@@ -2,7 +2,7 @@ import cv2
 from imutils.object_detection import non_max_suppression
 import math
 import numpy as np
-from django.admin import settings
+from server import settings
 import time
 
 class EastScanner():
@@ -12,9 +12,8 @@ class EastScanner():
     min_confidence = .5
     args = {}
 
-    def __init__(self, args):
-        self.debug = args.get('debug', False)
-        self.args = args
+    def __init__(self):
+        pass
 
     def get_areas_to_redact(self, source, input_filename, telemetry_data):
         textareas = self.get_text_areas_from_east(source)
