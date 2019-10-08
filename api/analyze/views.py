@@ -1,8 +1,11 @@
-from django.shortcuts import render
-from django.http import HttpResponse, JsonResponse
+import cv2
 from django.views.decorators.csrf import csrf_exempt
+from analyze.classes.EastPlusTessGuidedAnalyzer import EastPlusTessGuidedAnalyzer
 from django import forms
+from django.http import HttpResponse, JsonResponse
 import json
+import numpy as np
+from django.shortcuts import render
 
 class ValidationForm(forms.Form):
     roi_start_x = forms.IntegerField()
@@ -13,7 +16,6 @@ class ValidationForm(forms.Form):
 @csrf_exempt
 def index(request):
     if request.method == 'POST':
-        text_areas = {"gorilla": "state"}
         uploaded_file= request.FILES.get('image')
         if uploaded_file:
             image = uploaded_file.read()
@@ -27,11 +29,6 @@ def index(request):
             roi_start = (roi_start_x, roi_start_y)
             roi_end = (roi_end_x, roi_end_y)
 
-            from analyze.classes.EastScanner import EastScanner
-            from analyze.classes.EastPlusTessScanner import EastPlusTessScanner
-            from analyze.classes.EastPlusTessGuidedAnalyzer import EastPlusTessGuidedAnalyzer
-            import numpy as np
-            import cv2
             analyzer = EastPlusTessGuidedAnalyzer()
             nparr = np.fromstring(image, np.uint8)
             cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
