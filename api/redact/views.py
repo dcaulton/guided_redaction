@@ -24,12 +24,13 @@ def index(request):
 
             image_masker = ImageMasker()
             masked_image = image_masker.mask_all_regions(cv2_image, areas_to_redact, mask_info)
+            image_bytes = cv2.imencode('.png', masked_image)[1].tostring()
             
-            #TODO stream an image back to the caller 
-            cv2.imwrite('/Users/dcaulton/Desktop/howboutthat.png', masked_image)
-
-            wrap = {'yippie': 'ki yay'}
-            return JsonResponse(wrap)
+            filename='whatever.png'
+            response = HttpResponse(content_type='image/png')
+            response['Content-Disposition'] = 'attachment; filename=whatever.png'
+            response.write(image_bytes)
+            return response
         else:
             return HttpResponse('upload a file and call it image', status=422)
     else:
