@@ -10,7 +10,6 @@ class EastScanner():
     debug = False
     path_to_east_text_detector = settings.EAST_FILE_PATH
     min_confidence = .5
-    args = {}
 
     def __init__(self):
         pass

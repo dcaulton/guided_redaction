@@ -27,16 +27,18 @@ def index(request):
             roi_start = (roi_start_x, roi_start_y)
             roi_end = (roi_end_x, roi_end_y)
 
-            # TODO push this off into a controller
             from analyze.classes.EastScanner import EastScanner
+            from analyze.classes.EastPlusTessScanner import EastPlusTessScanner
             import numpy as np
             import cv2
-            east_scanner = EastScanner()
+            east_scanner = EastPlusTessScanner()
             nparr = np.fromstring(image, np.uint8)
             cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-            text_areas = east_scanner.get_text_areas_from_east(cv2_image)
+            detected_text_areas = east_scanner.get_text_areas_from_east(cv2_image)
+            detected_contours = east_scanner.grow_selections_and_get_contours(cv2_image, detected_text_areas)
+            recognized_text_areas =  east_scanner.do_tess_on_contours(cv2_image, detected_contours)
 
-            wrap = {'text_areas': text_areas}
+            wrap = {'recognized_text_areas': recognized_text_areas}
             return JsonResponse(wrap)
         else:
             return HttpResponse('upload a file and call it image', status=422)
