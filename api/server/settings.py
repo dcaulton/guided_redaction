@@ -118,3 +118,6 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/2.2/howto/static-files/
 
 STATIC_URL = '/static/'
+
+#CUSTOM SETTINGS
+EAST_FILE_PATH = 'analyze/bin/frozen_east_text_detection.pb'

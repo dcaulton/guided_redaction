@@ -2,12 +2,13 @@ import cv2
 from imutils.object_detection import non_max_suppression
 import math
 import numpy as np
+from django.admin import settings
 import time
 
 class EastScanner():
 
     debug = False
-    path_to_east_text_detector = 'bin/frozen_east_text_detection.pb'
+    path_to_east_text_detector = settings.EAST_FILE_PATH
     min_confidence = .5
     args = {}
 
