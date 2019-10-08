@@ -29,14 +29,13 @@ def index(request):
 
             from analyze.classes.EastScanner import EastScanner
             from analyze.classes.EastPlusTessScanner import EastPlusTessScanner
+            from analyze.classes.EastPlusTessGuidedAnalyzer import EastPlusTessGuidedAnalyzer
             import numpy as np
             import cv2
-            east_scanner = EastPlusTessScanner()
+            analyzer = EastPlusTessGuidedAnalyzer()
             nparr = np.fromstring(image, np.uint8)
             cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-            detected_text_areas = east_scanner.get_text_areas_from_east(cv2_image)
-            detected_contours = east_scanner.grow_selections_and_get_contours(cv2_image, detected_text_areas)
-            recognized_text_areas =  east_scanner.do_tess_on_contours(cv2_image, detected_contours)
+            recognized_text_areas = analyzer.analyze_text(cv2_image, [roi_start, roi_end])
 
             wrap = {'recognized_text_areas': recognized_text_areas}
             return JsonResponse(wrap)

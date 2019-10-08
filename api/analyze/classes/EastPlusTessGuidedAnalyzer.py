@@ -21,7 +21,7 @@ class EastPlusTessGuidedAnalyzer(EastPlusTessScanner):
                 new_areas.append(area)
         return new_areas
 
-    def point_is_in_box(point, box_start, box_end):
+    def point_is_in_box(self, point, box_start, box_end):
         if box_start[0] <= point[0] <= box_end[0]:
             if box_start[1] <= point[1] <= box_end[1]:
                 return True  
