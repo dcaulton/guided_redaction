@@ -15,6 +15,14 @@ class ValidationForm(forms.Form):
 
 @csrf_exempt
 def index(request):
+    # requires a form data payload like this:
+    # 
+    # image: the image file to analyze, png format preferred
+    # roi_start_x: 123  # integer for the region of interest start x coordinate
+    # roi_start_y: 123
+    # roi_end_x: 234
+    # roi_end_y: 234
+    #
     if request.method == 'POST':
         uploaded_file= request.FILES.get('image')
         if uploaded_file:

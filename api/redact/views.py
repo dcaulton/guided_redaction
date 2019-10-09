@@ -9,6 +9,21 @@ import uuid
 
 @csrf_exempt
 def index(request):
+    # requires a form data payload like this:
+    #
+    # image: the file to mask, preferably in png format
+    # data: {    
+    #     "areas_to_redact": [
+    #         [[start_x, start_y], [end_x, end_y]]
+    #      ],
+    #     "mask_info": {
+    #         "method": "blur_7x7"   # or green_outline, or black_rectangle (default)
+    #      }
+    # }
+    #
+    #  note: data is a JSON-formatted object
+    #        the output from analyze is suitable here, even though it has 
+    #        more info in its array after those two coordinates that data will be ignored
     if request.method == 'POST':
         uploaded_file= request.FILES.get('image')
         if uploaded_file:
