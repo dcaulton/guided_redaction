@@ -37,6 +37,6 @@ def index(request):
             wrap = {'recognized_text_areas': recognized_text_areas}
             return JsonResponse(wrap)
         else:
-            return HttpResponse('upload a file and call it image', status=422)
+            return HttpResponse('Upload an image as formdata, use key name of "image"', status=422)
     else:
-        return HttpResponse("Hello, world. You're at the analyze index.  You're gonna want to do a post though")
+        return HttpResponse("You're at the analyze index.  You're gonna want to do a post though")

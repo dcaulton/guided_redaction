@@ -4,6 +4,7 @@ from django.http import HttpResponse, JsonResponse
 from redact.classes.ImageMasker import ImageMasker
 import json
 import numpy as np
+import uuid
 
 
 @csrf_exempt
@@ -26,12 +27,12 @@ def index(request):
             masked_image = image_masker.mask_all_regions(cv2_image, areas_to_redact, mask_info)
             image_bytes = cv2.imencode('.png', masked_image)[1].tostring()
             
-            filename='whatever.png'
             response = HttpResponse(content_type='image/png')
-            response['Content-Disposition'] = 'attachment; filename=whatever.png'
+            new_name = 'image_' + str(uuid.uuid4()) + '.png'
+            response['Content-Disposition'] = 'attachment; filename=' + new_name
             response.write(image_bytes)
             return response
         else:
-            return HttpResponse('upload a file and call it image', status=422)
+            return HttpResponse('Upload an image as formdata, use key name of "image"', status=422)
     else:
-        return HttpResponse("Hello, world. You're at the analyze index.  You're gonna want to do a post though")
+        return HttpResponse("You're at the redact index.  You're gonna want to do a post though")
