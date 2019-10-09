@@ -6,10 +6,10 @@ class ImageMasker():
     def __init__(self):
         pass
 
-    def mask_all_regions(self, source, regions_to_mask, mask_info):
+    def mask_all_regions(self, source, regions_to_mask, mask_method):
         output = source.copy()
         for region_number, masking_region in enumerate(regions_to_mask):
-            mask_method = mask_info.get('method', 'black_rectangle')
+            mask_method = mask_method or 'black_rectangle'
             if mask_method == 'black_rectangle':
                 cv2.rectangle(output, masking_region['start'], masking_region['end'], (0, 0, 0), -1)
             elif mask_method == 'green_outline':

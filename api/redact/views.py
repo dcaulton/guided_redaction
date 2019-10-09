@@ -33,7 +33,7 @@ def index(request):
 
             data = json.loads(request.POST.get('data'))
             areas_to_redact_from_json = data.get('areas_to_redact', [])
-            mask_info = data.get('mask_info', {"method": "black_rectangle"})
+            mask_info = data.get('mask_method', "black_rectangle")
             areas_to_redact = []
             for a2r in areas_to_redact_from_json:
                 coords_dict = {
