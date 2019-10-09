@@ -24,7 +24,7 @@ def index(request):
     # roi_end_y: 234
     #
     if request.method == 'POST':
-        uploaded_file= request.FILES.get('image')
+        uploaded_file = request.FILES.get('image')
         if uploaded_file:
             image = uploaded_file.read()
             form = ValidationForm(request.POST, request.FILES)
