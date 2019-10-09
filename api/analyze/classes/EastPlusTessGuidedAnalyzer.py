@@ -14,6 +14,8 @@ class EastPlusTessGuidedAnalyzer(EastPlusTessScanner):
         return recognized_text_areas
 
     def discard_unneeded_areas(self, region_of_interest, areas):
+        print('areas are', areas)
+        print('roi is ', region_of_interest)
         new_areas = []
         for area in areas:
             if self.point_is_in_box(area[0], region_of_interest[0], region_of_interest[1]) and \

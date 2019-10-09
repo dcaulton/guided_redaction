@@ -36,7 +36,11 @@ def index(request):
             mask_info = data.get('mask_info', {"method": "black_rectangle"})
             areas_to_redact = []
             for a2r in areas_to_redact_from_json:
-                areas_to_redact.append([tuple(a2r[0]), tuple(a2r[1])])
+                coords_dict = {
+                    'start': tuple(a2r[0]), 
+                    'end': tuple(a2r[1])
+                }
+                areas_to_redact.append(coords_dict)
 
             image_masker = ImageMasker()
             masked_image = image_masker.mask_all_regions(cv2_image, areas_to_redact, mask_info)

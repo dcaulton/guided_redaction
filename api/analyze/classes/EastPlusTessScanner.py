@@ -7,6 +7,7 @@ import os
 import pytesseract
 import random
 import time
+import uuid
 
 # tools to use East and Tesseract to find word regions in an image
 class EastPlusTessScanner(EastScanner):
@@ -50,7 +51,16 @@ class EastPlusTessScanner(EastScanner):
             upper_left = (x, y)
             lower_right = (x+w, y+h)
             centroid = self.get_centroid(contour)
-            text_regions.append([upper_left, lower_right, text, centroid, self.TEXT_REGION_NOT_CLAIMED])
+            recognized_text_area = {
+                'id': 'rta_' + str(uuid.uuid4()),
+                'start': upper_left,
+                'end': lower_right,
+                'text': text,
+                'centroid': centroid,
+                'claimed': self.TEXT_REGION_NOT_CLAIMED,
+            }
+            text_regions.append(recognized_text_area)
+
         sum_text = 'total text recognition time: ' + str(math.ceil(total_tess_time)) + ' seconds for ' + \
             str(len(contours)) + ' calls'
         print(sum_text)
