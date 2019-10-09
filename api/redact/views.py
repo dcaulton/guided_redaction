@@ -31,11 +31,13 @@ def index(request):
             nparr = np.fromstring(image, np.uint8)
             cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 
-            data = json.loads(request.POST.get('data'))
-            areas_to_redact_from_json = data.get('areas_to_redact', [])
-            mask_info = data.get('mask_method', "black_rectangle")
+            areas_to_redact_inbound = request.POST.get('areas_to_redact')
+            areas_to_redact_inbound = json.loads(areas_to_redact_inbound)
+            print('areas_to_redact_inbound', areas_to_redact_inbound)
+
+            mask_info = "black_rectangle"
             areas_to_redact = []
-            for a2r in areas_to_redact_from_json:
+            for a2r in areas_to_redact_inbound:
                 coords_dict = {
                     'start': tuple(a2r[0]), 
                     'end': tuple(a2r[1])
