@@ -35,7 +35,7 @@ def index(request):
             areas_to_redact_inbound = json.loads(areas_to_redact_inbound)
             print('areas_to_redact_inbound', areas_to_redact_inbound)
 
-            mask_info = "black_rectangle"
+            mask_method = request.POST.get('mask_method', 'blur_7x7')
             areas_to_redact = []
             for a2r in areas_to_redact_inbound:
                 coords_dict = {
@@ -45,7 +45,7 @@ def index(request):
                 areas_to_redact.append(coords_dict)
 
             image_masker = ImageMasker()
-            masked_image = image_masker.mask_all_regions(cv2_image, areas_to_redact, mask_info)
+            masked_image = image_masker.mask_all_regions(cv2_image, areas_to_redact, mask_method)
             image_bytes = cv2.imencode('.png', masked_image)[1].tostring()
             
             response = HttpResponse(content_type='image/png')
