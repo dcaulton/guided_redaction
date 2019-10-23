@@ -1,22 +1,51 @@
-.App {
-  text-align: center;
+
+div#canvas_div {
+  position: absolute;
+  left: 100px;
+  top: 100px;
 }
 
-.App-logo {
-  height: 40vmin;
+canvas {
+  background-color: transparent;
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+div#base_image_div {
+  position: absolute;
+  left: 100px;
+  top: 100px;
 }
 
-.App-link {
-  color: #09d3ac;
+img#base_image_id {
+  padding: 0;
+  margin: 0;
+  max-width:100%;
+  max-height: 100%;
+}
+
+div#bottom_controls_div {
+  margin: 5px;
+
+}
+div.marquee_div {
+  background:
+    linear-gradient(90deg, blue 50%, transparent 50%),
+    linear-gradient(0deg, blue 50%, transparent 50%),
+    linear-gradient(90deg, blue 50%, transparent 50%),
+    linear-gradient(0deg, blue 50%, transparent 50%);
+  background-repeat: repeat-x, repeat-y, repeat-x, repeat-y;
+  background-size: 15px 4px, 4px 15px, 15px 4px, 4px 15px;
+  background-position: left top, right top, left bottom, left top;
+  padding: 4px;
+  animation: border-dance 4s infinite linear;
+}
+@keyframes border-dance
+{
+  0%
+  {
+    background-position: left top, right top, right bottom, left bottom;
+  }
+  100%
+  {
+    background-position: right top, right bottom, left bottom, left top;
+  }
 }
