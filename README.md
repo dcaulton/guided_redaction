@@ -3,7 +3,7 @@ An API for guided redaction and analysis tasks.
 
 Uses Python, OpenCV and Tesseract and the EAST algorithm to analyze and redact information on images.
 
-## to install
+## to install the backend
 - Python 3 is required.
 - For desktop, set up a python virtualenv just to keep things tidy.  It's your call on a dockerized server container.
 - ( MAYBE NOT, hold off on this for now)- install opencv.  If you're using a mac this will be useful: https://www.pyimagesearch.com/2018/08/17/install-opencv-4-on-macos/
@@ -11,3 +11,5 @@ Uses Python, OpenCV and Tesseract and the EAST algorithm to analyze and redact i
 - check this repository out
 - start it up with the webserver
 
+## to install the frontend
+- npm is required
