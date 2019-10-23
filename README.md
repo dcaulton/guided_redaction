@@ -12,4 +12,4 @@ Uses Python, OpenCV and Tesseract and the EAST algorithm to analyze and redact i
 - start it up with the webserver
 
 ## to install the frontend
-- npm is required
+- install the latest version of Node.js
