@@ -1,5 +1,4 @@
 import React from 'react';
-import Thing from './components/Thing';
 import TopControls from './components/TopControls';
 import './App.css';
 
@@ -24,10 +23,6 @@ class App extends React.Component {
     this.setState({areas_to_redact: a2r});
   }
   
-  handle_image_click() {
-    alert('someone clicked the image');
-  }
-
   handleSetMode = (mode, submode) => {
     var message = this.getMessage(mode, submode);
     var display_mode = this.getDisplayMode(mode, submode);
@@ -87,20 +82,31 @@ class App extends React.Component {
     return disp_mode;
   }
 
-  handle_add_area(e) {
-    this.setState({message: 'area added'});
+  handleImageClick = (e) => {
+    var x = e.clientX;
+    var y = e.clientY;
+
+    if (this.state.mode === 'add_1' || 
+        this.state.mode === 'delete' || 
+        this.state.mode === 'delete_1') {
+      this.setState({
+        message: 'got a click at '+ x +'  ' + y,
+        last_click: [x,y],
+      });
+    }
   }
 
   render() {
     return (
       <div id='container' className='App container'>
         <div id='image_redactor_panel'>
-          <BaseImage />
+          <BaseImage 
+            clickCallback= {this.handleImageClick}
+          />
           <ImageCanvas
             areas_to_redact={this.state.areas_to_redact}
             mode={this.state.mode}
             submode={this.state.submode}
-            add_area_callback= {() => this.handle_add_area()}
           />
           <div className='row'>
             <div className='col'>
@@ -131,7 +137,10 @@ class BaseImage extends React.Component {
   render() {
     return (
       <div id='base_image_div'>
-        <img id='base_image_id' onClick={() => alert(5544)} alt='whatever' src='images/frame_00187.png' />
+        <img id='base_image_id' 
+          onClick={(e) => this.props.clickCallback(e)} 
+          alt='whatever' 
+          src='images/frame_00187.png' />
       </div>
     );
   }
@@ -150,7 +159,7 @@ class ImageCanvas extends React.Component {
   }
 
   render() {
-// todo draw all the selected areas here before rendering
+  // todo draw all the selected areas here before rendering
     return (
       <div id='canvas_div'>
         <canvas id='overlay_canvas' />
