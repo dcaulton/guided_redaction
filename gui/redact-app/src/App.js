@@ -2,24 +2,32 @@ import React from 'react';
 import './App.css';
 
 class App extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      areas_to_redact: [],
+      mode: 'VIEW',
+      message: '',
+    }
+  }
+  
+  handle_image_click() {
+    alert('someone clicked the image');
+  }
+
   render() {
     return (
       <div id='container' className='App container'>
-        <ImageRedactorPanel />
-      </div>
-    );
-  }
-}
-
-class ImageRedactorPanel extends React.Component {
-  render() {
-    return (
-      <div id='image_redactor_panel'>
-        <BaseImage />
-        <ImageCanvas />
-        <div className='row'>
-          <div className='col'>
-            <TopControls />
+        <div id='image_redactor_panel'>
+          <BaseImage />
+          <ImageCanvas
+            areas_to_redact={this.state.areas_to_redact}
+            mode={this.state.mode}
+          />
+          <div className='row'>
+            <div className='col'>
+              <TopControls />
+            </div>
           </div>
         </div>
       </div>
@@ -38,6 +46,14 @@ class BaseImage extends React.Component {
 }
 
 class ImageCanvas extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      areas_to_redact: this.props.areas_to_redact,
+      mode: this.props.mode,
+    }
+  }
+
   render() {
     return (
       <div id='canvas_div'>
@@ -53,19 +69,41 @@ class TopControls extends React.Component {
     this.state = {
       mode: 'VIEW'
     };
+    this.addMode= this.addMode.bind(this);
+    this.deleteMode= this.deleteMode.bind(this);
     this.clearMode= this.clearMode.bind(this);
     this.resetImage= this.resetImage.bind(this);
   }
 
   resetImage() {
     this.setState({
-      mode: 'GONNA GET UGLY'
+      mode: 'RESET'
+    });
+  }
+
+  redactImage() {
+    this.setState({
+      mode: 'REDACT'
     });
   }
 
   clearMode() {
     this.setState({
       mode: 'VIEW'
+    });
+  }
+
+  deleteMode(submode) {
+    alert(submode);
+    this.setState({
+      mode: 'DELETE'
+    });
+  }
+
+  addMode(submode) {
+    alert(submode);
+    this.setState({
+      mode: 'ADD'
     });
   }
 
@@ -80,10 +118,26 @@ class TopControls extends React.Component {
               Add
             </button>
             <div className='dropdown-menu' aria-labelledby='addDropdownButton'>
-              <a className='dropdown-item' href='./index.html'>Box</a>
-              <a className='dropdown-item' href='./index.html'>OCR</a>
-              <a className='dropdown-item' href='./index.html'>Flood</a>
-              <a className='dropdown-item' href='./index.html'>Polyline</a>
+              <button className='dropdown-item' 
+                  onClick={() => this.addMode('box')} 
+                  href='.'>
+                Box
+              </button>
+              <button className='dropdown-item' 
+                  onClick={() => this.addMode('ocr')} 
+                  href='.'>
+                OCR
+              </button>
+              <button className='dropdown-item' 
+                  onClick={() => this.addMode('flood')} 
+                  href='.'>
+                Flood
+              </button>
+              <button className='dropdown-item' 
+                  onClick={() => this.addMode('polyline')} 
+                  href='.'>
+                Polyline
+              </button>
             </div>
           </div>
           <div className='col' id='delete_div'>
@@ -92,9 +146,21 @@ class TopControls extends React.Component {
               Delete
             </button>
             <div className='dropdown-menu' aria-labelledby='deleteDropdownButton'>
-              <a className='dropdown-item' href='./index.html'>Item</a>
-              <a className='dropdown-item' href='./index.html'>Box (all in)</a>
-              <a className='dropdown-item' href='./index.html'>Box (part in)</a>
+              <button className='dropdown-item' 
+                  onClick={() => this.deleteMode('item')} 
+                  href='.'>
+                Item
+              </button>
+              <button className='dropdown-item' 
+                  onClick={() => this.deleteMode('box_all')} 
+                  href='.'>
+                Box (all in)
+              </button>
+              <button className='dropdown-item' 
+                  onClick={() => this.deleteMode('box_part')} 
+                  href='.'>
+                Box (part in)
+              </button>
             </div>
           </div>
           <div className='col'>
@@ -116,6 +182,7 @@ class TopControls extends React.Component {
           <div className='col'>
             <button 
                 className='btn btn-primary'  
+                onClick={() => this.redactImage()}
                 href='./index.html' >
               Redact
             </button>
