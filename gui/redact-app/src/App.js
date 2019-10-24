@@ -5,14 +5,36 @@ class App extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      areas_to_redact: [],
+      areas_to_redact: [2,1],
       mode: 'VIEW',
+      submode: null,
       message: '',
+      debuginfo: 'nifty',
+      current_click: null,
+      last_click: null,
     }
+  }
+
+  add_area_to_redact(new_area) {
+    const a2r = this.state.areas_to_redact.slice();
+    a2r.push(new_area);
+    this.setState({areas_to_redact: a2r});
   }
   
   handle_image_click() {
     alert('someone clicked the image');
+  }
+
+  handleSetMode = (mode, submode) => {
+    console.log('just got a handle_set_mode callback with ' + mode + ' ' + submode);
+    this.setState({
+        mode: mode,
+        submode: submode,
+      });
+  }
+
+  handle_add_area(e) {
+    this.setState({message: 'area added'});
   }
 
   render() {
@@ -23,10 +45,24 @@ class App extends React.Component {
           <ImageCanvas
             areas_to_redact={this.state.areas_to_redact}
             mode={this.state.mode}
+            submode={this.state.submode}
+            add_area_callback= {() => this.handle_add_area()}
           />
           <div className='row'>
             <div className='col'>
-              <TopControls />
+              <TopControls 
+                areas_to_redact={this.state.areas_to_redact}
+                mode={this.state.mode}
+                submode={this.state.submode}
+                setModeCallback= {this.handleSetMode}
+              />
+            </div>
+          </div>
+        </div>
+        <div id='debug' className='row'>
+          <div className='col'>
+            <div id='debug'>
+              {this.state.areas_to_redact}
             </div>
           </div>
         </div>
@@ -39,7 +75,7 @@ class BaseImage extends React.Component {
   render() {
     return (
       <div id='base_image_div'>
-        <img id='base_image_id' alt='whatever' src='images/frame_00187.png' />
+        <img id='base_image_id' onClick={() => alert(5544)} alt='whatever' src='images/frame_00187.png' />
       </div>
     );
   }
@@ -51,10 +87,14 @@ class ImageCanvas extends React.Component {
     this.state = {
       areas_to_redact: this.props.areas_to_redact,
       mode: this.props.mode,
+      submode: this.props.submode,
+      prev_x: this.props.prev_x,
+      prev_y: this.props.prev_y,
     }
   }
 
   render() {
+// todo draw all the selected areas here before rendering
     return (
       <div id='canvas_div'>
         <canvas id='overlay_canvas' />
@@ -67,44 +107,12 @@ class TopControls extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      mode: 'VIEW'
+      mode: props.mode,
+      submode: props.submode,
+      message: props.message,
+      debuginfo: props.debuginfo,
+      areas_to_redact: props.areas_to_redact,
     };
-    this.addMode= this.addMode.bind(this);
-    this.deleteMode= this.deleteMode.bind(this);
-    this.clearMode= this.clearMode.bind(this);
-    this.resetImage= this.resetImage.bind(this);
-  }
-
-  resetImage() {
-    this.setState({
-      mode: 'RESET'
-    });
-  }
-
-  redactImage() {
-    this.setState({
-      mode: 'REDACT'
-    });
-  }
-
-  clearMode() {
-    this.setState({
-      mode: 'VIEW'
-    });
-  }
-
-  deleteMode(submode) {
-    alert(submode);
-    this.setState({
-      mode: 'DELETE'
-    });
-  }
-
-  addMode(submode) {
-    alert(submode);
-    this.setState({
-      mode: 'ADD'
-    });
   }
 
   render() {
@@ -119,22 +127,23 @@ class TopControls extends React.Component {
             </button>
             <div className='dropdown-menu' aria-labelledby='addDropdownButton'>
               <button className='dropdown-item' 
-                  onClick={() => this.addMode('box')} 
+                  onClick={() => this.props.setModeCallback('ADD', 'box')} 
                   href='.'>
                 Box
+                {this.state.debuginfo}
               </button>
               <button className='dropdown-item' 
-                  onClick={() => this.addMode('ocr')} 
+                  onClick={() => this.props.setModeCallback('ADD', 'ocr')} 
                   href='.'>
                 OCR
               </button>
               <button className='dropdown-item' 
-                  onClick={() => this.addMode('flood')} 
+                  onClick={() => this.props.setModeCallback('ADD', 'flood')} 
                   href='.'>
                 Flood
               </button>
               <button className='dropdown-item' 
-                  onClick={() => this.addMode('polyline')} 
+                  onClick={() => this.props.setModeCallback('ADD', 'polyline')} 
                   href='.'>
                 Polyline
               </button>
@@ -147,17 +156,17 @@ class TopControls extends React.Component {
             </button>
             <div className='dropdown-menu' aria-labelledby='deleteDropdownButton'>
               <button className='dropdown-item' 
-                  onClick={() => this.deleteMode('item')} 
+                  onClick={() => this.props.setModeCallback('DELETE', 'item')} 
                   href='.'>
                 Item
               </button>
               <button className='dropdown-item' 
-                  onClick={() => this.deleteMode('box_all')} 
+                  onClick={() => this.props.setModeCallback('DELETE', 'box_all')} 
                   href='.'>
                 Box (all in)
               </button>
               <button className='dropdown-item' 
-                  onClick={() => this.deleteMode('box_part')} 
+                  onClick={() => this.props.setModeCallback('DELETE', 'box_part')} 
                   href='.'>
                 Box (part in)
               </button>
@@ -166,7 +175,7 @@ class TopControls extends React.Component {
           <div className='col'>
             <button 
                 className='btn btn-primary' 
-                onClick={() => this.clearMode()}
+                onClick={() => this.props.setModeCallback('VIEW', '')}
                 href='./index.html' >
               Cancel
             </button>
@@ -174,7 +183,7 @@ class TopControls extends React.Component {
           <div className='col'>
             <button 
                 className='btn btn-primary' 
-                onClick={() => this.resetImage()}
+                onClick={() => this.props.setModeCallback('RESET', '')}
                 href='./index.html' >
               Reset Image
             </button>
@@ -182,7 +191,7 @@ class TopControls extends React.Component {
           <div className='col'>
             <button 
                 className='btn btn-primary'  
-                onClick={() => this.redactImage()}
+                onClick={() => this.props.setModeCallback('REDACT', '')}
                 href='./index.html' >
               Redact
             </button>
@@ -193,7 +202,7 @@ class TopControls extends React.Component {
         </div>
         <div className='row'>
           <div className='col'>
-            <h3 id='mode_header' >{this.state.mode}</h3>
+            <h3 id='mode_header' >{this.props.mode} : {this.props.submode}</h3>
             <div id='mode_div'/>
           </div>
         </div>

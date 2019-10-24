@@ -49,3 +49,8 @@ div.marquee_div {
     background-position: right top, right bottom, left bottom, left top;
   }
 }
+
+div#debug {
+  position: absolute;
+  top:40px;
+}
