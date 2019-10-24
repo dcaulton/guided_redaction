@@ -97,16 +97,17 @@ class App extends React.Component {
   }
 
   render() {
+    // TODO hang the click listener on the canvas, make the canvas the same size as the image
+    // image height is document.getElementById('whatever').clientHeight or offsetHeight with scrollbar and borders
     return (
       <div id='container' className='App container'>
         <div id='image_redactor_panel'>
-          <BaseImage 
-            clickCallback= {this.handleImageClick}
-          />
+          <BaseImage />
           <ImageCanvas
             areas_to_redact={this.state.areas_to_redact}
             mode={this.state.mode}
             submode={this.state.submode}
+            clickCallback= {this.handleImageClick}
           />
           <div className='row'>
             <div className='col'>
@@ -138,7 +139,6 @@ class BaseImage extends React.Component {
     return (
       <div id='base_image_div'>
         <img id='base_image_id' 
-          onClick={(e) => this.props.clickCallback(e)} 
           alt='whatever' 
           src='images/frame_00187.png' />
       </div>
@@ -162,7 +162,9 @@ class ImageCanvas extends React.Component {
   // todo draw all the selected areas here before rendering
     return (
       <div id='canvas_div'>
-        <canvas id='overlay_canvas' />
+        <canvas id='overlay_canvas' 
+          onClick={(e) => this.props.clickCallback(e)} 
+        />
       </div>
     );
   }

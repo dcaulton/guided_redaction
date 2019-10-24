@@ -1,10 +1,6 @@
 import React from 'react';
 
 class TopControls extends React.Component {
-  constructor(props) {
-    super(props);
-  }
-
   render() {
     return (
       <div id='bottom_controls_div'>
