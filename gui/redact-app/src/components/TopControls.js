@@ -1,6 +1,16 @@
 import React from 'react';
 
 class TopControls extends React.Component {
+  constructor(props) {
+    super(props);
+    this.handleReset = this.handleReset.bind(this);
+  }
+
+  handleReset() {
+    this.props.clearRedactAreasCallback();
+    this.props.setModeCallback('reset', '');
+  }
+
   render() {
     return (
       <div id='bottom_controls_div'>
@@ -72,7 +82,7 @@ class TopControls extends React.Component {
           <div className='col'>
             <button 
                 className='btn btn-primary' 
-                onClick={() => this.props.setModeCallback('reset', '')}
+                onClick={() => this.handleReset()}
                 href='./index.html' >
               Reset Image
             </button>

@@ -94,9 +94,16 @@ class App extends React.Component {
         last_click: [x,y],
       });
     }
+
   }
 
+  handleResetAreasToRedact = () => {
+    this.setState({
+      areas_to_redact: [],
+    });
+  }
   render() {
+
     // TODO hang the click listener on the canvas, make the canvas the same size as the image
     // image height is document.getElementById('whatever').clientHeight or offsetHeight with scrollbar and borders
     return (
@@ -118,6 +125,7 @@ class App extends React.Component {
                 submode={this.state.submode}
                 message={this.state.message}
                 setModeCallback= {this.handleSetMode}
+                clearRedactAreasCallback = {this.handleResetAreasToRedact}
               />
             </div>
           </div>
