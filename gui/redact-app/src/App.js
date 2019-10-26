@@ -15,7 +15,7 @@ class App extends React.Component {
          text: 'whatever babe'},
         {start: [1500,850],
          end: [1590,890],
-         text: 'whatever babe'},
+         text: 'whatever hon'},
       ],
       mode: 'VIEW',
       submode: null,
@@ -100,6 +100,8 @@ class App extends React.Component {
 
     if (this.state.mode === 'add_1') {
       this.handleAddFirst(x, y);
+    } else if (this.state.mode === 'add_2') {
+      this.handleAddSecond(x, y);
     } else if (this.state.mode === 'delete') {
       this.handleDelete(x, y);
     } else if (this.state.mode === 'delete_1') {
@@ -113,6 +115,27 @@ class App extends React.Component {
       last_click: [x_rel, y_rel],
       mode: 'add_2',
       message: this.getMessage('add_2', this.state.submode),
+    });
+  }
+
+  handleAddSecond(x, y) {
+    let msg='adding a box from '+this.state.last_click[0]+' '+this.state.last_click[1]
+    msg += '  to '+x+'  '+y+'   ';
+    console.log(msg);
+    console.log('add second');
+    let deepCopyAreasToRedact = JSON.parse(JSON.stringify(this.state.areas_to_redact));
+    let new_a2r = {
+      start: [this.state.last_click[0], this.state.last_click[1]],
+      end: [x, y],
+      text: 'you got it hombre',
+    };
+    deepCopyAreasToRedact.push(new_a2r);
+
+    this.setState({
+      last_click: null,
+      mode: 'view',
+      message: 'region was successfully added',
+      areas_to_redact: deepCopyAreasToRedact,
     });
   }
 
@@ -188,14 +211,13 @@ class ImageCanvas extends React.Component {
     }
   }
 
-  componentDidMount() {
+  drawRectangles() {
     const canvas = this.refs.canvas
     let ctx = canvas.getContext("2d")
     ctx.strokeStyle = '#3F3';
-//    ctx.shadowColor='#F3F'
-//    ctx.shadowBlur = 5;
     ctx.lineWidth = 3;
     for (let i= 0; i < this.props.areas_to_redact.length; i++) {
+      console.log('drawing number '+i);
       let a2r = this.props.areas_to_redact[i];
       let width = a2r['end'][0] - a2r['start'][0];
       let height = a2r['end'][1] - a2r['start'][1];
@@ -203,15 +225,22 @@ class ImageCanvas extends React.Component {
     }
   }
 
+  componentDidMount() {
+    this.drawRectangles()
+  }
+
+  componentDidUpdate() {
+    this.drawRectangles()
+  }
+
   render() {
-  // todo draw all the selected areas here before rendering
     return (
       <div id='canvas_div'>
         <canvas id='overlay_canvas' 
           ref='canvas'
           width={1600}
           height={900}
-          onClick={(e) => this.props.clickCallback(e)} 
+          onClick={(e) => this.props.clickCallback(e)}
         />
       </div>
     );
