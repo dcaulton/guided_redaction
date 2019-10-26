@@ -6,12 +6,21 @@ class App extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      areas_to_redact: [2,1],
+      areas_to_redact: [
+        {start: [10,10],
+         end: [40,40],
+         text: 'whatever dude'},
+        {start: [130,60],
+         end: [290,70],
+         text: 'whatever babe'},
+        {start: [1500,850],
+         end: [1590,890],
+         text: 'whatever babe'},
+      ],
       mode: 'VIEW',
       submode: null,
       display_mode: 'view',
       message: '',
-      debuginfo: 'nifty',
       current_click: null,
       last_click: null,
     }
@@ -24,8 +33,8 @@ class App extends React.Component {
   }
   
   handleSetMode = (mode, submode) => {
-    var message = this.getMessage(mode, submode);
-    var display_mode = this.getDisplayMode(mode, submode);
+    const message = this.getMessage(mode, submode);
+    const display_mode = this.getDisplayMode(mode, submode);
     this.setState({
       mode: mode,
       submode: submode,
@@ -35,7 +44,7 @@ class App extends React.Component {
   }
 
   getMessage(mode, submode) {
-      var msg = '';
+      let msg = '';
       if (mode === 'add_1' && submode === 'box') {
         msg = 'click on the first corner of the box';
       } else if (mode === 'add_2' && submode === 'box') {
@@ -61,7 +70,7 @@ class App extends React.Component {
   }
 
   getDisplayMode(mode, submode) {
-    var disp_mode = 'View';
+    let disp_mode = 'View';
     if (mode === 'add_1' && submode === 'box') {
       disp_mode = 'Add Box';
     } else if (mode === 'add_2' && submode === 'box') {
@@ -83,18 +92,36 @@ class App extends React.Component {
   }
 
   handleImageClick = (e) => {
-    var x = e.clientX;
-    var y = e.clientY;
+    let x = e.nativeEvent.offsetX;
+    let y = e.nativeEvent.offsetY;
 
-    if (this.state.mode === 'add_1' || 
-        this.state.mode === 'delete' || 
-        this.state.mode === 'delete_1') {
-      this.setState({
-        message: 'got a click at '+ x +'  ' + y,
-        last_click: [x,y],
-      });
+    let message = 'got a click at ('+x+', '+y+')-----';
+    console.log(message);
+
+    if (this.state.mode === 'add_1') {
+      this.handleAddFirst(x, y);
+    } else if (this.state.mode === 'delete') {
+      this.handleDelete(x, y);
+    } else if (this.state.mode === 'delete_1') {
+      this.handleDeleteFirst(x, y);
     }
+  }
 
+  handleAddFirst(x_rel, y_rel) {
+    console.log('add first');
+    this.setState({
+      last_click: [x_rel, y_rel],
+      mode: 'add_2',
+      message: this.getMessage('add_2', this.state.submode),
+    });
+  }
+
+  handleDeleteFirst(x_rel, y_rel) {
+    console.log('delete first');
+  }
+
+  handleDelete(x_rel, y_rel) {
+    console.log('delete');
   }
 
   handleResetAreasToRedact = () => {
@@ -108,15 +135,17 @@ class App extends React.Component {
     // image height is document.getElementById('whatever').clientHeight or offsetHeight with scrollbar and borders
     return (
       <div id='container' className='App container'>
-        <div id='image_redactor_panel'>
-          <BaseImage />
-          <ImageCanvas
-            areas_to_redact={this.state.areas_to_redact}
-            mode={this.state.mode}
-            submode={this.state.submode}
-            clickCallback= {this.handleImageClick}
-          />
-          <div className='row'>
+        <div id='image_redactor_panel' className='xrow'>
+          <div id='image_and_canvas_wrapper' className='row'>
+            <BaseImage />
+            <ImageCanvas
+              areas_to_redact={this.state.areas_to_redact}
+              mode={this.state.mode}
+              submode={this.state.submode}
+              clickCallback= {this.handleImageClick}
+            />
+          </div>
+          <div id='controls_wrapper' className='row'>
             <div className='col'>
               <TopControls 
                 areas_to_redact={this.state.areas_to_redact}
@@ -127,13 +156,6 @@ class App extends React.Component {
                 setModeCallback= {this.handleSetMode}
                 clearRedactAreasCallback = {this.handleResetAreasToRedact}
               />
-            </div>
-          </div>
-        </div>
-        <div id='debug' className='row'>
-          <div className='col'>
-            <div id='debug'>
-              {this.state.areas_to_redact}
             </div>
           </div>
         </div>
@@ -166,11 +188,29 @@ class ImageCanvas extends React.Component {
     }
   }
 
+  componentDidMount() {
+    const canvas = this.refs.canvas
+    let ctx = canvas.getContext("2d")
+    ctx.strokeStyle = '#3F3';
+//    ctx.shadowColor='#F3F'
+//    ctx.shadowBlur = 5;
+    ctx.lineWidth = 3;
+    for (let i= 0; i < this.props.areas_to_redact.length; i++) {
+      let a2r = this.props.areas_to_redact[i];
+      let width = a2r['end'][0] - a2r['start'][0];
+      let height = a2r['end'][1] - a2r['start'][1];
+      ctx.strokeRect(a2r['start'][0], a2r['start'][1], width, height);
+    }
+  }
+
   render() {
   // todo draw all the selected areas here before rendering
     return (
       <div id='canvas_div'>
         <canvas id='overlay_canvas' 
+          ref='canvas'
+          width={1600}
+          height={900}
           onClick={(e) => this.props.clickCallback(e)} 
         />
       </div>

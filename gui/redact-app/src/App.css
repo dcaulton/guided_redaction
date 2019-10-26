@@ -1,10 +1,17 @@
 
+div#image_and_canvas_wrapper {
+}
+
+div#controls_wrapper {
+  position: relative;
+}
 div#canvas_div {
   position: absolute;
   left: 100px;
   top: 100px;
   width:1600px;
-  height:900px;
+  height:auto;
+  xheight:900px;
 }
 
 canvas {
