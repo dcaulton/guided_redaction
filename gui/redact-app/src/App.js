@@ -1,5 +1,6 @@
 import React from 'react';
 import TopControls from './components/TopControls';
+import CanvasOverlay from './components/CanvasOverlay';
 import './App.css';
 
 class App extends React.Component {
@@ -86,7 +87,7 @@ class App extends React.Component {
     let x = e.nativeEvent.offsetX;
     let y = e.nativeEvent.offsetY;
 
-    let message = 'got a click at ('+x+', '+y+')-----';
+    let message = 'got a click at ('+x+', '+y+')';
     console.log(message);
 
     if (this.state.mode === 'add_1') {
@@ -97,11 +98,12 @@ class App extends React.Component {
       this.handleDelete(x, y);
     } else if (this.state.mode === 'delete_1') {
       this.handleDeleteFirst(x, y);
+    } else if (this.state.mode === 'delete_2') {
+      this.handleDeleteSecond(x, y);
     }
   }
 
   handleAddFirst(x_rel, y_rel) {
-    console.log('add first');
     this.setState({
       last_click: [x_rel, y_rel],
       mode: 'add_2',
@@ -113,7 +115,6 @@ class App extends React.Component {
     let msg='adding a box from '+this.state.last_click[0]+' '+this.state.last_click[1]
     msg += '  to '+x+'  '+y+'   ';
     console.log(msg);
-    console.log('add second');
     let deepCopyAreasToRedact = JSON.parse(JSON.stringify(this.state.areas_to_redact));
     let new_a2r = {
       start: [this.state.last_click[0], this.state.last_click[1]],
@@ -132,8 +133,50 @@ class App extends React.Component {
     });
   }
 
-  handleDeleteFirst(x_rel, y_rel) {
-    console.log('delete first');
+  handleDeleteFirst(x, y) {
+    const display_mode = this.getDisplayMode('delete_2');
+    this.setState({
+      last_click: [x, y],
+      mode: 'delete_2',
+      message: this.getMessage('delete_2', this.state.submode),
+      display_mode: display_mode,
+    });
+  }
+
+  handleDeleteSecond(x, y) {
+    let msg='deleting a box from '+this.state.last_click[0]+' '+this.state.last_click[1]
+    msg += '  to '+x+'  '+y+'   ';
+    console.log(msg);
+
+    let new_areas_to_redact = [];
+    for (var i=0; i < this.state.areas_to_redact.length; i++) {
+      let a2r = this.state.areas_to_redact[i];
+      var start_is_within_delete_box = false;
+      var end_is_within_delete_box = false;
+      if (this.state.last_click[0] <= a2r['start'][0]  && a2r['start'][0] <= x &&
+          this.state.last_click[1] <= a2r['start'][1]  && a2r['start'][1] <= y) {
+        start_is_within_delete_box = true;
+      } 
+      if (this.state.last_click[0] <= a2r['end'][0]  && a2r['end'][0] <= x &&
+          this.state.last_click[1] <= a2r['end'][1]  && a2r['end'][1] <= y) {
+        end_is_within_delete_box = true;
+      } 
+      if (start_is_within_delete_box && end_is_within_delete_box) {
+        console.log('deleting '+i);
+      } else {
+        console.log('keeping '+i);
+        new_areas_to_redact.push(a2r);
+      }
+    }
+    if (new_areas_to_redact.length !== this.state.areas_to_redact.length) {
+      const display_mode = this.getDisplayMode('view');
+      this.setState({
+        mode: 'view',
+        message: 'region was successfully deleted',
+        areas_to_redact: new_areas_to_redact,
+        display_mode: display_mode,
+      });
+    }
   }
 
   handleDelete(x, y) {
@@ -142,15 +185,12 @@ class App extends React.Component {
         let a2r = this.state.areas_to_redact[i];
         if (a2r['start'][0] <= x  && x <= a2r['end'][0] &&
             a2r['start'][1] <= y  && y <= a2r['end'][1]) {
-          console.log('deleting item '+i);
         } else {
-          console.log('keeping item '+i);
           new_areas_to_redact.push(a2r);
         }
       
     }
     if (new_areas_to_redact.length !== this.state.areas_to_redact.length) {
-      console.log('cowabunga');
       const display_mode = this.getDisplayMode('view');
       this.setState({
         mode: 'view',
@@ -162,25 +202,24 @@ class App extends React.Component {
   }
 
   handleResetAreasToRedact = () => {
-    console.log('resetting baby');
     this.setState({
       areas_to_redact: [],
     });
   }
-  render() {
 
-    // TODO hang the click listener on the canvas, make the canvas the same size as the image
-    // image height is document.getElementById('whatever').clientHeight or offsetHeight with scrollbar and borders
+  render() {
     return (
       <div id='container' className='App container'>
         <div id='image_redactor_panel' className='xrow'>
           <div id='image_and_canvas_wrapper' className='row'>
             <BaseImage />
-            <ImageCanvas
+            <CanvasOverlay
               areas_to_redact={this.state.areas_to_redact}
               mode={this.state.mode}
               submode={this.state.submode}
               clickCallback= {this.handleImageClick}
+              image_width={1600}
+              image_height={900}
             />
           </div>
           <div id='controls_wrapper' className='row'>
@@ -209,57 +248,6 @@ class BaseImage extends React.Component {
         <img id='base_image_id' 
           alt='whatever' 
           src='images/frame_00187.png' />
-      </div>
-    );
-  }
-}
-
-class ImageCanvas extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      areas_to_redact: this.props.areas_to_redact,
-      mode: this.props.mode,
-      submode: this.props.submode,
-      prev_x: this.props.prev_x,
-      prev_y: this.props.prev_y,
-    }
-  }
-
-  drawRectangles() {
-    const canvas = this.refs.canvas
-    let ctx = canvas.getContext("2d")
-    ctx.strokeStyle = '#3F3';
-    ctx.lineWidth = 3;
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    for (let i= 0; i < this.props.areas_to_redact.length; i++) {
-      console.log('drawing number '+i);
-      let a2r = this.props.areas_to_redact[i];
-      let width = a2r['end'][0] - a2r['start'][0];
-      let height = a2r['end'][1] - a2r['start'][1];
-      ctx.strokeRect(a2r['start'][0], a2r['start'][1], width, height);
-    }
-  }
-
-  componentDidMount() {
-    this.drawRectangles()
-  }
-
-  componentDidUpdate() {
-    this.drawRectangles()
-  }
-
-  render() {
-    return (
-      <div id='canvas_div'>
-        <canvas id='overlay_canvas' 
-          ref='canvas'
-          width={1600}
-          height={900}
-          onClick={(e) => this.props.clickCallback(e)}
-        />
       </div>
     );
   }
