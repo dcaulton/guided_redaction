@@ -15,6 +15,7 @@ class App extends React.Component {
       message: '',
       current_click: null,
       last_click: null,
+      image_path: 'images/frame_00187.png',
     }
   }
 
@@ -123,7 +124,6 @@ class App extends React.Component {
     };
     deepCopyAreasToRedact.push(new_a2r);
 
-    const display_mode = this.getDisplayMode('view');
     this.setState({
       last_click: null,
       mode: 'add_1',
@@ -133,7 +133,6 @@ class App extends React.Component {
   }
 
   handleDeleteFirst(x, y) {
-    const display_mode = this.getDisplayMode('delete_2');
     this.setState({
       last_click: [x, y],
       mode: 'delete_2',
@@ -192,12 +191,9 @@ class App extends React.Component {
       
     }
     if (new_areas_to_redact.length !== this.state.areas_to_redact.length) {
-      const display_mode = this.getDisplayMode('view');
       this.setState({
-        mode: 'view',
-        message: 'region was successfully deleted',
+        message: 'region was successfully deleted, continue selecting regions, press cancel when done',
         areas_to_redact: new_areas_to_redact,
-        display_mode: display_mode,
       });
     }
   }
@@ -213,12 +209,15 @@ class App extends React.Component {
       <div id='container' className='App container'>
         <div id='image_redactor_panel' className='xrow'>
           <div id='image_and_canvas_wrapper' className='row'>
-            <BaseImage />
+            <BaseImage 
+              image_path={this.state.image_path}
+            />
             <CanvasOverlay
               areas_to_redact={this.state.areas_to_redact}
               mode={this.state.mode}
               submode={this.state.submode}
               clickCallback= {this.handleImageClick}
+              last_click= {this.state.last_click}
               image_width={1600}
               image_height={900}
             />
@@ -248,7 +247,8 @@ class BaseImage extends React.Component {
       <div id='base_image_div'>
         <img id='base_image_id' 
           alt='whatever' 
-          src='images/frame_00187.png' />
+          src={this.props.image_path}
+        />
       </div>
     );
   }
