@@ -39,7 +39,6 @@ class CanvasOverlay extends React.Component {
     ctx.lineWidth = 3;
 
     for (let i= 0; i < this.props.areas_to_redact.length; i++) {
-      console.log('drawing number '+i);
       let a2r = this.props.areas_to_redact[i];
       let width = a2r['end'][0] - a2r['start'][0];
       let height = a2r['end'][1] - a2r['start'][1];

@@ -113,23 +113,63 @@ class App extends React.Component {
   }
 
   handleAddSecond(x, y) {
-    let msg='adding a box from '+this.state.last_click[0]+' '+this.state.last_click[1]
-    msg += '  to '+x+'  '+y+'   ';
-    console.log(msg);
-    let deepCopyAreasToRedact = JSON.parse(JSON.stringify(this.state.areas_to_redact));
-    let new_a2r = {
-      start: [this.state.last_click[0], this.state.last_click[1]],
-      end: [x, y],
-      text: 'you got it hombre',
-    };
-    deepCopyAreasToRedact.push(new_a2r);
+    if (this.state.submode === 'box') {
+      let msg='adding a box from '+this.state.last_click[0]+' '+this.state.last_click[1]
+      msg += '  to '+x+'  '+y+'   ';
+      console.log(msg);
+      let deepCopyAreasToRedact = JSON.parse(JSON.stringify(this.state.areas_to_redact));
+      let new_a2r = {
+        start: [this.state.last_click[0], this.state.last_click[1]],
+        end: [x, y],
+        text: 'you got it hombre',
+      };
+      deepCopyAreasToRedact.push(new_a2r);
 
-    this.setState({
-      last_click: null,
-      mode: 'add_1',
-      message: 'region was successfully added, select another region to add, press cancel when done',
-      areas_to_redact: deepCopyAreasToRedact,
+      this.setState({
+        last_click: null,
+        mode: 'add_1',
+        message: 'region was successfully added, select another region to add, press cancel when done',
+        areas_to_redact: deepCopyAreasToRedact,
+      });
+    } else if (this.state.submode === 'ocr') {
+      const current_click = [x, y];
+      let new_areas_to_redact = this.callOcr(current_click, this.state.last_click);
+      let deepCopyAreasToRedact = JSON.parse(JSON.stringify(this.state.areas_to_redact));
+      for (let i=0; i < new_areas_to_redact.length; i++) {
+        deepCopyAreasToRedact.push(new_areas_to_redact[i]);
+      }
+      this.setState({
+        last_click: null,
+        mode: 'add_1',
+        message: new_areas_to_redact.length + ' OCR detected regions were added, select another region to scan, press cancel when done',
+        areas_to_redact: deepCopyAreasToRedact,
+      });
+    }
+  }
+
+  callOcr(current_click, last_click) {
+    console.log('calling ocr with two clicks');
+    fetch('http://127.0.0.1:8000/analyze/', {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        firstParam: 'thatThing',
+        secondParam: 'thatOtherThing',
+      }),
+    })
+    .then((response) => response.json())
+    .then((responseJson) => {
+      console.log('well we got this far in the ocr call, MYES???');
+      console.log(responseJson);
+    })
+    .catch((error) => {
+      console.error(error);
     });
+    
+    return [];
   }
 
   handleDeleteFirst(x, y) {
