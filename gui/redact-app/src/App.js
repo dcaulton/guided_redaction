@@ -126,10 +126,9 @@ class App extends React.Component {
     const display_mode = this.getDisplayMode('view');
     this.setState({
       last_click: null,
-      mode: 'view',
-      message: 'region was successfully added',
+      mode: 'add_1',
+      message: 'region was successfully added, select another region to add, press cancel when done',
       areas_to_redact: deepCopyAreasToRedact,
-      display_mode: display_mode,
     });
   }
 
@@ -139,7 +138,6 @@ class App extends React.Component {
       last_click: [x, y],
       mode: 'delete_2',
       message: this.getMessage('delete_2', this.state.submode),
-      display_mode: display_mode,
     });
   }
 
@@ -169,12 +167,15 @@ class App extends React.Component {
       }
     }
     if (new_areas_to_redact.length !== this.state.areas_to_redact.length) {
-      const display_mode = this.getDisplayMode('view');
       this.setState({
-        mode: 'view',
-        message: 'region was successfully deleted',
+        mode: 'delete_1',
+        message: 'region was successfully deleted, select another region to delete, press cancel when done',
         areas_to_redact: new_areas_to_redact,
-        display_mode: display_mode,
+      });
+    } else {
+      this.setState({
+        mode: 'delete_1',
+        message: this.getMessage('delete_1', this.state.submode),
       });
     }
   }
