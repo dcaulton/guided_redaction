@@ -7,17 +7,8 @@ class App extends React.Component {
     super(props);
     this.state = {
       areas_to_redact: [
-        {start: [10,10],
-         end: [40,40],
-         text: 'whatever dude'},
-        {start: [130,60],
-         end: [290,70],
-         text: 'whatever babe'},
-        {start: [1500,850],
-         end: [1590,890],
-         text: 'whatever hon'},
       ],
-      mode: 'VIEW',
+      mode: 'view',
       submode: null,
       display_mode: 'view',
       message: '',
@@ -131,11 +122,13 @@ class App extends React.Component {
     };
     deepCopyAreasToRedact.push(new_a2r);
 
+    const display_mode = this.getDisplayMode('view');
     this.setState({
       last_click: null,
       mode: 'view',
       message: 'region was successfully added',
       areas_to_redact: deepCopyAreasToRedact,
+      display_mode: display_mode,
     });
   }
 
@@ -143,11 +136,33 @@ class App extends React.Component {
     console.log('delete first');
   }
 
-  handleDelete(x_rel, y_rel) {
-    console.log('delete');
+  handleDelete(x, y) {
+    let new_areas_to_redact = [];
+    for (var i=0; i < this.state.areas_to_redact.length; i++) {
+        let a2r = this.state.areas_to_redact[i];
+        if (a2r['start'][0] <= x  && x <= a2r['end'][0] &&
+            a2r['start'][1] <= y  && y <= a2r['end'][1]) {
+          console.log('deleting item '+i);
+        } else {
+          console.log('keeping item '+i);
+          new_areas_to_redact.push(a2r);
+        }
+      
+    }
+    if (new_areas_to_redact.length !== this.state.areas_to_redact.length) {
+      console.log('cowabunga');
+      const display_mode = this.getDisplayMode('view');
+      this.setState({
+        mode: 'view',
+        message: 'region was successfully deleted',
+        areas_to_redact: new_areas_to_redact,
+        display_mode: display_mode,
+      });
+    }
   }
 
   handleResetAreasToRedact = () => {
+    console.log('resetting baby');
     this.setState({
       areas_to_redact: [],
     });
@@ -216,6 +231,9 @@ class ImageCanvas extends React.Component {
     let ctx = canvas.getContext("2d")
     ctx.strokeStyle = '#3F3';
     ctx.lineWidth = 3;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
     for (let i= 0; i < this.props.areas_to_redact.length; i++) {
       console.log('drawing number '+i);
       let a2r = this.props.areas_to_redact[i];
