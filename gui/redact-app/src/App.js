@@ -16,15 +16,12 @@ class App extends React.Component {
       current_click: null,
       last_click: null,
       image_path: 'images/frame_00187.png',
+      image_url: 'http://127.0.0.1:3000/images/frame_00187.png',
+      analyze_url: 'http://127.0.0.1:8000/analyze/', 
+      redact_url: 'http://127.0.0.1:8000/redact/', 
     }
   }
 
-  add_area_to_redact(new_area) {
-    const a2r = this.state.areas_to_redact.slice();
-    a2r.push(new_area);
-    this.setState({areas_to_redact: a2r});
-  }
-  
   handleSetMode = (mode, submode) => {
     const message = this.getMessage(mode, submode);
     const display_mode = this.getDisplayMode(mode, submode);
@@ -150,8 +147,7 @@ class App extends React.Component {
 
   callOcr(current_click, last_click) {
     console.log('calling ocr with two clicks');
-    let image_url = 'http://127.0.0.1:3000/images/frame_00187.png';
-    fetch('http://127.0.0.1:8000/analyze/', {
+    fetch(this.state.analyze_url, {
       method: 'POST',
       headers: {
         Accept: 'application/json',
@@ -162,7 +158,7 @@ class App extends React.Component {
         roi_start_y: last_click[1],
         roi_end_x: current_click[0],
         roi_end_y: current_click[1],
-        image_url: image_url,
+        image_url: this.state.image_url,
       }),
     })
     .then((response) => response.json())
@@ -254,7 +250,43 @@ class App extends React.Component {
   handleResetAreasToRedact = () => {
     this.setState({
       areas_to_redact: [],
+      image_path: this.state.image_url,
     });
+  }
+
+  handleRedactCall = () => {
+    console.log('handleRedactCall in App');
+    let pass_arr = [];
+    for (let i=0; i < this.state.areas_to_redact.length; i++) {
+      let a2r = this.state.areas_to_redact[i];
+      pass_arr.push([a2r['start'], a2r['end']]);
+    }
+    console.log(pass_arr);
+    this.callRedact(pass_arr);
+  }
+
+  async callRedact(areas_to_redact_short) {
+    console.log('calling redact');
+    let response = await fetch(this.state.redact_url, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        areas_to_redact: areas_to_redact_short,
+        mask_method: 'black_rectangle',
+        image_url: this.state.image_url,
+      }),
+    })
+    .catch((error) => {
+      console.error(error);
+    });
+    let blob = await response.blob();
+    document.getElementById('base_image_id').src = URL.createObjectURL(blob);
+    console.log(blob);
+    
+    return [];
   }
 
   render() {
@@ -285,6 +317,7 @@ class App extends React.Component {
                 message={this.state.message}
                 setModeCallback= {this.handleSetMode}
                 clearRedactAreasCallback = {this.handleResetAreasToRedact}
+                doRedactCallback = {this.handleRedactCall}
               />
             </div>
           </div>

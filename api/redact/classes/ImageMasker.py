@@ -10,6 +10,7 @@ class ImageMasker():
         output = source.copy()
         print('mask method is ', mask_method)
         for region_number, masking_region in enumerate(regions_to_mask):
+            print('masking region', masking_region);
 #            mask_method = mask_method or 'blur_7x7'
 #            mask_method = 'blur_7x7'
             if mask_method == 'black_rectangle':

@@ -4,6 +4,7 @@ from django.http import HttpResponse, JsonResponse
 from redact.classes.ImageMasker import ImageMasker
 import json
 import numpy as np
+import requests
 import uuid
 
 
@@ -25,17 +26,16 @@ def index(request):
     #        the output from analyze is suitable here, even though it has 
     #        more info in its array after those two coordinates that data will be ignored
     if request.method == 'POST':
-        uploaded_file= request.FILES.get('image')
-        if uploaded_file:
-            image = uploaded_file.read()
+        request_data = json.loads(request.body)
+        pic_response = requests.get(request_data['image_url'])
+        image = pic_response.content
+        if image:
             nparr = np.fromstring(image, np.uint8)
             cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 
-            areas_to_redact_inbound = request.POST.get('areas_to_redact')
-            areas_to_redact_inbound = json.loads(areas_to_redact_inbound)
-            print('areas_to_redact_inbound', areas_to_redact_inbound)
+            areas_to_redact_inbound = json.loads(request.body)['areas_to_redact']
+            mask_method = json.loads(request.body).get('mask_method', 'blur_7x7')
 
-            mask_method = request.POST.get('mask_method', 'blur_7x7')
             areas_to_redact = []
             for a2r in areas_to_redact_inbound:
                 coords_dict = {

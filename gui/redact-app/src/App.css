@@ -66,3 +66,8 @@ div#debug {
   top:500px;
 }
 
+div#redacted {
+position: absolute;
+top: 1000px;
+left:200px;
+}

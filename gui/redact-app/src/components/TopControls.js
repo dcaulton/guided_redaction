@@ -4,11 +4,18 @@ class TopControls extends React.Component {
   constructor(props) {
     super(props);
     this.handleReset = this.handleReset.bind(this);
+    this.handleRedact = this.handleRedact.bind(this);
   }
 
   handleReset() {
     this.props.clearRedactAreasCallback();
     this.props.setModeCallback('reset', '');
+  }
+
+  handleRedact() {
+    console.log('handleRedact in TopControls');
+    this.props.doRedactCallback();
+    this.props.setModeCallback('redact', '');
   }
 
   render() {
@@ -90,7 +97,7 @@ class TopControls extends React.Component {
           <div className='col'>
             <button 
                 className='btn btn-primary'  
-                onClick={() => this.props.setModeCallback('redact', '')}
+                onClick={() => this.handleRedact()}
                 href='./index.html' >
               Redact
             </button>
