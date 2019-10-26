@@ -6,12 +6,14 @@ from django.http import HttpResponse, JsonResponse
 import json
 import numpy as np
 from django.shortcuts import render
+import requests
 
 class ValidationForm(forms.Form):
     roi_start_x = forms.IntegerField()
     roi_start_y = forms.IntegerField()
     roi_end_x = forms.IntegerField()
     roi_end_y = forms.IntegerField()
+    image_url = forms.CharField()
 
 @csrf_exempt
 def index(request):
@@ -24,16 +26,17 @@ def index(request):
     # roi_end_y: 234
     #
     if request.method == 'POST':
-        uploaded_file = request.FILES.get('image')
-        if uploaded_file:
-            image = uploaded_file.read()
-            form = ValidationForm(request.POST, request.FILES)
-            if not form.is_valid():
-                return HttpResponse(form.as_p(), status='422')
-            roi_start_x = int(request.POST.get('roi_start_x'))
-            roi_start_y = int(request.POST.get('roi_start_y'))
-            roi_end_x = int(request.POST.get('roi_end_x'))
-            roi_end_y = int(request.POST.get('roi_end_y'))
+        request_data = json.loads(request.body)
+        pic_response = requests.get(request_data['image_url'])
+        image = pic_response.content
+        if image:
+#            form = ValidationForm(request.POST, request.FILES)
+#            if not form.is_valid():
+#                return HttpResponse(form.as_p(), status='422')
+            roi_start_x = int(request_data['roi_start_x'])
+            roi_start_y = int(request_data['roi_start_y'])
+            roi_end_x = int(request_data['roi_end_x'])
+            roi_end_y = int(request_data['roi_end_y'])
             roi_start = (roi_start_x, roi_start_y)
             roi_end = (roi_end_x, roi_end_y)
 
@@ -45,6 +48,6 @@ def index(request):
             wrap = {'recognized_text_areas': recognized_text_areas}
             return JsonResponse(wrap)
         else:
-            return HttpResponse('Upload an image as formdata, use key name of "image"', status=422)
+            return HttpResponse('couldnt read image data', status=422)
     else:
         return HttpResponse("You're at the analyze index.  You're gonna want to do a post though")

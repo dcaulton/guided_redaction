@@ -1,9 +1,14 @@
+certifi==2019.9.11
+chardet==3.0.4
 Django==2.2.6
 django-cors-headers==3.1.1
+idna==2.8
 imutils==0.5.3
 numpy==1.17.2
 opencv-python==4.1.1.26
 Pillow==6.2.0
 pytesseract==0.3.0
 pytz==2019.3
+requests==2.22.0
 sqlparse==0.3.0
+urllib3==1.25.6

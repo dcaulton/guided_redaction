@@ -122,6 +122,7 @@ class App extends React.Component {
         start: [this.state.last_click[0], this.state.last_click[1]],
         end: [x, y],
         text: 'you got it hombre',
+        id: Math.floor(Math.random() * 1000000),
       };
       deepCopyAreasToRedact.push(new_a2r);
 
@@ -141,7 +142,7 @@ class App extends React.Component {
       this.setState({
         last_click: null,
         mode: 'add_1',
-        message: new_areas_to_redact.length + ' OCR detected regions were added, select another region to scan, press cancel when done',
+        message: 'processing OCR, please wait',
         areas_to_redact: deepCopyAreasToRedact,
       });
     }
@@ -149,6 +150,7 @@ class App extends React.Component {
 
   callOcr(current_click, last_click) {
     console.log('calling ocr with two clicks');
+    let image_url = 'http://127.0.0.1:3000/images/frame_00187.png';
     fetch('http://127.0.0.1:8000/analyze/', {
       method: 'POST',
       headers: {
@@ -156,13 +158,26 @@ class App extends React.Component {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        firstParam: 'thatThing',
-        secondParam: 'thatOtherThing',
+        roi_start_x: last_click[0],
+        roi_start_y: last_click[1],
+        roi_end_x: current_click[0],
+        roi_end_y: current_click[1],
+        image_url: image_url,
       }),
     })
     .then((response) => response.json())
     .then((responseJson) => {
-      console.log('well we got this far in the ocr call, MYES???');
+      let new_areas_to_redact = responseJson['recognized_text_areas']
+      let deepCopyAreasToRedact = JSON.parse(JSON.stringify(this.state.areas_to_redact));
+      for (let i=0; i < new_areas_to_redact.length; i++) {
+        deepCopyAreasToRedact.push(new_areas_to_redact[i]);
+      }
+      let mess = new_areas_to_redact.length 
+      mess += ' OCR detected regions were added, select another region to scan, press cancel when done'
+      this.setState({
+        message: mess,
+        areas_to_redact: deepCopyAreasToRedact,
+      });
       console.log(responseJson);
     })
     .catch((error) => {
@@ -199,9 +214,7 @@ class App extends React.Component {
         end_is_within_delete_box = true;
       } 
       if (start_is_within_delete_box && end_is_within_delete_box) {
-        console.log('deleting '+i);
       } else {
-        console.log('keeping '+i);
         new_areas_to_redact.push(a2r);
       }
     }
