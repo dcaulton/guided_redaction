@@ -13,7 +13,6 @@ class TopControls extends React.Component {
   }
 
   handleRedact() {
-    console.log('handleRedact in TopControls');
     this.props.doRedactCallback();
     this.props.setModeCallback('redact', '');
   }
