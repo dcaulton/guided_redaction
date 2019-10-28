@@ -102,8 +102,18 @@ class TopControls extends React.Component {
               Redact
             </button>
           </div>
-          <div className='col marquee_div'>
-            <span>hiya</span>
+          <div className='col'>
+            Mask Method: 
+            <select 
+                name='mask_method'
+                onChange={(event) => this.props.changeMaskMethodCallback(event.target.value)}
+            >
+              <option value='blur_7x7'>Gaussian Blur 7x7</option>
+              <option value='blur_21x21'>Gaussian Blur 21x21</option>
+              <option value='blur_median'>Median Blur</option>
+              <option value='black_rectangle'>Black Rectangle</option>
+              <option value='green_outline'>Green Outline</option>
+            </select>
           </div>
         </div>
         <div className='row d-flex justify-content-between'>

@@ -15,6 +15,9 @@ class App extends React.Component {
       message: '',
       current_click: null,
       last_click: null,
+      mask_method: 'blur_7x7',
+//      mask_method: 'blur_median',
+//      mask_method: 'black_rectangle',
       image_path: 'images/frame_00187.png',
       image_url: 'http://127.0.0.1:3000/images/frame_00187.png',
       analyze_url: 'http://127.0.0.1:8000/analyze/', 
@@ -106,6 +109,12 @@ class App extends React.Component {
       last_click: [x_rel, y_rel],
       mode: 'add_2',
       message: this.getMessage('add_2', this.state.submode),
+    });
+  }
+
+  handleChangeMaskingMode = (new_mode) => {
+    this.setState({
+      mask_method: new_mode,
     });
   }
 
@@ -275,7 +284,7 @@ class App extends React.Component {
       },
       body: JSON.stringify({
         areas_to_redact: areas_to_redact_short,
-        mask_method: 'black_rectangle',
+        mask_method: this.state.mask_method,
         image_url: this.state.image_url,
       }),
     })
@@ -318,6 +327,7 @@ class App extends React.Component {
                 setModeCallback= {this.handleSetMode}
                 clearRedactAreasCallback = {this.handleResetAreasToRedact}
                 doRedactCallback = {this.handleRedactCall}
+                changeMaskMethodCallback= {this.handleChangeMaskingMode}
               />
             </div>
           </div>
