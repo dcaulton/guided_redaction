@@ -51,7 +51,6 @@ class App extends React.Component {
               <RedactionPanel 
                 areas_to_redact = {this.state.areas_to_redact}
                 mask_method = {this.state.mask_method}
-                image_path = {this.state.image_path}
                 image_url = {this.state.image_url}
                 analyze_url = {this.state.analyze_url}
                 redact_url = {this.state.redact_url}

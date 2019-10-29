@@ -5,6 +5,7 @@ import CanvasOverlay from './CanvasOverlay';
 class RedactionPanel extends React.Component {
   constructor(props) {
     super(props);
+    const url_copy = Object.assign("", this.props.image_url)
     this.state = {
       areas_to_redact: this.props.areas_to_redact,
       mode: 'View',
@@ -14,7 +15,6 @@ class RedactionPanel extends React.Component {
       current_click: null,
       last_click: null,
       mask_method: this.props.mask_method,
-      image_path: this.props.image_path,
       image_url: this.props.image_url,
       analyze_url: this.props.analyze_url,
       redact_url: this.props.redact_url,
@@ -265,8 +265,8 @@ class RedactionPanel extends React.Component {
   handleResetAreasToRedact = () => {
     this.setState({
       areas_to_redact: [],
-      image_path: this.state.image_url,
     });
+    document.getElementById('base_image_id').src = this.state.image_url;
   }
 
   handleRedactCall = () => {
@@ -304,7 +304,7 @@ class RedactionPanel extends React.Component {
         <div id='image_redactor_panel' className='xrow'>
           <div id='image_and_canvas_wrapper' className='row'>
             <BaseImage 
-              image_path={this.state.image_path}
+              image_url={this.state.image_url}
             />
             <CanvasOverlay
               areas_to_redact={this.state.areas_to_redact}
@@ -312,8 +312,6 @@ class RedactionPanel extends React.Component {
               submode={this.state.submode}
               clickCallback= {this.handleImageClick}
               last_click= {this.state.last_click}
-              image_width={1600}
-              image_height={900}
             />
           </div>
           <div id='controls_wrapper' className='row'>
@@ -343,7 +341,7 @@ class BaseImage extends React.Component {
       <div id='base_image_div'>
         <img id='base_image_id' 
           alt='whatever' 
-          src={this.props.image_path}
+          src={this.props.image_url}
         />
       </div>
     );
