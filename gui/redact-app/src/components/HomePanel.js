@@ -13,7 +13,22 @@ class HomePanel extends React.Component {
           <hr />
           <div className='row'>
             <form>
-              <div class="form-group">
+              <div className="form-group">
+                <h5>File Type</h5>
+                <div className='form-check'>
+                  <input className="form-check-input" type="radio" name="form_radio" id="form_radio_1" value="file" checked />
+                  <label class="form-check-label" for="form_radio_1" >
+                    File
+                  </label>
+                </div>
+                <div className='form-check'>
+                  <input className="form-check-input" type="radio" name="form_radio" id="form_radio_2" value="movie" />
+                  <label class="form-check-label" for="form_radio_2">
+                    Movie
+                  </label>
+                </div>
+              </div>
+              <div className="form-group">
                 <label for="imageMovieUrl">Image/Movie URL</label>
                 <input type="text" class="form-control" size='90' id="imageMovieUrl" />
               </div>

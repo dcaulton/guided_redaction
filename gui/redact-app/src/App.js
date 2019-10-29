@@ -30,10 +30,10 @@ class App extends React.Component {
         <a class="navbar-brand" href="/">RedactUI</a>
         <ul class="navbar-nav mr-auto mt-2 mt-lg-0">
           <li class="nav-item">
-              <a class="nav-link" href='/movie_parser'>Movie Parser</a>
+            <Link className='nav-link' to='/movie_parser'>Movie Parser</Link>
           </li>
           <li class="nav-item">
-              <a class="nav-link" href='/redactor'>Image Redactor</a>
+            <Link className='nav-link' to='/redactor'>Image Redactor</Link>
           </li>
         </ul>
         </nav>
