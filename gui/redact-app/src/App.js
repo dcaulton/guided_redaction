@@ -26,14 +26,16 @@ class App extends React.Component {
   render() {
     return (
       <Router>
-        <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <a class="navbar-brand" href="/">RedactUI</a>
-        <ul class="navbar-nav mr-auto mt-2 mt-lg-0">
-          <li class="nav-item">
-            <Link className='nav-link' to='/movie_parser'>Movie Parser</Link>
+        <nav className="navbar navbar-expand-lg navbar-dark bg-dark">
+        <ul className="navbar-nav mr-auto mt-2 mt-lg-0">
+          <li className="nav-item">
+            <Link className='nav-link' id='home_parser_link' to='/'>RedactUI</Link>
           </li>
-          <li class="nav-item">
-            <Link className='nav-link' to='/redactor'>Image Redactor</Link>
+          <li className="nav-item">
+            <Link className='nav-link' id='movie_parser_link' to='/movie_parser'>Movie Parser</Link>
+          </li>
+          <li className="nav-item">
+            <Link className='nav-link' id='redactor_link' to='/redactor'>Image Redactor</Link>
           </li>
         </ul>
         </nav>
