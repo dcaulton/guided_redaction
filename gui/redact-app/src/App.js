@@ -16,11 +16,25 @@ class App extends React.Component {
     this.state = {
       areas_to_redact: [],                                                                        
       mask_method: 'blur_7x7',                                                  
-      image_path: 'images/frame_00187.png',                                     
-      image_url: 'http://127.0.0.1:3000/images/frame_00187.png',                
+      image_url: '',
+      image_width: 100,
+      image_height: 100,
       analyze_url: 'http://127.0.0.1:8000/analyze/',                            
       redact_url: 'http://127.0.0.1:8000/redact/',                              
     }
+  }
+
+  handleSetImageUrl = (the_url) => {
+    var img = new Image();
+    var app_this = this;
+    img.onload = function(){
+        app_this.setState({
+          image_url: the_url,
+          image_width: this.width,
+          image_height: this.height,
+        });
+    };
+    img.src = the_url;
   }
 
   render() {
@@ -42,7 +56,9 @@ class App extends React.Component {
         <div id='container' className='App container'>
           <Switch>
             <Route exact path='/'>
-              <HomePanel />
+              <HomePanel 
+                setImageUrlCallback={this.handleSetImageUrl}
+              />
             </Route>
             <Route path='/movie_parser'>
               <MovieParserPanel />
@@ -52,6 +68,8 @@ class App extends React.Component {
                 areas_to_redact = {this.state.areas_to_redact}
                 mask_method = {this.state.mask_method}
                 image_url = {this.state.image_url}
+                image_width = {this.state.image_width}
+                image_height = {this.state.image_height}
                 analyze_url = {this.state.analyze_url}
                 redact_url = {this.state.redact_url}
               />

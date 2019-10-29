@@ -1,7 +1,6 @@
 import React from 'react';
 
 class HomePanel extends React.Component {
-
   render() {
     return (
       <div id='home_panel'>
@@ -12,7 +11,9 @@ class HomePanel extends React.Component {
           </div>
           <hr />
           <div className='row'>
-            <ImageMovieForm />
+            <ImageMovieForm 
+              setImageUrlCallback = {this.props.setImageUrlCallback}
+            />
           </div>
         </div>
       </div>
@@ -26,7 +27,7 @@ class ImageMovieForm extends React.Component {
     this.state = {
       image_or_movie: '', 
       file_or_url: '',
-      asset_url: '',
+      image_url: this.props.image_url,
       asset_file: '',
     }
     this.handleSubmit = this.handleSubmit.bind(this);
@@ -76,8 +77,9 @@ class ImageMovieForm extends React.Component {
   setUrl(event) {
     document.getElementById('submit_button').disabled = false;
     document.getElementById('submit_button').disabled = false;
+    this.props.setImageUrlCallback(event.target.value)
     this.setState({
-      asset_url: event.target.value,
+      image_url: event.target.value,
       asset_file: '',
     })
   }
@@ -85,7 +87,7 @@ class ImageMovieForm extends React.Component {
   setFile(event) {
     document.getElementById('submit_button').disabled = false;
     this.setState({
-      asset_url: '',
+      image_url: '',
       asset_file: event.target.value,
     })
   }

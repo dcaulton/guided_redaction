@@ -1,10 +1,6 @@
 import React from 'react';
 
 class CanvasOverlay extends React.Component {
-  constructor(props) {
-    super(props)
-    this.state = {}
-  }
 
   drawCrosshairs() {
     if (this.props.mode === 'add_2' || this.props.mode === 'delete_2' || 
@@ -55,11 +51,6 @@ class CanvasOverlay extends React.Component {
     this.clearCanvasItems();
     this.drawRectangles();
     this.drawCrosshairs();
-    var img_ele = document.getElementById('base_image_id')
-    this.setState({
-      image_width: img_ele.naturalWidth,
-      image_height: img_ele.naturalHeight,
-    })
   }
 
   componentDidUpdate() {
@@ -73,8 +64,8 @@ class CanvasOverlay extends React.Component {
       <div id='canvas_div'>
         <canvas id='overlay_canvas' 
           ref='canvas'
-          width={this.state.image_width}
-          height={this.state.image_height}
+          width={this.props.image_width}
+          height={this.props.image_height}
           onClick={(e) => this.props.clickCallback(e)}
         />
       </div>

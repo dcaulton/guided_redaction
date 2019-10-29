@@ -5,7 +5,6 @@ import CanvasOverlay from './CanvasOverlay';
 class RedactionPanel extends React.Component {
   constructor(props) {
     super(props);
-    const url_copy = Object.assign("", this.props.image_url)
     this.state = {
       areas_to_redact: this.props.areas_to_redact,
       mode: 'View',
@@ -310,6 +309,8 @@ class RedactionPanel extends React.Component {
               areas_to_redact={this.state.areas_to_redact}
               mode={this.state.mode}
               submode={this.state.submode}
+              image_width={this.props.image_width}
+              image_height={this.props.image_height}
               clickCallback= {this.handleImageClick}
               last_click= {this.state.last_click}
             />
