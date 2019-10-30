@@ -21,4 +21,5 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('analyze/', include('analyze.urls')),
     path('redact/', include('redact.urls')),
+    path('parse/', include('parse.urls')),
 ]
