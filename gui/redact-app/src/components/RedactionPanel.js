@@ -15,6 +15,7 @@ class RedactionPanel extends React.Component {
       last_click: null,
       mask_method: this.props.mask_method,
       image_url: this.props.image_url,
+      image_file: this.props.image_file,
       analyze_url: this.props.analyze_url,
       redact_url: this.props.redact_url,
     }
@@ -304,6 +305,7 @@ class RedactionPanel extends React.Component {
           <div id='image_and_canvas_wrapper' className='row'>
             <BaseImage 
               image_url={this.state.image_url}
+              image_file={this.state.image_file}
             />
             <CanvasOverlay
               areas_to_redact={this.state.areas_to_redact}
@@ -337,12 +339,29 @@ class RedactionPanel extends React.Component {
 }
 
 class BaseImage extends React.Component {
+
+  async doStuff() {
+    console.log('stuff')
+    const reader = new FileReader()
+//    let file = this.props.image_file.slice()
+//    console.log(file)
+
+    const img = document.getElementById("base_image_id");
+    reader.onload = (function(aImg) { return function(e) { aImg.src = e.target.result; }; })(img);
+//    reader.readAsDataURL(file)
+  }
+
   render() {
+    this.doStuff()
+//    var img_src = this.props.image_url
+//    var img_file = this.props.image_file
+//    var the_src = img_src
+    var the_src = this.props.image_url
     return (
       <div id='base_image_div'>
         <img id='base_image_id' 
           alt='whatever' 
-          src={this.props.image_url}
+          src={the_src}
         />
       </div>
     );

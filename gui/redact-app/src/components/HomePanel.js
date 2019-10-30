@@ -12,7 +12,9 @@ class HomePanel extends React.Component {
           <hr />
           <div className='row'>
             <ImageMovieForm 
+              setMovieUrlCallback = {this.props.setImageMovieCallback}
               setImageUrlCallback = {this.props.setImageUrlCallback}
+              setImageFileCallback = {this.props.setImageFileCallback}
             />
           </div>
         </div>
@@ -44,9 +46,11 @@ class ImageMovieForm extends React.Component {
   }
 
   handleSubmit(event) {
-    let link_to_next_page = document.getElementById('movie_parser_link')
-    if (this.state.image_or_movie === 'image') {
+    let link_to_next_page = ''
+    if (this.state.image_or_movie === 'image' && this.state.file_or_url === 'url') {
       link_to_next_page = document.getElementById('redactor_link')
+    } else if (this.state.image_or_movie === 'movie' && this.state.file_or_url === 'url') {
+      link_to_next_page = document.getElementById('movie_parser_link')
     } 
     link_to_next_page.click()
   }
@@ -76,8 +80,8 @@ class ImageMovieForm extends React.Component {
 
   setUrl(event) {
     document.getElementById('submit_button').disabled = false;
-    document.getElementById('submit_button').disabled = false;
     this.props.setImageUrlCallback(event.target.value)
+    // TODO I don't think this setState is needed anymore
     this.setState({
       image_url: event.target.value,
       asset_file: '',
@@ -86,6 +90,8 @@ class ImageMovieForm extends React.Component {
 
   setFile(event) {
     document.getElementById('submit_button').disabled = false;
+    this.props.setImageFileCallback(event.target.files[0])
+    // TODO I don't think this setState is needed anymore
     this.setState({
       image_url: '',
       asset_file: event.target.value,

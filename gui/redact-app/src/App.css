@@ -36,6 +36,14 @@ div#bottom_controls_div {
   margin: 5px;
 
 }
+
+div#frame_frameset_header {
+  display: flex;
+}
+video {
+  width: 100%;
+}
+
 div.marquee_div {
   background:
     linear-gradient(90deg, blue 50%, transparent 50%),
