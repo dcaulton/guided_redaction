@@ -16,17 +16,19 @@ class MovieParser():
     image_hash_size = 8;
 
     def __init__(self, args):
-        unique_working_dir = os.path.join(args.get('working_dir'), str(uuid.uuid4()))
-        os.mkdir(unique_working_dir)
         self.debug = args.get('debug', False)
-        self.working_dir = unique_working_dir
+        self.working_dir= args.get('working_dir')
         self.input_frames_per_second = args.get('ifps', 1)
         self.output_frames_per_second = args.get('ofps', 1)
         self.scan_method = args.get('scan_method')
         self.movie_url = args.get('movie_url')
 
+        working_uuid = str(uuid.uuid4())
+        self.unique_working_dir = os.path.join(self.working_dir, working_uuid)
+        os.mkdir(self.unique_working_dir)
+
     def split_movie(self):
-        print('splitting movie into frames at ', self.working_dir) if self.debug else None
+        print('splitting movie into frames at ', self.unique_working_dir) if self.debug else None
         video_object = cv2.VideoCapture(self.movie_url)
         success = True
         read_count = 0
@@ -37,7 +39,7 @@ class MovieParser():
                 read_count += 1
                 filename = "frame_{:05d}.png".format(read_count)
                 success, image = video_object.read()
-                filename_full = os.path.join(self.working_dir, filename)
+                filename_full = os.path.join(self.unique_working_dir, filename)
                 if success:
                     if self.input_frames_per_second > self.output_frames_per_second:
                         if read_count % (60 / self.output_frames_per_second) != 0:
@@ -51,11 +53,9 @@ class MovieParser():
             print('exception encountered unzipping movie frames: ', e)
         print("{} frames created".format(str(created_count))) if self.debug else None
         return files_created
-        if self.scan_method == 'unzip':
-            print('unzip only requested, terminating with frames in ', self.working_dir)
-            exit()
 
     def load_and_hash_frames(self, input_file_list):
+        # we are passed a list of file urls.
         unique_frames = {}
         for input_full_path in input_file_list:
             input_filename = os.path.basename(input_full_path)

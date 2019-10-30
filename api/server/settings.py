@@ -124,4 +124,5 @@ STATIC_URL = '/static/'
 #CUSTOM SETTINGS
 EAST_FILE_PATH = 'analyze/bin/frozen_east_text_detection.pb'
 CORS_ORIGIN_ALLOW_ALL = True
-MOVIE_ZIPPER_DIR = '/Users/dcaulton/Desktop/parse_work'
+FILE_STORAGE_DIR = './work'
+FILE_BASE_URL = 'http://localhost:8080'

@@ -13,3 +13,11 @@ Uses Python, OpenCV and Tesseract and the EAST algorithm to analyze and redact i
 
 ## to install the frontend
 - install the latest version of Node.js
+
+## to run
+- start django server
+-- so change directory to the server, then `python manage.py runserver`
+- start npm server
+-- so change directory to the gui part, then `npm start`
+- start the http server for the images
+-- cd to the directory 'work' for the api part, then `python3 -m http.server 8080`
