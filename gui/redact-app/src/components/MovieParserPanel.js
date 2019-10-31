@@ -82,6 +82,13 @@ class MovieParserPanel extends React.Component {
       frameset_button_text: 'Show Framesets',
     }
     this.toggleFrameFramesetCallback = this.toggleFrameFramesetCallback.bind(this);
+    this.getNameFor = this.getNameFor.bind(this);
+  }
+
+  getNameFor(image_name) {
+      let s = image_name.substring(image_name.lastIndexOf('/')+1, image_name.length);
+      s = s.substring(0, s.indexOf('.'))
+      return s
   }
 
   componentDidMount() {
@@ -171,6 +178,7 @@ class MovieParserPanel extends React.Component {
             <div id='cards_row' className='row m-5'>
               <FrameCardList 
                 frames={this.state.frames}
+                getNameFor={this.getNameFor}
               />
             </div>
           </div>
@@ -179,6 +187,7 @@ class MovieParserPanel extends React.Component {
               <FramesetCardList 
                 frames={this.state.frames}
                 framesets={this.state.framesets}
+                getNameFor={this.getNameFor}
               />
             </div>
           </div>
@@ -214,19 +223,14 @@ class FramesetCard extends React.Component {
     )
   }
 }
-class FramesetCardList extends React.Component {
-  getNameFor(image_name) {
-      let s = image_name.substring(image_name.lastIndexOf('/')+1, image_name.length);
-      s = s.substring(0, s.indexOf('.'))
-      return s
-  }
 
+class FramesetCardList extends React.Component {
   getImageNamesList(image_list) {
     let name_elements = Object.keys(image_list).map((img_name) =>
       <p
         key={Math.random() * 10**9}
       >
-        {this.getNameFor(image_list[img_name])}
+        {this.props.getNameFor(image_list[img_name])}
       </p>
     );
     return name_elements
@@ -245,17 +249,11 @@ class FramesetCardList extends React.Component {
 }
 
 class FrameCardList extends React.Component {
-  getNameFor(image_name) {
-      let s = image_name.substring(image_name.lastIndexOf('/')+1, image_name.length);
-      s = s.substring(0, s.indexOf('.'))
-      return s
-  }
-
   render() {
     let items = this.props.frames.map((item) =>
       <ImageCard
         image_url={item}
-        image_name={this.getNameFor(item)}
+        image_name={this.props.getNameFor(item)}
         key={item}
       />
     );
