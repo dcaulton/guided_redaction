@@ -76,37 +76,44 @@ class MovieParserPanel extends React.Component {
             "./work/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00409.png"
         ]
       },
+      frame_button_classes: 'btn btn-secondary',
+      frame_button_text : 'Displaying all Frames',
+      frameset_button_classes: 'btn btn-primary',
+      frameset_button_text: 'Show Framesets',
     }
+    this.toggleFrameFramesetCallback = this.toggleFrameFramesetCallback.bind(this);
   }
 
   componentDidMount() {
-    document.getElementById('frame_inactive').style.display = 'none';
-    document.getElementById('frameset_active').style.display = 'none';
-    document.getElementById('frameset_cards').style.display = 'none';
+      document.getElementById('frame_button').disabled = true;
   }
 
-  toggleFrameFramesetViewMode() {
-    let new_mode = ''
+  toggleFrameFramesetCallback() {
     if (this.state.frame_frameset_view_mode === 'frame') {
-      new_mode = 'frameset'
-      document.getElementById('frame_active').style.display = 'inline';
-      document.getElementById('frame_inactive').style.display = 'none';
-      document.getElementById('frameset_active').style.display = 'none';
-      document.getElementById('frameset_inactive').style.display = 'inline';
+      this.setState({
+        frame_button_classes: 'btn btn-primary',
+        frame_button_text : 'Display Frames',
+        frameset_button_classes: 'btn btn-secondary',
+        frameset_button_text: 'Showing Framesets',
+        frame_frameset_view_mode: 'frameset',
+      });
+      document.getElementById('frameset_button').disabled = true;
+      document.getElementById('frame_button').disabled = false;
       document.getElementById('frameset_cards').style.display = 'block';
       document.getElementById('frame_cards').style.display = 'none';
     } else {
-      new_mode = 'frame'
-      document.getElementById('frame_active').style.display = 'none';
-      document.getElementById('frame_inactive').style.display = 'inline';
-      document.getElementById('frameset_active').style.display = 'inline';
-      document.getElementById('frameset_inactive').style.display = 'none';
-      document.getElementById('frameset_cards').style.display = 'none';
+      this.setState({
+        frameset_button_classes: 'btn btn-primary',
+        frameset_button_text : 'Display Framesets',
+        frame_button_classes: 'btn btn-secondary',
+        frame_button_text: 'Showing Frames',
+        frame_frameset_view_mode: 'frame',
+      });
+      document.getElementById('frame_button').disabled = true;
+      document.getElementById('frameset_button').disabled = false;
       document.getElementById('frame_cards').style.display = 'block';
+      document.getElementById('frameset_cards').style.display = 'none';
     }
-    this.setState({
-      frame_frameset_view_mode: new_mode,
-    })
   } 
 
   parseVideo = () => {
@@ -142,32 +149,20 @@ class MovieParserPanel extends React.Component {
             <div className='row container'>
               <div id='ffh_frame_title' className='col-md-3'>
                 <button
-                    id='frame_active'
-                    className='btn btn-secondary'
+                    id='frame_button'
+                    className={this.state.frame_button_classes}
+                    onClick={this.toggleFrameFramesetCallback}
                 >
-                  Displaying all Frames
-                </button>
-                <button
-                    id='frame_inactive'
-                    className='btn btn-primary'
-                    onClick={() => this.toggleFrameFramesetViewMode()}
-                >
-                  Show Frames
+                  {this.state.frame_button_text}
                 </button>
               </div>
               <div id='ffh_frameset_title' className='col-md-3'>
                 <button
-                    id='frameset_active'
-                    className='btn btn-secondary'
+                    id='frameset_button'
+                    className={this.state.frameset_button_classes}
+                    onClick={this.toggleFrameFramesetCallback}
                 >
-                  Displaying all FrameSets
-                </button>
-                <button
-                    id='frameset_inactive'
-                    className='btn btn-primary'
-                    onClick={() => this.toggleFrameFramesetViewMode()}
-                >
-                  Show FrameSets
+                  {this.state.frameset_button_text}
                 </button>
               </div>
             </div>
