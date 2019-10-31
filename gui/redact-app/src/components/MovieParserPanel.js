@@ -30,59 +30,85 @@ class MovieParserPanel extends React.Component {
         "http://localhost:8080/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00115.png",
       ],
       framesets: {
-        "4611686018429812866": [
-            "./work/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00383.png",
-            "./work/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00384.png",
-            "./work/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00385.png",
-            "./work/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00386.png",
-            "./work/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00387.png",
-            "./work/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00388.png",
-            "./work/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00390.png"
-        ],
-        "9223372036857200770": [
-            "./work/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00389.png",
-            "./work/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00392.png"
-        ],
-        "9367487224933056642": [
-            "./work/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00391.png"
-        ],
-        "9223376452083581058": [
-            "./work/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00393.png"
-        ],
-        "4611686035609682050": [
-            "./work/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00394.png"
-        ],
-        "4611686035607585154": [
-            "./work/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00395.png",
-            "./work/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00399.png"
-        ],
-        "9223372054034973058": [
-            "./work/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00396.png",
-            "./work/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00397.png",
-            "./work/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00398.png",
-            "./work/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00400.png",
-            "./work/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00401.png",
-            "./work/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00402.png",
-            "./work/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00403.png",
-            "./work/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00404.png",
-            "./work/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00405.png",
-            "./work/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00406.png"
-        ],
-        "9223376456384709122": [
-            "./work/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00407.png"
-        ],
-        "9223372054043230722": [
-            "./work/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00408.png",
-            "./work/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00409.png"
-        ]
+        "4611686018429812866": {
+            "images": [
+            "http://localhost:8080/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00383.png",
+            "http://localhost:8080/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00384.png",
+            "http://localhost:8080/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00385.png",
+            "http://localhost:8080/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00386.png",
+            "http://localhost:8080/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00387.png",
+            "http://localhost:8080/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00388.png",
+            "http://localhost:8080/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00390.png"
+            ],
+        },
+        "9223372036857200770": {
+            "images": [
+            "http://localhost:8080/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00389.png",
+            "http://localhost:8080/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00392.png"
+            ],
+        },
+        "9367487224933056642": {
+            "images": [
+            "http://localhost:8080/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00391.png"
+            ],
+        },
+        "9223376452083581058": {
+            "images": [
+            "http://localhost:8080/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00393.png"
+            ],
+        },
+        "4611686035609682050": {
+            "images": [
+            "http://localhost:8080/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00394.png"
+            ],
+        },
+        "4611686035607585154": {
+            "images": [
+            "http://localhost:8080/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00395.png",
+            "http://localhost:8080/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00399.png"
+            ],
+        },
+        "9223372054034973058": {
+            "images": [
+            "http://localhost:8080/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00396.png",
+            "http://localhost:8080/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00397.png",
+            "http://localhost:8080/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00398.png",
+            "http://localhost:8080/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00400.png",
+            "http://localhost:8080/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00401.png",
+            "http://localhost:8080/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00402.png",
+            "http://localhost:8080/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00403.png",
+            "http://localhost:8080/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00404.png",
+            "http://localhost:8080/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00405.png",
+            "http://localhost:8080/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00406.png"
+            ],
+        },
+        "9223376456384709122": {
+            "images": [
+            "http://localhost:8080/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00407.png"
+            ],
+        },
+        "9223372054043230722": {
+            "images": [
+            "http://localhost:8080/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00408.png",
+            "http://localhost:8080/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00409.png"
+            ],
+        }
       },
       frame_button_classes: 'btn btn-secondary',
       frame_button_text : 'Displaying all Frames',
       frameset_button_classes: 'btn btn-primary',
       frameset_button_text: 'Show Framesets',
     }
-    this.toggleFrameFramesetCallback = this.toggleFrameFramesetCallback.bind(this);
-    this.getNameFor = this.getNameFor.bind(this);
+    this.toggleFrameFramesetCallback = this.toggleFrameFramesetCallback.bind(this)
+    this.getNameFor = this.getNameFor.bind(this)
+    this.redactFramesetCallback = this.redactFramesetCallback.bind(this)
+  }
+
+  redactFramesetCallback = (frameset_hash) => {
+    let first_image_url = this.state.framesets[frameset_hash]['images'][0]
+    this.props.setImageUrlCallback(first_image_url)
+    const link_to_next_page = document.getElementById('redactor_link')
+    link_to_next_page.click()
   }
 
   getNameFor(image_name) {
@@ -188,6 +214,7 @@ class MovieParserPanel extends React.Component {
                 frames={this.state.frames}
                 framesets={this.state.framesets}
                 getNameFor={this.getNameFor}
+                redactFramesetCallback={this.redactFramesetCallback}
               />
             </div>
           </div>
@@ -219,6 +246,14 @@ class FramesetCard extends React.Component {
         <div className='card-body'>
           <div className='card-text'>{this.props.image_names}</div>
         </div>
+        <div>
+          <button
+            className='btn btn-primary'
+            onClick={() => this.props.redactFramesetCallback(this.props.frame_hash)}
+          >
+            Redact
+          </button>
+        </div>
       </div>
     )
   }
@@ -240,8 +275,9 @@ class FramesetCardList extends React.Component {
     let items = Object.keys(this.props.framesets).map((key) =>
       <FramesetCard
         frame_hash={key}
-        image_names={this.getImageNamesList(this.props.framesets[key])}
+        image_names={this.getImageNamesList(this.props.framesets[key]['images'])}
         key={key}
+        redactFramesetCallback={this.props.redactFramesetCallback}
       />
     );
     return items

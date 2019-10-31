@@ -80,6 +80,7 @@ class App extends React.Component {
             </Route>
             <Route path='/movie_parser'>
               <MovieParserPanel 
+                setImageUrlCallback={this.handleSetImageUrl}
               />
             </Route>
             <Route path='/redactor'>

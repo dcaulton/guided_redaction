@@ -18,7 +18,14 @@ def convert_to_urls(frames, unique_frames):
 
     new_unique_frames = {}
     for uf in unique_frames.keys():
-        new_unique_frames[uf] = unique_frames[uf]
+        new_unique_frames[uf] = {}
+        url_list = []
+        for frame in unique_frames[uf]:
+            (x_part, file_part) = os.path.split(frame)
+            (y_part, uuid_part) = os.path.split(x_part)
+            new_frame = '/'.join([file_base_url, uuid_part, file_part])
+            url_list.append(new_frame)
+        new_unique_frames[uf]['images'] = url_list
 
     return (new_frames, new_unique_frames)
 
