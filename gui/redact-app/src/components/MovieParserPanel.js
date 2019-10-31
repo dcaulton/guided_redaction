@@ -89,7 +89,6 @@ class MovieParserPanel extends React.Component {
     let new_mode = ''
     if (this.state.frame_frameset_view_mode === 'frame') {
       new_mode = 'frameset'
-      alert('ming')
       document.getElementById('frame_active').style.display = 'inline';
       document.getElementById('frame_inactive').style.display = 'none';
       document.getElementById('frameset_active').style.display = 'none';
@@ -214,26 +213,43 @@ class FramesetCard extends React.Component {
       <div className='col-md-2 frameCard m-3 p-3 bg-light'>
         <h5 className='card-title'>{this.props.frame_hash}</h5>
         <div className='card-body'>
-          <p className='card-text'>{this.props.frame_images}</p>
+          <div className='card-text'>{this.props.image_names}</div>
         </div>
       </div>
     )
   }
 }
 class FramesetCardList extends React.Component {
+  getNameFor(image_name) {
+      let s = image_name.substring(image_name.lastIndexOf('/')+1, image_name.length);
+      s = s.substring(0, s.indexOf('.'))
+      return s
+  }
+
+  getImageNamesList(image_list) {
+    let name_elements = Object.keys(image_list).map((img_name) =>
+      <p
+        key={Math.random() * 10**9}
+      >
+        {this.getNameFor(image_list[img_name])}
+      </p>
+    );
+    return name_elements
+  }
+
   render() {
-    return (
+    let items = Object.keys(this.props.framesets).map((key) =>
       <FramesetCard
-        frame_hash='babish'
-        frame_images='bobnish'
-        key='floof'
+        frame_hash={key}
+        image_names={this.getImageNamesList(this.props.framesets[key])}
+        key={key}
       />
-    )
+    );
+    return items
   }
 }
 
 class FrameCardList extends React.Component {
-
   getNameFor(image_name) {
       let s = image_name.substring(image_name.lastIndexOf('/')+1, image_name.length);
       s = s.substring(0, s.indexOf('.'))
