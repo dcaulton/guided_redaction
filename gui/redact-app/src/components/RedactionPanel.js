@@ -293,8 +293,6 @@ class RedactionPanel extends React.Component {
               framesets={this.props.framesets}
               mode={this.state.mode}
               submode={this.state.submode}
-              frameset_hash={this.props.frameset_hash}
-              image_url={this.props.image_url}
               image_width={this.props.image_width}
               image_height={this.props.image_height}
               clickCallback= {this.handleImageClick}

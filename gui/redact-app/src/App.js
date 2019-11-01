@@ -119,6 +119,9 @@ class App extends React.Component {
   }
 
   getRedactionFromFrameset = (frameset_hash) => {
+    if (!this.state.framesets || !this.state.frameset_hash) {
+        return []
+    }
     let the_hash = this.state.frameset_hash
     if (frameset_hash) {
       the_hash = frameset_hash
@@ -173,7 +176,6 @@ class App extends React.Component {
                 image_url = {this.state.image_url}
                 image_width = {this.state.image_width}
                 image_height = {this.state.image_height}
-                frameset_hash = {this.state.frameset_hash}
                 analyze_url = {this.state.analyze_url}
                 redact_url = {this.state.redact_url}
                 framesets={this.state.framesets}
