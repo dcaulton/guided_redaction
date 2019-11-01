@@ -23,6 +23,7 @@ class App extends React.Component {
       image_height: 100,
       analyze_url: 'http://127.0.0.1:8000/analyze/',                            
       redact_url: 'http://127.0.0.1:8000/redact/',                              
+      parse_movie_url: 'http://127.0.0.1:8000/parse/',
       frames: [],
       framesets: {},
     }
@@ -142,10 +143,12 @@ class App extends React.Component {
             </Route>
             <Route path='/movie_parser'>
               <MovieParserPanel 
+                movie_url = {this.state.movie_url}
                 frames={this.state.frames}
                 framesets={this.state.framesets}
                 setFramesAndFramesetsCallback={this.handleSetFramesAndFramesets}
                 setImageUrlCallback={this.handleSetImageUrl}
+                parse_movie_url = {this.state.parse_movie_url}
               />
             </Route>
             <Route path='/redactor'>

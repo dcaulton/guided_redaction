@@ -12,7 +12,7 @@ class HomePanel extends React.Component {
           <hr />
           <div className='row'>
             <ImageMovieForm 
-              setMovieUrlCallback = {this.props.setImageMovieCallback}
+              setMovieUrlCallback = {this.props.setMovieUrlCallback}
               setImageUrlCallback = {this.props.setImageUrlCallback}
             />
           </div>
@@ -77,8 +77,12 @@ class ImageMovieForm extends React.Component {
   }
 
   setUrl(event) {
+    if (this.state.image_or_movie === 'image') {
+      this.props.setImageUrlCallback(event.target.value)
+    } else {
+      this.props.setMovieUrlCallback(event.target.value)
+    }
     document.getElementById('submit_button').disabled = false;
-    this.props.setImageUrlCallback(event.target.value)
   }
   
   doFileStuff(event) {

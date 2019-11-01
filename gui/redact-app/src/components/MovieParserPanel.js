@@ -17,15 +17,14 @@ class MovieParserPanel extends React.Component {
   }
 
   async callMovieSplit() {
-    console.log(this)
-    let response = await fetch('http://127.0.0.1:8000/parse/', {
+    let response = await fetch(this.props.parse_movie_url, {
       method: 'POST',
       headers: {
         Accept: 'application/json',
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        movie_url: 'http://127.0.0.1:3000/images/hybris_address.mp4',
+        movie_url: this.props.movie_url,
       }),
     })
     .catch((error) => {
@@ -92,7 +91,10 @@ class MovieParserPanel extends React.Component {
         <div id='video_and_meta' className='row mt-3'>
           <div id='video_div' className='col-md-6'>
             <video id='video_id' controls >
-              <source src="http://127.0.0.1:3000/images/hybris_address.mp4" type="video/mp4" />
+              <source 
+                  src={this.props.movie_url}
+                  type="video/mp4" 
+              />
               Your browser does not support the video tag.
             </video>
           </div>
