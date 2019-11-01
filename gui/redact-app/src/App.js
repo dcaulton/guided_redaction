@@ -14,7 +14,6 @@ class App extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      areas_to_redact: [],                                                                        
       mask_method: 'blur_7x7',                                                  
       image_url: '',
       movie_url: '',
@@ -97,6 +96,10 @@ class App extends React.Component {
   handleSetMovieUrl = (the_url) => {
     this.setState({
       movie_url: the_url,
+      image_url: '',
+      frames: [],
+      framesets: {},
+      frameset_hash: '',
     });
   }
 
@@ -107,14 +110,26 @@ class App extends React.Component {
     });
   }
 
-  addRedactionToFrameset = (image_name, areas_to_redact) => {
-    alert('adding redaction into to frameset')
-    // TODO if there is no frameset (we're working on a single image), initialize frames and framesets here
-    //          give that generated frameset an id of -1 to indicate what we're doing
+  addRedactionToFrameset = (areas_to_redact) => {
+    let deepCopyFramesets = JSON.parse(JSON.stringify(this.state.framesets))
+    deepCopyFramesets[this.state.frameset_hash]['areas_to_redact'] = areas_to_redact
+    this.setState({
+        framesets: deepCopyFramesets,
+    })
   }
 
-  getRedactionFromFrameset = (image_name) => {
-    alert('getting redaction into from frameset')
+  getRedactionFromFrameset = (frameset_hash) => {
+    let the_hash = this.state.frameset_hash
+    if (frameset_hash) {
+      the_hash = frameset_hash
+    } 
+    let frameset = this.state.framesets[the_hash]
+    let tk = Object.keys(frameset)
+    if (tk.indexOf('areas_to_redact') > -1) {
+        return frameset['areas_to_redact']
+    } else {
+        return []
+    }
   }
 
   render() {
@@ -149,18 +164,19 @@ class App extends React.Component {
                 setFramesAndFramesetsCallback={this.handleSetFramesAndFramesets}
                 setImageUrlCallback={this.handleSetImageUrl}
                 parse_movie_url = {this.state.parse_movie_url}
+                getRedactionFromFrameset={this.getRedactionFromFrameset}
               />
             </Route>
             <Route path='/redactor'>
               <RedactionPanel 
-                // DMC Push areas_to_redact down soon, it will live with the framesets object up here
-                areas_to_redact = {this.state.areas_to_redact}
                 mask_method = {this.state.mask_method}
                 image_url = {this.state.image_url}
                 image_width = {this.state.image_width}
                 image_height = {this.state.image_height}
+                frameset_hash = {this.state.frameset_hash}
                 analyze_url = {this.state.analyze_url}
                 redact_url = {this.state.redact_url}
+                framesets={this.state.framesets}
                 addRedactionToFrameset={this.addRedactionToFrameset}
                 getRedactionFromFrameset={this.getRedactionFromFrameset}
               />

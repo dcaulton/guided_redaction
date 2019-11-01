@@ -150,6 +150,7 @@ class MovieParserPanel extends React.Component {
                 framesets={this.props.framesets}
                 getNameFor={this.getNameFor}
                 redactFramesetCallback={this.redactFramesetCallback}
+                getRedactionFromFrameset={this.props.getRedactionFromFrameset}
               />
             </div>
           </div>
@@ -183,6 +184,9 @@ class FramesetCard extends React.Component {
           <div className='card-text'>{this.props.image_names}</div>
         </div>
         <div>
+          <p>{this.props.redactionDesc}</p>
+        </div>
+        <div>
           <button
             className='btn btn-primary'
             onClick={() => this.props.redactFramesetCallback(this.props.frame_hash)}
@@ -207,6 +211,15 @@ class FramesetCardList extends React.Component {
     return name_elements
   }
 
+  getRedactionDesc(hash_key) {
+      const areas_to_redact = this.props.getRedactionFromFrameset(hash_key)
+      if (areas_to_redact.length > 0) {
+          return 'has redaction data'
+      }  else  {
+          return ''
+      }
+  }
+
   render() {
     let items = Object.keys(this.props.framesets).map((key) =>
       <FramesetCard
@@ -215,6 +228,7 @@ class FramesetCardList extends React.Component {
         image_url={this.props.framesets[key]['images'][0]}
         key={key}
         redactFramesetCallback={this.props.redactFramesetCallback}
+        redactionDesc={this.getRedactionDesc(key)}
       />
     );
     return items

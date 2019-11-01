@@ -6,7 +6,6 @@ class RedactionPanel extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      areas_to_redact: this.props.areas_to_redact,
       mode: 'View',
       submode: null,
       display_mode: 'View',
@@ -118,7 +117,7 @@ class RedactionPanel extends React.Component {
       let msg='adding a box from '+this.state.last_click[0]+' '+this.state.last_click[1]
       msg += '  to '+x+'  '+y+'   ';
       console.log(msg);
-      let deepCopyAreasToRedact = JSON.parse(JSON.stringify(this.state.areas_to_redact));
+      let deepCopyAreasToRedact = this.props.getRedactionFromFrameset()
       let new_a2r = {
         start: [this.state.last_click[0], this.state.last_click[1]],
         end: [x, y],
@@ -131,37 +130,20 @@ class RedactionPanel extends React.Component {
         last_click: null,
         mode: 'add_1',
         message: 'region was successfully added, select another region to add, press cancel when done',
-        areas_to_redact: deepCopyAreasToRedact,
       });
+      this.props.addRedactionToFrameset(deepCopyAreasToRedact)
     } else if (this.state.submode === 'ocr') {
-      const current_click = [x, y];
-      let new_areas_to_redact = this.callOcr(current_click, this.state.last_click);
-      let deepCopyAreasToRedact = JSON.parse(JSON.stringify(this.state.areas_to_redact));
-      for (let i=0; i < new_areas_to_redact.length; i++) {
-        deepCopyAreasToRedact.push(new_areas_to_redact[i]);
-      }
+      const current_click = [x, y]
+      this.callOcr(current_click, this.state.last_click)
       this.setState({
         last_click: null,
         mode: 'add_1',
         message: 'processing OCR, please wait',
-        areas_to_redact: deepCopyAreasToRedact,
       });
     }
   }
 
-  async getBaseImageAsString() {
-    console.log('courduroy');
-    let response = fetch(this.props.image_url);
-    let resp = await response;
-    console.log(resp);
-//    document.getElementById('base_image_id').src = URL.createObjectURL(blob);
-      //DMC
-  }
-
   callOcr(current_click, last_click) {
-    // TODO read the image, pass it as a string.  this simplifies access for the api.
-//    this.getBaseImageAsString(); //DMC
-    // END TODO
     fetch(this.state.analyze_url, {
       method: 'POST',
       headers: {
@@ -179,7 +161,7 @@ class RedactionPanel extends React.Component {
     .then((response) => response.json())
     .then((responseJson) => {
       let new_areas_to_redact = responseJson['recognized_text_areas']
-      let deepCopyAreasToRedact = JSON.parse(JSON.stringify(this.state.areas_to_redact));
+      let deepCopyAreasToRedact = this.props.getRedactionFromFrameset()
       for (let i=0; i < new_areas_to_redact.length; i++) {
         deepCopyAreasToRedact.push(new_areas_to_redact[i]);
       }
@@ -187,8 +169,8 @@ class RedactionPanel extends React.Component {
       mess += ' OCR detected regions were added, select another region to scan, press cancel when done'
       this.setState({
         message: mess,
-        areas_to_redact: deepCopyAreasToRedact,
       });
+      this.props.addRedactionToFrameset(deepCopyAreasToRedact)
     })
     .catch((error) => {
       console.error(error);
@@ -211,8 +193,9 @@ class RedactionPanel extends React.Component {
     console.log(msg);
 
     let new_areas_to_redact = [];
-    for (var i=0; i < this.state.areas_to_redact.length; i++) {
-      let a2r = this.state.areas_to_redact[i];
+    const areas_to_redact = this.props.getRedactionFromFrameset()
+    for (var i=0; i < areas_to_redact.length; i++) {
+      let a2r = areas_to_redact[i];
       var start_is_within_delete_box = false;
       var end_is_within_delete_box = false;
       if (this.state.last_click[0] <= a2r['start'][0]  && a2r['start'][0] <= x &&
@@ -228,12 +211,12 @@ class RedactionPanel extends React.Component {
         new_areas_to_redact.push(a2r);
       }
     }
-    if (new_areas_to_redact.length !== this.state.areas_to_redact.length) {
+    if (new_areas_to_redact.length !== areas_to_redact.length) {
       this.setState({
         mode: 'delete_1',
         message: 'region was successfully deleted, select another region to delete, press cancel when done',
-        areas_to_redact: new_areas_to_redact,
       });
+      this.props.addRedactionToFrameset(new_areas_to_redact)
     } else {
       this.setState({
         mode: 'delete_1',
@@ -244,8 +227,9 @@ class RedactionPanel extends React.Component {
 
   handleDelete(x, y) {
     let new_areas_to_redact = [];
-    for (var i=0; i < this.state.areas_to_redact.length; i++) {
-        let a2r = this.state.areas_to_redact[i];
+    const areas_to_redact = this.props.getRedactionFromFrameset()
+    for (var i=0; i < areas_to_redact.length; i++) {
+        let a2r = areas_to_redact[i];
         if (a2r['start'][0] <= x  && x <= a2r['end'][0] &&
             a2r['start'][1] <= y  && y <= a2r['end'][1]) {
         } else {
@@ -253,25 +237,24 @@ class RedactionPanel extends React.Component {
         }
       
     }
-    if (new_areas_to_redact.length !== this.state.areas_to_redact.length) {
+    if (new_areas_to_redact.length !== areas_to_redact.length) {
       this.setState({
         message: 'region was successfully deleted, continue selecting regions, press cancel when done',
-        areas_to_redact: new_areas_to_redact,
       });
+      this.props.addRedactionToFrameset(new_areas_to_redact)
     }
   }
 
   handleResetAreasToRedact = () => {
-    this.setState({
-      areas_to_redact: [],
-    });
+    this.props.addRedactionToFrameset([])
     document.getElementById('base_image_id').src = this.props.image_url;
   }
 
   handleRedactCall = () => {
     let pass_arr = [];
-    for (let i=0; i < this.state.areas_to_redact.length; i++) {
-      let a2r = this.state.areas_to_redact[i];
+    const areas_to_redact = this.props.getRedactionFromFrameset()
+    for (let i=0; i < areas_to_redact.length; i++) {
+      let a2r = areas_to_redact[i];
       pass_arr.push([a2r['start'], a2r['end']]);
     }
     this.callRedact(pass_arr);
@@ -307,19 +290,21 @@ class RedactionPanel extends React.Component {
               image_file={this.state.image_file}
             />
             <CanvasOverlay
-              areas_to_redact={this.state.areas_to_redact}
+              framesets={this.props.framesets}
               mode={this.state.mode}
               submode={this.state.submode}
+              frameset_hash={this.props.frameset_hash}
+              image_url={this.props.image_url}
               image_width={this.props.image_width}
               image_height={this.props.image_height}
               clickCallback= {this.handleImageClick}
               last_click= {this.state.last_click}
+              getRedactionFromFrameset={this.props.getRedactionFromFrameset}
             />
           </div>
           <div id='controls_wrapper' className='row'>
             <div className='col'>
               <TopControls 
-                areas_to_redact={this.state.areas_to_redact}
                 mode={this.state.mode}
                 display_mode={this.state.display_mode}
                 submode={this.state.submode}
@@ -339,22 +324,7 @@ class RedactionPanel extends React.Component {
 
 class BaseImage extends React.Component {
 
-  async doStuff() {
-    console.log('stuff')
-    const reader = new FileReader()
-//    let file = this.props.image_file.slice()
-//    console.log(file)
-
-    const img = document.getElementById("base_image_id");
-    reader.onload = (function(aImg) { return function(e) { aImg.src = e.target.result; }; })(img);
-//    reader.readAsDataURL(file)
-  }
-
   render() {
-    this.doStuff()
-//    var img_src = this.props.image_url
-//    var img_file = this.props.image_file
-//    var the_src = img_src
     var the_src = this.props.image_url
     return (
       <div id='base_image_div'>

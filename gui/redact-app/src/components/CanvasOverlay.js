@@ -2,6 +2,14 @@ import React from 'react';
 
 class CanvasOverlay extends React.Component {
 
+  constructor(props) {
+      super(props)
+      console.log('papa john')
+      console.log(this.props.frameset_hash)
+      console.log(this.props.framesets)
+      console.log(this.props.image_url)
+  }
+
   drawCrosshairs() {
     if (this.props.mode === 'add_2' || this.props.mode === 'delete_2' || 
         this.props.mode === 'add_ocr_2') {
@@ -39,8 +47,12 @@ class CanvasOverlay extends React.Component {
     ctx.strokeStyle = '#3F3';
     ctx.lineWidth = 3;
 
-    for (let i= 0; i < this.props.areas_to_redact.length; i++) {
-      let a2r = this.props.areas_to_redact[i];
+    if (!this.props.image_url || !this.props.frameset_hash) {
+        return
+    }
+    const areas_to_redact = this.props.getRedactionFromFrameset(this.props.frameset_hash)
+    for (let i= 0; i < areas_to_redact.length; i++) {
+      let a2r = areas_to_redact[i];
       let width = a2r['end'][0] - a2r['start'][0];
       let height = a2r['end'][1] - a2r['start'][1];
       ctx.strokeRect(a2r['start'][0], a2r['start'][1], width, height);
