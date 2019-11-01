@@ -23,8 +23,8 @@ class App extends React.Component {
       image_height: 100,
       analyze_url: 'http://127.0.0.1:8000/analyze/',                            
       redact_url: 'http://127.0.0.1:8000/redact/',                              
-      frames: null,
-      framesets: null,
+      frames: [],
+      framesets: {},
     }
   }
 

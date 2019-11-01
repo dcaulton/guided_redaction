@@ -6,30 +6,6 @@ class MovieParserPanel extends React.Component {
     super(props)
     this.state = {
       frame_frameset_view_mode: 'frame',
-      frames: [
-        "http://localhost:8080/5b0869d3-47ec-4f99-aa86-ad109f5afbbb/frame_00001.png",
-        "http://localhost:8080/5b0869d3-47ec-4f99-aa86-ad109f5afbbb/frame_00002.png",
-        "http://localhost:8080/5b0869d3-47ec-4f99-aa86-ad109f5afbbb/frame_00003.png",
-        "http://localhost:8080/5b0869d3-47ec-4f99-aa86-ad109f5afbbb/frame_00004.png",
-        "http://localhost:8080/5b0869d3-47ec-4f99-aa86-ad109f5afbbb/frame_00005.png",
-        "http://localhost:8080/5b0869d3-47ec-4f99-aa86-ad109f5afbbb/frame_00006.png",
-      ],
-      framesets: {
-        "0": {
-            "images": [
-                "http://localhost:8080/5b0869d3-47ec-4f99-aa86-ad109f5afbbb/frame_00001.png",
-                "http://localhost:8080/5b0869d3-47ec-4f99-aa86-ad109f5afbbb/frame_00002.png",
-                "http://localhost:8080/5b0869d3-47ec-4f99-aa86-ad109f5afbbb/frame_00003.png",
-            ]
-        },
-        "4665808447656232962": {
-            "images": [
-                "http://localhost:8080/5b0869d3-47ec-4f99-aa86-ad109f5afbbb/frame_00004.png",
-                "http://localhost:8080/5b0869d3-47ec-4f99-aa86-ad109f5afbbb/frame_00005.png",
-                "http://localhost:8080/5b0869d3-47ec-4f99-aa86-ad109f5afbbb/frame_00006.png",
-            ]
-        },
-      },
       frame_button_classes: 'btn btn-secondary',
       frame_button_text : 'Displaying all Frames',
       frameset_button_classes: 'btn btn-primary',
@@ -40,8 +16,29 @@ class MovieParserPanel extends React.Component {
     this.redactFramesetCallback = this.redactFramesetCallback.bind(this)
   }
 
+  async callMovieSplit() {
+    console.log(this)
+    let response = await fetch('http://127.0.0.1:8000/parse/', {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        movie_url: 'http://127.0.0.1:3000/images/hybris_address.mp4',
+      }),
+    })
+    .catch((error) => {
+      console.error(error);
+    });
+    let responseJson = await response.json();
+    let frames = responseJson.frames
+    let framesets = responseJson.unique_frames
+    this.props.setFramesAndFramesetsCallback(frames, framesets)
+  }
+
   redactFramesetCallback = (frameset_hash) => {
-    let first_image_url = this.state.framesets[frameset_hash]['images'][0]
+    let first_image_url = this.props.framesets[frameset_hash]['images'][0]
     this.props.setImageUrlCallback(first_image_url)
     const link_to_next_page = document.getElementById('redactor_link')
     link_to_next_page.click()
@@ -89,10 +86,6 @@ class MovieParserPanel extends React.Component {
     alert('calling the api')
   }
 
-  saveFrameFramesetData = () => {
-    this.props.setFramesAndFramesetsCallback(this.state.frames, this.state.framesets)
-  }
-
   render() {
     return (
       <div id='movie_parser_panel'>
@@ -107,15 +100,9 @@ class MovieParserPanel extends React.Component {
             <div className='row'>
               <button 
                   className='btn btn-primary' 
-                  onClick={this.parseVideo}
+                  onClick={this.callMovieSplit.bind(this)}
               >
                 Parse Video
-              </button>
-              <button 
-                  className='btn btn-primary ml-5' 
-                  onClick={this.saveFrameFramesetData}
-              >
-                Save Frames
               </button>
             </div>
             <div className='row'>
@@ -149,7 +136,7 @@ class MovieParserPanel extends React.Component {
           <div id='frame_cards' className='col-md-12'>
             <div id='cards_row' className='row m-5'>
               <FrameCardList 
-                frames={this.state.frames}
+                frames={this.props.frames}
                 getNameFor={this.getNameFor}
               />
             </div>
@@ -157,8 +144,8 @@ class MovieParserPanel extends React.Component {
           <div id='frameset_cards' className='col-md-12'>
             <div id='cards_row' className='row m-5'>
               <FramesetCardList 
-                frames={this.state.frames}
-                framesets={this.state.framesets}
+                frames={this.props.frames}
+                framesets={this.props.framesets}
                 getNameFor={this.getNameFor}
                 redactFramesetCallback={this.redactFramesetCallback}
               />
@@ -189,6 +176,7 @@ class FramesetCard extends React.Component {
     return (
       <div className='col-md-2 frameCard m-3 p-3 bg-light'>
         <h5 className='card-title'>{this.props.frame_hash}</h5>
+        <img src={this.props.image_url} alt='whatever'/>
         <div className='card-body'>
           <div className='card-text'>{this.props.image_names}</div>
         </div>
@@ -222,6 +210,7 @@ class FramesetCardList extends React.Component {
       <FramesetCard
         frame_hash={key}
         image_names={this.getImageNamesList(this.props.framesets[key]['images'])}
+        image_url={this.props.framesets[key]['images'][0]}
         key={key}
         redactFramesetCallback={this.props.redactFramesetCallback}
       />
