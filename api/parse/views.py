@@ -1,4 +1,5 @@
 from django.views.decorators.csrf import csrf_exempt
+import uuid
 from django.http import HttpResponse, JsonResponse
 import json
 import os
@@ -58,3 +59,24 @@ def index(request):
             return HttpResponse('couldnt read movie data', status=422)
     else:
         return HttpResponse("You're at the parse index.  You're gonna want to do a post though")
+
+@csrf_exempt
+def make_url(request):
+    file_base_url = settings.FILE_BASE_URL
+    if request.method == 'POST' and 'file' in request.FILES:
+        file_obj = request.FILES['file']
+        file_basename = request.FILES.get('file').name
+        if file_obj:
+            the_uuid = str(uuid.uuid4())
+            workdir = os.path.join(settings.FILE_STORAGE_DIR, the_uuid)
+            os.mkdir(workdir)
+            outfilename = os.path.join(workdir, file_basename)
+            fh = open(outfilename, 'wb')
+            for chunk in file_obj.chunks():
+              fh.write(chunk)
+            fh.close()
+            (x_part, file_part) = os.path.split(outfilename)
+            (y_part, uuid_part) = os.path.split(x_part)
+            file_url = '/'.join([file_base_url, uuid_part, file_part])
+
+            return HttpResponse(file_url, status=200)
