@@ -38,18 +38,6 @@ class TopControls extends React.Component {
                   href='.'>
                 OCR
               </button>
-{/*
-              <button className='dropdown-item' 
-                  onClick={() => this.props.setModeCallback('ADD', 'flood')} 
-                  href='.'>
-                Flood
-              </button>
-              <button className='dropdown-item' 
-                  onClick={() => this.props.setModeCallback('ADD', 'polyline')} 
-                  href='.'>
-                Polyline
-              </button>
-*/}
             </div>
           </div>
           <div className='col' id='delete_div'>
@@ -68,13 +56,6 @@ class TopControls extends React.Component {
                   href='.'>
                 Box (all in)
               </button>
-{/*
-              <button className='dropdown-item' 
-                  onClick={() => this.props.setModeCallback('DELETE', 'box_part')} 
-                  href='.'>
-                Box (part in)
-              </button>
-*/}
             </div>
           </div>
           <div className='col'>

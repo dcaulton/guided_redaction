@@ -7,92 +7,28 @@ class MovieParserPanel extends React.Component {
     this.state = {
       frame_frameset_view_mode: 'frame',
       frames: [
-        "http://localhost:8080/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00095.png",
-        "http://localhost:8080/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00096.png",
-        "http://localhost:8080/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00097.png",
-        "http://localhost:8080/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00098.png",
-        "http://localhost:8080/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00099.png",
-        "http://localhost:8080/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00100.png",
-        "http://localhost:8080/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00101.png",
-        "http://localhost:8080/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00102.png",
-        "http://localhost:8080/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00103.png",
-        "http://localhost:8080/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00104.png",
-        "http://localhost:8080/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00105.png",
-        "http://localhost:8080/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00106.png",
-        "http://localhost:8080/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00107.png",
-        "http://localhost:8080/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00108.png",
-        "http://localhost:8080/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00109.png",
-        "http://localhost:8080/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00110.png",
-        "http://localhost:8080/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00111.png",
-        "http://localhost:8080/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00112.png",
-        "http://localhost:8080/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00113.png",
-        "http://localhost:8080/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00114.png",
-        "http://localhost:8080/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00115.png",
+        "http://localhost:8080/5b0869d3-47ec-4f99-aa86-ad109f5afbbb/frame_00001.png",
+        "http://localhost:8080/5b0869d3-47ec-4f99-aa86-ad109f5afbbb/frame_00002.png",
+        "http://localhost:8080/5b0869d3-47ec-4f99-aa86-ad109f5afbbb/frame_00003.png",
+        "http://localhost:8080/5b0869d3-47ec-4f99-aa86-ad109f5afbbb/frame_00004.png",
+        "http://localhost:8080/5b0869d3-47ec-4f99-aa86-ad109f5afbbb/frame_00005.png",
+        "http://localhost:8080/5b0869d3-47ec-4f99-aa86-ad109f5afbbb/frame_00006.png",
       ],
       framesets: {
-        "4611686018429812866": {
+        "0": {
             "images": [
-            "http://localhost:8080/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00383.png",
-            "http://localhost:8080/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00384.png",
-            "http://localhost:8080/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00385.png",
-            "http://localhost:8080/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00386.png",
-            "http://localhost:8080/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00387.png",
-            "http://localhost:8080/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00388.png",
-            "http://localhost:8080/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00390.png"
-            ],
+                "http://localhost:8080/5b0869d3-47ec-4f99-aa86-ad109f5afbbb/frame_00001.png",
+                "http://localhost:8080/5b0869d3-47ec-4f99-aa86-ad109f5afbbb/frame_00002.png",
+                "http://localhost:8080/5b0869d3-47ec-4f99-aa86-ad109f5afbbb/frame_00003.png",
+            ]
         },
-        "9223372036857200770": {
+        "4665808447656232962": {
             "images": [
-            "http://localhost:8080/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00389.png",
-            "http://localhost:8080/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00392.png"
-            ],
+                "http://localhost:8080/5b0869d3-47ec-4f99-aa86-ad109f5afbbb/frame_00004.png",
+                "http://localhost:8080/5b0869d3-47ec-4f99-aa86-ad109f5afbbb/frame_00005.png",
+                "http://localhost:8080/5b0869d3-47ec-4f99-aa86-ad109f5afbbb/frame_00006.png",
+            ]
         },
-        "9367487224933056642": {
-            "images": [
-            "http://localhost:8080/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00391.png"
-            ],
-        },
-        "9223376452083581058": {
-            "images": [
-            "http://localhost:8080/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00393.png"
-            ],
-        },
-        "4611686035609682050": {
-            "images": [
-            "http://localhost:8080/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00394.png"
-            ],
-        },
-        "4611686035607585154": {
-            "images": [
-            "http://localhost:8080/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00395.png",
-            "http://localhost:8080/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00399.png"
-            ],
-        },
-        "9223372054034973058": {
-            "images": [
-            "http://localhost:8080/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00396.png",
-            "http://localhost:8080/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00397.png",
-            "http://localhost:8080/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00398.png",
-            "http://localhost:8080/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00400.png",
-            "http://localhost:8080/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00401.png",
-            "http://localhost:8080/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00402.png",
-            "http://localhost:8080/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00403.png",
-            "http://localhost:8080/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00404.png",
-            "http://localhost:8080/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00405.png",
-            "http://localhost:8080/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00406.png"
-            ],
-        },
-        "9223376456384709122": {
-            "images": [
-            "http://localhost:8080/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00407.png"
-            ],
-        },
-        "9223372054043230722": {
-            "images": [
-            "http://localhost:8080/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00408.png",
-            "http://localhost:8080/7feb2e00-0a7d-4926-8052-10c57135b5c0/frame_00409.png"
-            ],
-        }
       },
       frame_button_classes: 'btn btn-secondary',
       frame_button_text : 'Displaying all Frames',
@@ -150,7 +86,12 @@ class MovieParserPanel extends React.Component {
   } 
 
   parseVideo = () => {
-    alert('bazinga.  or whatever')
+    alert('calling the api')
+  }
+
+  saveFrameFramesetData = () => {
+    this.props.setFramesCallback(this.state.frames)
+    this.props.setFramesetsCallback(this.state.framesets)
   }
 
   render() {
@@ -170,6 +111,12 @@ class MovieParserPanel extends React.Component {
                   onClick={this.parseVideo}
               >
                 Parse Video
+              </button>
+              <button 
+                  className='btn btn-primary ml-5' 
+                  onClick={this.saveFrameFramesetData}
+              >
+                Save Frames
               </button>
             </div>
             <div className='row'>

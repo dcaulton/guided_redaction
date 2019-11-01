@@ -14,7 +14,6 @@ class RedactionPanel extends React.Component {
       current_click: null,
       last_click: null,
       mask_method: this.props.mask_method,
-      image_url: this.props.image_url,
       image_file: this.props.image_file,
       analyze_url: this.props.analyze_url,
       redact_url: this.props.redact_url,
@@ -152,7 +151,7 @@ class RedactionPanel extends React.Component {
 
   async getBaseImageAsString() {
     console.log('courduroy');
-    let response = fetch(this.state.image_url);
+    let response = fetch(this.props.image_url);
     let resp = await response;
     console.log(resp);
 //    document.getElementById('base_image_id').src = URL.createObjectURL(blob);
@@ -174,7 +173,7 @@ class RedactionPanel extends React.Component {
         roi_start_y: last_click[1],
         roi_end_x: current_click[0],
         roi_end_y: current_click[1],
-        image_url: this.state.image_url,
+        image_url: this.props.image_url,
       }),
     })
     .then((response) => response.json())
@@ -266,7 +265,7 @@ class RedactionPanel extends React.Component {
     this.setState({
       areas_to_redact: [],
     });
-    document.getElementById('base_image_id').src = this.state.image_url;
+    document.getElementById('base_image_id').src = this.props.image_url;
   }
 
   handleRedactCall = () => {
@@ -288,7 +287,7 @@ class RedactionPanel extends React.Component {
       body: JSON.stringify({
         areas_to_redact: areas_to_redact_short,
         mask_method: this.state.mask_method,
-        image_url: this.state.image_url,
+        image_url: this.props.image_url,
       }),
     })
     .catch((error) => {
@@ -304,7 +303,7 @@ class RedactionPanel extends React.Component {
         <div id='image_redactor_panel' className='xrow'>
           <div id='image_and_canvas_wrapper' className='row'>
             <BaseImage 
-              image_url={this.state.image_url}
+              image_url={this.props.image_url}
               image_file={this.state.image_file}
             />
             <CanvasOverlay

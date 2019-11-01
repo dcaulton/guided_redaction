@@ -14,7 +14,6 @@ class HomePanel extends React.Component {
             <ImageMovieForm 
               setMovieUrlCallback = {this.props.setImageMovieCallback}
               setImageUrlCallback = {this.props.setImageUrlCallback}
-              setImageFileCallback = {this.props.setImageFileCallback}
             />
           </div>
         </div>
@@ -36,7 +35,6 @@ class ImageMovieForm extends React.Component {
     this.toggleFileOrUrl= this.toggleFileOrUrl.bind(this);
     this.toggleImageOrMovie = this.toggleImageOrMovie.bind(this);
     this.setUrl = this.setUrl.bind(this);
-    this.setFile = this.setFile.bind(this);
   }
 
   componentDidMount() {
@@ -81,21 +79,10 @@ class ImageMovieForm extends React.Component {
   setUrl(event) {
     document.getElementById('submit_button').disabled = false;
     this.props.setImageUrlCallback(event.target.value)
-    // TODO I don't think this setState is needed anymore
-    this.setState({
-      image_url: event.target.value,
-      asset_file: '',
-    })
   }
-
-  setFile(event) {
-    document.getElementById('submit_button').disabled = false;
-    this.props.setImageFileCallback(event.target.files[0])
-    // TODO I don't think this setState is needed anymore
-    this.setState({
-      image_url: '',
-      asset_file: event.target.value,
-    })
+  
+  doFileStuff(event) {
+    alert('should be uploading a file now')
   }
 
   toggleFileOrUrl(event) {
@@ -195,7 +182,7 @@ class ImageMovieForm extends React.Component {
               type="file" 
               className="form-control-file" 
               id="imageMovieFile" 
-              onChange={this.setFile}
+              onChange={this.doFileStuff}
           />
         </div>
         <button
