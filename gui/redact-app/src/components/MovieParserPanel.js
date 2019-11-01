@@ -90,8 +90,7 @@ class MovieParserPanel extends React.Component {
   }
 
   saveFrameFramesetData = () => {
-    this.props.setFramesCallback(this.state.frames)
-    this.props.setFramesetsCallback(this.state.framesets)
+    this.props.setFramesAndFramesetsCallback(this.state.frames, this.state.framesets)
   }
 
   render() {
