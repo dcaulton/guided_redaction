@@ -23,6 +23,7 @@ class App extends React.Component {
       analyze_url: 'http://127.0.0.1:8000/analyze/',                            
       redact_url: 'http://127.0.0.1:8000/redact/',                              
       parse_movie_url: 'http://127.0.0.1:8000/parse/',
+      reassemble_movie_url: 'http://127.0.0.1:8000/reassemble/',
       frames: [],
       framesets: {},
     }
@@ -168,6 +169,7 @@ class App extends React.Component {
                 setImageUrlCallback={this.handleSetImageUrl}
                 parse_movie_url = {this.state.parse_movie_url}
                 getRedactionFromFrameset={this.getRedactionFromFrameset}
+                reassembleMovieUrl={this.state.reassemble_movie_url}
               />
             </Route>
             <Route path='/redactor'>

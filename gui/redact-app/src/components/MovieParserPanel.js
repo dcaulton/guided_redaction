@@ -43,6 +43,10 @@ class MovieParserPanel extends React.Component {
     link_to_next_page.click()
   }
 
+  callReassembleVideo() {
+  alert('reassembling video')
+  }
+
   getNameFor(image_name) {
       let s = image_name.substring(image_name.lastIndexOf('/')+1, image_name.length);
       s = s.substring(0, s.indexOf('.'))
@@ -105,6 +109,12 @@ class MovieParserPanel extends React.Component {
                   onClick={this.callMovieSplit.bind(this)}
               >
                 Parse Video
+              </button>
+              <button 
+                  className='btn btn-primary ml-5' 
+                  onClick={this.callReassembleVideo.bind(this)}
+              >
+                Reassemble Video
               </button>
             </div>
             <div className='row'>
@@ -181,7 +191,7 @@ class FramesetCard extends React.Component {
         <h5 className='card-title'>{this.props.frame_hash}</h5>
         <img src={this.props.image_url} alt='whatever'/>
         <div className='card-body'>
-          <div className='card-text'>{this.props.image_names}</div>
+          <div className='card-text'>{this.props.image_names.length} images</div>
         </div>
         <div>
           <p>{this.props.redactionDesc}</p>
@@ -221,7 +231,8 @@ class FramesetCardList extends React.Component {
   }
 
   render() {
-    let items = Object.keys(this.props.framesets).map((key) =>
+    let ordered_frame_hashes = Object.keys(this.props.framesets)
+    let items = ordered_frame_hashes.map((key) =>
       <FramesetCard
         frame_hash={key}
         image_names={this.getImageNamesList(this.props.framesets[key]['images'])}
