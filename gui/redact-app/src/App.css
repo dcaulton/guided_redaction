@@ -49,6 +49,10 @@ div.frameCard img {
   max-height: 100%;
 }
 
+div#movieparser_status {
+  border: solid 1px #ccc;
+}
+
 div.marquee_div {
   background:
     linear-gradient(90deg, blue 50%, transparent 50%),

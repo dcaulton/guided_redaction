@@ -14,9 +14,11 @@ class MovieParserPanel extends React.Component {
     this.toggleFrameFramesetCallback = this.toggleFrameFramesetCallback.bind(this)
     this.getNameFor = this.getNameFor.bind(this)
     this.redactFramesetCallback = this.redactFramesetCallback.bind(this)
+    this.callMovieSplit = this.callMovieSplit.bind(this)
   }
 
   async callMovieSplit() {
+    document.getElementById('movieparser_status').innerHTML = 'calling movie unzipper'
     let response = await fetch(this.props.parse_movie_url, {
       method: 'POST',
       headers: {
@@ -34,6 +36,7 @@ class MovieParserPanel extends React.Component {
     let frames = responseJson.frames
     let framesets = responseJson.unique_frames
     this.props.setFramesAndFramesetsCallback(frames, framesets)
+    document.getElementById('movieparser_status').innerHTML = 'movie unzipping completed'
   }
 
   redactFramesetCallback = (frameset_hash) => {
@@ -44,7 +47,7 @@ class MovieParserPanel extends React.Component {
   }
 
   callReassembleVideo() {
-  alert('reassembling video')
+    document.getElementById('movieparser_status').innerHTML = 'calling movie reassembler'
   }
 
   getNameFor(image_name) {
@@ -85,8 +88,24 @@ class MovieParserPanel extends React.Component {
     }
   } 
 
-  parseVideo = () => {
-    alert('calling the api')
+  doMovieParse() {
+    this.callMovieSplit()
+    document.getElementById('parse_video_button').disabled = true;
+    document.getElementById('parse_video_button').innerHTML = 'Movie Parse Called'
+  }
+
+  doMovieReassemble() {
+    this.callReassembleVideo()
+    document.getElementById('reassemble_video_button').disabled = true;
+    document.getElementById('reassemble_video_button').innerHTML = 'Reassemble Called'
+  }
+
+  doButtonReset() {
+    document.getElementById('parse_video_button').disabled = false;
+    document.getElementById('reassemble_video_button').disabled = false;
+    document.getElementById('movieparser_status').innerHTML = 'buttons have been reset to active'
+    document.getElementById('parse_video_button').innerHTML = 'Parse'
+    document.getElementById('reassemble_video_button').innerHTML = 'Reassemble Video'
   }
 
   render() {
@@ -105,20 +124,33 @@ class MovieParserPanel extends React.Component {
           <div id='video_meta_div' className='col-md-6'>
             <div className='row'>
               <button 
+                  id='parse_video_button'
                   className='btn btn-primary' 
-                  onClick={this.callMovieSplit.bind(this)}
+                  onClick={this.doMovieParse.bind(this)}
               >
                 Parse Video
               </button>
               <button 
+                  id='reassemble_video_button'
                   className='btn btn-primary ml-5' 
-                  onClick={this.callReassembleVideo.bind(this)}
+                  onClick={this.doMovieReassemble.bind(this)}
               >
                 Reassemble Video
               </button>
+              <button 
+                  className='btn btn-primary ml-5' 
+                  onClick={this.doButtonReset.bind(this)}
+              >
+                Reset
+              </button>
             </div>
             <div className='row'>
-              other Metadata
+              <div 
+                  id='movieparser_status'
+                  className='col-md-6 mt-2'
+              >
+                status
+              </div>
             </div>
           </div>
         </div>

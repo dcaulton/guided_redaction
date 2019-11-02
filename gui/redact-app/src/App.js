@@ -29,6 +29,33 @@ class App extends React.Component {
     }
   }
 
+  componentDidMount() {
+    this.checkForInboundImageOrMovie()
+  }
+
+  checkForInboundImageOrMovie() {
+    console.log('checking for inbound image')
+    let vars = this.getUrlVars()
+    console.log(vars)
+    if (Object.keys(vars).includes('image_url')) {
+        console.log('inbound image found')
+        this.handleSetImageUrl(vars['image_url'])
+        document.getElementById('redactor_link').click()
+    } else if (Object.keys(vars).includes('movie_url')) {
+        console.log('inbound movie found')
+        this.handleSetMovieUrl(vars['movie_url'])
+        document.getElementById('movie_parser_link').click()
+    }
+  }
+
+  getUrlVars() {
+      var vars = {};
+      window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi, function(m,key,value) {
+          value = decodeURIComponent(value);
+          vars[key] = value;
+      });
+      return vars;
+  }
 
   makeNewFrameFrameset(the_url) {
       let new_frameset = {
