@@ -104,4 +104,8 @@ def zip_movie(request):
       'ofps': 1,
     })
     parser.zip_movie(image_files, output_fullpath)
-    return HttpResponse(output_url, status=200)
+    print('output url is ', output_url)
+    wrap = {
+        'movie_url': output_url,
+    }
+    return JsonResponse(wrap)

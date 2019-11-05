@@ -16,6 +16,7 @@ class App extends React.Component {
     this.state = {
       mask_method: 'blur_7x7',                                                  
       image_url: '',
+      redacted_movie_url: '',
       movie_url: '',
       frameset_hash: '',
       image_width: 100,
@@ -23,7 +24,7 @@ class App extends React.Component {
       analyze_url: 'http://127.0.0.1:8000/analyze/',                            
       redact_url: 'http://127.0.0.1:8000/redact/',                              
       parse_movie_url: 'http://127.0.0.1:8000/parse/',
-      reassemble_movie_url: 'http://127.0.0.1:8000/reassemble/',
+      zip_movie_url: 'http://127.0.0.1:8000/parse/zip_movie',
       frames: [],
       framesets: {},
     }
@@ -34,15 +35,11 @@ class App extends React.Component {
   }
 
   checkForInboundImageOrMovie() {
-    console.log('checking for inbound image')
     let vars = this.getUrlVars()
-    console.log(vars)
     if (Object.keys(vars).includes('image_url')) {
-        console.log('inbound image found')
         this.handleSetImageUrl(vars['image_url'])
         document.getElementById('redactor_link').click()
     } else if (Object.keys(vars).includes('movie_url')) {
-        console.log('inbound movie found')
         this.handleSetMovieUrl(vars['movie_url'])
         document.getElementById('movie_parser_link').click()
     }
@@ -131,6 +128,20 @@ class App extends React.Component {
     });
   }
 
+  handleUpdateFrameset = (the_hash, the_frameset) => {
+    let new_framesets = this.state.framesets
+    new_framesets[the_hash] = the_frameset
+    this.setState({
+      framesets: new_framesets
+    })
+  }
+
+  handleSetRedactedMovieUrl = (the_url) => {
+    this.setState({
+      redacted_movie_url: the_url,
+    });
+  }
+
   handleSetFramesAndFramesets = (the_frames, the_framesets) => {
     this.setState({
       frames: the_frames,
@@ -196,7 +207,11 @@ class App extends React.Component {
                 setImageUrlCallback={this.handleSetImageUrl}
                 parse_movie_url = {this.state.parse_movie_url}
                 getRedactionFromFrameset={this.getRedactionFromFrameset}
-                reassembleMovieUrl={this.state.reassemble_movie_url}
+                zipMovieUrl={this.state.zip_movie_url}
+                setRedactedMovieUrlCallback={this.handleSetRedactedMovieUrl}
+                handleUpdateFramesetCallback={this.handleUpdateFrameset}
+                redacted_movie_url = {this.state.redacted_movie_url}
+                redact_url = {this.state.redact_url}
               />
             </Route>
             <Route path='/redactor'>

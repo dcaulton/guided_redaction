@@ -10,6 +10,7 @@ class MovieParserPanel extends React.Component {
       frame_button_text : 'Displaying all Frames',
       frameset_button_classes: 'btn btn-primary',
       frameset_button_text: 'Show Framesets',
+      reassembling_video: false,
     }
     this.toggleFrameFramesetCallback = this.toggleFrameFramesetCallback.bind(this)
     this.getNameFor = this.getNameFor.bind(this)
@@ -39,6 +40,124 @@ class MovieParserPanel extends React.Component {
     document.getElementById('movieparser_status').innerHTML = 'movie unzipping completed'
   }
 
+  callRedactOnOneFrame(areas_to_redact_short, image_url) {
+    fetch(this.props.redact_url, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        areas_to_redact: areas_to_redact_short,
+        mask_method: 'blur_7x7',
+        image_url: image_url,
+        return_type: 'url',
+      }),
+    })
+    .then((response) => response.json())
+    .then((responseJson) => {
+      let local_framesets = JSON.parse(JSON.stringify(this.props.framesets));
+      let frameset_hash = this.getFramesetHashForImageUrl(responseJson['original_image_url'])
+      let frameset = local_framesets[frameset_hash]
+      frameset['redacted_image'] = responseJson['redacted_image_url']
+      local_framesets[frameset_hash] = frameset
+      if (this.isFinalFrameToRedact(frameset_hash, this.props.framesets)) {
+        this.zipUpRedactedImages(local_framesets)
+      }
+      // update the framesets now I suppose.  Otherwinse, any late ones coming in 
+      //    would trigger making a whole new movie file.
+    })
+    .catch((error) => {
+      console.error(error);
+    });
+  }
+
+  isFinalFrameToRedact(frameset_hash, framesets) {
+    let keys = Object.keys(framesets)
+    let num_being_changed = 0
+    for (let i=0; i < keys.length; i++) {
+      let key = keys[i]
+      if (framesets[key]['areas_to_redact'] && framesets[key]['areas_to_redact'].length > 0 && !framesets[key]['redacted_image_url']) {
+          num_being_changed++;
+      }
+    }
+    if (num_being_changed === 1) {
+      return true
+    }
+  }
+
+  zipUpRedactedImages(framesets) {
+    let movie_frame_urls = []
+    for (let i=0; i < this.props.frames.length; i++) {
+      let image_url = this.props.frames[i]
+      let the_hash = this.getFramesetHashForImageUrl(image_url)
+      let the_frameset = framesets[the_hash]
+      if (('areas_to_redact' in the_frameset) && the_frameset['areas_to_redact'].length > 0) {
+        movie_frame_urls.push(the_frameset['redacted_image'])
+      } else {
+        movie_frame_urls.push(image_url)
+      }
+    }
+    this.callMovieZip(movie_frame_urls)
+  }
+
+  moreImagesNeedRedaction() {
+    let frameset_keys = Object.keys(this.props.framesets)
+    for (let i=0; i < frameset_keys.length; i++) {
+      let the_hash = frameset_keys[i]
+      let the_frameset = this.props.framesets[the_hash]
+      if (('areas_to_redact' in the_frameset) && the_frameset['areas_to_redact'].length > 0 && !the_frameset['redacted_image']) {
+        return true
+      }
+    }
+    return false
+  }
+
+  async callMovieZip(the_urls) {
+    document.getElementById('movieparser_status').innerHTML = 'calling movie zipper'
+    let response = await fetch(this.props.zipMovieUrl, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        image_urls: the_urls
+      }),
+    })
+    .then((response) => {
+      // DMC RESUME WORK HERE
+
+
+
+
+
+
+      console.log('response from zipper')
+    })
+    .catch((error) => {
+      console.error(error);
+    });
+    let tommy = await response;
+    console.log('tommy')
+    console.log(tommy)
+    document.getElementById('movieparser_status').innerHTML = 'movie zipping completed'
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   redactFramesetCallback = (frameset_hash) => {
     let first_image_url = this.props.framesets[frameset_hash]['images'][0]
     this.props.setImageUrlCallback(first_image_url)
@@ -46,8 +165,35 @@ class MovieParserPanel extends React.Component {
     link_to_next_page.click()
   }
 
-  callReassembleVideo() {
+  getFramesetHashForImageUrl = (image_url) => {
+    let hashes = Object.keys(this.props.framesets)
+    for (let i=0; i < hashes.length; i++) {
+      let the_images = this.props.framesets[hashes[i]]['images']
+      if (the_images.includes(image_url)) {
+        return hashes[i]
+      }
+    }
+  }
+  
+  callFrameRedactions() {
+    this.setState({reassembling_video: true})
     document.getElementById('movieparser_status').innerHTML = 'calling movie reassembler'
+    let frameset_keys = Object.keys(this.props.framesets)
+    for (let i=0; i < frameset_keys.length; i++) {
+      let pass_arr = []
+      let hash_key = frameset_keys[i]
+      const areas_to_redact = this.props.getRedactionFromFrameset(hash_key)
+      if (areas_to_redact.length > 0) {
+        let first_image_url = this.props.framesets[hash_key]['images'][0]
+        for (let i=0; i < this.props.framesets[hash_key]['areas_to_redact'].length; i++) {                            
+          let a2r = this.props.framesets[hash_key]['areas_to_redact'][i]
+          pass_arr.push([a2r['start'], a2r['end']])
+        }  
+        this.callRedactOnOneFrame(pass_arr, first_image_url) 
+      } 
+    }
+    document.getElementById('reassemble_video_button').disabled = true;
+    document.getElementById('reassemble_video_button').innerHTML = 'Reassemble Called'
   }
 
   getNameFor(image_name) {
@@ -94,12 +240,6 @@ class MovieParserPanel extends React.Component {
     document.getElementById('parse_video_button').innerHTML = 'Movie Parse Called'
   }
 
-  doMovieReassemble() {
-    this.callReassembleVideo()
-    document.getElementById('reassemble_video_button').disabled = true;
-    document.getElementById('reassemble_video_button').innerHTML = 'Reassemble Called'
-  }
-
   doButtonReset() {
     document.getElementById('parse_video_button').disabled = false;
     document.getElementById('reassemble_video_button').disabled = false;
@@ -109,19 +249,28 @@ class MovieParserPanel extends React.Component {
   }
 
   render() {
-    return (
-      <div id='movie_parser_panel'>
-        <div id='video_and_meta' className='row mt-3'>
-          <div id='video_div' className='col-md-6'>
-            <video id='video_id' controls >
+    let redacted_video_element = <div />
+    if (this.props.redacted_movie_url) {
+      redacted_video_element = (
+        <div>
+            <h3>Redacted Video</h3>
+            <div id='redacted_video_url'></div>
+            <video id='redacted_video_id' controls >
               <source 
-                  src={this.props.movie_url}
+                  id='redacted_video_source'
+                  src={this.props.redacted_movie_url}
                   type="video/mp4" 
               />
               Your browser does not support the video tag.
             </video>
           </div>
-          <div id='video_meta_div' className='col-md-6'>
+      )
+    }
+
+    return (
+      <div id='movie_parser_panel'>
+        <div id='video_and_meta' className='row mt-3'>
+          <div id='video_meta_div' className='col-md-12'>
             <div className='row'>
               <button 
                   id='parse_video_button'
@@ -133,7 +282,7 @@ class MovieParserPanel extends React.Component {
               <button 
                   id='reassemble_video_button'
                   className='btn btn-primary ml-5' 
-                  onClick={this.doMovieReassemble.bind(this)}
+                  onClick={this.callFrameRedactions.bind(this)}
               >
                 Reassemble Video
               </button>
@@ -152,6 +301,24 @@ class MovieParserPanel extends React.Component {
                 status
               </div>
             </div>
+          </div>
+
+
+          <div id='video_div' className='col-md-6'>
+            <h3>Source Video</h3>
+            <video id='video_id' controls >
+              <source 
+                  src={this.props.movie_url}
+                  type="video/mp4" 
+              />
+              Your browser does not support the video tag.
+            </video>
+          </div>
+          <div 
+              id='redacted_video_div' 
+              className='col-md-6'
+          >
+            {redacted_video_element}
           </div>
         </div>
         <div id='frame_and_frameset_data' className='row mt-3'>

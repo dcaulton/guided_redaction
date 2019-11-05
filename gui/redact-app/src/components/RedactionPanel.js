@@ -271,6 +271,7 @@ class RedactionPanel extends React.Component {
         areas_to_redact: areas_to_redact_short,
         mask_method: this.state.mask_method,
         image_url: this.props.image_url,
+        return_type: 'inline',
       }),
     })
     .catch((error) => {
