@@ -1,5 +1,8 @@
 import cv2
+from urllib.parse import urlsplit
+import os
 from django.views.decorators.csrf import csrf_exempt
+from django.conf import settings
 from django.http import HttpResponse, JsonResponse
 from redact.classes.ImageMasker import ImageMasker
 import json
@@ -47,13 +50,42 @@ def index(request):
             image_masker = ImageMasker()
             masked_image = image_masker.mask_all_regions(cv2_image, areas_to_redact, mask_method)
             image_bytes = cv2.imencode('.png', masked_image)[1].tostring()
+
             
-            response = HttpResponse(content_type='image/png')
-            new_name = 'image_' + str(uuid.uuid4()) + '.png'
-            response['Content-Disposition'] = 'attachment; filename=' + new_name
-            response.write(image_bytes)
-            return response
+            return_type = json.loads(request.body).get('return_type', 'inline')
+            if return_type == 'inline':
+                response = HttpResponse(content_type='image/png')
+                new_name = 'image_' + str(uuid.uuid4()) + '.png'
+                response['Content-Disposition'] = 'attachment; filename=' + new_name
+                response.write(image_bytes)
+                return response
+            else:
+                image_hash = str(uuid.uuid4())
+                inbound_image_url = request_data['image_url']
+                inbound_filename = (urlsplit(inbound_image_url)[2]).split('/')[-1]
+                (file_basename, file_extension) = os.path.splitext(inbound_filename)
+                new_filename = file_basename + '_redacted' + file_extension
+                the_url = save_image_to_disk(image_bytes, new_filename, image_hash)
+                wrap = {
+                  'redacted_image_url': the_url,
+                  'original_image_url': request_data['image_url'],
+                } 
+                return JsonResponse(wrap)
         else:
             return HttpResponse('Upload an image as formdata, use key name of "image"', status=422)
     else:
         return HttpResponse("You're at the redact index.  You're gonna want to do a post though")
+
+def save_image_to_disk(image_bytes, image_name, the_uuid):
+    workdir = os.path.join(settings.FILE_STORAGE_DIR, the_uuid)
+    if not os.path.isdir(workdir):
+        os.mkdir(workdir)
+    outfilename = os.path.join(workdir, image_name)
+    fh = open(outfilename, 'wb')
+    fh.write(image_bytes)
+    fh.close()
+    (x_part, file_part) = os.path.split(outfilename)
+    (y_part, uuid_part) = os.path.split(x_part)
+    file_url = '/'.join([settings.FILE_BASE_URL, uuid_part, file_part])
+    return file_url
+
