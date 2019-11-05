@@ -115,7 +115,7 @@ class MovieParserPanel extends React.Component {
 
   async callMovieZip(the_urls) {
     document.getElementById('movieparser_status').innerHTML = 'calling movie zipper'
-    let response = await fetch(this.props.zipMovieUrl, {
+    await fetch(this.props.zipMovieUrl, {
       method: 'POST',
       headers: {
         Accept: 'application/json',
@@ -125,38 +125,16 @@ class MovieParserPanel extends React.Component {
         image_urls: the_urls
       }),
     })
-    .then((response) => {
-      // DMC RESUME WORK HERE
-
-
-
-
-
-
-      console.log('response from zipper')
+    .then((response) => response.json())
+    .then((responseJson) => {
+      let movie_url = responseJson['movie_url']
+      this.props.setRedactedMovieUrlCallback(movie_url)
     })
     .catch((error) => {
       console.error(error);
     });
-    let tommy = await response;
-    console.log('tommy')
-    console.log(tommy)
     document.getElementById('movieparser_status').innerHTML = 'movie zipping completed'
   }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
   redactFramesetCallback = (frameset_hash) => {
     let first_image_url = this.props.framesets[frameset_hash]['images'][0]
