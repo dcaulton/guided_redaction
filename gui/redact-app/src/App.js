@@ -17,6 +17,7 @@ class App extends React.Component {
       mask_method: 'blur_7x7',                                                  
       image_url: '',
       redacted_movie_url: '',
+      redacted_image_url: '',
       movie_url: '',
       frameset_hash: '',
       image_width: 100,
@@ -142,6 +143,12 @@ class App extends React.Component {
     });
   }
 
+  handleSetRedactedImageUrl = (the_url) => {
+    this.setState({
+      redacted_image_url: the_url,
+    });
+  }
+
   handleSetMaskMethod = (mask_method) => {
     this.setState({
       mask_method: mask_method,
@@ -225,6 +232,7 @@ class App extends React.Component {
               <RedactionPanel 
                 mask_method = {this.state.mask_method}
                 image_url = {this.state.image_url}
+                redacted_image_url = {this.state.redacted_image_url}
                 image_width = {this.state.image_width}
                 image_height = {this.state.image_height}
                 analyze_url = {this.state.analyze_url}
@@ -233,6 +241,7 @@ class App extends React.Component {
                 addRedactionToFrameset={this.addRedactionToFrameset}
                 getRedactionFromFrameset={this.getRedactionFromFrameset}
                 setMaskMethod={this.handleSetMaskMethod}
+                setRedactedImageUrl={this.handleSetRedactedImageUrl}
               />
             </Route>
           </Switch>

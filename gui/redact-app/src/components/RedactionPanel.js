@@ -12,9 +12,6 @@ class RedactionPanel extends React.Component {
       message: '',
       current_click: null,
       last_click: null,
-      image_file: this.props.image_file,
-      analyze_url: this.props.analyze_url,
-      redact_url: this.props.redact_url,
     }
   }
 
@@ -137,7 +134,7 @@ class RedactionPanel extends React.Component {
   }
 
   callOcr(current_click, last_click) {
-    fetch(this.state.analyze_url, {
+    fetch(this.props.analyze_url, {
       method: 'POST',
       headers: {
         Accept: 'application/json',
@@ -254,7 +251,7 @@ class RedactionPanel extends React.Component {
   }
 
   async callRedact(areas_to_redact_short) {
-    let response = await fetch(this.state.redact_url, {
+    let response = await fetch(this.props.redact_url, {
       method: 'POST',
       headers: {
         Accept: 'application/json',
@@ -264,24 +261,32 @@ class RedactionPanel extends React.Component {
         areas_to_redact: areas_to_redact_short,
         mask_method: this.props.mask_method,
         image_url: this.props.image_url,
-        return_type: 'inline',
+        return_type: 'url',
       }),
+    })
+    .then((response) => response.json())
+    .then((responseJson) => {
+      let redacted_image_url = responseJson['redacted_image_url']
+      this.props.setRedactedImageUrl(redacted_image_url)
     })
     .catch((error) => {
       console.error(error);
     });
-    let blob = await response.blob();
-    document.getElementById('base_image_id').src = URL.createObjectURL(blob);
+    await response
   }
 
   render() {
+    let the_image_url = this.props.image_url
+    if (this.props.redacted_image_url) {
+      the_image_url = this.props.redacted_image_url
+    }
     return (
       <div id='redaction_panel_container'>
         <div id='image_redactor_panel' className='xrow'>
           <div id='image_and_canvas_wrapper' className='row'>
             <BaseImage 
-              image_url={this.props.image_url}
-              image_file={this.state.image_file}
+              image_url={the_image_url}
+              image_file={this.props.image_file}
             />
             <CanvasOverlay
               framesets={this.props.framesets}
