@@ -84,7 +84,7 @@ class MovieParser():
         if files_to_zip:
             img = cv2.imread(files_to_zip[0])
             cap_size = (img.shape[1], img.shape[0])
-        fourcc = cv2.VideoWriter_fourcc('m', 'p', '4', 'v')
+        fourcc = cv2.VideoWriter_fourcc('a', 'v', 'c', '1')
         writer = cv2.VideoWriter(output_fullpath, fourcc, fps, cap_size, True)
         num_frames = len(files_to_zip)
         for count, output_frame_full_path in enumerate(files_to_zip):
