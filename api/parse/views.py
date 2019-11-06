@@ -84,7 +84,7 @@ def make_url(request):
 @csrf_exempt
 def zip_movie(request):
     image_urls = json.loads(request.body)['image_urls']
-    settings.FILE_STORAGE_DIR
+    movie_name = json.loads(request.body)['movie_name']
     image_files = []
     uuid_part = ''
     for image_url in image_urls:
@@ -92,11 +92,9 @@ def zip_movie(request):
         (y_part, uuid_part) = os.path.split(x_part)
         file_path = os.path.join(settings.FILE_STORAGE_DIR, uuid_part, file_part)
         image_files.append(file_path)
-    print('zipping', image_files)
-    output_filename = 'mongo.mp4'
-    output_fullpath = os.path.join(settings.FILE_STORAGE_DIR, uuid_part, output_filename)
+    output_fullpath = os.path.join(settings.FILE_STORAGE_DIR, uuid_part, movie_name)
     print('saving to ', output_fullpath)
-    output_url = '/'.join([settings.FILE_BASE_URL, uuid_part, output_filename])
+    output_url = '/'.join([settings.FILE_BASE_URL, uuid_part, movie_name])
     parser = MovieParser({
       'working_dir': settings.FILE_STORAGE_DIR,
       'debug': settings.DEBUG,

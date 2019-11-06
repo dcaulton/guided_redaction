@@ -89,7 +89,6 @@ class MovieParser():
         num_frames = len(files_to_zip)
         for count, output_frame_full_path in enumerate(files_to_zip):
             percent_done = str(count+1) + '/' + str(num_frames)
-            print('adding image ', output_frame_full_path, '   ', percent_done) if self.debug else None
             frame = cv2.imread(output_frame_full_path)
             success = writer.write(frame)
         writer.release()

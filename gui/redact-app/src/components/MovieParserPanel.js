@@ -72,6 +72,14 @@ class MovieParserPanel extends React.Component {
     });
   }
 
+  getRedactedMovieFilename() {
+    //TODO this is not friendly to file names with more than one period, or with a slash in them
+    let parts = this.props.movie_url.split('/')
+    let file_parts = parts[parts.length-1].split('.')
+    let new_filename = file_parts[0] + '_redacted.' + file_parts[1]
+    return new_filename
+  }
+
   isFinalFrameToRedact(frameset_hash, framesets) {
     let keys = Object.keys(framesets)
     let num_being_changed = 0
@@ -115,6 +123,7 @@ class MovieParserPanel extends React.Component {
 
   async callMovieZip(the_urls) {
     document.getElementById('movieparser_status').innerHTML = 'calling movie zipper'
+    let new_movie_name = this.getRedactedMovieFilename()
     await fetch(this.props.zipMovieUrl, {
       method: 'POST',
       headers: {
@@ -122,7 +131,8 @@ class MovieParserPanel extends React.Component {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        image_urls: the_urls
+        image_urls: the_urls,
+        movie_name: new_movie_name,
       }),
     })
     .then((response) => response.json())
@@ -237,6 +247,7 @@ class MovieParserPanel extends React.Component {
 
   render() {
     let redacted_video_element = <div />
+
     if (this.props.redacted_movie_url) {
       redacted_video_element = (
         <div>
@@ -250,6 +261,12 @@ class MovieParserPanel extends React.Component {
               />
               Your browser does not support the video tag.
             </video>
+            <a 
+                href={this.props.redacted_movie_url}
+                download={this.getRedactedMovieFilename()}
+            >
+              download movie
+            </a>
           </div>
       )
     }
