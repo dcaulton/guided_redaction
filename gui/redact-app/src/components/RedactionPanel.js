@@ -12,7 +12,6 @@ class RedactionPanel extends React.Component {
       message: '',
       current_click: null,
       last_click: null,
-      mask_method: this.props.mask_method,
       image_file: this.props.image_file,
       analyze_url: this.props.analyze_url,
       redact_url: this.props.redact_url,
@@ -103,12 +102,6 @@ class RedactionPanel extends React.Component {
       last_click: [x_rel, y_rel],
       mode: 'add_2',
       message: this.getMessage('add_2', this.state.submode),
-    });
-  }
-
-  handleChangeMaskingMode = (new_mode) => {
-    this.setState({
-      mask_method: new_mode,
     });
   }
 
@@ -269,7 +262,7 @@ class RedactionPanel extends React.Component {
       },
       body: JSON.stringify({
         areas_to_redact: areas_to_redact_short,
-        mask_method: this.state.mask_method,
+        mask_method: this.props.mask_method,
         image_url: this.props.image_url,
         return_type: 'inline',
       }),
@@ -311,7 +304,7 @@ class RedactionPanel extends React.Component {
                 setModeCallback= {this.handleSetMode}
                 clearRedactAreasCallback = {this.handleResetAreasToRedact}
                 doRedactCallback = {this.handleRedactCall}
-                changeMaskMethodCallback= {this.handleChangeMaskingMode}
+                changeMaskMethodCallback= {this.props.setMaskMethod}
               />
             </div>
           </div>

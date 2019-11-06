@@ -142,6 +142,12 @@ class App extends React.Component {
     });
   }
 
+  handleSetMaskMethod = (mask_method) => {
+    this.setState({
+      mask_method: mask_method,
+    });
+  }
+
   handleSetFramesAndFramesets = (the_frames, the_framesets) => {
     this.setState({
       frames: the_frames,
@@ -203,6 +209,7 @@ class App extends React.Component {
                 movie_url = {this.state.movie_url}
                 frames={this.state.frames}
                 framesets={this.state.framesets}
+                mask_method = {this.state.mask_method}
                 setFramesAndFramesetsCallback={this.handleSetFramesAndFramesets}
                 setImageUrlCallback={this.handleSetImageUrl}
                 parse_movie_url = {this.state.parse_movie_url}
@@ -225,6 +232,7 @@ class App extends React.Component {
                 framesets={this.state.framesets}
                 addRedactionToFrameset={this.addRedactionToFrameset}
                 getRedactionFromFrameset={this.getRedactionFromFrameset}
+                setMaskMethod={this.handleSetMaskMethod}
               />
             </Route>
           </Switch>

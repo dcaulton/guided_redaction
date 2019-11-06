@@ -49,7 +49,7 @@ class MovieParserPanel extends React.Component {
       },
       body: JSON.stringify({
         areas_to_redact: areas_to_redact_short,
-        mask_method: 'blur_7x7',
+        mask_method: this.props.mask_method,
         image_url: image_url,
         return_type: 'url',
       }),
