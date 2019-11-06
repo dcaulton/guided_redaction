@@ -153,6 +153,15 @@ class MovieParserPanel extends React.Component {
     }
   }
   
+  imageUrlHasRedactionInfo = (image_url) => {
+      let frameset_hash = this.getFramesetHashForImageUrl(image_url)
+      let areas_to_redact = this.props.getRedactionFromFrameset(frameset_hash)
+      if (areas_to_redact.length > 0) {
+          return true
+      }
+      return false
+  }
+
   callFrameRedactions() {
     this.setState({reassembling_video: true})
     document.getElementById('movieparser_status').innerHTML = 'calling movie reassembler'
@@ -327,6 +336,7 @@ class MovieParserPanel extends React.Component {
               <FrameCardList 
                 frames={this.props.frames}
                 getNameFor={this.getNameFor}
+                imageUrlHasRedactionInfo={this.imageUrlHasRedactionInfo}
               />
             </div>
           </div>
@@ -354,7 +364,10 @@ class ImageCard extends React.Component {
         <h5 className='card-title'>{this.props.image_name}</h5>
         <img src={this.props.image_url} alt='whatever'/>
         <div className='card-body'>
-          <p className='card-text'>stuff</p>
+
+          <p className='card-text'>
+            {this.props.hasRedactionInfo ? 'has redaction info' : ''}
+          </p>
         </div>
       </div>
     )
@@ -365,7 +378,7 @@ class FramesetCard extends React.Component {
   render() {
     return (
       <div className='col-md-2 frameCard m-3 p-3 bg-light'>
-        <h5 className='card-title'>{this.props.frame_hash}</h5>
+        <div className='frameset_hash'>{this.props.frame_hash}</div>
         <img src={this.props.image_url} alt='whatever'/>
         <div className='card-body'>
           <div className='card-text'>{this.props.image_names.length} images</div>
@@ -430,6 +443,7 @@ class FrameCardList extends React.Component {
         image_url={item}
         image_name={this.props.getNameFor(item)}
         key={item}
+        hasRedactionInfo={this.props.imageUrlHasRedactionInfo(item)}
       />
     );
     return items

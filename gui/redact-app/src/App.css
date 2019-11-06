@@ -53,6 +53,10 @@ div#movieparser_status {
   border: solid 1px #ccc;
 }
 
+div.frameset_hash {
+font-size: .8rem;
+}
+
 div.marquee_div {
   background:
     linear-gradient(90deg, blue 50%, transparent 50%),
