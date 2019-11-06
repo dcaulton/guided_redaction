@@ -18,6 +18,18 @@ class TopControls extends React.Component {
   }
 
   render() {
+    let redacted_link = ''
+    if (this.props.redacted_image_url) {
+      let redacted_filename = this.props.redacted_image_url.split('/') 
+      redacted_link = (
+          <a 
+              href={this.props.redacted_image_url}
+              download={redacted_filename}
+          >
+            download redacted image
+          </a>
+      )
+    }
     return (
       <div id='bottom_controls_div'>
         <div className='row'>
@@ -71,7 +83,7 @@ class TopControls extends React.Component {
                 className='btn btn-primary' 
                 onClick={() => this.handleReset()}
                 href='./index.html' >
-              Reset Image
+              Reset
             </button>
           </div>
           <div className='col'>
@@ -94,6 +106,9 @@ class TopControls extends React.Component {
               <option value='black_rectangle'>Black Rectangle</option>
               <option value='green_outline'>Green Outline</option>
             </select>
+          </div>
+          <div id='redacted_image_download_link' className='col'>
+            {redacted_link}
           </div>
         </div>
         <div className='row d-flex justify-content-between'>

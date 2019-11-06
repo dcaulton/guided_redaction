@@ -310,6 +310,7 @@ class RedactionPanel extends React.Component {
                 clearRedactAreasCallback = {this.handleResetAreasToRedact}
                 doRedactCallback = {this.handleRedactCall}
                 changeMaskMethodCallback= {this.props.setMaskMethod}
+                redacted_image_url={this.props.redacted_image_url}
               />
             </div>
           </div>
