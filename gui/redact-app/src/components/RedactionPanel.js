@@ -237,6 +237,7 @@ class RedactionPanel extends React.Component {
 
   handleResetAreasToRedact = () => {
     this.props.addRedactionToFrameset([])
+    this.props.setRedactedImageUrl('')
     document.getElementById('base_image_id').src = this.props.image_url;
   }
 

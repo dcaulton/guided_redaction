@@ -26,7 +26,7 @@ class TopControls extends React.Component {
               href={this.props.redacted_image_url}
               download={redacted_filename}
           >
-            download redacted image
+            download 
           </a>
       )
     }
