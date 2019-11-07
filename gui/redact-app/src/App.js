@@ -2,6 +2,7 @@ import React from 'react';
 import RedactionPanel from './components/RedactionPanel';
 import MovieParserPanel from './components/MovieParserPanel';
 import HomePanel from './components/HomePanel';
+import {getUrlVars} from './components/redact_utils.js'
 import './App.css';
 import {
   BrowserRouter as Router,
@@ -35,8 +36,18 @@ class App extends React.Component {
     this.checkForInboundImageOrMovie()
   }
 
+  getFramesetHashForImageUrl = (image_url) => {
+    let hashes = Object.keys(this.state.framesets)
+    for (let i=0; i < hashes.length; i++) {
+      let the_images = this.state.framesets[hashes[i]]['images']
+      if (the_images.includes(image_url)) {
+        return hashes[i]
+      }
+    }
+  }
+
   checkForInboundImageOrMovie() {
-    let vars = this.getUrlVars()
+    let vars = getUrlVars()
     if (Object.keys(vars).includes('image_url')) {
         this.handleSetImageUrl(vars['image_url'])
         document.getElementById('redactor_link').click()
@@ -44,15 +55,6 @@ class App extends React.Component {
         this.handleSetMovieUrl(vars['movie_url'])
         document.getElementById('movie_parser_link').click()
     }
-  }
-
-  getUrlVars() {
-      var vars = {};
-      window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi, function(m,key,value) {
-          value = decodeURIComponent(value);
-          vars[key] = value;
-      });
-      return vars;
   }
 
   makeNewFrameFrameset(the_url) {
@@ -68,9 +70,9 @@ class App extends React.Component {
 
   handleSetImageUrl = (the_url) => {
     let create_frameset = false
-    let new_frameset = {wasnt: 'initialized'}
-    let new_frames = ['whatnot']
-    let new_frameset_hash = 'none'
+    let new_frameset = {}
+    let new_frames = []
+    let new_frameset_hash = ''
     if (!this.state.framesets) {
         create_frameset = true
         let yy = this.makeNewFrameFrameset(the_url) 
@@ -78,14 +80,8 @@ class App extends React.Component {
         new_frames = yy[1] 
         new_frameset_hash = yy[2]
     } else {
-        let the_hashes = Object.keys(this.state.framesets)
-        for (let i=0; i < the_hashes.length; i++) {
-            let frameset_hash = the_hashes[i]
-            if (this.state.framesets[frameset_hash]['images'].includes(the_url)) {
-                new_frameset_hash = frameset_hash
-            }
-        }
-        if (new_frameset_hash === 'none') {
+        new_frameset_hash = this.getFramesetHashForImageUrl(the_url)
+        if (!new_frameset_hash) {
             create_frameset = true
             let yy = this.makeNewFrameFrameset(the_url) 
             new_frameset = yy[0]
@@ -224,6 +220,7 @@ class App extends React.Component {
                 zipMovieUrl={this.state.zip_movie_url}
                 setRedactedMovieUrlCallback={this.handleSetRedactedMovieUrl}
                 handleUpdateFramesetCallback={this.handleUpdateFrameset}
+                getFramesetHashForImageUrl={this.getFramesetHashForImageUrl}
                 redacted_movie_url = {this.state.redacted_movie_url}
                 redact_url = {this.state.redact_url}
               />
@@ -242,6 +239,7 @@ class App extends React.Component {
                 getRedactionFromFrameset={this.getRedactionFromFrameset}
                 setMaskMethod={this.handleSetMaskMethod}
                 setRedactedImageUrl={this.handleSetRedactedImageUrl}
+                setImageUrlCallback={this.handleSetImageUrl}
               />
             </Route>
           </Switch>

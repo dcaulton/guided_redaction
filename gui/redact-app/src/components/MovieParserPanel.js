@@ -57,7 +57,7 @@ class MovieParserPanel extends React.Component {
     .then((response) => response.json())
     .then((responseJson) => {
       let local_framesets = JSON.parse(JSON.stringify(this.props.framesets));
-      let frameset_hash = this.getFramesetHashForImageUrl(responseJson['original_image_url'])
+      let frameset_hash = this.props.getFramesetHashForImageUrl(responseJson['original_image_url'])
       let frameset = local_framesets[frameset_hash]
       frameset['redacted_image'] = responseJson['redacted_image_url']
       local_framesets[frameset_hash] = frameset
@@ -98,7 +98,7 @@ class MovieParserPanel extends React.Component {
     let movie_frame_urls = []
     for (let i=0; i < this.props.frames.length; i++) {
       let image_url = this.props.frames[i]
-      let the_hash = this.getFramesetHashForImageUrl(image_url)
+      let the_hash = this.props.getFramesetHashForImageUrl(image_url)
       let the_frameset = framesets[the_hash]
       if (('areas_to_redact' in the_frameset) && the_frameset['areas_to_redact'].length > 0) {
         movie_frame_urls.push(the_frameset['redacted_image'])
@@ -153,18 +153,8 @@ class MovieParserPanel extends React.Component {
     link_to_next_page.click()
   }
 
-  getFramesetHashForImageUrl = (image_url) => {
-    let hashes = Object.keys(this.props.framesets)
-    for (let i=0; i < hashes.length; i++) {
-      let the_images = this.props.framesets[hashes[i]]['images']
-      if (the_images.includes(image_url)) {
-        return hashes[i]
-      }
-    }
-  }
-  
   imageUrlHasRedactionInfo = (image_url) => {
-      let frameset_hash = this.getFramesetHashForImageUrl(image_url)
+      let frameset_hash = this.props.getFramesetHashForImageUrl(image_url)
       let areas_to_redact = this.props.getRedactionFromFrameset(frameset_hash)
       if (areas_to_redact.length > 0) {
           return true

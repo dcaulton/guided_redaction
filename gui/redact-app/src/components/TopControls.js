@@ -30,6 +30,30 @@ class TopControls extends React.Component {
           </a>
       )
     }
+    let next_image_link = ''
+    let next_image_url = this.props.getNextImageLink()
+    if (next_image_url) {
+      next_image_link = (
+        <button
+          className='btn btn-primary'
+          onClick={() => this.props.setImageUrlCallback(next_image_url)}
+        >
+          Next
+        </button>
+      )
+    }
+    let prev_image_link = ''
+    let prev_image_url = this.props.getPrevImageLink()
+    if (prev_image_url) {
+      prev_image_link = (
+        <button
+          className='btn btn-primary'
+          onClick={() => this.props.setImageUrlCallback(prev_image_url)}
+        >
+          Prev
+        </button>
+      )
+    }
     return (
       <div id='bottom_controls_div'>
         <div className='row'>
@@ -110,6 +134,13 @@ class TopControls extends React.Component {
           <div id='redacted_image_download_link' className='col'>
             {redacted_link}
           </div>
+          <div id='next_image_div' className='col'>
+            {next_image_link}
+          </div>
+          <div id='prev_image_div' className='col'>
+            {prev_image_link}
+          </div>
+
         </div>
         <div className='row d-flex justify-content-between'>
           <div id='mode_div' className='col-md-4'>

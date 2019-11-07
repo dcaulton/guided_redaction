@@ -1,6 +1,7 @@
 import React from 'react';
 import TopControls from './TopControls';
 import CanvasOverlay from './CanvasOverlay';
+import {getMessage, getDisplayMode} from './redact_utils.js'
 
 class RedactionPanel extends React.Component {
   constructor(props) {
@@ -16,8 +17,8 @@ class RedactionPanel extends React.Component {
   }
 
   handleSetMode = (mode, submode) => {
-    const message = this.getMessage(mode, submode);
-    const display_mode = this.getDisplayMode(mode, submode);
+    const message = getMessage(mode, submode);
+    const display_mode = getDisplayMode(mode, submode);
     this.setState({
       mode: mode,
       submode: submode,
@@ -26,60 +27,17 @@ class RedactionPanel extends React.Component {
     });
   }
 
-  getMessage(mode, submode) {
-      let msg = '';
-      if (mode === 'add_1' && submode === 'box') {
-        msg = 'click on the first corner of the box';
-      } else if (mode === 'add_2' && submode === 'box') {
-        msg = 'click on the second corner of the box';
-      } else if (mode === 'add_1' && submode === 'ocr') {
-        msg = 'click on the first corner of the region to scan for text';
-      } else if (mode === 'add_2' && submode === 'ocr') {
-        msg = 'click on the second corner of the region to scan for text';
-      } else if (mode === 'delete' && submode === 'item') {
-        msg = 'click anywhere within a box to delete that item';
-      } else if (mode === 'delete_1' && submode === 'box_all') {
-        msg = 'click on the first corner of the box';
-      } else if (mode === 'delete_2' && submode === 'box_all') {
-        msg = 'click on the second corner of the box';
-      } else if (mode === 'redact') {
-        msg = 'redacting selected areas';
-      } else if (mode === 'reset') {
-        msg = 'image has been reset';
-      } else if (mode === 'clear') {
-        msg = 'operation cancelled';
-      } 
-      return msg;
+  getNextImageLink() {
+      return ''
   }
 
-  getDisplayMode(mode, submode) {
-    let disp_mode = 'View';
-    if (mode === 'add_1' && submode === 'box') {
-      disp_mode = 'Add Box';
-    } else if (mode === 'add_2' && submode === 'box') {
-      disp_mode = 'Add Box';
-    } else if (mode === 'add_1' && submode === 'ocr') {
-      disp_mode = 'Add OCR';
-    } else if (mode === 'add_2' && submode === 'ocr') {
-      disp_mode = 'Add OCR';
-    } else if (mode === 'delete' && submode === 'item') {
-      disp_mode = 'Delete Item';
-    } else if (mode === 'delete_1' && submode === 'box_all') {
-      disp_mode = 'Delete Items in Box';
-    } else if (mode === 'delete_2' && submode === 'box_all') {
-      disp_mode = 'Delete Items in Box';
-    } else if (mode === 'redact') {
-      disp_mode = 'Redact';
-    }
-    return disp_mode;
+  getPrevImageLink() {
+      return ''
   }
 
   handleImageClick = (e) => {
     let x = e.nativeEvent.offsetX;
     let y = e.nativeEvent.offsetY;
-
-    let message = 'got a click at ('+x+', '+y+')';
-    console.log(message);
 
     if (this.state.mode === 'add_1') {
       this.handleAddFirst(x, y);
@@ -98,7 +56,7 @@ class RedactionPanel extends React.Component {
     this.setState({
       last_click: [x_rel, y_rel],
       mode: 'add_2',
-      message: this.getMessage('add_2', this.state.submode),
+      message: getMessage('add_2', this.state.submode),
     });
   }
 
@@ -173,7 +131,7 @@ class RedactionPanel extends React.Component {
     this.setState({
       last_click: [x, y],
       mode: 'delete_2',
-      message: this.getMessage('delete_2', this.state.submode),
+      message: getMessage('delete_2', this.state.submode),
     });
   }
 
@@ -210,7 +168,7 @@ class RedactionPanel extends React.Component {
     } else {
       this.setState({
         mode: 'delete_1',
-        message: this.getMessage('delete_1', this.state.submode),
+        message: getMessage('delete_1', this.state.submode),
       });
     }
   }
@@ -312,6 +270,9 @@ class RedactionPanel extends React.Component {
                 doRedactCallback = {this.handleRedactCall}
                 changeMaskMethodCallback= {this.props.setMaskMethod}
                 redacted_image_url={this.props.redacted_image_url}
+                getNextImageLink={this.getNextImageLink}
+                getPrevImageLink={this.getPrevImageLink}
+                setImageUrlCallback={this.props.setImageUrlCallback}
               />
             </div>
           </div>
