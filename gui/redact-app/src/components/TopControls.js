@@ -2,19 +2,19 @@ import React from 'react';
 
 class TopControls extends React.Component {
   constructor(props) {
-    super(props);
-    this.handleReset = this.handleReset.bind(this);
-    this.handleRedact = this.handleRedact.bind(this);
+    super(props)
+    this.handleReset = this.handleReset.bind(this)
+    this.handleRedact = this.handleRedact.bind(this)
   }
 
   handleReset() {
-    this.props.clearRedactAreasCallback();
-    this.props.setModeCallback('reset', '');
+    this.props.clearRedactAreasCallback()
+    this.props.setModeCallback('reset', '')
   }
 
   handleRedact() {
-    this.props.doRedactCallback();
-    this.props.setModeCallback('redact', '');
+    this.props.doRedactCallback()
+    this.props.setModeCallback('redact', '')
   }
 
   render() {

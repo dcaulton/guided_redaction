@@ -32,8 +32,8 @@ class MovieParserPanel extends React.Component {
     })
     .catch((error) => {
       console.error(error);
-    });
-    let responseJson = await response.json();
+    })
+    let responseJson = await response.json()
     let frames = responseJson.frames
     let framesets = responseJson.unique_frames
     this.props.setFramesAndFramesetsCallback(frames, framesets)
@@ -69,7 +69,7 @@ class MovieParserPanel extends React.Component {
     })
     .catch((error) => {
       console.error(error);
-    });
+    })
   }
 
   getRedactedMovieFilename() {

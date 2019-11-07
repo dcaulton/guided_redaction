@@ -37,7 +37,7 @@ class App extends React.Component {
   }
 
   getFramesetHashForImageUrl = (image_url) => {
-    let hashes = Object.keys(this.state.framesets)
+    const hashes = Object.keys(this.state.framesets)
     for (let i=0; i < hashes.length; i++) {
       let the_images = this.state.framesets[hashes[i]]['images']
       if (the_images.includes(image_url)) {
@@ -89,8 +89,8 @@ class App extends React.Component {
             new_frameset_hash = yy[2]
         }
     }
-    var img = new Image();
-    var app_this = this;
+    var img = new Image()
+    var app_this = this
     if (create_frameset) {
         img.onload = function(){
             app_this.setState({
@@ -109,10 +109,10 @@ class App extends React.Component {
               image_width: this.width,
               image_height: this.height,
               frameset_hash: new_frameset_hash,
-            });
-        };
+            })
+        }
     }
-    img.src = the_url;
+    img.src = the_url
   }
 
   handleSetMovieUrl = (the_url) => {
@@ -122,7 +122,7 @@ class App extends React.Component {
       frames: [],
       framesets: {},
       frameset_hash: '',
-    });
+    })
   }
 
   handleUpdateFrameset = (the_hash, the_frameset) => {
@@ -136,26 +136,26 @@ class App extends React.Component {
   handleSetRedactedMovieUrl = (the_url) => {
     this.setState({
       redacted_movie_url: the_url,
-    });
+    })
   }
 
   handleSetRedactedImageUrl = (the_url) => {
     this.setState({
       redacted_image_url: the_url,
-    });
+    })
   }
 
   handleSetMaskMethod = (mask_method) => {
     this.setState({
       mask_method: mask_method,
-    });
+    })
   }
 
   handleSetFramesAndFramesets = (the_frames, the_framesets) => {
     this.setState({
       frames: the_frames,
       framesets: the_framesets,
-    });
+    })
   }
 
   addRedactionToFrameset = (areas_to_redact) => {
@@ -170,13 +170,13 @@ class App extends React.Component {
     if (!this.state.framesets || !this.state.frameset_hash) {
         return []
     }
-    let the_hash = this.state.frameset_hash
-    if (frameset_hash) {
-      the_hash = frameset_hash
-    } 
+    let the_hash = frameset_hash || this.state.frameset_hash
+//    if (frameset_hash) {
+//      the_hash = frameset_hash
+//    } 
     let frameset = this.state.framesets[the_hash]
-    let tk = Object.keys(frameset)
-    if (tk.indexOf('areas_to_redact') > -1) {
+//    let tk = Object.keys(frameset)
+    if (Object.keys(frameset).indexOf('areas_to_redact') > -1) {
         return frameset['areas_to_redact']
     } else {
         return []

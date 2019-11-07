@@ -1,6 +1,6 @@
-import React from 'react';
-import TopControls from './TopControls';
-import CanvasOverlay from './CanvasOverlay';
+import React from 'react'
+import TopControls from './TopControls'
+import CanvasOverlay from './CanvasOverlay'
 import {getMessage, getDisplayMode} from './redact_utils.js'
 
 class RedactionPanel extends React.Component {
@@ -24,7 +24,7 @@ class RedactionPanel extends React.Component {
       submode: submode,
       message: message,
       display_mode: display_mode,
-    });
+    })
   }
 
   getNextImageLink() {
@@ -36,19 +36,19 @@ class RedactionPanel extends React.Component {
   }
 
   handleImageClick = (e) => {
-    let x = e.nativeEvent.offsetX;
-    let y = e.nativeEvent.offsetY;
+    let x = e.nativeEvent.offsetX
+    let y = e.nativeEvent.offsetY
 
     if (this.state.mode === 'add_1') {
-      this.handleAddFirst(x, y);
+      this.handleAddFirst(x, y)
     } else if (this.state.mode === 'add_2') {
-      this.handleAddSecond(x, y);
+      this.handleAddSecond(x, y)
     } else if (this.state.mode === 'delete') {
-      this.handleDelete(x, y);
+      this.handleDelete(x, y)
     } else if (this.state.mode === 'delete_1') {
-      this.handleDeleteFirst(x, y);
+      this.handleDeleteFirst(x, y)
     } else if (this.state.mode === 'delete_2') {
-      this.handleDeleteSecond(x, y);
+      this.handleDeleteSecond(x, y)
     }
   }
 
@@ -57,28 +57,25 @@ class RedactionPanel extends React.Component {
       last_click: [x_rel, y_rel],
       mode: 'add_2',
       message: getMessage('add_2', this.state.submode),
-    });
+    })
   }
 
   handleAddSecond(x, y) {
     if (this.state.submode === 'box') {
-      let msg='adding a box from '+this.state.last_click[0]+' '+this.state.last_click[1]
-      msg += '  to '+x+'  '+y+'   ';
-      console.log(msg);
       let deepCopyAreasToRedact = this.props.getRedactionFromFrameset()
       let new_a2r = {
         start: [this.state.last_click[0], this.state.last_click[1]],
         end: [x, y],
         text: 'you got it hombre',
         id: Math.floor(Math.random() * 1950960),
-      };
-      deepCopyAreasToRedact.push(new_a2r);
+      }
+      deepCopyAreasToRedact.push(new_a2r)
 
       this.setState({
         last_click: null,
         mode: 'add_1',
         message: 'region was successfully added, select another region to add, press cancel when done',
-      });
+      })
       this.props.addRedactionToFrameset(deepCopyAreasToRedact)
     } else if (this.state.submode === 'ocr') {
       const current_click = [x, y]
@@ -87,7 +84,7 @@ class RedactionPanel extends React.Component {
         last_click: null,
         mode: 'add_1',
         message: 'processing OCR, please wait',
-      });
+      })
     }
   }
 
@@ -117,14 +114,14 @@ class RedactionPanel extends React.Component {
       mess += ' OCR detected regions were added, select another region to scan, press cancel when done'
       this.setState({
         message: mess,
-      });
+      })
       this.props.addRedactionToFrameset(deepCopyAreasToRedact)
     })
     .catch((error) => {
-      console.error(error);
-    });
+      console.error(error)
+    })
     
-    return [];
+    return []
   }
 
   handleDeleteFirst(x, y) {
@@ -132,44 +129,40 @@ class RedactionPanel extends React.Component {
       last_click: [x, y],
       mode: 'delete_2',
       message: getMessage('delete_2', this.state.submode),
-    });
+    })
   }
 
   handleDeleteSecond(x, y) {
-    let msg='deleting a box from '+this.state.last_click[0]+' '+this.state.last_click[1]
-    msg += '  to '+x+'  '+y+'   ';
-    console.log(msg);
-
     let new_areas_to_redact = [];
     const areas_to_redact = this.props.getRedactionFromFrameset()
     for (var i=0; i < areas_to_redact.length; i++) {
       let a2r = areas_to_redact[i];
-      var start_is_within_delete_box = false;
-      var end_is_within_delete_box = false;
+      var start_is_within_delete_box = false
+      var end_is_within_delete_box = false
       if (this.state.last_click[0] <= a2r['start'][0]  && a2r['start'][0] <= x &&
           this.state.last_click[1] <= a2r['start'][1]  && a2r['start'][1] <= y) {
-        start_is_within_delete_box = true;
+        start_is_within_delete_box = true
       } 
       if (this.state.last_click[0] <= a2r['end'][0]  && a2r['end'][0] <= x &&
           this.state.last_click[1] <= a2r['end'][1]  && a2r['end'][1] <= y) {
-        end_is_within_delete_box = true;
+        end_is_within_delete_box = true
       } 
       if (start_is_within_delete_box && end_is_within_delete_box) {
       } else {
-        new_areas_to_redact.push(a2r);
+        new_areas_to_redact.push(a2r)
       }
     }
     if (new_areas_to_redact.length !== areas_to_redact.length) {
       this.setState({
         mode: 'delete_1',
         message: 'region was successfully deleted, select another region to delete, press cancel when done',
-      });
+      })
       this.props.addRedactionToFrameset(new_areas_to_redact)
     } else {
       this.setState({
         mode: 'delete_1',
         message: getMessage('delete_1', this.state.submode),
-      });
+      })
     }
   }
 
@@ -177,18 +170,18 @@ class RedactionPanel extends React.Component {
     let new_areas_to_redact = [];
     const areas_to_redact = this.props.getRedactionFromFrameset()
     for (var i=0; i < areas_to_redact.length; i++) {
-        let a2r = areas_to_redact[i];
+        let a2r = areas_to_redact[i]
         if (a2r['start'][0] <= x  && x <= a2r['end'][0] &&
             a2r['start'][1] <= y  && y <= a2r['end'][1]) {
         } else {
-          new_areas_to_redact.push(a2r);
+          new_areas_to_redact.push(a2r)
         }
       
     }
     if (new_areas_to_redact.length !== areas_to_redact.length) {
       this.setState({
         message: 'region was successfully deleted, continue selecting regions, press cancel when done',
-      });
+      })
       this.props.addRedactionToFrameset(new_areas_to_redact)
     }
   }
@@ -196,17 +189,17 @@ class RedactionPanel extends React.Component {
   handleResetAreasToRedact = () => {
     this.props.addRedactionToFrameset([])
     this.props.setRedactedImageUrl('')
-    document.getElementById('base_image_id').src = this.props.image_url;
+    document.getElementById('base_image_id').src = this.props.image_url
   }
 
   handleRedactCall = () => {
-    let pass_arr = [];
+    let pass_arr = []
     const areas_to_redact = this.props.getRedactionFromFrameset()
     for (let i=0; i < areas_to_redact.length; i++) {
-      let a2r = areas_to_redact[i];
-      pass_arr.push([a2r['start'], a2r['end']]);
+      let a2r = areas_to_redact[i]
+      pass_arr.push([a2r['start'], a2r['end']])
     }
-    this.callRedact(pass_arr);
+    this.callRedact(pass_arr)
   }
 
   async callRedact(areas_to_redact_short) {
@@ -230,7 +223,7 @@ class RedactionPanel extends React.Component {
     })
     .catch((error) => {
       console.error(error);
-    });
+    })
     await response
   }
 
@@ -289,11 +282,11 @@ class BaseImage extends React.Component {
     return (
       <div id='base_image_div'>
         <img id='base_image_id' 
-          alt='whatever' 
+          alt={the_src}
           src={the_src}
         />
       </div>
-    );
+    )
   }
 }
 

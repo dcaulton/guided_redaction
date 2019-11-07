@@ -31,16 +31,16 @@ class ImageMovieForm extends React.Component {
       image_url: this.props.image_url,
       asset_file: '',
     }
-    this.handleSubmit = this.handleSubmit.bind(this);
-    this.toggleFileOrUrl= this.toggleFileOrUrl.bind(this);
-    this.toggleImageOrMovie = this.toggleImageOrMovie.bind(this);
-    this.setUrl = this.setUrl.bind(this);
+    this.handleSubmit = this.handleSubmit.bind(this)
+    this.toggleFileOrUrl= this.toggleFileOrUrl.bind(this)
+    this.toggleImageOrMovie = this.toggleImageOrMovie.bind(this)
+    this.setUrl = this.setUrl.bind(this)
   }
 
   componentDidMount() {
-    document.getElementById('url_input').style.display = 'none';
-    document.getElementById('file_input').style.display = 'none';
-    document.getElementById('submit_button').disabled = true;
+    document.getElementById('url_input').style.display = 'none'
+    document.getElementById('file_input').style.display = 'none'
+    document.getElementById('submit_button').disabled = true
   }
 
   handleSubmit(event) {
@@ -73,7 +73,7 @@ class ImageMovieForm extends React.Component {
     }
     this.setState({
       image_or_movie: the_value,
-    });
+    })
   }
 
   setUrl(event) {
@@ -82,7 +82,7 @@ class ImageMovieForm extends React.Component {
     } else {
       this.props.setMovieUrlCallback(event.target.value)
     }
-    document.getElementById('submit_button').disabled = false;
+    document.getElementById('submit_button').disabled = false
   }
   
   doFileStuff(event) {
@@ -97,20 +97,20 @@ class ImageMovieForm extends React.Component {
     let the_value = event.target.value;
 
     if (the_value === 'file') {
-      url_ele.checked = false;
-      file_ele.checked = true;
-      url_input_ele.style.display = 'none';
-      file_input_ele.style.display = 'block';
+      url_ele.checked = false
+      file_ele.checked = true
+      url_input_ele.style.display = 'none'
+      file_input_ele.style.display = 'block'
     } else {
-      url_ele.checked = true;
-      file_ele.checked = false;
-      url_input_ele.style.display = 'block';
-      file_input_ele.style.display = 'none';
+      url_ele.checked = true
+      file_ele.checked = false
+      url_input_ele.style.display = 'block'
+      file_input_ele.style.display = 'none'
     }
 
     this.setState({
       file_or_url: the_value,
-    });
+    })
   }
 
   render() {
