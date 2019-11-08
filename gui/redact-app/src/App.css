@@ -54,7 +54,12 @@ div#movieparser_status {
 }
 
 div.frameset_hash {
-font-size: .8rem;
+  font-size: .8rem;
+}
+
+div#image-zoom-modal {
+  position: absolute;
+  z-index: 10;
 }
 
 div.marquee_div {

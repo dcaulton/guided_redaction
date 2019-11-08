@@ -12,12 +12,14 @@ class MovieParserPanel extends React.Component {
       frameset_button_text: 'Displaying all Framesets',
       reassembling_video: false,
       draggedId: null,
+      zoom_image_url: '',
     }
     this.toggleFrameFramesetCallback = this.toggleFrameFramesetCallback.bind(this)
     this.getNameFor = this.getNameFor.bind(this)
     this.redactFramesetCallback = this.redactFramesetCallback.bind(this)
     this.callMovieSplit = this.callMovieSplit.bind(this)
     this.setDraggedId = this.setDraggedId.bind(this)
+    this.setZoomImageUrl= this.setZoomImageUrl.bind(this)
     this.handleDroppedFrameset = this.handleDroppedFrameset.bind(this)
     this.allFramesHaveBeenRedacted = this.allFramesHaveBeenRedacted.bind(this)
   }
@@ -250,6 +252,12 @@ class MovieParserPanel extends React.Component {
     document.getElementById('reassemble_video_button').innerHTML = 'Reassemble Video'
   }
 
+  setZoomImageUrl = (the_url) => {
+    this.setState({
+      zoom_image_url: the_url,
+    })
+  }
+
   render() {
     let redacted_video_element = <div />
 
@@ -277,6 +285,17 @@ class MovieParserPanel extends React.Component {
     }
 
     return (
+    <div>
+      <div 
+          id='image-zoom-modal'
+          style={{display: this.state.zoom_image_url? 'block' : 'none' }}
+      >
+        <img 
+            src={this.state.zoom_image_url}
+            alt='zoomed in'
+            onClick={() => this.setZoomImageUrl('')}
+        />
+      </div>
       <div id='movie_parser_panel'>
         <div id='video_and_meta' className='row mt-3'>
           <div id='video_meta_div' className='col-md-12'>
@@ -372,11 +391,13 @@ class MovieParserPanel extends React.Component {
                 getRedactionFromFrameset={this.props.getRedactionFromFrameset}
                 setDraggedId={this.setDraggedId}
                 handleDroppedFrameset={this.handleDroppedFrameset}
+                setZoomImageUrl={this.setZoomImageUrl}
               />
             </div>
           </div>
         </div>
       </div>
+    </div>
     );
   }
 }
@@ -386,7 +407,11 @@ class FrameCard extends React.Component {
     return (
       <div className='col-md-2 frameCard m-3 p-3 bg-light'>
         <h5 className='card-title'>{this.props.image_name}</h5>
-        <img src={this.props.image_url} alt='whatever'/>
+        <img 
+            className='zoomable-image'
+            src={this.props.image_url} 
+            alt='whatever'
+        />
         <div className='card-body'>
 
           <p className='card-text'>
@@ -411,7 +436,12 @@ class FramesetCard extends React.Component {
           onDrop={() => this.props.handleDroppedFrameset(this.props.frame_hash)}
       >
         <div className='frameset_hash'>{this.props.frame_hash}</div>
-        <img src={this.props.image_url} alt='whatever'/>
+        <img 
+            className='zoomable-image'
+            src={this.props.image_url} 
+            alt='whatever'
+            onClick={() => this.props.setZoomImageUrl(this.props.image_url)}
+        />
         <div className='card-body'>
           <div className='card-text'>{this.props.image_names.length} images</div>
         </div>
@@ -464,6 +494,7 @@ class FramesetCardList extends React.Component {
         key={key}
         redactFramesetCallback={this.props.redactFramesetCallback}
         redactionDesc={this.getRedactionDesc(key)}
+        setZoomImageUrl={this.props.setZoomImageUrl}
       />
     );
     return items
