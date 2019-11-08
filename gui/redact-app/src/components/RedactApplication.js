@@ -32,6 +32,7 @@ class RedactApplication extends React.Component {
     }
     this.getNextImageLink=this.getNextImageLink.bind(this)
     this.getPrevImageLink=this.getPrevImageLink.bind(this)
+    this.handleMergeFramesets=this.handleMergeFramesets.bind(this)
   }
 
   componentDidMount() {
@@ -186,6 +187,27 @@ class RedactApplication extends React.Component {
     })
   }
 
+  handleMergeFramesets = (target_hash, source_hash) => {
+    let deepCopyFramesets = JSON.parse(JSON.stringify(this.state.framesets))
+    const source_frameset = this.state.framesets[source_hash]
+    let new_target_frameset = deepCopyFramesets[target_hash]
+    let new_target_images = new_target_frameset['images'].concat(source_frameset['images'])
+    if (new_target_frameset['areas_to_redact']) {
+      if (source_frameset['areas_to_redact']) {
+        let new_a2r = new_target_frameset['areas_to_redact'].concat(source_frameset['areas_to_redact'])
+        new_target_frameset['areas_to_redact'] = new_a2r
+      }
+    } else if (source_frameset['areas_to_redact']) {
+      new_target_frameset['areas_to_redact'] = source_frameset['areas_to_redact']
+    }
+    new_target_frameset['images'] = new_target_images
+    deepCopyFramesets[target_hash] = new_target_frameset
+    delete deepCopyFramesets[source_hash]
+    this.setState({
+      framesets:deepCopyFramesets,
+    })
+  }
+
   addRedactionToFrameset = (areas_to_redact) => {
     let deepCopyFramesets = JSON.parse(JSON.stringify(this.state.framesets))
     deepCopyFramesets[this.state.frameset_hash]['areas_to_redact'] = areas_to_redact
@@ -247,6 +269,7 @@ class RedactApplication extends React.Component {
                 getFramesetHashForImageUrl={this.getFramesetHashForImageUrl}
                 redacted_movie_url = {this.state.redacted_movie_url}
                 redact_url = {this.state.redact_url}
+                handleMergeFramesets={this.handleMergeFramesets}
               />
             </Route>
             <Route path='/redactor'>

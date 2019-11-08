@@ -5,23 +5,36 @@ class MovieParserPanel extends React.Component {
   constructor(props) {
     super(props)
     this.state = {
-      frame_frameset_view_mode: 'frame',
-      frame_button_classes: 'btn btn-secondary',
-      frame_button_text : 'Displaying all Frames',
-      frameset_button_classes: 'btn btn-primary',
-      frameset_button_text: 'Show Framesets',
+      frame_frameset_view_mode: 'frameset',
+      frame_button_classes: 'btn btn-primary',
+      frame_button_text : 'Show Frames',
+      frameset_button_classes: 'btn btn-secondary',
+      frameset_button_text: 'Displaying all Framesets',
       reassembling_video: false,
+      draggedId: null,
     }
     this.toggleFrameFramesetCallback = this.toggleFrameFramesetCallback.bind(this)
     this.getNameFor = this.getNameFor.bind(this)
     this.redactFramesetCallback = this.redactFramesetCallback.bind(this)
     this.callMovieSplit = this.callMovieSplit.bind(this)
+    this.setDraggedId = this.setDraggedId.bind(this)
+    this.handleDroppedFrameset = this.handleDroppedFrameset.bind(this)
     this.allFramesHaveBeenRedacted = this.allFramesHaveBeenRedacted.bind(this)
+  }
+
+  setDraggedId = (the_id) => {
+    this.setState({
+      draggedId: the_id,
+    })
+  }
+
+  handleDroppedFrameset = (target_id) => {
+    this.props.handleMergeFramesets(target_id, this.state.draggedId)
   }
 
   async callMovieSplit() {
     document.getElementById('movieparser_status').innerHTML = 'calling movie unzipper'
-    let response = await fetch(this.props.parse_movie_url, {
+    await fetch(this.props.parse_movie_url, {
       method: 'POST',
       headers: {
         Accept: 'application/json',
@@ -31,14 +44,22 @@ class MovieParserPanel extends React.Component {
         movie_url: this.props.movie_url,
       }),
     })
+    .then((response) => response.json())
+    .then((responseJson) => {
+//      let responseJson = response.json()
+      let frames = responseJson.frames
+      let framesets = responseJson.unique_frames
+      this.props.setFramesAndFramesetsCallback(frames, framesets)
+      document.getElementById('movieparser_status').innerHTML = 'movie unzipping completed'
+      document.getElementById('frameset_button').disabled = true;
+      document.getElementById('frame_button').disabled = false;
+      document.getElementById('frame_cards').style.display = 'none';
+      document.getElementById('frameset_cards').style.display = 'block';
+    })
     .catch((error) => {
       console.error(error);
     })
-    let responseJson = await response.json()
-    let frames = responseJson.frames
-    let framesets = responseJson.unique_frames
-    this.props.setFramesAndFramesetsCallback(frames, framesets)
-    document.getElementById('movieparser_status').innerHTML = 'movie unzipping completed'
+//    let responseJson = await response.json()
   }
 
   async callRedactOnOneFrame(areas_to_redact_short, image_url) {
@@ -170,7 +191,6 @@ class MovieParserPanel extends React.Component {
           let a2r = this.props.framesets[hash_key]['areas_to_redact'][i]
           pass_arr.push([a2r['start'], a2r['end']])
         }  
-        console.log('calling redaction on frame '+first_image_url)
         this.callRedactOnOneFrame(pass_arr, first_image_url) 
       } 
     }
@@ -350,6 +370,8 @@ class MovieParserPanel extends React.Component {
                 getNameFor={this.getNameFor}
                 redactFramesetCallback={this.redactFramesetCallback}
                 getRedactionFromFrameset={this.props.getRedactionFromFrameset}
+                setDraggedId={this.setDraggedId}
+                handleDroppedFrameset={this.handleDroppedFrameset}
               />
             </div>
           </div>
@@ -359,7 +381,7 @@ class MovieParserPanel extends React.Component {
   }
 }
 
-class ImageCard extends React.Component {
+class FrameCard extends React.Component {
   render() {
     return (
       <div className='col-md-2 frameCard m-3 p-3 bg-light'>
@@ -376,10 +398,18 @@ class ImageCard extends React.Component {
   }
 }
 
+//          onDrop={() => this.props.handleDroppedFrameset(this.props.frame_hash)}
 class FramesetCard extends React.Component {
   render() {
     return (
-      <div className='col-md-2 frameCard m-3 p-3 bg-light'>
+      <div 
+          id={this.props.frame_hash}
+          className='col-md-2 frameCard m-3 p-3 bg-light' 
+          draggable='true'
+          onDragStart={() => this.props.setDraggedId(this.props.frame_hash)}
+          onDragOver={(event) => event.preventDefault()}
+          onDrop={() => this.props.handleDroppedFrameset(this.props.frame_hash)}
+      >
         <div className='frameset_hash'>{this.props.frame_hash}</div>
         <img src={this.props.image_url} alt='whatever'/>
         <div className='card-body'>
@@ -426,6 +456,8 @@ class FramesetCardList extends React.Component {
     let ordered_frame_hashes = Object.keys(this.props.framesets)
     let items = ordered_frame_hashes.map((key) =>
       <FramesetCard
+        setDraggedId={this.props.setDraggedId}
+        handleDroppedFrameset={this.props.handleDroppedFrameset}
         frame_hash={key}
         image_names={this.getImageNamesList(this.props.framesets[key]['images'])}
         image_url={this.props.framesets[key]['images'][0]}
@@ -441,7 +473,7 @@ class FramesetCardList extends React.Component {
 class FrameCardList extends React.Component {
   render() {
     let items = this.props.frames.map((item) =>
-      <ImageCard
+      <FrameCard
         image_url={item}
         image_name={this.props.getNameFor(item)}
         key={item}
