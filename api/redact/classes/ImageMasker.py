@@ -20,7 +20,7 @@ class ImageMasker():
             green_mask_color = (128)
         for region_number, masking_region in enumerate(regions_to_mask):
             print('masking region', masking_region);
-            mask_method = mask_method or 'black_rectangle'
+            mask_method = mask_method or 'blur_7x7'
             if mask_method == 'black_rectangle':
                 cv2.rectangle(output, masking_region['start'], masking_region['end'], black_mask_color, -1)
             elif mask_method == 'green_outline':

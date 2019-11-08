@@ -27,14 +27,6 @@ class RedactionPanel extends React.Component {
     })
   }
 
-  getNextImageLink() {
-      return ''
-  }
-
-  getPrevImageLink() {
-      return ''
-  }
-
   handleImageClick = (e) => {
     let x = e.nativeEvent.offsetX
     let y = e.nativeEvent.offsetY
@@ -263,8 +255,8 @@ class RedactionPanel extends React.Component {
                 doRedactCallback = {this.handleRedactCall}
                 changeMaskMethodCallback= {this.props.setMaskMethod}
                 redacted_image_url={this.props.redacted_image_url}
-                getNextImageLink={this.getNextImageLink}
-                getPrevImageLink={this.getPrevImageLink}
+                getNextImageLink={this.props.getNextImageLink}
+                getPrevImageLink={this.props.getPrevImageLink}
                 setImageUrlCallback={this.props.setImageUrlCallback}
               />
             </div>

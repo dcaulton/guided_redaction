@@ -16,6 +16,7 @@ class MovieParserPanel extends React.Component {
     this.getNameFor = this.getNameFor.bind(this)
     this.redactFramesetCallback = this.redactFramesetCallback.bind(this)
     this.callMovieSplit = this.callMovieSplit.bind(this)
+    this.allFramesHaveBeenRedacted = this.allFramesHaveBeenRedacted.bind(this)
   }
 
   async callMovieSplit() {
@@ -40,19 +41,20 @@ class MovieParserPanel extends React.Component {
     document.getElementById('movieparser_status').innerHTML = 'movie unzipping completed'
   }
 
-  callRedactOnOneFrame(areas_to_redact_short, image_url) {
+  async callRedactOnOneFrame(areas_to_redact_short, image_url) {
+    let the_body = {
+      areas_to_redact: areas_to_redact_short,
+      mask_method: this.props.mask_method,
+      image_url: image_url,
+      return_type: 'url',
+    }
     fetch(this.props.redact_url, {
       method: 'POST',
       headers: {
         Accept: 'application/json',
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        areas_to_redact: areas_to_redact_short,
-        mask_method: this.props.mask_method,
-        image_url: image_url,
-        return_type: 'url',
-      }),
+      body: JSON.stringify(the_body),
     })
     .then((response) => response.json())
     .then((responseJson) => {
@@ -61,11 +63,12 @@ class MovieParserPanel extends React.Component {
       let frameset = local_framesets[frameset_hash]
       frameset['redacted_image'] = responseJson['redacted_image_url']
       local_framesets[frameset_hash] = frameset
-      if (this.isFinalFrameToRedact(frameset_hash, this.props.framesets)) {
-        this.zipUpRedactedImages(local_framesets)
+      this.props.handleUpdateFramesetCallback(frameset_hash, frameset)
+    })
+    .then(() => {
+      if (this.allFramesHaveBeenRedacted()) {
+        this.zipUpRedactedImages()
       }
-      // update the framesets now I suppose.  Otherwinse, any late ones coming in 
-      //    would trigger making a whole new movie file.
     })
     .catch((error) => {
       console.error(error);
@@ -80,21 +83,24 @@ class MovieParserPanel extends React.Component {
     return new_filename
   }
 
-  isFinalFrameToRedact(frameset_hash, framesets) {
-    let keys = Object.keys(framesets)
-    let num_being_changed = 0
+  allFramesHaveBeenRedacted() {
+    const framesets = this.props.framesets
+    const keys = Object.keys(framesets)
     for (let i=0; i < keys.length; i++) {
-      let key = keys[i]
-      if (framesets[key]['areas_to_redact'] && framesets[key]['areas_to_redact'].length > 0 && !framesets[key]['redacted_image_url']) {
-          num_being_changed++;
+      const key = keys[i]
+      if (framesets[key]['areas_to_redact']) {
+        if (framesets[key]['areas_to_redact'].length > 0) {
+          if (!framesets[key]['redacted_image']) {
+            return false
+          }
+        }
       }
     }
-    if (num_being_changed === 1) {
-      return true
-    }
+    return true
   }
 
-  zipUpRedactedImages(framesets) {
+  zipUpRedactedImages() {
+    let framesets = this.props.framesets
     let movie_frame_urls = []
     for (let i=0; i < this.props.frames.length; i++) {
       let image_url = this.props.frames[i]
@@ -107,18 +113,6 @@ class MovieParserPanel extends React.Component {
       }
     }
     this.callMovieZip(movie_frame_urls)
-  }
-
-  moreImagesNeedRedaction() {
-    let frameset_keys = Object.keys(this.props.framesets)
-    for (let i=0; i < frameset_keys.length; i++) {
-      let the_hash = frameset_keys[i]
-      let the_frameset = this.props.framesets[the_hash]
-      if (('areas_to_redact' in the_frameset) && the_frameset['areas_to_redact'].length > 0 && !the_frameset['redacted_image']) {
-        return true
-      }
-    }
-    return false
   }
 
   async callMovieZip(the_urls) {
@@ -154,12 +148,12 @@ class MovieParserPanel extends React.Component {
   }
 
   imageUrlHasRedactionInfo = (image_url) => {
-      let frameset_hash = this.props.getFramesetHashForImageUrl(image_url)
-      let areas_to_redact = this.props.getRedactionFromFrameset(frameset_hash)
-      if (areas_to_redact.length > 0) {
-          return true
-      }
-      return false
+    let frameset_hash = this.props.getFramesetHashForImageUrl(image_url)
+    let areas_to_redact = this.props.getRedactionFromFrameset(frameset_hash)
+    if (areas_to_redact.length > 0) {
+        return true
+    }
+    return false
   }
 
   callFrameRedactions() {
@@ -176,6 +170,7 @@ class MovieParserPanel extends React.Component {
           let a2r = this.props.framesets[hash_key]['areas_to_redact'][i]
           pass_arr.push([a2r['start'], a2r['end']])
         }  
+        console.log('calling redaction on frame '+first_image_url)
         this.callRedactOnOneFrame(pass_arr, first_image_url) 
       } 
     }
@@ -184,13 +179,13 @@ class MovieParserPanel extends React.Component {
   }
 
   getNameFor(image_name) {
-      let s = image_name.substring(image_name.lastIndexOf('/')+1, image_name.length);
-      s = s.substring(0, s.indexOf('.'))
-      return s
+    let s = image_name.substring(image_name.lastIndexOf('/')+1, image_name.length);
+    s = s.substring(0, s.indexOf('.'))
+    return s
   }
 
   componentDidMount() {
-      document.getElementById('frame_button').disabled = true;
+    document.getElementById('frame_button').disabled = true;
   }
 
   toggleFrameFramesetCallback() {

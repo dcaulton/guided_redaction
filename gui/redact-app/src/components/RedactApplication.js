@@ -15,14 +15,14 @@ class RedactApplication extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      mask_method: 'blur_7x7',                                                  
+      mask_method: 'blur_7x7',
       image_url: '',
       redacted_movie_url: '',
       redacted_image_url: '',
       movie_url: '',
       frameset_hash: '',
-      image_width: 100,
-      image_height: 100,
+      image_width: 0,
+      image_height: 0,
       analyze_url: 'http://127.0.0.1:8000/v1/analyze/',                            
       redact_url: 'http://127.0.0.1:8000/v1/redact/',                              
       parse_movie_url: 'http://127.0.0.1:8000/v1/parse/',
@@ -30,6 +30,8 @@ class RedactApplication extends React.Component {
       frames: [],
       framesets: {},
     }
+    this.getNextImageLink=this.getNextImageLink.bind(this)
+    this.getPrevImageLink=this.getPrevImageLink.bind(this)
   }
 
   componentDidMount() {
@@ -55,6 +57,32 @@ class RedactApplication extends React.Component {
         this.handleSetMovieUrl(vars['movie_url'])
         document.getElementById('movie_parser_link').click()
     }
+  }
+
+  getNextImageLink() {
+    let hashes = Object.keys(this.state.framesets)
+    if (this.state.frameset_hash) {
+      let cur_index = hashes.indexOf(this.state.frameset_hash)
+      if (cur_index < (hashes.length-1)) {
+        const next_hash = hashes[cur_index + 1]
+        const next_image_url = this.state.framesets[next_hash]['images'][0]
+        return next_image_url
+      } 
+    }
+    return ''
+  }
+
+  getPrevImageLink() {
+    let hashes = Object.keys(this.state.framesets)
+    if (this.state.frameset_hash) {
+      let cur_index = hashes.indexOf(this.state.frameset_hash)
+      if (cur_index > 0) {
+        const prev_hash = hashes[cur_index - 1]
+        const prev_image_url = this.state.framesets[prev_hash]['images'][0]
+        return prev_image_url
+      } 
+    }
+    return ''
   }
 
   makeNewFrameFrameset(the_url) {
@@ -171,11 +199,7 @@ class RedactApplication extends React.Component {
         return []
     }
     let the_hash = frameset_hash || this.state.frameset_hash
-//    if (frameset_hash) {
-//      the_hash = frameset_hash
-//    } 
     let frameset = this.state.framesets[the_hash]
-//    let tk = Object.keys(frameset)
     if (Object.keys(frameset).indexOf('areas_to_redact') > -1) {
         return frameset['areas_to_redact']
     } else {
@@ -240,6 +264,9 @@ class RedactApplication extends React.Component {
                 setMaskMethod={this.handleSetMaskMethod}
                 setRedactedImageUrl={this.handleSetRedactedImageUrl}
                 setImageUrlCallback={this.handleSetImageUrl}
+                getFramesetHashForImageUrl={this.getFramesetHashForImageUrl}
+                getNextImageLink={this.getNextImageLink}
+                getPrevImageLink={this.getPrevImageLink}
               />
             </Route>
           </Switch>
