@@ -237,6 +237,9 @@ class RedactApplication extends React.Component {
   }
 
   render() {
+    if (document.getElementById('movie_parser_link')) {
+      document.getElementById('movie_parser_link').style.display = 'block'
+    }
     return (
       <Router>
         <nav className="navbar navbar-expand-lg navbar-dark bg-dark">
