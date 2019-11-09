@@ -29,6 +29,7 @@ class RedactApplication extends React.Component {
       zip_movie_url: 'http://127.0.0.1:8000/v1/parse/zip_movie',
       frames: [],
       framesets: {},
+      showMovieParserLink: false,
     }
     this.getNextImageLink=this.getNextImageLink.bind(this)
     this.getPrevImageLink=this.getPrevImageLink.bind(this)
@@ -37,6 +38,9 @@ class RedactApplication extends React.Component {
 
   componentDidMount() {
     this.checkForInboundImageOrMovie()
+    if (!this.state.showMovieParserLink) {
+      document.getElementById('movie_parser_link').style.display = 'none'
+    }
   }
 
   getFramesetHashForImageUrl = (image_url) => {
@@ -251,6 +255,7 @@ class RedactApplication extends React.Component {
               <HomePanel 
                 setMovieUrlCallback={this.handleSetMovieUrl}
                 setImageUrlCallback={this.handleSetImageUrl}
+                showMovieParserLink={this.state.showMovieParserLink}
               />
             </Route>
             <Route path='/movie_parser'>

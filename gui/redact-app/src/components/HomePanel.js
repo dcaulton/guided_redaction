@@ -14,6 +14,7 @@ class HomePanel extends React.Component {
             <ImageMovieForm 
               setMovieUrlCallback = {this.props.setMovieUrlCallback}
               setImageUrlCallback = {this.props.setImageUrlCallback}
+              showMovieParserLink = {this.props.showMovieParserLink}
             />
           </div>
         </div>
@@ -27,27 +28,26 @@ class ImageMovieForm extends React.Component {
     super(props);
     this.state = {
       image_or_movie: '', 
-      file_or_url: '',
       image_url: this.props.image_url,
-      asset_file: '',
     }
     this.handleSubmit = this.handleSubmit.bind(this)
-    this.toggleFileOrUrl= this.toggleFileOrUrl.bind(this)
     this.toggleImageOrMovie = this.toggleImageOrMovie.bind(this)
     this.setUrl = this.setUrl.bind(this)
   }
 
   componentDidMount() {
-    document.getElementById('url_input').style.display = 'none'
-    document.getElementById('file_input').style.display = 'none'
+    document.getElementById('url_input').style.display = 'block'
     document.getElementById('submit_button').disabled = true
+    if (!this.props.showMovieParserLink) {
+      document.getElementById('input_type_image').checked = true
+    }
   }
 
   handleSubmit(event) {
     let link_to_next_page = ''
-    if (this.state.image_or_movie === 'image' && this.state.file_or_url === 'url') {
+    if (this.state.image_or_movie === 'image') {
       link_to_next_page = document.getElementById('redactor_link')
-    } else if (this.state.image_or_movie === 'movie' && this.state.file_or_url === 'url') {
+    } else if (this.state.image_or_movie === 'movie') {
       link_to_next_page = document.getElementById('movie_parser_link')
     } 
     link_to_next_page.click()
@@ -57,19 +57,16 @@ class ImageMovieForm extends React.Component {
     let image_ele = document.getElementById('input_type_image')
     let movie_ele = document.getElementById('input_type_movie')
     let url_label_ele = document.getElementById('url_input_label')
-    let file_label_ele = document.getElementById('file_input_label')
     let the_value = event.target.value
 
     if (the_value === 'image') {
       image_ele.checked = true;
       movie_ele.checked = false;
       url_label_ele.innerHTML = 'Image URL'
-      file_label_ele.innerHTML = 'Image'
     } else {
       image_ele.checked = false;
       movie_ele.checked = true;
       url_label_ele.innerHTML = 'Movie URL'
-      file_label_ele.innerHTML = 'Movie'
     }
     this.setState({
       image_or_movie: the_value,
@@ -85,34 +82,6 @@ class ImageMovieForm extends React.Component {
     document.getElementById('submit_button').disabled = false
   }
   
-  doFileStuff(event) {
-    alert('should be uploading a file now')
-  }
-
-  toggleFileOrUrl(event) {
-    let url_ele = document.getElementById('input_source_url')
-    let file_ele = document.getElementById('input_source_file')
-    let url_input_ele = document.getElementById('url_input')
-    let file_input_ele = document.getElementById('file_input')
-    let the_value = event.target.value;
-
-    if (the_value === 'file') {
-      url_ele.checked = false
-      file_ele.checked = true
-      url_input_ele.style.display = 'none'
-      file_input_ele.style.display = 'block'
-    } else {
-      url_ele.checked = true
-      file_ele.checked = false
-      url_input_ele.style.display = 'block'
-      file_input_ele.style.display = 'none'
-    }
-
-    this.setState({
-      file_or_url: the_value,
-    })
-  }
-
   render() {
     return (
       <div className='col'>
@@ -145,31 +114,6 @@ class ImageMovieForm extends React.Component {
             </label>
           </div>
         </div>
-        <div className="form-group">
-          <h5>Input Source</h5>
-          <div className='form-check'>
-            <input className="form-check-input" type="radio"
-                name="source_radio"
-                id="input_source_url"
-                value="url"
-                onChange={this.toggleFileOrUrl} 
-            />
-            <label className="form-check-label" htmlFor="input_source_url" >
-              Url
-            </label>
-          </div>
-          <div className='form-check'>
-            <input className="form-check-input" type="radio"
-                name="source_radio"
-                id="input_source_file"
-                value="file"
-                onChange={this.toggleFileOrUrl} 
-            />
-            <label className="form-check-label" htmlFor="input_source_file" >
-              File Upload
-            </label>
-          </div>
-        </div>
         <div className="form-group" id='url_input'>
           <label htmlFor="imageMovieUrl" id='url_input_label'>Image/Movie URL</label>
           <input 
@@ -178,15 +122,6 @@ class ImageMovieForm extends React.Component {
               size='90'
               id="imageMovieUrl" 
               onChange={this.setUrl}
-          />
-        </div>
-        <div className="form-group" id='file_input'>
-          <label htmlFor="imageMovieFile" id='file_input_label'>Image or Movie</label>
-          <input 
-              type="file" 
-              className="form-control-file" 
-              id="imageMovieFile" 
-              onChange={this.doFileStuff}
           />
         </div>
         <button
