@@ -1,5 +1,6 @@
 import React from 'react'
 import TopControls from './TopControls'
+import AdvancedControls from './AdvancedControls'
 import CanvasOverlay from './CanvasOverlay'
 import {getMessage, getDisplayMode} from './redact_utils.js'
 
@@ -13,6 +14,7 @@ class RedactionPanel extends React.Component {
       message: '',
       current_click: null,
       last_click: null,
+      showAdvancedControls: false,
     }
   }
 
@@ -226,7 +228,7 @@ class RedactionPanel extends React.Component {
     }
     return (
       <div id='redaction_panel_container'>
-        <div id='image_redactor_panel' className='xrow'>
+        <div id='image_redactor_panel'>
           <div id='image_and_canvas_wrapper' className='row'>
             <BaseImage 
               image_url={the_image_url}
@@ -242,6 +244,14 @@ class RedactionPanel extends React.Component {
               last_click= {this.state.last_click}
               getRedactionFromFrameset={this.props.getRedactionFromFrameset}
             />
+          </div>
+          <div id='advanced_controls_wrapper' className='row'>
+            <div className='col'>
+              <AdvancedControls 
+                showAdvancedControls={this.state.showAdvancedControls}
+                setModeCallback= {this.handleSetMode}
+              />
+            </div>
           </div>
           <div id='controls_wrapper' className='row'>
             <div className='col'>

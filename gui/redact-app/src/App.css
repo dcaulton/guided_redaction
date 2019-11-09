@@ -5,6 +5,13 @@ div#image_and_canvas_wrapper {
 div#controls_wrapper {
   position: relative;
 }
+
+div#advanced_controls_wrapper {
+  position: absolute;
+  left: 1800px;
+  top: 150px;
+}
+
 div#canvas_div {
   position: absolute;
   left: 150px;
@@ -60,29 +67,5 @@ div.frameset_hash {
 div#image-zoom-modal {
   position: absolute;
   z-index: 10;
-}
-
-div.marquee_div {
-  background:
-    linear-gradient(90deg, blue 50%, transparent 50%),
-    linear-gradient(0deg, blue 50%, transparent 50%),
-    linear-gradient(90deg, blue 50%, transparent 50%),
-    linear-gradient(0deg, blue 50%, transparent 50%);
-  background-repeat: repeat-x, repeat-y, repeat-x, repeat-y;
-  background-size: 15px 4px, 4px 15px, 15px 4px, 4px 15px;
-  background-position: left top, right top, left bottom, left top;
-  padding: 4px;
-  animation: border-dance 4s infinite linear;
-}
-@keyframes border-dance
-{
-  0%
-  {
-    background-position: left top, right top, right bottom, left bottom;
-  }
-  100%
-  {
-    background-position: right top, right bottom, left bottom, left top;
-  }
 }
 
