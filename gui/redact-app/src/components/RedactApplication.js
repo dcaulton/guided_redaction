@@ -237,7 +237,7 @@ class RedactApplication extends React.Component {
   }
 
   render() {
-    if (document.getElementById('movie_parser_link')) {
+    if (document.getElementById('movie_parser_link') && this.state.showMovieParserLink) {
       document.getElementById('movie_parser_link').style.display = 'block'
     }
     return (
