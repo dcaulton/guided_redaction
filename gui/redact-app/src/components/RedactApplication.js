@@ -1,5 +1,5 @@
 import React from 'react';
-import RedactionPanel from './RedactionPanel';
+import ImagePanel from './ImagePanel';
 import MovieParserPanel from './MovieParserPanel';
 import HomePanel from './HomePanel';
 import {getUrlVars} from './redact_utils.js'
@@ -278,7 +278,7 @@ class RedactApplication extends React.Component {
               />
             </Route>
             <Route path='/redactor'>
-              <RedactionPanel 
+              <ImagePanel 
                 mask_method = {this.state.mask_method}
                 image_url = {this.state.image_url}
                 redacted_image_url = {this.state.redacted_image_url}

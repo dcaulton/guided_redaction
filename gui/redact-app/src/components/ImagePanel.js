@@ -1,10 +1,10 @@
 import React from 'react'
-import TopControls from './TopControls'
-import AdvancedControls from './AdvancedControls'
+import TopImageControls from './TopImageControls'
+import AdvancedImageControls from './AdvancedImageControls'
 import CanvasOverlay from './CanvasOverlay'
 import {getMessage, getDisplayMode} from './redact_utils.js'
 
-class RedactionPanel extends React.Component {
+class ImagePanel extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
@@ -14,7 +14,7 @@ class RedactionPanel extends React.Component {
       message: '',
       current_click: null,
       last_click: null,
-      showAdvancedControls: false,
+      showAdvancedControls: true,
     }
   }
 
@@ -247,7 +247,7 @@ class RedactionPanel extends React.Component {
           </div>
           <div id='advanced_controls_wrapper' className='row'>
             <div className='col'>
-              <AdvancedControls 
+              <AdvancedImageControls 
                 showAdvancedControls={this.state.showAdvancedControls}
                 setModeCallback= {this.handleSetMode}
               />
@@ -255,7 +255,7 @@ class RedactionPanel extends React.Component {
           </div>
           <div id='controls_wrapper' className='row'>
             <div className='col'>
-              <TopControls 
+              <TopImageControls 
                 mode={this.state.mode}
                 display_mode={this.state.display_mode}
                 submode={this.state.submode}
@@ -292,4 +292,4 @@ class BaseImage extends React.Component {
   }
 }
 
-export default RedactionPanel;
+export default ImagePanel;

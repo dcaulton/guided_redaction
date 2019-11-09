@@ -1,6 +1,6 @@
 import React from 'react';
 
-class TopControls extends React.Component {
+class TopImageControls extends React.Component {
   constructor(props) {
     super(props)
     this.handleReset = this.handleReset.bind(this)
@@ -155,4 +155,4 @@ class TopControls extends React.Component {
   }
 }
 
-export default TopControls;
+export default TopImageControls;
