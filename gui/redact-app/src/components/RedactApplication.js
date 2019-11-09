@@ -1,6 +1,6 @@
 import React from 'react';
 import ImagePanel from './ImagePanel';
-import MovieParserPanel from './MovieParserPanel';
+import MoviePanel from './MoviePanel';
 import HomePanel from './HomePanel';
 import {getUrlVars} from './redact_utils.js'
 import '../App.css';
@@ -30,6 +30,7 @@ class RedactApplication extends React.Component {
       frames: [],
       framesets: {},
       showMovieParserLink: false,
+      showAdvancedPanels: false,
     }
     this.getNextImageLink=this.getNextImageLink.bind(this)
     this.getPrevImageLink=this.getPrevImageLink.bind(this)
@@ -155,7 +156,9 @@ class RedactApplication extends React.Component {
       frames: [],
       framesets: {},
       frameset_hash: '',
+      showMovieParserLink: true,
     })
+    document.getElementById('movie_parser_link').style.display = 'block'
   }
 
   handleUpdateFrameset = (the_hash, the_frameset) => {
@@ -259,7 +262,7 @@ class RedactApplication extends React.Component {
               />
             </Route>
             <Route path='/movie_parser'>
-              <MovieParserPanel 
+              <MoviePanel 
                 movie_url = {this.state.movie_url}
                 frames={this.state.frames}
                 framesets={this.state.framesets}
@@ -295,6 +298,7 @@ class RedactApplication extends React.Component {
                 getFramesetHashForImageUrl={this.getFramesetHashForImageUrl}
                 getNextImageLink={this.getNextImageLink}
                 getPrevImageLink={this.getPrevImageLink}
+                showAdvancedPanels={this.state.showAdvancedPanels}
               />
             </Route>
           </Switch>

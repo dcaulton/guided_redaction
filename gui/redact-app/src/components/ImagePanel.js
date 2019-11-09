@@ -14,7 +14,7 @@ class ImagePanel extends React.Component {
       message: '',
       current_click: null,
       last_click: null,
-      showAdvancedControls: true,
+      showAdvancedControls: this.props.showAdvancedPanels,
     }
   }
 

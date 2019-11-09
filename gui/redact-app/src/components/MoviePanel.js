@@ -1,6 +1,6 @@
 import React from 'react';
 
-class MovieParserPanel extends React.Component {
+class MoviePanel extends React.Component {
 
   constructor(props) {
     super(props)
@@ -515,4 +515,4 @@ class FrameCardList extends React.Component {
   }
 }
 
-export default MovieParserPanel;
+export default MoviePanel;
