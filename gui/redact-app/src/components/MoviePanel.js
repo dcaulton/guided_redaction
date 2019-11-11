@@ -34,34 +34,18 @@ class MoviePanel extends React.Component {
     this.props.handleMergeFramesets(target_id, this.state.draggedId)
   }
 
-  async callMovieSplit() {
-    document.getElementById('movieparser_status').innerHTML = 'calling movie unzipper'
-    await fetch(this.props.parse_movie_url, {
-      method: 'POST',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        movie_url: this.props.movie_url,
-      }),
-    })
-    .then((response) => response.json())
-    .then((responseJson) => {
-//      let responseJson = response.json()
-      let frames = responseJson.frames
-      let framesets = responseJson.unique_frames
-      this.props.setFramesAndFramesetsCallback(frames, framesets)
-      document.getElementById('movieparser_status').innerHTML = 'movie unzipping completed'
-      document.getElementById('frameset_button').disabled = true;
-      document.getElementById('frame_button').disabled = false;
-      document.getElementById('frame_cards').style.display = 'none';
-      document.getElementById('frameset_cards').style.display = 'block';
-    })
-    .catch((error) => {
-      console.error(error);
-    })
-//    let responseJson = await response.json()
+  movieSplitWhenDone() {
+    document.getElementById('movieparser_status').innerHTML = 'movie unzipping completed'
+    document.getElementById('frameset_button').disabled = true;
+    document.getElementById('frame_button').disabled = false;
+    document.getElementById('frame_cards').style.display = 'none';
+    document.getElementById('frameset_cards').style.display = 'block';
+    document.getElementById('parse_video_button').disabled = true;
+    document.getElementById('parse_video_button').innerHTML = 'Movie Parse Called'
+  }
+
+  callMovieSplit() {
+    this.props.doMovieSplit(this.movieSplitWhenDone)
   }
 
   async callRedactOnOneFrame(areas_to_redact_short, image_url) {
@@ -240,8 +224,6 @@ class MoviePanel extends React.Component {
 
   doMovieParse() {
     this.callMovieSplit()
-    document.getElementById('parse_video_button').disabled = true;
-    document.getElementById('parse_video_button').innerHTML = 'Movie Parse Called'
   }
 
   doButtonReset() {

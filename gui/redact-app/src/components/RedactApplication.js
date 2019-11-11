@@ -37,6 +37,7 @@ class RedactApplication extends React.Component {
     this.getNextImageLink=this.getNextImageLink.bind(this)
     this.getPrevImageLink=this.getPrevImageLink.bind(this)
     this.handleMergeFramesets=this.handleMergeFramesets.bind(this)
+    this.doMovieSplit=this.doMovieSplit.bind(this)
   }
 
   componentDidMount() {
@@ -47,6 +48,30 @@ class RedactApplication extends React.Component {
     if (!this.state.showInsightsLink) {
       document.getElementById('insights_link').style.display = 'none'
     }
+  }
+
+  async doMovieSplit(theCallback) {
+    document.getElementById('movieparser_status').innerHTML = 'calling movie unzipper'
+    await fetch(this.state.parse_movie_url, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        movie_url: this.state.movie_url,
+      }),
+    })
+    .then((response) => response.json())
+    .then((responseJson) => {
+      let frames = responseJson.frames
+      let framesets = responseJson.unique_frames
+      this.handleSetFramesAndFramesets(frames, framesets)
+      theCallback()
+    })
+    .catch((error) => {
+      console.error(error);
+    })
   }
 
   getFramesetHashForImageUrl = (image_url) => {
@@ -155,6 +180,7 @@ class RedactApplication extends React.Component {
   }
 
   handleSetMovieUrl = (the_url) => {
+    // TODO have this check campaign_movies  to see if we already have framesets and frames
     this.setState({
       movie_url: the_url,
       image_url: '',
@@ -278,9 +304,7 @@ class RedactApplication extends React.Component {
                 frames={this.state.frames}
                 framesets={this.state.framesets}
                 mask_method = {this.state.mask_method}
-                setFramesAndFramesetsCallback={this.handleSetFramesAndFramesets}
                 setImageUrlCallback={this.handleSetImageUrl}
-                parse_movie_url = {this.state.parse_movie_url}
                 getRedactionFromFrameset={this.getRedactionFromFrameset}
                 zipMovieUrl={this.state.zip_movie_url}
                 setRedactedMovieUrlCallback={this.handleSetRedactedMovieUrl}
@@ -289,6 +313,7 @@ class RedactApplication extends React.Component {
                 redacted_movie_url = {this.state.redacted_movie_url}
                 redact_url = {this.state.redact_url}
                 handleMergeFramesets={this.handleMergeFramesets}
+                doMovieSplit={this.doMovieSplit}
               />
             </Route>
             <Route path='/image'>
@@ -313,7 +338,9 @@ class RedactApplication extends React.Component {
               />
             </Route>
             <Route path='/insights'>
-              <InsightsPanel  />
+              <InsightsPanel  
+                setMovieUrlCallback={this.handleSetMovieUrl}
+              />
             </Route>
           </Switch>
         </div>

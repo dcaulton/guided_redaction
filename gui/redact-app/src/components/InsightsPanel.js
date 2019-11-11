@@ -8,7 +8,7 @@ class InsightsPanel extends React.Component {
       currentMovie: {},
       currentCampaign: '',
       campaigns: [],
-      movies: {},
+      campaignMovies: {},
     }
   }
 
@@ -22,8 +22,8 @@ class InsightsPanel extends React.Component {
     // find image for that value (0 - 100, integers only), bring it up
   }
 
-  setCurrentVideo(video_id) {
-    console.log('current video is now '+video_id)
+  setCurrentVideo(video_url) {
+    this.props.setMovieUrlCallback(video_url)
   }
 
   render() {
@@ -44,7 +44,7 @@ class InsightsPanel extends React.Component {
           <div>
             <button
                 className='btn btn-link'
-                onClick={() => this.setCurrentVideo('hybris_address_1')}
+                onClick={() => this.setCurrentVideo('http://localhost:3000/images/hybris_address.mp4')}
             >
             make current
             </button>
@@ -72,7 +72,7 @@ class InsightsPanel extends React.Component {
             onChange={this.scrubberOnChange}
         />
       </div>
-      <div id='insights_right' className='col-md-2'>
+      <div id='insights_right' className='col'>
         <div className='row mt-5'>                                            
           <select                                                           
               name='mask_method'                                            
