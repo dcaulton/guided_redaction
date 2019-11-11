@@ -1,6 +1,7 @@
 import React from 'react';
 import ImagePanel from './ImagePanel';
 import MoviePanel from './MoviePanel';
+import InsightsPanel from './InsightsPanel';
 import HomePanel from './HomePanel';
 import {getUrlVars} from './redact_utils.js'
 import '../App.css';
@@ -29,8 +30,9 @@ class RedactApplication extends React.Component {
       zip_movie_url: 'http://127.0.0.1:8000/v1/parse/zip_movie',
       frames: [],
       framesets: {},
-      showMovieParserLink: false,
-      showAdvancedPanels: false,
+      showMovieParserLink: true,
+      showInsightsLink: true,
+      showAdvancedPanels: true,
     }
     this.getNextImageLink=this.getNextImageLink.bind(this)
     this.getPrevImageLink=this.getPrevImageLink.bind(this)
@@ -40,7 +42,10 @@ class RedactApplication extends React.Component {
   componentDidMount() {
     this.checkForInboundImageOrMovie()
     if (!this.state.showMovieParserLink) {
-      document.getElementById('movie_parser_link').style.display = 'none'
+      document.getElementById('movie_panel_link').style.display = 'none'
+    }
+    if (!this.state.showInsightsLink) {
+      document.getElementById('insights_link').style.display = 'none'
     }
   }
 
@@ -58,10 +63,10 @@ class RedactApplication extends React.Component {
     let vars = getUrlVars()
     if (Object.keys(vars).includes('image_url')) {
         this.handleSetImageUrl(vars['image_url'])
-        document.getElementById('redactor_link').click()
+        document.getElementById('image_panel_link').click()
     } else if (Object.keys(vars).includes('movie_url')) {
         this.handleSetMovieUrl(vars['movie_url'])
-        document.getElementById('movie_parser_link').click()
+        document.getElementById('movie_panel_link').click()
     }
   }
 
@@ -158,7 +163,7 @@ class RedactApplication extends React.Component {
       frameset_hash: '',
       showMovieParserLink: true,
     })
-    document.getElementById('movie_parser_link').style.display = 'block'
+    document.getElementById('movie_panel_link').style.display = 'block'
   }
 
   handleUpdateFrameset = (the_hash, the_frameset) => {
@@ -237,8 +242,8 @@ class RedactApplication extends React.Component {
   }
 
   render() {
-    if (document.getElementById('movie_parser_link') && this.state.showMovieParserLink) {
-      document.getElementById('movie_parser_link').style.display = 'block'
+    if (document.getElementById('movie_panel_link') && this.state.showMovieParserLink) {
+      document.getElementById('movie_panel_link').style.display = 'block'
     }
     return (
       <Router>
@@ -248,10 +253,13 @@ class RedactApplication extends React.Component {
             <Link className='nav-link' id='home_link' to='/'>RedactUI</Link>
           </li>
           <li className="nav-item">
-            <Link className='nav-link' id='movie_parser_link' to='/movie_parser'>Movie Parser</Link>
+            <Link className='nav-link' id='image_panel_link' to='/image'>Images</Link>
           </li>
           <li className="nav-item">
-            <Link className='nav-link' id='redactor_link' to='/redactor'>Image Redactor</Link>
+            <Link className='nav-link' id='movie_panel_link' to='/movie'>Movies</Link>
+          </li>
+          <li className="nav-item">
+            <Link className='nav-link' id='insights_link' to='/insights'>Insights</Link>
           </li>
         </ul>
         </nav>
@@ -264,7 +272,7 @@ class RedactApplication extends React.Component {
                 showMovieParserLink={this.state.showMovieParserLink}
               />
             </Route>
-            <Route path='/movie_parser'>
+            <Route path='/movie'>
               <MoviePanel 
                 movie_url = {this.state.movie_url}
                 frames={this.state.frames}
@@ -283,7 +291,7 @@ class RedactApplication extends React.Component {
                 handleMergeFramesets={this.handleMergeFramesets}
               />
             </Route>
-            <Route path='/redactor'>
+            <Route path='/image'>
               <ImagePanel 
                 mask_method = {this.state.mask_method}
                 image_url = {this.state.image_url}
@@ -303,6 +311,9 @@ class RedactApplication extends React.Component {
                 getPrevImageLink={this.getPrevImageLink}
                 showAdvancedPanels={this.state.showAdvancedPanels}
               />
+            </Route>
+            <Route path='/insights'>
+              <InsightsPanel  />
             </Route>
           </Switch>
         </div>

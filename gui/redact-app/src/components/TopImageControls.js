@@ -134,11 +134,11 @@ class TopImageControls extends React.Component {
           <div id='redacted_image_download_link' className='col'>
             {redacted_link}
           </div>
-          <div id='next_image_div' className='col'>
-            {next_image_link}
-          </div>
           <div id='prev_image_div' className='col'>
             {prev_image_link}
+          </div>
+          <div id='next_image_div' className='col'>
+            {next_image_link}
           </div>
 
         </div>

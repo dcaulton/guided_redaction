@@ -14,7 +14,6 @@ class ImagePanel extends React.Component {
       message: '',
       current_click: null,
       last_click: null,
-      showAdvancedControls: this.props.showAdvancedPanels,
     }
   }
 
@@ -33,6 +32,7 @@ class ImagePanel extends React.Component {
     let x = e.nativeEvent.offsetX
     let y = e.nativeEvent.offsetY
 
+    // TODO make this into a hashtable, it's going to grow
     if (this.state.mode === 'add_1') {
       this.handleAddFirst(x, y)
     } else if (this.state.mode === 'add_2') {
@@ -46,6 +46,8 @@ class ImagePanel extends React.Component {
     }
   }
 
+  // TODO consider moving these click/add/subtract functions into a common area
+  // insights are going to need them too.
   handleAddFirst(x_rel, y_rel) {
     this.setState({
       last_click: [x_rel, y_rel],
@@ -248,7 +250,7 @@ class ImagePanel extends React.Component {
           <div id='advanced_controls_wrapper' className='row'>
             <div className='col'>
               <AdvancedImageControls 
-                showAdvancedControls={this.state.showAdvancedControls}
+                showAdvancedControls={this.props.showAdvancedPanels}
                 setModeCallback= {this.handleSetMode}
               />
             </div>

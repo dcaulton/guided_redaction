@@ -46,9 +46,9 @@ class ImageMovieForm extends React.Component {
   handleSubmit(event) {
     let link_to_next_page = ''
     if (this.state.image_or_movie === 'image') {
-      link_to_next_page = document.getElementById('redactor_link')
+      link_to_next_page = document.getElementById('image_panel_link')
     } else if (this.state.image_or_movie === 'movie') {
-      link_to_next_page = document.getElementById('movie_parser_link')
+      link_to_next_page = document.getElementById('movie_panel_link')
     } 
     link_to_next_page.click()
   }
