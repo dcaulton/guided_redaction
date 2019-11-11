@@ -30,6 +30,7 @@ class RedactApplication extends React.Component {
       zip_movie_url: 'http://127.0.0.1:8000/v1/parse/zip_movie',
       frames: [],
       framesets: {},
+      movies: {},
       showMovieParserLink: true,
       showInsightsLink: true,
       showAdvancedPanels: true,
@@ -50,28 +51,56 @@ class RedactApplication extends React.Component {
     }
   }
 
-  async doMovieSplit(theCallback) {
-    document.getElementById('movieparser_status').innerHTML = 'calling movie unzipper'
-    await fetch(this.state.parse_movie_url, {
-      method: 'POST',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        movie_url: this.state.movie_url,
-      }),
-    })
-    .then((response) => response.json())
-    .then((responseJson) => {
-      let frames = responseJson.frames
-      let framesets = responseJson.unique_frames
-      this.handleSetFramesAndFramesets(frames, framesets)
-      theCallback()
-    })
-    .catch((error) => {
-      console.error(error);
-    })
+  setActiveMovie(the_url, theCallback) {
+    if (this.state.movie_url !== the_url) {
+      const the_movie = this.state.movies[the_url]
+      this.setState({
+        movie_url: the_url,
+        frames: the_movie.frames,
+        framesets: the_movie.framesets,
+      })
+    }
+    theCallback()
+  }
+
+  async doMovieSplit(the_url, theCallback) {
+    if (!the_url) {
+      the_url = this.state.movie_url
+    }
+    if (this.state.movies[the_url]) {
+      this.setActiveMovie(the_url, theCallback)
+    } else {
+      await fetch(this.state.parse_movie_url, {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          movie_url: the_url,
+        }),
+      })
+      .then((response) => response.json())
+      .then((responseJson) => {
+        let frames = responseJson.frames
+        let framesets = responseJson.unique_frames
+        let deepCopyMovies = JSON.parse(JSON.stringify(this.state.movies))
+        deepCopyMovies[the_url] = {
+          frames: frames,
+          framesets: framesets,
+        }
+        this.setState({
+          movie_url: the_url, 
+          frames: frames,
+          framesets: framesets,
+          movies: deepCopyMovies,
+        })
+        theCallback()
+      })
+      .catch((error) => {
+        console.error(error);
+      })
+    }
   }
 
   getFramesetHashForImageUrl = (image_url) => {
@@ -193,8 +222,11 @@ class RedactApplication extends React.Component {
   }
 
   handleUpdateFrameset = (the_hash, the_frameset) => {
+    // DMC update the frameset in this.state.movies too, 
     let new_framesets = this.state.framesets
     new_framesets[the_hash] = the_frameset
+    let new_movie = this.state.movies[this.state.movie_url]
+    new_movie['framesets'] = new_framesets
     this.setState({
       framesets: new_framesets
     })
@@ -218,6 +250,7 @@ class RedactApplication extends React.Component {
     })
   }
 
+  // DMC may not be needed any more
   handleSetFramesAndFramesets = (the_frames, the_framesets) => {
     this.setState({
       frames: the_frames,
@@ -340,6 +373,10 @@ class RedactApplication extends React.Component {
             <Route path='/insights'>
               <InsightsPanel  
                 setMovieUrlCallback={this.handleSetMovieUrl}
+                doMovieSplit={this.doMovieSplit}
+                movie_url={this.state.movie_url}
+                movies={this.state.movies}
+                framesets={this.state.framesets}
               />
             </Route>
           </Switch>

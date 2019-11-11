@@ -46,7 +46,8 @@ class MoviePanel extends React.Component {
   }
 
   callMovieSplit() {
-    this.props.doMovieSplit(this.movieSplitWhenDone)
+    document.getElementById('movieparser_status').innerHTML = 'calling movie unzipper'
+    this.props.doMovieSplit(this.props.movie_url, this.movieSplitWhenDone)
   }
 
   async callRedactOnOneFrame(areas_to_redact_short, image_url) {
