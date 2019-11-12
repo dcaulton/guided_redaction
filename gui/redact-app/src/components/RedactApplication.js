@@ -188,6 +188,7 @@ class RedactApplication extends React.Component {
         img.onload = function(){
             app_this.setState({
               image_url: the_url,
+              redacted_image_url: '',
               image_width: this.width,
               image_height: this.height,
               frameset_hash: new_frameset_hash,
@@ -199,6 +200,7 @@ class RedactApplication extends React.Component {
         img.onload = function(){
             app_this.setState({
               image_url: the_url,
+              redacted_image_url: '',
               image_width: this.width,
               image_height: this.height,
               frameset_hash: new_frameset_hash,

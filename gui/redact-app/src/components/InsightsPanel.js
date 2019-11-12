@@ -1,4 +1,5 @@
 import React from 'react';
+import CanvasInsightsOverlay from './CanvasInsightsOverlay'
 
 class InsightsPanel extends React.Component {
 
@@ -12,6 +13,10 @@ class InsightsPanel extends React.Component {
         'http://localhost:3000/images/hybris_address2.mp4',
       ],
       frameset_starts: {},
+      insights_image: '',
+      image_width: 100,
+      image_height: 100,
+      insights_title: 'Insights, load a movie to get started',
     }
     this.setCurrentVideo=this.setCurrentVideo.bind(this)
     this.movieSplitDone=this.movieSplitDone.bind(this)
@@ -27,19 +32,49 @@ class InsightsPanel extends React.Component {
     const keys = Object.keys(this.props.framesets)
     const new_frameset_hash = keys[value]
     const the_url = this.props.framesets[new_frameset_hash]['images'][0]
-    document.getElementById('insights_image').src = the_url
+    this.setState({
+      insights_image: the_url,
+      insights_title: the_url,
+    }, this.setImageSize)
   }
-
+  
   movieSplitDone() {
     const len = Object.keys(this.props.framesets).length
     document.getElementById('movie_scrubber').max = len-1
     const first_key = Object.keys(this.props.framesets)[0]
     const first_image = this.props.framesets[first_key]['images'][0]
-    document.getElementById('insights_image').src = first_image
+    this.setState({
+      insights_image: first_image,
+      insights_title: first_image,
+    }, this.setImageSize)
   }
 
   setCurrentVideo(video_url) {
     this.props.doMovieSplit(video_url, this.movieSplitDone)
+  }
+
+  handleImageClick = (e) => {
+    // TODO, deal with these coords soon.  The image is boxed in enough that 
+    //  we are not getting true image coords as we do on ImagePanel
+    let x = e.nativeEvent.offsetX
+    let y = e.nativeEvent.offsetY
+    console.log(e.nativeEvent)
+
+    console.log('clicked at ('+x+', '+y+')')
+  }
+
+  setImageSize() {
+    var app_this = this
+    if (this.state.insights_image) {
+      let img = new Image()
+      img.src = this.state.insights_image
+      img.onload = function() {
+        app_this.setState({
+          image_width: this.width,
+          image_height: this.height,
+        })
+      }
+    }
   }
 
   render() {
@@ -54,18 +89,31 @@ class InsightsPanel extends React.Component {
           />
         </div>
         <div id='insights_middle' className='col-md-7 ml-4'>
-          <img 
-              id='insights_image' 
-              src='http://localhost:3000/images/frame_00185.png' 
-              alt='whatever'
-          />
-          <input 
-              id='movie_scrubber' 
-              type='range' 
-              defaultValue='0'
-              onChange={this.scrubberOnChange}
-          />
+          <div className='row' id='insights_title'>
+            {this.state.insights_title}
+          </div>
+          <div id='insights_image_div' className='row'>
+            <img 
+                id='insights_image' 
+                src={this.state.insights_image}
+                alt={this.state.insights_image}
+            />
+            <CanvasInsightsOverlay 
+              width={this.state.image_width}
+              height={this.state.image_height}
+              clickCallback={this.handleImageClick}
+            />
+          </div>
+          <div id='insights_scrubber_div' className='row'>
+            <input 
+                id='movie_scrubber' 
+                type='range' 
+                defaultValue='0'
+                onChange={this.scrubberOnChange}
+            />
+          </div>
         </div>
+{/*
         <div id='insights_right' className='col'>
           <div className='row mt-5'>                                            
             <select                                                           
@@ -77,6 +125,7 @@ class InsightsPanel extends React.Component {
             </select>                                                         
           </div>  
         </div>
+*/}
       </div>
     );
   }

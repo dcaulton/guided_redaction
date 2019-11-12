@@ -1,6 +1,6 @@
 import React from 'react';
 
-class CanvasOverlay extends React.Component {
+class CanvasImageOverlay extends React.Component {
 
   drawCrosshairs() {
     if (this.props.mode === 'add_2' || this.props.mode === 'delete_2' || 
@@ -74,4 +74,4 @@ class CanvasOverlay extends React.Component {
   }
 }
 
-export default CanvasOverlay;
+export default CanvasImageOverlay;

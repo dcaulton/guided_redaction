@@ -1,7 +1,7 @@
 import React from 'react'
 import TopImageControls from './TopImageControls'
 import AdvancedImageControls from './AdvancedImageControls'
-import CanvasOverlay from './CanvasOverlay'
+import CanvasImageOverlay from './CanvasImageOverlay'
 import {getMessage, getDisplayMode} from './redact_utils.js'
 
 class ImagePanel extends React.Component {
@@ -257,7 +257,7 @@ class ImagePanel extends React.Component {
               image_url={the_image_url}
               image_file={this.props.image_file}
             />
-            <CanvasOverlay
+            <CanvasImageOverlay
               framesets={this.props.framesets}
               mode={this.state.mode}
               submode={this.state.submode}

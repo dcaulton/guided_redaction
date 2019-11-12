@@ -80,3 +80,22 @@ input#movie_scrubber {
   width: 100%;
 }
 
+div#insights_image_div {
+  position: absolute; 
+}
+
+div#canvas_div_insights {
+  position: absolute; 
+  width:680px;
+  height:auto;
+}
+
+div#insights_middle {
+  position: relative;
+}
+
+div#insights_scrubber_div {
+  position: absolute;
+  top: 430px;
+  width: 100%;
+}
