@@ -46,6 +46,7 @@ class InsightsPanel extends React.Component {
           <MovieCardList 
             setCurrentVideo={this.setCurrentVideo}
             movie_url={this.props.movie_url}
+            movie_urls={this.state.campaign_movies}
             movies={this.props.movies}
           />
         </div>
@@ -85,41 +86,76 @@ class MovieCardList extends React.Component {
         <div className='row'>
           <h3>Videos</h3>
         </div>
-        <div className='row mt-4'>
-          <video id='video_1' controls >
-            <source
-              src='http://localhost:3000/images/hybris_address.mp4'
-              type='video/mp4'
-            />
-          </video>
-          <div>Hybris Address 1</div>
-          <div>
-            <button
-                className='btn btn-link'
-                onClick={() => this.props.setCurrentVideo('http://localhost:3000/images/hybris_address.mp4')}
-            >
-            make current
-            </button>
-          </div>
-        </div>
-        <div className='row mt-4'>
-          <video id='video_2' controls >
-            <source
-              src='http://localhost:3000/images/hybris_address2.mp4'
-              type='video/mp4'
-            />
-          </video>
-          <div>Hybris Address 2</div>
-          <div>
-            <button
-                className='btn btn-link'
-                onClick={() => this.props.setCurrentVideo('http://localhost:3000/images/hybris_address2.mp4')}
-            >
-            make current
-            </button>
-          </div>
-        </div>
+      {this.props.movie_urls.map((value, index) => {
+        return (
+        <MovieCard
+            key={index}
+            setCurrentVideo={this.props.setCurrentVideo}
+            active_movie_url={this.props.movie_url}
+            this_cards_movie_url={value}
+            movies={this.props.movies}
+        />
+        )
+      })}
       </div>
+    )
+  }
+}
+
+class MovieCard extends React.Component {
+  get_filename(the_url) {
+    let parts = the_url.split('/')
+    return parts[parts.length-1]
+  }
+
+  render() {
+    let active_status = false
+    let the_button = (
+      <button
+          className='btn btn-link'
+          onClick={() => this.props.setCurrentVideo(this.props.this_cards_movie_url)}
+      >
+      make current
+      </button>
+    )
+    if (this.props.this_cards_movie_url === this.props.active_movie_url) {
+      active_status = true
+      the_button = ''
+    }
+    let framesets_count_message = 'no framesets'
+    const loaded_movie_keys = Object.keys(this.props.movies)
+    if (loaded_movie_keys.includes(this.props.this_cards_movie_url) && 'framesets' in this.props.movies[this.props.this_cards_movie_url]) {
+      let the_framesets = this.props.movies[this.props.this_cards_movie_url].framesets
+      framesets_count_message = Object.keys(the_framesets).length + ' framesets'
+    }
+    return (
+        <div className='row mt-4 card'>
+          <div className='col'>
+              <div className='row'>
+                <video 
+                    id='video_{this.props.key}' 
+                    controls 
+                >
+                  <source
+                    src={this.props.this_cards_movie_url}
+                    type='video/mp4'
+                  />
+                </video>
+              </div>
+            <div className='row'>
+              {this.get_filename(this.props.this_cards_movie_url)}
+            </div>
+            <div className='row'>
+              {the_button}
+            </div>
+            <div className='row'>
+              {active_status? 'active' : ''}
+            </div>
+            <div className='row'>
+              {framesets_count_message}
+            </div>
+          </div>
+        </div>
     )
   }
 }
