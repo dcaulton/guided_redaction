@@ -99,3 +99,9 @@ div#insights_scrubber_div {
   top: 430px;
   width: 100%;
 }
+
+div#bottom_insights_controls {
+  position: absolute;
+  top: 500px;
+  width: 100%;
+}

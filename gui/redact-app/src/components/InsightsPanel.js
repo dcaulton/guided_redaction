@@ -1,11 +1,13 @@
 import React from 'react';
 import CanvasInsightsOverlay from './CanvasInsightsOverlay'
+import BottomInsightsControls from './BottomInsightsControls'
 
 class InsightsPanel extends React.Component {
 
   constructor(props) {
     super(props)
     this.state = {
+      mode: 'view',
       currentCampaign: '',
       campaigns: [],
       campaign_movies: [
@@ -17,14 +19,28 @@ class InsightsPanel extends React.Component {
       image_width: 100,
       image_height: 100,
       insights_title: 'Insights, load a movie to get started',
+      insights_message: '',
+      clicked_coords: (0,0),
     }
     this.setCurrentVideo=this.setCurrentVideo.bind(this)
     this.movieSplitDone=this.movieSplitDone.bind(this)
     this.scrubberOnChange=this.scrubberOnChange.bind(this)
+    this.handleSetMode=this.handleSetMode.bind(this)
   }
 
   changeCampaign = (newCampaignName) => {
     console.log('campaign is now '+newCampaignName)
+  }
+
+  handleSetMode(the_mode) {
+    let the_message = ''
+    if (this.state.mode === 'add_roi_1') {
+      the_message = 'Select the first corner of the Region of Interest'
+    }
+    this.setState({
+      mode: the_mode,
+      insights_message: the_message,
+    })
   }
 
   scrubberOnChange() {
@@ -58,9 +74,22 @@ class InsightsPanel extends React.Component {
     //  we are not getting true image coords as we do on ImagePanel
     let x = e.nativeEvent.offsetX
     let y = e.nativeEvent.offsetY
-    console.log(e.nativeEvent)
-
     console.log('clicked at ('+x+', '+y+')')
+
+    if (this.state.mode === 'add_roi_1') {
+      this.setState({
+        clicked_coords: [x, y],
+        insights_message: 'pick the second corner of the ROI',
+        mode: 'add_roi_2',
+      })
+    } else if (this.state.mode === 'add_roi_2') {
+      this.setState({
+        prev_coords: this.state.clicked_coords,
+        clicked_coords: [x, y],
+        insights_message: 'ROI selected.  press scan to see any matches',
+        mode: 'add_roi_3',
+      })
+    }
   }
 
   setImageSize() {
@@ -92,6 +121,9 @@ class InsightsPanel extends React.Component {
           <div className='row' id='insights_title'>
             {this.state.insights_title}
           </div>
+          <div className='row' id='insights_message'>
+            {this.state.insights_message}
+          </div>
           <div id='insights_image_div' className='row'>
             <img 
                 id='insights_image' 
@@ -112,6 +144,9 @@ class InsightsPanel extends React.Component {
                 onChange={this.scrubberOnChange}
             />
           </div>
+          <BottomInsightsControls 
+            setMode={this.handleSetMode}
+          />
         </div>
 {/*
         <div id='insights_right' className='col'>

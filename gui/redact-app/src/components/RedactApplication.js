@@ -31,9 +31,9 @@ class RedactApplication extends React.Component {
       frames: [],
       framesets: {},
       movies: {},
-      showMovieParserLink: true,
-      showInsightsLink: true,
-      showAdvancedPanels: true,
+      showMovieParserLink: false,
+      showInsightsLink: false,
+      showAdvancedPanels: false,
     }
     this.getNextImageLink=this.getNextImageLink.bind(this)
     this.getPrevImageLink=this.getPrevImageLink.bind(this)
