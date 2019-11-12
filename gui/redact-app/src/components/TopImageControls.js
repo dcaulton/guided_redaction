@@ -143,11 +143,17 @@ class TopImageControls extends React.Component {
 
         </div>
         <div className='row d-flex justify-content-between'>
-          <div id='mode_div' className='col-md-4'>
+          <div id='mode_div' className='col-md-2'>
             <h3 id='mode_header' >{this.props.display_mode}</h3>
           </div>
-          <div id='message_div' className='pt-2 col-md-8'>
-            <span id='message'>{this.props.message}</span>
+          <div id='message_div' className='pt-2 col-md-10'>
+            <div 
+                className='float-left'
+                id='message'
+            >
+              {this.props.message}
+            </div>
+            {this.props.getImageAndHashDisplay()}
           </div>
         </div>
       </div>

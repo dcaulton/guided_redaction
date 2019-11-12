@@ -15,6 +15,7 @@ class ImagePanel extends React.Component {
       current_click: null,
       last_click: null,
     }
+    this.getImageAndHashDisplay=this.getImageAndHashDisplay.bind(this)
   }
 
   handleSetMode = (mode, submode) => {
@@ -81,6 +82,26 @@ class ImagePanel extends React.Component {
         mode: 'add_1',
         message: 'processing OCR, please wait',
       })
+    }
+  }
+
+  getCurrentImageFilename() {
+    const parts = this.props.image_url.split('/')
+    return parts[parts.length-1]
+  }
+
+  getImageAndHashDisplay() {
+    if (this.props.image_url) {
+      const img_filename = this.getCurrentImageFilename()
+      const img_hash = this.props.getFramesetHashForImageUrl(this.props.image_url)
+      return (
+        <div 
+            className='float-right'
+            id='image_info'
+        >
+          image: {img_filename}, frameset hash: {img_hash}
+        </div>
+      )
     }
   }
 
@@ -270,6 +291,7 @@ class ImagePanel extends React.Component {
                 getNextImageLink={this.props.getNextImageLink}
                 getPrevImageLink={this.props.getPrevImageLink}
                 setImageUrlCallback={this.props.setImageUrlCallback}
+                getImageAndHashDisplay={this.getImageAndHashDisplay}
               />
             </div>
           </div>
