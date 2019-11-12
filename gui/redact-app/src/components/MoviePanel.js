@@ -242,7 +242,19 @@ class MoviePanel extends React.Component {
     })
   }
 
+  get_filename(the_url) {
+    if (this.props.movie_url) {
+      const parts = this.props.movie_url.split('/')
+      return parts[parts.length-1]
+    }
+  }
+
   render() {
+    let source_video_string = <h3>&nbsp;</h3>
+    const movie_filename = this.get_filename(this.props.movie_url)
+    if (movie_filename) {
+      source_video_string = <h3>Source Video for {movie_filename}</h3>
+    }
     let redacted_video_element = <div />
 
     if (this.props.redacted_movie_url) {
@@ -317,7 +329,7 @@ class MoviePanel extends React.Component {
 
 
           <div id='video_div' className='col-md-6'>
-            <h3>Source Video</h3>
+            {source_video_string}
             <video id='video_id' controls >
               <source 
                   src={this.props.movie_url}

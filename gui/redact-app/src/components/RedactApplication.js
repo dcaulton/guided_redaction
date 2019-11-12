@@ -374,6 +374,7 @@ class RedactApplication extends React.Component {
               <InsightsPanel  
                 setMovieUrlCallback={this.handleSetMovieUrl}
                 doMovieSplit={this.doMovieSplit}
+                getFramesetHashForImageUrl={this.getFramesetHashForImageUrl}
                 movie_url={this.state.movie_url}
                 movies={this.state.movies}
                 framesets={this.state.framesets}

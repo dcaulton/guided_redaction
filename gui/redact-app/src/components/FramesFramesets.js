@@ -27,7 +27,7 @@ class FramesetCard extends React.Component {
     return (
       <div 
           id={this.props.frame_hash}
-          className='col-md-2 frameCard m-3 p-3 bg-light' 
+          className='col-md-3 frameCard m-3 p-3 bg-light' 
           draggable='true'
           onDragStart={() => this.props.setDraggedId(this.props.frame_hash)}
           onDragOver={(event) => event.preventDefault()}

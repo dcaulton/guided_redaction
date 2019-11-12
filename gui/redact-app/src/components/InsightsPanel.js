@@ -23,16 +23,19 @@ class InsightsPanel extends React.Component {
   }
 
   scrubberOnChange() {
-    let value = document.getElementById('movie_scrubber').value
-    let keys = Object.keys(this.props.framesets)
-    let new_frameset_hash = keys[value]
-    let the_url = this.props.framesets[new_frameset_hash]['images'][0]
+    const value = document.getElementById('movie_scrubber').value
+    const keys = Object.keys(this.props.framesets)
+    const new_frameset_hash = keys[value]
+    const the_url = this.props.framesets[new_frameset_hash]['images'][0]
     document.getElementById('insights_image').src = the_url
   }
 
   movieSplitDone() {
-    let len = Object.keys(this.props.framesets).length
-    document.getElementById('movie_scrubber').max = len
+    const len = Object.keys(this.props.framesets).length
+    document.getElementById('movie_scrubber').max = len-1
+    const first_key = Object.keys(this.props.framesets)[0]
+    const first_image = this.props.framesets[first_key]['images'][0]
+    document.getElementById('insights_image').src = first_image
   }
 
   setCurrentVideo(video_url) {
@@ -104,7 +107,7 @@ class MovieCardList extends React.Component {
 
 class MovieCard extends React.Component {
   get_filename(the_url) {
-    let parts = the_url.split('/')
+    const parts = the_url.split('/')
     return parts[parts.length-1]
   }
 
@@ -115,7 +118,7 @@ class MovieCard extends React.Component {
           className='btn btn-link'
           onClick={() => this.props.setCurrentVideo(this.props.this_cards_movie_url)}
       >
-      make current
+      load and make current
       </button>
     )
     if (this.props.this_cards_movie_url === this.props.active_movie_url) {
@@ -124,38 +127,40 @@ class MovieCard extends React.Component {
     }
     let framesets_count_message = 'no framesets'
     const loaded_movie_keys = Object.keys(this.props.movies)
-    if (loaded_movie_keys.includes(this.props.this_cards_movie_url) && 'framesets' in this.props.movies[this.props.this_cards_movie_url]) {
+    if (loaded_movie_keys.includes(this.props.this_cards_movie_url) 
+        && 'framesets' in this.props.movies[this.props.this_cards_movie_url]) {
       let the_framesets = this.props.movies[this.props.this_cards_movie_url].framesets
       framesets_count_message = Object.keys(the_framesets).length + ' framesets'
+      the_button = ''
     }
     return (
-        <div className='row mt-4 card'>
-          <div className='col'>
-              <div className='row'>
-                <video 
-                    id='video_{this.props.key}' 
-                    controls 
-                >
-                  <source
-                    src={this.props.this_cards_movie_url}
-                    type='video/mp4'
-                  />
-                </video>
-              </div>
+      <div className='row mt-4 card'>
+        <div className='col'>
             <div className='row'>
-              {this.get_filename(this.props.this_cards_movie_url)}
+              <video 
+                  id='video_{this.props.key}' 
+                  controls 
+              >
+                <source
+                  src={this.props.this_cards_movie_url}
+                  type='video/mp4'
+                />
+              </video>
             </div>
-            <div className='row'>
-              {the_button}
-            </div>
-            <div className='row'>
-              {active_status? 'active' : ''}
-            </div>
-            <div className='row'>
-              {framesets_count_message}
-            </div>
+          <div className='row'>
+            {this.get_filename(this.props.this_cards_movie_url)}
+          </div>
+          <div className='row'>
+            {the_button}
+          </div>
+          <div className={active_status? 'row text-success' : 'row'} >
+            {active_status? 'active' : ''}
+          </div>
+          <div className='row'>
+            {framesets_count_message}
           </div>
         </div>
+      </div>
     )
   }
 }
