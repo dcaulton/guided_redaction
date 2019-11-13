@@ -13,6 +13,33 @@ class BottomInsightsControls extends React.Component {
             >
               Add ROI
             </button>
+            <button
+                className='btn btn-primary ml-5'
+                onClick={() => this.props.clearRoiCallback()}
+            >
+              Clear ROI
+            </button>
+            <button
+                className='btn btn-primary ml-5'
+                onClick={() => console.log('fuzzy bunny')}
+            >
+              Scan 
+            </button>
+          </div>
+        </div>
+        <div className='row mt-3'>
+          <div className='col'>
+            <input 
+                id='match_on_text'
+                value='match on text'
+                onChange={() => console.log('react forces me to put this stupid thing here')}
+            />
+            <button
+                className='btn btn-primary ml-5'
+                onClick={() => console.log('runny bunny')}
+            >
+              Scan Text
+            </button>
           </div>
         </div>
 

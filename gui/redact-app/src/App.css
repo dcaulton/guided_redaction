@@ -84,8 +84,6 @@ div#insights_image_div {
 
 div#canvas_div_insights {
   position: absolute; 
-  width:680px;
-  height:auto;
 }
 
 div#insights_middle {
@@ -94,12 +92,19 @@ div#insights_middle {
 
 div#insights_scrubber_div {
   position: absolute;
-  top: 430px;
+  top: 600px;
   width: 100%;
 }
 
 div#bottom_insights_controls {
   position: absolute;
-  top: 500px;
+  top: 700px;
   width: 100%;
+}
+
+img#insights_image {
+  padding: 0;
+  margin: 0;
+  max-width:100%;
+  max-height: 100%;
 }

@@ -182,7 +182,6 @@ class RedactApplication extends React.Component {
             new_frameset_hash = yy[2]
         }
     }
-console.log('pokey mann')
     var img = new Image()
     var app_this = this
     if (create_frameset) {
@@ -325,7 +324,7 @@ console.log('pokey mann')
           </li>
         </ul>
         </nav>
-        <div id='container' className='App container'>
+        <div id='container' className='container'>
           <Switch>
             <Route exact path='/'>
               <HomePanel 

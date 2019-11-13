@@ -16,9 +16,11 @@ class InsightsPanel extends React.Component {
         'http://localhost:3000/images/d448ccd5-79b4-4157-8fa1-d9504b2bdf08.mp4',
       ],
       frameset_starts: {},
+      roi: [],
       insights_image: '',
       image_width: 100,
       image_height: 100,
+      image_scale: 1,
       insights_title: 'Insights, load a movie to get started',
       insights_message: '',
       clicked_coords: (0,0),
@@ -27,6 +29,7 @@ class InsightsPanel extends React.Component {
     this.movieSplitDone=this.movieSplitDone.bind(this)
     this.scrubberOnChange=this.scrubberOnChange.bind(this)
     this.handleSetMode=this.handleSetMode.bind(this)
+    this.clearRoi=this.clearRoi.bind(this)
   }
 
   changeCampaign = (newCampaignName) => {
@@ -55,6 +58,13 @@ class InsightsPanel extends React.Component {
     }, this.setImageSize)
   }
   
+  clearRoi() {
+    this.setState({
+      roi: [],
+      insights_message: 'ROI has been cleared'
+    })
+  }
+
   movieSplitDone() {
     const len = Object.keys(this.props.framesets).length
     document.getElementById('movie_scrubber').max = len-1
@@ -63,6 +73,7 @@ class InsightsPanel extends React.Component {
     this.setState({
       insights_image: first_image,
       insights_title: first_image,
+      insights_message: '.',
     }, this.setImageSize)
   }
 
@@ -71,22 +82,28 @@ class InsightsPanel extends React.Component {
   }
 
   handleImageClick = (e) => {
-    // TODO, deal with these coords soon.  The image is boxed in enough that 
-    //  we are not getting true image coords as we do on ImagePanel
-    let x = e.nativeEvent.offsetX
-    let y = e.nativeEvent.offsetY
+    const x = e.nativeEvent.offsetX
+    const y = e.nativeEvent.offsetY
     console.log('clicked at ('+x+', '+y+')')
+    const scale = (document.getElementById('insights_image').width / 
+        document.getElementById('insights_image').naturalWidth)
+    const x_scaled = parseInt(x / scale)
+    const y_scaled = parseInt(y / scale)
+    console.log('click in image coords is  at ('+x_scaled+', '+y_scaled+')')
 
     if (this.state.mode === 'add_roi_1') {
       this.setState({
-        clicked_coords: [x, y],
+        image_scale: scale,
+        clicked_coords: [x_scaled, y_scaled],
         insights_message: 'pick the second corner of the ROI',
         mode: 'add_roi_2',
       })
     } else if (this.state.mode === 'add_roi_2') {
       this.setState({
+        image_scale: scale,
         prev_coords: this.state.clicked_coords,
-        clicked_coords: [x, y],
+        clicked_coords: [x_scaled, y_scaled],
+        roi: [this.state.clicked_coords, [x_scaled, y_scaled]],
         insights_message: 'ROI selected.  press scan to see any matches',
         mode: 'add_roi_3',
       })
@@ -108,6 +125,10 @@ class InsightsPanel extends React.Component {
   }
 
   render() {
+    let imageDivStyle= {
+      width: this.props.image_width,
+      height: this.props.image_height,
+    }
     return (
       <div id='insights_panel' className='row mt-5'>
         <div id='insights_left' className='col-md-3'>
@@ -118,14 +139,18 @@ class InsightsPanel extends React.Component {
             movies={this.props.movies}
           />
         </div>
-        <div id='insights_middle' className='col-md-7 ml-4'>
+        <div id='insights_middle' className='col md-7 ml-4'>
           <div className='row' id='insights_title'>
             {this.state.insights_title}
           </div>
           <div className='row' id='insights_message'>
             {this.state.insights_message}
           </div>
-          <div id='insights_image_div' className='row'>
+          <div 
+              id='insights_image_div' 
+              className='row'
+              style={imageDivStyle}
+          >
             <img 
                 id='insights_image' 
                 src={this.state.insights_image}
@@ -135,6 +160,8 @@ class InsightsPanel extends React.Component {
               width={this.state.image_width}
               height={this.state.image_height}
               clickCallback={this.handleImageClick}
+              roi={this.state.roi}
+              image_scale={this.state.image_scale}
             />
           </div>
           <div id='insights_scrubber_div' className='row'>
@@ -147,6 +174,7 @@ class InsightsPanel extends React.Component {
           </div>
           <BottomInsightsControls 
             setMode={this.handleSetMode}
+            clearRoiCallback={this.clearRoi}
           />
         </div>
 {/*
