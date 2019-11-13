@@ -11,8 +11,9 @@ class InsightsPanel extends React.Component {
       currentCampaign: '',
       campaigns: [],
       campaign_movies: [
-        'http://localhost:3000/images/hybris_address.mp4',
-        'http://localhost:3000/images/hybris_address2.mp4',
+        'http://localhost:3000/images/0d0b8fd4-75cb-4793-8740-ec78e46d06da.mp4',
+        'http://localhost:3000/images/c708e978-0c4c-493c-a4e7-553a8ac78aa5.mp4',
+        'http://localhost:3000/images/d448ccd5-79b4-4157-8fa1-d9504b2bdf08.mp4',
       ],
       frameset_starts: {},
       insights_image: '',

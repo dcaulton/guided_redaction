@@ -16,8 +16,6 @@ div#canvas_div {
   position: absolute;
   left: 150px;
   top: 150px;
-  width:1600px;
-  height:auto;
 }
 
 canvas {

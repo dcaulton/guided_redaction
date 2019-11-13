@@ -61,8 +61,14 @@ class CanvasImageOverlay extends React.Component {
   }
 
   render() {
+    let canvasDivStyle= {
+      width: this.props.image_width,
+      height: this.props.image_height,
+    }
     return (
-      <div id='canvas_div'>
+      <div id='canvas_div'
+        style={canvasDivStyle}
+      >
         <canvas id='overlay_canvas' 
           ref='canvas'
           width={this.props.image_width}

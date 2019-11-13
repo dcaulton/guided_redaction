@@ -33,7 +33,7 @@ class RedactApplication extends React.Component {
       movies: {},
       showMovieParserLink: true,
       showInsightsLink: true,
-      showAdvancedPanels: true,
+      showAdvancedPanels: false,
     }
     this.getNextImageLink=this.getNextImageLink.bind(this)
     this.getPrevImageLink=this.getPrevImageLink.bind(this)
@@ -182,6 +182,7 @@ class RedactApplication extends React.Component {
             new_frameset_hash = yy[2]
         }
     }
+console.log('pokey mann')
     var img = new Image()
     var app_this = this
     if (create_frameset) {
