@@ -129,6 +129,19 @@ class InsightsPanel extends React.Component {
       width: this.props.image_width,
       height: this.props.image_height,
     }
+    let bottom_y = 50
+    let the_display='block'
+    if (!this.state.insights_image) {
+      the_display='none'
+    }
+    const ele = document.getElementById('insights_image_div')
+    if (ele) {
+      bottom_y += ele.offsetHeight
+    }
+    const scrubber_style = {
+      top: bottom_y,
+      display: the_display,
+    }
     return (
       <div id='insights_panel' className='row mt-5'>
         <div id='insights_left' className='col-md-3'>
@@ -140,11 +153,18 @@ class InsightsPanel extends React.Component {
           />
         </div>
         <div id='insights_middle' className='col md-7 ml-4'>
-          <div className='row' id='insights_title'>
-            {this.state.insights_title}
-          </div>
-          <div className='row' id='insights_message'>
-            {this.state.insights_message}
+          <div 
+              className='row'
+              id='insights_header'
+          >
+            <div className='col'>
+              <div className='row' id='insights_title'>
+                {this.state.insights_title}
+              </div>
+              <div className='row' id='insights_message'>
+                {this.state.insights_message}
+              </div>
+            </div>
           </div>
           <div 
               id='insights_image_div' 
@@ -164,7 +184,11 @@ class InsightsPanel extends React.Component {
               image_scale={this.state.image_scale}
             />
           </div>
-          <div id='insights_scrubber_div' className='row'>
+          <div 
+              id='insights_scrubber_div' 
+              className='row'
+              style={scrubber_style}
+          >
             <input 
                 id='movie_scrubber' 
                 type='range' 
@@ -175,6 +199,7 @@ class InsightsPanel extends React.Component {
           <BottomInsightsControls 
             setMode={this.handleSetMode}
             clearRoiCallback={this.clearRoi}
+            insights_image={this.state.insights_image}
           />
         </div>
 {/*

@@ -3,8 +3,20 @@ import React from 'react';
 class BottomInsightsControls extends React.Component {
 
   render() {
+    let bottom_y = 100
+    const ele = document.getElementById('insights_image_div')
+    if (ele) {
+      bottom_y += ele.offsetHeight
+    }
+    const controls_style = {
+      top: bottom_y,
+    }
     return (
-      <div id='bottom_insights_controls' className='fixed-bottom'>
+      <div 
+          id='bottom_insights_controls' 
+          className='fixed-bottom'
+          style={controls_style}
+      >
         <div className='row'>
           <div className='col'>
             <button

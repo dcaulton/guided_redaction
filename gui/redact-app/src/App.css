@@ -92,13 +92,11 @@ div#insights_middle {
 
 div#insights_scrubber_div {
   position: absolute;
-  top: 600px;
   width: 100%;
 }
 
 div#bottom_insights_controls {
   position: absolute;
-  top: 700px;
   width: 100%;
 }
 
