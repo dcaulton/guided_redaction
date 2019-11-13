@@ -1,21 +1,15 @@
 import React from 'react';
-import {FrameCardList, FramesetCardList} from './FramesFramesets'
+import FramesetCardList from './Framesets'
 
 class MoviePanel extends React.Component {
 
   constructor(props) {
     super(props)
     this.state = {
-      frame_frameset_view_mode: 'frameset',
-      frame_button_classes: 'btn btn-primary',
-      frame_button_text : 'Show Frames',
-      frameset_button_classes: 'btn btn-secondary',
-      frameset_button_text: 'Displaying all Framesets',
       reassembling_video: false,
       draggedId: null,
       zoom_image_url: '',
     }
-    this.toggleFrameFramesetCallback = this.toggleFrameFramesetCallback.bind(this)
     this.getNameFor = this.getNameFor.bind(this)
     this.redactFramesetCallback = this.redactFramesetCallback.bind(this)
     this.callMovieSplit = this.callMovieSplit.bind(this)
@@ -37,10 +31,6 @@ class MoviePanel extends React.Component {
 
   movieSplitWhenDone() {
     document.getElementById('movieparser_status').innerHTML = 'movie unzipping completed'
-    document.getElementById('frameset_button').disabled = true;
-    document.getElementById('frame_button').disabled = false;
-    document.getElementById('frame_cards').style.display = 'none';
-    document.getElementById('frameset_cards').style.display = 'block';
     document.getElementById('parse_video_button').disabled = true;
     document.getElementById('parse_video_button').innerHTML = 'Movie Parse Called'
   }
@@ -192,38 +182,6 @@ class MoviePanel extends React.Component {
     return s
   }
 
-  componentDidMount() {
-    document.getElementById('frame_button').disabled = true;
-  }
-
-  toggleFrameFramesetCallback() {
-    if (this.state.frame_frameset_view_mode === 'frame') {
-      this.setState({
-        frame_button_classes: 'btn btn-primary',
-        frame_button_text : 'Display Frames',
-        frameset_button_classes: 'btn btn-secondary',
-        frameset_button_text: 'Showing Framesets',
-        frame_frameset_view_mode: 'frameset',
-      });
-      document.getElementById('frameset_button').disabled = true;
-      document.getElementById('frame_button').disabled = false;
-      document.getElementById('frameset_cards').style.display = 'block';
-      document.getElementById('frame_cards').style.display = 'none';
-    } else {
-      this.setState({
-        frameset_button_classes: 'btn btn-primary',
-        frameset_button_text : 'Display Framesets',
-        frame_button_classes: 'btn btn-secondary',
-        frame_button_text: 'Showing Frames',
-        frame_frameset_view_mode: 'frame',
-      });
-      document.getElementById('frame_button').disabled = true;
-      document.getElementById('frameset_button').disabled = false;
-      document.getElementById('frame_cards').style.display = 'block';
-      document.getElementById('frameset_cards').style.display = 'none';
-    }
-  } 
-
   doMovieParse() {
     this.callMovieSplit()
   }
@@ -250,6 +208,15 @@ class MoviePanel extends React.Component {
   }
 
   render() {
+    let framesets_title = ''
+    const framesets_count = Object.keys(this.props.framesets).length
+    if (framesets_count) {
+      framesets_title = (
+        <span id='frameset_title'>
+          Showing {framesets_count} framesets
+        </span>
+      )
+    }
     let source_video_string = <h3>&nbsp;</h3>
     const movie_filename = this.get_filename(this.props.movie_url)
     if (movie_filename) {
@@ -347,35 +314,7 @@ class MoviePanel extends React.Component {
         </div>
         <div id='frame_and_frameset_data' className='row mt-3'>
           <div id='frame_frameset_header' className='col-md-12'>
-            <div className='row container'>
-              <div id='ffh_frame_title' className='col-md-3'>
-                <button
-                    id='frame_button'
-                    className={this.state.frame_button_classes}
-                    onClick={this.toggleFrameFramesetCallback}
-                >
-                  {this.state.frame_button_text}
-                </button>
-              </div>
-              <div id='ffh_frameset_title' className='col-md-3'>
-                <button
-                    id='frameset_button'
-                    className={this.state.frameset_button_classes}
-                    onClick={this.toggleFrameFramesetCallback}
-                >
-                  {this.state.frameset_button_text}
-                </button>
-              </div>
-            </div>
-          </div>
-          <div id='frame_cards' className='col-md-12'>
-            <div id='cards_row' className='row m-5'>
-              <FrameCardList 
-                frames={this.props.frames}
-                getNameFor={this.getNameFor}
-                imageUrlHasRedactionInfo={this.imageUrlHasRedactionInfo}
-              />
-            </div>
+            {framesets_title}
           </div>
           <div id='frameset_cards' className='col-md-12'>
             <div id='cards_row' className='row m-5'>

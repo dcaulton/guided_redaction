@@ -1,27 +1,5 @@
 import React from 'react';
 
-class FrameCard extends React.Component {
-  render() {
-    return (
-      <div className='col-md-2 frameCard m-3 p-3 bg-light'>
-        <h5 className='card-title'>{this.props.image_name}</h5>
-        <img 
-            className='zoomable-image'
-            src={this.props.image_url} 
-            alt='whatever'
-        />
-        <div className='card-body'>
-
-          <p className='card-text'>
-            {this.props.hasRedactionInfo ? 'has redaction info' : ''}
-          </p>
-        </div>
-      </div>
-    )
-  }
-}
-
-//          onDrop={() => this.props.handleDroppedFrameset(this.props.frame_hash)}
 class FramesetCard extends React.Component {
   render() {
     return (
@@ -99,18 +77,4 @@ class FramesetCardList extends React.Component {
   }
 }
 
-class FrameCardList extends React.Component {
-  render() {
-    let items = this.props.frames.map((item) =>
-      <FrameCard
-        image_url={item}
-        image_name={this.props.getNameFor(item)}
-        key={item}
-        hasRedactionInfo={this.props.imageUrlHasRedactionInfo(item)}
-      />
-    );
-    return items
-  }
-}
-
-export {FramesetCardList, FrameCardList};
+export default FramesetCardList;
