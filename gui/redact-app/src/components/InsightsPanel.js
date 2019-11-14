@@ -16,7 +16,7 @@ class InsightsPanel extends React.Component {
         'http://localhost:3000/images/d448ccd5-79b4-4157-8fa1-d9504b2bdf08.mp4',
       ],
       frameset_starts: {},
-      roi: [],
+      roi: {},
       insights_image: '',
       image_width: 100,
       image_height: 100,
@@ -30,6 +30,41 @@ class InsightsPanel extends React.Component {
     this.scrubberOnChange=this.scrubberOnChange.bind(this)
     this.handleSetMode=this.handleSetMode.bind(this)
     this.clearRoi=this.clearRoi.bind(this)
+    this.scanSubImage=this.scanSubImage.bind(this)
+    this.scanRecognizedText=this.scanRecognizedText.bind(this)
+  }
+
+  scanSubImage() {
+    this.callSubImageScanner()
+  }
+
+  async callSubImageScanner() {
+
+    await fetch(this.props.scanSubImageUrl, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        source_image_url: this.state.insights_image,
+        subimage_start: this.state.roi['start'],
+        subimage_end: this.state.roi['end'],
+        roi_id: this.state.roi['id'],
+        targets: this.props.movies,
+      }),
+    })
+    .then((response) => response.json())
+    .then((responseJson) => {
+      let matches = responseJson.matches
+      console.log(matches)
+    })
+    .catch((error) => {
+      console.error(error);
+    })
+  }
+
+  scanRecognizedText() {
   }
 
   changeCampaign = (newCampaignName) => {
@@ -38,7 +73,7 @@ class InsightsPanel extends React.Component {
 
   handleSetMode(the_mode) {
     let the_message = ''
-    if (this.state.mode === 'add_roi_1') {
+    if (the_mode === 'add_roi_1') {
       the_message = 'Select the first corner of the Region of Interest'
     }
     this.setState({
@@ -60,7 +95,7 @@ class InsightsPanel extends React.Component {
   
   clearRoi() {
     this.setState({
-      roi: [],
+      roi: {},
       insights_message: 'ROI has been cleared'
     })
   }
@@ -99,11 +134,17 @@ class InsightsPanel extends React.Component {
         mode: 'add_roi_2',
       })
     } else if (this.state.mode === 'add_roi_2') {
+      const roi_id = Math.floor(Math.random(1000000, 9999999)*1000000000)
+      const the_roi = {
+          'id': roi_id,
+          'start': this.state.clicked_coords, 
+          'end': [x_scaled, y_scaled],
+      }
       this.setState({
         image_scale: scale,
         prev_coords: this.state.clicked_coords,
         clicked_coords: [x_scaled, y_scaled],
-        roi: [this.state.clicked_coords, [x_scaled, y_scaled]],
+        roi: the_roi,
         insights_message: 'ROI selected.  press scan to see any matches',
         mode: 'add_roi_3',
       })
@@ -199,6 +240,7 @@ class InsightsPanel extends React.Component {
           <BottomInsightsControls 
             setMode={this.handleSetMode}
             clearRoiCallback={this.clearRoi}
+            scanSubImage={this.scanSubImage}
             insights_image={this.state.insights_image}
           />
         </div>

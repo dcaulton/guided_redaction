@@ -33,9 +33,15 @@ class BottomInsightsControls extends React.Component {
             </button>
             <button
                 className='btn btn-primary ml-5'
-                onClick={() => console.log('fuzzy bunny')}
+                onClick={() => this.props.scanSubImage()}
             >
-              Scan 
+              Scan SubImage
+            </button>
+            <button
+                className='btn btn-primary ml-5'
+                onClick={() => this.props.scanRecognizedText()}
+            >
+              Scan for Recognized Text
             </button>
           </div>
         </div>

@@ -12,11 +12,12 @@ class CanvasInsightsOverlay extends React.Component {
     const canvas = this.refs.insights_canvas
     let ctx = canvas.getContext('2d')
     
-    if (this.props.roi.length > 0) {
-      const start_x_scaled = this.props.roi[0][0] * this.props.image_scale
-      const start_y_scaled = this.props.roi[0][1] * this.props.image_scale
-      const start = this.props.roi[0]
-      const end = this.props.roi[1]
+    const the_keys = Object.keys(this.props.roi)
+    if (the_keys.includes('start')) {
+      const start_x_scaled = this.props.roi['start'][0] * this.props.image_scale
+      const start_y_scaled = this.props.roi['start'][1] * this.props.image_scale
+      const start = this.props.roi['start']
+      const end = this.props.roi['end']
       ctx.strokeStyle = '#F33'
       ctx.lineWidth = 2
       const width = (end[0] - start[0]) * this.props.image_scale

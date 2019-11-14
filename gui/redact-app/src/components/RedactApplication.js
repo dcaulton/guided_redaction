@@ -24,8 +24,9 @@ class RedactApplication extends React.Component {
       frameset_hash: '',
       image_width: 0,
       image_height: 0,
-      analyze_url: 'http://127.0.0.1:8000/v1/analyze/',                            
-      redact_url: 'http://127.0.0.1:8000/v1/redact/',                              
+      scan_subimage_url: 'http://127.0.0.1:8000/v1/analyze/scan_subimage',
+      analyze_url: 'http://127.0.0.1:8000/v1/analyze/',
+      redact_url: 'http://127.0.0.1:8000/v1/redact/',
       parse_movie_url: 'http://127.0.0.1:8000/v1/parse/',
       zip_movie_url: 'http://127.0.0.1:8000/v1/parse/zip_movie',
       frames: [],
@@ -380,6 +381,7 @@ class RedactApplication extends React.Component {
                 movie_url={this.state.movie_url}
                 movies={this.state.movies}
                 framesets={this.state.framesets}
+                scanSubImageUrl={this.state.scan_subimage_url}
               />
             </Route>
           </Switch>
