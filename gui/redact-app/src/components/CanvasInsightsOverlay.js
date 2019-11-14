@@ -8,6 +8,15 @@ class CanvasInsightsOverlay extends React.Component {
     ctx.clearRect(0, 0, canvas.width, canvas.height)
   }
 
+  getRoiScaledDimensions() {
+    const start = this.props.roi['start']
+    const end = this.props.roi['end']
+    const width = (end[0] - start[0]) * this.props.image_scale
+    const height = (end[1] - start[1]) * this.props.image_scale
+    let ret_val = [width, height]
+    return ret_val
+  }
+
   drawRoi() {
     const canvas = this.refs.insights_canvas
     let ctx = canvas.getContext('2d')
@@ -16,24 +25,46 @@ class CanvasInsightsOverlay extends React.Component {
     if (the_keys.includes('start')) {
       const start_x_scaled = this.props.roi['start'][0] * this.props.image_scale
       const start_y_scaled = this.props.roi['start'][1] * this.props.image_scale
-      const start = this.props.roi['start']
-      const end = this.props.roi['end']
+      let lala = this.getRoiScaledDimensions() 
+      let width = lala[0]
+      let height = lala[1]
       ctx.strokeStyle = '#F33'
       ctx.lineWidth = 2
-      const width = (end[0] - start[0]) * this.props.image_scale
-      const height = (end[1] - start[1]) * this.props.image_scale
+      ctx.strokeRect(start_x_scaled, start_y_scaled, width, height)
+    }
+  }
+
+  drawSubimageMatches() {
+    let template_upper_left = this.props.getSubImageMatches()
+    if (template_upper_left) {
+      const canvas = this.refs.insights_canvas
+      let ctx = canvas.getContext('2d')
+      ctx.strokeStyle = '#E7E'
+      const start_x_scaled = template_upper_left[0] * this.props.image_scale
+      const start_y_scaled = template_upper_left[1] * this.props.image_scale
+      let lala = this.getRoiScaledDimensions() 
+      let width = lala[0]
+      let height = lala[1]
       ctx.strokeRect(start_x_scaled, start_y_scaled, width, height)
     }
   }
 
   componentDidMount() {
     this.clearCanvasItems()
-    this.drawRoi()
+    if (Object.keys(this.props.subimage_matches).length === 0) {
+      this.drawRoi()
+    } else {
+      this.drawSubimageMatches()
+    }
   }
 
   componentDidUpdate() {
     this.clearCanvasItems()
-    this.drawRoi()
+    if (Object.keys(this.props.subimage_matches).length === 0) {
+      this.drawRoi()
+    } else {
+      this.drawSubimageMatches()
+    }
   }
 
   render() {

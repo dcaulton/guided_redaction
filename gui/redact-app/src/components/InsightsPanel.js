@@ -24,6 +24,7 @@ class InsightsPanel extends React.Component {
       insights_title: 'Insights, load a movie to get started',
       insights_message: '',
       clicked_coords: (0,0),
+      subimage_matches: {},
     }
     this.setCurrentVideo=this.setCurrentVideo.bind(this)
     this.movieSplitDone=this.movieSplitDone.bind(this)
@@ -32,6 +33,8 @@ class InsightsPanel extends React.Component {
     this.clearRoi=this.clearRoi.bind(this)
     this.scanSubImage=this.scanSubImage.bind(this)
     this.scanRecognizedText=this.scanRecognizedText.bind(this)
+  this.getSubImageMatches=this.getSubImageMatches.bind(this)
+
   }
 
   scanSubImage() {
@@ -39,7 +42,6 @@ class InsightsPanel extends React.Component {
   }
 
   async callSubImageScanner() {
-
     await fetch(this.props.scanSubImageUrl, {
       method: 'POST',
       headers: {
@@ -57,7 +59,9 @@ class InsightsPanel extends React.Component {
     .then((response) => response.json())
     .then((responseJson) => {
       let matches = responseJson.matches
-      console.log(matches)
+      this.setState({
+        subimage_matches: matches,
+      })
     })
     .catch((error) => {
       console.error(error);
@@ -165,6 +169,33 @@ class InsightsPanel extends React.Component {
     }
   }
 
+  getScrubberFramesetHash() {
+    if (this.props.movie_url && Object.keys(this.props.movies).includes(this.props.movie_url)) {
+      for (let frameset_hash in this.props.framesets) {
+        if (this.props.framesets[frameset_hash]['images'].includes(this.state.insights_image)) {
+          return frameset_hash
+        }
+      }
+    }
+
+  }
+
+  getSubImageMatches() {
+  let cur_hash = this.getScrubberFramesetHash()
+  console.log('current_hash is '+cur_hash)
+  if (this.state.subimage_matches && Object.keys(this.state.subimage_matches).includes(this.props.movie_url)) {
+    let sim = this.state.subimage_matches[this.props.movie_url]
+    if (Object.keys(sim).includes(cur_hash)) {
+      let first_subimage_match_key = Object.keys(sim[cur_hash])[0].toString()
+      let roi_id_str = this.state.roi['id'].toString()
+      if (first_subimage_match_key === roi_id_str) {
+        let location = sim[cur_hash][roi_id_str]['location']
+        return location
+      }
+    }
+  }
+  }
+
   render() {
     let imageDivStyle= {
       width: this.props.image_width,
@@ -223,6 +254,8 @@ class InsightsPanel extends React.Component {
               clickCallback={this.handleImageClick}
               roi={this.state.roi}
               image_scale={this.state.image_scale}
+              getSubImageMatches={this.getSubImageMatches}
+              subimage_matches={this.state.subimage_matches}
             />
           </div>
           <div 
@@ -292,27 +325,45 @@ class MovieCard extends React.Component {
   }
 
   render() {
+    let loaded_status = false
     let active_status = false
-    let the_button = (
-      <button
-          className='btn btn-link'
-          onClick={() => this.props.setCurrentVideo(this.props.this_cards_movie_url)}
-      >
-      load and make current
-      </button>
-    )
     if (this.props.this_cards_movie_url === this.props.active_movie_url) {
+console.log('  current url is '+this.props.this_cards_movie_url+'*')
       active_status = true
-      the_button = ''
+    } else {
+console.log('  current url is '+this.props.this_cards_movie_url)
     }
+    if (Object.keys(this.props.movies).includes(this.props.this_cards_movie_url)) {
+      loaded_status = true
+    }
+
+    let the_button = (
+      <div className='row'>
+        <button
+            className='btn btn-link'
+            onClick={() => this.props.setCurrentVideo(this.props.this_cards_movie_url)}
+        >
+        make active
+        </button>
+      </div>
+    )
     let framesets_count_message = 'no framesets'
-    const loaded_movie_keys = Object.keys(this.props.movies)
-    if (loaded_movie_keys.includes(this.props.this_cards_movie_url) 
-        && 'framesets' in this.props.movies[this.props.this_cards_movie_url]) {
-      let the_framesets = this.props.movies[this.props.this_cards_movie_url].framesets
+    if (loaded_status) {
+      let the_framesets = this.props.movies[this.props.this_cards_movie_url]['framesets']
       framesets_count_message = Object.keys(the_framesets).length + ' framesets'
-      the_button = ''
     }
+    if (active_status) {
+      the_button = (
+        <div
+          className='row text-success'
+        >
+          active
+        </div>
+      )
+    }
+
+
+
     return (
       <div className='row mt-4 card'>
         <div className='col'>
@@ -330,11 +381,8 @@ class MovieCard extends React.Component {
           <div className='row'>
             {this.get_filename(this.props.this_cards_movie_url)}
           </div>
-          <div className='row'>
+          <div className='row ml-1'>
             {the_button}
-          </div>
-          <div className={active_status? 'row text-success' : 'row'} >
-            {active_status? 'active' : ''}
           </div>
           <div className='row'>
             {framesets_count_message}

@@ -28,7 +28,7 @@ class TemplateMatcher():
         res = cv2.matchTemplate(source, template, cv2.TM_CCOEFF_NORMED)
         min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
         template_top_left = max_loc
-        if max_val > .999:
+        if max_val > .9:
             print('high confidence on primary matching, secondary matching bypassed')
             return template_top_left
         if not self.histograms_match(template, source, template_top_left):

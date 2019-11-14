@@ -57,6 +57,7 @@ def scan_subimage(request):
             match_image = cv2_image[start[1]:end[1], start[0]:end[0]]
             targets = request_data.get('targets')
             for movie_name in targets.keys():
+                print('----------looking at movie ', movie_name)
                 framesets = targets[movie_name]['framesets']
                 for frameset_hash in framesets.keys():
                     frameset = framesets[frameset_hash]
