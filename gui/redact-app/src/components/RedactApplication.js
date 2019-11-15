@@ -24,6 +24,8 @@ class RedactApplication extends React.Component {
       frameset_hash: '',
       image_width: 0,
       image_height: 0,
+      flood_fill_url: 'http://127.0.0.1:8000/v1/analyze/flood_fill',
+      arrow_fill_url: 'http://127.0.0.1:8000/v1/analyze/arrow_fill',
       scan_subimage_url: 'http://127.0.0.1:8000/v1/analyze/scan_subimage',
       analyze_url: 'http://127.0.0.1:8000/v1/analyze/',
       redact_url: 'http://127.0.0.1:8000/v1/redact/',
@@ -399,6 +401,8 @@ class RedactApplication extends React.Component {
                 movies={this.state.movies}
                 framesets={this.state.framesets}
                 scanSubImageUrl={this.state.scan_subimage_url}
+                floodFillUrl={this.state.flood_fill_url}
+                arrowFillUrl={this.state.arrow_fill_url}
                 setSubImageMatches={this.setSubImageMatches}
                 setRoi={this.setRoi}
                 subimage_matches={this.state.subimage_matches}

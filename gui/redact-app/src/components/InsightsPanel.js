@@ -77,9 +77,6 @@ class InsightsPanel extends React.Component {
     .then((responseJson) => {
       let matches = responseJson.matches
       this.props.setSubImageMatches(matches)
-//      this.setState({
-//        subimage_matches: matches,
-//      })
     })
     .catch((error) => {
       console.error(error);
@@ -94,6 +91,10 @@ class InsightsPanel extends React.Component {
     let the_message = ''
     if (the_mode === 'add_roi_1') {
       the_message = 'Select the first corner of the Region of Interest'
+    } else if (the_mode === 'flood_fill_1') {
+      the_message = 'Select the area to flood fill'
+    } else if (the_mode === 'arrow_fill_1') {
+      the_message = 'Select the area to arrow fill'
     }
     this.setState({
       mode: the_mode,
@@ -115,7 +116,6 @@ class InsightsPanel extends React.Component {
   clearRoi() {
     this.props.setRoi({})
     this.setState({
-//      roi: {},
       insights_message: 'ROI has been cleared'
     })
   }
@@ -123,7 +123,6 @@ class InsightsPanel extends React.Component {
   clearSubImageMatches() {
     this.props.setSubImageMatches({})
     this.setState({
-//      subimage_matches: {},
       insights_message: 'SubImage matches have been cleared'
     })
   }
@@ -155,29 +154,98 @@ class InsightsPanel extends React.Component {
     console.log('click in image coords is  at ('+x_scaled+', '+y_scaled+')')
 
     if (this.state.mode === 'add_roi_1') {
-      this.setState({
-        image_scale: scale,
-        clicked_coords: [x_scaled, y_scaled],
-        insights_message: 'pick the second corner of the ROI',
-        mode: 'add_roi_2',
-      })
+      this.doAddRoiClickOne(scale, x_scaled, y_scaled)
     } else if (this.state.mode === 'add_roi_2') {
-      const roi_id = Math.floor(Math.random(1000000, 9999999)*1000000000)
-      const the_roi = {
-          'id': roi_id,
-          'start': this.state.clicked_coords, 
-          'end': [x_scaled, y_scaled],
-      }
-      this.props.setRoi(the_roi)
-      this.setState({
-        image_scale: scale,
-        prev_coords: this.state.clicked_coords,
-        clicked_coords: [x_scaled, y_scaled],
-//        roi: the_roi,
-        insights_message: 'ROI selected.  press scan to see any matches',
-        mode: 'add_roi_3',
-      })
+      this.addRoi(scale, x_scaled, y_scaled)
+    } else if (this.state.mode === 'flood_fill_1') {
+      this.doFloodFill(scale, x_scaled, y_scaled)
+    } else if (this.state.mode === 'arrow_fill_1') {
+      this.doArrowFill(scale, x_scaled, y_scaled)
     }
+  }
+
+  async doFloodFill(scale, x_scaled, y_scaled) {
+    this.setState({
+      image_scale: scale,
+      clicked_coords: [x_scaled, y_scaled],
+      insights_message: 'Calling flood fill api',
+      mode: 'flood_fill_2',
+    })
+    await fetch(this.props.floodFillUrl, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        source_image_url: this.state.insights_image,
+        tolerance: 5,
+        selected_point : [x_scaled, y_scaled],
+      }),
+    })
+    .then((response) => response.json())
+    .then((responseJson) => {
+      console.log('wazoo')
+      console.log(responseJson)
+    })
+    .catch((error) => {
+      console.error(error);
+    })
+  }
+
+  async doArrowFill(scale, x_scaled, y_scaled) {
+    this.setState({
+      image_scale: scale,
+      clicked_coords: [x_scaled, y_scaled],
+      insights_message: 'Calling arrow fill api',
+      mode: 'arrow_fill_2',
+    })
+    await fetch(this.props.arrowFillUrl, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        source_image_url: this.state.insights_image,
+        tolerance: 5,
+        selected_point : [x_scaled, y_scaled],
+      }),
+    })
+    .then((response) => response.json())
+    .then((responseJson) => {
+      console.log('wazoo')
+      console.log(responseJson)
+    })
+    .catch((error) => {
+      console.error(error);
+    })
+  }
+
+  doAddRoiClickOne(scale, x_scaled, y_scaled) {
+    this.setState({
+      image_scale: scale,
+      clicked_coords: [x_scaled, y_scaled],
+      insights_message: 'pick the second corner of the ROI',
+      mode: 'add_roi_2',
+    })
+  }
+
+  addRoi(scale, x_scaled, y_scaled) {
+    const roi_id = Math.floor(Math.random(1000000, 9999999)*1000000000)
+    const the_roi = {
+        'id': roi_id,
+        'start': this.state.clicked_coords, 
+        'end': [x_scaled, y_scaled],
+    }
+    this.props.setRoi(the_roi)
+    this.setState({
+      image_scale: scale,
+      prev_coords: this.state.clicked_coords,
+      clicked_coords: [x_scaled, y_scaled],
+      insights_message: 'ROI selected.  press scan to see any matches',
+      mode: 'add_roi_3',
+    })
   }
 
   setImageSize(the_image) {

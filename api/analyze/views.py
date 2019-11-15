@@ -2,6 +2,7 @@ import cv2
 from django.views.decorators.csrf import csrf_exempt
 from analyze.classes.EastPlusTessGuidedAnalyzer import EastPlusTessGuidedAnalyzer
 from analyze.classes.TemplateMatcher import TemplateMatcher
+from analyze.classes.ExtentsFinder import ExtentsFinder
 from django.http import HttpResponse, JsonResponse
 import json
 import numpy as np
@@ -12,6 +13,16 @@ import requests
 def index(request):
     if request.method == 'POST':
         request_data = json.loads(request.body)
+        if not request_data.get('image_url'):
+            return HttpResponse('image_url is required', status=400)
+        if not request_data.get('roi_start_x'):
+            return HttpResponse('roi_start_x is required', status=400)
+        if not request_data.get('roi_start_y'):
+            return HttpResponse('roi_start_y is required', status=400)
+        if not request_data.get('roi_end_x'):
+            return HttpResponse('roi_end_x is required', status=400)
+        if not request_data.get('roi_end_y'):
+            return HttpResponse('roi_end_y is required', status=400)
         pic_response = requests.get(request_data['image_url'])
         image = pic_response.content
         if image:
@@ -41,11 +52,11 @@ def scan_subimage(request):
     if request.method == 'POST':
         request_data = json.loads(request.body)
         if request_data.get('subimage_start') == [0,0] and request_data.get('subimage_end') == [0,0]:
-            return JsonResponse({'matches': matches})
+            return HttpResponse('nonzero subimage_start and subimage_end are required', status=400)
         if not request_data.get('source_image_url'):
-            return JsonResponse({'matches': matches})
+            return HttpResponse('source_image_url is required', status=400)
         if not request_data.get('roi_id'):
-            return JsonResponse({'matches': matches})
+            return HttpResponse('roi_id is required', status=400)
         pic_response = requests.get(request_data['source_image_url'])
         image = pic_response.content
         if image:
@@ -74,5 +85,51 @@ def scan_subimage(request):
                             matches[movie_name][frameset_hash] = {}
                             matches[movie_name][frameset_hash][roi_id] = {}
                             matches[movie_name][frameset_hash][roi_id]['location'] = temp_coords
+        else:
+            return HttpResponse('couldnt read image data', status=422)
         return JsonResponse({'matches': matches})
+    return HttpResponse('Gotta do a POST, smart guy', status=400)
+
+@csrf_exempt
+def flood_fill(request):
+    regions = [] # response will be a list of rectangles.  These are screen grabs; this should be fine
+    if request.method == 'POST':
+        request_data = json.loads(request.body)
+        if not request_data.get('source_image_url'):
+            return HttpResponse('source_image_url is required', status=400)
+        if not request_data.get('selected_point'):
+            return HttpResponse('selected_point is required', status=400)
+        selected_point = request_data.get('selected_point')
+        tolerance = request_data.get('tolerance')
+        image = requests.get(request_data['source_image_url']).content
+        if image:
+            nparr = np.fromstring(image, np.uint8)
+            cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+            finder = ExtentsFinder()
+            regions = finder.determine_flood_fill_area(cv2_image, selected_point, tolerance)
+            return JsonResponse({'flood_fill_regions': regions})
+        else:
+            return HttpResponse('couldnt read image data', status=422)
+    return HttpResponse('Gotta do a POST, smart guy', status=400)
+
+@csrf_exempt
+def arrow_fill(request):
+    regions = [] # response will be a list of rectangles.  These are screen grabs; this should be fine
+    if request.method == 'POST':
+        request_data = json.loads(request.body)
+        if not request_data.get('source_image_url'):
+            return HttpResponse('source_image_url is required', status=400)
+        if not request_data.get('selected_point'):
+            return HttpResponse('selected_point is required', status=400)
+        selected_point = request_data.get('selected_point')
+        tolerance = request_data.get('tolerance')
+        image = requests.get(request_data['source_image_url']).content
+        if image:
+            nparr = np.fromstring(image, np.uint8)
+            cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+            finder = ExtentsFinder()
+            regions = finder.determine_arrow_fill_area(cv2_image, selected_point, tolerance)
+            return JsonResponse({'arrow_fill_regions': regions})
+        else:
+            return HttpResponse('couldnt read image data', status=422)
     return HttpResponse('Gotta do a POST, smart guy', status=400)

@@ -43,14 +43,36 @@ class BottomInsightsControls extends React.Component {
             >
               Clear Results
             </button>
-            <button
-                className='btn btn-primary ml-5'
-                onClick={() => this.props.scanRecognizedText()}
-            >
-              Scan for OCR
-            </button>
           </div>
         </div>
+
+        <div className='row mt-3'>
+          <div className='col'>
+            <button
+                className='btn btn-primary'
+                onClick={() => this.props.setMode('flood_fill_1')}
+            >
+              Flood Fill Select
+            </button>
+          </div>
+          <div className='col ml-1'>
+              <button
+                  className='btn btn-primary'
+                  onClick={() => this.props.setMode('arrow_fill_1')}
+              >
+                Arrow Fill Select
+              </button>
+          </div>
+          <div className='col ml-1'>
+              Tolerance
+              <input 
+                  id='fill_tolerance'
+                  value=''
+                  onChange={() => console.log('react forces me to put this stupid thing here')}
+              />
+          </div>
+        </div>
+
         <div className='row mt-3'>
           <div className='col'>
             <input 
@@ -60,9 +82,21 @@ class BottomInsightsControls extends React.Component {
             />
             <button
                 className='btn btn-primary ml-5'
-                onClick={() => console.log('runny bunny')}
+                onClick={() => console.log('rabid hedgehog')}
             >
               Scan Text
+            </button>
+            <button
+                className='btn btn-primary ml-5'
+                onClick={() => console.log('feisty bunny')}
+            >
+              Scan for OCR
+            </button>
+            <button
+                className='btn btn-primary ml-5'
+                onClick={() => console.log('fierce fruit bat')}
+            >
+              Scan for OCR
             </button>
           </div>
         </div>
