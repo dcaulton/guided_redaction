@@ -32,13 +32,29 @@ class InsightsPanel extends React.Component {
     this.handleSetMode=this.handleSetMode.bind(this)
     this.clearRoi=this.clearRoi.bind(this)
     this.scanSubImage=this.scanSubImage.bind(this)
-    this.scanRecognizedText=this.scanRecognizedText.bind(this)
-  this.getSubImageMatches=this.getSubImageMatches.bind(this)
-
+    this.getSubImageMatches=this.getSubImageMatches.bind(this)
+    this.clearSubImageMatches=this.clearSubImageMatches.bind(this)
+    this.movieSplitDone=this.movieSplitDone.bind(this)
+    this.getMovieMatchesFound=this.getMovieMatchesFound.bind(this)
   }
 
   scanSubImage() {
     this.callSubImageScanner()
+  }
+
+  getMovieMatchesFound(movie_url) {
+    if (Object.keys(this.state.subimage_matches).includes(movie_url)) {
+      let match_count = 0
+      for (let frameset_hashkey in this.state.subimage_matches[movie_url]) {
+        let roi_keys = Object.keys(this.state.subimage_matches[movie_url][frameset_hashkey])
+        for (let i=0; i < roi_keys.length; i++) {
+          match_count++
+        }
+      }
+      const ret_str = match_count.toString() + 'matches found'
+      return ret_str
+    }
+    return ''
   }
 
   async callSubImageScanner() {
@@ -66,9 +82,6 @@ class InsightsPanel extends React.Component {
     .catch((error) => {
       console.error(error);
     })
-  }
-
-  scanRecognizedText() {
   }
 
   changeCampaign = (newCampaignName) => {
@@ -104,16 +117,23 @@ class InsightsPanel extends React.Component {
     })
   }
 
-  movieSplitDone() {
-    const len = Object.keys(this.props.framesets).length
+  clearSubImageMatches() {
+    this.setState({
+      subimage_matches: {},
+      insights_message: 'SubImage matches have been cleared'
+    })
+  }
+
+  movieSplitDone(new_framesets) {
+    const len = Object.keys(new_framesets).length
     document.getElementById('movie_scrubber').max = len-1
-    const first_key = Object.keys(this.props.framesets)[0]
-    const first_image = this.props.framesets[first_key]['images'][0]
+    const first_key = Object.keys(new_framesets)[0]
+    const first_image = new_framesets[first_key]['images'][0]
     this.setState({
       insights_image: first_image,
       insights_title: first_image,
       insights_message: '.',
-    }, this.setImageSize)
+    }, this.setImageSize(first_image))
   }
 
   setCurrentVideo(video_url) {
@@ -155,11 +175,11 @@ class InsightsPanel extends React.Component {
     }
   }
 
-  setImageSize() {
+  setImageSize(the_image) {
     var app_this = this
-    if (this.state.insights_image) {
+    if (the_image) {
       let img = new Image()
-      img.src = this.state.insights_image
+      img.src = the_image
       img.onload = function() {
         app_this.setState({
           image_width: this.width,
@@ -182,7 +202,6 @@ class InsightsPanel extends React.Component {
 
   getSubImageMatches() {
   let cur_hash = this.getScrubberFramesetHash()
-  console.log('current_hash is '+cur_hash)
   if (this.state.subimage_matches && Object.keys(this.state.subimage_matches).includes(this.props.movie_url)) {
     let sim = this.state.subimage_matches[this.props.movie_url]
     if (Object.keys(sim).includes(cur_hash)) {
@@ -222,6 +241,7 @@ class InsightsPanel extends React.Component {
             movie_url={this.props.movie_url}
             movie_urls={this.state.campaign_movies}
             movies={this.props.movies}
+            getMovieMatchesFound={this.getMovieMatchesFound}
           />
         </div>
         <div id='insights_middle' className='col md-7 ml-4'>
@@ -274,22 +294,10 @@ class InsightsPanel extends React.Component {
             setMode={this.handleSetMode}
             clearRoiCallback={this.clearRoi}
             scanSubImage={this.scanSubImage}
+            clearSubImageMatches={this.clearSubImageMatches}
             insights_image={this.state.insights_image}
           />
         </div>
-{/*
-        <div id='insights_right' className='col'>
-          <div className='row mt-5'>                                            
-            <select                                                           
-                name='mask_method'                                            
-                onChange={(event) => this.changeCampaign(event.target.value)} 
-            >                                                                 
-              <option value=''>-- campaign --</option>                        
-              <option value='TestCampaign'>test campaign</option>             
-            </select>                                                         
-          </div>  
-        </div>
-*/}
       </div>
     );
   }
@@ -310,6 +318,7 @@ class MovieCardList extends React.Component {
             active_movie_url={this.props.movie_url}
             this_cards_movie_url={value}
             movies={this.props.movies}
+            getMovieMatchesFound={this.props.getMovieMatchesFound}
         />
         )
       })}
@@ -328,11 +337,8 @@ class MovieCard extends React.Component {
     let loaded_status = false
     let active_status = false
     if (this.props.this_cards_movie_url === this.props.active_movie_url) {
-console.log('  current url is '+this.props.this_cards_movie_url+'*')
       active_status = true
-    } else {
-console.log('  current url is '+this.props.this_cards_movie_url)
-    }
+    } 
     if (Object.keys(this.props.movies).includes(this.props.this_cards_movie_url)) {
       loaded_status = true
     }
@@ -362,10 +368,14 @@ console.log('  current url is '+this.props.this_cards_movie_url)
       )
     }
 
-
+    const found_string = this.props.getMovieMatchesFound(this.props.this_cards_movie_url)
+    let top_div_classname = "row mt-4 card"
+    if (active_status) {
+      top_div_classname = "row mt-4 card active_movie_card"
+    }
 
     return (
-      <div className='row mt-4 card'>
+      <div className={top_div_classname}>
         <div className='col'>
             <div className='row'>
               <video 
@@ -386,6 +396,9 @@ console.log('  current url is '+this.props.this_cards_movie_url)
           </div>
           <div className='row'>
             {framesets_count_message}
+          </div>
+          <div className='row'>
+            {found_string}
           </div>
         </div>
       </div>

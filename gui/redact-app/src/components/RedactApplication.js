@@ -53,15 +53,15 @@ class RedactApplication extends React.Component {
   }
 
   setActiveMovie(the_url, theCallback) {
+    const the_movie = this.state.movies[the_url]
     if (this.state.movie_url !== the_url) {
-      const the_movie = this.state.movies[the_url]
       this.setState({
         movie_url: the_url,
         frames: the_movie.frames,
         framesets: the_movie.framesets,
       })
     }
-    theCallback()
+    theCallback(the_movie.framesets)
   }
 
   async doMovieSplit(the_url, theCallback) {
@@ -95,8 +95,9 @@ class RedactApplication extends React.Component {
           frames: frames,
           framesets: framesets,
           movies: deepCopyMovies,
-        })
-        theCallback()
+        },
+        theCallback(framesets)
+        )
       })
       .catch((error) => {
         console.error(error);

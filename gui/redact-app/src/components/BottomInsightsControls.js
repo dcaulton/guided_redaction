@@ -39,9 +39,15 @@ class BottomInsightsControls extends React.Component {
             </button>
             <button
                 className='btn btn-primary ml-5'
+                onClick={() => this.props.clearSubImageMatches()}
+            >
+              Clear Matches
+            </button>
+            <button
+                className='btn btn-primary ml-5'
                 onClick={() => this.props.scanRecognizedText()}
             >
-              Scan for Recognized Text
+              Scan for OCR
             </button>
           </div>
         </div>
