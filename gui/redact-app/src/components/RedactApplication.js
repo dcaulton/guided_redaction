@@ -32,6 +32,8 @@ class RedactApplication extends React.Component {
       frames: [],
       framesets: {},
       movies: {},
+      subimage_matches: {},
+      roi: {},
       showMovieParserLink: true,
       showInsightsLink: true,
       showAdvancedPanels: false,
@@ -40,6 +42,8 @@ class RedactApplication extends React.Component {
     this.getPrevImageLink=this.getPrevImageLink.bind(this)
     this.handleMergeFramesets=this.handleMergeFramesets.bind(this)
     this.doMovieSplit=this.doMovieSplit.bind(this)
+    this.setSubImageMatches=this.setSubImageMatches.bind(this)
+    this.setRoi=this.setRoi.bind(this)
   }
 
   componentDidMount() {
@@ -242,6 +246,12 @@ class RedactApplication extends React.Component {
     })
   }
 
+  setSubImageMatches = (the_matches) => {
+    this.setState({
+      subimage_matches: the_matches,
+    })
+  }
+
   handleSetRedactedImageUrl = (the_url) => {
     this.setState({
       redacted_image_url: the_url,
@@ -251,6 +261,12 @@ class RedactApplication extends React.Component {
   handleSetMaskMethod = (mask_method) => {
     this.setState({
       mask_method: mask_method,
+    })
+  }
+
+  setRoi = (the_roi) => {
+    this.setState({
+      roi: the_roi,
     })
   }
 
@@ -383,6 +399,10 @@ class RedactApplication extends React.Component {
                 movies={this.state.movies}
                 framesets={this.state.framesets}
                 scanSubImageUrl={this.state.scan_subimage_url}
+                setSubImageMatches={this.setSubImageMatches}
+                setRoi={this.setRoi}
+                subimage_matches={this.state.subimage_matches}
+                roi={this.state.roi}
               />
             </Route>
           </Switch>

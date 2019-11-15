@@ -16,15 +16,16 @@ class InsightsPanel extends React.Component {
         'http://localhost:3000/images/d448ccd5-79b4-4157-8fa1-d9504b2bdf08.mp4',
       ],
       frameset_starts: {},
-      roi: {},
       insights_image: '',
       image_width: 100,
       image_height: 100,
       image_scale: 1,
       insights_title: 'Insights, load a movie to get started',
       insights_message: '',
+      prev_coords: (0,0),
       clicked_coords: (0,0),
-      subimage_matches: {},
+      subimage_matches: this.props.subimage_matches,
+      roi: this.props.roi,
     }
     this.setCurrentVideo=this.setCurrentVideo.bind(this)
     this.movieSplitDone=this.movieSplitDone.bind(this)
@@ -43,10 +44,10 @@ class InsightsPanel extends React.Component {
   }
 
   getMovieMatchesFound(movie_url) {
-    if (Object.keys(this.state.subimage_matches).includes(movie_url)) {
+    if (Object.keys(this.props.subimage_matches).includes(movie_url)) {
       let match_count = 0
-      for (let frameset_hashkey in this.state.subimage_matches[movie_url]) {
-        let roi_keys = Object.keys(this.state.subimage_matches[movie_url][frameset_hashkey])
+      for (let frameset_hashkey in this.props.subimage_matches[movie_url]) {
+        let roi_keys = Object.keys(this.props.subimage_matches[movie_url][frameset_hashkey])
         for (let i=0; i < roi_keys.length; i++) {
           match_count++
         }
@@ -66,18 +67,19 @@ class InsightsPanel extends React.Component {
       },
       body: JSON.stringify({
         source_image_url: this.state.insights_image,
-        subimage_start: this.state.roi['start'],
-        subimage_end: this.state.roi['end'],
-        roi_id: this.state.roi['id'],
+        subimage_start: this.props.roi['start'],
+        subimage_end: this.props.roi['end'],
+        roi_id: this.props.roi['id'],
         targets: this.props.movies,
       }),
     })
     .then((response) => response.json())
     .then((responseJson) => {
       let matches = responseJson.matches
-      this.setState({
-        subimage_matches: matches,
-      })
+      this.props.setSubImageMatches(matches)
+//      this.setState({
+//        subimage_matches: matches,
+//      })
     })
     .catch((error) => {
       console.error(error);
@@ -111,15 +113,17 @@ class InsightsPanel extends React.Component {
   }
   
   clearRoi() {
+    this.props.setRoi({})
     this.setState({
-      roi: {},
+//      roi: {},
       insights_message: 'ROI has been cleared'
     })
   }
 
   clearSubImageMatches() {
+    this.props.setSubImageMatches({})
     this.setState({
-      subimage_matches: {},
+//      subimage_matches: {},
       insights_message: 'SubImage matches have been cleared'
     })
   }
@@ -132,7 +136,7 @@ class InsightsPanel extends React.Component {
     this.setState({
       insights_image: first_image,
       insights_title: first_image,
-      insights_message: '.',
+      insights_message: 'Movie splitting completed.',
     }, this.setImageSize(first_image))
   }
 
@@ -164,11 +168,12 @@ class InsightsPanel extends React.Component {
           'start': this.state.clicked_coords, 
           'end': [x_scaled, y_scaled],
       }
+      this.props.setRoi(the_roi)
       this.setState({
         image_scale: scale,
         prev_coords: this.state.clicked_coords,
         clicked_coords: [x_scaled, y_scaled],
-        roi: the_roi,
+//        roi: the_roi,
         insights_message: 'ROI selected.  press scan to see any matches',
         mode: 'add_roi_3',
       })
@@ -201,18 +206,18 @@ class InsightsPanel extends React.Component {
   }
 
   getSubImageMatches() {
-  let cur_hash = this.getScrubberFramesetHash()
-  if (this.state.subimage_matches && Object.keys(this.state.subimage_matches).includes(this.props.movie_url)) {
-    let sim = this.state.subimage_matches[this.props.movie_url]
-    if (Object.keys(sim).includes(cur_hash)) {
-      let first_subimage_match_key = Object.keys(sim[cur_hash])[0].toString()
-      let roi_id_str = this.state.roi['id'].toString()
-      if (first_subimage_match_key === roi_id_str) {
-        let location = sim[cur_hash][roi_id_str]['location']
-        return location
+    let cur_hash = this.getScrubberFramesetHash()
+    if (this.props.subimage_matches && Object.keys(this.props.subimage_matches).includes(this.props.movie_url)) {
+      let sim = this.props.subimage_matches[this.props.movie_url]
+      if (Object.keys(sim).includes(cur_hash)) {
+        let first_subimage_match_key = Object.keys(sim[cur_hash])[0].toString()
+        let roi_id_str = this.props.roi['id'].toString()
+        if (first_subimage_match_key === roi_id_str) {
+          let location = sim[cur_hash][roi_id_str]['location']
+          return location
+        }
       }
     }
-  }
   }
 
   render() {
@@ -272,10 +277,12 @@ class InsightsPanel extends React.Component {
               width={this.state.image_width}
               height={this.state.image_height}
               clickCallback={this.handleImageClick}
-              roi={this.state.roi}
+              roi={this.props.roi}
               image_scale={this.state.image_scale}
               getSubImageMatches={this.getSubImageMatches}
-              subimage_matches={this.state.subimage_matches}
+              subimage_matches={this.props.subimage_matches}
+              mode={this.state.mode}
+              clicked_coords={this.state.clicked_coords}
             />
           </div>
           <div 

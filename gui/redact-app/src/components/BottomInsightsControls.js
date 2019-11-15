@@ -23,25 +23,25 @@ class BottomInsightsControls extends React.Component {
                 className='btn btn-primary'
                 onClick={() => this.props.setMode('add_roi_1')}
             >
-              Add ROI
+              Add Template
             </button>
             <button
                 className='btn btn-primary ml-5'
                 onClick={() => this.props.clearRoiCallback()}
             >
-              Clear ROI
+              Clear Template
             </button>
             <button
                 className='btn btn-primary ml-5'
                 onClick={() => this.props.scanSubImage()}
             >
-              Scan SubImage
+              Scan Template
             </button>
             <button
                 className='btn btn-primary ml-5'
                 onClick={() => this.props.clearSubImageMatches()}
             >
-              Clear Matches
+              Clear Results
             </button>
             <button
                 className='btn btn-primary ml-5'

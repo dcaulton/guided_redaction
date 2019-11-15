@@ -34,12 +34,40 @@ class CanvasInsightsOverlay extends React.Component {
     }
   }
 
+  drawCrosshairs() {                                                            
+    if (this.props.mode === 'add_roi_2') {
+      const crosshair_length = 2000
+      let start_x = this.props.clicked_coords[0] - crosshair_length/2
+      start_x = start_x * this.props.image_scale
+      let end_x = this.props.clicked_coords[0] + crosshair_length/2
+      end_x = end_x * this.props.image_scale
+      let start_y = this.props.clicked_coords[1] - crosshair_length/2
+      start_y = start_y * this.props.image_scale
+      let end_y = this.props.clicked_coords[1] + crosshair_length/2
+      end_y = end_y * this.props.image_scale
+      const canvas = this.refs.insights_canvas
+      let ctx = canvas.getContext("2d")
+      ctx.strokeStyle = '#F33'
+      ctx.lineWidth = 1
+
+      ctx.beginPath()
+      ctx.moveTo(start_x, this.props.clicked_coords[1]*this.props.image_scale)
+      ctx.lineTo(end_x, this.props.clicked_coords[1]*this.props.image_scale)
+      ctx.stroke()
+
+      ctx.beginPath()
+      ctx.moveTo(this.props.clicked_coords[0]*this.props.image_scale, start_y)
+      ctx.lineTo(this.props.clicked_coords[0]*this.props.image_scale, end_y)
+      ctx.stroke()
+    }
+  }
+
   drawSubimageMatches() {
     let template_upper_left = this.props.getSubImageMatches()
     if (template_upper_left) {
       const canvas = this.refs.insights_canvas
       let ctx = canvas.getContext('2d')
-      ctx.strokeStyle = '#E7E'
+      ctx.strokeStyle = '#E95'
       const start_x_scaled = template_upper_left[0] * this.props.image_scale
       const start_y_scaled = template_upper_left[1] * this.props.image_scale
       let lala = this.getRoiScaledDimensions() 
@@ -51,6 +79,7 @@ class CanvasInsightsOverlay extends React.Component {
 
   componentDidMount() {
     this.clearCanvasItems()
+    this.drawCrosshairs()
     if (Object.keys(this.props.subimage_matches).length === 0) {
       this.drawRoi()
     } else {
@@ -60,6 +89,7 @@ class CanvasInsightsOverlay extends React.Component {
 
   componentDidUpdate() {
     this.clearCanvasItems()
+    this.drawCrosshairs()
     if (Object.keys(this.props.subimage_matches).length === 0) {
       this.drawRoi()
     } else {
