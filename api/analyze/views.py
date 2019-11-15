@@ -129,7 +129,8 @@ def arrow_fill(request):
             cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
             finder = ExtentsFinder()
             regions = finder.determine_arrow_fill_area(cv2_image, selected_point, tolerance)
-            return JsonResponse({'arrow_fill_regions': regions})
+            wrapper = {'arrow_fill_regions': regions}
+            return JsonResponse(wrapper)
         else:
             return HttpResponse('couldnt read image data', status=422)
     return HttpResponse('Gotta do a POST, smart guy', status=400)

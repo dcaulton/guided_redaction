@@ -214,8 +214,13 @@ class InsightsPanel extends React.Component {
     })
     .then((response) => response.json())
     .then((responseJson) => {
-      console.log('wazoo')
-      console.log(responseJson)
+      const roi_id = Math.floor(Math.random(1000000, 9999999)*1000000000)
+      const the_roi = {
+          'id': roi_id,
+          'start': responseJson['arrow_fill_regions'][0],
+          'end': responseJson['arrow_fill_regions'][1],
+      }
+      this.props.setRoi(the_roi)
     })
     .catch((error) => {
       console.error(error);

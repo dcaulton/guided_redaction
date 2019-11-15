@@ -33,11 +33,32 @@ class ExtentsFinder():
         img_height = gray.shape[0]
         img_width = gray.shape[1]
         target_color = gray[y, x]
-        row = gray[y:y, x:img_width]
-        mask = row < target_color
-#        import pdb; pdb.set_trace()
-        return mask
-#        return ['vichysois', 'ratatouille']
+
+        # find x to the right
+        row = gray[y, x:img_width]
+#        mask = row < target_color
+        mask = abs(target_color - row) > tolerance
+        plus_x = np.where(mask)[0][0]
+        # find x to the left
+        row = gray[y, 0:x]
+        mask = abs(target_color - row) > tolerance
+        minus_x = np.where(mask)[0][-1]
+        # find y down
+        row = gray[y:img_height, x]
+        mask = abs(target_color - row) > tolerance
+        plus_y = np.where(mask)[0][0]
+        # find y up
+        row = gray[0:y, x]
+        mask = abs(target_color - row) > tolerance
+        minus_y = np.where(mask)[0][-1]
+
+        xd = x-(x-minus_x)
+        yd = y-(y-minus_y)
+        top_left = [int(xd), int(yd)]
+        bottom_right = [int(x + plus_x), int(y + plus_y)]
+        ret_arr = [top_left, bottom_right]
+
+        return ret_arr
 
     def get_template_coords(self, source, template):
         res = cv2.matchTemplate(source, template, cv2.TM_CCOEFF_NORMED)
