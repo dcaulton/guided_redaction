@@ -67,6 +67,7 @@ class BottomInsightsControls extends React.Component {
               Tolerance
               <input 
                   id='fill_tolerance'
+                  size='3'
                   value=''
                   onChange={() => console.log('react forces me to put this stupid thing here')}
               />
@@ -76,7 +77,7 @@ class BottomInsightsControls extends React.Component {
                 className='btn btn-primary ml-5'
                 onClick={() => this.props.clearSelectedAreas()}
             >
-              Clear Selected Areas
+              Clear Image 
             </button>
           </div>
         </div>

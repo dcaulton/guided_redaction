@@ -266,9 +266,19 @@ class RedactApplication extends React.Component {
     })
   }
 
-  setSelectedArea = (the_areas, the_image) => {
+  setSelectedArea = (the_areas, the_image, the_movie, the_frameset_hash) => {
     let deepCopySelectedAreas= JSON.parse(JSON.stringify(this.state.selected_areas))
-    deepCopySelectedAreas[the_image] = the_areas
+    let movie_obj = {}
+    if (Object.keys(deepCopySelectedAreas).includes(the_movie)) {
+      movie_obj = deepCopySelectedAreas[the_movie]
+    }
+    let frameset_obj = {}
+    if (Object.keys(movie_obj).includes(the_frameset_hash)) {
+      frameset_obj = movie_obj[the_frameset_hash]
+    }
+    frameset_obj[the_image] = the_areas
+    movie_obj[the_frameset_hash] = frameset_obj
+    deepCopySelectedAreas[the_movie] = movie_obj
     this.setState({
       selected_areas: deepCopySelectedAreas,
     })

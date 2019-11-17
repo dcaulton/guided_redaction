@@ -38,6 +38,7 @@ class InsightsPanel extends React.Component {
     this.clearSelectedAreas=this.clearSelectedAreas.bind(this)
     this.movieSplitDone=this.movieSplitDone.bind(this)
     this.getMovieMatchesFound=this.getMovieMatchesFound.bind(this)
+    this.getMovieSelectedCount=this.getMovieSelectedCount.bind(this)
     this.currentImageIsRoiImage=this.currentImageIsRoiImage.bind(this)
   }
 
@@ -50,6 +51,7 @@ class InsightsPanel extends React.Component {
   }
 
   getMovieMatchesFound(movie_url) {
+    // returns the number of matches within all relevant images from this movie 
     if (Object.keys(this.props.subimage_matches).includes(movie_url)) {
       let match_count = 0
       for (let frameset_hashkey in this.props.subimage_matches[movie_url]) {
@@ -58,7 +60,17 @@ class InsightsPanel extends React.Component {
           match_count++
         }
       }
-      const ret_str = match_count.toString() + 'matches found'
+      const ret_str = match_count.toString() + ' template matches'
+      return ret_str
+    }
+    return ''
+  }
+
+  getMovieSelectedCount(movie_url) {
+    // returns the number of images from this movie with at least one selected region 
+    if (Object.keys(this.props.selected_areas).includes(movie_url)) {
+      const  sa_count = Object.keys(this.props.selected_areas[movie_url]).length
+      const ret_str = sa_count.toString() + ' with selected areas'
       return ret_str
     }
     return ''
@@ -234,7 +246,8 @@ class InsightsPanel extends React.Component {
       }
       let deepCopySelectedAreas= JSON.parse(JSON.stringify(this.getSelectedAreas()))
       deepCopySelectedAreas.push(new_sa)
-      this.props.setSelectedArea(deepCopySelectedAreas, this.state.insights_image)
+      const cur_hash = this.getScrubberFramesetHash() 
+      this.props.setSelectedArea(deepCopySelectedAreas, this.state.insights_image, this.props.movie_url, cur_hash)
     })
     .then(() => {
       this.setState({
@@ -313,8 +326,15 @@ class InsightsPanel extends React.Component {
   }
 
   getSelectedAreas() {
-    if (Object.keys(this.props.selected_areas).includes(this.state.insights_image)) {
-      return this.props.selected_areas[this.state.insights_image]
+    if (Object.keys(this.props.selected_areas).includes(this.props.movie_url)) {
+      const movie_obj = this.props.selected_areas[this.props.movie_url]
+      const frameset_hash = this.getScrubberFramesetHash() 
+      if (Object.keys(movie_obj).includes(frameset_hash)) {
+        const frameset_obj  = movie_obj[frameset_hash]
+        if (Object.keys(frameset_obj).includes(this.state.insights_image)) {
+          return frameset_obj[this.state.insights_image]
+        }
+      }
     }
     return []
   }
@@ -346,6 +366,7 @@ class InsightsPanel extends React.Component {
             movie_urls={this.state.campaign_movies}
             movies={this.props.movies}
             getMovieMatchesFound={this.getMovieMatchesFound}
+            getMovieSelectedCount={this.getMovieSelectedCount}
           />
         </div>
         <div id='insights_middle' className='col md-7 ml-4'>
@@ -428,6 +449,7 @@ class MovieCardList extends React.Component {
             this_cards_movie_url={value}
             movies={this.props.movies}
             getMovieMatchesFound={this.props.getMovieMatchesFound}
+            getMovieSelectedCount={this.props.getMovieSelectedCount}
         />
         )
       })}
@@ -478,6 +500,7 @@ class MovieCard extends React.Component {
     }
 
     const found_string = this.props.getMovieMatchesFound(this.props.this_cards_movie_url)
+    const selected_string = this.props.getMovieSelectedCount(this.props.this_cards_movie_url)
     let top_div_classname = "row mt-4 card"
     if (active_status) {
       top_div_classname = "row mt-4 card active_movie_card"
@@ -508,6 +531,9 @@ class MovieCard extends React.Component {
           </div>
           <div className='row'>
             {found_string}
+          </div>
+          <div className='row'>
+            {selected_string}
           </div>
         </div>
       </div>
