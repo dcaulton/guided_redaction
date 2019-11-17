@@ -48,6 +48,7 @@ class RedactApplication extends React.Component {
     this.doMovieSplit=this.doMovieSplit.bind(this)
     this.setSubImageMatches=this.setSubImageMatches.bind(this)
     this.setSelectedArea=this.setSelectedArea.bind(this)
+    this.clearSelectedArea=this.clearSelectedArea.bind(this)
     this.setRoi=this.setRoi.bind(this)
   }
 
@@ -246,7 +247,7 @@ class RedactApplication extends React.Component {
   }
 
   handleSetRedactedMovieUrl = (the_url) => {
-    this.setState({
+    this.etsetState({
       redacted_movie_url: the_url,
     })
   }
@@ -254,6 +255,14 @@ class RedactApplication extends React.Component {
   setSubImageMatches = (the_matches) => {
     this.setState({
       subimage_matches: the_matches,
+    })
+  }
+
+  clearSelectedArea = (the_image) => {
+    let deepCopySelectedAreas= JSON.parse(JSON.stringify(this.state.selected_areas))
+    deepCopySelectedAreas[the_image] = []
+    this.setState({
+      selected_areas: deepCopySelectedAreas,
     })
   }
 
@@ -417,6 +426,7 @@ class RedactApplication extends React.Component {
                 arrowFillUrl={this.state.arrow_fill_url}
                 setSubImageMatches={this.setSubImageMatches}
                 setSelectedArea={this.setSelectedArea}
+                clearSelectedArea={this.clearSelectedArea}
                 setRoi={this.setRoi}
                 subimage_matches={this.state.subimage_matches}
                 selected_areas={this.state.selected_areas}

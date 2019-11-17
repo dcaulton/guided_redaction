@@ -134,7 +134,7 @@ class InsightsPanel extends React.Component {
   }
 
   clearSelectedAreas() {
-    this.props.setSelectedAreas({}, '')
+    this.props.clearSelectedArea(this.state.insights_image)
     this.setState({
       insights_message: 'Selected Areas have been cleared'
     })
@@ -211,7 +211,6 @@ class InsightsPanel extends React.Component {
       image_scale: scale,
       clicked_coords: [x_scaled, y_scaled],
       insights_message: 'Calling arrow fill api',
-      mode: 'arrow_fill_2',
     })
     await fetch(this.props.arrowFillUrl, {
       method: 'POST',
@@ -236,6 +235,11 @@ class InsightsPanel extends React.Component {
       let deepCopySelectedAreas= JSON.parse(JSON.stringify(this.getSelectedAreas()))
       deepCopySelectedAreas.push(new_sa)
       this.props.setSelectedArea(deepCopySelectedAreas, this.state.insights_image)
+    })
+    .then(() => {
+      this.setState({
+        insights_message: 'Fill area added, click to add another.',
+      })
     })
     .catch((error) => {
       console.error(error);

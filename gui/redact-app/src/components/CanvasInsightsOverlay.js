@@ -98,12 +98,11 @@ class CanvasInsightsOverlay extends React.Component {
       ctx.strokeRect(start_x_scaled, start_y_scaled, width, height)
     }
     for (let i=0; i < selected_areas.length; i++) {
-      const line_padding = 2
       const selected_area = selected_areas[i]
-      const start_x_scaled = selected_area['start'][0] * this.props.image_scale + line_padding
-      const start_y_scaled = selected_area['start'][1] * this.props.image_scale + line_padding
-      const width = (selected_area['end'][0] * this.props.image_scale) - start_x_scaled - 2*line_padding
-      const height= (selected_area['end'][1] * this.props.image_scale) - start_y_scaled - 2*line_padding
+      const start_x_scaled = selected_area['start'][0] * this.props.image_scale
+      const start_y_scaled = selected_area['start'][1] * this.props.image_scale
+      const width = (selected_area['end'][0] * this.props.image_scale) - start_x_scaled
+      const height= (selected_area['end'][1] * this.props.image_scale) - start_y_scaled
       ctx.clearRect(start_x_scaled, start_y_scaled, width, height)
     }
   }
