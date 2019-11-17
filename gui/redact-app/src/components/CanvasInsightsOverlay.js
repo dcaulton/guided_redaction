@@ -18,19 +18,21 @@ class CanvasInsightsOverlay extends React.Component {
   }
 
   drawRoi() {
-    const canvas = this.refs.insights_canvas
-    let ctx = canvas.getContext('2d')
-    
-    const the_keys = Object.keys(this.props.roi)
-    if (the_keys.includes('start')) {
-      const start_x_scaled = this.props.roi['start'][0] * this.props.image_scale
-      const start_y_scaled = this.props.roi['start'][1] * this.props.image_scale
-      let lala = this.getRoiScaledDimensions() 
-      let width = lala[0]
-      let height = lala[1]
-      ctx.strokeStyle = '#F33'
-      ctx.lineWidth = 2
-      ctx.strokeRect(start_x_scaled, start_y_scaled, width, height)
+    if (this.props.currentImageIsRoiImage()) {
+      const canvas = this.refs.insights_canvas
+      let ctx = canvas.getContext('2d')
+      
+      const the_keys = Object.keys(this.props.roi)
+      if (the_keys.includes('start')) {
+        const start_x_scaled = this.props.roi['start'][0] * this.props.image_scale
+        const start_y_scaled = this.props.roi['start'][1] * this.props.image_scale
+        let lala = this.getRoiScaledDimensions() 
+        let width = lala[0]
+        let height = lala[1]
+        ctx.strokeStyle = '#33F'
+        ctx.lineWidth = 3
+        ctx.strokeRect(start_x_scaled, start_y_scaled, width, height)
+      }
     }
   }
 
@@ -69,7 +71,8 @@ class CanvasInsightsOverlay extends React.Component {
     if (template_upper_left) {
       const canvas = this.refs.insights_canvas
       let ctx = canvas.getContext('2d')
-      ctx.strokeStyle = '#E95'
+      ctx.strokeStyle = '#3F3'
+      ctx.lineWidth = 2
       const start_x_scaled = template_upper_left[0] * this.props.image_scale
       const start_y_scaled = template_upper_left[1] * this.props.image_scale
       let lala = this.getRoiScaledDimensions() 
@@ -79,24 +82,46 @@ class CanvasInsightsOverlay extends React.Component {
     }
   }
 
+  drawSelectedAreas() {
+    // This needs to run high in the stack, because it's a destructive rendering process
+    const selected_areas = this.props.getSelectedAreas()
+    const canvas = this.refs.insights_canvas
+    let ctx = canvas.getContext('2d')
+    ctx.strokeStyle = '#F3F'
+    ctx.lineWidth = 3
+    for (let i=0; i < selected_areas.length; i++) {
+      const selected_area = selected_areas[i]
+      const start_x_scaled = selected_area['start'][0] * this.props.image_scale
+      const start_y_scaled = selected_area['start'][1] * this.props.image_scale
+      const width = (selected_area['end'][0] * this.props.image_scale) - start_x_scaled
+      const height= (selected_area['end'][1] * this.props.image_scale) - start_y_scaled
+      ctx.strokeRect(start_x_scaled, start_y_scaled, width, height)
+    }
+    for (let i=0; i < selected_areas.length; i++) {
+      const line_padding = 2
+      const selected_area = selected_areas[i]
+      const start_x_scaled = selected_area['start'][0] * this.props.image_scale + line_padding
+      const start_y_scaled = selected_area['start'][1] * this.props.image_scale + line_padding
+      const width = (selected_area['end'][0] * this.props.image_scale) - start_x_scaled - 2*line_padding
+      const height= (selected_area['end'][1] * this.props.image_scale) - start_y_scaled - 2*line_padding
+      ctx.clearRect(start_x_scaled, start_y_scaled, width, height)
+    }
+  }
+
   componentDidMount() {
     this.clearCanvasItems()
+    this.drawSelectedAreas()
     this.drawCrosshairs()
-    if (Object.keys(this.props.subimage_matches).length === 0) {
-      this.drawRoi()
-    } else {
-      this.drawSubimageMatches()
-    }
+    this.drawRoi()
+    this.drawSubimageMatches()
   }
 
   componentDidUpdate() {
     this.clearCanvasItems()
+    this.drawSelectedAreas()
     this.drawCrosshairs()
-    if (Object.keys(this.props.subimage_matches).length === 0) {
-      this.drawRoi()
-    } else {
-      this.drawSubimageMatches()
-    }
+    this.drawRoi()
+    this.drawSubimageMatches()
   }
 
   render() {

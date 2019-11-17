@@ -24,9 +24,9 @@ class InsightsPanel extends React.Component {
       insights_message: '',
       prev_coords: (0,0),
       clicked_coords: (0,0),
-      subimage_matches: this.props.subimage_matches,
       roi: this.props.roi,
     }
+    this.getSelectedAreas=this.getSelectedAreas.bind(this)
     this.setCurrentVideo=this.setCurrentVideo.bind(this)
     this.movieSplitDone=this.movieSplitDone.bind(this)
     this.scrubberOnChange=this.scrubberOnChange.bind(this)
@@ -35,8 +35,14 @@ class InsightsPanel extends React.Component {
     this.scanSubImage=this.scanSubImage.bind(this)
     this.getSubImageMatches=this.getSubImageMatches.bind(this)
     this.clearSubImageMatches=this.clearSubImageMatches.bind(this)
+    this.clearSelectedAreas=this.clearSelectedAreas.bind(this)
     this.movieSplitDone=this.movieSplitDone.bind(this)
     this.getMovieMatchesFound=this.getMovieMatchesFound.bind(this)
+    this.currentImageIsRoiImage=this.currentImageIsRoiImage.bind(this)
+  }
+
+  currentImageIsRoiImage() {
+    return (this.props.roi_image === this.state.insights_image)
   }
 
   scanSubImage() {
@@ -114,7 +120,7 @@ class InsightsPanel extends React.Component {
   }
   
   clearRoi() {
-    this.props.setRoi({})
+    this.props.setRoi({}, '')
     this.setState({
       insights_message: 'ROI has been cleared'
     })
@@ -124,6 +130,13 @@ class InsightsPanel extends React.Component {
     this.props.setSubImageMatches({})
     this.setState({
       insights_message: 'SubImage matches have been cleared'
+    })
+  }
+
+  clearSelectedAreas() {
+    this.props.setSelectedAreas({}, '')
+    this.setState({
+      insights_message: 'Selected Areas have been cleared'
     })
   }
 
@@ -214,13 +227,15 @@ class InsightsPanel extends React.Component {
     })
     .then((response) => response.json())
     .then((responseJson) => {
-      const roi_id = Math.floor(Math.random(1000000, 9999999)*1000000000)
-      const the_roi = {
-          'id': roi_id,
+      const sa_id = Math.floor(Math.random(1000000, 9999999)*1000000000)
+      const new_sa = {
+          'id': sa_id,
           'start': responseJson['arrow_fill_regions'][0],
           'end': responseJson['arrow_fill_regions'][1],
       }
-      this.props.setRoi(the_roi)
+      let deepCopySelectedAreas= JSON.parse(JSON.stringify(this.getSelectedAreas()))
+      deepCopySelectedAreas.push(new_sa)
+      this.props.setSelectedArea(deepCopySelectedAreas, this.state.insights_image)
     })
     .catch((error) => {
       console.error(error);
@@ -243,7 +258,7 @@ class InsightsPanel extends React.Component {
         'start': this.state.clicked_coords, 
         'end': [x_scaled, y_scaled],
     }
-    this.props.setRoi(the_roi)
+    this.props.setRoi(the_roi, this.state.insights_image)
     this.setState({
       image_scale: scale,
       prev_coords: this.state.clicked_coords,
@@ -291,6 +306,13 @@ class InsightsPanel extends React.Component {
         }
       }
     }
+  }
+
+  getSelectedAreas() {
+    if (Object.keys(this.props.selected_areas).includes(this.state.insights_image)) {
+      return this.props.selected_areas[this.state.insights_image]
+    }
+    return []
   }
 
   render() {
@@ -351,8 +373,10 @@ class InsightsPanel extends React.Component {
               height={this.state.image_height}
               clickCallback={this.handleImageClick}
               roi={this.props.roi}
+              currentImageIsRoiImage={this.currentImageIsRoiImage}
               image_scale={this.state.image_scale}
               getSubImageMatches={this.getSubImageMatches}
+              getSelectedAreas={this.getSelectedAreas}
               subimage_matches={this.props.subimage_matches}
               mode={this.state.mode}
               clicked_coords={this.state.clicked_coords}
@@ -375,6 +399,7 @@ class InsightsPanel extends React.Component {
             clearRoiCallback={this.clearRoi}
             scanSubImage={this.scanSubImage}
             clearSubImageMatches={this.clearSubImageMatches}
+            clearSelectedAreas={this.clearSelectedAreas}
             insights_image={this.state.insights_image}
           />
         </div>

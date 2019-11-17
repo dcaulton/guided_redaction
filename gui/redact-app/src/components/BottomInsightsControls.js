@@ -29,7 +29,7 @@ class BottomInsightsControls extends React.Component {
                 className='btn btn-primary ml-5'
                 onClick={() => this.props.clearRoiCallback()}
             >
-              Clear Template
+              Reset Template
             </button>
             <button
                 className='btn btn-primary ml-5'
@@ -41,7 +41,7 @@ class BottomInsightsControls extends React.Component {
                 className='btn btn-primary ml-5'
                 onClick={() => this.props.clearSubImageMatches()}
             >
-              Clear Results
+              Clear Template Matches
             </button>
           </div>
         </div>
@@ -70,6 +70,14 @@ class BottomInsightsControls extends React.Component {
                   value=''
                   onChange={() => console.log('react forces me to put this stupid thing here')}
               />
+          </div>
+          <div className='col ml-1'>
+            <button
+                className='btn btn-primary ml-5'
+                onClick={() => this.props.clearSelectedAreas()}
+            >
+              Clear Selected Areas
+            </button>
           </div>
         </div>
 

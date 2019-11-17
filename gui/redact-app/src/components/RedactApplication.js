@@ -35,7 +35,9 @@ class RedactApplication extends React.Component {
       framesets: {},
       movies: {},
       subimage_matches: {},
+      selected_areas: {},
       roi: {},
+      roi_image: '',
       showMovieParserLink: true,
       showInsightsLink: true,
       showAdvancedPanels: false,
@@ -45,6 +47,7 @@ class RedactApplication extends React.Component {
     this.handleMergeFramesets=this.handleMergeFramesets.bind(this)
     this.doMovieSplit=this.doMovieSplit.bind(this)
     this.setSubImageMatches=this.setSubImageMatches.bind(this)
+    this.setSelectedArea=this.setSelectedArea.bind(this)
     this.setRoi=this.setRoi.bind(this)
   }
 
@@ -254,6 +257,14 @@ class RedactApplication extends React.Component {
     })
   }
 
+  setSelectedArea = (the_areas, the_image) => {
+    let deepCopySelectedAreas= JSON.parse(JSON.stringify(this.state.selected_areas))
+    deepCopySelectedAreas[the_image] = the_areas
+    this.setState({
+      selected_areas: deepCopySelectedAreas,
+    })
+  }
+
   handleSetRedactedImageUrl = (the_url) => {
     this.setState({
       redacted_image_url: the_url,
@@ -266,9 +277,10 @@ class RedactApplication extends React.Component {
     })
   }
 
-  setRoi = (the_roi) => {
+  setRoi = (the_roi, the_insights_image) => {
     this.setState({
       roi: the_roi,
+      roi_image: the_insights_image,
     })
   }
 
@@ -404,9 +416,12 @@ class RedactApplication extends React.Component {
                 floodFillUrl={this.state.flood_fill_url}
                 arrowFillUrl={this.state.arrow_fill_url}
                 setSubImageMatches={this.setSubImageMatches}
+                setSelectedArea={this.setSelectedArea}
                 setRoi={this.setRoi}
                 subimage_matches={this.state.subimage_matches}
+                selected_areas={this.state.selected_areas}
                 roi={this.state.roi}
+                roi_image={this.state.roi_image}
               />
             </Route>
           </Switch>
