@@ -48,7 +48,6 @@ class RedactApplication extends React.Component {
     this.doMovieSplit=this.doMovieSplit.bind(this)
     this.setSubImageMatches=this.setSubImageMatches.bind(this)
     this.setSelectedArea=this.setSelectedArea.bind(this)
-    this.clearSelectedArea=this.clearSelectedArea.bind(this)
     this.setRoi=this.setRoi.bind(this)
   }
 
@@ -258,14 +257,6 @@ class RedactApplication extends React.Component {
     })
   }
 
-  clearSelectedArea = (the_image) => {
-    let deepCopySelectedAreas= JSON.parse(JSON.stringify(this.state.selected_areas))
-    deepCopySelectedAreas[the_image] = []
-    this.setState({
-      selected_areas: deepCopySelectedAreas,
-    })
-  }
-
   setSelectedArea = (the_areas, the_image, the_movie, the_frameset_hash) => {
     let deepCopySelectedAreas= JSON.parse(JSON.stringify(this.state.selected_areas))
     let movie_obj = {}
@@ -300,14 +291,6 @@ class RedactApplication extends React.Component {
     this.setState({
       roi: the_roi,
       roi_image: the_insights_image,
-    })
-  }
-
-  // DMC may not be needed any more
-  handleSetFramesAndFramesets = (the_frames, the_framesets) => {
-    this.setState({
-      frames: the_frames,
-      framesets: the_framesets,
     })
   }
 
@@ -436,7 +419,6 @@ class RedactApplication extends React.Component {
                 arrowFillUrl={this.state.arrow_fill_url}
                 setSubImageMatches={this.setSubImageMatches}
                 setSelectedArea={this.setSelectedArea}
-                clearSelectedArea={this.clearSelectedArea}
                 setRoi={this.setRoi}
                 subimage_matches={this.state.subimage_matches}
                 selected_areas={this.state.selected_areas}

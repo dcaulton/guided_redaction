@@ -146,9 +146,11 @@ class InsightsPanel extends React.Component {
   }
 
   clearSelectedAreas() {
-    this.props.clearSelectedArea(this.state.insights_image)
+    const cur_hash = this.getScrubberFramesetHash() 
+    this.props.setSelectedArea([], this.state.insights_image, this.props.movie_url, cur_hash)
     this.setState({
-      insights_message: 'Selected Areas have been cleared'
+      mode: 'view',
+      insights_message: 'Selected Areas have been cleared',
     })
   }
 
@@ -194,7 +196,6 @@ class InsightsPanel extends React.Component {
       image_scale: scale,
       clicked_coords: [x_scaled, y_scaled],
       insights_message: 'Calling flood fill api',
-      mode: 'flood_fill_2',
     })
     await fetch(this.props.floodFillUrl, {
       method: 'POST',

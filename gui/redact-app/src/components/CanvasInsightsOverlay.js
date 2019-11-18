@@ -38,8 +38,8 @@ class CanvasInsightsOverlay extends React.Component {
 
   drawCrosshairs() {                                                            
     if ((this.props.mode === 'add_roi_2') 
-        || (this.props.mode === 'arrow_fill_2')
-        || (this.props.mode === 'flood_fill_2')) {
+        || (this.props.mode === 'arrow_fill_1')
+        || (this.props.mode === 'flood_fill_1')) {
       const crosshair_length = 2000
       let start_x = this.props.clicked_coords[0] - crosshair_length/2
       start_x = start_x * this.props.image_scale
