@@ -210,8 +210,16 @@ class InsightsPanel extends React.Component {
     })
     .then((response) => response.json())
     .then((responseJson) => {
-      console.log('wazoo')
-      console.log(responseJson)
+      const sa_id = Math.floor(Math.random(1000000, 9999999)*1000000000)
+      const new_sa = {
+          'id': sa_id,
+          'start': responseJson['flood_fill_regions'][0],
+          'end': responseJson['flood_fill_regions'][1],
+      }
+      let deepCopySelectedAreas= JSON.parse(JSON.stringify(this.getSelectedAreas()))
+      deepCopySelectedAreas.push(new_sa)
+      const cur_hash = this.getScrubberFramesetHash() 
+      this.props.setSelectedArea(deepCopySelectedAreas, this.state.insights_image, this.props.movie_url, cur_hash)
     })
     .catch((error) => {
       console.error(error);

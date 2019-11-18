@@ -1,4 +1,5 @@
 import cv2
+import imutils
 import numpy as np
 
 class ExtentsFinder():
@@ -7,24 +8,24 @@ class ExtentsFinder():
     def __init__(self):
         pass
 
-    def determine_flood_fill_area(self, the_image, fill_center, tolerance=5):
-#        template_height, template_width, _ = template.shape
-#
-#        template_copy = template.copy()
-#        template_copy = cv2.cvtColor(template_copy, cv2.COLOR_BGR2GRAY)
-#        cropped_source = the_source[template_top_left[1]:template_top_left[1]+template_height,
-#                   template_top_left[0]:template_top_left[0]+template_width]
-#        cropped_source = cv2.cvtColor(cropped_source, cv2.COLOR_BGR2GRAY)
-#        
-#        template_hist = cv2.calcHist([template_copy], [0], None, [256], [0, 256])
-#        source_hist = cv2.calcHist([cropped_source], [0], None, [256], [0, 256])
-#
-#        res = cv2.compareHist(template_hist, source_hist, cv2.HISTCMP_CORREL)
-#        print('histograms compare at ', res)
-#        if res > .7:
-#            return True
-#        return False
-        return ['alligator soup', 'egg lemon soup']
+    def determine_flood_fill_area(self, the_image, fill_center, tol=5):
+        x = fill_center[0]
+        y = fill_center[1]
+        gray = cv2.cvtColor(the_image, cv2.COLOR_BGR2GRAY)
+        img_height = gray.shape[0]
+        img_width = gray.shape[1]
+        im2 = cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR)
+        x = cv2.floodFill(im2, None, (x, y), (0,255,0), (tol, tol, tol, tol))
+        flood_filled_img = x[1]
+        low_green = np.array([0, 250, 0])
+        hi_green = np.array([0, 255, 0])
+        mask = cv2.inRange(flood_filled_img, low_green, hi_green)
+        cnts = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        cnts = imutils.grab_contours(cnts)
+        biggest_contour = max(cnts, key = cv2.contourArea)
+        (box_x, box_y, box_w, box_h) = cv2.boundingRect(biggest_contour)
+        rect = ((box_x, box_y), (box_x+box_w, box_y+box_h))
+        return rect
 
     def determine_arrow_fill_area(self, image, fill_center, tolerance=5):
         x = fill_center[0]
@@ -36,7 +37,6 @@ class ExtentsFinder():
 
         # find x to the right
         row = gray[y, x:img_width]
-#        mask = row < target_color
         mask = abs(target_color - row) > tolerance
         plus_x = np.where(mask)[0][0]
         # find x to the left
