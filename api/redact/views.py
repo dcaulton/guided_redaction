@@ -30,6 +30,10 @@ def index(request):
     #        more info in its array after those two coordinates that data will be ignored
     if request.method == 'POST':
         request_data = json.loads(request.body)
+        if not request_data.get('image_url'):
+            return HttpResponse('image_url is required', status=400)
+        if not request_data.get('areas_to_redact'):
+            return HttpResponse('areas_to_redact is required', status=400)
         pic_response = requests.get(request_data['image_url'])
         image = pic_response.content
         if image:

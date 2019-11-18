@@ -246,7 +246,7 @@ class RedactApplication extends React.Component {
   }
 
   handleSetRedactedMovieUrl = (the_url) => {
-    this.etsetState({
+    this.setState({
       redacted_movie_url: the_url,
     })
   }

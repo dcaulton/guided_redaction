@@ -35,6 +35,8 @@ def convert_to_urls(frames, unique_frames):
 def index(request):
     if request.method == 'POST':
         request_data = json.loads(request.body)
+        if not request_data.get('movie_url'):
+            return HttpResponse('movie_url is required', status=400)
         movie_url = request_data.get('movie_url')
         if movie_url:
             parser = MovieParser({
@@ -83,8 +85,13 @@ def make_url(request):
 
 @csrf_exempt
 def zip_movie(request):
-    image_urls = json.loads(request.body)['image_urls']
-    movie_name = json.loads(request.body)['movie_name']
+    request_data = json.loads(request.body)
+    if not request_data.get('image_urls'):
+        return HttpResponse('image_urls is required', status=400)
+    if not request_data.get('movie_name'):
+        return HttpResponse('movie_name is required', status=400)
+    image_urls = request_data['image_urls']
+    movie_name = request_data['movie_name']
     image_files = []
     uuid_part = ''
     for image_url in image_urls:
