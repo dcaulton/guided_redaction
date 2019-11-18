@@ -48,6 +48,7 @@ class RedactApplication extends React.Component {
     this.doMovieSplit=this.doMovieSplit.bind(this)
     this.setSubImageMatches=this.setSubImageMatches.bind(this)
     this.setSelectedArea=this.setSelectedArea.bind(this)
+    this.clearMovieSelectedAreas=this.clearMovieSelectedAreas.bind(this)
     this.setRoi=this.setRoi.bind(this)
   }
 
@@ -257,6 +258,8 @@ class RedactApplication extends React.Component {
     })
   }
 
+  // TODO fix this.  If we know the frameset, we don't need the image url
+  //   it wouldn't even make sense for the same framesets to have two images with diff stuff
   setSelectedArea = (the_areas, the_image, the_movie, the_frameset_hash) => {
     let deepCopySelectedAreas= JSON.parse(JSON.stringify(this.state.selected_areas))
     let movie_obj = {}
@@ -270,6 +273,14 @@ class RedactApplication extends React.Component {
     frameset_obj[the_image] = the_areas
     movie_obj[the_frameset_hash] = frameset_obj
     deepCopySelectedAreas[the_movie] = movie_obj
+    this.setState({
+      selected_areas: deepCopySelectedAreas,
+    })
+  }
+
+  clearMovieSelectedAreas = (the_movie) => {
+    let deepCopySelectedAreas= JSON.parse(JSON.stringify(this.state.selected_areas))
+    delete deepCopySelectedAreas[this.state.movie_url]
     this.setState({
       selected_areas: deepCopySelectedAreas,
     })
@@ -419,6 +430,7 @@ class RedactApplication extends React.Component {
                 arrowFillUrl={this.state.arrow_fill_url}
                 setSubImageMatches={this.setSubImageMatches}
                 setSelectedArea={this.setSelectedArea}
+                clearMovieSelectedAreas={this.clearMovieSelectedAreas}
                 setRoi={this.setRoi}
                 subimage_matches={this.state.subimage_matches}
                 selected_areas={this.state.selected_areas}

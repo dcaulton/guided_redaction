@@ -73,11 +73,28 @@ class BottomInsightsControls extends React.Component {
               />
           </div>
           <div className='col ml-1'>
+              Offset from Template UL
+              <input 
+                  id='offset_from_template'
+                  size='3'
+                  value=''
+                  onChange={() => console.log('react forces me to put this stupid thing here')}
+              />
+          </div>
+          <div className='col ml-1'>
             <button
                 className='btn btn-primary ml-5'
                 onClick={() => this.props.clearSelectedAreas()}
             >
               Clear Image 
+            </button>
+          </div>
+          <div className='col ml-1'>
+            <button
+                className='btn btn-primary ml-5'
+                onClick={() => this.props.clearMovieSelectedAreas()}
+            >
+              Clear Movie
             </button>
           </div>
         </div>

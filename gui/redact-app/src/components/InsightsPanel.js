@@ -434,6 +434,7 @@ class InsightsPanel extends React.Component {
             scanSubImage={this.scanSubImage}
             clearSubImageMatches={this.clearSubImageMatches}
             clearSelectedAreas={this.clearSelectedAreas}
+            clearMovieSelectedAreas={this.props.clearMovieSelectedAreas}
             insights_image={this.state.insights_image}
           />
         </div>
