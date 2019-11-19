@@ -3,7 +3,7 @@ import uuid
 from django.http import HttpResponse, JsonResponse
 import json
 import os
-from parse.classes.MovieParser import MovieParser
+from guided_redaction.parse.classes.MovieParser import MovieParser
 from django.shortcuts import render
 from django.conf import settings
 import requests

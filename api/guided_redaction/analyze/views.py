@@ -1,8 +1,8 @@
 import cv2
 from django.views.decorators.csrf import csrf_exempt
-from analyze.classes.EastPlusTessGuidedAnalyzer import EastPlusTessGuidedAnalyzer
-from analyze.classes.TemplateMatcher import TemplateMatcher
-from analyze.classes.ExtentsFinder import ExtentsFinder
+from guided_redaction.analyze.classes.EastPlusTessGuidedAnalyzer import EastPlusTessGuidedAnalyzer
+from guided_redaction.analyze.classes.TemplateMatcher import TemplateMatcher
+from guided_redaction.analyze.classes.ExtentsFinder import ExtentsFinder
 from django.http import HttpResponse, JsonResponse
 import json
 import numpy as np

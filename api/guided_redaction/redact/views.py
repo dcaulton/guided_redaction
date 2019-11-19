@@ -4,7 +4,7 @@ import os
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
 from django.http import HttpResponse, JsonResponse
-from redact.classes.ImageMasker import ImageMasker
+from guided_redaction.redact.classes.ImageMasker import ImageMasker
 import json
 import numpy as np
 import requests

@@ -1,5 +1,5 @@
 import cv2
-from analyze.classes.EastPlusTessScanner import EastPlusTessScanner
+from guided_redaction.analyze.classes.EastPlusTessScanner import EastPlusTessScanner
 
 class EastPlusTessGuidedAnalyzer(EastPlusTessScanner):
 

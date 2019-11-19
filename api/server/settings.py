@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'guided_redaction',
 ]
 
 MIDDLEWARE = [
@@ -122,7 +123,7 @@ USE_TZ = True
 STATIC_URL = '/static/'
 
 #CUSTOM SETTINGS
-EAST_FILE_PATH = 'analyze/bin/frozen_east_text_detection.pb'
+EAST_FILE_PATH = 'guided_redaction/analyze/bin/frozen_east_text_detection.pb'
 CORS_ORIGIN_ALLOW_ALL = True
 FILE_STORAGE_DIR = './work'
 FILE_BASE_URL = 'http://localhost:8080'

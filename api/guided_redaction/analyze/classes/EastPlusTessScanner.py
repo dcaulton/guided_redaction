@@ -1,5 +1,5 @@
 import cv2
-from analyze.classes.EastScanner import EastScanner
+from guided_redaction.analyze.classes.EastScanner import EastScanner
 from imutils import grab_contours
 import math
 import numpy as np
