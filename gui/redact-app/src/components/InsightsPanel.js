@@ -40,6 +40,7 @@ class InsightsPanel extends React.Component {
     this.getMovieMatchesFound=this.getMovieMatchesFound.bind(this)
     this.getMovieSelectedCount=this.getMovieSelectedCount.bind(this)
     this.currentImageIsRoiImage=this.currentImageIsRoiImage.bind(this)
+    this.doPing=this.doPing.bind(this)
   }
 
   currentImageIsRoiImage() {
@@ -74,6 +75,26 @@ class InsightsPanel extends React.Component {
       return ret_str
     }
     return ''
+  }
+
+  async doPing() {
+    await fetch(this.props.ping_url, {
+      method: 'GET',
+    })
+    .then((response) => response.json())
+    .then((responseJson) => {
+      if (responseJson.response === 'pong') {
+        this.setState({
+          insights_message: 'ping succeeded',
+        })
+      }
+    })
+    .catch((error) => {
+      console.error(error);
+        this.setState({
+          insights_message: 'ping failed',
+        })
+    })
   }
 
   async callSubImageScanner() {
@@ -436,6 +457,7 @@ class InsightsPanel extends React.Component {
             clearSelectedAreas={this.clearSelectedAreas}
             clearMovieSelectedAreas={this.props.clearMovieSelectedAreas}
             insights_image={this.state.insights_image}
+            doPing={this.doPing}
           />
         </div>
       </div>

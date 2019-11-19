@@ -24,6 +24,7 @@ class RedactApplication extends React.Component {
       frameset_hash: '',
       image_width: 0,
       image_height: 0,
+      ping_url: 'http://127.0.0.1:8000/v1/parse/ping',
       flood_fill_url: 'http://127.0.0.1:8000/v1/analyze/flood_fill',
       arrow_fill_url: 'http://127.0.0.1:8000/v1/analyze/arrow_fill',
       scan_subimage_url: 'http://127.0.0.1:8000/v1/analyze/scan_subimage',
@@ -436,6 +437,7 @@ class RedactApplication extends React.Component {
                 selected_areas={this.state.selected_areas}
                 roi={this.state.roi}
                 roi_image={this.state.roi_image}
+                ping_url={this.state.ping_url}
               />
             </Route>
           </Switch>

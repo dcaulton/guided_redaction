@@ -118,11 +118,16 @@ class BottomInsightsControls extends React.Component {
             >
               Scan for OCR
             </button>
+          </div>
+        </div>
+
+        <div className='row mt-3'>
+          <div className='col'>
             <button
                 className='btn btn-primary ml-5'
-                onClick={() => console.log('fierce fruit bat')}
+                onClick={() => this.props.doPing()}
             >
-              Scan for OCR
+              Do Ping
             </button>
           </div>
         </div>
