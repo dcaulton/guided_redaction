@@ -1,7 +1,8 @@
 import cv2
-#from cv2 import imread, imwrite, VideoWriter, VideoWriter_fourcc, VideoCapture
 from operator import add
 import os
+import numpy as np
+import requests
 import uuid
 
 # Handles getting from a series of images to a movie and vise versa
@@ -17,15 +18,14 @@ class MovieParser():
 
     def __init__(self, args):
         self.debug = args.get('debug', False)
-        self.working_dir= args.get('working_dir')
         self.input_frames_per_second = args.get('ifps', 1)
         self.output_frames_per_second = args.get('ofps', 1)
         self.scan_method = args.get('scan_method')
         self.movie_url = args.get('movie_url')
+        self.file_writer = args.get('file_writer')
 
         working_uuid = str(uuid.uuid4())
-        self.unique_working_dir = os.path.join(self.working_dir, working_uuid)
-        os.mkdir(self.unique_working_dir)
+        self.unique_working_dir = self.file_writer.create_unique_directory(working_uuid)
 
     def split_movie(self):
         print('splitting movie into frames at ', self.unique_working_dir) if self.debug else None
@@ -46,30 +46,32 @@ class MovieParser():
                             # drop frames not needed for output based on FPS
                             print('dropping frame number ', str(read_count),' due to output_fps') if self.debug else None
                             continue
-                    cv2.imwrite(filename_full, image)
-                    files_created.append(filename_full)
+                    file_url = self.file_writer.write_image_to_url(image, filename_full)
+                    files_created.append(file_url)
                     created_count += 1
         except Exception as e:
             print('exception encountered unzipping movie frames: ', e)
         print("{} frames created".format(str(created_count))) if self.debug else None
         return files_created
 
-    def load_and_hash_frames(self, input_file_list):
-        # we are passed a list of file urls.
+    def load_and_hash_frames(self, input_url_list):
         unique_frames = {}
-        for input_full_path in input_file_list:
-            input_filename = os.path.basename(input_full_path)
-            image = cv2.imread(input_full_path)
-            self.advance_one_frame(image, input_full_path, unique_frames)
+        for input_url in input_url_list:
+            pic_response = requests.get(input_url)
+            img_binary = pic_response.content
+            if img_binary:
+                nparr = np.fromstring(img_binary, np.uint8) 
+                cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+                self.advance_one_frame(cv2_image, input_url, unique_frames)
         return unique_frames
 
-    def advance_one_frame(self, image, image_filename, unique_frames):
+    def advance_one_frame(self, image, image_url, unique_frames):
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         current_hash = self.get_hash(gray)
         if current_hash in unique_frames.keys():
-            unique_frames[current_hash].append(image_filename)
+            unique_frames[current_hash].append(image_url)
         else:
-            unique_frames[current_hash] = [image_filename]
+            unique_frames[current_hash] = [image_url]
 
     def get_hash(self, image):
         resized = cv2.resize(image, (self.image_hash_size+1, self.image_hash_size))
@@ -78,17 +80,8 @@ class MovieParser():
         return the_hash
 
 
-    def zip_movie(self, files_to_zip=[], output_fullpath='output/output.mp4'):
-        print('zipping frames into movie at ', output_fullpath) if self.debug else None
+    def zip_movie(self, image_urls, movie_name='output.mp4'):
+        print('zipping frames into movie at ', movie_name) if self.debug else None
         fps = self.output_frames_per_second
-        if files_to_zip:
-            img = cv2.imread(files_to_zip[0])
-            cap_size = (img.shape[1], img.shape[0])
-        fourcc = cv2.VideoWriter_fourcc('a', 'v', 'c', '1')
-        writer = cv2.VideoWriter(output_fullpath, fourcc, fps, cap_size, True)
-        num_frames = len(files_to_zip)
-        for count, output_frame_full_path in enumerate(files_to_zip):
-            percent_done = str(count+1) + '/' + str(num_frames)
-            frame = cv2.imread(output_frame_full_path)
-            success = writer.write(frame)
-        writer.release()
+        output_url = self.file_writer.write_video_to_url(image_urls, movie_name)
+        return output_url
