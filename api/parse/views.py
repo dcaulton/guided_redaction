@@ -114,3 +114,8 @@ def zip_movie(request):
         'movie_url': output_url,
     }
     return JsonResponse(wrap)
+
+@csrf_exempt
+def ping(request):
+    return JsonResponse({'response': 'pong'})
+
