@@ -11,7 +11,7 @@ class FileWriter():
         self.working_dir = working_dir
         self.base_url = base_url
 
-    def write_image_to_url(self, cv2_image, file_fullpath):
+    def write_cv2_image_to_url(self, cv2_image, file_fullpath):
         image_bytes = cv2.imencode('.png', cv2_image)[1].tostring()
         fh = open(file_fullpath, 'wb')
         fh.write(image_bytes)
@@ -25,7 +25,8 @@ class FileWriter():
   
     def create_unique_directory(self, working_uuid):
         unique_working_dir = os.path.join(self.working_dir, working_uuid)
-        os.mkdir(unique_working_dir)
+        if not os.path.isdir(unique_working_dir):
+            os.mkdir(unique_working_dir)
         return unique_working_dir
 
     def write_video_to_url(self, image_url_list, output_file_name):

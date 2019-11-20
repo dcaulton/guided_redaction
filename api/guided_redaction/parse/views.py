@@ -86,16 +86,7 @@ def zip_movie(request):
         return HttpResponse('movie_name is required', status=400)
     image_urls = request_data['image_urls']
     movie_name = request_data['movie_name']
-#    image_files = []
-#    uuid_part = ''
-#    for image_url in image_urls:
-#        (x_part, file_part) = os.path.split(image_url)
-#        (y_part, uuid_part) = os.path.split(x_part)
-#        file_path = os.path.join(settings.FILE_STORAGE_DIR, uuid_part, file_part)
-#        image_files.append(file_path)
-#    output_filename = movie_name
     print('saving to ', movie_name)
-#    output_url = '/'.join([settings.FILE_BASE_URL, uuid_part, movie_name])
     fw = FileWriter(working_dir=settings.FILE_STORAGE_DIR, base_url=settings.FILE_BASE_URL)
     parser = MovieParser({
       'debug': settings.DEBUG,

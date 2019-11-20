@@ -3,6 +3,7 @@ from urllib.parse import urlsplit
 import os
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
+from guided_redaction.utils.classes.FileWriter import FileWriter
 from django.http import HttpResponse, JsonResponse
 from guided_redaction.redact.classes.ImageMasker import ImageMasker
 import json
@@ -71,7 +72,7 @@ def index(request):
                 inbound_filename = (urlsplit(inbound_image_url)[2]).split('/')[-1]
                 (file_basename, file_extension) = os.path.splitext(inbound_filename)
                 new_filename = file_basename + '_redacted' + file_extension
-                the_url = save_image_to_disk(image_bytes, new_filename, image_hash)
+                the_url = save_image_to_disk(masked_image, new_filename, image_hash)
                 wrap = {
                   'redacted_image_url': the_url,
                   'original_image_url': request_data['image_url'],
@@ -82,16 +83,9 @@ def index(request):
     else:
         return HttpResponse("You're at the redact index.  You're gonna want to do a post though")
 
-def save_image_to_disk(image_bytes, image_name, the_uuid):
-    workdir = os.path.join(settings.FILE_STORAGE_DIR, the_uuid)
-    if not os.path.isdir(workdir):
-        os.mkdir(workdir)
+def save_image_to_disk(cv2_image, image_name, the_uuid):
+    fw = FileWriter(working_dir=settings.FILE_STORAGE_DIR, base_url=settings.FILE_BASE_URL)
+    workdir = fw.create_unique_directory(the_uuid)
     outfilename = os.path.join(workdir, image_name)
-    fh = open(outfilename, 'wb')
-    fh.write(image_bytes)
-    fh.close()
-    (x_part, file_part) = os.path.split(outfilename)
-    (y_part, uuid_part) = os.path.split(x_part)
-    file_url = '/'.join([settings.FILE_BASE_URL, uuid_part, file_part])
+    file_url = fw.write_cv2_image_to_url(cv2_image, outfilename)
     return file_url
-
