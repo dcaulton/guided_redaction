@@ -72,7 +72,7 @@ def index(request):
                 inbound_filename = (urlsplit(inbound_image_url)[2]).split('/')[-1]
                 (file_basename, file_extension) = os.path.splitext(inbound_filename)
                 new_filename = file_basename + '_redacted' + file_extension
-                the_url = save_image_to_disk(masked_image, new_filename, image_hash)
+                the_url = save_image_to_disk(masked_image, new_filename, image_hash, request)
                 wrap = {
                   'redacted_image_url': the_url,
                   'original_image_url': request_data['image_url'],
@@ -83,9 +83,13 @@ def index(request):
     else:
         return HttpResponse("You're at the redact index.  You're gonna want to do a post though")
 
-def save_image_to_disk(cv2_image, image_name, the_uuid):
+def save_image_to_disk(cv2_image, image_name, the_uuid, request):
+    if settings.USE_IMAGEBLOB_STORAGE:
+        the_base_url = request.build_absolute_uri(settings.FILE_BASE_URL)
+    else:
+        the_base_url = settings.FILE_BASE_URL
     fw = FileWriter(working_dir=settings.FILE_STORAGE_DIR,
-        base_url=settings.FILE_BASE_URL,
+        base_url=the_base_url,
         use_image_blob_storage=settings.USE_IMAGEBLOB_STORAGE)
     workdir = fw.create_unique_directory(the_uuid)
     outfilename = os.path.join(workdir, image_name)

@@ -34,8 +34,12 @@ def index(request):
             return HttpResponse('movie_url is required', status=400)
         movie_url = request_data.get('movie_url')
         if movie_url:
+            if settings.USE_IMAGEBLOB_STORAGE:
+                the_base_url = request.build_absolute_uri(settings.FILE_BASE_URL)
+            else:
+                the_base_url = settings.FILE_BASE_URL
             fw = FileWriter(working_dir=settings.FILE_STORAGE_DIR,
-                base_url=settings.FILE_BASE_URL,
+                base_url=the_base_url,
                 use_image_blob_storage=settings.USE_IMAGEBLOB_STORAGE)
             parser = MovieParser({
               'debug': settings.DEBUG,
@@ -90,8 +94,12 @@ def zip_movie(request):
     image_urls = request_data['image_urls']
     movie_name = request_data['movie_name']
     print('saving to ', movie_name)
+    if settings.USE_IMAGEBLOB_STORAGE:
+        the_base_url = request.build_absolute_uri(settings.FILE_BASE_URL)
+    else:
+        the_base_url = settings.FILE_BASE_URL
     fw = FileWriter(working_dir=settings.FILE_STORAGE_DIR,
-        base_url=settings.FILE_BASE_URL,
+        base_url=the_base_url,
         use_image_blob_storage=settings.USE_IMAGEBLOB_STORAGE)
     parser = MovieParser({
       'debug': settings.DEBUG,
