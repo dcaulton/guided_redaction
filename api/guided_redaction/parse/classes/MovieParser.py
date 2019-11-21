@@ -1,4 +1,5 @@
 import cv2
+from django import db
 from operator import add
 import os
 import numpy as np
@@ -82,6 +83,6 @@ class MovieParser():
 
     def zip_movie(self, image_urls, movie_name='output.mp4'):
         print('zipping frames into movie at ', movie_name) if self.debug else None
-        fps = self.output_frames_per_second
-        output_url = self.file_writer.write_video_to_url(image_urls, movie_name)
+        output_url = self.file_writer.write_video(image_urls, movie_name)
+        print('output_url is ', output_url)
         return output_url

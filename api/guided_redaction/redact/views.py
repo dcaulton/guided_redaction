@@ -84,7 +84,9 @@ def index(request):
         return HttpResponse("You're at the redact index.  You're gonna want to do a post though")
 
 def save_image_to_disk(cv2_image, image_name, the_uuid):
-    fw = FileWriter(working_dir=settings.FILE_STORAGE_DIR, base_url=settings.FILE_BASE_URL)
+    fw = FileWriter(working_dir=settings.FILE_STORAGE_DIR,
+        base_url=settings.FILE_BASE_URL,
+        use_image_blob_storage=settings.USE_IMAGEBLOB_STORAGE)
     workdir = fw.create_unique_directory(the_uuid)
     outfilename = os.path.join(workdir, image_name)
     file_url = fw.write_cv2_image_to_url(cv2_image, outfilename)
