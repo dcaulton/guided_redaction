@@ -141,5 +141,5 @@ FILE_STORAGE_DIR = './guided_redaction/work'
 FILE_BASE_URL = 'http://localhost:8080/'
 MYSQL_BASE_URL = '/v1/parse/asset'
 AZURE_BASE_URL = 'https://redactblob.blob.core.windows.net/mycontainer'
-AZURE_CONNECTION_STRING = 'DefaultEndpointsProtocol=https;AccountName=redactblob;AccountKey=pTkHJ1dws5dtiVmX5FF+vYxkp1qNgaz62LeSLcxijoWFUXVzWFkn3BxoGMKxJs4tjjHaI/zI80zeIcfdPPz7sw==;EndpointSuffix=core.windows.net'
-IMAGE_STORAGE='azure_blob'  # file, mysql or azure_blob
+AZURE_BLOB_CONNECTION_STRING = 'DefaultEndpointsProtocol=https;AccountName=redactblob;AccountKey=pTkHJ1dws5dtiVmX5FF+vYxkp1qNgaz62LeSLcxijoWFUXVzWFkn3BxoGMKxJs4tjjHaI/zI80zeIcfdPPz7sw==;EndpointSuffix=core.windows.net'
+IMAGE_STORAGE='file'  # file, mysql or azure_blob

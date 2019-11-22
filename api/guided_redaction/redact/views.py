@@ -89,7 +89,7 @@ def save_image_to_disk(cv2_image, image_name, the_uuid, request):
         the_base_url = request.build_absolute_uri(settings.MYSQL_BASE_URL)
     elif settings.IMAGE_STORAGE == 'azure_blob':
         the_base_url = settings.AZURE_BASE_URL
-        the_connection_string = settings.AZURE_CONNECTION_STRING
+        the_connection_string = settings.AZURE_BLOB_CONNECTION_STRING
     else:
         the_base_url = settings.FILE_BASE_URL
     fw = FileWriter(working_dir=settings.FILE_STORAGE_DIR,

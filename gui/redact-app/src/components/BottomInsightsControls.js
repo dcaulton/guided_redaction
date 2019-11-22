@@ -17,19 +17,25 @@ class BottomInsightsControls extends React.Component {
           className='fixed-bottom'
           style={controls_style}
       >
-        <div className='row'>
+        <div className='row bg-light'>
           <div className='col'>
             <button
-                className='btn btn-primary'
+                className='btn btn-primary ml-5'
+                onClick={() => alert('fun guy')}
+            >
+              Set Template
+            </button>
+            <button
+                className='btn btn-primary ml-5'
                 onClick={() => this.props.setMode('add_roi_1')}
             >
-              Add Template
+              Add Anchor
             </button>
             <button
                 className='btn btn-primary ml-5'
                 onClick={() => this.props.clearRoiCallback()}
             >
-              Reset Template
+              Clear Anchor
             </button>
             <button
                 className='btn btn-primary ml-5'
@@ -46,7 +52,7 @@ class BottomInsightsControls extends React.Component {
           </div>
         </div>
 
-        <div className='row mt-3'>
+        <div className='row mt-3 bg-light'>
           <div className='col'>
             <button
                 className='btn btn-primary'
@@ -99,7 +105,7 @@ class BottomInsightsControls extends React.Component {
           </div>
         </div>
 
-        <div className='row mt-3'>
+        <div className='row mt-3 bg-light'>
           <div className='col'>
             <input 
                 id='match_on_text'
@@ -121,7 +127,7 @@ class BottomInsightsControls extends React.Component {
           </div>
         </div>
 
-        <div className='row mt-3'>
+        <div className='row mt-3 bg-light'>
           <div className='col'>
             <button
                 className='btn btn-primary ml-5'
