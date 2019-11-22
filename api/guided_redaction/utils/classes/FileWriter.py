@@ -1,3 +1,4 @@
+from azure.storage.blob import BlobClient, ContentSettings
 import cv2
 import numpy as np
 import requests
@@ -8,10 +9,11 @@ class FileWriter():
 
     working_dir = ''
 
-    def __init__(self, working_dir, base_url, use_image_blob_storage):
+    def __init__(self, working_dir, base_url, connection_string, image_storage):
         self.working_dir = working_dir
         self.base_url = base_url
-        self.use_image_blob_storage = use_image_blob_storage
+        self.connection_string = connection_string
+        self.image_storage = image_storage
 
     def write_cv2_image_to_url(self, cv2_image, file_fullpath):
         image_bytes = cv2.imencode('.png', cv2_image)[1].tostring()
@@ -19,13 +21,20 @@ class FileWriter():
         (y_part, uuid_part) = os.path.split(x_part)
         new_url = '/'.join([self.base_url, uuid_part, file_part])
 
-        if self.use_image_blob_storage:
+        if self.image_storage == 'mysql':
             image_blob = ImageBlob()
             image_blob.uuid = uuid_part
             image_blob.file_name = file_part
             image_blob.asset_type = 'image/png'
             image_blob.image_data = image_bytes
             image_blob.save()
+        elif self.image_storage == 'azure_blob':
+            blob_name = os.path.join(uuid_part, file_part)
+            blob = BlobClient.from_connection_string(
+                conn_str=self.connection_string, container_name="mycontainer", blob_name=blob_name)
+            blob.upload_blob(image_bytes)
+            blob.set_http_headers(content_settings=ContentSettings(content_type='image/png'))
+            new_url = os.path.join(self.base_url, blob_name)
         else:
             fh = open(file_fullpath, 'wb')
             fh.write(image_bytes)
@@ -53,7 +62,7 @@ class FileWriter():
         fps = 1
         fourcc = cv2.VideoWriter_fourcc('a', 'v', 'c', '1')
 
-        if self.use_image_blob_storage:
+        if self.image_storage == 'mysql' or self.image_storage == 'azure_blob':
             output_tempdir = os.path.join('/tmp', uuid_part)
             self.create_unique_directory(output_tempdir)
             output_fullpath = os.path.join(output_tempdir, output_file_name)
@@ -77,7 +86,7 @@ class FileWriter():
         (y_part, uuid_part) = os.path.split(x_part)
         output_url = '/'.join([self.base_url, uuid_part, file_part])
 
-        if self.use_image_blob_storage:
+        if self.image_storage == 'mysql':
             fh = open(output_fullpath, 'rb')
             image_bytes = fh.read()
             image_blob = ImageBlob()
@@ -86,5 +95,14 @@ class FileWriter():
             image_blob.asset_type = 'video/mp4'
             image_blob.image_data = image_bytes
             image_blob.save()
+        elif self.image_storage == 'azure_blob':
+            fh = open(output_fullpath, 'rb')
+            image_bytes = fh.read()
+            blob_name = os.path.join(uuid_part, file_part)
+            blob = BlobClient.from_connection_string(
+                conn_str=self.connection_string, container_name="mycontainer", blob_name=blob_name)
+            blob.upload_blob(image_bytes)
+            blob.set_http_headers(content_settings=ContentSettings(content_type='video/mp4'))
+            new_url = os.path.join(self.base_url, blob_name)
 
         return output_url

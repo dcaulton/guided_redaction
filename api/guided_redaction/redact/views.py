@@ -84,13 +84,18 @@ def index(request):
         return HttpResponse("You're at the redact index.  You're gonna want to do a post though")
 
 def save_image_to_disk(cv2_image, image_name, the_uuid, request):
-    if settings.USE_IMAGEBLOB_STORAGE:
-        the_base_url = request.build_absolute_uri(settings.FILE_BASE_URL)
+    the_connection_string = ''
+    if settings.IMAGE_STORAGE == 'mysql':
+        the_base_url = request.build_absolute_uri(settings.MYSQL_BASE_URL)
+    elif settings.IMAGE_STORAGE == 'azure_blob':
+        the_base_url = settings.AZURE_BASE_URL
+        the_connection_string = settings.AZURE_CONNECTION_STRING
     else:
         the_base_url = settings.FILE_BASE_URL
     fw = FileWriter(working_dir=settings.FILE_STORAGE_DIR,
         base_url=the_base_url,
-        use_image_blob_storage=settings.USE_IMAGEBLOB_STORAGE)
+        connection_string=the_connection_string,
+        image_storage=settings.IMAGE_STORAGE)
     workdir = fw.create_unique_directory(the_uuid)
     outfilename = os.path.join(workdir, image_name)
     file_url = fw.write_cv2_image_to_url(cv2_image, outfilename)
