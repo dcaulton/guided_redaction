@@ -97,7 +97,7 @@ class BottomInsightsControls extends React.Component {
                     className='btn btn-primary ml-2 mt-2'
                     onClick={() => alert('add template zone')}
                 >
-                  Add Zone
+                  Add Mask Zone
                 </button>
                 <button
                     className='btn btn-primary ml-2 mt-2'
@@ -259,56 +259,128 @@ class BottomInsightsControls extends React.Component {
               <div id='selected_area_main' className='col'>
 
                 <div className='row mt-3 bg-light'>
-                  <div className='col'>
+                  <button
+                      className='btn btn-primary ml-2 mt-2'
+                      onClick={() => this.props.setMode('flood_fill_1')}
+                  >
+                    Flood Fill
+                  </button>
+
+                  <div className='d-inline'>
                     <button
-                        className='btn btn-primary'
-                        onClick={() => this.props.setMode('flood_fill_1')}
+                        className='btn btn-primary ml-2 mt-2 dropdown-toggle'
+                        type='button'
+                        id='arrowFillDropdownButton'
+                        data-toggle='dropdown'
+                        area-haspopup='true'
+                        area-expanded='false'
                     >
-                      Flood Fill Select
+                      Arrow Fill
                     </button>
-                  </div>
-                  <div className='col ml-1'>
-                      <button
-                          className='btn btn-primary'
+                    <div className='dropdown-menu' aria-labelledby='arrowFillDropdownButton'>
+                      <button className='dropdown-item'
                           onClick={() => this.props.setMode('arrow_fill_1')}
                       >
-                        Arrow Fill Select
+                        Simple
                       </button>
+                      <button className='dropdown-item'
+                          onClick={() => alert('arrow fill chain')}
+                      >
+                        Chain
+                      </button>
+                    </div>
                   </div>
-                  <div className='col ml-1'>
-                      Tolerance
+
+                  <div
+                      className='d-inline ml-2 mt-2'
+                  >   
                       <input 
-                          id='fill_tolerance'
-                          size='3'
-                          value=''
-                          onChange={() => console.log('react forces me to put this stupid thing here')}
+                          id='selected_area_tolerance'
+                          size='10'
+                          value='Tolerance %'
+                          onChange={() => console.log('selected area tolerance')}
                       />
                   </div>
-                  <div className='col ml-1'>
-                      Offset from Template UL
+
+                  <div
+                      className='d-inline ml-2 mt-2'
+                  >   
                       <input 
-                          id='offset_from_template'
-                          size='3'
-                          value=''
-                          onChange={() => console.log('react forces me to put this stupid thing here')}
+                          id='selected_area_offset'
+                          size='10'
+                          value='Origin (x,y)' 
+                          onChange={() => console.log('selected area offset')}
                       />
                   </div>
-                  <div className='col ml-1'>
-                    <button
-                        className='btn btn-primary ml-5'
-                        onClick={() => this.props.clearSelectedAreas()}
+
+                  <div className='d-inline ml-2 mt-2'>
+                    <select
+                        name='selected_area_mask_method'
+                        onChange={(event) => this.props.changeMaskMethodCallback(event.target.value)}
                     >
-                      Clear Image 
-                    </button>
+                      <option value='blur_7x7'>--Mask Method--</option>
+                      <option value='blur_7x7'>Gaussian Blur 7x7</option>
+                      <option value='blur_21x21'>Gaussian Blur 21x21</option>
+                      <option value='blur_median'>Median Blur</option>
+                      <option value='black_rectangle'>Black Rectangle</option>
+                    </select>
                   </div>
-                  <div className='col ml-1'>
+
+                  <div className='d-inline'>
                     <button
-                        className='btn btn-primary ml-5'
-                        onClick={() => this.props.clearMovieSelectedAreas()}
+                        className='btn btn-primary ml-2 mt-2 dropdown-toggle'
+                        type='button'
+                        id='selectedAreaMaskDropdownButton'
+                        data-toggle='dropdown'
+                        area-haspopup='true'
+                        area-expanded='false'
                     >
-                      Clear Movie
+                      Mask
                     </button>
+                    <div className='dropdown-menu' aria-labelledby='selectedAreaMaskDropdownButton'>
+                      <button className='dropdown-item'
+                          onClick={() => alert('no mask (default)')}
+                      >
+                        None
+                      </button>
+                      <button className='dropdown-item'
+                          onClick={() => alert('mask everything outside the selected area')}
+                      >
+                        Exterior
+                      </button>
+                      <button className='dropdown-item'
+                          onClick={() => alert('mask everything inside the selected area')}
+                      >
+                        Interior
+                      </button>
+                    </div>
                   </div>
+
+                  <div className='d-inline'>
+                    <button
+                        className='btn btn-primary ml-2 mt-2 dropdown-toggle'
+                        type='button'
+                        id='deleteSelectedAreaDropdownButton'
+                        data-toggle='dropdown'
+                        area-haspopup='true'
+                        area-expanded='false'
+                    >
+                      Clear
+                    </button>
+                    <div className='dropdown-menu' aria-labelledby='deleteSelectedAreaDropdownButton'>
+                      <button className='dropdown-item'
+                          onClick={() => alert('clear selected areas for just this image')}
+                      >
+                        Image
+                      </button>
+                      <button className='dropdown-item'
+                          onClick={() => this.props.clearMovieSelectedAreas()}
+                      >
+                        Movie
+                      </button>
+                    </div>
+                  </div>
+
                 </div>
 
               </div>
