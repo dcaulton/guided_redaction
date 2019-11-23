@@ -131,6 +131,13 @@ class BottomInsightsControls extends React.Component {
 
                 <button
                     className='btn btn-primary ml-2 mt-2'
+                    onClick={() => alert('template mask style')}
+                >
+                  Mask Style
+                </button>
+
+                <button
+                    className='btn btn-primary ml-2 mt-2'
                     onClick={() => this.props.scanSubImage()}
                 >
                   Scan Template
