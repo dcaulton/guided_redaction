@@ -194,12 +194,13 @@ class InsightsPanel extends React.Component {
   handleImageClick = (e) => {
     const x = e.nativeEvent.offsetX
     const y = e.nativeEvent.offsetY
-    console.log('clicked at ('+x+', '+y+')')
     const scale = (document.getElementById('insights_image').width / 
         document.getElementById('insights_image').naturalWidth)
     const x_scaled = parseInt(x / scale)
     const y_scaled = parseInt(y / scale)
-    console.log('click in image coords is  at ('+x_scaled+', '+y_scaled+')')
+    if (x_scaled > this.state.image_width || y_scaled > this.state.image_height) {
+        return
+    }
 
     if (this.state.mode === 'add_roi_1') {
       this.doAddRoiClickOne(scale, x_scaled, y_scaled)

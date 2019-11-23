@@ -308,35 +308,76 @@ class BottomInsightsControls extends React.Component {
                     >
                       Clear Movie
                     </button>
-                    </div>
                   </div>
+                </div>
+
               </div>
             </div>
           </div>
         </div>
 
 
-        <div className='row mt-3 bg-light'>
+
+
+        <div className='row bg-light rounded mt-3'>
           <div className='col'>
-            <input 
-                id='match_on_text'
-                value='match on text'
-                onChange={() => console.log('react forces me to put this stupid thing here')}
-            />
-            <button
-                className='btn btn-primary ml-5'
-                onClick={() => console.log('rabid hedgehog')}
+            <div className='row'>
+              <div 
+                className='col-lg-10 h3'
+              > 
+                ocr
+              </div>
+              <div className='col float-right'>
+                <button
+                    className='btn btn-link'
+                    aria-expanded='false'
+                    data-target='#ocr_body'
+                    aria-controls='ocr_body'
+                    data-toggle='collapse'
+                    type='button'
+                >
+                  show/hide
+                </button>
+              </div>
+            </div>
+
+            <div 
+                id='ocr_body' 
+                className='row collapse'
             >
-              Scan Text
-            </button>
-            <button
-                className='btn btn-primary ml-5'
-                onClick={() => console.log('feisty bunny')}
-            >
-              Scan for OCR
-            </button>
+              <div id='ocr_main' className='col'>
+
+                <div className='row mt-3 bg-light'>
+                  <div className='col'>
+                    <input 
+                        id='match_on_text'
+                        value='match on text'
+                        onChange={() => console.log('react forces me to put this stupid thing here')}
+                    />
+                    <button
+                        className='btn btn-primary ml-5'
+                        onClick={() => console.log('rabid hedgehog')}
+                    >
+                      Scan Text
+                    </button>
+                    <button
+                        className='btn btn-primary ml-5'
+                        onClick={() => console.log('feisty bunny')}
+                    >
+                      Scan for OCR
+                    </button>
+                  </div>
+                </div>
+
+              </div>
+            </div>
           </div>
         </div>
+
+
+
+
+
 
         <div className='row mt-3 bg-light'>
           <div className='col'>
