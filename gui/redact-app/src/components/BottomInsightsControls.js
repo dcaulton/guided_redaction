@@ -156,62 +156,91 @@ class BottomInsightsControls extends React.Component {
 
 
 
-
-
-
-
-        <div className='row mt-3 bg-light'>
+        <div className='row bg-light rounded mt-3'>
           <div className='col'>
-            <button
-                className='btn btn-primary'
-                onClick={() => this.props.setMode('flood_fill_1')}
+            <div className='row'>
+              <div 
+                className='col-lg-10 h3'
+              > 
+                selected area
+              </div>
+              <div className='col float-right'>
+                <button
+                    className='btn btn-link'
+                    aria-expanded='false'
+                    data-target='#selected_area_body'
+                    aria-controls='selected_area_body'
+                    data-toggle='collapse'
+                    type='button'
+                >
+                  show/hide
+                </button>
+              </div>
+            </div>
+
+            <div 
+                id='selected_area_body' 
+                className='row collapse'
             >
-              Flood Fill Select
-            </button>
-          </div>
-          <div className='col ml-1'>
-              <button
-                  className='btn btn-primary'
-                  onClick={() => this.props.setMode('arrow_fill_1')}
-              >
-                Arrow Fill Select
-              </button>
-          </div>
-          <div className='col ml-1'>
-              Tolerance
-              <input 
-                  id='fill_tolerance'
-                  size='3'
-                  value=''
-                  onChange={() => console.log('react forces me to put this stupid thing here')}
-              />
-          </div>
-          <div className='col ml-1'>
-              Offset from Template UL
-              <input 
-                  id='offset_from_template'
-                  size='3'
-                  value=''
-                  onChange={() => console.log('react forces me to put this stupid thing here')}
-              />
-          </div>
-          <div className='col ml-1'>
-            <button
-                className='btn btn-primary ml-5'
-                onClick={() => this.props.clearSelectedAreas()}
-            >
-              Clear Image 
-            </button>
-          </div>
-          <div className='col ml-1'>
-            <button
-                className='btn btn-primary ml-5'
-                onClick={() => this.props.clearMovieSelectedAreas()}
-            >
-              Clear Movie
-            </button>
+              <div id='selected_area_main' className='col'>
+
+                <div className='row mt-3 bg-light'>
+                  <div className='col'>
+                    <button
+                        className='btn btn-primary'
+                        onClick={() => this.props.setMode('flood_fill_1')}
+                    >
+                      Flood Fill Select
+                    </button>
+                  </div>
+                  <div className='col ml-1'>
+                      <button
+                          className='btn btn-primary'
+                          onClick={() => this.props.setMode('arrow_fill_1')}
+                      >
+                        Arrow Fill Select
+                      </button>
+                  </div>
+                  <div className='col ml-1'>
+                      Tolerance
+                      <input 
+                          id='fill_tolerance'
+                          size='3'
+                          value=''
+                          onChange={() => console.log('react forces me to put this stupid thing here')}
+                      />
+                  </div>
+                  <div className='col ml-1'>
+                      Offset from Template UL
+                      <input 
+                          id='offset_from_template'
+                          size='3'
+                          value=''
+                          onChange={() => console.log('react forces me to put this stupid thing here')}
+                      />
+                  </div>
+                  <div className='col ml-1'>
+                    <button
+                        className='btn btn-primary ml-5'
+                        onClick={() => this.props.clearSelectedAreas()}
+                    >
+                      Clear Image 
+                    </button>
+                  </div>
+                  <div className='col ml-1'>
+                    <button
+                        className='btn btn-primary ml-5'
+                        onClick={() => this.props.clearMovieSelectedAreas()}
+                    >
+                      Clear Movie
+                    </button>
+                    </div>
+                  </div>
+              </div>
+            </div>
           </div>
         </div>
+
 
         <div className='row mt-3 bg-light'>
           <div className='col'>
