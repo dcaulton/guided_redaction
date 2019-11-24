@@ -31,6 +31,7 @@ class InsightsPanel extends React.Component {
     this.scrubberOnChange=this.scrubberOnChange.bind(this)
     this.handleSetMode=this.handleSetMode.bind(this)
     this.clearCurrentTemplateAnchor=this.clearCurrentTemplateAnchor.bind(this)
+    this.clearCurrentTemplateMaskZones=this.clearCurrentTemplateMaskZones.bind(this)
     this.scanTemplate=this.scanTemplate.bind(this)
     this.getTemplateMatches=this.getTemplateMatches.bind(this)
     this.clearTemplateMatches=this.clearTemplateMatches.bind(this)
@@ -41,11 +42,20 @@ class InsightsPanel extends React.Component {
     this.currentImageIsTemplateAnchorImage=this.currentImageIsTemplateAnchorImage.bind(this)
     this.doPing=this.doPing.bind(this)
     this.getCurrentTemplateAnchors=this.getCurrentTemplateAnchors.bind(this)
+    this.getCurrentTemplateMaskZones=this.getCurrentTemplateMaskZones.bind(this)
   }
 
   getCurrentTemplateAnchors() {
     if (Object.keys(this.props.templates).includes(this.props.current_template_id)) {
       return this.props.templates[this.props.current_template_id]['anchors']
+    } else {
+      return []
+    }
+  }
+
+  getCurrentTemplateMaskZones() {
+    if (Object.keys(this.props.templates).includes(this.props.current_template_id)) {
+      return this.props.templates[this.props.current_template_id]['mask_zones']
     } else {
       return []
     }
@@ -154,6 +164,8 @@ class InsightsPanel extends React.Component {
       the_message = 'Select the area to flood fill'
     } else if (the_mode === 'arrow_fill_1') {
       the_message = 'Select the area to arrow fill'
+    } else if (the_mode === 'add_template_mask_zone_1') {
+      the_message = 'Select the first corner of the mask zone'
     }
     this.setState({
       mode: the_mode,
@@ -174,13 +186,30 @@ class InsightsPanel extends React.Component {
   
   clearCurrentTemplateAnchor() {
   // This currently clears all anchors.  Update it to take coords to remove just one anchor
+    if (!this.props.templates || Object.keys(this.props.templates).length === 0) {
+      return
+    }
     let deepCopyTemplates = JSON.parse(JSON.stringify(this.props.templates))
-    let cur_template = deepCopyTemplates(this.props.current_template_id)
+    let cur_template = deepCopyTemplates[this.props.current_template_id]
     cur_template['anchors'] =[]
     deepCopyTemplates[this.props.current_template_id] = cur_template
     this.props.setTemplates(deepCopyTemplates)
     this.setState({
       insights_message: 'Anchor has been cleared'
+    })
+  }
+
+  clearCurrentTemplateMaskZones() {
+    if (!this.props.templates || Object.keys(this.props.templates).length === 0) {
+      return
+    }
+    let deepCopyTemplates = JSON.parse(JSON.stringify(this.props.templates))
+    let cur_template = deepCopyTemplates[this.props.current_template_id]
+    cur_template['mask_zones'] =[]
+    deepCopyTemplates[this.props.current_template_id] = cur_template
+    this.props.setTemplates(deepCopyTemplates)
+    this.setState({
+      insights_message: 'Mask zones have been cleared'
     })
   }
 
@@ -245,6 +274,10 @@ class InsightsPanel extends React.Component {
       this.doFloodFill(scale, x_scaled, y_scaled)
     } else if (this.state.mode === 'arrow_fill_1') {
       this.doArrowFill(scale, x_scaled, y_scaled)
+    } else if (this.state.mode === 'add_template_mask_zone_1') {
+      this.doAddTemplateMaskZoneClickOne(scale, x_scaled, y_scaled)
+    } else if (this.state.mode === 'add_template_mask_zone_2') {
+      this.addCurrentTemplateMaskZone(scale, x_scaled, y_scaled)
     }
   }
 
@@ -329,8 +362,17 @@ class InsightsPanel extends React.Component {
     this.setState({
       image_scale: scale,
       clicked_coords: [x_scaled, y_scaled],
-      insights_message: 'pick the second corner of the ROI',
+      insights_message: 'pick the second corner of the anchor',
       mode: 'add_template_anchor_2',
+    })
+  }
+
+  doAddTemplateMaskZoneClickOne(scale, x_scaled, y_scaled) {
+    this.setState({
+      image_scale: scale,
+      clicked_coords: [x_scaled, y_scaled],
+      insights_message: 'pick the second corner of the mask zone',
+      mode: 'add_template_mask_zone_2',
     })
   }
 
@@ -338,7 +380,7 @@ class InsightsPanel extends React.Component {
     const template_id = 'template_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
     let the_template = {
       'id': template_id,
-      'name': 'template_' + template_id.toString(),
+      'name': template_id,
       'anchors': [],
       'mask_zones': [],
     }
@@ -374,6 +416,38 @@ class InsightsPanel extends React.Component {
       clicked_coords: [x_scaled, y_scaled],
       insights_message: 'Anchor has been added',
       mode: 'add_template_anchor_3',
+    })
+  }
+
+  addCurrentTemplateMaskZone(scale, x_scaled, y_scaled) {
+    const mask_zone_id = 'mask_zone_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
+    const the_mask_zone = {
+        'id': mask_zone_id,
+        'start': this.state.clicked_coords, 
+        'end': [x_scaled, y_scaled],
+        'image': this.state.insights_image,
+        'movie': this.props.movie_url,
+    }
+
+    let deepCopyTemplates = JSON.parse(JSON.stringify(this.props.templates))
+    let cur_template = this.createTemplateSkeleton()
+    let template_id = cur_template['id']
+    if (Object.keys(deepCopyTemplates).includes(this.props.current_template_id)) {
+      cur_template = deepCopyTemplates[this.props.current_template_id]
+      template_id = cur_template['id']
+    } else {
+      this.props.setCurrentTemplate(template_id)
+    }
+    cur_template['mask_zones'].push(the_mask_zone)
+    deepCopyTemplates[template_id] = cur_template
+    this.props.setTemplates(deepCopyTemplates)
+
+    this.setState({
+      image_scale: scale,
+      prev_coords: this.state.clicked_coords,
+      clicked_coords: [x_scaled, y_scaled],
+      insights_message: 'Mask zone has been added',
+      mode: 'add_template_mask_zone_3',
     })
   }
 
@@ -492,6 +566,7 @@ class InsightsPanel extends React.Component {
               clickCallback={this.handleImageClick}
               currentImageIsTemplateAnchorImage={this.currentImageIsTemplateAnchorImage}
               getCurrentTemplateAnchors={this.getCurrentTemplateAnchors}
+              getCurrentTemplateMaskZones={this.getCurrentTemplateMaskZones}
               image_scale={this.state.image_scale}
               getTemplateMatches={this.getTemplateMatches}
               getSelectedAreas={this.getSelectedAreas}
@@ -514,12 +589,15 @@ class InsightsPanel extends React.Component {
           <BottomInsightsControls 
             setMode={this.handleSetMode}
             clearCurrentTemplateAnchor={this.clearCurrentTemplateAnchor}
+            clearCurrentTemplateMaskZones={this.clearCurrentTemplateMaskZones}
             scanTemplate={this.scanTemplate}
             clearTemplateMatches={this.clearTemplateMatches}
             clearSelectedAreas={this.clearSelectedAreas}
             clearMovieSelectedAreas={this.props.clearMovieSelectedAreas}
             insights_image={this.state.insights_image}
             doPing={this.doPing}
+            templates={this.props.templates}
+            current_template_id={this.props.current_template_id}
           />
         </div>
       </div>
