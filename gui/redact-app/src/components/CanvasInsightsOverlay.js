@@ -8,36 +8,31 @@ class CanvasInsightsOverlay extends React.Component {
     ctx.clearRect(0, 0, canvas.width, canvas.height)
   }
 
-  getRoiScaledDimensions() {
-    const start = this.props.roi['start']
-    const end = this.props.roi['end']
-    const width = (end[0] - start[0]) * this.props.image_scale
-    const height = (end[1] - start[1]) * this.props.image_scale
-    let ret_val = [width, height]
-    return ret_val
-  }
-
-  drawRoi() {
-    if (this.props.currentImageIsRoiImage()) {
+  drawTemplateAnchors() {
+    if (this.props.currentImageIsTemplateAnchorImage()) {
       const canvas = this.refs.insights_canvas
       let ctx = canvas.getContext('2d')
+      ctx.strokeStyle = '#33F'
+      ctx.lineWidth = 3
       
-      const the_keys = Object.keys(this.props.roi)
-      if (the_keys.includes('start')) {
-        const start_x_scaled = this.props.roi['start'][0] * this.props.image_scale
-        const start_y_scaled = this.props.roi['start'][1] * this.props.image_scale
-        let lala = this.getRoiScaledDimensions() 
-        let width = lala[0]
-        let height = lala[1]
-        ctx.strokeStyle = '#33F'
-        ctx.lineWidth = 3
-        ctx.strokeRect(start_x_scaled, start_y_scaled, width, height)
+      const template_anchors = this.props.getCurrentTemplateAnchors()
+      for (let i=0; i < template_anchors.length; i++) {
+        let the_anchor = template_anchors[i]
+        if (Object.keys(the_anchor).includes('start')) {
+          let start = the_anchor['start']
+          let end = the_anchor['end']
+          const start_x_scaled = start[0] * this.props.image_scale
+          const start_y_scaled = start[1] * this.props.image_scale
+          const width = (end[0] - start[0]) * this.props.image_scale
+          const height = (end[1] - start[1]) * this.props.image_scale
+          ctx.strokeRect(start_x_scaled, start_y_scaled, width, height)
+        }
       }
     }
   }
 
   drawCrosshairs() {                                                            
-    if ((this.props.mode === 'add_roi_2') 
+    if ((this.props.mode === 'add_template_anchor_2') 
         || (this.props.mode === 'arrow_fill_1')
         || (this.props.mode === 'flood_fill_1')) {
       const crosshair_length = 2000
@@ -66,19 +61,24 @@ class CanvasInsightsOverlay extends React.Component {
     }
   }
 
-  drawSubimageMatches() {
-    let template_upper_left = this.props.getSubImageMatches()
-    if (template_upper_left) {
-      const canvas = this.refs.insights_canvas
-      let ctx = canvas.getContext('2d')
-      ctx.strokeStyle = '#3F3'
-      ctx.lineWidth = 2
-      const start_x_scaled = template_upper_left[0] * this.props.image_scale
-      const start_y_scaled = template_upper_left[1] * this.props.image_scale
-      let lala = this.getRoiScaledDimensions() 
-      let width = lala[0]
-      let height = lala[1]
-      ctx.strokeRect(start_x_scaled, start_y_scaled, width, height)
+  drawTemplateMatches() {
+    const canvas = this.refs.insights_canvas
+    let ctx = canvas.getContext('2d')
+    ctx.strokeStyle = '#3F3'
+    ctx.lineWidth = 2
+    let matches = this.props.getTemplateMatches()
+    if (!matches) {
+      return
+    }
+    for (let i=0; i < Object.keys(matches).length; i++) {
+      let anchor_id = Object.keys(matches)[i]
+      let match = matches[anchor_id]
+      let start = match['location']
+      const start_x_scaled = start[0] * this.props.image_scale
+      const start_y_scaled = start[1] * this.props.image_scale
+      const width_scaled = match['size'][0] * this.props.image_scale
+      const height_scaled = match['size'][1] * this.props.image_scale
+      ctx.strokeRect(start_x_scaled, start_y_scaled, width_scaled, height_scaled)
     }
   }
 
@@ -111,16 +111,16 @@ class CanvasInsightsOverlay extends React.Component {
     this.clearCanvasItems()
     this.drawSelectedAreas()
     this.drawCrosshairs()
-    this.drawRoi()
-    this.drawSubimageMatches()
+    this.drawTemplateAnchors()
+    this.drawTemplateMatches()
   }
 
   componentDidUpdate() {
     this.clearCanvasItems()
     this.drawSelectedAreas()
     this.drawCrosshairs()
-    this.drawRoi()
-    this.drawSubimageMatches()
+    this.drawTemplateAnchors()
+    this.drawTemplateMatches()
   }
 
   render() {

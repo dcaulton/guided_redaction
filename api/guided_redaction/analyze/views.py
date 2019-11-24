@@ -46,47 +46,65 @@ def index(request):
         return HttpResponse("You're at the analyze index.  You're gonna want to do a post though")
 
 @csrf_exempt
-def scan_subimage(request):
+def scan_template(request):
     matches = {}
     template_matcher = TemplateMatcher()
     if request.method == 'POST':
         request_data = json.loads(request.body)
-        if request_data.get('subimage_start') == [0,0] and request_data.get('subimage_end') == [0,0]:
-            return HttpResponse('nonzero subimage_start and subimage_end are required', status=400)
+        if not request_data.get('anchors'):
+            return HttpResponse('anchors are required', status=400)
         if not request_data.get('source_image_url'):
             return HttpResponse('source_image_url is required', status=400)
-        if not request_data.get('roi_id'):
-            return HttpResponse('roi_id is required', status=400)
+        if not request_data.get('target_movies') and not request_data.get('target_image'):
+            return HttpResponse('target_movies OR a target_image is required', status=400)
         pic_response = requests.get(request_data['source_image_url'])
         image = pic_response.content
         if image:
             nparr = np.fromstring(image, np.uint8)
             cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-            start = request_data.get('subimage_start')
-            end = request_data.get('subimage_end')
-            roi_id = request_data.get('roi_id')
-            match_image = cv2_image[start[1]:end[1], start[0]:end[0]]
-            targets = request_data.get('targets')
-            for movie_name in targets.keys():
-                print('----------looking at movie ', movie_name)
-                framesets = targets[movie_name]['framesets']
-                for frameset_hash in framesets.keys():
-                    frameset = framesets[frameset_hash]
-                    one_image_url = frameset['images'][0]
-                    oi_response = requests.get(one_image_url)
+            for anchor in request_data.get('anchors'):
+                start = anchor.get('start')
+                end = anchor.get('end')
+                size = (end[0]-start[0], end[1]-start[1])
+                anchor_id = anchor.get('id')
+                match_image = cv2_image[start[1]:end[1], start[0]:end[0]]
+                targets = request_data.get('target_movies')
+                for movie_name in targets.keys():
+                    framesets = targets[movie_name]['framesets']
+                    for frameset_hash in framesets.keys():
+                        frameset = framesets[frameset_hash]
+                        one_image_url = frameset['images'][0]
+                        oi_response = requests.get(one_image_url)
+                        one_image = oi_response.content
+                        if one_image:
+                            oi_nparr = np.fromstring(one_image, np.uint8)
+                            target_image = cv2.imdecode(oi_nparr, cv2.IMREAD_COLOR)
+                            temp_coords = template_matcher.get_template_coords(target_image, match_image)
+                            if temp_coords:
+                                if movie_name not in matches: 
+                                    matches[movie_name] = {}
+                                if frameset_hash not in matches[movie_name]: 
+                                    matches[movie_name][frameset_hash] = {}
+                                matches[movie_name][frameset_hash][anchor_id] = {}
+                                matches[movie_name][frameset_hash][anchor_id]['location'] = temp_coords
+                                matches[movie_name][frameset_hash][anchor_id]['size'] = size
+                if request_data.get('image'):
+                    image_name = request_data.get('image')
+                    oi_response = requests.get(image_name)
                     one_image = oi_response.content
                     if one_image:
                         oi_nparr = np.fromstring(one_image, np.uint8)
                         target_image = cv2.imdecode(oi_nparr, cv2.IMREAD_COLOR)
                         temp_coords = template_matcher.get_template_coords(target_image, match_image)
                         if temp_coords:
-                            if movie_name not in matches: 
-                                matches[movie_name] = {}
-                            matches[movie_name][frameset_hash] = {}
-                            matches[movie_name][frameset_hash][roi_id] = {}
-                            matches[movie_name][frameset_hash][roi_id]['location'] = temp_coords
+                            if image_name not in matches:
+                                matches[image_name] = {}
+                            matches[image_name][anchor_id] = {}
+                            matches[image_name][anchor_id]['location'] = temp_coords
+                            matches[image_name][anchor_id]['size'] = (76, 276)
+            return JsonResponse({'matches': matches})
         else:
-            return HttpResponse('couldnt read image data', status=422)
+            return HttpResponse('couldnt read source image data', status=422)
         return JsonResponse({'matches': matches})
     return HttpResponse('Gotta do a POST, smart guy', status=400)
 

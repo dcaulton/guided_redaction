@@ -27,7 +27,7 @@ class RedactApplication extends React.Component {
       ping_url: 'http://127.0.0.1:8000/v1/parse/ping',
       flood_fill_url: 'http://127.0.0.1:8000/v1/analyze/flood_fill',
       arrow_fill_url: 'http://127.0.0.1:8000/v1/analyze/arrow_fill',
-      scan_subimage_url: 'http://127.0.0.1:8000/v1/analyze/scan_subimage',
+      scan_template_url: 'http://127.0.0.1:8000/v1/analyze/scan_template',
       analyze_url: 'http://127.0.0.1:8000/v1/analyze/',
       redact_url: 'http://127.0.0.1:8000/v1/redact/',
       parse_movie_url: 'http://127.0.0.1:8000/v1/parse/',
@@ -35,10 +35,10 @@ class RedactApplication extends React.Component {
       frames: [],
       framesets: {},
       movies: {},
-      subimage_matches: {},
+      template_matches: {},
+      templates: {},
+      current_template_id: '',
       selected_areas: {},
-      roi: {},
-      roi_image: '',
       showMovieParserLink: true,
       showInsightsLink: true,
       showAdvancedPanels: false,
@@ -47,10 +47,23 @@ class RedactApplication extends React.Component {
     this.getPrevImageLink=this.getPrevImageLink.bind(this)
     this.handleMergeFramesets=this.handleMergeFramesets.bind(this)
     this.doMovieSplit=this.doMovieSplit.bind(this)
-    this.setSubImageMatches=this.setSubImageMatches.bind(this)
+    this.setTemplateMatches=this.setTemplateMatches.bind(this)
     this.setSelectedArea=this.setSelectedArea.bind(this)
     this.clearMovieSelectedAreas=this.clearMovieSelectedAreas.bind(this)
-    this.setRoi=this.setRoi.bind(this)
+    this.setTemplates=this.setTemplates.bind(this)
+    this.setCurrentTemplate=this.setCurrentTemplate.bind(this)
+  }
+
+  setTemplates = (the_templates) => {
+    this.setState({
+      templates: the_templates,
+    })
+  }
+
+  setCurrentTemplate = (current_template_id) => {
+    this.setState({
+      current_template_id: current_template_id,
+    })
   }
 
   componentDidMount() {
@@ -253,9 +266,11 @@ class RedactApplication extends React.Component {
     })
   }
 
-  setSubImageMatches = (the_matches) => {
+  setTemplateMatches = (template_id, the_matches) => {
+    let deepCopyTemplateMatches = JSON.parse(JSON.stringify(this.state.template_matches))
+    deepCopyTemplateMatches[template_id] = the_matches
     this.setState({
-      subimage_matches: the_matches,
+      template_matches: deepCopyTemplateMatches,
     })
   }
 
@@ -296,13 +311,6 @@ class RedactApplication extends React.Component {
   handleSetMaskMethod = (mask_method) => {
     this.setState({
       mask_method: mask_method,
-    })
-  }
-
-  setRoi = (the_roi, the_insights_image) => {
-    this.setState({
-      roi: the_roi,
-      roi_image: the_insights_image,
     })
   }
 
@@ -426,18 +434,19 @@ class RedactApplication extends React.Component {
                 movie_url={this.state.movie_url}
                 movies={this.state.movies}
                 framesets={this.state.framesets}
-                scanSubImageUrl={this.state.scan_subimage_url}
+                scanTemplateUrl={this.state.scan_template_url}
                 floodFillUrl={this.state.flood_fill_url}
                 arrowFillUrl={this.state.arrow_fill_url}
-                setSubImageMatches={this.setSubImageMatches}
+                setTemplateMatches={this.setTemplateMatches}
                 setSelectedArea={this.setSelectedArea}
                 clearMovieSelectedAreas={this.clearMovieSelectedAreas}
-                setRoi={this.setRoi}
-                subimage_matches={this.state.subimage_matches}
+                template_matches={this.state.template_matches}
                 selected_areas={this.state.selected_areas}
-                roi={this.state.roi}
-                roi_image={this.state.roi_image}
                 ping_url={this.state.ping_url}
+                templates={this.state.templates}
+                current_template_id={this.state.current_template_id}
+                setTemplates={this.setTemplates}
+                setCurrentTemplate={this.setCurrentTemplate}
               />
             </Route>
           </Switch>

@@ -83,13 +83,13 @@ class BottomInsightsControls extends React.Component {
 
                 <button
                     className='btn btn-primary ml-2 mt-2'
-                    onClick={() => this.props.setMode('add_roi_1')}
+                    onClick={() => this.props.setMode('add_template_anchor_1')}
                 >
                   Add Anchor
                 </button>
                 <button
                     className='btn btn-primary ml-2 mt-2'
-                    onClick={() => this.props.clearRoiCallback()}
+                    onClick={() => this.props.clearCurrentTemplateAnchor()}
                 >
                   Clear Anchor
                 </button>
@@ -146,17 +146,17 @@ class BottomInsightsControls extends React.Component {
                   </button>
                   <div className='dropdown-menu' aria-labelledby='scanTemplateDropdownButton'>
                     <button className='dropdown-item'
-                        onClick={() => alert('scan just this image')}
+                        onClick={() => this.props.scanTemplate('image')}
                     >
                       Image
                     </button>
                     <button className='dropdown-item'
-                        onClick={() => alert('scan this movie')}
+                        onClick={() => this.props.scanTemplate('movie')}
                     >
                       Movie
                     </button>
                     <button className='dropdown-item'
-                        onClick={() => this.props.scanSubImage()}
+                        onClick={() => this.props.scanTemplate('all_movies')}
                     >
                       All Movies
                     </button>
@@ -186,7 +186,7 @@ class BottomInsightsControls extends React.Component {
                       Movie
                     </button>
                     <button className='dropdown-item'
-                        onClick={() => this.props.clearSubImageMatches()}
+                        onClick={() => this.props.clearTemplateMatches()}
                     >
                       All Movies
                     </button>
@@ -246,6 +246,17 @@ class BottomInsightsControls extends React.Component {
                     <option value='blur_21x21'>Gaussian Blur 21x21</option>
                     <option value='blur_median'>Median Blur</option>
                     <option value='black_rectangle'>Black Rectangle</option>
+                  </select>
+                </div>
+
+                <div className='d-inline ml-2'>
+                  <select
+                      name='template_match_method'
+                      onChange={(event) => alert('template match method')}
+                  >
+                    <option value='all'>--Match Method--</option>
+                    <option value='all'>Match All Anchors</option>
+                    <option value='any'>Match Any Anchor</option>
                   </select>
                 </div>
 
