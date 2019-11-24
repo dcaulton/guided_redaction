@@ -33,8 +33,8 @@ class InsightsPanel extends React.Component {
     this.handleSetMode=this.handleSetMode.bind(this)
     this.clearRoi=this.clearRoi.bind(this)
     this.scanSubImage=this.scanSubImage.bind(this)
-    this.getSubImageMatches=this.getSubImageMatches.bind(this)
-    this.clearSubImageMatches=this.clearSubImageMatches.bind(this)
+    this.getTemplateMatches=this.getTemplateMatches.bind(this)
+    this.clearTemplateMatches=this.clearTemplateMatches.bind(this)
     this.clearSelectedAreas=this.clearSelectedAreas.bind(this)
     this.movieSplitDone=this.movieSplitDone.bind(this)
     this.getMovieMatchesFound=this.getMovieMatchesFound.bind(this)
@@ -115,7 +115,7 @@ class InsightsPanel extends React.Component {
     .then((response) => response.json())
     .then((responseJson) => {
       let matches = responseJson.matches
-      this.props.setSubImageMatches(matches)
+      this.props.setTemplateMatches(matches)
     })
     .catch((error) => {
       console.error(error);
@@ -159,8 +159,8 @@ class InsightsPanel extends React.Component {
     })
   }
 
-  clearSubImageMatches() {
-    this.props.setSubImageMatches({})
+  clearTemplateMatches() {
+    this.props.setTemplateMatches({})
     this.setState({
       insights_message: 'SubImage matches have been cleared'
     })
@@ -341,7 +341,7 @@ class InsightsPanel extends React.Component {
 
   }
 
-  getSubImageMatches() {
+  getTemplateMatches() {
     let cur_hash = this.getScrubberFramesetHash()
     if (this.props.subimage_matches && Object.keys(this.props.subimage_matches).includes(this.props.movie_url)) {
       let sim = this.props.subimage_matches[this.props.movie_url]
@@ -431,7 +431,7 @@ class InsightsPanel extends React.Component {
               roi={this.props.roi}
               currentImageIsRoiImage={this.currentImageIsRoiImage}
               image_scale={this.state.image_scale}
-              getSubImageMatches={this.getSubImageMatches}
+              getTemplateMatches={this.getTemplateMatches}
               getSelectedAreas={this.getSelectedAreas}
               subimage_matches={this.props.subimage_matches}
               mode={this.state.mode}
@@ -454,7 +454,7 @@ class InsightsPanel extends React.Component {
             setMode={this.handleSetMode}
             clearRoiCallback={this.clearRoi}
             scanSubImage={this.scanSubImage}
-            clearSubImageMatches={this.clearSubImageMatches}
+            clearTemplateMatches={this.clearTemplateMatches}
             clearSelectedAreas={this.clearSelectedAreas}
             clearMovieSelectedAreas={this.props.clearMovieSelectedAreas}
             insights_image={this.state.insights_image}

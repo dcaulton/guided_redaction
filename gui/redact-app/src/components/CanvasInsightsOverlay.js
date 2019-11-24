@@ -66,8 +66,8 @@ class CanvasInsightsOverlay extends React.Component {
     }
   }
 
-  drawSubimageMatches() {
-    let template_upper_left = this.props.getSubImageMatches()
+  drawTemplateMatches() {
+    let template_upper_left = this.props.getTemplateMatches()
     if (template_upper_left) {
       const canvas = this.refs.insights_canvas
       let ctx = canvas.getContext('2d')
@@ -112,7 +112,7 @@ class CanvasInsightsOverlay extends React.Component {
     this.drawSelectedAreas()
     this.drawCrosshairs()
     this.drawRoi()
-    this.drawSubimageMatches()
+    this.drawTemplateMatches()
   }
 
   componentDidUpdate() {
@@ -120,7 +120,7 @@ class CanvasInsightsOverlay extends React.Component {
     this.drawSelectedAreas()
     this.drawCrosshairs()
     this.drawRoi()
-    this.drawSubimageMatches()
+    this.drawTemplateMatches()
   }
 
   render() {

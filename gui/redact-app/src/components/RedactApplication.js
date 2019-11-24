@@ -47,7 +47,7 @@ class RedactApplication extends React.Component {
     this.getPrevImageLink=this.getPrevImageLink.bind(this)
     this.handleMergeFramesets=this.handleMergeFramesets.bind(this)
     this.doMovieSplit=this.doMovieSplit.bind(this)
-    this.setSubImageMatches=this.setSubImageMatches.bind(this)
+    this.setTemplateMatches=this.setTemplateMatches.bind(this)
     this.setSelectedArea=this.setSelectedArea.bind(this)
     this.clearMovieSelectedAreas=this.clearMovieSelectedAreas.bind(this)
     this.setRoi=this.setRoi.bind(this)
@@ -253,7 +253,7 @@ class RedactApplication extends React.Component {
     })
   }
 
-  setSubImageMatches = (the_matches) => {
+  setTemplateMatches = (the_matches) => {
     this.setState({
       subimage_matches: the_matches,
     })
@@ -429,7 +429,7 @@ class RedactApplication extends React.Component {
                 scanSubImageUrl={this.state.scan_subimage_url}
                 floodFillUrl={this.state.flood_fill_url}
                 arrowFillUrl={this.state.arrow_fill_url}
-                setSubImageMatches={this.setSubImageMatches}
+                setTemplateMatches={this.setTemplateMatches}
                 setSelectedArea={this.setSelectedArea}
                 clearMovieSelectedAreas={this.clearMovieSelectedAreas}
                 setRoi={this.setRoi}

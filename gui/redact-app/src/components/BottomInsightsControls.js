@@ -186,7 +186,7 @@ class BottomInsightsControls extends React.Component {
                       Movie
                     </button>
                     <button className='dropdown-item'
-                        onClick={() => this.props.clearSubImageMatches()}
+                        onClick={() => this.props.clearTemplateMatches()}
                     >
                       All Movies
                     </button>
