@@ -133,6 +133,65 @@ class BottomInsightsControls extends React.Component {
                   </div>
                 </div>
 
+                <div className='d-inline'>
+                  <button
+                      className='btn btn-primary ml-2 mt-2 dropdown-toggle'
+                      type='button'
+                      id='scanTemplateDropdownButton'
+                      data-toggle='dropdown'
+                      area-haspopup='true'
+                      area-expanded='false'
+                  >
+                    Run
+                  </button>
+                  <div className='dropdown-menu' aria-labelledby='scanTemplateDropdownButton'>
+                    <button className='dropdown-item'
+                        onClick={() => alert('scan just this image')}
+                    >
+                      Image
+                    </button>
+                    <button className='dropdown-item'
+                        onClick={() => alert('scan this movie')}
+                    >
+                      Movie
+                    </button>
+                    <button className='dropdown-item'
+                        onClick={() => this.props.scanSubImage()}
+                    >
+                      All Movies
+                    </button>
+                  </div>
+                </div>
+
+                <div className='d-inline'>
+                  <button
+                      className='btn btn-primary ml-2 mt-2 dropdown-toggle'
+                      type='button'
+                      id='deleteTemplateMatchDropdownButton'
+                      data-toggle='dropdown'
+                      area-haspopup='true'
+                      area-expanded='false'
+                  >
+                    Clear
+                  </button>
+                  <div className='dropdown-menu' aria-labelledby='deleteTemplateMatchDropdownButton'>
+                    <button className='dropdown-item'
+                        onClick={() => alert('clear template matches for just this image')}
+                    >
+                      Image
+                    </button>
+                    <button className='dropdown-item'
+                        onClick={() => alert('clear template matches for this movie')}
+                    >
+                      Movie
+                    </button>
+                    <button className='dropdown-item'
+                        onClick={() => this.props.clearSubImageMatches()}
+                    >
+                      All Movies
+                    </button>
+                  </div>
+                </div>
                 <div className='d-inline ml-2'>
                   <select
                       name='template_scale'
@@ -190,38 +249,6 @@ class BottomInsightsControls extends React.Component {
                   </select>
                 </div>
 
-
-                <div className='d-inline'>
-                  <button
-                      className='btn btn-primary ml-2 mt-2 dropdown-toggle'
-                      type='button'
-                      id='scanTemplateDropdownButton'
-                      data-toggle='dropdown'
-                      area-haspopup='true'
-                      area-expanded='false'
-                  >
-                    Scan
-                  </button>
-                  <div className='dropdown-menu' aria-labelledby='scanTemplateDropdownButton'>
-                    <button className='dropdown-item'
-                        onClick={() => alert('scan just this movie')}
-                    >
-                      Movie
-                    </button>
-                    <button className='dropdown-item'
-                        onClick={() => this.props.scanSubImage()}
-                    >
-                      All Movies
-                    </button>
-                  </div>
-                </div>
-
-                <button
-                    className='btn btn-primary ml-2 mt-2 mb-2'
-                    onClick={() => this.props.clearSubImageMatches()}
-                >
-                  Clear
-                </button>
               </div>
 
             </div>
@@ -290,42 +317,7 @@ class BottomInsightsControls extends React.Component {
                       </button>
                     </div>
                   </div>
-
-                  <div
-                      className='d-inline ml-2 mt-2'
-                  >   
-                      <input 
-                          id='selected_area_tolerance'
-                          size='10'
-                          value='Tolerance %'
-                          onChange={() => console.log('selected area tolerance')}
-                      />
-                  </div>
-
-                  <div
-                      className='d-inline ml-2 mt-2'
-                  >   
-                      <input 
-                          id='selected_area_offset'
-                          size='10'
-                          value='Origin (x,y)' 
-                          onChange={() => console.log('selected area offset')}
-                      />
-                  </div>
-
-                  <div className='d-inline ml-2 mt-2'>
-                    <select
-                        name='selected_area_mask_method'
-                        onChange={(event) => this.props.changeMaskMethodCallback(event.target.value)}
-                    >
-                      <option value='blur_7x7'>--Mask Method--</option>
-                      <option value='blur_7x7'>Gaussian Blur 7x7</option>
-                      <option value='blur_21x21'>Gaussian Blur 21x21</option>
-                      <option value='blur_median'>Median Blur</option>
-                      <option value='black_rectangle'>Black Rectangle</option>
-                    </select>
-                  </div>
-
+                  
                   <div className='d-inline'>
                     <button
                         className='btn btn-primary ml-2 mt-2 dropdown-toggle'
@@ -360,6 +352,36 @@ class BottomInsightsControls extends React.Component {
                     <button
                         className='btn btn-primary ml-2 mt-2 dropdown-toggle'
                         type='button'
+                        id='scanSelectedAreaDropdownButton'
+                        data-toggle='dropdown'
+                        area-haspopup='true'
+                        area-expanded='false'
+                    >
+                      Run
+                    </button>
+                    <div className='dropdown-menu' aria-labelledby='scanSelectedAreaDropdownButton'>
+                      <button className='dropdown-item'
+                          onClick={() => alert('scan just this image')}
+                      >
+                        Image
+                      </button>
+                      <button className='dropdown-item'
+                          onClick={() => alert('scan this movie')}
+                      >
+                        Movie
+                      </button>
+                      <button className='dropdown-item'
+                          onClick={() => alert('scan all movies')}
+                      >
+                        All Movies
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className='d-inline'>
+                    <button
+                        className='btn btn-primary ml-2 mt-2 dropdown-toggle'
+                        type='button'
                         id='deleteSelectedAreaDropdownButton'
                         data-toggle='dropdown'
                         area-haspopup='true'
@@ -369,16 +391,67 @@ class BottomInsightsControls extends React.Component {
                     </button>
                     <div className='dropdown-menu' aria-labelledby='deleteSelectedAreaDropdownButton'>
                       <button className='dropdown-item'
-                          onClick={() => alert('clear selected areas for just this image')}
+                          onClick={() => alert('clear selectd areas for just this image')}
                       >
                         Image
                       </button>
                       <button className='dropdown-item'
-                          onClick={() => this.props.clearMovieSelectedAreas()}
+                          onClick={() => alert('clear selected areas for this movie')}
                       >
                         Movie
                       </button>
+                      <button className='dropdown-item'
+                          onClick={() => this.props.clearMovieSelectedAreas()}
+                      >
+                        All Movies
+                      </button>
                     </div>
+                  </div>
+
+                  <div
+                      className='d-inline ml-2 mt-2'
+                  >   
+                      <input 
+                          id='selected_area_tolerance'
+                          size='10'
+                          value='Tolerance %'
+                          onChange={() => console.log('selected area tolerance')}
+                      />
+                  </div>
+
+                  <div
+                      className='d-inline ml-2 mt-2'
+                  >   
+                      <input 
+                          id='selected_area_offset'
+                          size='10'
+                          value='Offset (x,y)' 
+                          onChange={() => console.log('selected area offset')}
+                      />
+                  </div>
+
+                  <div className='d-inline ml-2 mt-2'>
+                    <select
+                        name='selected_area_mask_method'
+                        onChange={(event) => this.props.changeMaskMethodCallback(event.target.value)}
+                    >
+                      <option value='blur_7x7'>--Mask Method--</option>
+                      <option value='blur_7x7'>Gaussian Blur 7x7</option>
+                      <option value='blur_21x21'>Gaussian Blur 21x21</option>
+                      <option value='blur_median'>Median Blur</option>
+                      <option value='black_rectangle'>Black Rectangle</option>
+                    </select>
+                  </div>
+
+                  <div className='d-inline ml-2 mt-2'>
+                    <select
+                        name='selected_area_origin_template_anchor'
+                        onChange={(event) => alert('selected area mask origin template anchor')}
+                    >
+                      <option value='default'>--Template Anchor--</option>
+                      <option value='template_1_andrew'>template 1 Andrew</option>
+                      <option value='template_2_billy'>template 2 Billy</option>
+                    </select>
                   </div>
 
                 </div>
@@ -420,25 +493,89 @@ class BottomInsightsControls extends React.Component {
               <div id='ocr_main' className='col'>
 
                 <div className='row mt-3 bg-light'>
-                  <div className='col'>
-                    <input 
-                        id='match_on_text'
-                        value='match on text'
-                        onChange={() => console.log('react forces me to put this stupid thing here')}
-                    />
-                    <button
-                        className='btn btn-primary ml-5'
-                        onClick={() => console.log('rabid hedgehog')}
-                    >
-                      Scan Text
-                    </button>
-                    <button
-                        className='btn btn-primary ml-5'
-                        onClick={() => console.log('feisty bunny')}
-                    >
-                      Scan for OCR
-                    </button>
+                
+                  <div
+                      className='d-inline ml-2 mt-2'
+                  >   
+                      <input 
+                          id='ocr_match_on_text'
+                          size='30'
+                          value='match on text' 
+                          onChange={() => console.log('match on text')}
+                      />
                   </div>
+
+                  <div
+                      className='d-inline ml-2 mt-2'
+                  >   
+                      <input 
+                          id='ocr_similarity'
+                          size='10'
+                          value='Similarity %' 
+                          onChange={() => console.log('OCR similarity %')}
+                      />
+                  </div>
+
+                  <div className='d-inline'>
+                    <button
+                        className='btn btn-primary ml-2 mt-2 dropdown-toggle'
+                        type='button'
+                        id='scanOcrDropdownButton'
+                        data-toggle='dropdown'
+                        area-haspopup='true'
+                        area-expanded='false'
+                    >
+                      Run
+                    </button>
+                    <div className='dropdown-menu' aria-labelledby='scanOcrDropdownButton'>
+                      <button className='dropdown-item'
+                          onClick={() => alert('scan just this image')}
+                      >
+                        Image
+                      </button>
+                      <button className='dropdown-item'
+                          onClick={() => alert('scan just this movie')}
+                      >
+                        Movie
+                      </button>
+                      <button className='dropdown-item'
+                          onClick={() => alert('scan all movies')}
+                      >
+                        All Movies
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className='d-inline'>
+                    <button
+                        className='btn btn-primary ml-2 mt-2 dropdown-toggle'
+                        type='button'
+                        id='deleteOcrDropdownButton'
+                        data-toggle='dropdown'
+                        area-haspopup='true'
+                        area-expanded='false'
+                    >
+                      Clear
+                    </button>
+                    <div className='dropdown-menu' aria-labelledby='deleteOcrDropdownButton'>
+                      <button className='dropdown-item'
+                          onClick={() => alert('clear OCR data for just this image')}
+                      >
+                        Image
+                      </button>
+                      <button className='dropdown-item'
+                          onClick={() => alert('clear OCR data for all frames of this movie')}
+                      >
+                        Movie
+                      </button>
+                      <button className='dropdown-item'
+                          onClick={() => alert('clear OCR data for all movies')}
+                      >
+                        All Movies
+                      </button>
+                    </div>
+                  </div>
+
                 </div>
 
               </div>
@@ -451,15 +588,28 @@ class BottomInsightsControls extends React.Component {
 
 
 
-        <div className='row mt-3 bg-light'>
-          <div className='col'>
+        <div className='row mt-3 bg-light rounded mt-3'>
             <button
-                className='btn btn-primary ml-5'
+                className='btn btn-primary mt-2 ml-2'
                 onClick={() => this.props.doPing()}
             >
-              Do Ping
+              Ping
             </button>
-          </div>
+
+            <button
+                className='btn btn-primary mt-2 ml-2'
+                onClick={() => alert('load')}
+            >
+              Load Prev Session
+            </button>
+
+            <button
+                className='btn btn-primary mt-2 ml-2'
+                onClick={() => alert('save')}
+            >
+              Save Session
+            </button>
+
         </div>
 
       </div>
