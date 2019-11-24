@@ -95,13 +95,13 @@ class BottomInsightsControls extends React.Component {
                 </button>
                 <button
                     className='btn btn-primary ml-2 mt-2'
-                    onClick={() => alert('add template zone')}
+                    onClick={() => this.props.setMode('add_template_mask_zone_1')}
                 >
                   Add Mask Zone
                 </button>
                 <button
                     className='btn btn-primary ml-2 mt-2'
-                    onClick={() => alert('clear template zones')}
+                    onClick={() => this.props.clearCurrentTemplateMaskZones()}
                 >
                   Clear Zones
                 </button>
@@ -212,7 +212,7 @@ class BottomInsightsControls extends React.Component {
                     className='d-inline ml-2 mt-2'
                 >   
                     <input 
-                        id='template_name'
+                        id='template_hist_percent'
                         size='10'
                         value='Hist %'
                         onChange={() => console.log('setting histogram percent')}
@@ -223,7 +223,7 @@ class BottomInsightsControls extends React.Component {
                     className='d-inline ml-2 mt-2'
                 >   
                     <input 
-                        id='template_name'
+                        id='template_match_percent'
                         size='10'
                         value='Match %'
                         onChange={() => console.log('setting template match percent')}
@@ -236,7 +236,7 @@ class BottomInsightsControls extends React.Component {
                     <input 
                         id='template_name'
                         size='25'
-                        value='Template Name'
+                        value='Template name'
                         onChange={() => console.log('setting template name')}
                     />
                 </div>
