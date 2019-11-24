@@ -48,6 +48,7 @@ class RedactApplication extends React.Component {
     this.handleMergeFramesets=this.handleMergeFramesets.bind(this)
     this.doMovieSplit=this.doMovieSplit.bind(this)
     this.setTemplateMatches=this.setTemplateMatches.bind(this)
+    this.clearTemplateMatches=this.clearTemplateMatches.bind(this)
     this.setSelectedArea=this.setSelectedArea.bind(this)
     this.clearMovieSelectedAreas=this.clearMovieSelectedAreas.bind(this)
     this.setTemplates=this.setTemplates.bind(this)
@@ -274,6 +275,12 @@ class RedactApplication extends React.Component {
     })
   }
 
+  clearTemplateMatches = (template_id, the_matches) => {
+    this.setState({
+      template_matches: {},
+    })
+  }
+
   // TODO fix this.  If we know the frameset, we don't need the image url
   //   it wouldn't even make sense for the same framesets to have two images with diff stuff
   setSelectedArea = (the_areas, the_image, the_movie, the_frameset_hash) => {
@@ -438,6 +445,7 @@ class RedactApplication extends React.Component {
                 floodFillUrl={this.state.flood_fill_url}
                 arrowFillUrl={this.state.arrow_fill_url}
                 setTemplateMatches={this.setTemplateMatches}
+                clearTemplateMatches={this.clearTemplateMatches}
                 setSelectedArea={this.setSelectedArea}
                 clearMovieSelectedAreas={this.clearMovieSelectedAreas}
                 template_matches={this.state.template_matches}

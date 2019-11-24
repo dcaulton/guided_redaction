@@ -172,23 +172,28 @@ class BottomInsightsControls extends React.Component {
                       area-haspopup='true'
                       area-expanded='false'
                   >
-                    Clear
+                    Clear Matches
                   </button>
                   <div className='dropdown-menu' aria-labelledby='deleteTemplateMatchDropdownButton'>
                     <button className='dropdown-item'
-                        onClick={() => alert('clear template matches for just this image')}
+                        onClick={() => this.props.clearTemplateMatches('image')}
                     >
                       Image
                     </button>
                     <button className='dropdown-item'
-                        onClick={() => alert('clear template matches for this movie')}
+                        onClick={() => this.props.clearTemplateMatches('movie')}
                     >
                       Movie
                     </button>
                     <button className='dropdown-item'
-                        onClick={() => this.props.clearTemplateMatches()}
+                        onClick={() => this.props.clearTemplateMatches('all_movies')}
                     >
                       All Movies
+                    </button>
+                    <button className='dropdown-item'
+                        onClick={() => this.props.clearTemplateMatches('all_templates')}
+                    >
+                      All Templates
                     </button>
                   </div>
                 </div>

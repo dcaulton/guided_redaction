@@ -184,10 +184,20 @@ class InsightsPanel extends React.Component {
     })
   }
 
-  clearTemplateMatches() {
-    this.props.setTemplateMatches({})
+  clearTemplateMatches(scope) {
+    if (scope === 'all_templates') {
+      this.props.clearTemplateMatches()
+    } else if (scope === 'all_movies') {
+      this.props.setTemplateMatches(this.props.current_template_id, {})
+    } else if (scope === 'movie') {
+      let deepCopy = JSON.parse(JSON.stringify(this.props.template_matches[this.props.current_template_id]))
+      if (Object.keys(deepCopy).includes(this.props.movie_url)) {
+        delete deepCopy[this.props.movie_url]
+        this.props.setTemplateMatches(this.props.current_template_id, deepCopy)
+      }
+    }
     this.setState({
-      insights_message: 'SubImage matches have been cleared'
+      insights_message: 'Template matches have been cleared'
     })
   }
 
