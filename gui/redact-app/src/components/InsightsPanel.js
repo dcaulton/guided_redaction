@@ -1,4 +1,4 @@
-import React from 'react';
+import React from 'react'
 import CanvasInsightsOverlay from './CanvasInsightsOverlay'
 import BottomInsightsControls from './BottomInsightsControls'
 
@@ -24,47 +24,67 @@ class InsightsPanel extends React.Component {
       insights_message: '',
       prev_coords: (0,0),
       clicked_coords: (0,0),
-      roi: this.props.roi,
     }
     this.getSelectedAreas=this.getSelectedAreas.bind(this)
     this.setCurrentVideo=this.setCurrentVideo.bind(this)
     this.movieSplitDone=this.movieSplitDone.bind(this)
     this.scrubberOnChange=this.scrubberOnChange.bind(this)
     this.handleSetMode=this.handleSetMode.bind(this)
-    this.clearRoi=this.clearRoi.bind(this)
-    this.scanSubImage=this.scanSubImage.bind(this)
+    this.clearCurrentTemplateAnchor=this.clearCurrentTemplateAnchor.bind(this)
+    this.scanTemplate=this.scanTemplate.bind(this)
     this.getTemplateMatches=this.getTemplateMatches.bind(this)
     this.clearTemplateMatches=this.clearTemplateMatches.bind(this)
     this.clearSelectedAreas=this.clearSelectedAreas.bind(this)
     this.movieSplitDone=this.movieSplitDone.bind(this)
     this.getMovieMatchesFound=this.getMovieMatchesFound.bind(this)
     this.getMovieSelectedCount=this.getMovieSelectedCount.bind(this)
-    this.currentImageIsRoiImage=this.currentImageIsRoiImage.bind(this)
+    this.currentImageIsTemplateAnchorImage=this.currentImageIsTemplateAnchorImage.bind(this)
     this.doPing=this.doPing.bind(this)
+    this.getCurrentTemplateAnchors=this.getCurrentTemplateAnchors.bind(this)
   }
 
-  currentImageIsRoiImage() {
-    return (this.props.roi_image === this.state.insights_image)
+  getCurrentTemplateAnchors() {
+    if (Object.keys(this.props.templates).includes(this.props.current_template_id)) {
+      return this.props.templates[this.props.current_template_id]['anchors']
+    } else {
+      return []
+    }
   }
 
-  scanSubImage() {
-    this.callSubImageScanner()
+  currentImageIsTemplateAnchorImage() {
+    if (this.props.current_template_id) {
+      let key = this.props.current_template_id
+      let cur_template_anchor_image_name = this.props.templates[key]['anchors'][0]['image']
+      return (cur_template_anchor_image_name === this.state.insights_image)
+    }
+    return false
+  }
+
+  scanTemplate(scope) {
+    if (scope === 'all_movies') {
+      this.callTemplateScanner(this.props.movies)
+    } else if (scope === 'movie') {
+      const the_movie = this.props.movies[this.props.movie_url]
+      const wrap = {}
+      wrap[this.props.movie_url] = the_movie
+      this.callTemplateScanner(wrap)
+    } else if (scope === 'image') {
+      this.callTemplateScanner([], this.props.insights_image)
+    }
   }
 
   getMovieMatchesFound(movie_url) {
-    // returns the number of matches within all relevant images from this movie 
-    if (Object.keys(this.props.subimage_matches).includes(movie_url)) {
-      let match_count = 0
-      for (let frameset_hashkey in this.props.subimage_matches[movie_url]) {
-        let roi_keys = Object.keys(this.props.subimage_matches[movie_url][frameset_hashkey])
-        for (let i=0; i < roi_keys.length; i++) {
-          match_count++
-        }
-      }
-      const ret_str = match_count.toString() + ' template matches'
-      return ret_str
+    let message = '0 images matched any anchor'
+    if (!Object.keys(this.props.template_matches).includes(this.props.current_template_id)) {
+      return message
     }
-    return ''
+    const cur_templates_matches = this.props.template_matches[this.props.current_template_id]
+    if (!Object.keys(cur_templates_matches).includes(movie_url)) {
+      return message 
+    }
+    const cur_movies_matches = cur_templates_matches[movie_url]
+    let count = Object.keys(cur_movies_matches).length
+    return count.toString() + ' images matched any anchor'
   }
 
   getMovieSelectedCount(movie_url) {
@@ -97,8 +117,9 @@ class InsightsPanel extends React.Component {
     })
   }
 
-  async callSubImageScanner() {
-    await fetch(this.props.scanSubImageUrl, {
+  async callTemplateScanner(movies=[], image='') {
+    let anchors = this.getCurrentTemplateAnchors()
+    await fetch(this.props.scanTemplateUrl, {
       method: 'POST',
       headers: {
         Accept: 'application/json',
@@ -106,16 +127,15 @@ class InsightsPanel extends React.Component {
       },
       body: JSON.stringify({
         source_image_url: this.state.insights_image,
-        subimage_start: this.props.roi['start'],
-        subimage_end: this.props.roi['end'],
-        roi_id: this.props.roi['id'],
-        targets: this.props.movies,
+        anchors: anchors, 
+        target_movies: movies,
+        target_image: image,
       }),
     })
     .then((response) => response.json())
     .then((responseJson) => {
       let matches = responseJson.matches
-      this.props.setTemplateMatches(matches)
+      this.props.setTemplateMatches(this.props.current_template_id, matches)
     })
     .catch((error) => {
       console.error(error);
@@ -128,7 +148,7 @@ class InsightsPanel extends React.Component {
 
   handleSetMode(the_mode) {
     let the_message = ''
-    if (the_mode === 'add_roi_1') {
+    if (the_mode === 'add_template_anchor_1') {
       the_message = 'Select the first corner of the Region of Interest'
     } else if (the_mode === 'flood_fill_1') {
       the_message = 'Select the area to flood fill'
@@ -152,10 +172,15 @@ class InsightsPanel extends React.Component {
     }, this.setImageSize)
   }
   
-  clearRoi() {
-    this.props.setRoi({}, '')
+  clearCurrentTemplateAnchor() {
+  // This currently clears all anchors.  Update it to take coords to remove just one anchor
+    let deepCopyTemplates = JSON.parse(JSON.stringify(this.props.templates))
+    let cur_template = deepCopyTemplates(this.props.current_template_id)
+    cur_template['anchors'] =[]
+    deepCopyTemplates[this.props.current_template_id] = cur_template
+    this.props.setTemplates(deepCopyTemplates)
     this.setState({
-      insights_message: 'ROI has been cleared'
+      insights_message: 'Anchor has been cleared'
     })
   }
 
@@ -202,10 +227,10 @@ class InsightsPanel extends React.Component {
         return
     }
 
-    if (this.state.mode === 'add_roi_1') {
-      this.doAddRoiClickOne(scale, x_scaled, y_scaled)
-    } else if (this.state.mode === 'add_roi_2') {
-      this.addRoi(scale, x_scaled, y_scaled)
+    if (this.state.mode === 'add_template_anchor_1') {
+      this.doAddTemplateAnchorClickOne(scale, x_scaled, y_scaled)
+    } else if (this.state.mode === 'add_template_anchor_2') {
+      this.addCurrentTemplateAnchor(scale, x_scaled, y_scaled)
     } else if (this.state.mode === 'flood_fill_1') {
       this.doFloodFill(scale, x_scaled, y_scaled)
     } else if (this.state.mode === 'arrow_fill_1') {
@@ -290,29 +315,55 @@ class InsightsPanel extends React.Component {
     })
   }
 
-  doAddRoiClickOne(scale, x_scaled, y_scaled) {
+  doAddTemplateAnchorClickOne(scale, x_scaled, y_scaled) {
     this.setState({
       image_scale: scale,
       clicked_coords: [x_scaled, y_scaled],
       insights_message: 'pick the second corner of the ROI',
-      mode: 'add_roi_2',
+      mode: 'add_template_anchor_2',
     })
   }
 
-  addRoi(scale, x_scaled, y_scaled) {
-    const roi_id = Math.floor(Math.random(1000000, 9999999)*1000000000)
-    const the_roi = {
-        'id': roi_id,
+  createTemplateSkeleton() {
+    const template_id = 'template_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
+    let the_template = {
+      'id': template_id,
+      'name': 'template_' + template_id.toString(),
+      'anchors': [],
+      'mask_zones': [],
+    }
+    return the_template
+  }
+
+  addCurrentTemplateAnchor(scale, x_scaled, y_scaled) {
+    const anchor_id = 'anchor_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
+    const the_anchor = {
+        'id': anchor_id,
         'start': this.state.clicked_coords, 
         'end': [x_scaled, y_scaled],
+        'image': this.state.insights_image,
+        'movie': this.props.movie_url,
     }
-    this.props.setRoi(the_roi, this.state.insights_image)
+
+    let deepCopyTemplates = JSON.parse(JSON.stringify(this.props.templates))
+    let cur_template = this.createTemplateSkeleton()
+    let template_id = cur_template['id']
+    if (Object.keys(deepCopyTemplates).includes(this.props.current_template_id)) {
+      cur_template = deepCopyTemplates[this.props.current_template_id]
+      template_id = cur_template['id']
+    } else {
+      this.props.setCurrentTemplate(template_id)
+    }
+    cur_template['anchors'].push(the_anchor)
+    deepCopyTemplates[template_id] = cur_template
+    this.props.setTemplates(deepCopyTemplates)
+
     this.setState({
       image_scale: scale,
       prev_coords: this.state.clicked_coords,
       clicked_coords: [x_scaled, y_scaled],
-      insights_message: 'ROI selected.  press scan to see any matches',
-      mode: 'add_roi_3',
+      insights_message: 'Anchor has been added',
+      mode: 'add_template_anchor_3',
     })
   }
 
@@ -342,18 +393,19 @@ class InsightsPanel extends React.Component {
   }
 
   getTemplateMatches() {
-    let cur_hash = this.getScrubberFramesetHash()
-    if (this.props.subimage_matches && Object.keys(this.props.subimage_matches).includes(this.props.movie_url)) {
-      let sim = this.props.subimage_matches[this.props.movie_url]
-      if (Object.keys(sim).includes(cur_hash)) {
-        let first_subimage_match_key = Object.keys(sim[cur_hash])[0].toString()
-        let roi_id_str = this.props.roi['id'].toString()
-        if (first_subimage_match_key === roi_id_str) {
-          let location = sim[cur_hash][roi_id_str]['location']
-          return location
-        }
-      }
+    if (!Object.keys(this.props.template_matches).includes(this.props.current_template_id)) {
+      return
     }
+    const cur_templates_matches = this.props.template_matches[this.props.current_template_id]
+    if (!Object.keys(cur_templates_matches).includes(this.props.movie_url)) {
+      return
+    }
+    const cur_movies_matches = cur_templates_matches[this.props.movie_url]
+    const insight_image_hash = this.props.getFramesetHashForImageUrl(this.state.insights_image)
+    if (!Object.keys(cur_movies_matches).includes(insight_image_hash)) {
+      return
+    }
+    return cur_movies_matches[insight_image_hash]
   }
 
   getSelectedAreas() {
@@ -428,12 +480,11 @@ class InsightsPanel extends React.Component {
               width={this.state.image_width}
               height={this.state.image_height}
               clickCallback={this.handleImageClick}
-              roi={this.props.roi}
-              currentImageIsRoiImage={this.currentImageIsRoiImage}
+              currentImageIsTemplateAnchorImage={this.currentImageIsTemplateAnchorImage}
+              getCurrentTemplateAnchors={this.getCurrentTemplateAnchors}
               image_scale={this.state.image_scale}
               getTemplateMatches={this.getTemplateMatches}
               getSelectedAreas={this.getSelectedAreas}
-              subimage_matches={this.props.subimage_matches}
               mode={this.state.mode}
               clicked_coords={this.state.clicked_coords}
             />
@@ -452,8 +503,8 @@ class InsightsPanel extends React.Component {
           </div>
           <BottomInsightsControls 
             setMode={this.handleSetMode}
-            clearRoiCallback={this.clearRoi}
-            scanSubImage={this.scanSubImage}
+            clearCurrentTemplateAnchor={this.clearCurrentTemplateAnchor}
+            scanTemplate={this.scanTemplate}
             clearTemplateMatches={this.clearTemplateMatches}
             clearSelectedAreas={this.clearSelectedAreas}
             clearMovieSelectedAreas={this.props.clearMovieSelectedAreas}
