@@ -24,6 +24,7 @@ class RedactApplication extends React.Component {
       frameset_hash: '',
       image_width: 0,
       image_height: 0,
+      image_scale: 1,
       ping_url: 'http://127.0.0.1:8000/v1/parse/ping',
       flood_fill_url: 'http://127.0.0.1:8000/v1/analyze/flood_fill',
       arrow_fill_url: 'http://127.0.0.1:8000/v1/analyze/arrow_fill',
@@ -213,11 +214,13 @@ class RedactApplication extends React.Component {
     var app_this = this
     if (create_frameset) {
         img.onload = function(){
+            const scale = this.width / this.naturalWidth
             app_this.setState({
               image_url: the_url,
               redacted_image_url: '',
               image_width: this.width,
               image_height: this.height,
+              image_scale: scale,
               frameset_hash: new_frameset_hash,
               framesets: new_frameset,
               frames: new_frames,
@@ -225,11 +228,13 @@ class RedactApplication extends React.Component {
         };
     } else {
         img.onload = function(){
+            const scale = this.width / this.naturalWidth
             app_this.setState({
               image_url: the_url,
               redacted_image_url: '',
               image_width: this.width,
               image_height: this.height,
+              image_scale: scale,
               frameset_hash: new_frameset_hash,
             })
         }
@@ -419,6 +424,7 @@ class RedactApplication extends React.Component {
                 redacted_image_url = {this.state.redacted_image_url}
                 image_width = {this.state.image_width}
                 image_height = {this.state.image_height}
+                image_scale = {this.state.image_scale}
                 analyze_url = {this.state.analyze_url}
                 redact_url = {this.state.redact_url}
                 framesets={this.state.framesets}
