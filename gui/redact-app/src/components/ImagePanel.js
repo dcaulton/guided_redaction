@@ -32,18 +32,20 @@ class ImagePanel extends React.Component {
   handleImageClick = (e) => {
     let x = e.nativeEvent.offsetX
     let y = e.nativeEvent.offsetY
+    const x_scaled = parseInt(x / this.props.image_scale)
+    const y_scaled = parseInt(y / this.props.image_scale)
 
     // TODO make this into a hashtable, it's going to grow
     if (this.state.mode === 'add_1') {
-      this.handleAddFirst(x, y)
+      this.handleAddFirst(x_scaled, y_scaled)
     } else if (this.state.mode === 'add_2') {
-      this.handleAddSecond(x, y)
+      this.handleAddSecond(x_scaled, y_scaled)
     } else if (this.state.mode === 'delete') {
-      this.handleDelete(x, y)
+      this.handleDelete(x_scaled, y_scaled)
     } else if (this.state.mode === 'delete_1') {
-      this.handleDeleteFirst(x, y)
+      this.handleDeleteFirst(x_scaled, y_scaled)
     } else if (this.state.mode === 'delete_2') {
-      this.handleDeleteSecond(x, y)
+      this.handleDeleteSecond(x_scaled, y_scaled)
     }
   }
 
@@ -263,6 +265,7 @@ class ImagePanel extends React.Component {
               submode={this.state.submode}
               image_width={this.props.image_width}
               image_height={this.props.image_height}
+              image_scale={this.props.image_scale}
               clickCallback= {this.handleImageClick}
               last_click= {this.state.last_click}
               getRedactionFromFrameset={this.props.getRedactionFromFrameset}
