@@ -30,10 +30,10 @@ class CanvasInsightsOverlay extends React.Component {
         if (Object.keys(the_anchor).includes('start')) {
           let start = the_anchor['start']
           let end = the_anchor['end']
-          const start_x_scaled = start[0] * this.props.image_scale
-          const start_y_scaled = start[1] * this.props.image_scale
-          const width = (end[0] - start[0]) * this.props.image_scale
-          const height = (end[1] - start[1]) * this.props.image_scale
+          const start_x_scaled = start[0] * this.props.insights_image_scale
+          const start_y_scaled = start[1] * this.props.insights_image_scale
+          const width = (end[0] - start[0]) * this.props.insights_image_scale
+          const height = (end[1] - start[1]) * this.props.insights_image_scale
           ctx.strokeRect(start_x_scaled, start_y_scaled, width, height)
         }
       }
@@ -53,10 +53,10 @@ class CanvasInsightsOverlay extends React.Component {
         if (Object.keys(the_mask_zone).includes('start')) {
           let start = the_mask_zone['start']
           let end = the_mask_zone['end']
-          const start_x_scaled = start[0] * this.props.image_scale
-          const start_y_scaled = start[1] * this.props.image_scale
-          const width = (end[0] - start[0]) * this.props.image_scale
-          const height = (end[1] - start[1]) * this.props.image_scale
+          const start_x_scaled = start[0] * this.props.insights_image_scale
+          const start_y_scaled = start[1] * this.props.insights_image_scale
+          const width = (end[0] - start[0]) * this.props.insights_image_scale
+          const height = (end[1] - start[1]) * this.props.insights_image_scale
           ctx.strokeRect(start_x_scaled, start_y_scaled, width, height)
         }
       }
@@ -70,26 +70,26 @@ class CanvasInsightsOverlay extends React.Component {
         || (this.props.mode === 'flood_fill_1')) {
       const crosshair_length = 2000
       let start_x = this.props.clicked_coords[0] - crosshair_length/2
-      start_x = start_x * this.props.image_scale
+      start_x = start_x * this.props.insights_image_scale
       let end_x = this.props.clicked_coords[0] + crosshair_length/2
-      end_x = end_x * this.props.image_scale
+      end_x = end_x * this.props.insights_image_scale
       let start_y = this.props.clicked_coords[1] - crosshair_length/2
-      start_y = start_y * this.props.image_scale
+      start_y = start_y * this.props.insights_image_scale
       let end_y = this.props.clicked_coords[1] + crosshair_length/2
-      end_y = end_y * this.props.image_scale
+      end_y = end_y * this.props.insights_image_scale
       const canvas = this.refs.insights_canvas
       let ctx = canvas.getContext("2d")
       ctx.strokeStyle = this.crosshairs_color
       ctx.lineWidth = 1
 
       ctx.beginPath()
-      ctx.moveTo(start_x, this.props.clicked_coords[1]*this.props.image_scale)
-      ctx.lineTo(end_x, this.props.clicked_coords[1]*this.props.image_scale)
+      ctx.moveTo(start_x, this.props.clicked_coords[1]*this.props.insights_image_scale)
+      ctx.lineTo(end_x, this.props.clicked_coords[1]*this.props.insights_image_scale)
       ctx.stroke()
 
       ctx.beginPath()
-      ctx.moveTo(this.props.clicked_coords[0]*this.props.image_scale, start_y)
-      ctx.lineTo(this.props.clicked_coords[0]*this.props.image_scale, end_y)
+      ctx.moveTo(this.props.clicked_coords[0]*this.props.insights_image_scale, start_y)
+      ctx.lineTo(this.props.clicked_coords[0]*this.props.insights_image_scale, end_y)
       ctx.stroke()
     }
   }
@@ -107,10 +107,10 @@ class CanvasInsightsOverlay extends React.Component {
       let anchor_id = Object.keys(matches)[i]
       let match = matches[anchor_id]
       let start = match['location']
-      const start_x_scaled = start[0] * this.props.image_scale
-      const start_y_scaled = start[1] * this.props.image_scale
-      const width_scaled = match['size'][0] * this.props.image_scale
-      const height_scaled = match['size'][1] * this.props.image_scale
+      const start_x_scaled = start[0] * this.props.insights_image_scale
+      const start_y_scaled = start[1] * this.props.insights_image_scale
+      const width_scaled = match['size'][0] * this.props.insights_image_scale
+      const height_scaled = match['size'][1] * this.props.insights_image_scale
       ctx.strokeRect(start_x_scaled, start_y_scaled, width_scaled, height_scaled)
     }
   }
@@ -124,18 +124,18 @@ class CanvasInsightsOverlay extends React.Component {
     ctx.lineWidth = 3
     for (let i=0; i < selected_areas.length; i++) {
       const selected_area = selected_areas[i]
-      const start_x_scaled = selected_area['start'][0] * this.props.image_scale
-      const start_y_scaled = selected_area['start'][1] * this.props.image_scale
-      const width = (selected_area['end'][0] * this.props.image_scale) - start_x_scaled
-      const height= (selected_area['end'][1] * this.props.image_scale) - start_y_scaled
+      const start_x_scaled = selected_area['start'][0] * this.props.insights_image_scale
+      const start_y_scaled = selected_area['start'][1] * this.props.insights_image_scale
+      const width = (selected_area['end'][0] * this.props.insights_image_scale) - start_x_scaled
+      const height= (selected_area['end'][1] * this.props.insights_image_scale) - start_y_scaled
       ctx.strokeRect(start_x_scaled, start_y_scaled, width, height)
     }
     for (let i=0; i < selected_areas.length; i++) {
       const selected_area = selected_areas[i]
-      const start_x_scaled = selected_area['start'][0] * this.props.image_scale
-      const start_y_scaled = selected_area['start'][1] * this.props.image_scale
-      const width = (selected_area['end'][0] * this.props.image_scale) - start_x_scaled
-      const height= (selected_area['end'][1] * this.props.image_scale) - start_y_scaled
+      const start_x_scaled = selected_area['start'][0] * this.props.insights_image_scale
+      const start_y_scaled = selected_area['start'][1] * this.props.insights_image_scale
+      const width = (selected_area['end'][0] * this.props.insights_image_scale) - start_x_scaled
+      const height= (selected_area['end'][1] * this.props.insights_image_scale) - start_y_scaled
       ctx.clearRect(start_x_scaled, start_y_scaled, width, height)
     }
   }

@@ -18,8 +18,6 @@ class BottomInsightsControls extends React.Component {
           style={controls_style}
       >
 
-
-
         <div className='row bg-light rounded'>
           <div className='col'>
             <div className='row'>
@@ -465,8 +463,8 @@ class BottomInsightsControls extends React.Component {
                         onChange={(event) => alert('selected area mask origin template anchor')}
                     >
                       <option value='default'>--Template Anchor--</option>
-                      <option value='template_1_andrew'>template 1 Andrew</option>
-                      <option value='template_2_billy'>template 2 Billy</option>
+                      <option value='template_1_andrew'>template 1 Bocephus</option>
+                      <option value='template_2_billy'>template 2 Stan</option>
                     </select>
                   </div>
 
