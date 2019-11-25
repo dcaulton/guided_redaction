@@ -19,7 +19,7 @@ class InsightsPanel extends React.Component {
       insights_image: '',
       image_width: 100,
       image_height: 100,
-      image_scale: 1,
+      insights_image_scale: 1,
       insights_title: 'Insights, load a movie to get started',
       insights_message: '',
       prev_coords: (0,0),
@@ -283,7 +283,7 @@ class InsightsPanel extends React.Component {
 
   async doFloodFill(scale, x_scaled, y_scaled) {
     this.setState({
-      image_scale: scale,
+      insights_image_scale: scale,
       clicked_coords: [x_scaled, y_scaled],
       insights_message: 'Calling flood fill api',
     })
@@ -319,7 +319,7 @@ class InsightsPanel extends React.Component {
 
   async doArrowFill(scale, x_scaled, y_scaled) {
     this.setState({
-      image_scale: scale,
+      insights_image_scale: scale,
       clicked_coords: [x_scaled, y_scaled],
       insights_message: 'Calling arrow fill api',
     })
@@ -360,7 +360,7 @@ class InsightsPanel extends React.Component {
 
   doAddTemplateAnchorClickOne(scale, x_scaled, y_scaled) {
     this.setState({
-      image_scale: scale,
+      insights_image_scale: scale,
       clicked_coords: [x_scaled, y_scaled],
       insights_message: 'pick the second corner of the anchor',
       mode: 'add_template_anchor_2',
@@ -369,7 +369,7 @@ class InsightsPanel extends React.Component {
 
   doAddTemplateMaskZoneClickOne(scale, x_scaled, y_scaled) {
     this.setState({
-      image_scale: scale,
+      insights_image_scale: scale,
       clicked_coords: [x_scaled, y_scaled],
       insights_message: 'pick the second corner of the mask zone',
       mode: 'add_template_mask_zone_2',
@@ -411,7 +411,7 @@ class InsightsPanel extends React.Component {
     this.props.setTemplates(deepCopyTemplates)
 
     this.setState({
-      image_scale: scale,
+      insights_image_scale: scale,
       prev_coords: this.state.clicked_coords,
       clicked_coords: [x_scaled, y_scaled],
       insights_message: 'Anchor has been added',
@@ -443,7 +443,7 @@ class InsightsPanel extends React.Component {
     this.props.setTemplates(deepCopyTemplates)
 
     this.setState({
-      image_scale: scale,
+      insights_image_scale: scale,
       prev_coords: this.state.clicked_coords,
       clicked_coords: [x_scaled, y_scaled],
       insights_message: 'Mask zone has been added',
@@ -567,7 +567,7 @@ class InsightsPanel extends React.Component {
               currentImageIsTemplateAnchorImage={this.currentImageIsTemplateAnchorImage}
               getCurrentTemplateAnchors={this.getCurrentTemplateAnchors}
               getCurrentTemplateMaskZones={this.getCurrentTemplateMaskZones}
-              image_scale={this.state.image_scale}
+              insights_image_scale={this.state.insights_image_scale}
               getTemplateMatches={this.getTemplateMatches}
               getSelectedAreas={this.getSelectedAreas}
               mode={this.state.mode}
