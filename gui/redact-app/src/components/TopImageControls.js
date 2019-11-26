@@ -57,8 +57,7 @@ class TopImageControls extends React.Component {
     return (
       <div id='bottom_controls_div'>
         <div className='row'>
-          <div className='col-md-1' />
-          <div className='col' id='add_div'>
+          <div id='add_div'>
             <button className='btn btn-primary dropdown-toggle' type='button' id='addDropdownButton'
                 data-toggle='dropdown' aria-haspopup='true' aria-expanded='false'>
               Add
@@ -76,8 +75,9 @@ class TopImageControls extends React.Component {
               </button>
             </div>
           </div>
-          <div className='col' id='delete_div'>
-            <button className='btn btn-primary dropdown-toggle' type='button' id='deleteDropdownButton'
+
+          <div id='delete_div'>
+            <button className='btn btn-primary dropdown-toggle ml-2' type='button' id='deleteDropdownButton'
                 data-toggle='dropdown' aria-haspopup='true' aria-expanded='false'>
               Delete
             </button>
@@ -94,36 +94,36 @@ class TopImageControls extends React.Component {
               </button>
             </div>
           </div>
-          <div className='col'>
+
+          <button 
+              className='btn btn-primary ml-2' 
+              onClick={() => this.props.setModeCallback('view', '')}
+              href='./index.html' >
+            Cancel
+          </button>
+          
+          <button 
+              className='btn btn-primary ml-2' 
+              onClick={() => this.handleReset()}
+              href='./index.html' >
+            Reset
+          </button>
+        
+          <div>
             <button 
-                className='btn btn-primary' 
-                onClick={() => this.props.setModeCallback('view', '')}
-                href='./index.html' >
-              Cancel
-            </button>
-          </div>
-          <div className='col'>
-            <button 
-                className='btn btn-primary' 
-                onClick={() => this.handleReset()}
-                href='./index.html' >
-              Reset
-            </button>
-          </div>
-          <div className='col'>
-            <button 
-                className='btn btn-primary'  
+                className='btn btn-primary ml-2'  
                 onClick={() => this.handleRedact()}
                 href='./index.html' >
               Redact
             </button>
           </div>
+
           <div className='col'>
-            Mask Method: 
             <select 
                 name='mask_method'
                 onChange={(event) => this.props.changeMaskMethodCallback(event.target.value)}
             >
+              <option value='blur_7x7'>--- Mask Method ---</option>
               <option value='blur_7x7'>Gaussian Blur 7x7</option>
               <option value='blur_21x21'>Gaussian Blur 21x21</option>
               <option value='blur_median'>Median Blur</option>
@@ -131,13 +131,14 @@ class TopImageControls extends React.Component {
               <option value='green_outline'>Green Outline</option>
             </select>
           </div>
-          <div id='redacted_image_download_link' className='col'>
+
+          <div id='redacted_image_download_link' className='d-inline ml-2'>
             {redacted_link}
           </div>
-          <div id='prev_image_div' className='col'>
+          <div id='prev_image_div' className='d-inline ml-2'>
             {prev_image_link}
           </div>
-          <div id='next_image_div' className='col'>
+          <div id='next_image_div' className='d-inline ml-2'>
             {next_image_link}
           </div>
 
@@ -151,11 +152,11 @@ class TopImageControls extends React.Component {
                 className='float-left'
                 id='message'
             >
-              {this.props.message}
+              {this.props.message? this.props.message : '.'}
             </div>
-            {this.props.getImageAndHashDisplay()}
           </div>
         </div>
+            {this.props.getImageAndHashDisplay()}
       </div>
     );
   }

@@ -32,8 +32,11 @@ class ImagePanel extends React.Component {
   handleImageClick = (e) => {
     let x = e.nativeEvent.offsetX
     let y = e.nativeEvent.offsetY
-    const x_scaled = parseInt(x / this.props.image_scale)
-    const y_scaled = parseInt(y / this.props.image_scale)
+    const scale = (document.getElementById('base_image_id').width /
+      document.getElementById('base_image_id').naturalWidth)
+    this.props.setImageScale(scale)
+    const x_scaled = parseInt(x / scale)
+    const y_scaled = parseInt(y / scale)
 
     // TODO make this into a hashtable, it's going to grow
     if (this.state.mode === 'add_1') {
@@ -254,31 +257,7 @@ class ImagePanel extends React.Component {
     return (
       <div id='redaction_panel_container'>
         <div id='image_redactor_panel'>
-          <div id='image_and_canvas_wrapper' className='row'>
-            <BaseImage 
-              image_url={the_image_url}
-              image_file={this.props.image_file}
-            />
-            <CanvasImageOverlay
-              framesets={this.props.framesets}
-              mode={this.state.mode}
-              submode={this.state.submode}
-              image_width={this.props.image_width}
-              image_height={this.props.image_height}
-              image_scale={this.props.image_scale}
-              clickCallback= {this.handleImageClick}
-              last_click= {this.state.last_click}
-              getRedactionFromFrameset={this.props.getRedactionFromFrameset}
-            />
-          </div>
-          <div id='advanced_controls_wrapper' className='row'>
-            <div className='col'>
-              <AdvancedImageControls 
-                showAdvancedControls={this.props.showAdvancedPanels}
-                setModeCallback= {this.handleSetMode}
-              />
-            </div>
-          </div>
+
           <div id='controls_wrapper' className='row'>
             <div className='col'>
               <TopImageControls 
@@ -298,6 +277,39 @@ class ImagePanel extends React.Component {
               />
             </div>
           </div>
+
+          <div className='row'>
+            <div className='col-lg-1'>
+            </div>
+            <div className='col-lg-10'>
+              <div id='image_and_canvas_wrapper' className='row mt-5'>
+                <BaseImage 
+                  image_url={the_image_url}
+                  image_file={this.props.image_file}
+                />
+                <CanvasImageOverlay
+                  framesets={this.props.framesets}
+                  mode={this.state.mode}
+                  submode={this.state.submode}
+                  image_width={this.props.image_width}
+                  image_height={this.props.image_height}
+                  image_scale={this.props.image_scale}
+                  clickCallback= {this.handleImageClick}
+                  last_click= {this.state.last_click}
+                  getRedactionFromFrameset={this.props.getRedactionFromFrameset}
+                />
+              </div>
+              <div id='advanced_controls_wrapper' className='row'>
+                <div className='col'>
+                  <AdvancedImageControls 
+                    showAdvancedControls={this.props.showAdvancedPanels}
+                    setModeCallback= {this.handleSetMode}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
         </div>
       </div>
     );

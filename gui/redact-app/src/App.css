@@ -1,5 +1,6 @@
 
 div#image_and_canvas_wrapper {
+position: relative;
 }
 
 div#controls_wrapper {
@@ -8,14 +9,10 @@ div#controls_wrapper {
 
 div#advanced_controls_wrapper {
   position: absolute;
-  left: 1800px;
-  top: 150px;
 }
 
 div#canvas_div {
   position: absolute;
-  left: 150px;
-  top: 150px;
 }
 
 canvas {
@@ -26,8 +23,6 @@ canvas {
 
 div#base_image_div {
   position: absolute;
-  left: 150px;
-  top: 150px;
 }
 
 img#base_image_id {
@@ -39,12 +34,12 @@ img#base_image_id {
 
 div#bottom_controls_div {
   margin: 5px;
-
 }
 
 div#frame_frameset_header {
   display: flex;
 }
+
 video {
   width: 100%;
 }

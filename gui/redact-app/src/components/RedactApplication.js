@@ -25,6 +25,14 @@ class RedactApplication extends React.Component {
       image_width: 0,
       image_height: 0,
       image_scale: 1,
+//      ping_url: 'https:///step-work.dev.sykes.com/apiv1/parse/ping/7171',
+//      flood_fill_url: 'http:///step-work.dev.sykes.com/apiv1/analyze/flood-fill/',
+//      arrow_fill_url: 'http:///step-work.dev.sykes.com/apiv1/analyze/arrow-fill/',
+//      scan_template_url: 'http:///step-work.dev.sykes.com/apiv1/analyze/scan-template/',
+//      analyze_url: 'http:///step-work.dev.sykes.com/apiv1/analyze/east-tess/',
+//      redact_url: 'http:///step-work.dev.sykes.com/apiv1/redact/redact-image/',
+//      parse_movie_url: 'http:///step-work.dev.sykes.com/apiv1/parse/split-and-hash-movie/',
+//      zip_movie_url: 'http:///step-work.dev.sykes.com/apiv1/parse/zip-movie/',
       ping_url: 'http://127.0.0.1:8000/v1/parse/ping/7171',
       flood_fill_url: 'http://127.0.0.1:8000/v1/analyze/flood-fill/',
       arrow_fill_url: 'http://127.0.0.1:8000/v1/analyze/arrow-fill/',
@@ -53,12 +61,19 @@ class RedactApplication extends React.Component {
     this.setSelectedArea=this.setSelectedArea.bind(this)
     this.clearMovieSelectedAreas=this.clearMovieSelectedAreas.bind(this)
     this.setTemplates=this.setTemplates.bind(this)
+    this.setImageScale=this.setImageScale.bind(this)
     this.setCurrentTemplate=this.setCurrentTemplate.bind(this)
   }
 
   setTemplates = (the_templates) => {
     this.setState({
       templates: the_templates,
+    })
+  }
+
+  setImageScale= (the_scale) => {
+    this.setState({
+      image_scale: the_scale,
     })
   }
 
@@ -436,6 +451,7 @@ class RedactApplication extends React.Component {
                 getFramesetHashForImageUrl={this.getFramesetHashForImageUrl}
                 getNextImageLink={this.getNextImageLink}
                 getPrevImageLink={this.getPrevImageLink}
+                setImageScale={this.setImageScale}
                 showAdvancedPanels={this.state.showAdvancedPanels}
               />
             </Route>
