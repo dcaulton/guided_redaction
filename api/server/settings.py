@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'guided_redaction.analyze',
     'guided_redaction.redact',
     'django_extensions',
+    'rest_framework',
 ]
 
 MIDDLEWARE = [
