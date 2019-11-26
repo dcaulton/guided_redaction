@@ -37,6 +37,9 @@ class ImagePanel extends React.Component {
     this.props.setImageScale(scale)
     const x_scaled = parseInt(x / scale)
     const y_scaled = parseInt(y / scale)
+    if (x_scaled > this.props.image_width || y_scaled > this.props.image_height) {
+      return
+    }
 
     // TODO make this into a hashtable, it's going to grow
     if (this.state.mode === 'add_1') {
