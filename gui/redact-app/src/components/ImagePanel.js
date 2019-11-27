@@ -102,14 +102,7 @@ class ImagePanel extends React.Component {
     if (this.props.image_url) {
       const img_filename = this.getCurrentImageFilename()
       const img_hash = this.props.getFramesetHashForImageUrl(this.props.image_url)
-      return (
-        <div 
-            className='float-right'
-            id='image_info'
-        >
-          image: {img_filename}, frameset hash: {img_hash}
-        </div>
-      )
+      return (<span>image: {img_filename}, frameset hash: {img_hash}</span>)
     }
   }
 
@@ -252,8 +245,44 @@ class ImagePanel extends React.Component {
     await response
   }
 
+
+
+  get_next_button() {
+    let next_image_link = ''
+    let next_image_url = this.props.getNextImageLink()
+    if (next_image_url) {
+      next_image_link = (
+        <button
+          className='btn btn-primary'
+          onClick={() => this.props.setImageUrlCallback(next_image_url)}
+        >
+          Next
+        </button>
+      )
+    }
+    return next_image_link
+  }
+
+  get_prev_button() {
+    let prev_image_link = ''
+    let prev_image_url = this.props.getPrevImageLink()
+    if (prev_image_url) {
+      prev_image_link = (
+        <button
+          className='btn btn-primary'
+          onClick={() => this.props.setImageUrlCallback(prev_image_url)}
+        >
+          Prev
+        </button>
+      )
+    }
+    return prev_image_link
+  }
+
   render() {
     let the_image_url = this.props.image_url
+    let next_button = this.get_next_button()
+    let prev_button = this.get_prev_button()
     if (this.props.redacted_image_url) {
       the_image_url = this.props.redacted_image_url
     }
@@ -273,8 +302,6 @@ class ImagePanel extends React.Component {
                 doRedactCallback = {this.handleRedactCall}
                 changeMaskMethodCallback= {this.props.setMaskMethod}
                 redacted_image_url={this.props.redacted_image_url}
-                getNextImageLink={this.props.getNextImageLink}
-                getPrevImageLink={this.props.getPrevImageLink}
                 setImageUrlCallback={this.props.setImageUrlCallback}
                 getImageAndHashDisplay={this.getImageAndHashDisplay}
               />
@@ -282,10 +309,11 @@ class ImagePanel extends React.Component {
           </div>
 
           <div className='row'>
-            <div className='col-lg-1'>
+            <div id='prev_button_col' className='col-lg-1'>
+              {prev_button}
             </div>
             <div className='col-lg-10'>
-              <div id='image_and_canvas_wrapper' className='row mt-5'>
+              <div id='image_and_canvas_wrapper' className='row mt-2'>
                 <BaseImage 
                   image_url={the_image_url}
                   image_file={this.props.image_file}
@@ -310,6 +338,9 @@ class ImagePanel extends React.Component {
                   />
                 </div>
               </div>
+            </div>
+            <div id='next_button_col' className='col-lg-1'>
+              {next_button}
             </div>
           </div>
 
