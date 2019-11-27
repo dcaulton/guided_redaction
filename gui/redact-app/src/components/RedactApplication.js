@@ -70,6 +70,7 @@ class RedactApplication extends React.Component {
     this.callTemplateScanner=this.callTemplateScanner.bind(this)
     this.getCurrentTemplateAnchors=this.getCurrentTemplateAnchors.bind(this)
     this.doFloodFill=this.doFloodFill.bind(this)
+    this.doArrowFill=this.doArrowFill.bind(this)
   }
 
   setTemplates = (the_templates) => {
@@ -280,12 +281,7 @@ class RedactApplication extends React.Component {
     })
   }
 
-  async doFloodFill(scale, x_scaled, y_scaled, insights_image, selected_areas, cur_hash) {
-    this.setState({                                                             
-      insights_image_scale: scale,                                              
-      clicked_coords: [x_scaled, y_scaled],                                     
-      insights_message: 'Calling flood fill api',                               
-    })                                                                          
+  async doFloodFill(x_scaled, y_scaled, insights_image, selected_areas, cur_hash) {
     await fetch(this.state.flood_fill_url, {                                      
       method: 'POST',                                                           
       headers: this.buildJsonHeaders(),
@@ -312,7 +308,35 @@ class RedactApplication extends React.Component {
     })
   } 
 
-
+  async doArrowFill(x_scaled, y_scaled, insights_image, selected_areas, cur_hash, when_done) {
+    await fetch(this.state.arrow_fill_url, {
+      method: 'POST',
+      headers: this.buildJsonHeaders(),
+      body: JSON.stringify({
+        source_image_url: insights_image,
+        tolerance: 5,
+        selected_point : [x_scaled, y_scaled],
+      }),
+    })
+    .then((response) => response.json())
+    .then((responseJson) => {
+      const sa_id = Math.floor(Math.random(1000000, 9999999)*1000000000)
+      const new_sa = {
+          'id': sa_id,
+          'start': responseJson['arrow_fill_regions'][0],
+          'end': responseJson['arrow_fill_regions'][1],
+      }
+      let deepCopySelectedAreas= JSON.parse(JSON.stringify(selected_areas))
+      deepCopySelectedAreas.push(new_sa)
+      this.setSelectedArea(deepCopySelectedAreas, insights_image, this.state.movie_url, cur_hash)
+    })
+    .then(() => {
+      when_done()
+    })
+    .catch((error) => {
+      console.error(error);
+    })
+  }
 
   getCurrentTemplateAnchors() {
     if (Object.keys(this.state.templates).includes(this.state.current_template_id)) {
@@ -635,7 +659,6 @@ class RedactApplication extends React.Component {
                 framesets={this.state.framesets}
                 callTemplateScanner={this.callTemplateScanner}
                 getCurrentTemplateAnchors={this.getCurrentTemplateAnchors}
-                arrowFillUrl={this.state.arrow_fill_url}
                 setTemplateMatches={this.setTemplateMatches}
                 clearTemplateMatches={this.clearTemplateMatches}
                 setSelectedArea={this.setSelectedArea}
@@ -648,6 +671,7 @@ class RedactApplication extends React.Component {
                 setTemplates={this.setTemplates}
                 setCurrentTemplate={this.setCurrentTemplate}
                 doFloodFill={this.doFloodFill}
+                doArrowFill={this.doArrowFill}
               />
             </Route>
           </Switch>

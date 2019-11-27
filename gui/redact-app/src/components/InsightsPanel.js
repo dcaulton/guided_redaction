@@ -41,6 +41,7 @@ class InsightsPanel extends React.Component {
     this.getMovieSelectedCount=this.getMovieSelectedCount.bind(this)
     this.currentImageIsTemplateAnchorImage=this.currentImageIsTemplateAnchorImage.bind(this)
     this.doPing=this.doPing.bind(this)
+    this.afterArrowFill=this.afterArrowFill.bind(this)
     this.getCurrentTemplateMaskZones=this.getCurrentTemplateMaskZones.bind(this)
   }
 
@@ -232,16 +233,26 @@ class InsightsPanel extends React.Component {
         return
     }
 
+    const scrubber_frameset_hash = this.getScrubberFramesetHash()
+    const selected_areas = this.getSelectedAreas()
     if (this.state.mode === 'add_template_anchor_1') {
       this.doAddTemplateAnchorClickOne(scale, x_scaled, y_scaled)
     } else if (this.state.mode === 'add_template_anchor_2') {
       this.addCurrentTemplateAnchor(scale, x_scaled, y_scaled)
     } else if (this.state.mode === 'flood_fill_1') {
-      const selected_areas = this.getSelectedAreas()
-      const scrubber_frameset_hash = this.getScrubberFramesetHash()
-      this.props.doFloodFill(scale, x_scaled, y_scaled, this.state.insights_image, selected_areas, scrubber_frameset_hash)
+      this.setState({
+        insights_image_scale: scale,
+        clicked_coords: [x_scaled, y_scaled],
+        insights_message: 'Calling flood fill api',
+      })
+      this.props.doFloodFill(x_scaled, y_scaled, this.state.insights_image, selected_areas, scrubber_frameset_hash)
     } else if (this.state.mode === 'arrow_fill_1') {
-      this.doArrowFill(scale, x_scaled, y_scaled)
+      this.setState({
+        insights_image_scale: scale,
+        clicked_coords: [x_scaled, y_scaled],
+        insights_message: 'Calling arrow fill api',
+      })
+      this.props.doArrowFill(x_scaled, y_scaled, this.state.insights_image, selected_areas, scrubber_frameset_hash, this.afterArrowFill)
     } else if (this.state.mode === 'add_template_mask_zone_1') {
       this.doAddTemplateMaskZoneClickOne(scale, x_scaled, y_scaled)
     } else if (this.state.mode === 'add_template_mask_zone_2') {
@@ -249,44 +260,9 @@ class InsightsPanel extends React.Component {
     }
   }
 
-  async doArrowFill(scale, x_scaled, y_scaled) {
+  afterArrowFill() {
     this.setState({
-      insights_image_scale: scale,
-      clicked_coords: [x_scaled, y_scaled],
-      insights_message: 'Calling arrow fill api',
-    })
-    await fetch(this.props.arrowFillUrl, {
-      method: 'POST',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        source_image_url: this.state.insights_image,
-        tolerance: 5,
-        selected_point : [x_scaled, y_scaled],
-      }),
-    })
-    .then((response) => response.json())
-    .then((responseJson) => {
-      const sa_id = Math.floor(Math.random(1000000, 9999999)*1000000000)
-      const new_sa = {
-          'id': sa_id,
-          'start': responseJson['arrow_fill_regions'][0],
-          'end': responseJson['arrow_fill_regions'][1],
-      }
-      let deepCopySelectedAreas= JSON.parse(JSON.stringify(this.getSelectedAreas()))
-      deepCopySelectedAreas.push(new_sa)
-      const cur_hash = this.getScrubberFramesetHash() 
-      this.props.setSelectedArea(deepCopySelectedAreas, this.state.insights_image, this.props.movie_url, cur_hash)
-    })
-    .then(() => {
-      this.setState({
-        insights_message: 'Fill area added, click to add another.',
-      })
-    })
-    .catch((error) => {
-      console.error(error);
+      insights_message: 'Fill area added, click to add another.',
     })
   }
 
