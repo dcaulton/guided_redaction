@@ -17,6 +17,8 @@ class MoviePanel extends React.Component {
     this.setZoomImageUrl= this.setZoomImageUrl.bind(this)
     this.handleDroppedFrameset = this.handleDroppedFrameset.bind(this)
     this.allFramesHaveBeenRedacted = this.allFramesHaveBeenRedacted.bind(this)
+    this.afterFrameRedaction= this.afterFrameRedaction.bind(this)
+    this.movieZipCompleted= this.movieZipCompleted.bind(this)
   }
 
   setDraggedId = (the_id) => {
@@ -40,46 +42,10 @@ class MoviePanel extends React.Component {
     this.props.doMovieSplit(this.props.movie_url, this.movieSplitWhenDone)
   }
 
-  async callRedactOnOneFrame(areas_to_redact_short, image_url) {
-    let the_body = {
-      areas_to_redact: areas_to_redact_short,
-      mask_method: this.props.mask_method,
-      image_url: image_url,
-      return_type: 'url',
+  afterFrameRedaction() {
+    if (this.allFramesHaveBeenRedacted()) {
+      this.zipUpRedactedImages()
     }
-    fetch(this.props.redact_url, {
-      method: 'POST',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(the_body),
-    })
-    .then((response) => response.json())
-    .then((responseJson) => {
-      let local_framesets = JSON.parse(JSON.stringify(this.props.framesets));
-      let frameset_hash = this.props.getFramesetHashForImageUrl(responseJson['original_image_url'])
-      let frameset = local_framesets[frameset_hash]
-      frameset['redacted_image'] = responseJson['redacted_image_url']
-      local_framesets[frameset_hash] = frameset
-      this.props.handleUpdateFramesetCallback(frameset_hash, frameset)
-    })
-    .then(() => {
-      if (this.allFramesHaveBeenRedacted()) {
-        this.zipUpRedactedImages()
-      }
-    })
-    .catch((error) => {
-      console.error(error);
-    })
-  }
-
-  getRedactedMovieFilename() {
-    //TODO this is not friendly to file names with more than one period, or with a slash in them
-    let parts = this.props.movie_url.split('/')
-    let file_parts = parts[parts.length-1].split('.')
-    let new_filename = file_parts[0] + '_redacted.' + file_parts[1]
-    return new_filename
   }
 
   allFramesHaveBeenRedacted() {
@@ -111,31 +77,11 @@ class MoviePanel extends React.Component {
         movie_frame_urls.push(image_url)
       }
     }
-    this.callMovieZip(movie_frame_urls)
+    document.getElementById('movieparser_status').innerHTML = 'calling movie zipper'
+    this.props.callMovieZip(movie_frame_urls, this.movieZipCompleted)
   }
 
-  async callMovieZip(the_urls) {
-    document.getElementById('movieparser_status').innerHTML = 'calling movie zipper'
-    let new_movie_name = this.getRedactedMovieFilename()
-    await fetch(this.props.zipMovieUrl, {
-      method: 'POST',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        image_urls: the_urls,
-        movie_name: new_movie_name,
-      }),
-    })
-    .then((response) => response.json())
-    .then((responseJson) => {
-      let movie_url = responseJson['movie_url']
-      this.props.setRedactedMovieUrlCallback(movie_url)
-    })
-    .catch((error) => {
-      console.error(error);
-    });
+  movieZipCompleted() {
     document.getElementById('movieparser_status').innerHTML = 'movie zipping completed'
   }
 
@@ -169,7 +115,7 @@ class MoviePanel extends React.Component {
           let a2r = this.props.framesets[hash_key]['areas_to_redact'][i]
           pass_arr.push([a2r['start'], a2r['end']])
         }  
-        this.callRedactOnOneFrame(pass_arr, first_image_url) 
+        this.props.callRedact(pass_arr, first_image_url, this.afterFrameRedaction)
       } 
     }
     document.getElementById('reassemble_video_button').disabled = true;
@@ -239,7 +185,7 @@ class MoviePanel extends React.Component {
             </video>
             <a 
                 href={this.props.redacted_movie_url}
-                download={this.getRedactedMovieFilename()}
+                download={this.props.redacted_movie_url}
             >
               download movie
             </a>

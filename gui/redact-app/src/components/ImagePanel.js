@@ -16,6 +16,8 @@ class ImagePanel extends React.Component {
       last_click: null,
     }
     this.getImageAndHashDisplay=this.getImageAndHashDisplay.bind(this)
+    this.setOcrDoneMessage=this.setOcrDoneMessage.bind(this)
+    this.setRedactionDoneMessage=this.setRedactionDoneMessage.bind(this)
   }
 
   handleSetMode = (mode, submode) => {
@@ -84,13 +86,19 @@ class ImagePanel extends React.Component {
       this.props.addRedactionToFrameset(deepCopyAreasToRedact)
     } else if (this.state.submode === 'ocr') {
       const current_click = [x, y]
-      this.callOcr(current_click, this.state.last_click)
+      this.props.callOcr(current_click, this.state.last_click, this.setOcrDoneMessage)
       this.setState({
         last_click: null,
         mode: 'add_1',
         message: 'processing OCR, please wait',
       })
     }
+  }
+
+  setOcrDoneMessage() {
+    this.setState({
+      message: 'OCR detected regions were added, select another region to scan, press cancel when done'
+    })
   }
 
   getCurrentImageFilename() {
@@ -104,42 +112,6 @@ class ImagePanel extends React.Component {
       const img_hash = this.props.getFramesetHashForImageUrl(this.props.image_url)
       return (<span>image: {img_filename}, frameset hash: {img_hash}</span>)
     }
-  }
-
-  callOcr(current_click, last_click) {
-    fetch(this.props.analyze_url, {
-      method: 'POST',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        roi_start_x: last_click[0],
-        roi_start_y: last_click[1],
-        roi_end_x: current_click[0],
-        roi_end_y: current_click[1],
-        image_url: this.props.image_url,
-      }),
-    })
-    .then((response) => response.json())
-    .then((responseJson) => {
-      let new_areas_to_redact = responseJson['recognized_text_areas']
-      let deepCopyAreasToRedact = this.props.getRedactionFromFrameset()
-      for (let i=0; i < new_areas_to_redact.length; i++) {
-        deepCopyAreasToRedact.push(new_areas_to_redact[i]);
-      }
-      let mess = new_areas_to_redact.length 
-      mess += ' OCR detected regions were added, select another region to scan, press cancel when done'
-      this.setState({
-        message: mess,
-      })
-      this.props.addRedactionToFrameset(deepCopyAreasToRedact)
-    })
-    .catch((error) => {
-      console.error(error)
-    })
-    
-    return []
   }
 
   handleDeleteFirst(x, y) {
@@ -217,35 +189,14 @@ class ImagePanel extends React.Component {
       let a2r = areas_to_redact[i]
       pass_arr.push([a2r['start'], a2r['end']])
     }
-    this.callRedact(pass_arr)
+    this.props.callRedact(pass_arr, this.props.image_url, this.setRedactionDoneMessage)
   }
 
-  async callRedact(areas_to_redact_short) {
-    let response = await fetch(this.props.redact_url, {
-      method: 'POST',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        areas_to_redact: areas_to_redact_short,
-        mask_method: this.props.mask_method,
-        image_url: this.props.image_url,
-        return_type: 'url',
-      }),
+  setRedactionDoneMessage() {
+    this.setState({
+      message: 'Regions have been redacted'
     })
-    .then((response) => response.json())
-    .then((responseJson) => {
-      let redacted_image_url = responseJson['redacted_image_url']
-      this.props.setRedactedImageUrl(redacted_image_url)
-    })
-    .catch((error) => {
-      console.error(error);
-    })
-    await response
   }
-
-
 
   get_next_button() {
     let next_image_link = ''

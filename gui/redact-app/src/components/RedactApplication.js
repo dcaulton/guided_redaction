@@ -25,14 +25,15 @@ class RedactApplication extends React.Component {
       image_width: 0,
       image_height: 0,
       image_scale: 1,
-//      ping_url: 'https:///step-work.dev.sykes.com/apiv1/parse/ping/7171',
-//      flood_fill_url: 'http:///step-work.dev.sykes.com/apiv1/analyze/flood-fill/',
-//      arrow_fill_url: 'http:///step-work.dev.sykes.com/apiv1/analyze/arrow-fill/',
-//      scan_template_url: 'http:///step-work.dev.sykes.com/apiv1/analyze/scan-template/',
-//      analyze_url: 'http:///step-work.dev.sykes.com/apiv1/analyze/east-tess/',
-//      redact_url: 'http:///step-work.dev.sykes.com/apiv1/redact/redact-image/',
-//      parse_movie_url: 'http:///step-work.dev.sykes.com/apiv1/parse/split-and-hash-movie/',
-//      zip_movie_url: 'http:///step-work.dev.sykes.com/apiv1/parse/zip-movie/',
+//      ping_url: 'https:///step-work.dev.sykes.com/api/v1/parse/ping',
+//      flood_fill_url: 'http:///step-work.dev.sykes.com/api/v1/analyze/flood-fill',
+//      arrow_fill_url: 'http:///step-work.dev.sykes.com/api/v1/analyze/arrow-fill',
+//      scan_template_url: 'http:///step-work.dev.sykes.com/api/v1/analyze/scan-template',
+//      analyze_url: 'http:///step-work.dev.sykes.com/api/v1/analyze/east-tess',
+//      redact_url: 'http:///step-work.dev.sykes.com/api/v1/redact/redact-image',
+//      parse_movie_url: 'http:///step-work.dev.sykes.com/api/v1/parse/split-and-hash-movie',
+//      zip_movie_url: 'http:///step-work.dev.sykes.com/api/v1/parse/zip-movie',
+      api_key: '',
       ping_url: 'http://127.0.0.1:8000/v1/parse/ping/7171',
       flood_fill_url: 'http://127.0.0.1:8000/v1/analyze/flood-fill/',
       arrow_fill_url: 'http://127.0.0.1:8000/v1/analyze/arrow-fill/',
@@ -56,6 +57,9 @@ class RedactApplication extends React.Component {
     this.getPrevImageLink=this.getPrevImageLink.bind(this)
     this.handleMergeFramesets=this.handleMergeFramesets.bind(this)
     this.doMovieSplit=this.doMovieSplit.bind(this)
+    this.callOcr=this.callOcr.bind(this)
+    this.callRedact=this.callRedact.bind(this)
+    this.callMovieZip=this.callMovieZip.bind(this)
     this.setTemplateMatches=this.setTemplateMatches.bind(this)
     this.clearTemplateMatches=this.clearTemplateMatches.bind(this)
     this.setSelectedArea=this.setSelectedArea.bind(this)
@@ -105,6 +109,80 @@ class RedactApplication extends React.Component {
     theCallback(the_movie.framesets)
   }
 
+  buildJsonHeaders() {
+    let headers = {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+    }
+    if (this.state.api_key) {
+      headers['Authorization'] = 'Api-Key ' + this.state.api_key
+    }
+    return headers
+  }
+
+  async callRedact(areas_to_redact_short, image_url, when_done) {
+    let response = await fetch(this.state.redact_url, {
+      method: 'POST',
+      headers: this.buildJsonHeaders(),
+      body: JSON.stringify({
+        areas_to_redact: areas_to_redact_short,
+        mask_method: this.state.mask_method,
+        image_url: image_url,
+        return_type: 'url',
+      }),
+    })
+    .then((response) => response.json())
+    .then((responseJson) => {
+      let redacted_image_url = responseJson['redacted_image_url']
+      this.setRedactedImageUrl(redacted_image_url)
+
+      let local_framesets = JSON.parse(JSON.stringify(this.state.framesets));
+      const frameset_hash = this.getFramesetHashForImageUrl(responseJson['original_image_url'])
+      let frameset = local_framesets[frameset_hash]
+      frameset['redacted_image'] = responseJson['redacted_image_url']
+      local_framesets[frameset_hash] = frameset
+      this.handleUpdateFrameset(frameset_hash, frameset)
+
+    })
+    .then(() => {
+      when_done()
+    })
+    .catch((error) => {
+      console.error(error);
+    })
+    await response
+  }
+
+  callOcr(current_click, last_click, when_done) {
+    fetch(this.state.analyze_url, {
+      method: 'POST',
+      headers: this.buildJsonHeaders(),
+      body: JSON.stringify({
+        roi_start_x: last_click[0],
+        roi_start_y: last_click[1],
+        roi_end_x: current_click[0],
+        roi_end_y: current_click[1],
+        image_url: this.state.image_url,
+      }),
+    })
+    .then((response) => response.json())
+    .then((responseJson) => {
+      let new_areas_to_redact = responseJson['recognized_text_areas']
+      let deepCopyAreasToRedact = this.getRedactionFromFrameset()
+      for (let i=0; i < new_areas_to_redact.length; i++) {
+        deepCopyAreasToRedact.push(new_areas_to_redact[i]);
+      }
+      this.addRedactionToFrameset(deepCopyAreasToRedact)
+    })
+    .then(() => {
+      when_done()
+    })
+    .catch((error) => {
+      console.error(error)
+    })
+    return []
+  }
+
   async doMovieSplit(the_url, theCallback) {
     if (!the_url) {
       the_url = this.state.movie_url
@@ -114,10 +192,7 @@ class RedactApplication extends React.Component {
     } else {
       await fetch(this.state.parse_movie_url, {
         method: 'POST',
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json',
-        },
+        headers: this.buildJsonHeaders(),
         body: JSON.stringify({
           movie_url: the_url,
         }),
@@ -145,6 +220,40 @@ class RedactApplication extends React.Component {
       })
     }
   }
+
+  getRedactedMovieFilename() {
+    //TODO this is not friendly to file names with more than one period, or with a slash in them
+    let parts = this.state.movie_url.split('/')
+    let file_parts = parts[parts.length-1].split('.')
+    let new_filename = file_parts[0] + '_redacted.' + file_parts[1]
+    return new_filename
+  }
+
+  async callMovieZip(the_urls, when_done) {
+    document.getElementById('movieparser_status').innerHTML = 'calling movie zipper'
+    let new_movie_name = this.getRedactedMovieFilename()
+    await fetch(this.state.zip_movie_url, {
+      method: 'POST',
+      headers: this.buildJsonHeaders(),
+      body: JSON.stringify({
+        image_urls: the_urls,
+        movie_name: new_movie_name,
+      }),
+    })
+    .then((response) => response.json())
+    .then((responseJson) => {
+      let movie_url = responseJson['movie_url']
+      this.setState({
+        redacted_movie_url: movie_url,
+      })
+    })
+    .then(() => {
+      when_done()
+    })
+    .catch((error) => {
+      console.error(error);
+    });
+  } 
 
   getFramesetHashForImageUrl = (image_url) => {
     const hashes = Object.keys(this.state.framesets)
@@ -275,16 +384,12 @@ class RedactApplication extends React.Component {
     let new_framesets = this.state.framesets
     new_framesets[the_hash] = the_frameset
     let new_movie = this.state.movies[this.state.movie_url]
-    new_movie['framesets'] = new_framesets
-    this.setState({
-      framesets: new_framesets
-    })
-  }
-
-  handleSetRedactedMovieUrl = (the_url) => {
-    this.setState({
-      redacted_movie_url: the_url,
-    })
+    if (new_movie) { 
+      new_movie['framesets'] = new_framesets
+      this.setState({
+        framesets: new_framesets
+      })
+    }
   }
 
   setTemplateMatches = (template_id, the_matches) => {
@@ -329,7 +434,7 @@ class RedactApplication extends React.Component {
     })
   }
 
-  handleSetRedactedImageUrl = (the_url) => {
+  setRedactedImageUrl = (the_url) => {
     this.setState({
       redacted_image_url: the_url,
     })
@@ -422,37 +527,35 @@ class RedactApplication extends React.Component {
                 mask_method = {this.state.mask_method}
                 setImageUrlCallback={this.handleSetImageUrl}
                 getRedactionFromFrameset={this.getRedactionFromFrameset}
-                zipMovieUrl={this.state.zip_movie_url}
-                setRedactedMovieUrlCallback={this.handleSetRedactedMovieUrl}
-                handleUpdateFramesetCallback={this.handleUpdateFrameset}
+                callMovieZip={this.callMovieZip}
                 getFramesetHashForImageUrl={this.getFramesetHashForImageUrl}
                 redacted_movie_url = {this.state.redacted_movie_url}
-                redact_url = {this.state.redact_url}
+                callRedact={this.callRedact}
                 handleMergeFramesets={this.handleMergeFramesets}
                 doMovieSplit={this.doMovieSplit}
               />
             </Route>
             <Route path='/image'>
               <ImagePanel 
-                mask_method = {this.state.mask_method}
-                image_url = {this.state.image_url}
-                redacted_image_url = {this.state.redacted_image_url}
-                image_width = {this.state.image_width}
-                image_height = {this.state.image_height}
-                image_scale = {this.state.image_scale}
-                analyze_url = {this.state.analyze_url}
-                redact_url = {this.state.redact_url}
+                mask_method={this.state.mask_method}
+                image_url={this.state.image_url}
+                redacted_image_url={this.state.redacted_image_url}
+                image_width={this.state.image_width}
+                image_height={this.state.image_height}
+                image_scale={this.state.image_scale}
                 framesets={this.state.framesets}
                 addRedactionToFrameset={this.addRedactionToFrameset}
                 getRedactionFromFrameset={this.getRedactionFromFrameset}
                 setMaskMethod={this.handleSetMaskMethod}
-                setRedactedImageUrl={this.handleSetRedactedImageUrl}
+                setRedactedImageUrl={this.setRedactedImageUrl}
                 setImageUrlCallback={this.handleSetImageUrl}
                 getFramesetHashForImageUrl={this.getFramesetHashForImageUrl}
                 getNextImageLink={this.getNextImageLink}
                 getPrevImageLink={this.getPrevImageLink}
                 setImageScale={this.setImageScale}
                 showAdvancedPanels={this.state.showAdvancedPanels}
+                callOcr={this.callOcr}
+                callRedact={this.callRedact}
               />
             </Route>
             <Route path='/insights'>
