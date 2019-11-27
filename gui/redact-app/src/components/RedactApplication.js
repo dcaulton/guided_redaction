@@ -34,7 +34,7 @@ class RedactApplication extends React.Component {
 //      parse_movie_url: 'http:///step-work.dev.sykes.com/api/v1/parse/split-and-hash-movie',
 //      zip_movie_url: 'http:///step-work.dev.sykes.com/api/v1/parse/zip-movie',
       api_key: '',
-      ping_url: 'http://127.0.0.1:8000/v1/parse/ping/7171',
+      ping_url: 'http://127.0.0.1:8000/v1/parse/ping/',
       flood_fill_url: 'http://127.0.0.1:8000/v1/analyze/flood-fill/',
       arrow_fill_url: 'http://127.0.0.1:8000/v1/analyze/arrow-fill/',
       scan_template_url: 'http://127.0.0.1:8000/v1/analyze/scan-template/',
@@ -67,6 +67,11 @@ class RedactApplication extends React.Component {
     this.setTemplates=this.setTemplates.bind(this)
     this.setImageScale=this.setImageScale.bind(this)
     this.setCurrentTemplate=this.setCurrentTemplate.bind(this)
+    this.callTemplateScanner=this.callTemplateScanner.bind(this)
+    this.getCurrentTemplateAnchors=this.getCurrentTemplateAnchors.bind(this)
+    this.doFloodFill=this.doFloodFill.bind(this)
+    this.doArrowFill=this.doArrowFill.bind(this)
+    this.doPing=this.doPing.bind(this)
   }
 
   setTemplates = (the_templates) => {
@@ -254,6 +259,107 @@ class RedactApplication extends React.Component {
       console.error(error);
     });
   } 
+
+  async callTemplateScanner(source_image, movies=[], image='') {
+    let anchors = this.getCurrentTemplateAnchors()
+    await fetch(this.state.scan_template_url, {
+      method: 'POST',
+      headers: this.buildJsonHeaders(),
+      body: JSON.stringify({
+        source_image_url: source_image,
+        anchors: anchors,
+        target_movies: movies,
+        target_image: image,
+      }),
+    })
+    .then((response) => response.json())
+    .then((responseJson) => {
+      let matches = responseJson.matches
+      this.setTemplateMatches(this.state.current_template_id, matches)
+    })
+    .catch((error) => {
+      console.error(error);
+    })
+  }
+
+  async doFloodFill(x_scaled, y_scaled, insights_image, selected_areas, cur_hash) {
+    await fetch(this.state.flood_fill_url, {                                      
+      method: 'POST',                                                           
+      headers: this.buildJsonHeaders(),
+      body: JSON.stringify({                                                    
+        source_image_url: insights_image,                            
+        tolerance: 5,                                                           
+        selected_point : [x_scaled, y_scaled],                                  
+      }),                                                                       
+    })                                                                          
+    .then((response) => response.json())                                        
+    .then((responseJson) => {                                                   
+      const sa_id = Math.floor(Math.random(1000000, 9999999)*1000000000)        
+      const new_sa = {                                                          
+          'id': sa_id,                                                          
+          'start': responseJson['flood_fill_regions'][0],                       
+          'end': responseJson['flood_fill_regions'][1],                         
+      }
+      let deepCopySelectedAreas= JSON.parse(JSON.stringify(selected_areas))
+      deepCopySelectedAreas.push(new_sa)
+      this.setSelectedArea(deepCopySelectedAreas, insights_image, this.state.movie_url, cur_hash)
+    })
+    .catch((error) => { 
+      console.error(error);
+    })
+  } 
+
+  async doArrowFill(x_scaled, y_scaled, insights_image, selected_areas, cur_hash, when_done) {
+    await fetch(this.state.arrow_fill_url, {
+      method: 'POST',
+      headers: this.buildJsonHeaders(),
+      body: JSON.stringify({
+        source_image_url: insights_image,
+        tolerance: 5,
+        selected_point : [x_scaled, y_scaled],
+      }),
+    })
+    .then((response) => response.json())
+    .then((responseJson) => {
+      const sa_id = Math.floor(Math.random(1000000, 9999999)*1000000000)
+      const new_sa = {
+          'id': sa_id,
+          'start': responseJson['arrow_fill_regions'][0],
+          'end': responseJson['arrow_fill_regions'][1],
+      }
+      let deepCopySelectedAreas= JSON.parse(JSON.stringify(selected_areas))
+      deepCopySelectedAreas.push(new_sa)
+      this.setSelectedArea(deepCopySelectedAreas, insights_image, this.state.movie_url, cur_hash)
+    })
+    .then(() => {
+      when_done()
+    })
+    .catch((error) => {
+      console.error(error);
+    })
+  }
+
+  async doPing(when_done_success, when_done_failure) {                                                              
+    await fetch(this.state.ping_url, {                                          
+      method: 'GET',                                                            
+      headers: this.buildJsonHeaders(),
+    })                                                                          
+    .then((response) => response.json())                                        
+    .then((responseJson) => {                                                   
+      when_done_success(responseJson)
+    })                                                                          
+    .catch((error) => {                                                         
+      when_done_failure()
+    })                                                                          
+  }
+
+  getCurrentTemplateAnchors() {
+    if (Object.keys(this.state.templates).includes(this.state.current_template_id)) {
+      return this.state.templates[this.state.current_template_id]['anchors']
+    } else {
+      return []
+    }
+  }
 
   getFramesetHashForImageUrl = (image_url) => {
     const hashes = Object.keys(this.state.framesets)
@@ -566,20 +672,21 @@ class RedactApplication extends React.Component {
                 movie_url={this.state.movie_url}
                 movies={this.state.movies}
                 framesets={this.state.framesets}
-                scanTemplateUrl={this.state.scan_template_url}
-                floodFillUrl={this.state.flood_fill_url}
-                arrowFillUrl={this.state.arrow_fill_url}
+                callTemplateScanner={this.callTemplateScanner}
+                getCurrentTemplateAnchors={this.getCurrentTemplateAnchors}
                 setTemplateMatches={this.setTemplateMatches}
                 clearTemplateMatches={this.clearTemplateMatches}
                 setSelectedArea={this.setSelectedArea}
                 clearMovieSelectedAreas={this.clearMovieSelectedAreas}
                 template_matches={this.state.template_matches}
                 selected_areas={this.state.selected_areas}
-                ping_url={this.state.ping_url}
+                doPing={this.doPing}
                 templates={this.state.templates}
                 current_template_id={this.state.current_template_id}
                 setTemplates={this.setTemplates}
                 setCurrentTemplate={this.setCurrentTemplate}
+                doFloodFill={this.doFloodFill}
+                doArrowFill={this.doArrowFill}
               />
             </Route>
           </Switch>
