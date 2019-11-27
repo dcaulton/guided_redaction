@@ -32,10 +32,6 @@ img#base_image_id {
   max-height: 100%;
 }
 
-div#bottom_controls_div {
-  margin: 5px;
-}
-
 div#frame_frameset_header {
   display: flex;
 }
@@ -104,4 +100,8 @@ img#insights_image {
 
 div.active_movie_card {
   border: 5px solid red;
+}
+
+div#prev_button_col, div#next_button_col{
+padding-top:200px;
 }
