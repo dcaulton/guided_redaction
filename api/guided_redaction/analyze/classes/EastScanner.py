@@ -5,11 +5,12 @@ import numpy as np
 from server import settings
 import time
 
-class EastScanner():
+
+class EastScanner:
 
     debug = False
     path_to_east_text_detector = settings.EAST_FILE_PATH
-    min_confidence = .5
+    min_confidence = 0.5
 
     def __init__(self):
         pass
@@ -19,11 +20,11 @@ class EastScanner():
         return textareas
 
     def get_text_areas_from_east(self, source):
-        print('performing text detection with EAST') if self.debug else None
+        print("performing text detection with EAST") if self.debug else None
         image = source.copy()
 
         # EAST requires h and w to be multiples of 32
-        H,W = image.shape[:2]
+        H, W = image.shape[:2]
         resized_height = H - (H % 32)
         resized_width = W - (W % 32)
         rW = W / float(resized_width)
@@ -31,23 +32,23 @@ class EastScanner():
         image = cv2.resize(image, (resized_width, resized_height))
         (H, W) = image.shape[:2]
 
-        layerNames = [
-            'feature_fusion/Conv_7/Sigmoid',
-            'feature_fusion/concat_3'
-        ]
+        layerNames = ["feature_fusion/Conv_7/Sigmoid", "feature_fusion/concat_3"]
 
         # load the pre-trained EAST detector
         net = cv2.dnn.readNet(self.path_to_east_text_detector)
 
         # construct a blob from the image and then perform a forward pass of
         #   the model to obtain the two output layer sets
-        blob = cv2.dnn.blobFromImage(image, 1.0, (W, H),
-            (123.68, 116.78, 103.94), swapRB=True, crop=False)
+        blob = cv2.dnn.blobFromImage(
+            image, 1.0, (W, H), (123.68, 116.78, 103.94), swapRB=True, crop=False
+        )
         start = time.time()
         net.setInput(blob)
         (scores, geometry) = net.forward(layerNames)
         end = time.time()
-        print('text detection took', int(math.ceil(end - start)), 'seconds') if self.debug else None
+        print(
+            "text detection took", int(math.ceil(end - start)), "seconds"
+        ) if self.debug else None
 
         (numRows, numCols) = scores.shape[2:4]
         rects = []
@@ -74,7 +75,7 @@ class EastScanner():
                 h = xData0[x] + xData2[x]
                 w = xData1[x] + xData3[x]
                 endX = int(offsetX + (cos * xData1[x]) + (sin * xData2[x]))
-                endY = int(offsetY - (sin*xData1[x]) + (cos * xData2[x]))
+                endY = int(offsetY - (sin * xData1[x]) + (cos * xData2[x]))
                 startX = int(endX - w)
                 startY = int(endY - h)
                 rects.append((startX, startY, endX, endY))
@@ -90,6 +91,5 @@ class EastScanner():
             endY = int(endY * rH)
             text_areas.append([(startX, startY), (endX, endY)])
 
-        print('text detection complete') if self.debug else None
+        print("text detection complete") if self.debug else None
         return text_areas
-
