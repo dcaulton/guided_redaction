@@ -25,15 +25,15 @@ class RedactApplication extends React.Component {
       image_width: 0,
       image_height: 0,
       image_scale: 1,
-//      ping_url: 'https:///step-work.dev.sykes.com/apiv1/parse/ping/7171',
-//      flood_fill_url: 'http:///step-work.dev.sykes.com/apiv1/analyze/flood-fill/',
-//      arrow_fill_url: 'http:///step-work.dev.sykes.com/apiv1/analyze/arrow-fill/',
-//      scan_template_url: 'http:///step-work.dev.sykes.com/apiv1/analyze/scan-template/',
-//      analyze_url: 'http:///step-work.dev.sykes.com/apiv1/analyze/east-tess/',
-//      redact_url: 'http:///step-work.dev.sykes.com/apiv1/redact/redact-image/',
-//      parse_movie_url: 'http:///step-work.dev.sykes.com/apiv1/parse/split-and-hash-movie/',
-//      zip_movie_url: 'http:///step-work.dev.sykes.com/apiv1/parse/zip-movie/',
-      api_key: 'xxx',
+//      ping_url: 'https:///step-work.dev.sykes.com/api/v1/parse/ping',
+//      flood_fill_url: 'http:///step-work.dev.sykes.com/api/v1/analyze/flood-fill',
+//      arrow_fill_url: 'http:///step-work.dev.sykes.com/api/v1/analyze/arrow-fill',
+//      scan_template_url: 'http:///step-work.dev.sykes.com/api/v1/analyze/scan-template',
+//      analyze_url: 'http:///step-work.dev.sykes.com/api/v1/analyze/east-tess',
+//      redact_url: 'http:///step-work.dev.sykes.com/api/v1/redact/redact-image',
+//      parse_movie_url: 'http:///step-work.dev.sykes.com/api/v1/parse/split-and-hash-movie',
+//      zip_movie_url: 'http:///step-work.dev.sykes.com/api/v1/parse/zip-movie',
+      api_key: '',
       ping_url: 'http://127.0.0.1:8000/v1/parse/ping/7171',
       flood_fill_url: 'http://127.0.0.1:8000/v1/analyze/flood-fill/',
       arrow_fill_url: 'http://127.0.0.1:8000/v1/analyze/arrow-fill/',
@@ -109,13 +109,21 @@ class RedactApplication extends React.Component {
     theCallback(the_movie.framesets)
   }
 
+  buildJsonHeaders() {
+    let headers = {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+    }
+    if (this.state.api_key) {
+      headers['Authorization'] = 'Api-Key ' + this.state.api_key
+    }
+    return headers
+  }
+
   async callRedact(areas_to_redact_short, image_url, when_done) {
     let response = await fetch(this.state.redact_url, {
       method: 'POST',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-      },
+      headers: this.buildJsonHeaders(),
       body: JSON.stringify({
         areas_to_redact: areas_to_redact_short,
         mask_method: this.state.mask_method,
@@ -148,10 +156,7 @@ class RedactApplication extends React.Component {
   callOcr(current_click, last_click, when_done) {
     fetch(this.state.analyze_url, {
       method: 'POST',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-      },
+      headers: this.buildJsonHeaders(),
       body: JSON.stringify({
         roi_start_x: last_click[0],
         roi_start_y: last_click[1],
@@ -187,10 +192,7 @@ class RedactApplication extends React.Component {
     } else {
       await fetch(this.state.parse_movie_url, {
         method: 'POST',
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json',
-        },
+        headers: this.buildJsonHeaders(),
         body: JSON.stringify({
           movie_url: the_url,
         }),
@@ -232,10 +234,7 @@ class RedactApplication extends React.Component {
     let new_movie_name = this.getRedactedMovieFilename()
     await fetch(this.state.zip_movie_url, {
       method: 'POST',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-      },
+      headers: this.buildJsonHeaders(),
       body: JSON.stringify({
         image_urls: the_urls,
         movie_name: new_movie_name,
