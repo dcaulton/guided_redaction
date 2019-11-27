@@ -17,6 +17,7 @@ class MoviePanel extends React.Component {
     this.setZoomImageUrl= this.setZoomImageUrl.bind(this)
     this.handleDroppedFrameset = this.handleDroppedFrameset.bind(this)
     this.allFramesHaveBeenRedacted = this.allFramesHaveBeenRedacted.bind(this)
+    this.afterFrameRedaction= this.afterFrameRedaction.bind(this)
   }
 
   setDraggedId = (the_id) => {
@@ -40,38 +41,10 @@ class MoviePanel extends React.Component {
     this.props.doMovieSplit(this.props.movie_url, this.movieSplitWhenDone)
   }
 
-  async callRedactOnOneFrame(areas_to_redact_short, image_url) {
-    let the_body = {
-      areas_to_redact: areas_to_redact_short,
-      mask_method: this.props.mask_method,
-      image_url: image_url,
-      return_type: 'url',
+  afterFrameRedaction() {
+    if (this.allFramesHaveBeenRedacted()) {
+      this.zipUpRedactedImages()
     }
-    fetch(this.props.redact_url, {
-      method: 'POST',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(the_body),
-    })
-    .then((response) => response.json())
-    .then((responseJson) => {
-      let local_framesets = JSON.parse(JSON.stringify(this.props.framesets));
-      let frameset_hash = this.props.getFramesetHashForImageUrl(responseJson['original_image_url'])
-      let frameset = local_framesets[frameset_hash]
-      frameset['redacted_image'] = responseJson['redacted_image_url']
-      local_framesets[frameset_hash] = frameset
-      this.props.handleUpdateFramesetCallback(frameset_hash, frameset)
-    })
-    .then(() => {
-      if (this.allFramesHaveBeenRedacted()) {
-        this.zipUpRedactedImages()
-      }
-    })
-    .catch((error) => {
-      console.error(error);
-    })
   }
 
   getRedactedMovieFilename() {
@@ -169,7 +142,7 @@ class MoviePanel extends React.Component {
           let a2r = this.props.framesets[hash_key]['areas_to_redact'][i]
           pass_arr.push([a2r['start'], a2r['end']])
         }  
-        this.callRedactOnOneFrame(pass_arr, first_image_url) 
+        this.props.callRedact(pass_arr, first_image_url, this.afterFrameRedaction)
       } 
     }
     document.getElementById('reassemble_video_button').disabled = true;

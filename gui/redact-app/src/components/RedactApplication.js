@@ -58,6 +58,7 @@ class RedactApplication extends React.Component {
     this.handleMergeFramesets=this.handleMergeFramesets.bind(this)
     this.doMovieSplit=this.doMovieSplit.bind(this)
     this.callOcr=this.callOcr.bind(this)
+    this.callRedact=this.callRedact.bind(this)
     this.setTemplateMatches=this.setTemplateMatches.bind(this)
     this.clearTemplateMatches=this.clearTemplateMatches.bind(this)
     this.setSelectedArea=this.setSelectedArea.bind(this)
@@ -105,6 +106,42 @@ class RedactApplication extends React.Component {
       })
     }
     theCallback(the_movie.framesets)
+  }
+
+  async callRedact(areas_to_redact_short, image_url, when_done) {
+    let response = await fetch(this.state.redact_url, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        areas_to_redact: areas_to_redact_short,
+        mask_method: this.state.mask_method,
+        image_url: image_url,
+        return_type: 'url',
+      }),
+    })
+    .then((response) => response.json())
+    .then((responseJson) => {
+      let redacted_image_url = responseJson['redacted_image_url']
+      this.setRedactedImageUrl(redacted_image_url)
+
+      let local_framesets = JSON.parse(JSON.stringify(this.state.framesets));
+      const frameset_hash = this.getFramesetHashForImageUrl(responseJson['original_image_url'])
+      let frameset = local_framesets[frameset_hash]
+      frameset['redacted_image'] = responseJson['redacted_image_url']
+      local_framesets[frameset_hash] = frameset
+      this.handleUpdateFrameset(frameset_hash, frameset)
+
+    })
+    .then(() => {
+      when_done()
+    })
+    .catch((error) => {
+      console.error(error);
+    })
+    await response
   }
 
   callOcr(current_click, last_click, when_done) {
@@ -364,7 +401,7 @@ class RedactApplication extends React.Component {
     })
   }
 
-  handleSetRedactedImageUrl = (the_url) => {
+  setRedactedImageUrl = (the_url) => {
     this.setState({
       redacted_image_url: the_url,
     })
@@ -459,28 +496,26 @@ class RedactApplication extends React.Component {
                 getRedactionFromFrameset={this.getRedactionFromFrameset}
                 zipMovieUrl={this.state.zip_movie_url}
                 setRedactedMovieUrlCallback={this.handleSetRedactedMovieUrl}
-                handleUpdateFramesetCallback={this.handleUpdateFrameset}
                 getFramesetHashForImageUrl={this.getFramesetHashForImageUrl}
                 redacted_movie_url = {this.state.redacted_movie_url}
-                redact_url = {this.state.redact_url}
+                callRedact={this.callRedact}
                 handleMergeFramesets={this.handleMergeFramesets}
                 doMovieSplit={this.doMovieSplit}
               />
             </Route>
             <Route path='/image'>
               <ImagePanel 
-                mask_method = {this.state.mask_method}
-                image_url = {this.state.image_url}
-                redacted_image_url = {this.state.redacted_image_url}
-                image_width = {this.state.image_width}
-                image_height = {this.state.image_height}
-                image_scale = {this.state.image_scale}
-                redact_url = {this.state.redact_url}
+                mask_method={this.state.mask_method}
+                image_url={this.state.image_url}
+                redacted_image_url={this.state.redacted_image_url}
+                image_width={this.state.image_width}
+                image_height={this.state.image_height}
+                image_scale={this.state.image_scale}
                 framesets={this.state.framesets}
                 addRedactionToFrameset={this.addRedactionToFrameset}
                 getRedactionFromFrameset={this.getRedactionFromFrameset}
                 setMaskMethod={this.handleSetMaskMethod}
-                setRedactedImageUrl={this.handleSetRedactedImageUrl}
+                setRedactedImageUrl={this.setRedactedImageUrl}
                 setImageUrlCallback={this.handleSetImageUrl}
                 getFramesetHashForImageUrl={this.getFramesetHashForImageUrl}
                 getNextImageLink={this.getNextImageLink}
@@ -488,6 +523,7 @@ class RedactApplication extends React.Component {
                 setImageScale={this.setImageScale}
                 showAdvancedPanels={this.state.showAdvancedPanels}
                 callOcr={this.callOcr}
+                callRedact={this.callRedact}
               />
             </Route>
             <Route path='/insights'>

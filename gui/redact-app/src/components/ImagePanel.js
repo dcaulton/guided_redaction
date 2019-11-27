@@ -188,35 +188,14 @@ class ImagePanel extends React.Component {
       let a2r = areas_to_redact[i]
       pass_arr.push([a2r['start'], a2r['end']])
     }
-    this.callRedact(pass_arr)
+    this.props.callRedact(pass_arr, this.props.image_url, this.setRedactionDoneMessage)
   }
 
-  async callRedact(areas_to_redact_short) {
-    let response = await fetch(this.props.redact_url, {
-      method: 'POST',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        areas_to_redact: areas_to_redact_short,
-        mask_method: this.props.mask_method,
-        image_url: this.props.image_url,
-        return_type: 'url',
-      }),
+  setRedactionDoneMessage() {
+    this.setState({
+      message: 'Regions have been redacted'
     })
-    .then((response) => response.json())
-    .then((responseJson) => {
-      let redacted_image_url = responseJson['redacted_image_url']
-      this.props.setRedactedImageUrl(redacted_image_url)
-    })
-    .catch((error) => {
-      console.error(error);
-    })
-    await response
   }
-
-
 
   get_next_button() {
     let next_image_link = ''
