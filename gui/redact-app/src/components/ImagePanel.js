@@ -16,6 +16,7 @@ class ImagePanel extends React.Component {
       last_click: null,
     }
     this.getImageAndHashDisplay=this.getImageAndHashDisplay.bind(this)
+    this.setOcrDoneMessage=this.setOcrDoneMessage.bind(this)
   }
 
   handleSetMode = (mode, submode) => {
@@ -84,13 +85,19 @@ class ImagePanel extends React.Component {
       this.props.addRedactionToFrameset(deepCopyAreasToRedact)
     } else if (this.state.submode === 'ocr') {
       const current_click = [x, y]
-      this.callOcr(current_click, this.state.last_click)
+      this.props.callOcr(current_click, this.state.last_click, this.setOcrDoneMessage)
       this.setState({
         last_click: null,
         mode: 'add_1',
         message: 'processing OCR, please wait',
       })
     }
+  }
+
+  setOcrDoneMessage() {
+    this.setState({
+      message: 'OCR detected regions were added, select another region to scan, press cancel when done'
+    })
   }
 
   getCurrentImageFilename() {
@@ -104,42 +111,6 @@ class ImagePanel extends React.Component {
       const img_hash = this.props.getFramesetHashForImageUrl(this.props.image_url)
       return (<span>image: {img_filename}, frameset hash: {img_hash}</span>)
     }
-  }
-
-  callOcr(current_click, last_click) {
-    fetch(this.props.analyze_url, {
-      method: 'POST',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        roi_start_x: last_click[0],
-        roi_start_y: last_click[1],
-        roi_end_x: current_click[0],
-        roi_end_y: current_click[1],
-        image_url: this.props.image_url,
-      }),
-    })
-    .then((response) => response.json())
-    .then((responseJson) => {
-      let new_areas_to_redact = responseJson['recognized_text_areas']
-      let deepCopyAreasToRedact = this.props.getRedactionFromFrameset()
-      for (let i=0; i < new_areas_to_redact.length; i++) {
-        deepCopyAreasToRedact.push(new_areas_to_redact[i]);
-      }
-      let mess = new_areas_to_redact.length 
-      mess += ' OCR detected regions were added, select another region to scan, press cancel when done'
-      this.setState({
-        message: mess,
-      })
-      this.props.addRedactionToFrameset(deepCopyAreasToRedact)
-    })
-    .catch((error) => {
-      console.error(error)
-    })
-    
-    return []
   }
 
   handleDeleteFirst(x, y) {

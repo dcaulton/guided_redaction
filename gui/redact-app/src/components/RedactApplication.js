@@ -33,6 +33,7 @@ class RedactApplication extends React.Component {
 //      redact_url: 'http:///step-work.dev.sykes.com/apiv1/redact/redact-image/',
 //      parse_movie_url: 'http:///step-work.dev.sykes.com/apiv1/parse/split-and-hash-movie/',
 //      zip_movie_url: 'http:///step-work.dev.sykes.com/apiv1/parse/zip-movie/',
+      api_key: 'xxx',
       ping_url: 'http://127.0.0.1:8000/v1/parse/ping/7171',
       flood_fill_url: 'http://127.0.0.1:8000/v1/analyze/flood-fill/',
       arrow_fill_url: 'http://127.0.0.1:8000/v1/analyze/arrow-fill/',
@@ -56,6 +57,7 @@ class RedactApplication extends React.Component {
     this.getPrevImageLink=this.getPrevImageLink.bind(this)
     this.handleMergeFramesets=this.handleMergeFramesets.bind(this)
     this.doMovieSplit=this.doMovieSplit.bind(this)
+    this.callOcr=this.callOcr.bind(this)
     this.setTemplateMatches=this.setTemplateMatches.bind(this)
     this.clearTemplateMatches=this.clearTemplateMatches.bind(this)
     this.setSelectedArea=this.setSelectedArea.bind(this)
@@ -103,6 +105,39 @@ class RedactApplication extends React.Component {
       })
     }
     theCallback(the_movie.framesets)
+  }
+
+  callOcr(current_click, last_click, when_done) {
+    fetch(this.state.analyze_url, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        roi_start_x: last_click[0],
+        roi_start_y: last_click[1],
+        roi_end_x: current_click[0],
+        roi_end_y: current_click[1],
+        image_url: this.state.image_url,
+      }),
+    })
+    .then((response) => response.json())
+    .then((responseJson) => {
+      let new_areas_to_redact = responseJson['recognized_text_areas']
+      let deepCopyAreasToRedact = this.getRedactionFromFrameset()
+      for (let i=0; i < new_areas_to_redact.length; i++) {
+        deepCopyAreasToRedact.push(new_areas_to_redact[i]);
+      }
+      this.addRedactionToFrameset(deepCopyAreasToRedact)
+    })
+    .then(() => {
+      when_done()
+    })
+    .catch((error) => {
+      console.error(error)
+    })
+    return []
   }
 
   async doMovieSplit(the_url, theCallback) {
@@ -440,7 +475,6 @@ class RedactApplication extends React.Component {
                 image_width = {this.state.image_width}
                 image_height = {this.state.image_height}
                 image_scale = {this.state.image_scale}
-                analyze_url = {this.state.analyze_url}
                 redact_url = {this.state.redact_url}
                 framesets={this.state.framesets}
                 addRedactionToFrameset={this.addRedactionToFrameset}
@@ -453,6 +487,7 @@ class RedactApplication extends React.Component {
                 getPrevImageLink={this.getPrevImageLink}
                 setImageScale={this.setImageScale}
                 showAdvancedPanels={this.state.showAdvancedPanels}
+                callOcr={this.callOcr}
               />
             </Route>
             <Route path='/insights'>
