@@ -41,16 +41,7 @@ class InsightsPanel extends React.Component {
     this.getMovieSelectedCount=this.getMovieSelectedCount.bind(this)
     this.currentImageIsTemplateAnchorImage=this.currentImageIsTemplateAnchorImage.bind(this)
     this.doPing=this.doPing.bind(this)
-    this.getCurrentTemplateAnchors=this.getCurrentTemplateAnchors.bind(this)
     this.getCurrentTemplateMaskZones=this.getCurrentTemplateMaskZones.bind(this)
-  }
-
-  getCurrentTemplateAnchors() {
-    if (Object.keys(this.props.templates).includes(this.props.current_template_id)) {
-      return this.props.templates[this.props.current_template_id]['anchors']
-    } else {
-      return []
-    }
   }
 
   getCurrentTemplateMaskZones() {
@@ -72,14 +63,14 @@ class InsightsPanel extends React.Component {
 
   scanTemplate(scope) {
     if (scope === 'all_movies') {
-      this.callTemplateScanner(this.props.movies)
+      this.props.callTemplateScanner(this.state.insights_image, this.props.movies)
     } else if (scope === 'movie') {
       const the_movie = this.props.movies[this.props.movie_url]
       const wrap = {}
       wrap[this.props.movie_url] = the_movie
-      this.callTemplateScanner(wrap)
+      this.props.callTemplateScanner(this.state.insights_image, wrap)
     } else if (scope === 'image') {
-      this.callTemplateScanner([], this.props.insights_image)
+      this.props.callTemplateScanner(this.state.insights_image, [], this.props.insights_image)
     }
   }
 
@@ -124,31 +115,6 @@ class InsightsPanel extends React.Component {
         this.setState({
           insights_message: 'ping failed',
         })
-    })
-  }
-
-  async callTemplateScanner(movies=[], image='') {
-    let anchors = this.getCurrentTemplateAnchors()
-    await fetch(this.props.scanTemplateUrl, {
-      method: 'POST',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        source_image_url: this.state.insights_image,
-        anchors: anchors, 
-        target_movies: movies,
-        target_image: image,
-      }),
-    })
-    .then((response) => response.json())
-    .then((responseJson) => {
-      let matches = responseJson.matches
-      this.props.setTemplateMatches(this.props.current_template_id, matches)
-    })
-    .catch((error) => {
-      console.error(error);
     })
   }
 
@@ -271,7 +237,9 @@ class InsightsPanel extends React.Component {
     } else if (this.state.mode === 'add_template_anchor_2') {
       this.addCurrentTemplateAnchor(scale, x_scaled, y_scaled)
     } else if (this.state.mode === 'flood_fill_1') {
-      this.doFloodFill(scale, x_scaled, y_scaled)
+      const selected_areas = this.getSelectedAreas()
+      const scrubber_frameset_hash = this.getScrubberFramesetHash()
+      this.props.doFloodFill(scale, x_scaled, y_scaled, this.state.insights_image, selected_areas, scrubber_frameset_hash)
     } else if (this.state.mode === 'arrow_fill_1') {
       this.doArrowFill(scale, x_scaled, y_scaled)
     } else if (this.state.mode === 'add_template_mask_zone_1') {
@@ -279,42 +247,6 @@ class InsightsPanel extends React.Component {
     } else if (this.state.mode === 'add_template_mask_zone_2') {
       this.addCurrentTemplateMaskZone(scale, x_scaled, y_scaled)
     }
-  }
-
-  async doFloodFill(scale, x_scaled, y_scaled) {
-    this.setState({
-      insights_image_scale: scale,
-      clicked_coords: [x_scaled, y_scaled],
-      insights_message: 'Calling flood fill api',
-    })
-    await fetch(this.props.floodFillUrl, {
-      method: 'POST',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        source_image_url: this.state.insights_image,
-        tolerance: 5,
-        selected_point : [x_scaled, y_scaled],
-      }),
-    })
-    .then((response) => response.json())
-    .then((responseJson) => {
-      const sa_id = Math.floor(Math.random(1000000, 9999999)*1000000000)
-      const new_sa = {
-          'id': sa_id,
-          'start': responseJson['flood_fill_regions'][0],
-          'end': responseJson['flood_fill_regions'][1],
-      }
-      let deepCopySelectedAreas= JSON.parse(JSON.stringify(this.getSelectedAreas()))
-      deepCopySelectedAreas.push(new_sa)
-      const cur_hash = this.getScrubberFramesetHash() 
-      this.props.setSelectedArea(deepCopySelectedAreas, this.state.insights_image, this.props.movie_url, cur_hash)
-    })
-    .catch((error) => {
-      console.error(error);
-    })
   }
 
   async doArrowFill(scale, x_scaled, y_scaled) {
@@ -565,7 +497,7 @@ class InsightsPanel extends React.Component {
               height={this.state.image_height}
               clickCallback={this.handleImageClick}
               currentImageIsTemplateAnchorImage={this.currentImageIsTemplateAnchorImage}
-              getCurrentTemplateAnchors={this.getCurrentTemplateAnchors}
+              getCurrentTemplateAnchors={this.props.getCurrentTemplateAnchors}
               getCurrentTemplateMaskZones={this.getCurrentTemplateMaskZones}
               insights_image_scale={this.state.insights_image_scale}
               getTemplateMatches={this.getTemplateMatches}

@@ -67,6 +67,9 @@ class RedactApplication extends React.Component {
     this.setTemplates=this.setTemplates.bind(this)
     this.setImageScale=this.setImageScale.bind(this)
     this.setCurrentTemplate=this.setCurrentTemplate.bind(this)
+    this.callTemplateScanner=this.callTemplateScanner.bind(this)
+    this.getCurrentTemplateAnchors=this.getCurrentTemplateAnchors.bind(this)
+    this.doFloodFill=this.doFloodFill.bind(this)
   }
 
   setTemplates = (the_templates) => {
@@ -254,6 +257,70 @@ class RedactApplication extends React.Component {
       console.error(error);
     });
   } 
+
+  async callTemplateScanner(source_image, movies=[], image='') {
+    let anchors = this.getCurrentTemplateAnchors()
+    await fetch(this.state.scan_template_url, {
+      method: 'POST',
+      headers: this.buildJsonHeaders(),
+      body: JSON.stringify({
+        source_image_url: source_image,
+        anchors: anchors,
+        target_movies: movies,
+        target_image: image,
+      }),
+    })
+    .then((response) => response.json())
+    .then((responseJson) => {
+      let matches = responseJson.matches
+      this.setTemplateMatches(this.state.current_template_id, matches)
+    })
+    .catch((error) => {
+      console.error(error);
+    })
+  }
+
+  async doFloodFill(scale, x_scaled, y_scaled, insights_image, selected_areas, cur_hash) {
+    this.setState({                                                             
+      insights_image_scale: scale,                                              
+      clicked_coords: [x_scaled, y_scaled],                                     
+      insights_message: 'Calling flood fill api',                               
+    })                                                                          
+    await fetch(this.state.flood_fill_url, {                                      
+      method: 'POST',                                                           
+      headers: this.buildJsonHeaders(),
+      body: JSON.stringify({                                                    
+        source_image_url: insights_image,                            
+        tolerance: 5,                                                           
+        selected_point : [x_scaled, y_scaled],                                  
+      }),                                                                       
+    })                                                                          
+    .then((response) => response.json())                                        
+    .then((responseJson) => {                                                   
+      const sa_id = Math.floor(Math.random(1000000, 9999999)*1000000000)        
+      const new_sa = {                                                          
+          'id': sa_id,                                                          
+          'start': responseJson['flood_fill_regions'][0],                       
+          'end': responseJson['flood_fill_regions'][1],                         
+      }
+      let deepCopySelectedAreas= JSON.parse(JSON.stringify(selected_areas))
+      deepCopySelectedAreas.push(new_sa)
+      this.setSelectedArea(deepCopySelectedAreas, insights_image, this.state.movie_url, cur_hash)
+    })
+    .catch((error) => { 
+      console.error(error);
+    })
+  } 
+
+
+
+  getCurrentTemplateAnchors() {
+    if (Object.keys(this.state.templates).includes(this.state.current_template_id)) {
+      return this.state.templates[this.state.current_template_id]['anchors']
+    } else {
+      return []
+    }
+  }
 
   getFramesetHashForImageUrl = (image_url) => {
     const hashes = Object.keys(this.state.framesets)
@@ -566,8 +633,8 @@ class RedactApplication extends React.Component {
                 movie_url={this.state.movie_url}
                 movies={this.state.movies}
                 framesets={this.state.framesets}
-                scanTemplateUrl={this.state.scan_template_url}
-                floodFillUrl={this.state.flood_fill_url}
+                callTemplateScanner={this.callTemplateScanner}
+                getCurrentTemplateAnchors={this.getCurrentTemplateAnchors}
                 arrowFillUrl={this.state.arrow_fill_url}
                 setTemplateMatches={this.setTemplateMatches}
                 clearTemplateMatches={this.clearTemplateMatches}
@@ -580,6 +647,7 @@ class RedactApplication extends React.Component {
                 current_template_id={this.state.current_template_id}
                 setTemplates={this.setTemplates}
                 setCurrentTemplate={this.setCurrentTemplate}
+                doFloodFill={this.doFloodFill}
               />
             </Route>
           </Switch>
