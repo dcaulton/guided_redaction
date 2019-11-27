@@ -605,7 +605,7 @@ class BottomInsightsControls extends React.Component {
         <div className='row mt-3 bg-light rounded mt-3'>
             <button
                 className='btn btn-primary mt-2 ml-2'
-                onClick={() => this.props.doPing()}
+                onClick={() => this.props.callPing()}
             >
               Ping
             </button>

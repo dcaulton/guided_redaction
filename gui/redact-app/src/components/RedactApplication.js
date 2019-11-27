@@ -34,7 +34,7 @@ class RedactApplication extends React.Component {
 //      parse_movie_url: 'http:///step-work.dev.sykes.com/api/v1/parse/split-and-hash-movie',
 //      zip_movie_url: 'http:///step-work.dev.sykes.com/api/v1/parse/zip-movie',
       api_key: '',
-      ping_url: 'http://127.0.0.1:8000/v1/parse/ping/7171',
+      ping_url: 'http://127.0.0.1:8000/v1/parse/ping/',
       flood_fill_url: 'http://127.0.0.1:8000/v1/analyze/flood-fill/',
       arrow_fill_url: 'http://127.0.0.1:8000/v1/analyze/arrow-fill/',
       scan_template_url: 'http://127.0.0.1:8000/v1/analyze/scan-template/',
@@ -71,6 +71,7 @@ class RedactApplication extends React.Component {
     this.getCurrentTemplateAnchors=this.getCurrentTemplateAnchors.bind(this)
     this.doFloodFill=this.doFloodFill.bind(this)
     this.doArrowFill=this.doArrowFill.bind(this)
+    this.doPing=this.doPing.bind(this)
   }
 
   setTemplates = (the_templates) => {
@@ -336,6 +337,20 @@ class RedactApplication extends React.Component {
     .catch((error) => {
       console.error(error);
     })
+  }
+
+  async doPing(when_done_success, when_done_failure) {                                                              
+    await fetch(this.state.ping_url, {                                          
+      method: 'GET',                                                            
+      headers: this.buildJsonHeaders(),
+    })                                                                          
+    .then((response) => response.json())                                        
+    .then((responseJson) => {                                                   
+      when_done_success(responseJson)
+    })                                                                          
+    .catch((error) => {                                                         
+      when_done_failure()
+    })                                                                          
   }
 
   getCurrentTemplateAnchors() {
@@ -665,7 +680,7 @@ class RedactApplication extends React.Component {
                 clearMovieSelectedAreas={this.clearMovieSelectedAreas}
                 template_matches={this.state.template_matches}
                 selected_areas={this.state.selected_areas}
-                ping_url={this.state.ping_url}
+                doPing={this.doPing}
                 templates={this.state.templates}
                 current_template_id={this.state.current_template_id}
                 setTemplates={this.setTemplates}

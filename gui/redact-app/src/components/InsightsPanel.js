@@ -40,9 +40,11 @@ class InsightsPanel extends React.Component {
     this.getMovieMatchesFound=this.getMovieMatchesFound.bind(this)
     this.getMovieSelectedCount=this.getMovieSelectedCount.bind(this)
     this.currentImageIsTemplateAnchorImage=this.currentImageIsTemplateAnchorImage.bind(this)
-    this.doPing=this.doPing.bind(this)
     this.afterArrowFill=this.afterArrowFill.bind(this)
+    this.afterPingSuccess=this.afterPingSuccess.bind(this)
+    this.afterPingFailure=this.afterPingFailure.bind(this)
     this.getCurrentTemplateMaskZones=this.getCurrentTemplateMaskZones.bind(this)
+    this.callPing=this.callPing.bind(this)
   }
 
   getCurrentTemplateMaskZones() {
@@ -99,23 +101,26 @@ class InsightsPanel extends React.Component {
     return ''
   }
 
-  async doPing() {
-    await fetch(this.props.ping_url, {
-      method: 'GET',
-    })
-    .then((response) => response.json())
-    .then((responseJson) => {
-      if (responseJson.response === 'pong') {
-        this.setState({
-          insights_message: 'ping succeeded',
-        })
-      }
-    })
-    .catch((error) => {
-      console.error(error);
-        this.setState({
-          insights_message: 'ping failed',
-        })
+  callPing() {
+    this.props.doPing(this.afterPingSuccess, this.afterPingFailure)
+  }
+
+  afterPingSuccess(responseJson) {
+    if (responseJson.response === 'pong') {
+      this.setState({
+        insights_message: 'ping succeeded',
+      })
+    } else {
+      this.setState({
+        insights_message: 'unexpected ping response, could be failure',
+      })
+    }
+  }
+
+  afterPingFailure(error) {
+    console.error(error);
+    this.setState({
+      insights_message: 'ping failed',
     })
   }
 
@@ -503,7 +508,7 @@ class InsightsPanel extends React.Component {
             clearSelectedAreas={this.clearSelectedAreas}
             clearMovieSelectedAreas={this.props.clearMovieSelectedAreas}
             insights_image={this.state.insights_image}
-            doPing={this.doPing}
+            callPing={this.callPing}
             templates={this.props.templates}
             current_template_id={this.props.current_template_id}
           />
