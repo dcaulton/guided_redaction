@@ -59,6 +59,7 @@ class RedactApplication extends React.Component {
     this.doMovieSplit=this.doMovieSplit.bind(this)
     this.callOcr=this.callOcr.bind(this)
     this.callRedact=this.callRedact.bind(this)
+    this.callMovieZip=this.callMovieZip.bind(this)
     this.setTemplateMatches=this.setTemplateMatches.bind(this)
     this.clearTemplateMatches=this.clearTemplateMatches.bind(this)
     this.setSelectedArea=this.setSelectedArea.bind(this)
@@ -218,6 +219,43 @@ class RedactApplication extends React.Component {
     }
   }
 
+  getRedactedMovieFilename() {
+    //TODO this is not friendly to file names with more than one period, or with a slash in them
+    let parts = this.state.movie_url.split('/')
+    let file_parts = parts[parts.length-1].split('.')
+    let new_filename = file_parts[0] + '_redacted.' + file_parts[1]
+    return new_filename
+  }
+
+  async callMovieZip(the_urls, when_done) {
+    document.getElementById('movieparser_status').innerHTML = 'calling movie zipper'
+    let new_movie_name = this.getRedactedMovieFilename()
+    await fetch(this.state.zip_movie_url, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        image_urls: the_urls,
+        movie_name: new_movie_name,
+      }),
+    })
+    .then((response) => response.json())
+    .then((responseJson) => {
+      let movie_url = responseJson['movie_url']
+      this.setState({
+        redacted_movie_url: movie_url,
+      })
+    })
+    .then(() => {
+      when_done()
+    })
+    .catch((error) => {
+      console.error(error);
+    });
+  } 
+
   getFramesetHashForImageUrl = (image_url) => {
     const hashes = Object.keys(this.state.framesets)
     for (let i=0; i < hashes.length; i++) {
@@ -347,16 +385,12 @@ class RedactApplication extends React.Component {
     let new_framesets = this.state.framesets
     new_framesets[the_hash] = the_frameset
     let new_movie = this.state.movies[this.state.movie_url]
-    new_movie['framesets'] = new_framesets
-    this.setState({
-      framesets: new_framesets
-    })
-  }
-
-  handleSetRedactedMovieUrl = (the_url) => {
-    this.setState({
-      redacted_movie_url: the_url,
-    })
+    if (new_movie) { 
+      new_movie['framesets'] = new_framesets
+      this.setState({
+        framesets: new_framesets
+      })
+    }
   }
 
   setTemplateMatches = (template_id, the_matches) => {
@@ -494,8 +528,7 @@ class RedactApplication extends React.Component {
                 mask_method = {this.state.mask_method}
                 setImageUrlCallback={this.handleSetImageUrl}
                 getRedactionFromFrameset={this.getRedactionFromFrameset}
-                zipMovieUrl={this.state.zip_movie_url}
-                setRedactedMovieUrlCallback={this.handleSetRedactedMovieUrl}
+                callMovieZip={this.callMovieZip}
                 getFramesetHashForImageUrl={this.getFramesetHashForImageUrl}
                 redacted_movie_url = {this.state.redacted_movie_url}
                 callRedact={this.callRedact}

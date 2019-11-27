@@ -17,6 +17,7 @@ class ImagePanel extends React.Component {
     }
     this.getImageAndHashDisplay=this.getImageAndHashDisplay.bind(this)
     this.setOcrDoneMessage=this.setOcrDoneMessage.bind(this)
+    this.setRedactionDoneMessage=this.setRedactionDoneMessage.bind(this)
   }
 
   handleSetMode = (mode, submode) => {
