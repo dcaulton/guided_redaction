@@ -151,12 +151,22 @@ class BottomInsightsControls extends React.Component {
                     <button className='dropdown-item'
                         onClick={() => this.props.scanTemplate('movie')}
                     >
-                      Movie
+                      Movie 
                     </button>
                     <button className='dropdown-item'
                         onClick={() => this.props.scanTemplate('all_movies')}
                     >
                       All Movies
+                    </button>
+                    <button className='dropdown-item'
+                        onClick={() => this.props.submitInsightsJob('current_template_current_movie')}
+                    >
+                      Movie as Job
+                    </button>
+                    <button className='dropdown-item'
+                        onClick={() => this.props.submitInsightsJob('current_template_all_movies')}
+                    >
+                      All Movies as Job
                     </button>
                   </div>
                 </div>
@@ -612,7 +622,7 @@ class BottomInsightsControls extends React.Component {
 
             <button
                 className='btn btn-primary mt-2 ml-2'
-                onClick={() => this.props.submitJob('yikes')}
+                onClick={() => this.props.submitInsightsJob('yikes')}
             >
               Submit Job
             </button>

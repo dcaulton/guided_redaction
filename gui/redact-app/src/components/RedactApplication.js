@@ -48,21 +48,7 @@ class RedactApplication extends React.Component {
       movies: {},
       template_matches: {},
       templates: {},
-      jobs: [
-        {
-          'uuid': 'eed88148-934d-4f22-832e-0658c41f5539',
-          'status': 'waiting',
-          'description': 'ocr scan - 14 words, 23 movies',
-          'created_on': '8:38pm, Dec 15 2019',
-        },
-        {
-          'uuid': '50d0a434-e177-4700-923d-44a2d4cd1757',
-          'status': 'done',
-          'description': 'template scan - 8 templates, 50 movies',
-          'created_on': '8:38pm, Dec 15 2019',
-          'fetch_url': 'the fetch url',
-        },
-      ],
+      jobs: [],
       current_template_id: '',
       selected_areas: {},
       showMovieParserLink: true,
@@ -397,9 +383,11 @@ class RedactApplication extends React.Component {
       method: 'POST',
       headers: this.buildJsonHeaders(),
       body: JSON.stringify({
-        job_data: the_job_data,
+        app: the_job_data['app'],
+        operation: the_job_data['operation'],
+        request_data: the_job_data['request_data'],
         owner: 'stevie wonder',
-        description: 'something wonderful',
+        description: the_job_data['description'],
       }),
     })
     .then(() => {

@@ -22,6 +22,8 @@ class JobsViewSet(viewsets.ViewSet):
                     'status': job.status,
                     'description': job.description,
                     'created_on': job.created_on,
+                    'app': job.app,
+                    'operation': job.operation,
                 }
             )
             if (job.parent_id == None):
@@ -33,15 +35,19 @@ class JobsViewSet(viewsets.ViewSet):
         job = Job.objects.filter(uuid=the_uuid).first()
         return JsonResponse({"job": job})
 
+    def get_file_uuids_from_request(self, request_dict):
+        return []
+
     def create(self, request):
         job = Job(
             uuid=uuid.uuid4(),
-            job_data=request.data.get('job_data'),
+            request_data=request.data.get('request_data'),
+            file_uuids_used=self.get_file_uuids_from_request(request.data),
             owner=request.data.get('owner'),
             status='created',
             description=request.data.get('description'),
-            app='jefferson starship',
-            operation='knee deep in the hoopla',
+            app=request.data.get('app', 'bridezilla'),
+            operation=request.data.get('operation', 'chucky'),
             sequence=0,
             elapsed_time=0.0,
         )

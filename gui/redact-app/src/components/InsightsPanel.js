@@ -46,6 +46,39 @@ class InsightsPanel extends React.Component {
     this.getCurrentTemplateMaskZones=this.getCurrentTemplateMaskZones.bind(this)
     this.callPing=this.callPing.bind(this)
     this.loadJobResults=this.loadJobResults.bind(this)
+    this.submitInsightsJob=this.submitInsightsJob.bind(this)
+  }
+
+  submitInsightsJob(job_string) {
+    let job_data = {
+      request_data: {},
+    }
+    if (job_string === 'current_template_current_movie') {
+      job_data['app'] = 'analyze'
+      job_data['operation'] = 'match_template'
+      job_data['description'] = 'single template single movie match'
+      job_data['request_data']['templates'] = [this.props.templates[this.props.current_template_id]]
+      job_data['request_data']['targets'] = {images: [], movies: []}
+      job_data['request_data']['targets']['movies'] = [this.props.movies[this.props.movie_url]]
+    } else if (job_string === 'current_template_all_movies') {
+      const num_movies = Object.keys(this.props.movies).length.toString()
+      let num_frames = 0
+      let keys = Object.keys(this.props.movies)
+      for (let i=0; i < keys.length; i++) {
+          const movie = this.props.movies[keys[i]]
+          const num_frameset_keys = Object.keys(movie).length
+          num_frames += num_frameset_keys
+      }
+      num_frames = num_frames.toString()
+      job_data['app'] = 'analyze'
+      job_data['operation'] = 'match_template'
+      job_data['description'] = 'single template '+ num_movies+ ' movies, ('+num_frames+' framesets)  match'
+      job_data['request_data']['templates'] = [this.props.templates[this.props.current_template_id]]
+      job_data['request_data']['targets'] = {images: [], movies: []}
+      job_data['request_data']['targets']['movies'] = [this.props.movies]
+    }
+
+    this.props.submitJob(job_data)
   }
 
   getCurrentTemplateMaskZones() {
@@ -519,7 +552,7 @@ class InsightsPanel extends React.Component {
             callPing={this.callPing}
             templates={this.props.templates}
             current_template_id={this.props.current_template_id}
-            submitJob={this.props.submitJob}
+            submitInsightsJob={this.submitInsightsJob}
             getJobs={this.props.getJobs}
           />
         </div>

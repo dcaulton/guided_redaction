@@ -10,6 +10,8 @@ class Job(models.Model):
     operation = models.CharField(max_length=255)
     sequence = models.IntegerField()
     elapsed_time = models.FloatField()
-    job_data = models.TextField()
+    file_uuids_used = models.TextField()
+    request_data = models.TextField(null=True)
+    response_data = models.TextField(null=True)
     parent = models.ForeignKey('Job', on_delete=models.CASCADE, null=True)
 
