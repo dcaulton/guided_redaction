@@ -42,11 +42,27 @@ class RedactApplication extends React.Component {
       redact_url: 'http://127.0.0.1:8000/v1/redact/redact-image/',
       parse_movie_url: 'http://127.0.0.1:8000/v1/parse/split-and-hash-movie/',
       zip_movie_url: 'http://127.0.0.1:8000/v1/parse/zip-movie/',
+      jobs_url: 'http://127.0.0.1:8000/v1/jobs/',
       frames: [],
       framesets: {},
       movies: {},
       template_matches: {},
       templates: {},
+      jobs: [
+        {
+          'uuid': 'eed88148-934d-4f22-832e-0658c41f5539',
+          'status': 'waiting',
+          'description': 'ocr scan - 14 words, 23 movies',
+          'created_on': '8:38pm, Dec 15 2019',
+        },
+        {
+          'uuid': '50d0a434-e177-4700-923d-44a2d4cd1757',
+          'status': 'done',
+          'description': 'template scan - 8 templates, 50 movies',
+          'created_on': '8:38pm, Dec 15 2019',
+          'fetch_url': 'the fetch url',
+        },
+      ],
       current_template_id: '',
       selected_areas: {},
       showMovieParserLink: true,
@@ -72,6 +88,9 @@ class RedactApplication extends React.Component {
     this.doFloodFill=this.doFloodFill.bind(this)
     this.doArrowFill=this.doArrowFill.bind(this)
     this.doPing=this.doPing.bind(this)
+    this.cancelJob=this.cancelJob.bind(this)
+    this.submitJob=this.submitJob.bind(this)
+    this.getJobs=this.getJobs.bind(this)
   }
 
   setTemplates = (the_templates) => {
@@ -83,6 +102,12 @@ class RedactApplication extends React.Component {
   setImageScale= (the_scale) => {
     this.setState({
       image_scale: the_scale,
+    })
+  }
+
+  setJobs = (the_jobs) => {
+    this.setState({
+      jobs: the_jobs,
     })
   }
 
@@ -351,6 +376,52 @@ class RedactApplication extends React.Component {
     .catch((error) => {                                                         
       when_done_failure()
     })                                                                          
+  }
+
+  async getJobs() {
+    await fetch(this.state.jobs_url, {
+      method: 'GET',
+      headers: this.buildJsonHeaders(),
+    })
+    .then((response) => response.json())
+    .then((responseJson) => {
+      this.setJobs(responseJson['jobs'])
+    })
+    .catch((error) => {
+      console.error(error);
+    })
+  }
+
+  async submitJob(the_job_data) {
+    await fetch(this.state.jobs_url, {
+      method: 'POST',
+      headers: this.buildJsonHeaders(),
+      body: JSON.stringify({
+        job_data: the_job_data,
+        owner: 'stevie wonder',
+        description: 'something wonderful',
+      }),
+    })
+    .then(() => {
+      this.getJobs()
+    })
+    .catch((error) => {
+      console.error(error);
+    })
+  }
+
+  async cancelJob(the_uuid) {
+    let the_url = this.state.jobs_url + the_uuid + '/'
+    await fetch(the_url, {
+      method: 'DELETE',
+      headers: this.buildJsonHeaders(),
+    })
+    .then(() => {
+      this.getJobs()
+    })
+    .catch((error) => {
+      console.error(error);
+    })
   }
 
   getCurrentTemplateAnchors() {
@@ -687,6 +758,10 @@ class RedactApplication extends React.Component {
                 setCurrentTemplate={this.setCurrentTemplate}
                 doFloodFill={this.doFloodFill}
                 doArrowFill={this.doArrowFill}
+                cancelJob={this.cancelJob}
+                submitJob={this.submitJob}
+                getJobs={this.getJobs}
+                jobs={this.state.jobs}
               />
             </Route>
           </Switch>

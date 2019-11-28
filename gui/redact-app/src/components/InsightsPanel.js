@@ -45,6 +45,7 @@ class InsightsPanel extends React.Component {
     this.afterPingFailure=this.afterPingFailure.bind(this)
     this.getCurrentTemplateMaskZones=this.getCurrentTemplateMaskZones.bind(this)
     this.callPing=this.callPing.bind(this)
+    this.loadJobResults=this.loadJobResults.bind(this)
   }
 
   getCurrentTemplateMaskZones() {
@@ -419,6 +420,12 @@ class InsightsPanel extends React.Component {
     return []
   }
 
+  loadJobResults(job_id) {
+    console.log('loading job id '+job_id)
+    console.log('read the job and update data structures')
+    console.log('pop the job off the queue')
+  }
+
   render() {
     let imageDivStyle= {
       width: this.props.image_width,
@@ -439,7 +446,7 @@ class InsightsPanel extends React.Component {
     }
     return (
       <div id='insights_panel' className='row mt-5'>
-        <div id='insights_left' className='col-md-3'>
+        <div id='insights_left' className='col-lg-2'>
           <MovieCardList 
             setCurrentVideo={this.setCurrentVideo}
             movie_url={this.props.movie_url}
@@ -449,7 +456,8 @@ class InsightsPanel extends React.Component {
             getMovieSelectedCount={this.getMovieSelectedCount}
           />
         </div>
-        <div id='insights_middle' className='col md-7 ml-4'>
+
+        <div id='insights_middle' className='col-lg-7 ml-4'>
           <div 
               className='row'
               id='insights_header'
@@ -511,10 +519,88 @@ class InsightsPanel extends React.Component {
             callPing={this.callPing}
             templates={this.props.templates}
             current_template_id={this.props.current_template_id}
+            submitJob={this.props.submitJob}
+            getJobs={this.props.getJobs}
+          />
+        </div>
+
+        <div id='insights_right' className='col-lg-2 ml-4'>
+          <JobCardList 
+            jobs={this.props.jobs}
+            loadJobResults={this.loadJobResults}
+            cancelJob={this.props.cancelJob}
           />
         </div>
       </div>
     );
+  }
+}
+
+class JobCardList extends React.Component {
+  render() {
+    return (
+      <div>
+        <div className='row'>
+          <h3>Jobs</h3>
+        </div>
+      {this.props.jobs.map((value, index) => {
+        return (
+        <JobCard
+          key={index}
+          job_data={value}
+          loadJobResults={this.props.loadJobResults}
+          cancelJob={this.props.cancelJob}
+        />
+        )
+      })}
+      </div>
+    )
+  }
+}
+
+class JobCard extends React.Component {
+  render() {
+    let get_job_button = ''
+    if (this.props.job_data['status'] === 'done') {
+      get_job_button = (
+        <button 
+            className='btn btn-primary mt-2 ml-2'
+            onClick={() => this.props.loadJobResults(this.props.job_data['id'])}
+        >
+          Get Results
+        </button>
+      )
+    }
+    let delete_job_button = (
+      <button 
+          className='btn btn-primary mt-2 ml-2'
+          onClick={() => this.props.cancelJob(this.props.job_data['uuid'])}
+      >
+        Delete
+      </button>
+    )
+    return (
+      <div className='row mt-4 card'>
+        <div className='col'>
+          <div className='row border-bottom'>
+            {this.props.job_data['uuid']}
+          </div>
+          <div className='row mt-1'>
+            {this.props.job_data['description']}
+          </div>
+          <div className='row h4'>
+            {this.props.job_data['status']}
+          </div>
+          <div className='row mt-1'>
+            {this.props.job_data['created_on']}
+          </div>
+          <div className='row mt-1'>
+            {get_job_button}
+            {delete_job_button}
+          </div>
+        </div>
+      </div>
+    )
   }
 }
 

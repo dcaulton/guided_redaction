@@ -5,6 +5,7 @@ from rest_framework import routers
 import guided_redaction.analyze.views
 import guided_redaction.parse.views
 import guided_redaction.redact.views
+import guided_redaction.jobs.views
 
 router = routers.DefaultRouter()
 router.register(r'v1/analyze/east-tess', 
@@ -27,7 +28,10 @@ router.register(r'v1/parse/fetch-image',
     guided_redaction.parse.views.ParseViewSetFetchImage, basename='TonyClifton')
 router.register(r'v1/redact/redact-image', 
     guided_redaction.redact.views.RedactViewSetRedactImage, basename='DerekZoolander')
+router.register(r"v1/jobs", 
+    guided_redaction.jobs.views.JobsViewSet, basename="DarylHammond")
 
 urlpatterns = [
     path('', include(router.urls)),
 ]
+
