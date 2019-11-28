@@ -22,7 +22,7 @@ class BottomInsightsControls extends React.Component {
           <div className='col'>
             <div className='row'>
               <div 
-                className='col-lg-10 h3'
+                className='col-lg-9 h3'
               > 
                 templates
               </div>
@@ -275,7 +275,7 @@ class BottomInsightsControls extends React.Component {
           <div className='col'>
             <div className='row'>
               <div 
-                className='col-lg-10 h3'
+                className='col-lg-9 h3'
               > 
                 selected area
               </div>
@@ -482,7 +482,7 @@ class BottomInsightsControls extends React.Component {
           <div className='col'>
             <div className='row'>
               <div 
-                className='col-lg-10 h3'
+                className='col-lg-9 h3'
               > 
                 ocr
               </div>

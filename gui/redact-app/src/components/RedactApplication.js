@@ -47,6 +47,21 @@ class RedactApplication extends React.Component {
       movies: {},
       template_matches: {},
       templates: {},
+      jobs: [
+        {
+          'id': 'eed88148-934d-4f22-832e-0658c41f5539',
+          'status': 'waiting',
+          'description': 'ocr scan - 14 words, 23 movies',
+          'status_last_time': '8:38pm, Dec 15 2019',
+        },
+        {
+          'id': '50d0a434-e177-4700-923d-44a2d4cd1757',
+          'status': 'done',
+          'description': 'template scan - 8 templates, 50 movies',
+          'status_last_time': '8:38pm, Dec 15 2019',
+          'fetch_url': 'the fetch url',
+        },
+      ],
       current_template_id: '',
       selected_areas: {},
       showMovieParserLink: true,
@@ -66,6 +81,7 @@ class RedactApplication extends React.Component {
     this.clearMovieSelectedAreas=this.clearMovieSelectedAreas.bind(this)
     this.setTemplates=this.setTemplates.bind(this)
     this.setImageScale=this.setImageScale.bind(this)
+    this.setJobs=this.setJobs.bind(this)
     this.setCurrentTemplate=this.setCurrentTemplate.bind(this)
     this.callTemplateScanner=this.callTemplateScanner.bind(this)
     this.getCurrentTemplateAnchors=this.getCurrentTemplateAnchors.bind(this)
@@ -83,6 +99,12 @@ class RedactApplication extends React.Component {
   setImageScale= (the_scale) => {
     this.setState({
       image_scale: the_scale,
+    })
+  }
+
+  setJobs = (the_jobs) => {
+    this.setState({
+      jobs: the_jobs,
     })
   }
 
@@ -687,6 +709,8 @@ class RedactApplication extends React.Component {
                 setCurrentTemplate={this.setCurrentTemplate}
                 doFloodFill={this.doFloodFill}
                 doArrowFill={this.doArrowFill}
+                setJobs={this.setJobs}
+                jobs={this.state.jobs}
               />
             </Route>
           </Switch>
