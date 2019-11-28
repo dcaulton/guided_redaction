@@ -624,18 +624,41 @@ class BottomInsightsControls extends React.Component {
               Get Jobs
             </button>
 
-            <button
-                className='btn btn-primary mt-2 ml-2'
-                onClick={() => alert('load')}
-            >
-              Load Prev Session
-            </button>
+            <div className='d-inline'>
+              <button
+                  className='btn btn-primary ml-2 mt-2 dropdown-toggle'
+                  type='button'
+                  id='loadWorkbookDropdownButton'
+                  data-toggle='dropdown'
+                  area-haspopup='true'
+                  area-expanded='false'
+              >
+                Load Workbook
+              </button>
+              <div className='dropdown-menu' aria-labelledby='loadWorkbookDropdownButton'>
+                <button className='dropdown-item'
+                    onClick={() => alert('load session 1')}
+                >
+                  SESSION 1
+                </button>
+                <button className='dropdown-item'
+                    onClick={() => alert('load mobile stuff')}
+                >
+                  MOBILE STUFF SMALL
+                </button>
+                <button className='dropdown-item'
+                    onClick={() => alert('gradients')}
+                >
+                  Gradients
+                </button>
+              </div>
+            </div>
 
             <button
                 className='btn btn-primary mt-2 ml-2'
                 onClick={() => alert('save')}
             >
-              Save Session
+              Save Workbook
             </button>
 
         </div>
