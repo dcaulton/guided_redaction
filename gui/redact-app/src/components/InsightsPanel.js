@@ -519,6 +519,8 @@ class InsightsPanel extends React.Component {
             callPing={this.callPing}
             templates={this.props.templates}
             current_template_id={this.props.current_template_id}
+            submitJob={this.props.submitJob}
+            getJobs={this.props.getJobs}
           />
         </div>
 
@@ -526,6 +528,7 @@ class InsightsPanel extends React.Component {
           <JobCardList 
             jobs={this.props.jobs}
             loadJobResults={this.loadJobResults}
+            cancelJob={this.props.cancelJob}
           />
         </div>
       </div>
@@ -546,6 +549,7 @@ class JobCardList extends React.Component {
           key={index}
           job_data={value}
           loadJobResults={this.props.loadJobResults}
+          cancelJob={this.props.cancelJob}
         />
         )
       })}
@@ -560,13 +564,21 @@ class JobCard extends React.Component {
     if (this.props.job_data['status'] === 'done') {
       get_job_button = (
         <button 
-            className='btn btn-primary'
+            className='btn btn-primary mt-2 ml-2'
             onClick={() => this.props.loadJobResults(this.props.job_data['id'])}
         >
           Get Results
         </button>
       )
     }
+    let delete_job_button = (
+      <button 
+          className='btn btn-primary mt-2 ml-2'
+          onClick={() => this.props.cancelJob(this.props.job_data['id'])}
+      >
+        Delete
+      </button>
+    )
     return (
       <div className='row mt-4 card'>
         <div className='col'>
@@ -584,6 +596,7 @@ class JobCard extends React.Component {
           </div>
           <div className='row mt-1'>
             {get_job_button}
+            {delete_job_button}
           </div>
         </div>
       </div>

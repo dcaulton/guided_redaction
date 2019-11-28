@@ -42,6 +42,7 @@ class RedactApplication extends React.Component {
       redact_url: 'http://127.0.0.1:8000/v1/redact/redact-image/',
       parse_movie_url: 'http://127.0.0.1:8000/v1/parse/split-and-hash-movie/',
       zip_movie_url: 'http://127.0.0.1:8000/v1/parse/zip-movie/',
+      jobs_url: 'http://127.0.0.1:8000/v1/jobs/',
       frames: [],
       framesets: {},
       movies: {},
@@ -81,13 +82,15 @@ class RedactApplication extends React.Component {
     this.clearMovieSelectedAreas=this.clearMovieSelectedAreas.bind(this)
     this.setTemplates=this.setTemplates.bind(this)
     this.setImageScale=this.setImageScale.bind(this)
-    this.setJobs=this.setJobs.bind(this)
     this.setCurrentTemplate=this.setCurrentTemplate.bind(this)
     this.callTemplateScanner=this.callTemplateScanner.bind(this)
     this.getCurrentTemplateAnchors=this.getCurrentTemplateAnchors.bind(this)
     this.doFloodFill=this.doFloodFill.bind(this)
     this.doArrowFill=this.doArrowFill.bind(this)
     this.doPing=this.doPing.bind(this)
+    this.cancelJob=this.cancelJob.bind(this)
+    this.submitJob=this.submitJob.bind(this)
+    this.getJobs=this.getJobs.bind(this)
   }
 
   setTemplates = (the_templates) => {
@@ -106,6 +109,28 @@ class RedactApplication extends React.Component {
     this.setState({
       jobs: the_jobs,
     })
+  }
+
+  cancelJob(job_id) {
+    console.log('canceling job id '+job_id)
+    console.log('TODO: call the server and cancel it')
+    let newJobs = []
+    for (let i=0; i < this.state.jobs.length; i++) {
+      if (this.state.jobs[i]['id'] !== job_id) {
+        newJobs.push(this.state.jobs[i])
+      }
+    }
+    this.setJobs(newJobs)
+  }
+
+  submitJob(job_data) {
+    console.log('submitting job '+job_data)
+    console.log('TODO: call the server and submit it')
+    if (job_data) {
+      let newJobs = JSON.parse(JSON.stringify(this.state.jobs))
+      newJobs.push(job_data)
+      this.setJobs(newJobs)
+    }
   }
 
   setCurrentTemplate = (current_template_id) => {
@@ -373,6 +398,20 @@ class RedactApplication extends React.Component {
     .catch((error) => {                                                         
       when_done_failure()
     })                                                                          
+  }
+
+  async getJobs() {
+    await fetch(this.state.jobs_url, {
+      method: 'GET',
+      headers: this.buildJsonHeaders(),
+    })
+    .then((response) => response.json())
+    .then((responseJson) => {
+      this.setJobs(responseJson['jobs'])
+    })
+    .catch((error) => {
+      console.error(error);
+    })
   }
 
   getCurrentTemplateAnchors() {
@@ -709,7 +748,9 @@ class RedactApplication extends React.Component {
                 setCurrentTemplate={this.setCurrentTemplate}
                 doFloodFill={this.doFloodFill}
                 doArrowFill={this.doArrowFill}
-                setJobs={this.setJobs}
+                cancelJob={this.cancelJob}
+                submitJob={this.submitJob}
+                getJobs={this.getJobs}
                 jobs={this.state.jobs}
               />
             </Route>
