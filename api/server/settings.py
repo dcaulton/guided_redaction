@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'guided_redaction.parse',
     'guided_redaction.analyze',
     'guided_redaction.redact',
+    'guided_redaction.jobs',
     'django_extensions',
     'rest_framework',
 ]

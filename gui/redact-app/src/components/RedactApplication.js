@@ -50,16 +50,16 @@ class RedactApplication extends React.Component {
       templates: {},
       jobs: [
         {
-          'id': 'eed88148-934d-4f22-832e-0658c41f5539',
+          'uuid': 'eed88148-934d-4f22-832e-0658c41f5539',
           'status': 'waiting',
           'description': 'ocr scan - 14 words, 23 movies',
-          'status_last_time': '8:38pm, Dec 15 2019',
+          'created_on': '8:38pm, Dec 15 2019',
         },
         {
-          'id': '50d0a434-e177-4700-923d-44a2d4cd1757',
+          'uuid': '50d0a434-e177-4700-923d-44a2d4cd1757',
           'status': 'done',
           'description': 'template scan - 8 templates, 50 movies',
-          'status_last_time': '8:38pm, Dec 15 2019',
+          'created_on': '8:38pm, Dec 15 2019',
           'fetch_url': 'the fetch url',
         },
       ],
@@ -109,28 +109,6 @@ class RedactApplication extends React.Component {
     this.setState({
       jobs: the_jobs,
     })
-  }
-
-  cancelJob(job_id) {
-    console.log('canceling job id '+job_id)
-    console.log('TODO: call the server and cancel it')
-    let newJobs = []
-    for (let i=0; i < this.state.jobs.length; i++) {
-      if (this.state.jobs[i]['id'] !== job_id) {
-        newJobs.push(this.state.jobs[i])
-      }
-    }
-    this.setJobs(newJobs)
-  }
-
-  submitJob(job_data) {
-    console.log('submitting job '+job_data)
-    console.log('TODO: call the server and submit it')
-    if (job_data) {
-      let newJobs = JSON.parse(JSON.stringify(this.state.jobs))
-      newJobs.push(job_data)
-      this.setJobs(newJobs)
-    }
   }
 
   setCurrentTemplate = (current_template_id) => {
@@ -408,6 +386,38 @@ class RedactApplication extends React.Component {
     .then((response) => response.json())
     .then((responseJson) => {
       this.setJobs(responseJson['jobs'])
+    })
+    .catch((error) => {
+      console.error(error);
+    })
+  }
+
+  async submitJob(the_job_data) {
+    await fetch(this.state.jobs_url, {
+      method: 'POST',
+      headers: this.buildJsonHeaders(),
+      body: JSON.stringify({
+        job_data: the_job_data,
+        owner: 'stevie wonder',
+        description: 'something wonderful',
+      }),
+    })
+    .then(() => {
+      this.getJobs()
+    })
+    .catch((error) => {
+      console.error(error);
+    })
+  }
+
+  async cancelJob(the_uuid) {
+    let the_url = this.state.jobs_url + the_uuid + '/'
+    await fetch(the_url, {
+      method: 'DELETE',
+      headers: this.buildJsonHeaders(),
+    })
+    .then(() => {
+      this.getJobs()
     })
     .catch((error) => {
       console.error(error);

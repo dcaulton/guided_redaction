@@ -574,7 +574,7 @@ class JobCard extends React.Component {
     let delete_job_button = (
       <button 
           className='btn btn-primary mt-2 ml-2'
-          onClick={() => this.props.cancelJob(this.props.job_data['id'])}
+          onClick={() => this.props.cancelJob(this.props.job_data['uuid'])}
       >
         Delete
       </button>
@@ -583,7 +583,7 @@ class JobCard extends React.Component {
       <div className='row mt-4 card'>
         <div className='col'>
           <div className='row border-bottom'>
-            {this.props.job_data['id']}
+            {this.props.job_data['uuid']}
           </div>
           <div className='row mt-1'>
             {this.props.job_data['description']}
@@ -592,7 +592,7 @@ class JobCard extends React.Component {
             {this.props.job_data['status']}
           </div>
           <div className='row mt-1'>
-            {this.props.job_data['status_last_time']}
+            {this.props.job_data['created_on']}
           </div>
           <div className='row mt-1'>
             {get_job_button}
