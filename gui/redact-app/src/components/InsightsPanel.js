@@ -49,6 +49,10 @@ class InsightsPanel extends React.Component {
     this.submitInsightsJob=this.submitInsightsJob.bind(this)
   }
 
+  componentDidMount() {
+    this.props.getJobs()
+  }
+
   submitInsightsJob(job_string) {
     let job_data = {
       request_data: {},
