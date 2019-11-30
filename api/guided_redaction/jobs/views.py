@@ -26,6 +26,8 @@ class JobsViewSet(viewsets.ViewSet):
                     'created_on': job.created_on,
                     'app': job.app,
                     'operation': job.operation,
+                    'request_data': job.request_data,
+                    'response_data': job.response_data,
                 }
             )
             if (job.parent_id == None):
@@ -68,5 +70,5 @@ class JobsViewSet(viewsets.ViewSet):
     def schedule_job(self, job):
         job_uuid = job.uuid
         if job.app == 'analyze' and job.operation == 'scan_template':
-            from guided_redaction.analyze.tasks import scan_template
-            scan_template.delay(job_uuid)
+            from guided_redaction.analyze import tasks
+            tasks.scan_template.delay(job_uuid)

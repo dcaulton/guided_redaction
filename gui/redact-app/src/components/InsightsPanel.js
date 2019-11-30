@@ -61,9 +61,16 @@ class InsightsPanel extends React.Component {
       job_data['app'] = 'analyze'
       job_data['operation'] = 'scan_template'
       job_data['description'] = 'single template single movie match'
-      job_data['request_data']['templates'] = [this.props.templates[this.props.current_template_id]]
-      job_data['request_data']['targets'] = {images: [], movies: []}
-      job_data['request_data']['targets']['movies'] = [this.props.movies[this.props.movie_url]]
+      for (let i=0; i < Object.keys(this.props.templates).length; i++) {
+        let template_key = Object.keys(this.props.templates)[i]
+        let template = this.props.templates[template_key]
+        job_data['request_data']['anchors'] = template['anchors']
+        job_data['request_data']['source_image_url'] = template['anchors'][0]['image']
+        const wrap = {}
+        wrap[this.props.movie_url] = this.props.movies[this.props.movie_url]
+        job_data['request_data']['target_movies'] = wrap
+        this.props.submitJob(job_data)
+      }
     } else if (job_string === 'current_template_all_movies') {
       const num_movies = Object.keys(this.props.movies).length.toString()
       let num_frames = 0
@@ -80,9 +87,11 @@ class InsightsPanel extends React.Component {
       job_data['request_data']['templates'] = [this.props.templates[this.props.current_template_id]]
       job_data['request_data']['targets'] = {images: [], movies: []}
       job_data['request_data']['targets']['movies'] = [this.props.movies]
+      this.props.submitJob(job_data)
+
+
     }
 
-    this.props.submitJob(job_data)
   }
 
   getCurrentTemplateMaskZones() {
@@ -334,6 +343,7 @@ class InsightsPanel extends React.Component {
       'name': template_id,
       'anchors': [],
       'mask_zones': [],
+      'source_image': this.state.insights_image_id,
     }
     return the_template
   }
@@ -616,6 +626,14 @@ class JobCard extends React.Component {
         Delete
       </button>
     )
+    let job_response_data = ''
+    if (this.props.job_data['status'] === 'failed') {
+      job_response_data = (
+        <div className='row mt-1'>
+          {this.props.job_data['response_data']}
+        </div>
+      )
+    }
     return (
       <div className='row mt-4 card'>
         <div className='col'>
@@ -628,6 +646,7 @@ class JobCard extends React.Component {
           <div className='row h4'>
             {this.props.job_data['status']}
           </div>
+          {job_response_data}
           <div className='row mt-1'>
             {this.props.job_data['created_on']}
           </div>

@@ -386,6 +386,7 @@ class RedactApplication extends React.Component {
         app: the_job_data['app'],
         operation: the_job_data['operation'],
         request_data: the_job_data['request_data'],
+        response_data: the_job_data['response_data'],
         owner: 'stevie wonder',
         description: the_job_data['description'],
       }),
