@@ -77,6 +77,7 @@ class RedactApplication extends React.Component {
     this.cancelJob=this.cancelJob.bind(this)
     this.submitJob=this.submitJob.bind(this)
     this.getJobs=this.getJobs.bind(this)
+    this.addMovieAndSetActive=this.addMovieAndSetActive.bind(this)
   }
 
   setTemplates = (the_templates) => {
@@ -199,6 +200,18 @@ class RedactApplication extends React.Component {
     return []
   }
 
+
+  addMovieAndSetActive(movie_url, frames, framesets, movies, theCallback) {
+    this.setState({
+      movie_url: movie_url, 
+      frames: frames,
+      framesets: framesets,
+      movies: movies,
+    },
+    theCallback(framesets)
+    )
+  }
+
   async doMovieSplit(the_url, theCallback) {
     if (!the_url) {
       the_url = this.state.movie_url
@@ -222,14 +235,8 @@ class RedactApplication extends React.Component {
           frames: frames,
           framesets: framesets,
         }
-        this.setState({
-          movie_url: the_url, 
-          frames: frames,
-          framesets: framesets,
-          movies: deepCopyMovies,
-        },
-        theCallback(framesets)
-        )
+
+        this.addMovieAndSetActive(the_url, frames, framesets, deepCopyMovies, theCallback)
       })
       .catch((error) => {
         console.error(error);
@@ -752,6 +759,7 @@ class RedactApplication extends React.Component {
                 submitJob={this.submitJob}
                 getJobs={this.getJobs}
                 jobs={this.state.jobs}
+                addMovieAndSetActive={this.addMovieAndSetActive}
               />
             </Route>
           </Switch>

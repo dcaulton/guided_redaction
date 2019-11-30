@@ -53,7 +53,7 @@ class InsightsPanel extends React.Component {
     this.props.getJobs()
   }
 
-  submitInsightsJob(job_string) {
+  submitInsightsJob(job_string, extra_data) {
     let job_data = {
       request_data: {},
     }
@@ -103,6 +103,12 @@ class InsightsPanel extends React.Component {
         job_data['request_data']['template_id'] = template['id']
         this.props.submitJob(job_data)
       }
+    } else if (job_string === 'load_movie') {
+      job_data['app'] = 'parse'
+      job_data['operation'] = 'split_and_hash_movie'
+      job_data['description'] = 'load and hash movie: ' + extra_data
+      job_data['request_data']['movie_url'] = extra_data
+      this.props.submitJob(job_data)
     }
   }
 
@@ -486,7 +492,18 @@ class InsightsPanel extends React.Component {
         const request_data = JSON.parse(job.request_data)
         if (job.app === 'analyze' && job.operation === 'scan_template') {
           this.props.setTemplateMatches(request_data['template_id'], response_data)
+        } else if (job.app === 'parse' && job.operation === 'split_and_hash_movie') {
+          let frames = response_data.frames
+          let framesets = response_data.unique_frames
+          let deepCopyMovies = JSON.parse(JSON.stringify(this.props.movies))
+          deepCopyMovies[request_data['movie_url']] = {
+            frames: frames,
+            framesets: framesets,
+          }
+
+          this.props.addMovieAndSetActive(request_data['movie_url'], frames, framesets, deepCopyMovies, this.movieSplitDone) 
         }
+
       }
     }
   }
@@ -519,6 +536,7 @@ class InsightsPanel extends React.Component {
             movies={this.props.movies}
             getMovieMatchesFound={this.getMovieMatchesFound}
             getMovieSelectedCount={this.getMovieSelectedCount}
+            submitInsightsJob={this.submitInsightsJob}
           />
         </div>
 
@@ -695,6 +713,7 @@ class MovieCardList extends React.Component {
             movies={this.props.movies}
             getMovieMatchesFound={this.props.getMovieMatchesFound}
             getMovieSelectedCount={this.props.getMovieSelectedCount}
+            submitInsightsJob={this.props.submitInsightsJob}
         />
         )
       })}
@@ -719,7 +738,17 @@ class MovieCard extends React.Component {
       loaded_status = true
     }
 
-    let the_button = (
+    let load_as_job_button = (
+      <div className='row'>
+        <button
+            className='btn btn-link'
+            onClick={() => this.props.submitInsightsJob('load_movie', this.props.this_cards_movie_url)}
+        >
+        load as job
+        </button>
+      </div>
+    )
+    let make_active_button = (
       <div className='row'>
         <button
             className='btn btn-link'
@@ -735,7 +764,7 @@ class MovieCard extends React.Component {
       framesets_count_message = Object.keys(the_framesets).length.toString() + ' framesets'
     }
     if (active_status) {
-      the_button = (
+      make_active_button = (
         <div
           className='row text-success'
         >
@@ -769,7 +798,10 @@ class MovieCard extends React.Component {
             {this.get_filename(this.props.this_cards_movie_url)}
           </div>
           <div className='row ml-1'>
-            {the_button}
+            {make_active_button}
+          </div>
+          <div className='row ml-1'>
+            {load_as_job_button}
           </div>
           <div className='row'>
             {framesets_count_message}

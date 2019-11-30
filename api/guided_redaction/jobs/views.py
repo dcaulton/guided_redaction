@@ -11,6 +11,8 @@ from django.conf import settings
 import requests
 from rest_framework import viewsets
 from guided_redaction.jobs.models import Job
+from guided_redaction.analyze import tasks as analyze_tasks
+from guided_redaction.parse import tasks as parse_tasks
 import json
 
 
@@ -70,5 +72,6 @@ class JobsViewSet(viewsets.ViewSet):
     def schedule_job(self, job):
         job_uuid = job.uuid
         if job.app == 'analyze' and job.operation == 'scan_template':
-            from guided_redaction.analyze import tasks
-            tasks.scan_template.delay(job_uuid)
+            analyze_tasks.scan_template.delay(job_uuid)
+        if job.app == 'parse' and job.operation == 'split_and_hash_movie':
+            parse_tasks.split_and_hash_movie.delay(job_uuid)
