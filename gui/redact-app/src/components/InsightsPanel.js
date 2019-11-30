@@ -61,6 +61,10 @@ class InsightsPanel extends React.Component {
       job_data['app'] = 'analyze'
       job_data['operation'] = 'scan_template'
       job_data['description'] = 'single template single movie match'
+      if (Object.keys(this.props.templates).length > 1) {
+        const num_temps = Object.keys(this.props.templates).length.toString()
+        job_data['description'] = num_temps + ' templates single movie match'
+      }
       for (let i=0; i < Object.keys(this.props.templates).length; i++) {
         let template_key = Object.keys(this.props.templates)[i]
         let template = this.props.templates[template_key]
@@ -83,15 +87,21 @@ class InsightsPanel extends React.Component {
       num_frames = num_frames.toString()
       job_data['app'] = 'analyze'
       job_data['operation'] = 'scan_template'
-      job_data['description'] = 'single template '+ num_movies+ ' movies, ('+num_frames+' framesets)  match'
-      job_data['request_data']['templates'] = [this.props.templates[this.props.current_template_id]]
-      job_data['request_data']['targets'] = {images: [], movies: []}
-      job_data['request_data']['targets']['movies'] = [this.props.movies]
-      this.props.submitJob(job_data)
-
-
+      if (Object.keys(this.props.templates).length > 1) {
+        const num_temps = Object.keys(this.props.templates).length.toString()
+        job_data['description'] = num_temps + ' templates '+ num_movies+ ' movies, ('+num_frames+' framesets)  match'
+      } else {
+        job_data['description'] = 'single template '+ num_movies+ ' movies, ('+num_frames+' framesets)  match'
+      }
+      for (let i=0; i < Object.keys(this.props.templates).length; i++) {
+        let template_key = Object.keys(this.props.templates)[i]
+        let template = this.props.templates[template_key]
+        job_data['request_data']['anchors'] = template['anchors']
+        job_data['request_data']['source_image_url'] = template['anchors'][0]['image']
+        job_data['request_data']['target_movies'] = this.props.movies
+        this.props.submitJob(job_data)
+      }
     }
-
   }
 
   getCurrentTemplateMaskZones() {
