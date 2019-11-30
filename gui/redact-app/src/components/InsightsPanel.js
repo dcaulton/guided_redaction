@@ -53,7 +53,7 @@ class InsightsPanel extends React.Component {
     this.props.getJobs()
   }
 
-  submitInsightsJob(job_string) {
+  submitInsightsJob(job_string, extra_data) {
     let job_data = {
       request_data: {},
     }
@@ -61,28 +61,55 @@ class InsightsPanel extends React.Component {
       job_data['app'] = 'analyze'
       job_data['operation'] = 'scan_template'
       job_data['description'] = 'single template single movie match'
-      job_data['request_data']['templates'] = [this.props.templates[this.props.current_template_id]]
-      job_data['request_data']['targets'] = {images: [], movies: []}
-      job_data['request_data']['targets']['movies'] = [this.props.movies[this.props.movie_url]]
+      if (Object.keys(this.props.templates).length > 1) {
+        const num_temps = Object.keys(this.props.templates).length.toString()
+        job_data['description'] = num_temps + ' templates single movie match'
+      }
+      for (let i=0; i < Object.keys(this.props.templates).length; i++) {
+        let template_key = Object.keys(this.props.templates)[i]
+        let template = this.props.templates[template_key]
+        job_data['request_data']['anchors'] = template['anchors']
+        job_data['request_data']['source_image_url'] = template['anchors'][0]['image']
+        job_data['request_data']['template_id'] = template['id']
+        const wrap = {}
+        wrap[this.props.movie_url] = this.props.movies[this.props.movie_url]
+        job_data['request_data']['target_movies'] = wrap
+        this.props.submitJob(job_data)
+      }
     } else if (job_string === 'current_template_all_movies') {
       const num_movies = Object.keys(this.props.movies).length.toString()
       let num_frames = 0
       let keys = Object.keys(this.props.movies)
       for (let i=0; i < keys.length; i++) {
           const movie = this.props.movies[keys[i]]
-          const num_frameset_keys = Object.keys(movie).length
+          const num_frameset_keys = Object.keys(movie['framesets']).length
           num_frames += num_frameset_keys
       }
       num_frames = num_frames.toString()
       job_data['app'] = 'analyze'
       job_data['operation'] = 'scan_template'
-      job_data['description'] = 'single template '+ num_movies+ ' movies, ('+num_frames+' framesets)  match'
-      job_data['request_data']['templates'] = [this.props.templates[this.props.current_template_id]]
-      job_data['request_data']['targets'] = {images: [], movies: []}
-      job_data['request_data']['targets']['movies'] = [this.props.movies]
+      if (Object.keys(this.props.templates).length > 1) {
+        const num_temps = Object.keys(this.props.templates).length.toString()
+        job_data['description'] = num_temps + ' templates '+ num_movies+ ' movies, ('+num_frames+' framesets)  match'
+      } else {
+        job_data['description'] = 'single template '+ num_movies+ ' movies, ('+num_frames+' framesets)  match'
+      }
+      for (let i=0; i < Object.keys(this.props.templates).length; i++) {
+        let template_key = Object.keys(this.props.templates)[i]
+        let template = this.props.templates[template_key]
+        job_data['request_data']['anchors'] = template['anchors']
+        job_data['request_data']['source_image_url'] = template['anchors'][0]['image']
+        job_data['request_data']['target_movies'] = this.props.movies
+        job_data['request_data']['template_id'] = template['id']
+        this.props.submitJob(job_data)
+      }
+    } else if (job_string === 'load_movie') {
+      job_data['app'] = 'parse'
+      job_data['operation'] = 'split_and_hash_movie'
+      job_data['description'] = 'load and hash movie: ' + extra_data
+      job_data['request_data']['movie_url'] = extra_data
+      this.props.submitJob(job_data)
     }
-
-    this.props.submitJob(job_data)
   }
 
   getCurrentTemplateMaskZones() {
@@ -104,14 +131,14 @@ class InsightsPanel extends React.Component {
 
   scanTemplate(scope) {
     if (scope === 'all_movies') {
-      this.props.callTemplateScanner(this.state.insights_image, this.props.movies)
+      this.props.callTemplateScanner(this.props.current_template_id, this.state.insights_image, this.props.movies)
     } else if (scope === 'movie') {
       const the_movie = this.props.movies[this.props.movie_url]
       const wrap = {}
       wrap[this.props.movie_url] = the_movie
-      this.props.callTemplateScanner(this.state.insights_image, wrap)
+      this.props.callTemplateScanner(this.props.current_template_id, this.state.insights_image, wrap)
     } else if (scope === 'image') {
-      this.props.callTemplateScanner(this.state.insights_image, [], this.props.insights_image)
+      this.props.callTemplateScanner(this.props.current_template_id, this.state.insights_image, [], this.props.insights_image)
     }
   }
 
@@ -458,9 +485,27 @@ class InsightsPanel extends React.Component {
   }
 
   loadJobResults(job_id) {
-    console.log('loading job id '+job_id)
-    console.log('read the job and update data structures')
-    console.log('pop the job off the queue')
+    for (let i=0; i < this.props.jobs.length; i++) {
+      if (this.props.jobs[i]['uuid'] === job_id) {
+        const job = this.props.jobs[i]
+        const response_data = JSON.parse(job.response_data)
+        const request_data = JSON.parse(job.request_data)
+        if (job.app === 'analyze' && job.operation === 'scan_template') {
+          this.props.setTemplateMatches(request_data['template_id'], response_data)
+        } else if (job.app === 'parse' && job.operation === 'split_and_hash_movie') {
+          let frames = response_data.frames
+          let framesets = response_data.unique_frames
+          let deepCopyMovies = JSON.parse(JSON.stringify(this.props.movies))
+          deepCopyMovies[request_data['movie_url']] = {
+            frames: frames,
+            framesets: framesets,
+          }
+
+          this.props.addMovieAndSetActive(request_data['movie_url'], frames, framesets, deepCopyMovies, this.movieSplitDone) 
+        }
+
+      }
+    }
   }
 
   render() {
@@ -491,6 +536,7 @@ class InsightsPanel extends React.Component {
             movies={this.props.movies}
             getMovieMatchesFound={this.getMovieMatchesFound}
             getMovieSelectedCount={this.getMovieSelectedCount}
+            submitInsightsJob={this.submitInsightsJob}
           />
         </div>
 
@@ -602,7 +648,7 @@ class JobCard extends React.Component {
       get_job_button = (
         <button 
             className='btn btn-primary mt-2 ml-2'
-            onClick={() => this.props.loadJobResults(this.props.job_data['id'])}
+            onClick={() => this.props.loadJobResults(this.props.job_data['uuid'])}
         >
           Get Results
         </button>
@@ -616,6 +662,14 @@ class JobCard extends React.Component {
         Delete
       </button>
     )
+    let job_response_data = ''
+    if (this.props.job_data['status'] === 'failed') {
+      job_response_data = (
+        <div className='row mt-1'>
+          {this.props.job_data['response_data']}
+        </div>
+      )
+    }
     return (
       <div className='row mt-4 card'>
         <div className='col'>
@@ -628,6 +682,7 @@ class JobCard extends React.Component {
           <div className='row h4'>
             {this.props.job_data['status']}
           </div>
+          {job_response_data}
           <div className='row mt-1'>
             {this.props.job_data['created_on']}
           </div>
@@ -658,6 +713,7 @@ class MovieCardList extends React.Component {
             movies={this.props.movies}
             getMovieMatchesFound={this.props.getMovieMatchesFound}
             getMovieSelectedCount={this.props.getMovieSelectedCount}
+            submitInsightsJob={this.props.submitInsightsJob}
         />
         )
       })}
@@ -682,7 +738,17 @@ class MovieCard extends React.Component {
       loaded_status = true
     }
 
-    let the_button = (
+    let load_as_job_button = (
+      <div className='row'>
+        <button
+            className='btn btn-link'
+            onClick={() => this.props.submitInsightsJob('load_movie', this.props.this_cards_movie_url)}
+        >
+        load as job
+        </button>
+      </div>
+    )
+    let make_active_button = (
       <div className='row'>
         <button
             className='btn btn-link'
@@ -695,10 +761,10 @@ class MovieCard extends React.Component {
     let framesets_count_message = 'no framesets'
     if (loaded_status) {
       let the_framesets = this.props.movies[this.props.this_cards_movie_url]['framesets']
-      framesets_count_message = Object.keys(the_framesets).length + ' framesets'
+      framesets_count_message = Object.keys(the_framesets).length.toString() + ' framesets'
     }
     if (active_status) {
-      the_button = (
+      make_active_button = (
         <div
           className='row text-success'
         >
@@ -732,7 +798,10 @@ class MovieCard extends React.Component {
             {this.get_filename(this.props.this_cards_movie_url)}
           </div>
           <div className='row ml-1'>
-            {the_button}
+            {make_active_button}
+          </div>
+          <div className='row ml-1'>
+            {load_as_job_button}
           </div>
           <div className='row'>
             {framesets_count_message}
