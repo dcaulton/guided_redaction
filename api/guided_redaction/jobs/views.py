@@ -11,6 +11,7 @@ from django.conf import settings
 import requests
 from rest_framework import viewsets
 from guided_redaction.jobs.models import Job
+import json
 
 
 class JobsViewSet(viewsets.ViewSet):
@@ -43,7 +44,7 @@ class JobsViewSet(viewsets.ViewSet):
         job_uuid = str(uuid.uuid4())
         job = Job(
             uuid=job_uuid,
-            request_data=request.data.get('request_data'),
+            request_data=json.dumps(request.data.get('request_data')),
             file_uuids_used=self.get_file_uuids_from_request(request.data),
             owner=request.data.get('owner'),
             status='created',
@@ -55,7 +56,7 @@ class JobsViewSet(viewsets.ViewSet):
         )
         job.save()
 
-        self.enqueue_job(job_uuid)
+        self.schedule_job(job)
 
         return JsonResponse({"job_id": job.uuid})
 
@@ -64,10 +65,8 @@ class JobsViewSet(viewsets.ViewSet):
         job.delete()
         return HttpResponse('', status=204)
 
-    def enqueue_job(self, job_uuid):
-        connection = pika.BlockingConnection(pika.ConnectionParameters(settings.GR_QUEUE_CONNECTION_STRING))
-        channel = connection.channel()
-        channel.queue_declare(queue=settings.GR_STANDARD_QUEUE_NAME, durable=True)
-        channel.basic_publish(exchange='', routing_key=settings.GR_STANDARD_QUEUE_NAME, body=job_uuid)
-        connection.close()
-
+    def schedule_job(self, job):
+        job_uuid = job.uuid
+        if job.app == 'analyze' and job.operation == 'scan_template':
+            from guided_redaction.analyze.tasks import scan_template
+            scan_template.delay(job_uuid)
