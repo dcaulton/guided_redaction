@@ -7,6 +7,8 @@ from guided_redaction.analyze.views import AnalyzeViewSetScanTemplate
 def scan_template(job_uuid):
     job = Job.objects.filter(uuid=job_uuid).first()
     if job:
+        job.status = 'running'
+        job.save()
         print('scanning template for job ', job_uuid)
         request_data = json.loads(job.request_data)
         avsst = AnalyzeViewSetScanTemplate()

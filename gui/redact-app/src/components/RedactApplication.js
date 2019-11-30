@@ -271,7 +271,7 @@ class RedactApplication extends React.Component {
     });
   } 
 
-  async callTemplateScanner(source_image, movies=[], image='') {
+  async callTemplateScanner(template_id, source_image, movies=[], image='') {
     let anchors = this.getCurrentTemplateAnchors()
     await fetch(this.state.scan_template_url, {
       method: 'POST',
@@ -281,6 +281,7 @@ class RedactApplication extends React.Component {
         anchors: anchors,
         target_movies: movies,
         target_image: image,
+        template_id: template_id,
       }),
     })
     .then((response) => response.json())

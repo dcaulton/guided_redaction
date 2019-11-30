@@ -70,6 +70,7 @@ class InsightsPanel extends React.Component {
         let template = this.props.templates[template_key]
         job_data['request_data']['anchors'] = template['anchors']
         job_data['request_data']['source_image_url'] = template['anchors'][0]['image']
+        job_data['request_data']['template_id'] = template['id']
         const wrap = {}
         wrap[this.props.movie_url] = this.props.movies[this.props.movie_url]
         job_data['request_data']['target_movies'] = wrap
@@ -81,7 +82,7 @@ class InsightsPanel extends React.Component {
       let keys = Object.keys(this.props.movies)
       for (let i=0; i < keys.length; i++) {
           const movie = this.props.movies[keys[i]]
-          const num_frameset_keys = Object.keys(movie).length
+          const num_frameset_keys = Object.keys(movie['framesets']).length
           num_frames += num_frameset_keys
       }
       num_frames = num_frames.toString()
@@ -99,6 +100,7 @@ class InsightsPanel extends React.Component {
         job_data['request_data']['anchors'] = template['anchors']
         job_data['request_data']['source_image_url'] = template['anchors'][0]['image']
         job_data['request_data']['target_movies'] = this.props.movies
+        job_data['request_data']['template_id'] = template['id']
         this.props.submitJob(job_data)
       }
     }
@@ -123,14 +125,14 @@ class InsightsPanel extends React.Component {
 
   scanTemplate(scope) {
     if (scope === 'all_movies') {
-      this.props.callTemplateScanner(this.state.insights_image, this.props.movies)
+      this.props.callTemplateScanner(this.props.current_template_id, this.state.insights_image, this.props.movies)
     } else if (scope === 'movie') {
       const the_movie = this.props.movies[this.props.movie_url]
       const wrap = {}
       wrap[this.props.movie_url] = the_movie
-      this.props.callTemplateScanner(this.state.insights_image, wrap)
+      this.props.callTemplateScanner(this.props.current_template_id, this.state.insights_image, wrap)
     } else if (scope === 'image') {
-      this.props.callTemplateScanner(this.state.insights_image, [], this.props.insights_image)
+      this.props.callTemplateScanner(this.props.current_template_id, this.state.insights_image, [], this.props.insights_image)
     }
   }
 
@@ -353,7 +355,6 @@ class InsightsPanel extends React.Component {
       'name': template_id,
       'anchors': [],
       'mask_zones': [],
-      'source_image': this.state.insights_image_id,
     }
     return the_template
   }
@@ -478,9 +479,16 @@ class InsightsPanel extends React.Component {
   }
 
   loadJobResults(job_id) {
-    console.log('loading job id '+job_id)
-    console.log('read the job and update data structures')
-    console.log('pop the job off the queue')
+    for (let i=0; i < this.props.jobs.length; i++) {
+      if (this.props.jobs[i]['uuid'] === job_id) {
+        const job = this.props.jobs[i]
+        const response_data = JSON.parse(job.response_data)
+        const request_data = JSON.parse(job.request_data)
+        if (job.app === 'analyze' && job.operation === 'scan_template') {
+          this.props.setTemplateMatches(request_data['template_id'], response_data)
+        }
+      }
+    }
   }
 
   render() {
@@ -622,7 +630,7 @@ class JobCard extends React.Component {
       get_job_button = (
         <button 
             className='btn btn-primary mt-2 ml-2'
-            onClick={() => this.props.loadJobResults(this.props.job_data['id'])}
+            onClick={() => this.props.loadJobResults(this.props.job_data['uuid'])}
         >
           Get Results
         </button>
@@ -724,7 +732,7 @@ class MovieCard extends React.Component {
     let framesets_count_message = 'no framesets'
     if (loaded_status) {
       let the_framesets = this.props.movies[this.props.this_cards_movie_url]['framesets']
-      framesets_count_message = Object.keys(the_framesets).length + ' framesets'
+      framesets_count_message = Object.keys(the_framesets).length.toString() + ' framesets'
     }
     if (active_status) {
       the_button = (
