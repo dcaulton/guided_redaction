@@ -59,7 +59,7 @@ class InsightsPanel extends React.Component {
     }
     if (job_string === 'current_template_current_movie') {
       job_data['app'] = 'analyze'
-      job_data['operation'] = 'match_template'
+      job_data['operation'] = 'scan_template'
       job_data['description'] = 'single template single movie match'
       job_data['request_data']['templates'] = [this.props.templates[this.props.current_template_id]]
       job_data['request_data']['targets'] = {images: [], movies: []}
@@ -75,7 +75,7 @@ class InsightsPanel extends React.Component {
       }
       num_frames = num_frames.toString()
       job_data['app'] = 'analyze'
-      job_data['operation'] = 'match_template'
+      job_data['operation'] = 'scan_template'
       job_data['description'] = 'single template '+ num_movies+ ' movies, ('+num_frames+' framesets)  match'
       job_data['request_data']['templates'] = [this.props.templates[this.props.current_template_id]]
       job_data['request_data']['targets'] = {images: [], movies: []}
@@ -598,7 +598,7 @@ class JobCardList extends React.Component {
 class JobCard extends React.Component {
   render() {
     let get_job_button = ''
-    if (this.props.job_data['status'] === 'done') {
+    if (this.props.job_data['status'] === 'success') {
       get_job_button = (
         <button 
             className='btn btn-primary mt-2 ml-2'
