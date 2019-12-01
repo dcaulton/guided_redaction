@@ -62,8 +62,8 @@ class AnalyzeViewSetScanTemplate(viewsets.ModelViewSet):
         }
         matches = {}
         template_matcher = TemplateMatcher()
-        if not request_data.get("anchors"):
-            return_data['errors_400'].append("anchors are required")
+        if not request_data.get("template"):
+            return_data['errors_400'].append("template is required")
         if not request_data.get("source_image_url"):
             return_data['errors_400'].append("source_image_url is required")
         if not request_data.get("target_movies") and not request_data.get(
@@ -82,7 +82,8 @@ class AnalyzeViewSetScanTemplate(viewsets.ModelViewSet):
 
         nparr = np.fromstring(image, np.uint8)
         cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-        for anchor in request_data.get("anchors"):
+        template = request_data.get('template')
+        for anchor in template.get("anchors"):
             start = anchor.get("start")
             end = anchor.get("end")
             size = (end[0] - start[0], end[1] - start[1])
