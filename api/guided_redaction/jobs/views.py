@@ -23,6 +23,7 @@ class JobsViewSet(viewsets.ViewSet):
             jobs_list.append(
                 {
                     'uuid': job.uuid,
+                    'file_uuids_used': job.file_uuids_used,
                     'status': job.status,
                     'description': job.description,
                     'created_on': job.created_on,
@@ -42,14 +43,24 @@ class JobsViewSet(viewsets.ViewSet):
         return JsonResponse({"job": job})
 
     def get_file_uuids_from_request(self, request_dict):
-        return []
+        uuids = []
+        app = request_dict.get('app')
+        operation = request_dict.get('operation')
+        if (app == 'parse' and operation == 'split_and_hash_movie'):
+            movie = request_dict['request_data'].get('movie_url')
+            if movie:
+                (x_part, file_part) = os.path.split(movie)
+                (y_part, uuid_part) = os.path.split(x_part)
+                if uuid_part and len(uuid_part) == 36:
+                    uuids.append(uuid_part)
+        return uuids
 
     def create(self, request):
         job_uuid = str(uuid.uuid4())
         job = Job(
             uuid=job_uuid,
             request_data=json.dumps(request.data.get('request_data')),
-            file_uuids_used=self.get_file_uuids_from_request(request.data),
+            file_uuids_used=json.dumps(self.get_file_uuids_from_request(request.data)),
             owner=request.data.get('owner'),
             status='created',
             description=request.data.get('description'),

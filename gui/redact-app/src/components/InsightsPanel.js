@@ -739,24 +739,20 @@ class MovieCard extends React.Component {
     }
 
     let load_as_job_button = (
-      <div className='row'>
         <button
             className='btn btn-link'
             onClick={() => this.props.submitInsightsJob('load_movie', this.props.this_cards_movie_url)}
         >
-        load as job
+        queue
         </button>
-      </div>
     )
     let make_active_button = (
-      <div className='row'>
         <button
             className='btn btn-link'
             onClick={() => this.props.setCurrentVideo(this.props.this_cards_movie_url)}
         >
-        make active
+        load
         </button>
-      </div>
     )
     let framesets_count_message = 'no framesets'
     if (loaded_status) {
@@ -797,10 +793,8 @@ class MovieCard extends React.Component {
           <div className='row'>
             {this.get_filename(this.props.this_cards_movie_url)}
           </div>
-          <div className='row ml-1'>
+          <div className='row'>
             {make_active_button}
-          </div>
-          <div className='row ml-1'>
             {load_as_job_button}
           </div>
           <div className='row'>

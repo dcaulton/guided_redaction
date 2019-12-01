@@ -622,13 +622,6 @@ class BottomInsightsControls extends React.Component {
 
             <button
                 className='btn btn-primary mt-2 ml-2'
-                onClick={() => this.props.submitInsightsJob('yikes')}
-            >
-              Submit Job
-            </button>
-
-            <button
-                className='btn btn-primary mt-2 ml-2'
                 onClick={() => this.props.getJobs()}
             >
               Get Jobs
