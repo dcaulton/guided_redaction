@@ -201,14 +201,14 @@ class RedactApplication extends React.Component {
   }
 
 
-  addMovieAndSetActive(movie_url, frames, framesets, movies, theCallback) {
+  addMovieAndSetActive(movie_url, movies, theCallback) {
     this.setState({
       movie_url: movie_url, 
-      frames: frames,
-      framesets: framesets,
+      frames: movies[movie_url]['frames'],
+      framesets: movies[movie_url]['framesets'],
       movies: movies,
     },
-    theCallback(framesets)
+    theCallback(movies[movie_url]['framesets'])
     )
   }
 
@@ -236,7 +236,7 @@ class RedactApplication extends React.Component {
           framesets: framesets,
         }
 
-        this.addMovieAndSetActive(the_url, frames, framesets, deepCopyMovies, theCallback)
+        this.addMovieAndSetActive(the_url, deepCopyMovies, theCallback)
       })
       .catch((error) => {
         console.error(error);
@@ -279,22 +279,32 @@ class RedactApplication extends React.Component {
   } 
 
   async callTemplateScanner(template_id, source_image, movies=[], image='') {
-    let anchors = this.getCurrentTemplateAnchors()
+    let template = this.state.templates[template_id]
     await fetch(this.state.scan_template_url, {
       method: 'POST',
       headers: this.buildJsonHeaders(),
       body: JSON.stringify({
         source_image_url: source_image,
-        anchors: anchors,
+        template: template,
         target_movies: movies,
         target_image: image,
-        template_id: template_id,
       }),
     })
     .then((response) => response.json())
     .then((responseJson) => {
       let matches = responseJson.matches
-      this.setTemplateMatches(this.state.current_template_id, matches)
+      this.setTemplateMatches(template_id, matches)
+      return template
+    })
+    .then((template) => {
+      if (!Object.keys(this.state.templates).includes(template.id)) {
+        let deepCopyTemplates= JSON.parse(JSON.stringify(this.state.templates))
+        deepCopyTemplates[template['id']] = template
+        this.setState({
+          templates: deepCopyTemplates,
+          current_template_id: template['id'],
+        })
+      }
     })
     .catch((error) => {
       console.error(error);

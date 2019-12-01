@@ -36,7 +36,6 @@ class InsightsPanel extends React.Component {
     this.getTemplateMatches=this.getTemplateMatches.bind(this)
     this.clearTemplateMatches=this.clearTemplateMatches.bind(this)
     this.clearSelectedAreas=this.clearSelectedAreas.bind(this)
-    this.movieSplitDone=this.movieSplitDone.bind(this)
     this.getMovieMatchesFound=this.getMovieMatchesFound.bind(this)
     this.getMovieSelectedCount=this.getMovieSelectedCount.bind(this)
     this.currentImageIsTemplateAnchorImage=this.currentImageIsTemplateAnchorImage.bind(this)
@@ -68,7 +67,7 @@ class InsightsPanel extends React.Component {
       for (let i=0; i < Object.keys(this.props.templates).length; i++) {
         let template_key = Object.keys(this.props.templates)[i]
         let template = this.props.templates[template_key]
-        job_data['request_data']['anchors'] = template['anchors']
+        job_data['request_data']['template'] = template
         job_data['request_data']['source_image_url'] = template['anchors'][0]['image']
         job_data['request_data']['template_id'] = template['id']
         const wrap = {}
@@ -97,10 +96,9 @@ class InsightsPanel extends React.Component {
       for (let i=0; i < Object.keys(this.props.templates).length; i++) {
         let template_key = Object.keys(this.props.templates)[i]
         let template = this.props.templates[template_key]
-        job_data['request_data']['anchors'] = template['anchors']
+        job_data['request_data']['template'] = template
         job_data['request_data']['source_image_url'] = template['anchors'][0]['image']
         job_data['request_data']['target_movies'] = this.props.movies
-        job_data['request_data']['template_id'] = template['id']
         this.props.submitJob(job_data)
       }
     } else if (job_string === 'load_movie') {
@@ -123,7 +121,14 @@ class InsightsPanel extends React.Component {
   currentImageIsTemplateAnchorImage() {
     if (this.props.current_template_id) {
       let key = this.props.current_template_id
-      let cur_template_anchor_image_name = this.props.templates[key]['anchors'][0]['image']
+      if (!Object.keys(this.props.templates).includes(key)) {
+        return false
+      }
+      let template = this.props.templates[key]
+      if (!Object.keys(template).includes('anchors')) {
+        return false
+      }
+      let cur_template_anchor_image_name = template['anchors'][0]['image']
       return (cur_template_anchor_image_name === this.state.insights_image)
     }
     return false
@@ -429,6 +434,14 @@ class InsightsPanel extends React.Component {
     })
   }
 
+  setImageScale() {
+    const scale = (document.getElementById('insights_image').width / 
+        document.getElementById('insights_image').naturalWidth)
+    this.setState({
+      insights_image_scale: scale,
+    })
+  }
+
   setImageSize(the_image) {
     var app_this = this
     if (the_image) {
@@ -438,7 +451,8 @@ class InsightsPanel extends React.Component {
         app_this.setState({
           image_width: this.width,
           image_height: this.height,
-        })
+        }, app_this.setImageScale()
+        )
       }
     }
   }
@@ -491,7 +505,30 @@ class InsightsPanel extends React.Component {
         const response_data = JSON.parse(job.response_data)
         const request_data = JSON.parse(job.request_data)
         if (job.app === 'analyze' && job.operation === 'scan_template') {
-          this.props.setTemplateMatches(request_data['template_id'], response_data)
+          const template_id = request_data['template']['id']
+          this.props.setTemplateMatches(template_id, response_data)
+          if (!Object.keys(this.props.templates).includes(template_id)) {
+            let deepCopyTemplates= JSON.parse(JSON.stringify(this.props.templates))
+            let template = request_data['template']
+            deepCopyTemplates[template_id] = template
+            this.props.setTemplates(deepCopyTemplates)
+            this.props.setCurrentTemplate(template_id)
+
+            const cur_movies = Object.keys(this.props.movies)
+            let deepCopyMovies= JSON.parse(JSON.stringify(this.props.movies))
+            let movie_add = false
+            let movie_url = ''
+            for (let j=0; j < Object.keys(request_data['target_movies']).length; j++)  {
+              movie_url = Object.keys(request_data['target_movies'])[j]
+              if (!cur_movies.includes(movie_url)) {
+                deepCopyMovies[movie_url] = request_data['target_movies'][movie_url]
+                movie_add = true
+              }
+            }
+            if (movie_add) {
+              this.props.addMovieAndSetActive(movie_url, deepCopyMovies, this.movieSplitDone) 
+            }
+          }
         } else if (job.app === 'parse' && job.operation === 'split_and_hash_movie') {
           let frames = response_data.frames
           let framesets = response_data.unique_frames
@@ -500,8 +537,7 @@ class InsightsPanel extends React.Component {
             frames: frames,
             framesets: framesets,
           }
-
-          this.props.addMovieAndSetActive(request_data['movie_url'], frames, framesets, deepCopyMovies, this.movieSplitDone) 
+          this.props.addMovieAndSetActive(request_data['movie_url'], deepCopyMovies, this.movieSplitDone) 
         }
 
       }
