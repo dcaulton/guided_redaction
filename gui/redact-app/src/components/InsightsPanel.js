@@ -43,6 +43,7 @@ class InsightsPanel extends React.Component {
     this.afterPingSuccess=this.afterPingSuccess.bind(this)
     this.afterPingFailure=this.afterPingFailure.bind(this)
     this.getCurrentTemplateMaskZones=this.getCurrentTemplateMaskZones.bind(this)
+    this.getCurrentTemplateAnchors=this.getCurrentTemplateAnchors.bind(this)
     this.callPing=this.callPing.bind(this)
     this.loadJobResults=this.loadJobResults.bind(this)
     this.submitInsightsJob=this.submitInsightsJob.bind(this)
@@ -118,6 +119,20 @@ class InsightsPanel extends React.Component {
     }
   }
 
+  getCurrentTemplateAnchors() {
+    if (Object.keys(this.props.templates).includes(this.props.current_template_id)) {
+      let cur_template = this.props.templates[this.props.current_template_id]
+      let return_arr = []
+      for (let i=0; i < Object.keys(cur_template['anchors']).length; i++) {
+        const anchor = cur_template['anchors'][i]
+        return_arr.push(anchor['id'])
+      }
+      return return_arr
+    } else {
+      return []
+    }
+  }
+
   currentImageIsTemplateAnchorImage() {
     if (this.props.current_template_id) {
       let key = this.props.current_template_id
@@ -126,6 +141,9 @@ class InsightsPanel extends React.Component {
       }
       let template = this.props.templates[key]
       if (!Object.keys(template).includes('anchors')) {
+        return false
+      }
+      if (!template['anchors'].length) {
         return false
       }
       let cur_template_anchor_image_name = template['anchors'][0]['image']
@@ -630,6 +648,7 @@ class InsightsPanel extends React.Component {
             setMode={this.handleSetMode}
             clearCurrentTemplateAnchor={this.clearCurrentTemplateAnchor}
             clearCurrentTemplateMaskZones={this.clearCurrentTemplateMaskZones}
+            getCurrentTemplateAnchors={this.getCurrentTemplateAnchors}
             scanTemplate={this.scanTemplate}
             clearTemplateMatches={this.clearTemplateMatches}
             clearSelectedAreas={this.clearSelectedAreas}
