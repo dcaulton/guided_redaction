@@ -24,6 +24,7 @@ class InsightsPanel extends React.Component {
       insights_message: '',
       prev_coords: (0,0),
       clicked_coords: (0,0),
+      selected_area_template_anchor: '',
     }
     this.getSelectedAreas=this.getSelectedAreas.bind(this)
     this.setCurrentVideo=this.setCurrentVideo.bind(this)
@@ -47,10 +48,26 @@ class InsightsPanel extends React.Component {
     this.callPing=this.callPing.bind(this)
     this.loadJobResults=this.loadJobResults.bind(this)
     this.submitInsightsJob=this.submitInsightsJob.bind(this)
+    this.setSelectedAreaTemplateAnchor=this.setSelectedAreaTemplateAnchor.bind(this)
+    this.getCurrentSelectedAreaMeta=this.getCurrentSelectedAreaMeta.bind(this)
   }
 
   componentDidMount() {
     this.props.getJobs()
+  }
+
+  getCurrentSelectedAreaMeta() {
+    if (this.props.current_selected_area_meta_id && 
+        Object.keys(this.props.selected_area_metas).includes(this.props.current_selected_area_meta_id)) {
+      return this.props.selected_area_metas[this.props.current_selected_area_meta_id]
+    }
+    return {}
+  }
+
+  setSelectedAreaTemplateAnchor(the_anchor_id) {
+    this.setState({
+      selected_area_template_anchor: the_anchor_id,
+    })
   }
 
   submitInsightsJob(job_string, extra_data) {
@@ -338,14 +355,16 @@ class InsightsPanel extends React.Component {
         clicked_coords: [x_scaled, y_scaled],
         insights_message: 'Calling flood fill api',
       })
-      this.props.doFloodFill(x_scaled, y_scaled, this.state.insights_image, selected_areas, scrubber_frameset_hash)
+      const sam_id = this.getSelectAreaMetaId('flood', x_scaled, y_scaled)
+      this.props.doFloodFill(x_scaled, y_scaled, this.state.insights_image, selected_areas, scrubber_frameset_hash, sam_id)
     } else if (this.state.mode === 'arrow_fill_1') {
       this.setState({
         insights_image_scale: scale,
         clicked_coords: [x_scaled, y_scaled],
         insights_message: 'Calling arrow fill api',
       })
-      this.props.doArrowFill(x_scaled, y_scaled, this.state.insights_image, selected_areas, scrubber_frameset_hash, this.afterArrowFill)
+      const sam_id = this.getSelectAreaMetaId('arrow', x_scaled, y_scaled)
+      this.props.doArrowFill(x_scaled, y_scaled, this.state.insights_image, selected_areas, scrubber_frameset_hash, sam_id, this.afterArrowFill)
     } else if (this.state.mode === 'add_template_mask_zone_1') {
       this.doAddTemplateMaskZoneClickOne(scale, x_scaled, y_scaled)
     } else if (this.state.mode === 'add_template_mask_zone_2') {
@@ -375,6 +394,45 @@ class InsightsPanel extends React.Component {
       insights_message: 'pick the second corner of the mask zone',
       mode: 'add_template_mask_zone_2',
     })
+  }
+
+  getSelectAreaMetaId(fill_type='', offset_x=0, offset_y=0) {
+    if (!this.props.current_selected_area_meta_id) {
+      let deepCopySams = JSON.parse(JSON.stringify(this.props.selected_area_metas))
+      let the_sam = this.createSelectedAreaMetaSkeleton(fill_type)
+      // TODO Fill it in with values from the selected area controls 
+      if (fill_type) {
+        the_sam['fill_type'] = fill_type
+      }
+      if (this.state.selected_area_template_anchor) {
+        the_sam['origin_template_id'] = this.props.current_template_id
+        the_sam['origin_template_anchor_id'] = this.state.selected_area_template_anchor
+      }
+      if (offset_x || offset_y) {
+        the_sam['offset'] = [offset_x, offset_y]
+      }
+      deepCopySams[the_sam['id']] = the_sam
+      this.props.setSelectedAreaMetas(deepCopySams, the_sam['id'])
+      return the_sam['id']
+    } 
+    return this.props.current_selected_area_meta_id
+  }
+
+  createSelectedAreaMetaSkeleton() {
+    const sam_id = 'selected_area_meta_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
+    let the_sam = {
+      'id': sam_id,
+      'name': sam_id,
+      'offset': (0, 0),
+      'box_size': 0,
+      'origin_template_id': '',
+      'origin_template_anchor_id': '',
+      'fill_type': '',
+      'tolerance': '',
+      'mask_interior_exterior': '',
+      'mask_method': '',
+    }
+    return the_sam
   }
 
   createTemplateSkeleton() {
@@ -659,6 +717,8 @@ class InsightsPanel extends React.Component {
             current_template_id={this.props.current_template_id}
             submitInsightsJob={this.submitInsightsJob}
             getJobs={this.props.getJobs}
+            setSelectedAreaTemplateAnchor={this.setSelectedAreaTemplateAnchor}
+            getCurrentSelectedAreaMeta={this.getCurrentSelectedAreaMeta}
           />
         </div>
 

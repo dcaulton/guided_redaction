@@ -36,6 +36,8 @@ class BottomInsightsControls extends React.Component {
         getCurrentTemplateAnchors={this.props.getCurrentTemplateAnchors}
         clearMovieSelectedAreas={this.props.clearMovieSelectedAreas}
         changeMaskMethodCallback={this.props.changeMaskMethodCallback}
+        setSelectedAreaTemplateAnchor={this.props.setSelectedAreaTemplateAnchor}
+        getCurrentSelectedAreaMeta={this.props.getCurrentSelectedAreaMeta}
       />
 
 

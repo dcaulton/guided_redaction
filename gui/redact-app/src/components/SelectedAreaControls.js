@@ -5,11 +5,20 @@ class SelectedAreaControls extends React.Component {
   render() {
     const anchor_names = this.props.getCurrentTemplateAnchors()
 
+    const sam = this.props.getCurrentSelectedAreaMeta()
+    const or_template_id = sam['origin_template_id']
     let anchor_options = []
     for (const [index, value] of anchor_names.entries()) {
         anchor_options.push(
-            <option key={index} value={value}>{value}</option>
+            <option key={index} value={value} >{value}</option>
         )
+    }
+    anchor_options.push(
+        <option key='9898' value=''>---Template Anchor---</option>
+    )
+    let offset_string = 'Offset (0, 0)'
+    if (Object.keys(sam).includes('offset')) {
+      offset_string = 'Offset (' + sam['offset'].toString() + ')'
     }
 
     return (
@@ -180,8 +189,8 @@ class SelectedAreaControls extends React.Component {
                   >   
                       <input 
                           id='selected_area_offset'
-                          size='10'
-                          value='Offset (x,y)' 
+                          size='15'
+                          value={offset_string}
                           onChange={() => console.log('selected area offset')}
                       />
                   </div>
@@ -202,9 +211,9 @@ class SelectedAreaControls extends React.Component {
                   <div className='d-inline ml-2 mt-2'>
                     <select
                         name='selected_area_origin_template_anchor'
-                        onChange={(event) => alert('selected area mask origin template anchor')}
+                        onChange={(event) => this.props.setSelectedAreaTemplateAnchor(event.target.value)}
+                        value={or_template_id} 
                     >
-                      <option value='default'>--Template Anchor--</option>
                       {anchor_options}
                     </select>
                   </div>
