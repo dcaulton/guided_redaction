@@ -11,6 +11,53 @@ import requests
 from rest_framework import viewsets
 
 
+class ParseViewSetSplitMovie(viewsets.ViewSet):
+    def create(self, request):
+        request_data = json.loads(request.body)
+
+        return_data = {
+            'errors_400': [],
+            'errors_422': [],
+            'response_data': None,
+        }
+        if not request_data.get("movie_url"):
+            return HttpResponse("movie_url is required", status=400)
+        movie_url = request_data.get("movie_url")
+        if not movie_url:
+            return HttpResponse("couldn't read movie data", status=422)
+
+        the_connection_string = ""
+        if settings.IMAGE_STORAGE == "mysql":
+            the_base_url = request.build_absolute_uri(settings.MYSQL_BASE_URL)
+        elif settings.IMAGE_STORAGE == "azure_blob":
+            the_base_url = settings.AZURE_BASE_URL
+            the_connection_string = settings.AZURE_BLOB_CONNECTION_STRING
+        else:
+            the_base_url = settings.FILE_BASE_URL
+        fw = FileWriter(
+            working_dir=settings.FILE_STORAGE_DIR,
+            base_url=the_base_url,
+            connection_string=the_connection_string,
+            image_storage=settings.IMAGE_STORAGE,
+        )
+        parser = MovieParser(
+            {
+                "debug": settings.DEBUG,
+                "ifps": 1,
+                "ofps": 1,
+                "scan_method": "unzip",
+                "movie_url": movie_url,
+                "file_writer": fw,
+            }
+        )
+        frames = parser.split_movie()
+
+        return JsonResponse(
+            {
+                "frames": frames,
+            }
+        )
+
 class ParseViewSetSplitAndHashMovie(viewsets.ViewSet):
     def process_create_request(self, request_data):
         return_data = {
