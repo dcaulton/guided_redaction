@@ -51,6 +51,8 @@ class RedactApplication extends React.Component {
       jobs: [],
       current_template_id: '',
       selected_areas: {},
+      selected_area_metas: {},
+      current_selected_area_meta_id: '',
       showMovieParserLink: true,
       showInsightsLink: true,
       showAdvancedPanels: false,
@@ -78,12 +80,26 @@ class RedactApplication extends React.Component {
     this.submitJob=this.submitJob.bind(this)
     this.getJobs=this.getJobs.bind(this)
     this.addMovieAndSetActive=this.addMovieAndSetActive.bind(this)
+    this.setSelectedAreaMetas=this.setSelectedAreaMetas.bind(this)
   }
 
   setTemplates = (the_templates) => {
     this.setState({
       templates: the_templates,
     })
+  }
+
+  setSelectedAreaMetas = (the_metas, meta_id_to_make_active='') => {
+    if (meta_id_to_make_active) {
+      this.setState({
+        selected_area_metas: the_metas,
+        current_selected_area_meta_id: meta_id_to_make_active,
+      })
+    } else {
+      this.setState({
+        selected_area_metas: the_metas,
+      })
+    }
   }
 
   setImageScale= (the_scale) => {
@@ -311,7 +327,7 @@ class RedactApplication extends React.Component {
     })
   }
 
-  async doFloodFill(x_scaled, y_scaled, insights_image, selected_areas, cur_hash) {
+  async doFloodFill(x_scaled, y_scaled, insights_image, selected_areas, cur_hash, selected_area_meta_id) {
     await fetch(this.state.flood_fill_url, {                                      
       method: 'POST',                                                           
       headers: this.buildJsonHeaders(),
@@ -338,7 +354,7 @@ class RedactApplication extends React.Component {
     })
   } 
 
-  async doArrowFill(x_scaled, y_scaled, insights_image, selected_areas, cur_hash, when_done) {
+  async doArrowFill(x_scaled, y_scaled, insights_image, selected_areas, cur_hash, selected_area_meta_id, when_done) {
     await fetch(this.state.arrow_fill_url, {
       method: 'POST',
       headers: this.buildJsonHeaders(),
@@ -770,6 +786,9 @@ class RedactApplication extends React.Component {
                 getJobs={this.getJobs}
                 jobs={this.state.jobs}
                 addMovieAndSetActive={this.addMovieAndSetActive}
+                setSelectedAreaMetas={this.setSelectedAreaMetas}
+                selected_area_metas={this.state.selected_area_metas}
+                current_selected_area_meta_id={this.state.current_selected_area_meta_id}
               />
             </Route>
           </Switch>
