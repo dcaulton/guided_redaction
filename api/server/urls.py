@@ -18,6 +18,8 @@ router.register(r'v1/analyze/arrow-fill',
     guided_redaction.analyze.views.AnalyzeViewSetArrowFill, basename='ReddFoxx')
 router.register(r'v1/parse/split-and-hash-movie', 
     guided_redaction.parse.views.ParseViewSetSplitAndHashMovie, basename='MaxHeadroom')
+router.register(r'v1/parse/split-movie', 
+    guided_redaction.parse.views.ParseViewSetSplitMovie, basename='Lizzo')
 router.register(r'v1/parse/make-url', 
     guided_redaction.parse.views.ParseViewSetMakeUrl, basename='DustinDiamond')
 router.register(r'v1/parse/zip-movie', 

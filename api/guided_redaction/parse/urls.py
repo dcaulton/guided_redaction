@@ -10,6 +10,11 @@ router.register(
     basename="MaxHeadroom",
 )
 router.register(
+    r"v1/parse/split-movie",
+    views.ParseViewSetSplitMovie,
+    basename="Lizzo",
+)
+router.register(
     r"v1/parse/make-url", views.ParseViewSetMakeUrl, basename="DustinDiamond"
 )
 router.register(
