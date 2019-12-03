@@ -9,7 +9,7 @@ import time
 class EastScanner:
 
     debug = False
-    path_to_east_text_detector = settings.EAST_FILE_PATH
+    path_to_east_text_detector = settings.REDACT_EAST_FILE_PATH
     min_confidence = 0.5
 
     def __init__(self):
