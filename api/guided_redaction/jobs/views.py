@@ -33,8 +33,6 @@ class JobsViewSet(viewsets.ViewSet):
                     'response_data': job.response_data,
                 }
             )
-            if (job.parent_id == None):
-                print('job ',job.uuid, ' has no parent')
 
         return JsonResponse({"jobs": jobs_list})
 

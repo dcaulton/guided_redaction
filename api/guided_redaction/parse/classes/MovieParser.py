@@ -24,6 +24,10 @@ class MovieParser:
         self.scan_method = args.get("scan_method")
         self.movie_url = args.get("movie_url")
         self.file_writer = args.get("file_writer")
+        self.source = args.get('source', 'file')
+        self.sykes_dev_azure_blob_connection_string = args.get(
+            'sykes_dev_azure_blob_connection_string'
+        )
 
         working_uuid = str(uuid.uuid4())
         self.unique_working_dir = self.file_writer.create_unique_directory(working_uuid)

@@ -92,18 +92,18 @@ class RedactViewSetRedactImage(viewsets.ViewSet):
 
     def save_image_to_disk(self, cv2_image, image_name, the_uuid, request):
         the_connection_string = ""
-        if settings.IMAGE_STORAGE == "mysql":
-            the_base_url = request.build_absolute_uri(settings.MYSQL_BASE_URL)
-        elif settings.IMAGE_STORAGE == "azure_blob":
-            the_base_url = settings.AZURE_BASE_URL
-            the_connection_string = settings.AZURE_BLOB_CONNECTION_STRING
+        if settings.REDACT_IMAGE_STORAGE == "mysql":
+            the_base_url = request.build_absolute_uri(settings.REDACT_MYSQL_BASE_URL)
+        elif settings.REDACT_IMAGE_STORAGE == "azure_blob":
+            the_base_url = settings.REDACT_AZURE_BASE_URL
+            the_connection_string = settings.REDACT_AZURE_BLOB_CONNECTION_STRING
         else:
-            the_base_url = settings.FILE_BASE_URL
+            the_base_url = settings.REDACT_FILE_BASE_URL
         fw = FileWriter(
-            working_dir=settings.FILE_STORAGE_DIR,
+            working_dir=settings.REDACT_FILE_STORAGE_DIR,
             base_url=the_base_url,
             connection_string=the_connection_string,
-            image_storage=settings.IMAGE_STORAGE,
+            image_storage=settings.REDACT_IMAGE_STORAGE,
         )
         workdir = fw.create_unique_directory(the_uuid)
         outfilename = os.path.join(workdir, image_name)

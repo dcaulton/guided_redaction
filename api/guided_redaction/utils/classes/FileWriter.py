@@ -42,6 +42,36 @@ class FileWriter():
 
         return new_url
   
+    def write_video_to_url(self, video_source_file, file_fullpath):
+        (x_part, file_part) = os.path.split(file_fullpath)
+        (y_part, uuid_part) = os.path.split(x_part)
+        new_url = '/'.join([self.base_url, uuid_part, file_part])
+
+        in_fh = open(video_source_file, 'rb')
+        video_bytes = in_fh.read()
+        in_fh.close()
+
+        if self.image_storage == 'mysql':
+            image_blob = ImageBlob()
+            image_blob.uuid = uuid_part
+            image_blob.file_name = file_part
+            image_blob.asset_type = 'image/png'
+            image_blob.image_data = video_bytes
+            image_blob.save()
+        elif self.image_storage == 'azure_blob':
+            blob_name = os.path.join(uuid_part, file_part)
+            blob = BlobClient.from_connection_string(
+                conn_str=self.connection_string, container_name="mycontainer", blob_name=blob_name)
+            blob.upload_blob(video_bytes)
+            blob.set_http_headers(content_settings=ContentSettings(content_type='image/png'))
+            new_url = os.path.join(self.base_url, blob_name)
+        else:
+            fh = open(file_fullpath, 'wb')
+            fh.write(video_bytes)
+            fh.close()
+
+        return new_url
+  
     def create_unique_directory(self, working_uuid):
         unique_working_dir = os.path.join(self.working_dir, working_uuid)
         if not os.path.isdir(unique_working_dir):
