@@ -106,10 +106,23 @@ class RedactApplication extends React.Component {
   }
 
   afterUuidImagesFetched(image_urls, the_offsets) {
-    //build up a pseudo movie here,
-    console.log('setting up image uuid here, boss')
-    console.log('the images are '+image_urls)
-    console.log('the offsets are '+the_offsets)
+    let offset_arr = the_offsets.split(',')
+    let image_url_arr = []
+    for (let i=0; i < offset_arr.length; i++) {
+        image_url_arr.push(image_urls[parseInt(offset_arr[i])])
+    }
+
+
+    let the_framesets = {}
+    for (let i=0; i < image_url_arr.length; i++) {
+      the_framesets[i] = {images: [image_url_arr[i]]}
+    }
+
+    this.setState({
+      frames: image_url_arr,
+      framesets: the_framesets,
+    })
+    this.handleSetImageUrl(image_url_arr[0])
   }
 
   setTemplates = (the_templates) => {
@@ -503,7 +516,7 @@ class RedactApplication extends React.Component {
         this.handleSetMovieUrl(vars['movie_url'])
         document.getElementById('movie_panel_link').click()
     } else if (Object.keys(vars).includes('image_uuid') && Object.keys(vars).includes('offsets')) {
-        this.handleSetImageUuid(vars['image_uuid'])
+        this.handleSetImageUuid(vars['image_uuid'], vars['offsets'])
         document.getElementById('image_panel_link').click()
     }
   }

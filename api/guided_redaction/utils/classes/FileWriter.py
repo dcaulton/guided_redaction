@@ -19,7 +19,11 @@ class FileWriter():
         if self.image_storage == 'file':
             the_path = os.path.join(self.working_dir, the_uuid)
             the_files = sorted(os.listdir(the_path))
-            the_urls = [os.path.join(self.base_url, the_uuid, filename) for filename in the_files]
+            the_urls = []
+            for filename in the_files:
+                (file_basename, file_extension) = os.path.splitext(filename)
+                if file_extension == '.png':
+                   the_urls.append(os.path.join(self.base_url, the_uuid, filename))
             return the_urls
         elif self.image_storage == 'azure_blob':
             blob_names = []
