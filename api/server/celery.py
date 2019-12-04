@@ -1,5 +1,4 @@
 import os
-import logging
 from celery import Celery
 
 # set the default Django settings module for the 'celery' program.
@@ -16,8 +15,7 @@ app.config_from_object('django.conf:settings', namespace='CELERY')
 # Load task modules from all registered Django app configs.
 app.autodiscover_tasks()
 
-logger = logging.getLogger(__name__)
 
 @app.task(bind=True)
 def debug_task(self):
-    logger.warning('Request: {0!r}'.format(self.request))
+    print('Request: {0!r}'.format(self.request))

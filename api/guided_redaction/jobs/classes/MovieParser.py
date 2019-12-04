@@ -1,5 +1,4 @@
 import cv2
-import logging
 from django import db
 from operator import add
 import os
@@ -26,10 +25,9 @@ class MovieParser:
 
         working_uuid = str(uuid.uuid4())
         self.unique_working_dir = self.file_writer.create_unique_directory(working_uuid)
-        self.logger = logging.getLogger(__name__)
 
     def split_movie(self):
-        self.logger.warning("splitting movie into frames at "+ self.unique_working_dir) 
+        print("splitting movie into frames at "+ self.unique_working_dir) 
         video_object = cv2.VideoCapture(self.movie_url)
         success = True
         read_count = 0
@@ -45,7 +43,7 @@ class MovieParser:
                     if self.input_frames_per_second > self.output_frames_per_second:
                         if read_count % (60 / self.output_frames_per_second) != 0:
                             # drop frames not needed for output based on FPS
-                            self.logger.warning("dropping frame number "+str(read_count)+" due to output_fps") 
+                            print("dropping frame number "+str(read_count)+" due to output_fps") 
                             continue
                     file_url = self.file_writer.write_cv2_image_to_url(
                         image, filename_full
@@ -53,8 +51,8 @@ class MovieParser:
                     files_created.append(file_url)
                     created_count += 1
         except Exception as e:
-            self.logger.error("exception encountered unzipping movie frames: "+ e)
-        self.logger.warning("{} frames created".format(str(created_count)))
+            print("exception encountered unzipping movie frames: "+ e)
+        print("{} frames created".format(str(created_count)))
         return files_created
 
     def load_and_hash_frames(self, input_url_list):
@@ -83,7 +81,7 @@ class MovieParser:
         return the_hash
 
     def zip_movie(self, image_urls, movie_name="output.mp4"):
-        self.logger.warning("zipping frames into movie at "+ movie_name)
+        print("zipping frames into movie at "+ movie_name)
         output_url = self.file_writer.write_video(image_urls, movie_name)
-        self.logger.warning("output_url is "+ output_url)
+        print("output_url is "+ output_url)
         return output_url

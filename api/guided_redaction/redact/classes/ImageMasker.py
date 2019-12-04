@@ -1,17 +1,16 @@
 import cv2
 import numpy as np
-import logging
 
 
 class ImageMasker:
     def __init__(self):
-        self.logger = logging.getLogger(__name__)
+        pass
 
     def mask_all_regions(
         self, source, regions_to_mask, mask_method, blur_foreground_background
     ):
         output = source.copy()
-        self.logger.warning("mask method is "+ mask_method)
+        print("mask method is "+ mask_method)
         mask = np.zeros((output.shape[0], output.shape[1]))
         combine_via_mask = False
         if output.shape[2] == 3:
@@ -22,7 +21,7 @@ class ImageMasker:
             green_mask_color = 128
         if blur_foreground_background == "foreground":
             for region_number, masking_region in enumerate(regions_to_mask):
-                self.logger.warning("masking region"+ str(masking_region))
+                print("masking region"+ str(masking_region))
                 mask_method = mask_method or "blur_7x7"
                 if mask_method == "black_rectangle":
                     cv2.rectangle(
