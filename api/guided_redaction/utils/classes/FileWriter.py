@@ -3,7 +3,6 @@ import cv2
 import numpy as np
 import requests
 import os
-import logging
 from guided_redaction.parse.models import ImageBlob
 
 class FileWriter():
@@ -15,7 +14,6 @@ class FileWriter():
         self.base_url = base_url
         self.connection_string = connection_string
         self.image_storage = image_storage
-        self.logger = logging.getLogger(__name__)
 
     def get_images_from_uuid(self, the_uuid):
         if self.image_storage == 'file':
@@ -132,7 +130,7 @@ class FileWriter():
                 frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
                 success = writer.write(frame)
         writer.release()
-        self.logger.warning('writer done at '+ output_fullpath)
+        print('writer done at '+ output_fullpath)
       
 
         (x_part, file_part) = os.path.split(output_fullpath)

@@ -1,5 +1,4 @@
 import cv2
-import logging
 from imutils.object_detection import non_max_suppression
 import math
 import numpy as np
@@ -13,14 +12,14 @@ class EastScanner:
     min_confidence = 0.5
 
     def __init__(self):
-        self.logger = logging.getLogger(__name__)
+        pass
 
     def get_areas_to_redact(self, source, input_filename, telemetry_data):
         textareas = self.get_text_areas_from_east(source)
         return textareas
 
     def get_text_areas_from_east(self, source):
-        self.logger.warning("performing text detection with EAST")
+        print("performing text detection with EAST")
         image = source.copy()
 
         # EAST requires h and w to be multiples of 32
@@ -46,7 +45,7 @@ class EastScanner:
         net.setInput(blob)
         (scores, geometry) = net.forward(layerNames)
         end = time.time()
-        self.logger.warning("text detection took"+ str(int(math.ceil(end - start)))+ " seconds")
+        print("text detection took"+ str(int(math.ceil(end - start)))+ " seconds")
 
         (numRows, numCols) = scores.shape[2:4]
         rects = []
@@ -89,5 +88,5 @@ class EastScanner:
             endY = int(endY * rH)
             text_areas.append([(startX, startY), (endX, endY)])
 
-        self.logger.warning("text detection complete")
+        print("text detection complete")
         return text_areas
