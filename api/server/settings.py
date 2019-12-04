@@ -140,7 +140,7 @@ STATIC_URL = '/static/'
 REDACT_EAST_FILE_PATH = 'guided_redaction/analyze/bin/frozen_east_text_detection.pb'
 CORS_ORIGIN_ALLOW_ALL = True
 REDACT_FILE_STORAGE_DIR = './guided_redaction/work'
-REDACT_FILE_BASE_URL = 'http://localhost:8080/'
+REDACT_FILE_BASE_URL = 'http://localhost:8080'
 REDACT_MYSQL_BASE_URL = '/v1/parse/asset'
 REDACT_AZURE_BASE_URL = 'https://redactblob.blob.core.windows.net/mycontainer'
 REDACT_AZURE_BLOB_CONNECTION_STRING = 'DefaultEndpointsProtocol=https;AccountName=redactblob;AccountKey=pTkHJ1dws5dtiVmX5FF+vYxkp1qNgaz62LeSLcxijoWFUXVzWFkn3BxoGMKxJs4tjjHaI/zI80zeIcfdPPz7sw==;EndpointSuffix=core.windows.net'

@@ -20,6 +20,8 @@ router.register(r'v1/parse/split-and-hash-movie',
     guided_redaction.parse.views.ParseViewSetSplitAndHashMovie, basename='MaxHeadroom')
 router.register(r'v1/parse/split-movie', 
     guided_redaction.parse.views.ParseViewSetSplitMovie, basename='Lizzo')
+router.register(r'v1/parse/get-images-for-uuid', 
+    guided_redaction.parse.views.ParseViewSetGetImagesForUuid, basename='WeirdAl')
 router.register(r'v1/parse/make-url', 
     guided_redaction.parse.views.ParseViewSetMakeUrl, basename='DustinDiamond')
 router.register(r'v1/parse/zip-movie', 

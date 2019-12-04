@@ -12,6 +12,30 @@ import requests
 from rest_framework import viewsets
 
 
+class ParseViewSetGetImagesForUuid(viewsets.ViewSet):
+    def list(self, request):
+        the_uuid = request.GET['uuid']
+        the_connection_string = ""
+        if settings.REDACT_IMAGE_STORAGE == "mysql":
+            the_base_url = request.build_absolute_uri(settings.REDACT_MYSQL_BASE_URL)
+        elif settings.REDACT_IMAGE_STORAGE == "azure_blob":
+            the_base_url = settings.REDACT_AZURE_BASE_URL
+            the_connection_string = settings.REDACT_AZURE_BLOB_CONNECTION_STRING
+        else:
+            the_base_url = settings.REDACT_FILE_BASE_URL
+
+        fw = FileWriter(
+            working_dir=settings.REDACT_FILE_STORAGE_DIR,
+            base_url=the_base_url,
+            connection_string=the_connection_string,
+            image_storage=settings.REDACT_IMAGE_STORAGE,
+        )
+
+        the_files = fw.get_images_from_uuid(the_uuid)
+
+        return JsonResponse({"images": the_files})
+    
+
 class ParseViewSetSplitMovie(viewsets.ViewSet):
     def create(self, request):
         request_data = json.loads(request.body)
@@ -43,7 +67,9 @@ class ParseViewSetSplitMovie(viewsets.ViewSet):
         if request_data.get('movie_url'):
             movie_url = request_data.get("movie_url")
         elif request_data.get('sykes_dev_azure_movie_uuid'):
-            movie_url = self.get_movie_url_from_sykes_dev(request_data.get('sykes_dev_azure_movie_uuid'), fw)
+            the_uuid = request_data.get('sykes_dev_azure_movie_uuid')
+            print('the uuid is ', the_uuid)
+            movie_url = self.get_movie_url_from_sykes_dev(the_uuid, fw)
         if not movie_url:
             return HttpResponse("couldn't read movie data", status=422)
 
@@ -55,6 +81,7 @@ class ParseViewSetSplitMovie(viewsets.ViewSet):
                 "scan_method": "unzip",
                 "movie_url": movie_url,
                 "file_writer": fw,
+                "use_same_directory": True,
             }
         )
         frames = parser.split_movie()
@@ -87,6 +114,7 @@ class ParseViewSetSplitMovie(viewsets.ViewSet):
             with open(temp_video_filename, 'wb') as my_blob:
                 blob_data = blob.download_blob()
                 blob_data.readinto(my_blob)
+                print('creating unique directory for ', the_uuid)
                 workdir = file_writer.create_unique_directory(the_uuid)
                 outfilename = os.path.join(workdir, file_part)
                 file_url = file_writer.write_video_to_url(temp_video_filename, outfilename)
