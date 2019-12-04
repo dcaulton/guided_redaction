@@ -15,6 +15,11 @@ router.register(
     basename="Lizzo",
 )
 router.register(
+    r"v1/parse/get-images-for-uuid",
+    views.ParseViewSetGetImagesForUuid,
+    basename="WierdAl",
+)
+router.register(
     r"v1/parse/make-url", views.ParseViewSetMakeUrl, basename="DustinDiamond"
 )
 router.register(

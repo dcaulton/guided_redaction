@@ -42,6 +42,7 @@ class RedactApplication extends React.Component {
       redact_url: 'http://127.0.0.1:8000/v1/redact/redact-image/',
       parse_movie_url: 'http://127.0.0.1:8000/v1/parse/split-and-hash-movie/',
       zip_movie_url: 'http://127.0.0.1:8000/v1/parse/zip-movie/',
+      get_images_for_uuid_url: 'http://127.0.0.1:8000/v1/parse/get-images-for-uuid',
       jobs_url: 'http://127.0.0.1:8000/v1/jobs/',
       frames: [],
       framesets: {},
@@ -81,6 +82,34 @@ class RedactApplication extends React.Component {
     this.getJobs=this.getJobs.bind(this)
     this.addMovieAndSetActive=this.addMovieAndSetActive.bind(this)
     this.setSelectedAreaMetas=this.setSelectedAreaMetas.bind(this)
+    this.afterUuidImagesFetched=this.afterUuidImagesFetched.bind(this)
+  }
+
+  async getImagesForUuid(the_uuid, the_offsets, when_done) {
+    const the_url = this.state.get_images_for_uuid_url + '?uuid=' + the_uuid
+    let response = await fetch(the_url, {
+      method: 'GET',
+      headers: this.buildJsonHeaders(),
+    })
+    .then((response) => response.json())
+    .then((responseJson) => {
+      when_done(responseJson['images'], the_offsets)
+    })
+    .catch((error) => {
+      console.error(error);
+    })
+    await response
+  }
+
+  handleSetImageUuid(the_uuid, the_offsets) {
+    this.getImagesForUuid(the_uuid, the_offsets, this.afterUuidImagesFetched)
+  }
+
+  afterUuidImagesFetched(image_urls, the_offsets) {
+    //build up a pseudo movie here,
+    console.log('setting up image uuid here, boss')
+    console.log('the images are '+image_urls)
+    console.log('the offsets are '+the_offsets)
   }
 
   setTemplates = (the_templates) => {
@@ -473,6 +502,9 @@ class RedactApplication extends React.Component {
     } else if (Object.keys(vars).includes('movie_url')) {
         this.handleSetMovieUrl(vars['movie_url'])
         document.getElementById('movie_panel_link').click()
+    } else if (Object.keys(vars).includes('image_uuid') && Object.keys(vars).includes('offsets')) {
+        this.handleSetImageUuid(vars['image_uuid'])
+        document.getElementById('image_panel_link').click()
     }
   }
 

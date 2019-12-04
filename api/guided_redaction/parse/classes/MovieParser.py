@@ -28,9 +28,18 @@ class MovieParser:
         self.sykes_dev_azure_blob_connection_string = args.get(
             'sykes_dev_azure_blob_connection_string'
         )
+        self.use_same_directory= args.get('use_same_directory', False)
 
-        working_uuid = str(uuid.uuid4())
+        if self.use_same_directory:
+            working_uuid = self.get_movie_dir()
+        else:
+            working_uuid = str(uuid.uuid4())
         self.unique_working_dir = self.file_writer.create_unique_directory(working_uuid)
+
+    def get_movie_dir(self):
+        (x_part, file_part) = os.path.split(self.movie_url)
+        (y_part, uuid_part) = os.path.split(x_part)
+        return uuid_part
 
     def split_movie(self):
         print(

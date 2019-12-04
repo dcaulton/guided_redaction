@@ -15,6 +15,27 @@ class FileWriter():
         self.connection_string = connection_string
         self.image_storage = image_storage
 
+    def get_images_from_uuid(self, the_uuid):
+        if self.image_storage == 'file':
+            the_path = os.path.join(self.working_dir, the_uuid)
+            the_files = sorted(os.listdir(the_path))
+            the_urls = [os.path.join(self.base_url, the_uuid, filename) for filename in the_files]
+            return the_urls
+        elif self.image_storage == 'azure_blob':
+            blob_names = []
+            container = ContainerClient.from_connection_string(
+                conn_str=self.connection_string,
+                container_name='mycontainer',
+            )
+            blob_list = container.list_blobs()
+            for blob in blob_list:
+                (x_part, file_part) = os.path.split(blob.name)
+                (y_part, uuid_part) = os.path.split(x_part)
+                if uuid_part == the_uuid:
+                    blob_names.append(os.path.join(self.base_url, blob.name))
+            return blob_names
+        return []
+
     def write_cv2_image_to_url(self, cv2_image, file_fullpath):
         image_bytes = cv2.imencode('.png', cv2_image)[1].tostring()
         (x_part, file_part) = os.path.split(file_fullpath)
