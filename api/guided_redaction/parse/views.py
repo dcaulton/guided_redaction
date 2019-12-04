@@ -234,7 +234,6 @@ class ParseViewSetZipMovie(viewsets.ViewSet):
         self.logger = logging.getLogger(__name__)
 
     def create(self, request):
-        print('doofus 01')
         request_data = json.loads(request.body)
         if not request_data.get("image_urls"):
             return HttpResponse("image_urls is required", status=400)
@@ -243,7 +242,6 @@ class ParseViewSetZipMovie(viewsets.ViewSet):
         image_urls = request_data["image_urls"]
         movie_name = request_data["movie_name"]
         self.logger.warning("saving to "+ movie_name)
-        print('doofus 02')
         the_connection_string = ""
         if settings.REDACT_IMAGE_STORAGE == "mysql":
             the_base_url = request.build_absolute_uri(settings.REDACT_MYSQL_BASE_URL)
@@ -252,20 +250,16 @@ class ParseViewSetZipMovie(viewsets.ViewSet):
             the_connection_string = settings.REDACT_AZURE_BLOB_CONNECTION_STRING
         else:
             the_base_url = settings.REDACT_FILE_BASE_URL
-        print('doofus 03')
         fw = FileWriter(
             working_dir=settings.REDACT_FILE_STORAGE_DIR,
             base_url=the_base_url,
             connection_string=the_connection_string,
             image_storage=settings.REDACT_IMAGE_STORAGE,
         )
-        print('doofus 04')
         parser = MovieParser(
             {"debug": settings.DEBUG, "ifps": 1, "ofps": 1, "file_writer": fw,}
         )
-        print('doofus 05')
         output_url = parser.zip_movie(image_urls, movie_name)
-        print('doofus 06')
         self.logger.warning("output url is "+ output_url)
         wrap = {
             "movie_url": output_url,
