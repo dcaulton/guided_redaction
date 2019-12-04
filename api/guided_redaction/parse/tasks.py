@@ -1,8 +1,11 @@
 from celery import shared_task                                                  
+import logging
 import os
 import json                                                                     
 from guided_redaction.jobs.models import Job                                    
 from guided_redaction.parse.views import ParseViewSetSplitAndHashMovie
+
+logger = logging.getLogger(__name__)
 
 @shared_task
 def split_and_hash_movie(job_uuid):
@@ -10,7 +13,7 @@ def split_and_hash_movie(job_uuid):
     if job:
         job.status = 'running'
         job.save()
-        print('scanning template for job ', job_uuid)
+        logger.warning('scanning template for job ', job_uuid)
         request_data = json.loads(job.request_data)
         pvssahm = ParseViewSetSplitAndHashMovie()
         response_data = pvssahm.process_create_request(request_data)
@@ -30,7 +33,7 @@ def split_and_hash_movie(job_uuid):
             job.status = 'success'
         job.save()
     else:
-        print('error, calling split_and_hash_movie on nonexistent job: ', job_uuid) 
+        logger.error('calling split_and_hash_movie on nonexistent job: '+ job_uuid) 
 
 def get_file_uuid_from_response(response_dict):
     if 'frames' in response_dict and response_dict['frames']:

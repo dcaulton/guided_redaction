@@ -136,6 +136,7 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
+
 #CUSTOM SETTINGS
 REDACT_EAST_FILE_PATH = 'guided_redaction/analyze/bin/frozen_east_text_detection.pb'
 CORS_ORIGIN_ALLOW_ALL = True

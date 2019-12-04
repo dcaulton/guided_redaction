@@ -1,8 +1,11 @@
 from celery import shared_task
+import logging
 import json
 import os
 from guided_redaction.jobs.models import Job
 from guided_redaction.analyze.views import AnalyzeViewSetScanTemplate
+
+logger = logging.getLogger(__name__)
 
 @shared_task
 def scan_template(job_uuid):
@@ -10,7 +13,7 @@ def scan_template(job_uuid):
     if job:
         job.status = 'running'
         job.save()
-        print('scanning template for job ', job_uuid)
+        logger.warning('scanning template for job '+ job_uuid)
         request_data = json.loads(job.request_data)
         avsst = AnalyzeViewSetScanTemplate()
         response_data = avsst.process_create_request(request_data)
@@ -30,7 +33,7 @@ def scan_template(job_uuid):
             job.status = 'success'
         job.save()
     else:
-        print('error, calling scan_template on nonexistent job: ', job_uuid)
+        logger.error('calling scan_template on nonexistent job: '+ job_uuid)
 
 def get_file_uuids_from_response(request_dict):
     uuids = []

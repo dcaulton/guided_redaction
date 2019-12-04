@@ -1,4 +1,5 @@
 import cv2
+import logging
 from guided_redaction.analyze.classes.EastScanner import EastScanner
 from imutils import grab_contours
 import math
@@ -16,7 +17,7 @@ class EastPlusTessScanner(EastScanner):
     TEXT_REGION_HAS_BEEN_CLAIMED = 1
 
     def __init__(self):
-        pass
+        self.logger = logging.getLogger(__name__)
 
     # takes text areas detected by EAST, grows them horizontally using opencv morphology operations,
     def grow_selections_and_get_contours(self, image, selections):
@@ -72,7 +73,7 @@ class EastPlusTessScanner(EastScanner):
             + str(len(contours))
             + " calls"
         )
-        print(sum_text)
+        self.logger.warning(sum_text)
         return text_regions
 
     def get_centroid(self, contour):

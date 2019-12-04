@@ -4,10 +4,9 @@ import numpy as np
 
 
 class ExtentsFinder:
-    debug = False
 
     def __init__(self):
-        pass
+        self.logger = logging.getLogger(__name__)
 
     def determine_flood_fill_area(self, the_image, fill_center, tol=5):
         x = fill_center[0]
@@ -66,9 +65,9 @@ class ExtentsFinder:
         min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
         template_top_left = max_loc
         if max_val > 0.9:
-            print("high confidence on primary matching, secondary matching bypassed")
+            self.logger.warning("high confidence on primary matching, secondary matching bypassed")
             return template_top_left
         if not self.histograms_match(template, source, template_top_left):
-            print("no match found")
+            self.logger.warning("no match found")
             return False
         return template_top_left
