@@ -1,4 +1,5 @@
 import uuid
+import logging
 from guided_redaction.parse.models import ImageBlob
 from django.http import HttpResponse, JsonResponse
 import json
@@ -37,6 +38,8 @@ class ParseViewSetGetImagesForUuid(viewsets.ViewSet):
     
 
 class ParseViewSetSplitMovie(viewsets.ViewSet):
+    def __init__(self):
+        self.logger = logging.getLogger(__name__)
     def create(self, request):
         request_data = json.loads(request.body)
 
@@ -68,7 +71,7 @@ class ParseViewSetSplitMovie(viewsets.ViewSet):
             movie_url = request_data.get("movie_url")
         elif request_data.get('sykes_dev_azure_movie_uuid'):
             the_uuid = request_data.get('sykes_dev_azure_movie_uuid')
-            print('the uuid is ', the_uuid)
+            self.logger.warning('the uuid is '+ the_uuid)
             movie_url = self.get_movie_url_from_sykes_dev(the_uuid, fw)
         if not movie_url:
             return HttpResponse("couldn't read movie data", status=422)
@@ -114,7 +117,7 @@ class ParseViewSetSplitMovie(viewsets.ViewSet):
             with open(temp_video_filename, 'wb') as my_blob:
                 blob_data = blob.download_blob()
                 blob_data.readinto(my_blob)
-                print('creating unique directory for ', the_uuid)
+                self.logger.warning('creating unique directory for '+ the_uuid)
                 workdir = file_writer.create_unique_directory(the_uuid)
                 outfilename = os.path.join(workdir, file_part)
                 file_url = file_writer.write_video_to_url(temp_video_filename, outfilename)
@@ -227,6 +230,9 @@ class ParseViewSetMakeUrl(viewsets.ViewSet):
 
 
 class ParseViewSetZipMovie(viewsets.ViewSet):
+    def __init__(self):
+        self.logger = logging.getLogger(__name__)
+
     def create(self, request):
         request_data = json.loads(request.body)
         if not request_data.get("image_urls"):
@@ -235,7 +241,7 @@ class ParseViewSetZipMovie(viewsets.ViewSet):
             return HttpResponse("movie_name is required", status=400)
         image_urls = request_data["image_urls"]
         movie_name = request_data["movie_name"]
-        print("saving to ", movie_name)
+        self.logger.warning("saving to "+ movie_name)
         the_connection_string = ""
         if settings.REDACT_IMAGE_STORAGE == "mysql":
             the_base_url = request.build_absolute_uri(settings.REDACT_MYSQL_BASE_URL)
@@ -254,7 +260,7 @@ class ParseViewSetZipMovie(viewsets.ViewSet):
             {"debug": settings.DEBUG, "ifps": 1, "ofps": 1, "file_writer": fw,}
         )
         output_url = parser.zip_movie(image_urls, movie_name)
-        print("output url is ", output_url)
+        self.logger.warning("output url is "+ output_url)
         wrap = {
             "movie_url": output_url,
         }

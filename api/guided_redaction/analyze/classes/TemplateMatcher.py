@@ -1,11 +1,12 @@
 import cv2
+import logging
 
 
 class TemplateMatcher:
     debug = False
 
     def __init__(self):
-        pass
+        self.logger = logging.getLogger(__name__)
 
     def histograms_match(self, template, the_source, template_top_left):
         template_height, template_width, _ = template.shape
@@ -22,7 +23,7 @@ class TemplateMatcher:
         source_hist = cv2.calcHist([cropped_source], [0], None, [256], [0, 256])
 
         res = cv2.compareHist(template_hist, source_hist, cv2.HISTCMP_CORREL)
-        print("histograms compare at ", res)
+        self.logger.warning("histograms compare at "+ str(res))
         if res > 0.7:
             return True
         return False
@@ -32,9 +33,9 @@ class TemplateMatcher:
         min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
         template_top_left = max_loc
         if max_val > 0.9:
-            print("high confidence on primary matching, secondary matching bypassed")
+            self.logger.warning("high confidence on primary matching, secondary matching bypassed")
             return template_top_left
         if not self.histograms_match(template, source, template_top_left):
-            print("no match found")
+            self.logger.warning("no match found")
             return False
         return template_top_left
