@@ -1,4 +1,5 @@
 import React from 'react';
+import {observable} from 'mobx';
 import ImagePanel from './ImagePanel';
 import MoviePanel from './MoviePanel';
 import InsightsPanel from './InsightsPanel';
