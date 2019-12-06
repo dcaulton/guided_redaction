@@ -2,7 +2,7 @@ from celery import shared_task
 import os
 import json                                                                     
 from guided_redaction.jobs.models import Job                                    
-from guided_redaction.parse.views import ParseViewSetSplitAndHashMovie
+from guided_redaction.parse.api import ParseViewSetSplitAndHashMovie
 
 
 @shared_task

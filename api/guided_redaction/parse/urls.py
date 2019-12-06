@@ -1,31 +1,31 @@
 from server.router import get_router
 
-from . import views
+from . import api
 
 router = get_router()
 
 router.register(
     r"v1/parse/split-and-hash-movie",
-    views.ParseViewSetSplitAndHashMovie,
+    api.ParseViewSetSplitAndHashMovie,
     basename="MaxHeadroom",
 )
 router.register(
     r"v1/parse/split-movie",
-    views.ParseViewSetSplitMovie,
+    api.ParseViewSetSplitMovie,
     basename="Lizzo",
 )
 router.register(
     r"v1/parse/get-images-for-uuid",
-    views.ParseViewSetGetImagesForUuid,
+    api.ParseViewSetGetImagesForUuid,
     basename="WierdAl",
 )
 router.register(
-    r"v1/parse/make-url", views.ParseViewSetMakeUrl, basename="DustinDiamond"
+    r"v1/parse/make-url", api.ParseViewSetMakeUrl, basename="DustinDiamond"
 )
 router.register(
-    r"v1/parse/zip-movie", views.ParseViewSetZipMovie, basename="MachoManRandySavage"
+    r"v1/parse/zip-movie", api.ParseViewSetZipMovie, basename="MachoManRandySavage"
 )
-router.register(r"v1/parse/ping", views.ParseViewSetPing, basename="MarlinPerkins")
+router.register(r"v1/parse/ping", api.ParseViewSetPing, basename="MarlinPerkins")
 router.register(
-    r"v1/parse/fetch-image", views.ParseViewSetFetchImage, basename="TonyClifton"
+    r"v1/parse/fetch-image", api.ParseViewSetFetchImage, basename="TonyClifton"
 )

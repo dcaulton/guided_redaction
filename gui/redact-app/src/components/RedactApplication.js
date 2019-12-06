@@ -34,16 +34,16 @@ class RedactApplication extends React.Component {
 //      parse_movie_url: 'http:///step-work.dev.sykes.com/api/v1/parse/split-and-hash-movie',
 //      zip_movie_url: 'http:///step-work.dev.sykes.com/api/v1/parse/zip-movie',
       api_key: '',
-      ping_url: 'http://127.0.0.1:8000/v1/parse/ping/',
-      flood_fill_url: 'http://127.0.0.1:8000/v1/analyze/flood-fill/',
-      arrow_fill_url: 'http://127.0.0.1:8000/v1/analyze/arrow-fill/',
-      scan_template_url: 'http://127.0.0.1:8000/v1/analyze/scan-template/',
-      analyze_url: 'http://127.0.0.1:8000/v1/analyze/east-tess/',
-      redact_url: 'http://127.0.0.1:8000/v1/redact/redact-image/',
-      parse_movie_url: 'http://127.0.0.1:8000/v1/parse/split-and-hash-movie/',
-      zip_movie_url: 'http://127.0.0.1:8000/v1/parse/zip-movie/',
+      ping_url: 'http://127.0.0.1:8000/v1/parse/ping',
+      flood_fill_url: 'http://127.0.0.1:8000/v1/analyze/flood-fill',
+      arrow_fill_url: 'http://127.0.0.1:8000/v1/analyze/arrow-fill',
+      scan_template_url: 'http://127.0.0.1:8000/v1/analyze/scan-template',
+      analyze_url: 'http://127.0.0.1:8000/v1/analyze/east-tess',
+      redact_url: 'http://127.0.0.1:8000/v1/redact/redact-image',
+      parse_movie_url: 'http://127.0.0.1:8000/v1/parse/split-and-hash-movie',
+      zip_movie_url: 'http://127.0.0.1:8000/v1/parse/zip-movie',
       get_images_for_uuid_url: 'http://127.0.0.1:8000/v1/parse/get-images-for-uuid',
-      jobs_url: 'http://127.0.0.1:8000/v1/jobs/',
+      jobs_url: 'http://127.0.0.1:8000/v1/jobs',
       frames: [],
       framesets: {},
       movies: {},
@@ -455,7 +455,7 @@ class RedactApplication extends React.Component {
   }
 
   async submitJob(the_job_data) {
-    await fetch(this.state.jobs_url, {
+    await fetch(this.state.jobs_url + '/', {
       method: 'POST',
       headers: this.buildJsonHeaders(),
       body: JSON.stringify({
@@ -476,7 +476,7 @@ class RedactApplication extends React.Component {
   }
 
   async cancelJob(the_uuid) {
-    let the_url = this.state.jobs_url + the_uuid + '/'
+    let the_url = this.state.jobs_url + '/' + the_uuid 
     await fetch(the_url, {
       method: 'DELETE',
       headers: this.buildJsonHeaders(),
