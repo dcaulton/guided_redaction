@@ -1,11 +1,12 @@
 import React from 'react'
-import {observable} from 'mobx';
+import {autorun, observable} from 'mobx'
+import {observer} from 'mobx-react'
 import TopImageControls from './TopImageControls'
 import AdvancedImageControls from './AdvancedImageControls'
 import CanvasImageOverlay from './CanvasImageOverlay'
 import {getMessage, getDisplayMode} from './redact_utils.js'
 
-class ImagePanel extends React.Component {
+const ImagePanel = observer(class ImagePanel extends React.Component {
   constructor(props) {
     super(props);
     this.local_state = observable({
@@ -15,11 +16,28 @@ class ImagePanel extends React.Component {
       message: '',
       last_click: null,
     })
-    this.state = observable({
-    })
     this.getImageAndHashDisplay=this.getImageAndHashDisplay.bind(this)
     this.setOcrDoneMessage=this.setOcrDoneMessage.bind(this)
     this.setRedactionDoneMessage=this.setRedactionDoneMessage.bind(this)
+    this.setRedactedImage=this.setRedactedImage.bind(this)
+
+    
+    autorun(() => {
+    this.setRedactedImage(this.props.redacted_image_url)
+      console.log("autorunning ladies!")
+      console.log(this.props.redacted_image_url)
+      if (document.getElementById('base_image_id')) {
+      }
+    })
+  }
+  setRedactedImage(redacted_url) {
+    console.log("autorunning bitches!")
+    if (document.getElementById('base_image_id')) {
+    console.log("peep"+redacted_url)
+      if (redacted_url) {
+        console.log('we have a redacted image, should be setting the img source here')
+      }
+    }
   }
 
   //TODO THIS whole method can go away now
@@ -267,7 +285,7 @@ class ImagePanel extends React.Component {
       </div>
     );
   }
-}
+});
 
 class BaseImage extends React.Component {
 

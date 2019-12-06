@@ -16,11 +16,14 @@ import {
 class RedactApplication extends React.Component {
   constructor(props) {
     super(props);
+    this.observable = observable({
+      image_url: '',
+      redacted_image_url: '',
+    })
+
     this.state = {
       mask_method: 'blur_7x7',
-      image_url: '',
       redacted_movie_url: '',
-      redacted_image_url: '',
       movie_url: '',
       frameset_hash: '',
       image_width: 0,
@@ -238,7 +241,7 @@ class RedactApplication extends React.Component {
         roi_start_y: last_click[1],
         roi_end_x: current_click[0],
         roi_end_y: current_click[1],
-        image_url: this.state.image_url,
+        image_url: this.observable.image_url,
       }),
     })
     .then((response) => response.json())
@@ -585,9 +588,9 @@ class RedactApplication extends React.Component {
     if (create_frameset) {
         img.onload = function(){
             const scale = this.width / this.naturalWidth
+            app_this.observable.image_url = the_url
+            app_this.observable.redacted_image_url = ''
             app_this.setState({
-              image_url: the_url,
-              redacted_image_url: '',
               image_width: this.width,
               image_height: this.height,
               image_scale: scale,
@@ -599,9 +602,9 @@ class RedactApplication extends React.Component {
     } else {
         img.onload = function(){
             const scale = this.width / this.naturalWidth
+            app_this.observable.image_url = the_url
+            app_this.observable.redacted_image_url = ''
             app_this.setState({
-              image_url: the_url,
-              redacted_image_url: '',
               image_width: this.width,
               image_height: this.height,
               image_scale: scale,
@@ -614,9 +617,9 @@ class RedactApplication extends React.Component {
 
   handleSetMovieUrl = (the_url) => {
     // TODO have this check campaign_movies  to see if we already have framesets and frames
+    this.observable.image_url = ''
     this.setState({
       movie_url: the_url,
-      image_url: '',
       frames: [],
       framesets: {},
       frameset_hash: '',
@@ -681,9 +684,10 @@ class RedactApplication extends React.Component {
   }
 
   setRedactedImageUrl = (the_url) => {
-    this.setState({
-      redacted_image_url: the_url,
-    })
+    this.observable.redacted_image_url = the_url
+//    this.setState({
+//      redacted_image_url: the_url,
+//    })
   }
 
   handleSetMaskMethod = (mask_method) => {
@@ -783,9 +787,9 @@ class RedactApplication extends React.Component {
             </Route>
             <Route path='/image'>
               <ImagePanel 
+                image_url={this.observable.image_url}
+                redacted_image_url={this.observable.redacted_image_url}
                 mask_method={this.state.mask_method}
-                image_url={this.state.image_url}
-                redacted_image_url={this.state.redacted_image_url}
                 image_width={this.state.image_width}
                 image_height={this.state.image_height}
                 image_scale={this.state.image_scale}
@@ -843,5 +847,6 @@ class RedactApplication extends React.Component {
     );
   }
 }
+
 
 export default RedactApplication;
