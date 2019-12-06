@@ -32,20 +32,19 @@ class RedactViewSetRedactImage(viewsets.ViewSet):
         #        the output from analyze is suitable here, even though it has
         #        more info in its array after those two coordinates that data will be ignored
         if request.method == "POST":
-            request_data = json.loads(request.body)
-            if not request_data.get("image_url"):
+            if not request.data.get("image_url"):
                 return HttpResponse("image_url is required", status=400)
-            if not request_data.get("areas_to_redact"):
+            if not request.data.get("areas_to_redact"):
                 return HttpResponse("areas_to_redact is required", status=400)
-            pic_response = requests.get(request_data["image_url"])
+            pic_response = requests.get(request.data["image_url"])
             image = pic_response.content
             if image:
                 nparr = np.fromstring(image, np.uint8)
                 cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 
-                areas_to_redact_inbound = json.loads(request.body)["areas_to_redact"]
-                mask_method = json.loads(request.body).get("mask_method", "blur_7x7")
-                blur_foreground_background = json.loads(request.body).get(
+                areas_to_redact_inbound = request.data['areas_to_redact']
+                mask_method = request.data.get("mask_method", "blur_7x7")
+                blur_foreground_background = request.data.get(
                     "blur_foreground_background", "foreground"
                 )
 
@@ -60,7 +59,7 @@ class RedactViewSetRedactImage(viewsets.ViewSet):
                 )
                 image_bytes = cv2.imencode(".png", masked_image)[1].tostring()
 
-                return_type = json.loads(request.body).get("return_type", "inline")
+                return_type = request.data.get("return_type", "inline")
                 if return_type == "inline":
                     response = HttpResponse(content_type="image/png")
                     new_name = "image_" + str(uuid.uuid4()) + ".png"
@@ -69,7 +68,7 @@ class RedactViewSetRedactImage(viewsets.ViewSet):
                     return response
                 else:
                     image_hash = str(uuid.uuid4())
-                    inbound_image_url = request_data["image_url"]
+                    inbound_image_url = request.data["image_url"]
                     inbound_filename = (urlsplit(inbound_image_url)[2]).split("/")[-1]
                     (file_basename, file_extension) = os.path.splitext(inbound_filename)
                     new_filename = file_basename + "_redacted" + file_extension
@@ -78,7 +77,7 @@ class RedactViewSetRedactImage(viewsets.ViewSet):
                     )
                     wrap = {
                         "redacted_image_url": the_url,
-                        "original_image_url": request_data["image_url"],
+                        "original_image_url": request.data["image_url"],
                     }
                     return JsonResponse(wrap)
             else:

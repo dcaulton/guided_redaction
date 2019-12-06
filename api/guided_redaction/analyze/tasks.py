@@ -12,9 +12,8 @@ def scan_template(job_uuid):
         job.status = 'running'
         job.save()
         print('scanning template for job '+ job_uuid)
-        request_data = json.loads(job.request_data)
         avsst = AnalyzeViewSetScanTemplate()
-        response_data = avsst.process_create_request(request_data)
+        response_data = avsst.process_create_request(request.data)
         if response_data['errors_400']:
             job.status = 'failed'
             job.response_data = json.dumps(response_data['errors_400'])

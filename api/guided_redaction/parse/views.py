@@ -38,8 +38,6 @@ class ParseViewSetGetImagesForUuid(viewsets.ViewSet):
 
 class ParseViewSetSplitMovie(viewsets.ViewSet):
     def create(self, request):
-        request_data = json.loads(request.body)
-
         return_data = {
             'errors_400': [],
             'errors_422': [],
@@ -62,12 +60,12 @@ class ParseViewSetSplitMovie(viewsets.ViewSet):
             image_storage=settings.REDACT_IMAGE_STORAGE,
         )
 
-        if not request_data.get("movie_url") and not request_data.get("sykes_dev_azure_movie_uuid"):
+        if not request.data.get("movie_url") and not request.data.get("sykes_dev_azure_movie_uuid"):
             return HttpResponse("movie_url or sykes_dev_azure_movie_uuid is required", status=400)
-        if request_data.get('movie_url'):
-            movie_url = request_data.get("movie_url")
-        elif request_data.get('sykes_dev_azure_movie_uuid'):
-            the_uuid = request_data.get('sykes_dev_azure_movie_uuid')
+        if request.data.get('movie_url'):
+            movie_url = request.data.get("movie_url")
+        elif request.data.get('sykes_dev_azure_movie_uuid'):
+            the_uuid = request.data.get('sykes_dev_azure_movie_uuid')
             print('the uuid is '+ the_uuid)
             movie_url = self.get_movie_url_from_sykes_dev(the_uuid, fw)
         if not movie_url:
@@ -174,8 +172,7 @@ class ParseViewSetSplitAndHashMovie(viewsets.ViewSet):
         return return_data
 
     def create(self, request):
-        request_data = json.loads(request.body)
-        resp_data = self.process_create_request(request_data)
+        resp_data = self.process_create_request(request.data)
         if resp_data['errors_400']:
             return HttpResponse(str(resp_data['errors_400']), status=400)
         if resp_data['errors_422']:
@@ -228,13 +225,12 @@ class ParseViewSetMakeUrl(viewsets.ViewSet):
 
 class ParseViewSetZipMovie(viewsets.ViewSet):
     def create(self, request):
-        request_data = json.loads(request.body)
-        if not request_data.get("image_urls"):
+        if not request.data.get("image_urls"):
             return HttpResponse("image_urls is required", status=400)
-        if not request_data.get("movie_name"):
+        if not request.data.get("movie_name"):
             return HttpResponse("movie_name is required", status=400)
-        image_urls = request_data["image_urls"]
-        movie_name = request_data["movie_name"]
+        image_urls = request.data["image_urls"]
+        movie_name = request.data["movie_name"]
         print("saving to "+ movie_name)
         the_connection_string = ""
         if settings.REDACT_IMAGE_STORAGE == "mysql":

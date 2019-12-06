@@ -15,24 +15,23 @@ from rest_framework import viewsets
 class AnalyzeViewSetEastTess(viewsets.ModelViewSet):
     def create(self, request):
         if request.method == "POST":
-            request_data = json.loads(request.body)
-            if not request_data.get("image_url"):
+            if not request.data.get("image_url"):
                 return HttpResponse("image_url is required", status=400)
-            if not request_data.get("roi_start_x"):
+            if not request.data.get("roi_start_x"):
                 return HttpResponse("roi_start_x is required", status=400)
-            if not request_data.get("roi_start_y"):
+            if not request.data.get("roi_start_y"):
                 return HttpResponse("roi_start_y is required", status=400)
-            if not request_data.get("roi_end_x"):
+            if not request.data.get("roi_end_x"):
                 return HttpResponse("roi_end_x is required", status=400)
-            if not request_data.get("roi_end_y"):
+            if not request.data.get("roi_end_y"):
                 return HttpResponse("roi_end_y is required", status=400)
-            pic_response = requests.get(request_data["image_url"])
+            pic_response = requests.get(request.data["image_url"])
             image = pic_response.content
             if image:
-                roi_start_x = int(request_data["roi_start_x"])
-                roi_start_y = int(request_data["roi_start_y"])
-                roi_end_x = int(request_data["roi_end_x"])
-                roi_end_y = int(request_data["roi_end_y"])
+                roi_start_x = int(request.data["roi_start_x"])
+                roi_start_y = int(request.data["roi_start_y"])
+                roi_end_x = int(request.data["roi_end_x"])
+                roi_end_y = int(request.data["roi_end_y"])
                 roi_start = (roi_start_x, roi_start_y)
                 roi_end = (roi_end_x, roi_end_y)
 
@@ -135,8 +134,7 @@ class AnalyzeViewSetScanTemplate(viewsets.ModelViewSet):
         return return_data
 
     def create(self, request):
-        request_data = json.loads(request.body)
-        resp_data = self.process_create_request(request_data)
+        resp_data = self.process_create_request(request.data)
         if resp_data['errors_400']:
             return HttpResponse(str(resp_data['errors_400']), status=400)
         if resp_data['errors_422']:
@@ -150,14 +148,13 @@ class AnalyzeViewSetFloodFill(viewsets.ModelViewSet):
             []
         )  # response will be a list of rectangles.  These are screen grabs; this should be fine
         if request.method == "POST":
-            request_data = json.loads(request.body)
-            if not request_data.get("source_image_url"):
+            if not request.data.get("source_image_url"):
                 return HttpResponse("source_image_url is required", status=400)
-            if not request_data.get("selected_point"):
+            if not request.data.get("selected_point"):
                 return HttpResponse("selected_point is required", status=400)
-            selected_point = request_data.get("selected_point")
-            tolerance = request_data.get("tolerance")
-            image = requests.get(request_data["source_image_url"]).content
+            selected_point = request.data.get("selected_point")
+            tolerance = request.data.get("tolerance")
+            image = requests.get(request.data["source_image_url"]).content
             if image:
                 nparr = np.fromstring(image, np.uint8)
                 cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
@@ -177,14 +174,13 @@ class AnalyzeViewSetArrowFill(viewsets.ModelViewSet):
             []
         )  # response will be a list of rectangles.  These are screen grabs; this should be fine
         if request.method == "POST":
-            request_data = json.loads(request.body)
-            if not request_data.get("source_image_url"):
+            if not request.data.get("source_image_url"):
                 return HttpResponse("source_image_url is required", status=400)
-            if not request_data.get("selected_point"):
+            if not request.data.get("selected_point"):
                 return HttpResponse("selected_point is required", status=400)
-            selected_point = request_data.get("selected_point")
-            tolerance = request_data.get("tolerance")
-            image = requests.get(request_data["source_image_url"]).content
+            selected_point = request.data.get("selected_point")
+            tolerance = request.data.get("tolerance")
+            image = requests.get(request.data["source_image_url"]).content
             if image:
                 nparr = np.fromstring(image, np.uint8)
                 cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
