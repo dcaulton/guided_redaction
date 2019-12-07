@@ -1,20 +1,20 @@
 from server.router import get_router
 
-from . import views
+from . import api
 
 router = get_router()
 
 router.register(
-    r"v1/analyze/east-tess", views.AnalyzeViewSetEastTess, basename="GeorgeCarlin"
+    r"v1/analyze/east-tess", api.AnalyzeViewSetEastTess, basename="GeorgeCarlin"
 )
 router.register(
     r"v1/analyze/scan-template",
-    views.AnalyzeViewSetScanTemplate,
+    api.AnalyzeViewSetScanTemplate,
     basename="GaryColeman",
 )
 router.register(
-    r"v1/analyze/flood-fill", views.AnalyzeViewSetFloodFill, basename="RichardPryor"
+    r"v1/analyze/flood-fill", api.AnalyzeViewSetFloodFill, basename="RichardPryor"
 )
 router.register(
-    r"v1/analyze/arrow-fill", views.AnalyzeViewSetArrowFill, basename="ReddFoxx"
+    r"v1/analyze/arrow-fill", api.AnalyzeViewSetArrowFill, basename="ReddFoxx"
 )

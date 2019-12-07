@@ -2,7 +2,7 @@ from celery import shared_task
 import json
 import os
 from guided_redaction.jobs.models import Job
-from guided_redaction.analyze.views import AnalyzeViewSetScanTemplate
+from guided_redaction.analyze.api import AnalyzeViewSetScanTemplate
 
 
 @shared_task
