@@ -576,7 +576,7 @@ class InsightsPanel extends React.Component {
 
   loadJobResults(job_id) {
     for (let i=0; i < this.props.jobs.length; i++) {
-      if (this.props.jobs[i]['uuid'] === job_id) {
+      if (this.props.jobs[i]['id'] === job_id) {
         const job = this.props.jobs[i]
         const response_data = JSON.parse(job.response_data)
         const request_data = JSON.parse(job.request_data)
@@ -763,7 +763,7 @@ class JobCard extends React.Component {
       get_job_button = (
         <button 
             className='btn btn-primary mt-2 ml-2'
-            onClick={() => this.props.loadJobResults(this.props.job_data['uuid'])}
+            onClick={() => this.props.loadJobResults(this.props.job_data['id'])}
         >
           Get Results
         </button>
@@ -772,7 +772,7 @@ class JobCard extends React.Component {
     let delete_job_button = (
       <button 
           className='btn btn-primary mt-2 ml-2'
-          onClick={() => this.props.cancelJob(this.props.job_data['uuid'])}
+          onClick={() => this.props.cancelJob(this.props.job_data['id'])}
       >
         Delete
       </button>
@@ -789,7 +789,7 @@ class JobCard extends React.Component {
       <div className='row mt-4 card'>
         <div className='col'>
           <div className='row border-bottom'>
-            {this.props.job_data['uuid']}
+            {this.props.job_data['id']}
           </div>
           <div className='row mt-1'>
             {this.props.job_data['description']}
