@@ -1,15 +1,10 @@
 import uuid
-from guided_redaction.parse.models import ImageBlob
-from django.http import HttpResponse, JsonResponse
 import json
 import os
-import pika
-from guided_redaction.parse.classes.MovieParser import MovieParser
-from guided_redaction.utils.classes.FileWriter import FileWriter
-from django.shortcuts import render
 from django.conf import settings
 import requests
-from rest_framework import viewsets
+from rest_framework.response import Response
+from base import viewsets
 from guided_redaction.jobs.models import Job
 from guided_redaction.analyze import tasks as analyze_tasks
 from guided_redaction.parse import tasks as parse_tasks
@@ -22,7 +17,7 @@ class JobsViewSet(viewsets.ViewSet):
         for job in Job.objects.all():
             jobs_list.append(
                 {
-                    'uuid': job.uuid,
+                    'id': job.id,
                     'file_uuids_used': job.file_uuids_used,
                     'status': job.status,
                     'description': job.description,
@@ -34,11 +29,11 @@ class JobsViewSet(viewsets.ViewSet):
                 }
             )
 
-        return JsonResponse({"jobs": jobs_list})
+        return Response({"jobs": jobs_list})
 
     def retrieve(self, request, the_uuid):
-        job = Job.objects.filter(uuid=the_uuid).first()
-        return JsonResponse({"job": job})
+        job = Job.objects.get(pk=the_uuid)
+        return Response({"job": job})
 
     def get_file_uuids_from_request(self, request_dict):
         uuids = []
@@ -54,9 +49,7 @@ class JobsViewSet(viewsets.ViewSet):
         return uuids
 
     def create(self, request):
-        job_uuid = str(uuid.uuid4())
         job = Job(
-            uuid=job_uuid,
             request_data=json.dumps(request.data.get('request_data')),
             file_uuids_used=json.dumps(self.get_file_uuids_from_request(request.data)),
             owner=request.data.get('owner'),
@@ -68,18 +61,19 @@ class JobsViewSet(viewsets.ViewSet):
             elapsed_time=0.0,
         )
         job.save()
+        job_uuid = job.id
 
         self.schedule_job(job)
 
-        return JsonResponse({"job_id": job.uuid})
+        return Response({"job_id": job.id})
 
-    def delete(self, request, pk):
-        job = Job.objects.filter(uuid=pk).first()
+    def delete(self, request, pk, format=None):
+        job = Job.objects.get(pk=pk)
         job.delete()
-        return HttpResponse('', status=204)
+        return Response('', status=204)
 
     def schedule_job(self, job):
-        job_uuid = job.uuid
+        job_uuid = job.id
         if job.app == 'analyze' and job.operation == 'scan_template':
             analyze_tasks.scan_template.delay(job_uuid)
         if job.app == 'parse' and job.operation == 'split_and_hash_movie':

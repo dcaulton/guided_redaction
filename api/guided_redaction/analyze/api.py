@@ -51,6 +51,9 @@ class AnalyzeViewSetEastTess(viewsets.ViewSet):
 class AnalyzeViewSetScanTemplate(viewsets.ViewSet):
     def create(self, request):
         request_data = request.data
+        return self.process_create_request(request_data)
+
+    def process_create_request(self, request_data):
         matches = {}
         template_matcher = TemplateMatcher()
         if not request_data.get("template"):

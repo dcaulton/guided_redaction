@@ -477,7 +477,12 @@ class RedactApplication extends React.Component {
   }
 
   async cancelJob(the_uuid) {
-    let the_url = this.state.jobs_url + '/' + the_uuid 
+    // the following double slash is wrong but I'm tired of fighting with DRF 
+    // It comes back to the api urls file.  If I don't specify a trailing slash
+    //   after the jobs base url, 'list jobs' above won't work, because, 
+    //   even if I specify this.state.jobs_url with no trailing slash, the 
+    //   get call for getJobs() will append a slash, then 404 on me
+    let the_url = this.state.jobs_url + '//' + the_uuid
     await fetch(the_url, {
       method: 'DELETE',
       headers: this.buildJsonHeaders(),

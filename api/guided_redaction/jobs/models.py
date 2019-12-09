@@ -1,8 +1,9 @@
+import uuid
 from django.db import models
 
 class Job(models.Model):
     created_on = models.DateTimeField(auto_now_add=True)
-    uuid = models.CharField(max_length=36)
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     status = models.CharField(max_length=36)
     owner = models.CharField(max_length=255)
     description = models.CharField(max_length=255)

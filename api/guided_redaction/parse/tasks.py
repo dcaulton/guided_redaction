@@ -7,13 +7,14 @@ from guided_redaction.parse.api import ParseViewSetSplitAndHashMovie
 
 @shared_task
 def split_and_hash_movie(job_uuid):
-    job = Job.objects.filter(uuid=job_uuid).first()
+    job = Job.objects.get(pk=job_uuid)
     if job:
         job.status = 'running'
         job.save()
+        request_data = json.loads(job.request_data)
         print('scanning template for job ', job_uuid)
         pvssahm = ParseViewSetSplitAndHashMovie()
-        response_data = pvssahm.process_create_request(request.data)
+        response_data = pvssahm.process_create_request(request_data)
         if response_data['errors_400']:
             job.status = 'failed'
             job.response_data = json.dumps(response_data['errors_400'])
