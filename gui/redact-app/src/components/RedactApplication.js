@@ -4,7 +4,7 @@ import MoviePanel from './MoviePanel';
 import InsightsPanel from './InsightsPanel';
 import HomePanel from './HomePanel';
 import {getUrlVars} from './redact_utils.js'
-import '../App.css';
+import './styles/guided_redaction.css';
 import {
   BrowserRouter as Router,
   Switch,
