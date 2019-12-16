@@ -45,6 +45,10 @@ class RedactApplication extends React.Component {
       zip_movie_url: 'http://127.0.0.1:8000/v1/parse/zip-movie',
       get_images_for_uuid_url: 'http://127.0.0.1:8000/v1/parse/get-images-for-uuid',
       jobs_url: 'http://127.0.0.1:8000/v1/jobs',
+      workbooks_url: 'http://127.0.0.1:8000/v1/workbooks',
+      current_user: 'dave.caulton@sykes.com',
+      current_workbook_name: 'workbook 1',
+      workbooks: [],
       frames: [],
       framesets: {},
       movies: {},
@@ -81,6 +85,9 @@ class RedactApplication extends React.Component {
     this.cancelJob=this.cancelJob.bind(this)
     this.submitJob=this.submitJob.bind(this)
     this.getJobs=this.getJobs.bind(this)
+    this.getWorkbooks=this.getWorkbooks.bind(this)
+    this.saveWorkbook=this.saveWorkbook.bind(this)
+    this.loadWorkbook=this.loadWorkbook.bind(this)
     this.addMovieAndSetActive=this.addMovieAndSetActive.bind(this)
     this.setSelectedAreaMetas=this.setSelectedAreaMetas.bind(this)
     this.afterUuidImagesFetched=this.afterUuidImagesFetched.bind(this)
@@ -154,6 +161,12 @@ class RedactApplication extends React.Component {
   setJobs = (the_jobs) => {
     this.setState({
       jobs: the_jobs,
+    })
+  }
+
+  setWorkbooks = (the_workbooks) => {
+    this.setState({
+      workbooks: the_workbooks,
     })
   }
 
@@ -455,7 +468,19 @@ class RedactApplication extends React.Component {
     })
   }
 
+  getCurrentWorkbookId() {
+    for (let i=0; i < this.state.workbooks; i++) {
+      const wb = this.state.workbooks[i]
+      if (wb.name === this.state.current_workbook_name) {
+        console.log('poopy')
+        console.log(wb)
+        return wb.id
+      }
+    }
+  }
+
   async submitJob(the_job_data) {
+//        workbook_id: this.getCurrentWorkbookId(),
     await fetch(this.state.jobs_url + '/', {
       method: 'POST',
       headers: this.buildJsonHeaders(),
@@ -464,8 +489,9 @@ class RedactApplication extends React.Component {
         operation: the_job_data['operation'],
         request_data: the_job_data['request_data'],
         response_data: the_job_data['response_data'],
-        owner: 'stevie wonder',
+        owner: this.state.current_user,
         description: the_job_data['description'],
+        workbook_id: this.getCurrentWorkbookId(),
       }),
     })
     .then(() => {
@@ -493,6 +519,62 @@ class RedactApplication extends React.Component {
     .catch((error) => {
       console.error(error);
     })
+  }
+
+  async getWorkbooks() {
+    await fetch(this.state.workbooks_url, {
+      method: 'GET',
+      headers: this.buildJsonHeaders(),
+    })
+    .then((response) => response.json())
+    .then((responseJson) => {
+      this.setWorkbooks(responseJson['workbooks'])
+      if (!this.getCurrentWorkbookId()) {
+        this.saveWorkbook()
+      }
+    })
+    .catch((error) => {
+      console.error(error);
+    })
+  }
+
+  async saveWorkbook() {
+    await fetch(this.state.workbooks_url + '/', {
+      method: 'POST',
+      headers: this.buildJsonHeaders(),
+      body: JSON.stringify({
+        state_data: this.state,
+        owner: this.state.current_user,
+        name: this.state.current_workbook_name,
+      }),
+    })
+    .then(() => {
+      // TODO use a callback to pass a completed message to the UI
+      console.log('workbook saved')
+    })
+    .catch((error) => {
+      console.error(error);
+    })
+  }
+
+  async loadWorkbook(the_name) {
+    const dont_add_keys = ['workbooks', 'jobs']
+    for (let i=0; i < this.state.workbooks.length; i++) {
+      if (this.state.workbooks[i].name === the_name) {
+        let wb = this.state.workbooks[i]
+        let wb_state_data = JSON.parse(wb.state_data)
+        let wb_keys = Object.keys(wb_state_data)
+        let new_state = {}
+        for (let j=0; j < wb_keys.length; j++) {
+          let state_data_key = wb_keys[j]
+          if (!dont_add_keys.includes(state_data_key)) {
+            new_state[state_data_key] = wb_state_data[state_data_key]
+          }
+        } 
+        new_state['current_workbook_name'] = wb.name
+        this.setState(new_state)
+      }
+    }
   }
 
   getCurrentTemplateAnchors() {
@@ -835,7 +917,12 @@ class RedactApplication extends React.Component {
                 cancelJob={this.cancelJob}
                 submitJob={this.submitJob}
                 getJobs={this.getJobs}
+                getWorkbooks={this.getWorkbooks}
+                saveWorkbook={this.saveWorkbook}
+                loadWorkbook={this.loadWorkbook}
                 jobs={this.state.jobs}
+                workbooks={this.state.workbooks}
+                current_workbook_name={this.state.current_workbook_name}
                 addMovieAndSetActive={this.addMovieAndSetActive}
                 setSelectedAreaMetas={this.setSelectedAreaMetas}
                 selected_area_metas={this.state.selected_area_metas}

@@ -20,6 +20,7 @@ class JobsViewSet(viewsets.ViewSet):
                     'id': job.id,
                     'file_uuids_used': job.file_uuids_used,
                     'status': job.status,
+                    'workbook_id': job.workbook_id,
                     'description': job.description,
                     'created_on': job.created_on,
                     'app': job.app,
@@ -59,6 +60,7 @@ class JobsViewSet(viewsets.ViewSet):
             operation=request.data.get('operation', 'chucky'),
             sequence=0,
             elapsed_time=0.0,
+            workbook_id=request.data.get('workbook_id'),
         )
         job.save()
         job_uuid = job.id
