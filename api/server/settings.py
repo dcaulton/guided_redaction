@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'guided_redaction.analyze',
     'guided_redaction.redact',
     'guided_redaction.jobs',
+    'guided_redaction.workbooks',
     'django_extensions',
     'rest_framework',
     'base',
@@ -148,7 +149,7 @@ REDACT_AZURE_BASE_URL = 'https://redactblob.blob.core.windows.net/mycontainer'
 REDACT_AZURE_BLOB_CONNECTION_STRING = 'DefaultEndpointsProtocol=https;AccountName=redactblob;AccountKey=pTkHJ1dws5dtiVmX5FF+vYxkp1qNgaz62LeSLcxijoWFUXVzWFkn3BxoGMKxJs4tjjHaI/zI80zeIcfdPPz7sw==;EndpointSuffix=core.windows.net'
 REDACT_SYKES_DEV_AZURE_BLOB_CONNECTION_STRING = 'DefaultEndpointsProtocol=https;AccountName=sykesdevcustomertile;AccountKey=Q573TWuD3wefJDPk4zP9kVIZXuISaqzQR/gGy597111IuGx9yY/EWCztopDO1ufi4sK5s4Jwfz0U3f4EWLJMYQ==;EndpointSuffix=core.windows.net'
 REDACT_SYKES_DEV_AZURE_BLOB_CONTAINER_NAME = 'redaction'
-REDACT_IMAGE_STORAGE='redis'  # file, redis,  mysql or azure_blob
+REDACT_IMAGE_STORAGE='file'  # file, redis,  mysql or azure_blob
 REDACT_REDIS_HOST="127.0.0.1"
 REDACT_REDIS_PORT=6379
 REDACT_REDIS_DB=2

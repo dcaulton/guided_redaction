@@ -15,4 +15,5 @@ class Job(models.Model):
     request_data = models.TextField(null=True)
     response_data = models.TextField(null=True)
     parent = models.ForeignKey('Job', on_delete=models.CASCADE, null=True)
+    workbook = models.ForeignKey('workbooks.Workbook', on_delete=models.CASCADE, null=True)
 
