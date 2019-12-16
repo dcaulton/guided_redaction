@@ -50,10 +50,12 @@ class InsightsPanel extends React.Component {
     this.submitInsightsJob=this.submitInsightsJob.bind(this)
     this.setSelectedAreaTemplateAnchor=this.setSelectedAreaTemplateAnchor.bind(this)
     this.getCurrentSelectedAreaMeta=this.getCurrentSelectedAreaMeta.bind(this)
+    this.getWorkbookNames=this.getWorkbookNames.bind(this)
   }
 
   componentDidMount() {
     this.props.getJobs()
+    this.props.getWorkbooks()
   }
 
   getCurrentSelectedAreaMeta() {
@@ -62,6 +64,17 @@ class InsightsPanel extends React.Component {
       return this.props.selected_area_metas[this.props.current_selected_area_meta_id]
     }
     return {}
+  }
+
+  getWorkbookNames() {
+    let ret_list = []
+    for (let i=0; i < this.props.workbooks.length; i++) {
+      let the_workbook = this.props.workbooks[i]
+      if (the_workbook.name !== this.props.current_workbook_name) {
+        ret_list.push(the_workbook.name)
+      }
+    }
+    return ret_list
   }
 
   setSelectedAreaTemplateAnchor(the_anchor_id) {
@@ -717,8 +730,11 @@ class InsightsPanel extends React.Component {
             current_template_id={this.props.current_template_id}
             submitInsightsJob={this.submitInsightsJob}
             getJobs={this.props.getJobs}
+            saveWorkbook={this.props.saveWorkbook}
             setSelectedAreaTemplateAnchor={this.setSelectedAreaTemplateAnchor}
             getCurrentSelectedAreaMeta={this.getCurrentSelectedAreaMeta}
+            getWorkbookNames={this.getWorkbookNames}
+            loadWorkbook={this.props.loadWorkbook}
           />
         </div>
 

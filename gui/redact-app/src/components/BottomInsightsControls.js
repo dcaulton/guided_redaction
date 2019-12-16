@@ -4,7 +4,44 @@ import SelectedAreaControls from './SelectedAreaControls'
 
 class BottomInsightsControls extends React.Component {
 
+  buildWorkbookPickerButton() {
+    let return_array = []
+    let wb_names = this.props.getWorkbookNames()
+    if (wb_names) {
+      return_array.push(
+        <div key='lsls234'>
+        <button
+            key='wb_names_button'
+            className='btn btn-primary ml-2 mt-2 dropdown-toggle'
+            type='button'
+            id='loadWorkbookDropdownButton'
+            data-toggle='dropdown'
+            area-haspopup='true'
+            area-expanded='false'
+        >
+          Load Workbook
+        </button>
+        <div className='dropdown-menu' aria-labelledby='loadWorkbookDropdownButton'>
+      {wb_names.map((value, index) => {
+        return (
+          <button 
+              className='dropdown-item'
+              key='index'
+              onClick={() => this.props.loadWorkbook(value)}
+          >
+            {value}
+          </button>
+        )
+      })}
+        </div>
+        </div>
+      )
+    }
+    return return_array
+  }
+
   render() {
+    let workbook_load_button = this.buildWorkbookPickerButton()
     let bottom_y = 100
     const ele = document.getElementById('insights_image_div')
     if (ele) {
@@ -181,38 +218,12 @@ class BottomInsightsControls extends React.Component {
             </button>
 
             <div className='d-inline'>
-              <button
-                  className='btn btn-primary ml-2 mt-2 dropdown-toggle'
-                  type='button'
-                  id='loadWorkbookDropdownButton'
-                  data-toggle='dropdown'
-                  area-haspopup='true'
-                  area-expanded='false'
-              >
-                Load Workbook
-              </button>
-              <div className='dropdown-menu' aria-labelledby='loadWorkbookDropdownButton'>
-                <button className='dropdown-item'
-                    onClick={() => alert('load session 1')}
-                >
-                  SESSION 1
-                </button>
-                <button className='dropdown-item'
-                    onClick={() => alert('load mobile stuff')}
-                >
-                  MOBILE STUFF SMALL
-                </button>
-                <button className='dropdown-item'
-                    onClick={() => alert('gradients')}
-                >
-                  Gradients
-                </button>
-              </div>
+                {workbook_load_button}
             </div>
 
             <button
                 className='btn btn-primary mt-2 ml-2'
-                onClick={() => alert('save')}
+                onClick={() => this.props.saveWorkbook()}
             >
               Save Workbook
             </button>
