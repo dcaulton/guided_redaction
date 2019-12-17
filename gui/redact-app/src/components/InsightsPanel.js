@@ -50,6 +50,8 @@ class InsightsPanel extends React.Component {
     this.submitInsightsJob=this.submitInsightsJob.bind(this)
     this.setSelectedAreaTemplateAnchor=this.setSelectedAreaTemplateAnchor.bind(this)
     this.getCurrentSelectedAreaMeta=this.getCurrentSelectedAreaMeta.bind(this)
+    this.displayWorkbookDeletedMessage=this.displayWorkbookDeletedMessage.bind(this)
+    this.displayWorkbookLoadedMessage=this.displayWorkbookLoadedMessage.bind(this)
   }
 
   componentDidMount() {
@@ -274,6 +276,18 @@ class InsightsPanel extends React.Component {
     this.props.setTemplates(deepCopyTemplates)
     this.setState({
       insights_message: 'Anchor has been cleared'
+    })
+  }
+
+  displayWorkbookLoadedMessage() {
+    this.setState({
+      insights_message: 'Workbook has been loaded'
+    })
+  }
+
+  displayWorkbookDeletedMessage() {
+    this.setState({
+      insights_message: 'Workbook has been deleted'
     })
   }
 
@@ -734,6 +748,8 @@ class InsightsPanel extends React.Component {
             workbooks={this.props.workbooks}
             loadWorkbook={this.props.loadWorkbook}
             deleteWorkbook={this.props.deleteWorkbook}
+            displayWorkbookDeletedMessage={this.displayWorkbookDeletedMessage}
+            displayWorkbookLoadedMessage={this.displayWorkbookLoadedMessage}
           />
         </div>
 
@@ -773,6 +789,12 @@ class JobCardList extends React.Component {
 
 class JobCard extends React.Component {
   render() {
+    const jn_length = this.props.job_data['id'].length
+    let short_job_name = this.props.job_data['id']
+    if (jn_length > 12) {
+      short_job_name = this.props.job_data['id'].substring(0, 4) + '...' + 
+        this.props.job_data['id'].substring(jn_length-7)
+    }
     let get_job_button = ''
     if (this.props.job_data['status'] === 'success') {
       get_job_button = (
@@ -804,7 +826,9 @@ class JobCard extends React.Component {
       <div className='row mt-4 card'>
         <div className='col'>
           <div className='row border-bottom'>
-            {this.props.job_data['id']}
+            <span title={this.props.job_data['id']}>
+              {short_job_name}
+            </span>
           </div>
           <div className='row mt-1'>
             {this.props.job_data['description']}
@@ -899,6 +923,12 @@ class MovieCard extends React.Component {
       )
     }
 
+    const mn_length = this.get_filename(this.props.this_cards_movie_url).length
+    let short_movie_name = this.get_filename(this.props.this_cards_movie_url)
+    if (short_movie_name.length > 12) {
+      short_movie_name = this.get_filename(this.props.this_cards_movie_url).substring(0, 4) + '...' + 
+        this.get_filename(this.props.this_cards_movie_url).substring(mn_length-7)
+    }
     const found_string = this.props.getMovieMatchesFound(this.props.this_cards_movie_url)
     const selected_string = this.props.getMovieSelectedCount(this.props.this_cards_movie_url)
     let top_div_classname = "row mt-4 card"
@@ -921,7 +951,9 @@ class MovieCard extends React.Component {
               </video>
             </div>
           <div className='row'>
-            {this.get_filename(this.props.this_cards_movie_url)}
+            <span title={this.get_filename(this.props.this_cards_movie_url)}>
+            {short_movie_name}
+            </span>
           </div>
           <div className='row'>
             {make_active_button}

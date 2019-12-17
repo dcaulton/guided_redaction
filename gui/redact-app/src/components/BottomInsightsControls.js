@@ -26,12 +26,19 @@ class BottomInsightsControls extends React.Component {
           <button 
               className='dropdown-item'
               key={index}
-              onClick={() => this.props.loadWorkbook(value['id'])}
+              onClick={() => this.props.loadWorkbook(value['id'], this.props.displayWorkbookLoadedMessage)}
           >
             {value['name']}
           </button>
         )
       })}
+          <button 
+              className='dropdown-item'
+              key='000'
+              onClick={() => this.props.loadWorkbook('-1', this.props.displayWorkbookLoadedMessage)}
+          >
+            none
+          </button>
         </div>
         </div>
       )
@@ -61,7 +68,7 @@ class BottomInsightsControls extends React.Component {
           <button 
               className='dropdown-item'
               key={index}
-              onClick={() => this.props.deleteWorkbook(value['id'])}
+              onClick={() => this.props.deleteWorkbook(value['id'], this.props.displayWorkbookDeletedMessage)}
           >
             {value['name']}
           </button>
@@ -73,7 +80,6 @@ class BottomInsightsControls extends React.Component {
     }
     return return_array
   }
-
 
   render() {
     let workbook_load_button = this.buildWorkbookPickerButton()
@@ -94,24 +100,24 @@ class BottomInsightsControls extends React.Component {
           style={controls_style}
       >
 
-      <TemplateControls 
-        setMode={this.props.setMode}
-        clearCurrentTemplateAnchor={this.props.clearCurrentTemplateAnchor}
-        clearCurrentTemplateMaskZones={this.props.clearCurrentTemplateMaskZones}
-        scanTemplate={this.props.scanTemplate}
-        submitInsightsJob={this.props.submitInsightsJob}
-        clearTemplateMatches={this.props.clearTemplateMatches}
-        changeMaskMethodCallback={this.props.changeMaskMethodCallback}
-      />
+        <TemplateControls 
+          setMode={this.props.setMode}
+          clearCurrentTemplateAnchor={this.props.clearCurrentTemplateAnchor}
+          clearCurrentTemplateMaskZones={this.props.clearCurrentTemplateMaskZones}
+          scanTemplate={this.props.scanTemplate}
+          submitInsightsJob={this.props.submitInsightsJob}
+          clearTemplateMatches={this.props.clearTemplateMatches}
+          changeMaskMethodCallback={this.props.changeMaskMethodCallback}
+        />
 
-      <SelectedAreaControls
-        setMode={this.props.setMode}
-        getCurrentTemplateAnchors={this.props.getCurrentTemplateAnchors}
-        clearMovieSelectedAreas={this.props.clearMovieSelectedAreas}
-        changeMaskMethodCallback={this.props.changeMaskMethodCallback}
-        setSelectedAreaTemplateAnchor={this.props.setSelectedAreaTemplateAnchor}
-        getCurrentSelectedAreaMeta={this.props.getCurrentSelectedAreaMeta}
-      />
+        <SelectedAreaControls
+          setMode={this.props.setMode}
+          getCurrentTemplateAnchors={this.props.getCurrentTemplateAnchors}
+          clearMovieSelectedAreas={this.props.clearMovieSelectedAreas}
+          changeMaskMethodCallback={this.props.changeMaskMethodCallback}
+          setSelectedAreaTemplateAnchor={this.props.setSelectedAreaTemplateAnchor}
+          getCurrentSelectedAreaMeta={this.props.getCurrentSelectedAreaMeta}
+        />
 
 
         <div className='row bg-light rounded mt-3'>
@@ -234,51 +240,83 @@ class BottomInsightsControls extends React.Component {
         </div>
 
 
-
-
-        <div className='row mt-3 bg-light rounded mt-3'>
-            <button
-                className='btn btn-primary mt-2 ml-2'
-                onClick={() => this.props.callPing()}
-            >
-              Ping
-            </button>
-
-            <button
-                className='btn btn-primary mt-2 ml-2'
-                onClick={() => this.props.getJobs()}
-            >
-              Get Jobs
-            </button>
-
-            <div className='d-inline'>
-                {workbook_load_button}
+        <div className='row bg-light rounded mt-3'>
+          <div className='col'>
+            <div className='row'>
+              <div 
+                className='col-lg-9 h3'
+              > 
+                session
+              </div>
+              <div className='col float-right'>
+                <button
+                    className='btn btn-link'
+                    aria-expanded='false'
+                    data-target='#session_body'
+                    aria-controls='session_body'
+                    data-toggle='collapse'
+                    type='button'
+                >
+                  show/hide
+                </button>
+              </div>
             </div>
 
-            <div className='d-inline'>
-                {workbook_delete_button}
-            </div>
-
-            <button
-                className='btn btn-primary mt-2 ml-2'
-                onClick={() => this.props.saveWorkbook()}
+            <div 
+                id='session_body' 
+                className='row collapse'
             >
-              Save Workbook
-            </button>
+              <div id='session_main' className='col'>
 
-            <div
-                className='d-inline ml-2 mt-2'
-            >   
-              <input 
-                  id='workbook_name'
-                  key='workbook_name_1'
-                  size='20'
-                  value={this.props.current_workbook_name}
-                  onChange={(event) => this.props.saveWorkbookName(event.target.value)}
-              />
+                <div className='row mt-3 bg-light rounded mt-3'>
+                  <button
+                      className='btn btn-primary mt-2 ml-2'
+                      onClick={() => this.props.callPing()}
+                  >
+                    Ping
+                  </button>
+
+                  <button
+                      className='btn btn-primary mt-2 ml-2'
+                      onClick={() => this.props.getJobs()}
+                  >
+                    Get Jobs
+                  </button>
+
+                  <div className='d-inline'>
+                      {workbook_load_button}
+                  </div>
+
+                  <div className='d-inline'>
+                      {workbook_delete_button}
+                  </div>
+
+                  <button
+                      className='btn btn-primary mt-2 ml-2'
+                      onClick={() => this.props.saveWorkbook()}
+                  >
+                    Save Workbook
+                  </button>
+
+                  <div
+                      className='d-inline ml-2 mt-2'
+                  >   
+                    <input 
+                        id='workbook_name'
+                        key='workbook_name_1'
+                        size='20'
+                        value={this.props.current_workbook_name}
+                        onChange={(event) => this.props.saveWorkbookName(event.target.value)}
+                    />
+                  </div>
+
+                </div>
+
+              </div>
             </div>
-
+          </div>
         </div>
+
 
       </div>
     )

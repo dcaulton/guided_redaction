@@ -14,7 +14,11 @@ import json
 class JobsViewSet(viewsets.ViewSet):
     def list(self, request):
         jobs_list = []
-        for job in Job.objects.all():
+        if 'workbook_id' in request.GET.keys():
+            jobs = Job.objects.filter(workbook_id=request.GET['workbook_id'])
+        else:
+            jobs = Job.objects.all()
+        for job in jobs:
             jobs_list.append(
                 {
                     'id': job.id,
