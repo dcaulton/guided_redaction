@@ -27,6 +27,7 @@ class JobsViewSet(viewsets.ViewSet):
                     'operation': job.operation,
                     'request_data': job.request_data,
                     'response_data': job.response_data,
+                    'workbook_id': job.workbook_id,
                 }
             )
 
