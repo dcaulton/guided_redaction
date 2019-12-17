@@ -168,9 +168,17 @@ class RedactApplication extends React.Component {
   }
 
   setWorkbooks = (the_workbooks) => {
-    this.setState({
-      workbooks: the_workbooks,
-    })
+    if (!the_workbooks.length) {
+      this.setState({
+        workbooks: the_workbooks,
+        current_workbook_id: '',
+        current_workbook_name: 'workbook 1',
+      })
+    } else {
+      this.setState({
+        workbooks: the_workbooks,
+      })
+    }
   }
 
   setCurrentTemplate = (current_template_id) => {
@@ -458,7 +466,11 @@ class RedactApplication extends React.Component {
   }
 
   async getJobs() {
-    await fetch(this.state.jobs_url, {
+    let the_url = this.state.jobs_url
+    if (this.state.current_workbook_id) {
+        the_url += '?workbook_id=' + this.state.current_workbook_id
+    } 
+    await fetch(the_url, {
       method: 'GET',
       headers: this.buildJsonHeaders(),
     })
@@ -555,13 +567,24 @@ class RedactApplication extends React.Component {
       this.setState({
         current_workbook_id: responseJson['workbook_id']
       })
+      this.getWorkbooks()
+      // delete/load buttons aren't updating on BottomInsightsControl so force em
+      this.forceUpdate()
     })
     .catch((error) => {
       console.error(error);
     })
   }
 
-  async loadWorkbook(workbook_id) {
+  async loadWorkbook(workbook_id, when_done=null) {
+    if (workbook_id === '-1') {
+      this.setState({
+        current_workbook_name: 'workbook 1',
+        current_workbook_id: '',
+      })
+      when_done()
+      return
+    }
     let wb_url = this.state.workbooks_url + '/' + workbook_id
     await fetch(wb_url, {
       method: 'GET',
@@ -584,12 +607,18 @@ class RedactApplication extends React.Component {
       new_state['current_workbook_id'] = wb.id
       this.setState(new_state)
     })
+    .then(() => {
+      this.getJobs()
+    })
+    .then(() => {
+      when_done()
+    })
     .catch((error) => {
       console.error(error);
     })
   }
 
-  async deleteWorkbook(workbook_id) {
+  async deleteWorkbook(workbook_id, when_done=null) {
     let the_url = this.state.workbooks_url+ '/' + workbook_id
     await fetch(the_url, {
       method: 'DELETE',
@@ -599,6 +628,9 @@ class RedactApplication extends React.Component {
       this.getWorkbooks()
       // delete/load buttons aren't updating on BottomInsightsControl so force em
       this.forceUpdate()
+    })
+    .then(() => {
+      when_done()
     })
     .catch((error) => {
       console.error(error);
