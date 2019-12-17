@@ -50,7 +50,6 @@ class InsightsPanel extends React.Component {
     this.submitInsightsJob=this.submitInsightsJob.bind(this)
     this.setSelectedAreaTemplateAnchor=this.setSelectedAreaTemplateAnchor.bind(this)
     this.getCurrentSelectedAreaMeta=this.getCurrentSelectedAreaMeta.bind(this)
-    this.getWorkbookNames=this.getWorkbookNames.bind(this)
   }
 
   componentDidMount() {
@@ -64,17 +63,6 @@ class InsightsPanel extends React.Component {
       return this.props.selected_area_metas[this.props.current_selected_area_meta_id]
     }
     return {}
-  }
-
-  getWorkbookNames() {
-    let ret_list = []
-    for (let i=0; i < this.props.workbooks.length; i++) {
-      let the_workbook = this.props.workbooks[i]
-      if (the_workbook.name !== this.props.current_workbook_name) {
-        ret_list.push(the_workbook.name)
-      }
-    }
-    return ret_list
   }
 
   setSelectedAreaTemplateAnchor(the_anchor_id) {
@@ -634,6 +622,10 @@ class InsightsPanel extends React.Component {
   }
 
   render() {
+    let workbook_name = this.props.current_workbook_name
+    if (!this.props.current_workbook_id) {
+      workbook_name += ' (unsaved)'
+    }
     let imageDivStyle= {
       width: this.props.image_width,
       height: this.props.image_height,
@@ -671,6 +663,9 @@ class InsightsPanel extends React.Component {
               id='insights_header'
           >
             <div className='col'>
+              <div className='row' id='insights_workbook'>
+                <h4>{workbook_name}</h4>
+              </div>
               <div className='row' id='insights_title'>
                 {this.state.insights_title}
               </div>
@@ -731,10 +726,14 @@ class InsightsPanel extends React.Component {
             submitInsightsJob={this.submitInsightsJob}
             getJobs={this.props.getJobs}
             saveWorkbook={this.props.saveWorkbook}
+            saveWorkbookName={this.props.saveWorkbookName}
             setSelectedAreaTemplateAnchor={this.setSelectedAreaTemplateAnchor}
             getCurrentSelectedAreaMeta={this.getCurrentSelectedAreaMeta}
-            getWorkbookNames={this.getWorkbookNames}
+            current_workbook_name={this.props.current_workbook_name}
+            current_workbook_id={this.props.current_workbook_id}
+            workbooks={this.props.workbooks}
             loadWorkbook={this.props.loadWorkbook}
+            deleteWorkbook={this.props.deleteWorkbook}
           />
         </div>
 

@@ -6,8 +6,7 @@ class BottomInsightsControls extends React.Component {
 
   buildWorkbookPickerButton() {
     let return_array = []
-    let wb_names = this.props.getWorkbookNames()
-    if (wb_names) {
+    if (this.props.workbooks.length) {
       return_array.push(
         <div key='lsls234'>
         <button
@@ -22,14 +21,14 @@ class BottomInsightsControls extends React.Component {
           Load Workbook
         </button>
         <div className='dropdown-menu' aria-labelledby='loadWorkbookDropdownButton'>
-      {wb_names.map((value, index) => {
+      {this.props.workbooks.map((value, index) => {
         return (
           <button 
               className='dropdown-item'
-              key='index'
-              onClick={() => this.props.loadWorkbook(value)}
+              key={index}
+              onClick={() => this.props.loadWorkbook(value['id'])}
           >
-            {value}
+            {value['name']}
           </button>
         )
       })}
@@ -40,8 +39,45 @@ class BottomInsightsControls extends React.Component {
     return return_array
   }
 
+  buildWorkbookDeleteButton() {
+    let return_array = []
+    if (this.props.workbooks.length) {
+      return_array.push(
+        <div key='ls224'>
+        <button
+            key='wb_delete_button'
+            className='btn btn-primary ml-2 mt-2 dropdown-toggle'
+            type='button'
+            id='deleteWorkbookDropdownButton'
+            data-toggle='dropdown'
+            area-haspopup='true'
+            area-expanded='false'
+        >
+          Delete Workbook
+        </button>
+        <div className='dropdown-menu' aria-labelledby='deleteWorkbookDropdownButton'>
+      {this.props.workbooks.map((value, index) => {
+        return (
+          <button 
+              className='dropdown-item'
+              key={index}
+              onClick={() => this.props.deleteWorkbook(value['id'])}
+          >
+            {value['name']}
+          </button>
+        )
+      })}
+        </div>
+        </div>
+      )
+    }
+    return return_array
+  }
+
+
   render() {
     let workbook_load_button = this.buildWorkbookPickerButton()
+    let workbook_delete_button = this.buildWorkbookDeleteButton()
     let bottom_y = 100
     const ele = document.getElementById('insights_image_div')
     if (ele) {
@@ -200,8 +236,6 @@ class BottomInsightsControls extends React.Component {
 
 
 
-
-
         <div className='row mt-3 bg-light rounded mt-3'>
             <button
                 className='btn btn-primary mt-2 ml-2'
@@ -221,12 +255,28 @@ class BottomInsightsControls extends React.Component {
                 {workbook_load_button}
             </div>
 
+            <div className='d-inline'>
+                {workbook_delete_button}
+            </div>
+
             <button
                 className='btn btn-primary mt-2 ml-2'
                 onClick={() => this.props.saveWorkbook()}
             >
               Save Workbook
             </button>
+
+            <div
+                className='d-inline ml-2 mt-2'
+            >   
+              <input 
+                  id='workbook_name'
+                  key='workbook_name_1'
+                  size='20'
+                  value={this.props.current_workbook_name}
+                  onChange={(event) => this.props.saveWorkbookName(event.target.value)}
+              />
+            </div>
 
         </div>
 

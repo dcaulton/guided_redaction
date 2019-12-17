@@ -19,7 +19,6 @@ class WorkbooksViewSet(viewsets.ViewSet):
                     'file_uuids_used': workbook.file_uuids_used,
                     'name': workbook.name,
                     'updated_on': workbook.updated_on,
-                    'state_data': workbook.state_data,
                     'owner': workbook.owner,
                 }
             )
@@ -28,7 +27,15 @@ class WorkbooksViewSet(viewsets.ViewSet):
 
     def retrieve(self, request, pk):
         workbook = Workbook.objects.get(pk=pk)
-        return Response({"workbook": workbook})
+        wb_data = {
+            'id': workbook.id,
+            'file_uuids_used': workbook.file_uuids_used,
+            'name': workbook.name,
+            'updated_on': workbook.updated_on,
+            'state_data': workbook.state_data,
+            'owner': workbook.owner,
+        }
+        return Response({"workbook": wb_data})
 
     def get_file_uuids_from_request(self, request_dict):
         uuids = []
