@@ -9,9 +9,56 @@ from guided_redaction.jobs.models import Job
 from guided_redaction.analyze import tasks as analyze_tasks
 from guided_redaction.parse import tasks as parse_tasks
 import json
+import pytz
+import math
 
 
 class JobsViewSet(viewsets.ViewSet):
+    def pretty_date(self, time=False):
+        """
+        Get a datetime object or a int() Epoch timestamp and return a
+        pretty string like 'an hour ago', 'Yesterday', '3 months ago',
+        'just now', etc
+        """
+        from datetime import datetime
+        now = datetime.utcnow()
+        now = now.replace(tzinfo=pytz.utc)
+        if type(time) is int:
+            diff = now - datetime.fromtimestamp(time)
+        elif isinstance(time,datetime):
+            diff = now - time
+        elif not time:
+            diff = now - now
+        second_diff = diff.seconds
+        day_diff = diff.days
+
+        if day_diff < 0:
+            return ''
+
+        if day_diff == 0:
+            if second_diff < 10:
+                return "just now"
+            if second_diff < 60:
+                return str(second_diff) + " seconds ago"
+            if second_diff < 120:
+                return "a minute ago"
+            if second_diff < 3600:
+                return str(second_diff // 60) + " minutes ago"
+            if second_diff < 7200:
+                return "an hour ago"
+            if second_diff < 86400:
+                return str(second_diff // 3600) + " hours ago"
+        if day_diff == 1:
+            return "Yesterday"
+        if day_diff < 7:
+            return str(day_diff) + " days ago"
+        if day_diff < 31:
+            return str(day_diff // 7) + " weeks ago"
+        if day_diff < 365:
+            return str(day_diff // 30) + " months ago"
+        return str(day_diff // 365) + " years ago"
+
+
     def list(self, request):
         jobs_list = []
         if 'workbook_id' in request.GET.keys():
@@ -19,6 +66,7 @@ class JobsViewSet(viewsets.ViewSet):
         else:
             jobs = Job.objects.all()
         for job in jobs:
+            pretty_time = self.pretty_date(job.created_on)
             jobs_list.append(
                 {
                     'id': job.id,
@@ -27,6 +75,7 @@ class JobsViewSet(viewsets.ViewSet):
                     'workbook_id': job.workbook_id,
                     'description': job.description,
                     'created_on': job.created_on,
+                    'pretty_created_on': pretty_time,
                     'app': job.app,
                     'operation': job.operation,
                     'request_data': job.request_data,
