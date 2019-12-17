@@ -129,7 +129,7 @@ class JobCard extends React.Component {
           </div>
           {job_response_data}
           <div className='row mt-1'>
-            {this.props.job_data['created_on']}
+            {this.props.job_data['pretty_created_on']}
           </div>
           {job_workbook_block}
           <div className='row mt-1'>
