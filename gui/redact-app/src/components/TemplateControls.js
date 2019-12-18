@@ -70,7 +70,10 @@ class TemplateControls extends React.Component {
   }
 
   doTemplateLoad(template_id) {
-    this.props.loadTemplate(template_id, this.props.displayTemplateLoadedMessage)
+    this.props.loadTemplate(
+      template_id, 
+      this.props.displayInsightsMessage('Template has been loaded')
+    )
     const template = this.props.templates[template_id]
     this.setState({
       template_name: template.name,
@@ -91,42 +94,54 @@ class TemplateControls extends React.Component {
       template_name: the_name,
     })
     // I need to do this because setting it as the after clause on setState doesn't pick up the latest state
-    this.doSleep(500).then(() => {this.doTemplateSave(this.props.displayTemplateSavedMessage)})
+    this.doSleep(500).then(() => {
+      this.doTemplateSave(this.props.displayInsightsMessage('Template has been saved'))
+    })
   }
 
   setTemplateScale(value) {
     this.setState({
       template_scale: value,
     })
-    this.doSleep(500).then(() => {this.doTemplateSave(this.props.displayTemplateSavedMessage)})
+    this.doSleep(500).then(() => {
+      this.doTemplateSave(this.props.displayInsightsMessage('Template has been saved'))
+    })
   }
 
   setTemplateHistogramPercent(value) {
     this.setState({
       template_histogram_percent: value,
     })
-    this.doSleep(500).then(() => {this.doTemplateSave(this.props.displayTemplateSavedMessage)})
+    this.doSleep(500).then(() => {
+      this.doTemplateSave(this.props.displayInsightsMessage('Template has been saved'))
+    })
   }
 
   setTemplateMatchPercent(value) {
     this.setState({
       template_match_percent: value,
     })
-    this.doSleep(500).then(() => {this.doTemplateSave(this.props.displayTemplateSavedMessage)})
+    this.doSleep(500).then(() => {
+      this.doTemplateSave(this.props.displayInsightsMessage('Template has been saved'))
+    })
   }
 
   setTemplateMaskMethod(value) {
     this.setState({
       template_mask_method: value,
     })
-    this.doSleep(500).then(() => {this.doTemplateSave(this.props.displayTemplateSavedMessage)})
+    this.doSleep(500).then(() => {
+      this.doTemplateSave(this.props.displayInsightsMessage('Template has been saved'))
+    })
   }
 
   setTemplateMatchMethod(value) {
     this.setState({
       template_match_method: value,
     })
-    this.doSleep(500).then(() => {this.doTemplateSave(this.props.displayTemplateSavedMessage)})
+    this.doSleep(500).then(() => {
+      this.doTemplateSave(this.props.displayInsightsMessage('Template has been saved'))
+    })
   }
 
   buildTemplateDeleteButton() {
@@ -151,7 +166,12 @@ class TemplateControls extends React.Component {
         <button
             className='dropdown-item'
             key={index}
-            onClick={() => this.props.deleteTemplate(this.props.templates[value]['id'], this.props.displayTemplateDeletedMessage)}
+            onClick={() => 
+              this.props.deleteTemplate(
+                this.props.templates[value]['id'], 
+                this.props.displayInsightsMessage('Template has been deleted')
+              )
+            }
         >
           {this.props.templates[value]['name']}
         </button>
@@ -267,7 +287,11 @@ class TemplateControls extends React.Component {
                 >
 									<button
 											className='btn btn-primary ml-2 mt-2'
-											onClick={() => this.doTemplateSave(this.props.displayTemplateSavedMessage)}
+											onClick={() => 
+                        this.doTemplateSave(
+                          this.props.displayInsightsMessage('Template has been saved')
+                        )
+                      }
 									>
 										Save
 									</button>

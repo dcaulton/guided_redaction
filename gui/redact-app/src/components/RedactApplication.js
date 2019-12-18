@@ -543,7 +543,7 @@ class RedactApplication extends React.Component {
     })
   }
 
-  async saveWorkbook(when_done=null) {
+  async saveWorkbook(when_done=(()=>{})) {
     await fetch(this.state.workbooks_url, {
       method: 'POST',
       headers: this.buildJsonHeaders(),
@@ -555,7 +555,6 @@ class RedactApplication extends React.Component {
     })
     .then((response) => response.json())
     .then((responseJson) => {
-      // TODO use a callback to pass a completed message to the UI
       this.setState({
         current_workbook_id: responseJson['workbook_id']
       })
@@ -628,7 +627,7 @@ class RedactApplication extends React.Component {
     })
   }
 
-  async deleteWorkbook(workbook_id, when_done=null) {
+  async deleteWorkbook(workbook_id, when_done=(()=>{})) {
     let the_url = this.state.workbooks_url+ '/' + workbook_id
     await fetch(the_url, {
       method: 'DELETE',

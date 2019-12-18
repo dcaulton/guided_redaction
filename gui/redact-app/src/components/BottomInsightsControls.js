@@ -26,7 +26,10 @@ class BottomInsightsControls extends React.Component {
           <button 
               className='dropdown-item'
               key={index}
-              onClick={() => this.props.loadWorkbook(value['id'], this.props.displayWorkbookLoadedMessage)}
+              onClick={() => 
+                this.props.loadWorkbook(value['id'], 
+                this.props.displayInsightsMessage('Workbook has been loaded'))
+              }
           >
             {value['name']}
           </button>
@@ -35,7 +38,10 @@ class BottomInsightsControls extends React.Component {
           <button 
               className='dropdown-item'
               key='000'
-              onClick={() => this.props.loadWorkbook('-1', this.props.displayWorkbookLoadedMessage)}
+              onClick={() => 
+                this.props.loadWorkbook('-1', 
+                this.props.displayInsightsMessage('Workbook has been loaded'))
+              }
           >
             none
           </button>
@@ -68,7 +74,10 @@ class BottomInsightsControls extends React.Component {
           <button 
               className='dropdown-item'
               key={index}
-              onClick={() => this.props.deleteWorkbook(value['id'], this.props.displayWorkbookDeletedMessage)}
+              onClick={() => 
+                this.props.deleteWorkbook(value['id'], 
+                this.props.displayInsightsMessage('Workbook has been deleted'))
+              }
           >
             {value['name']}
           </button>
@@ -109,9 +118,7 @@ class BottomInsightsControls extends React.Component {
           clearTemplateMatches={this.props.clearTemplateMatches}
           templates={this.props.templates}
           current_template_id={this.props.current_template_id}
-          displayTemplateLoadedMessage={this.props.displayTemplateLoadedMessage}
-          displayTemplateDeletedMessage={this.props.displayTemplateDeletedMessage}
-          displayTemplateSavedMessage={this.props.displayTemplateSavedMessage}
+          displayInsightsMessage={this.props.displayInsightsMessage}
           loadTemplate={this.props.loadTemplate}
           saveTemplate={this.props.saveTemplate}
           setCurrentTemplate={this.props.setCurrentTemplate}
@@ -293,7 +300,11 @@ class BottomInsightsControls extends React.Component {
 
                   <button
                       className='btn btn-primary mt-2 ml-2'
-                      onClick={() => this.props.saveWorkbook(this.props.displayWorkbookSavedMessage)}
+                      onClick={() => 
+                        this.props.saveWorkbook(
+                          this.props.displayInsightsMessage('Workbook has been saved')
+                        )
+                      }
                   >
                     Save Workbook
                   </button>

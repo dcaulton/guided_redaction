@@ -52,12 +52,7 @@ class InsightsPanel extends React.Component {
     this.submitInsightsJob=this.submitInsightsJob.bind(this)
     this.setSelectedAreaTemplateAnchor=this.setSelectedAreaTemplateAnchor.bind(this)
     this.getCurrentSelectedAreaMeta=this.getCurrentSelectedAreaMeta.bind(this)
-    this.displayWorkbookDeletedMessage=this.displayWorkbookDeletedMessage.bind(this)
-    this.displayWorkbookLoadedMessage=this.displayWorkbookLoadedMessage.bind(this)
-    this.displayWorkbookSavedMessage=this.displayWorkbookSavedMessage.bind(this)
-    this.displayTemplateDeletedMessage=this.displayTemplateDeletedMessage.bind(this)
-    this.displayTemplateLoadedMessage=this.displayTemplateLoadedMessage.bind(this)
-    this.displayTemplateSavedMessage=this.displayTemplateSavedMessage.bind(this)
+    this.displayInsightsMessage=this.displayInsightsMessage.bind(this)
     this.saveTemplate=this.saveTemplate.bind(this)
     this.deleteTemplate=this.deleteTemplate.bind(this)
   }
@@ -69,7 +64,9 @@ class InsightsPanel extends React.Component {
 
   getCurrentSelectedAreaMeta() {
     if (this.props.current_selected_area_meta_id && 
-        Object.keys(this.props.selected_area_metas).includes(this.props.current_selected_area_meta_id)) {
+        Object.keys(this.props.selected_area_metas).includes(
+          this.props.current_selected_area_meta_id
+        )) {
       return this.props.selected_area_metas[this.props.current_selected_area_meta_id]
     }
     return {}
@@ -167,14 +164,26 @@ class InsightsPanel extends React.Component {
 
   scanTemplate(scope) {
     if (scope === 'all_movies') {
-      this.props.callTemplateScanner(this.props.current_template_id, this.state.insights_image, this.props.movies)
+      this.props.callTemplateScanner(
+        this.props.current_template_id, 
+        this.state.insights_image, 
+        this.props.movies
+      )
     } else if (scope === 'movie') {
       const the_movie = this.props.movies[this.props.movie_url]
       const wrap = {}
       wrap[this.props.movie_url] = the_movie
-      this.props.callTemplateScanner(this.props.current_template_id, this.state.insights_image, wrap)
+      this.props.callTemplateScanner(
+        this.props.current_template_id, 
+        this.state.insights_image, wrap
+      )
     } else if (scope === 'image') {
-      this.props.callTemplateScanner(this.props.current_template_id, this.state.insights_image, [], this.props.insights_image)
+      this.props.callTemplateScanner(
+        this.props.current_template_id, 
+        this.state.insights_image, 
+        [], 
+        this.props.insights_image
+      )
     }
   }
 
@@ -208,21 +217,15 @@ class InsightsPanel extends React.Component {
 
   afterPingSuccess(responseJson) {
     if (responseJson.response === 'pong') {
-      this.setState({
-        insights_message: 'ping succeeded',
-      })
+      this.displayInsightsMessage('ping succeeded')
     } else {
-      this.setState({
-        insights_message: 'unexpected ping response, could be failure',
-      })
+      this.displayInsightsMessage('unexpected ping response, could be failure')
     }
   }
 
   afterPingFailure(error) {
     console.error(error);
-    this.setState({
-      insights_message: 'ping failed',
-    })
+    this.displayInsightsMessage('ping failed')
   }
 
   changeCampaign = (newCampaignName) => {
@@ -267,44 +270,12 @@ class InsightsPanel extends React.Component {
     cur_template['anchors'] =[]
     deepCopyTemplates[this.props.current_template_id] = cur_template
     this.props.setTemplates(deepCopyTemplates)
-    this.setState({
-      insights_message: 'Anchor has been cleared'
-    })
+    this.displayInsightsMessage('Anchor has been cleared')
   }
 
-  displayWorkbookLoadedMessage() {
+  displayInsightsMessage(the_message) {
     this.setState({
-      insights_message: 'Workbook has been loaded'
-    })
-  }
-
-  displayWorkbookSavedMessage() {
-    this.setState({
-      insights_message: 'Workbook has been saved'
-    })
-  }
-
-  displayWorkbookDeletedMessage() {
-    this.setState({
-      insights_message: 'Workbook has been deleted'
-    })
-  }
-
-  displayTemplateLoadedMessage() {
-    this.setState({
-      insights_message: 'Template has been loaded'
-    })
-  }
-
-  displayTemplateSavedMessage() {
-    this.setState({
-      insights_message: 'Template has been saved'
-    })
-  }
-
-  displayTemplateDeletedMessage() {
-    this.setState({
-      insights_message: 'Template has been deleted'
+      insights_message: the_message
     })
   }
 
@@ -317,9 +288,7 @@ class InsightsPanel extends React.Component {
     cur_template['mask_zones'] =[]
     deepCopyTemplates[this.props.current_template_id] = cur_template
     this.props.setTemplates(deepCopyTemplates)
-    this.setState({
-      insights_message: 'Mask zones have been cleared'
-    })
+    this.displayInsightsMessage('Mask zones have been cleared')
   }
 
   clearTemplateMatches(scope) {
@@ -328,20 +297,24 @@ class InsightsPanel extends React.Component {
     } else if (scope === 'all_movies') {
       this.props.setTemplateMatches(this.props.current_template_id, {})
     } else if (scope === 'movie') {
-      let deepCopy = JSON.parse(JSON.stringify(this.props.template_matches[this.props.current_template_id]))
+      let deepCopy = JSON.parse(JSON.stringify(
+        this.props.template_matches[this.props.current_template_id])
+      )
       if (Object.keys(deepCopy).includes(this.props.movie_url)) {
         delete deepCopy[this.props.movie_url]
         this.props.setTemplateMatches(this.props.current_template_id, deepCopy)
       }
     }
-    this.setState({
-      insights_message: 'Template matches have been cleared'
-    })
+    this.displayInsightsMessage('Template matches have been cleared')
   }
 
   clearSelectedAreas() {
     const cur_hash = this.getScrubberFramesetHash() 
-    this.props.setSelectedArea([], this.state.insights_image, this.props.movie_url, cur_hash)
+    this.props.setSelectedArea(
+      [], 
+      this.state.insights_image, 
+      this.props.movie_url, cur_hash
+    )
     this.setState({
       mode: 'view',
       insights_message: 'Selected Areas have been cleared',
@@ -388,7 +361,14 @@ class InsightsPanel extends React.Component {
         insights_message: 'Calling flood fill api',
       })
       const sam_id = this.getSelectAreaMetaId('flood', x_scaled, y_scaled)
-      this.props.doFloodFill(x_scaled, y_scaled, this.state.insights_image, selected_areas, scrubber_frameset_hash, sam_id)
+      this.props.doFloodFill(
+        x_scaled, 
+        y_scaled, 
+        this.state.insights_image, 
+        selected_areas, 
+        scrubber_frameset_hash, 
+        sam_id
+      )
     } else if (this.state.mode === 'arrow_fill_1') {
       this.setState({
         insights_image_scale: scale,
@@ -396,7 +376,15 @@ class InsightsPanel extends React.Component {
         insights_message: 'Calling arrow fill api',
       })
       const sam_id = this.getSelectAreaMetaId('arrow', x_scaled, y_scaled)
-      this.props.doArrowFill(x_scaled, y_scaled, this.state.insights_image, selected_areas, scrubber_frameset_hash, sam_id, this.afterArrowFill)
+      this.props.doArrowFill(
+        x_scaled, 
+        y_scaled, 
+        this.state.insights_image, 
+        selected_areas, 
+        scrubber_frameset_hash, 
+        sam_id, 
+        this.afterArrowFill
+      )
     } else if (this.state.mode === 'add_template_mask_zone_1') {
       this.doAddTemplateMaskZoneClickOne(scale, x_scaled, y_scaled)
     } else if (this.state.mode === 'add_template_mask_zone_2') {
@@ -405,9 +393,7 @@ class InsightsPanel extends React.Component {
   }
 
   afterArrowFill() {
-    this.setState({
-      insights_message: 'Fill area added, click to add another.',
-    })
+    this.displayInsightsMessage('Fill area added, click to add another.')
   }
 
   doAddTemplateAnchorClickOne(scale, x_scaled, y_scaled) {
@@ -570,7 +556,8 @@ class InsightsPanel extends React.Component {
   }
 
   getScrubberFramesetHash() {
-    if (this.props.movie_url && Object.keys(this.props.movies).includes(this.props.movie_url)) {
+    if (this.props.movie_url && 
+        Object.keys(this.props.movies).includes(this.props.movie_url)) {
       for (let frameset_hash in this.props.framesets) {
         if (this.props.framesets[frameset_hash]['images'].includes(this.state.insights_image)) {
           return frameset_hash
@@ -649,7 +636,11 @@ class InsightsPanel extends React.Component {
             frames: frames,
             framesets: framesets,
           }
-          this.props.addMovieAndSetActive(request_data['movie_url'], deepCopyMovies, this.movieSplitDone) 
+          this.props.addMovieAndSetActive(
+            request_data['movie_url'], 
+            deepCopyMovies, 
+            this.movieSplitDone
+          ) 
         }
 
       }
@@ -767,12 +758,7 @@ class InsightsPanel extends React.Component {
             loadWorkbook={this.props.loadWorkbook}
             deleteWorkbook={this.props.deleteWorkbook}
             current_template_id={this.props.current_template_id}
-            displayWorkbookDeletedMessage={this.displayWorkbookDeletedMessage}
-            displayWorkbookLoadedMessage={this.displayWorkbookLoadedMessage}
-            displayWorkbookSavedMessage={this.displayWorkbookSavedMessage}
-            displayTemplateDeletedMessage={this.displayTemplateDeletedMessage}
-            displayTemplateLoadedMessage={this.displayTemplateLoadedMessage}
-            displayTemplateSavedMessage={this.displayTemplateSavedMessage}
+            displayInsightsMessage={this.displayInsightsMessage}
             setCurrentTemplate={this.props.setCurrentTemplate}
             loadTemplate={this.props.loadTemplate}
             saveTemplate={this.saveTemplate}
