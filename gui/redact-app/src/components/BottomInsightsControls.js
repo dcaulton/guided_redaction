@@ -107,14 +107,21 @@ class BottomInsightsControls extends React.Component {
           scanTemplate={this.props.scanTemplate}
           submitInsightsJob={this.props.submitInsightsJob}
           clearTemplateMatches={this.props.clearTemplateMatches}
-          changeMaskMethodCallback={this.props.changeMaskMethodCallback}
+          templates={this.props.templates}
+          current_template_id={this.props.current_template_id}
+          displayTemplateLoadedMessage={this.props.displayTemplateLoadedMessage}
+          displayTemplateDeletedMessage={this.props.displayTemplateDeletedMessage}
+          displayTemplateSavedMessage={this.props.displayTemplateSavedMessage}
+          loadTemplate={this.props.loadTemplate}
+          saveTemplate={this.props.saveTemplate}
+          setCurrentTemplate={this.props.setCurrentTemplate}
+          deleteTemplate={this.props.deleteTemplate}
         />
 
         <SelectedAreaControls
           setMode={this.props.setMode}
-          getCurrentTemplateAnchors={this.props.getCurrentTemplateAnchors}
+          getCurrentTemplateAnchorNames={this.props.getCurrentTemplateAnchorNames}
           clearMovieSelectedAreas={this.props.clearMovieSelectedAreas}
-          changeMaskMethodCallback={this.props.changeMaskMethodCallback}
           setSelectedAreaTemplateAnchor={this.props.setSelectedAreaTemplateAnchor}
           getCurrentSelectedAreaMeta={this.props.getCurrentSelectedAreaMeta}
         />
@@ -276,13 +283,6 @@ class BottomInsightsControls extends React.Component {
                     Ping
                   </button>
 
-                  <button
-                      className='btn btn-primary mt-2 ml-2'
-                      onClick={() => this.props.getJobs()}
-                  >
-                    Get Jobs
-                  </button>
-
                   <div className='d-inline'>
                       {workbook_load_button}
                   </div>
@@ -293,7 +293,7 @@ class BottomInsightsControls extends React.Component {
 
                   <button
                       className='btn btn-primary mt-2 ml-2'
-                      onClick={() => this.props.saveWorkbook()}
+                      onClick={() => this.props.saveWorkbook(this.props.displayWorkbookSavedMessage)}
                   >
                     Save Workbook
                   </button>

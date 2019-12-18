@@ -46,7 +46,7 @@ class InsightsPanel extends React.Component {
     this.afterPingSuccess=this.afterPingSuccess.bind(this)
     this.afterPingFailure=this.afterPingFailure.bind(this)
     this.getCurrentTemplateMaskZones=this.getCurrentTemplateMaskZones.bind(this)
-    this.getCurrentTemplateAnchors=this.getCurrentTemplateAnchors.bind(this)
+    this.getCurrentTemplateAnchorNames=this.getCurrentTemplateAnchorNames.bind(this)
     this.callPing=this.callPing.bind(this)
     this.loadJobResults=this.loadJobResults.bind(this)
     this.submitInsightsJob=this.submitInsightsJob.bind(this)
@@ -54,6 +54,12 @@ class InsightsPanel extends React.Component {
     this.getCurrentSelectedAreaMeta=this.getCurrentSelectedAreaMeta.bind(this)
     this.displayWorkbookDeletedMessage=this.displayWorkbookDeletedMessage.bind(this)
     this.displayWorkbookLoadedMessage=this.displayWorkbookLoadedMessage.bind(this)
+    this.displayWorkbookSavedMessage=this.displayWorkbookSavedMessage.bind(this)
+    this.displayTemplateDeletedMessage=this.displayTemplateDeletedMessage.bind(this)
+    this.displayTemplateLoadedMessage=this.displayTemplateLoadedMessage.bind(this)
+    this.displayTemplateSavedMessage=this.displayTemplateSavedMessage.bind(this)
+    this.saveTemplate=this.saveTemplate.bind(this)
+    this.deleteTemplate=this.deleteTemplate.bind(this)
   }
 
   componentDidMount() {
@@ -83,21 +89,14 @@ class InsightsPanel extends React.Component {
       job_data['app'] = 'analyze'
       job_data['operation'] = 'scan_template'
       job_data['description'] = 'single template single movie match'
-      if (Object.keys(this.props.templates).length > 1) {
-        const num_temps = Object.keys(this.props.templates).length.toString()
-        job_data['description'] = num_temps + ' templates single movie match'
-      }
-      for (let i=0; i < Object.keys(this.props.templates).length; i++) {
-        let template_key = Object.keys(this.props.templates)[i]
-        let template = this.props.templates[template_key]
-        job_data['request_data']['template'] = template
-        job_data['request_data']['source_image_url'] = template['anchors'][0]['image']
-        job_data['request_data']['template_id'] = template['id']
-        const wrap = {}
-        wrap[this.props.movie_url] = this.props.movies[this.props.movie_url]
-        job_data['request_data']['target_movies'] = wrap
-        this.props.submitJob(job_data)
-      }
+      let template = this.props.templates[this.props.current_template_id]
+      job_data['request_data']['template'] = template
+      job_data['request_data']['source_image_url'] = template['anchors'][0]['image']
+      job_data['request_data']['template_id'] = template['id']
+      const wrap = {}
+      wrap[this.props.movie_url] = this.props.movies[this.props.movie_url]
+      job_data['request_data']['target_movies'] = wrap
+      this.props.submitJob(job_data)
     } else if (job_string === 'current_template_all_movies') {
       const num_movies = Object.keys(this.props.movies).length.toString()
       let num_frames = 0
@@ -110,20 +109,12 @@ class InsightsPanel extends React.Component {
       num_frames = num_frames.toString()
       job_data['app'] = 'analyze'
       job_data['operation'] = 'scan_template'
-      if (Object.keys(this.props.templates).length > 1) {
-        const num_temps = Object.keys(this.props.templates).length.toString()
-        job_data['description'] = num_temps + ' templates '+ num_movies+ ' movies, ('+num_frames+' framesets)  match'
-      } else {
-        job_data['description'] = 'single template '+ num_movies+ ' movies, ('+num_frames+' framesets)  match'
-      }
-      for (let i=0; i < Object.keys(this.props.templates).length; i++) {
-        let template_key = Object.keys(this.props.templates)[i]
-        let template = this.props.templates[template_key]
-        job_data['request_data']['template'] = template
-        job_data['request_data']['source_image_url'] = template['anchors'][0]['image']
-        job_data['request_data']['target_movies'] = this.props.movies
-        this.props.submitJob(job_data)
-      }
+      job_data['description'] = 'single template '+ num_movies+ ' movies, ('+num_frames+' framesets)  match'
+      let template = this.props.templates[this.props.current_template_id]
+      job_data['request_data']['template'] = template
+      job_data['request_data']['source_image_url'] = template['anchors'][0]['image']
+      job_data['request_data']['target_movies'] = this.props.movies
+      this.props.submitJob(job_data)
     } else if (job_string === 'load_movie') {
       job_data['app'] = 'parse'
       job_data['operation'] = 'split_and_hash_movie'
@@ -141,7 +132,7 @@ class InsightsPanel extends React.Component {
     }
   }
 
-  getCurrentTemplateAnchors() {
+  getCurrentTemplateAnchorNames() {
     if (Object.keys(this.props.templates).includes(this.props.current_template_id)) {
       let cur_template = this.props.templates[this.props.current_template_id]
       let return_arr = []
@@ -287,9 +278,33 @@ class InsightsPanel extends React.Component {
     })
   }
 
+  displayWorkbookSavedMessage() {
+    this.setState({
+      insights_message: 'Workbook has been saved'
+    })
+  }
+
   displayWorkbookDeletedMessage() {
     this.setState({
       insights_message: 'Workbook has been deleted'
+    })
+  }
+
+  displayTemplateLoadedMessage() {
+    this.setState({
+      insights_message: 'Template has been loaded'
+    })
+  }
+
+  displayTemplateSavedMessage() {
+    this.setState({
+      insights_message: 'Template has been saved'
+    })
+  }
+
+  displayTemplateDeletedMessage() {
+    this.setState({
+      insights_message: 'Template has been deleted'
     })
   }
 
@@ -452,15 +467,33 @@ class InsightsPanel extends React.Component {
     return the_sam
   }
 
-  createTemplateSkeleton() {
-    const template_id = 'template_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
-    let the_template = {
-      'id': template_id,
-      'name': template_id,
-      'anchors': [],
-      'mask_zones': [],
+  saveTemplate(template_data, when_done) {
+    if (!template_data['id']) {
+      template_data['id'] = 'template_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
     }
-    return the_template
+    if (Object.keys(this.props.templates).includes(template_data['id'])) {
+      // get anchors and match_zones from the global object, all other props comes from the TemplateControls
+      template_data['anchors'] = this.props.templates[template_data['id']]['anchors']
+      template_data['mask_zones'] = this.props.templates[template_data['id']]['mask_zones']
+    } else {
+      template_data['anchors'] = []
+      template_data['mask_zones'] = []
+    }
+    let deepCopyTemplates = JSON.parse(JSON.stringify(this.props.templates))
+    deepCopyTemplates[template_data['id']] = template_data
+    this.props.setTemplates(deepCopyTemplates)
+    this.props.setCurrentTemplate(template_data['id'])
+    when_done()
+  }
+
+  deleteTemplate(template_id, when_done) {
+    let deepCopyTemplates = JSON.parse(JSON.stringify(this.props.templates))
+    delete deepCopyTemplates[template_id]
+    this.props.setTemplates(deepCopyTemplates)
+    if (template_id === this.props.current_template_id) {
+      this.props.setCurrentTemplate('')
+    }
+    when_done()
   }
 
   addCurrentTemplateAnchor(scale, x_scaled, y_scaled) {
@@ -474,16 +507,9 @@ class InsightsPanel extends React.Component {
     }
 
     let deepCopyTemplates = JSON.parse(JSON.stringify(this.props.templates))
-    let cur_template = this.createTemplateSkeleton()
-    let template_id = cur_template['id']
-    if (Object.keys(deepCopyTemplates).includes(this.props.current_template_id)) {
-      cur_template = deepCopyTemplates[this.props.current_template_id]
-      template_id = cur_template['id']
-    } else {
-      this.props.setCurrentTemplate(template_id)
-    }
+    let cur_template = deepCopyTemplates[this.props.current_template_id]
     cur_template['anchors'].push(the_anchor)
-    deepCopyTemplates[template_id] = cur_template
+    deepCopyTemplates[this.props.current_template_id] = cur_template
     this.props.setTemplates(deepCopyTemplates)
 
     this.setState({
@@ -506,16 +532,9 @@ class InsightsPanel extends React.Component {
     }
 
     let deepCopyTemplates = JSON.parse(JSON.stringify(this.props.templates))
-    let cur_template = this.createTemplateSkeleton()
-    let template_id = cur_template['id']
-    if (Object.keys(deepCopyTemplates).includes(this.props.current_template_id)) {
-      cur_template = deepCopyTemplates[this.props.current_template_id]
-      template_id = cur_template['id']
-    } else {
-      this.props.setCurrentTemplate(template_id)
-    }
+    let cur_template = deepCopyTemplates[this.props.current_template_id]
     cur_template['mask_zones'].push(the_mask_zone)
-    deepCopyTemplates[template_id] = cur_template
+    deepCopyTemplates[this.props.current_template_id] = cur_template
     this.props.setTemplates(deepCopyTemplates)
 
     this.setState({
@@ -730,7 +749,7 @@ class InsightsPanel extends React.Component {
             setMode={this.handleSetMode}
             clearCurrentTemplateAnchor={this.clearCurrentTemplateAnchor}
             clearCurrentTemplateMaskZones={this.clearCurrentTemplateMaskZones}
-            getCurrentTemplateAnchors={this.getCurrentTemplateAnchors}
+            getCurrentTemplateAnchorNames={this.getCurrentTemplateAnchorNames}
             scanTemplate={this.scanTemplate}
             clearTemplateMatches={this.clearTemplateMatches}
             clearSelectedAreas={this.clearSelectedAreas}
@@ -738,26 +757,33 @@ class InsightsPanel extends React.Component {
             insights_image={this.state.insights_image}
             callPing={this.callPing}
             templates={this.props.templates}
-            current_template_id={this.props.current_template_id}
             submitInsightsJob={this.submitInsightsJob}
-            getJobs={this.props.getJobs}
             saveWorkbook={this.props.saveWorkbook}
             saveWorkbookName={this.props.saveWorkbookName}
             setSelectedAreaTemplateAnchor={this.setSelectedAreaTemplateAnchor}
             getCurrentSelectedAreaMeta={this.getCurrentSelectedAreaMeta}
             current_workbook_name={this.props.current_workbook_name}
-            current_workbook_id={this.props.current_workbook_id}
             workbooks={this.props.workbooks}
             loadWorkbook={this.props.loadWorkbook}
             deleteWorkbook={this.props.deleteWorkbook}
+            current_template_id={this.props.current_template_id}
             displayWorkbookDeletedMessage={this.displayWorkbookDeletedMessage}
             displayWorkbookLoadedMessage={this.displayWorkbookLoadedMessage}
+            displayWorkbookSavedMessage={this.displayWorkbookSavedMessage}
+            displayTemplateDeletedMessage={this.displayTemplateDeletedMessage}
+            displayTemplateLoadedMessage={this.displayTemplateLoadedMessage}
+            displayTemplateSavedMessage={this.displayTemplateSavedMessage}
+            setCurrentTemplate={this.props.setCurrentTemplate}
+            loadTemplate={this.props.loadTemplate}
+            saveTemplate={this.saveTemplate}
+            deleteTemplate={this.deleteTemplate}
           />
         </div>
 
         <div id='insights_right' className='col-lg-2 ml-4'>
           <JobCardList 
             jobs={this.props.jobs}
+            getJobs={this.props.getJobs}
             loadJobResults={this.loadJobResults}
             cancelJob={this.props.cancelJob}
             workbooks={this.props.workbooks}

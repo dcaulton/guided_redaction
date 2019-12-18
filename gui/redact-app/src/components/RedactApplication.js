@@ -1,5 +1,4 @@
 import React from 'react';
-import {observable} from 'mobx';
 import ImagePanel from './ImagePanel';
 import MoviePanel from './MoviePanel';
 import InsightsPanel from './InsightsPanel';
@@ -26,14 +25,6 @@ class RedactApplication extends React.Component {
       image_width: 0,
       image_height: 0,
       image_scale: 1,
-//      ping_url: 'https:///step-work.dev.sykes.com/api/v1/parse/ping',
-//      flood_fill_url: 'http:///step-work.dev.sykes.com/api/v1/analyze/flood-fill',
-//      arrow_fill_url: 'http:///step-work.dev.sykes.com/api/v1/analyze/arrow-fill',
-//      scan_template_url: 'http:///step-work.dev.sykes.com/api/v1/analyze/scan-template',
-//      analyze_url: 'http:///step-work.dev.sykes.com/api/v1/analyze/east-tess',
-//      redact_url: 'http:///step-work.dev.sykes.com/api/v1/redact/redact-image',
-//      parse_movie_url: 'http:///step-work.dev.sykes.com/api/v1/parse/split-and-hash-movie',
-//      zip_movie_url: 'http:///step-work.dev.sykes.com/api/v1/parse/zip-movie',
       api_key: '',
       ping_url: 'http://127.0.0.1:8000/v1/parse/ping',
       flood_fill_url: 'http://127.0.0.1:8000/v1/analyze/flood-fill',
@@ -53,10 +44,10 @@ class RedactApplication extends React.Component {
       frames: [],
       framesets: {},
       movies: {},
-      template_matches: {},
-      templates: {},
-      jobs: [],
       current_template_id: '',
+      templates: {},
+      template_matches: {},
+      jobs: [],
       selected_areas: {},
       selected_area_metas: {},
       current_selected_area_meta_id: '',
@@ -90,6 +81,7 @@ class RedactApplication extends React.Component {
     this.saveWorkbook=this.saveWorkbook.bind(this)
     this.saveWorkbookName=this.saveWorkbookName.bind(this)
     this.loadWorkbook=this.loadWorkbook.bind(this)
+    this.loadTemplate=this.loadTemplate.bind(this)
     this.deleteWorkbook=this.deleteWorkbook.bind(this)
     this.addMovieAndSetActive=this.addMovieAndSetActive.bind(this)
     this.setSelectedAreaMetas=this.setSelectedAreaMetas.bind(this)
@@ -551,7 +543,7 @@ class RedactApplication extends React.Component {
     })
   }
 
-  async saveWorkbook() {
+  async saveWorkbook(when_done=null) {
     await fetch(this.state.workbooks_url, {
       method: 'POST',
       headers: this.buildJsonHeaders(),
@@ -571,15 +563,33 @@ class RedactApplication extends React.Component {
       // delete/load buttons aren't updating on BottomInsightsControl so force em
       this.forceUpdate()
     })
+    .then(() => {
+      when_done()
+    })
     .catch((error) => {
       console.error(error);
     })
   }
 
+  async loadTemplate(template_id, when_done=null) {
+    if (template_id === '-1') {
+      this.setState({
+        current_template_id: '',
+      }, when_done())
+      return
+    }
+    if (template_id === this.props.current_template_id) {
+      when_done()
+      return
+    }
+    this.setState({
+      current_template_id: template_id,
+    }, when_done())
+  }
+
   async loadWorkbook(workbook_id, when_done=null) {
     if (workbook_id === '-1') {
       this.setState({
-        current_workbook_name: 'workbook 1',
         current_workbook_id: '',
       })
       when_done()
@@ -969,7 +979,6 @@ class RedactApplication extends React.Component {
                 selected_areas={this.state.selected_areas}
                 doPing={this.doPing}
                 templates={this.state.templates}
-                current_template_id={this.state.current_template_id}
                 setTemplates={this.setTemplates}
                 setCurrentTemplate={this.setCurrentTemplate}
                 doFloodFill={this.doFloodFill}
@@ -980,6 +989,8 @@ class RedactApplication extends React.Component {
                 getWorkbooks={this.getWorkbooks}
                 saveWorkbook={this.saveWorkbook}
                 saveWorkbookName={this.saveWorkbookName}
+                loadTemplate={this.loadTemplate}
+                current_template_id={this.state.current_template_id}
                 loadWorkbook={this.loadWorkbook}
                 deleteWorkbook={this.deleteWorkbook}
                 jobs={this.state.jobs}

@@ -3,7 +3,7 @@ import React from 'react';
 class SelectedAreaControls extends React.Component {
 
   render() {
-    const anchor_names = this.props.getCurrentTemplateAnchors()
+    const anchor_names = this.props.getCurrentTemplateAnchorNames()
 
     const sam = this.props.getCurrentSelectedAreaMeta()
     const or_template_id = sam['origin_template_id']
@@ -198,7 +198,7 @@ class SelectedAreaControls extends React.Component {
                   <div className='d-inline ml-2 mt-2'>
                     <select
                         name='selected_area_mask_method'
-                        onChange={(event) => this.props.changeMaskMethodCallback(event.target.value)}
+                        onChange={(event) => alert(event.target.value)}
                     >
                       <option value='blur_7x7'>--Mask Method--</option>
                       <option value='blur_7x7'>Gaussian Blur 7x7</option>

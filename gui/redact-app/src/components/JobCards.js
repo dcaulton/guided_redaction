@@ -6,6 +6,12 @@ class JobCardList extends React.Component {
       <div>
         <div className='row'>
           <h3>Jobs</h3>
+					<button                                                       
+							className='btn btn-primary mt-2 ml-2'                     
+							onClick={() => this.props.getJobs()}                      
+					>                                                             
+						Get Jobs                                                    
+					</button>  
         </div>
       {this.props.jobs.map((value, index) => {
         return (
