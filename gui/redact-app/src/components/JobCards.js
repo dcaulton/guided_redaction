@@ -91,21 +91,31 @@ class JobCard extends React.Component {
     return job_desc_data
   }
 
+  buildCreatedOnData(job_data) {
+    return (
+      <div className='row mt-1 pl-3'>
+        <span title={job_data['created_on']}>
+          created {job_data['pretty_created_on']}
+        </span>
+      </div>
+    )
+  }
+
   render() {
     let get_job_button = ''
     if (this.props.job_data['status'] === 'success') {
       get_job_button = (
         <button 
-            className='btn btn-primary mt-2 ml-2'
+            className='btn btn-primary m-2'
             onClick={() => this.props.loadJobResults(this.props.job_data['id'])}
         >
-          Get Results
+          Load
         </button>
       )
     }
     let delete_job_button = (
       <button 
-          className='btn btn-primary mt-2 ml-2'
+          className='btn btn-primary m-2'
           onClick={() => this.props.cancelJob(this.props.job_data['id'])}
       >
         Delete
@@ -116,6 +126,7 @@ class JobCard extends React.Component {
     const job_response_data = this.buildJobResponseData(this.props.job_data)
     const job_workbook_block = this.buildJobWorkbookBlock(this.props.job_data)
     const job_desc_data = this.buildJobDescriptionData(this.props.job_data)
+    const job_created_on_data = this.buildCreatedOnData(this.props.job_data)
 
     return (
       <div className='row pl-1 mt-4 card'>
@@ -129,7 +140,7 @@ class JobCard extends React.Component {
           </div>
           {job_response_data}
           <div className='row mt-1'>
-            {this.props.job_data['pretty_created_on']}
+            {job_created_on_data}
           </div>
           {job_workbook_block}
           <div className='row mt-1'>
