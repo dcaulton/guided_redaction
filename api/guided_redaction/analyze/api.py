@@ -55,7 +55,6 @@ class AnalyzeViewSetScanTemplate(viewsets.ViewSet):
 
     def process_create_request(self, request_data):
         matches = {}
-        template_matcher = TemplateMatcher()
         if not request_data.get("template"):
             return self.error("template is required")
         if not request_data.get("source_image_url"):
@@ -64,6 +63,7 @@ class AnalyzeViewSetScanTemplate(viewsets.ViewSet):
             "target_image"
         ):
             return self.error("target_movies OR a target_image is required")
+        template_matcher = TemplateMatcher(request_data.get('template'))
         pic_response = requests.get(request_data["source_image_url"])
         image = pic_response.content
         if not image:

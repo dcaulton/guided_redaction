@@ -364,6 +364,7 @@ class TemplateControls extends React.Component {
                     <input 
                         id='template_hist_percent'
                         size='10'
+                        title='template histogram percent'
                         value={this.state.template_histogram_percent}
                         onChange={(event) => this.setTemplateHistogramPercent(event.target.value)}
                     />
@@ -375,6 +376,7 @@ class TemplateControls extends React.Component {
                     <input 
                         id='template_match_percent'
                         size='10'
+                        title='template match percent'
                         value={this.state.template_match_percent}
                         onChange={(event) => this.setTemplateMatchPercent(event.target.value)}
                     />
