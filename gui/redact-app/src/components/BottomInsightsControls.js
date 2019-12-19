@@ -1,5 +1,6 @@
 import React from 'react';
 import TemplateControls from './TemplateControls'
+import AnnotationControls from './AnnotationControls'
 import SelectedAreaControls from './SelectedAreaControls'
 
 class BottomInsightsControls extends React.Component {
@@ -132,6 +133,14 @@ class BottomInsightsControls extends React.Component {
           getCurrentSelectedAreaMeta={this.props.getCurrentSelectedAreaMeta}
         />
 
+        <AnnotationControls
+          templates={this.props.templates}
+          current_template_id={this.props.current_template_id}
+          displayInsightsMessage={this.props.displayInsightsMessage}
+          saveAnnotation={this.props.saveAnnotation}
+          deleteAnnotation={this.props.deleteAnnotation}
+          annotations={this.props.annotations}
+        />
 
         <div className='row bg-light rounded mt-3'>
           <div className='col'>

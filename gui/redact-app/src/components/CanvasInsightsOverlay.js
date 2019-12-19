@@ -9,6 +9,7 @@ class CanvasInsightsOverlay extends React.Component {
     this.crosshairs_color = '#F33'
     this.template_match_color = '#3F3'
     this.selected_area_color = '#F3F'
+    this.annotations_color = '#5DE'
   }
 
   clearCanvasItems() {
@@ -140,6 +141,19 @@ class CanvasInsightsOverlay extends React.Component {
     }
   }
 
+  drawAnnotations() {
+    const annotations = this.props.getAnnotations()
+    if (annotations) {
+      const canvas = this.refs.insights_canvas
+      let ctx = canvas.getContext('2d')
+      ctx.fillStyle = this.annotations_color
+      ctx.font = '30px Arial'
+      const x = canvas.width/2 * this.props.insights_image_scale
+      const y = canvas.height/2 * this.props.insights_image_scale
+      ctx.fillText('Annotated', x, y)
+    }
+  }
+
   componentDidMount() {
     this.clearCanvasItems()
     this.drawSelectedAreas()
@@ -147,6 +161,7 @@ class CanvasInsightsOverlay extends React.Component {
     this.drawTemplateAnchors()
     this.drawTemplateMaskZones()
     this.drawTemplateMatches()
+    this.drawAnnotations()
   }
 
   componentDidUpdate() {
@@ -156,6 +171,7 @@ class CanvasInsightsOverlay extends React.Component {
     this.drawTemplateAnchors()
     this.drawTemplateMaskZones()
     this.drawTemplateMatches()
+    this.drawAnnotations()
   }
 
   render() {

@@ -10,7 +10,7 @@ class JobCardList extends React.Component {
 							className='btn btn-primary mt-2 ml-2'                     
 							onClick={() => this.props.getJobs()}                      
 					>                                                             
-						Get Jobs                                                    
+						Refresh
 					</button>  
         </div>
       {this.props.jobs.map((value, index) => {

@@ -47,6 +47,7 @@ class RedactApplication extends React.Component {
       current_template_id: '',
       templates: {},
       template_matches: {},
+      annotations: {},
       jobs: [],
       selected_areas: {},
       selected_area_metas: {},
@@ -85,6 +86,7 @@ class RedactApplication extends React.Component {
     this.addMovieAndSetActive=this.addMovieAndSetActive.bind(this)
     this.setSelectedAreaMetas=this.setSelectedAreaMetas.bind(this)
     this.afterUuidImagesFetched=this.afterUuidImagesFetched.bind(this)
+    this.setAnnotations=this.setAnnotations.bind(this)
   }
 
   async getImagesForUuid(the_uuid, the_offsets, when_done) {
@@ -130,6 +132,12 @@ class RedactApplication extends React.Component {
   setTemplates = (the_templates) => {
     this.setState({
       templates: the_templates,
+    })
+  }
+
+  setAnnotations(the_annotations) {
+    this.setState({
+      annotations: the_annotations,
     })
   }
 
@@ -982,6 +990,8 @@ class RedactApplication extends React.Component {
                 setSelectedAreaMetas={this.setSelectedAreaMetas}
                 selected_area_metas={this.state.selected_area_metas}
                 current_selected_area_meta_id={this.state.current_selected_area_meta_id}
+                setAnnotations={this.setAnnotations}
+                annotations={this.state.annotations}
               />
             </Route>
           </Switch>

@@ -29,6 +29,7 @@ class InsightsPanel extends React.Component {
       selected_area_template_anchor: '',
     }
     this.getSelectedAreas=this.getSelectedAreas.bind(this)
+    this.getAnnotations=this.getAnnotations.bind(this)
     this.setCurrentVideo=this.setCurrentVideo.bind(this)
     this.movieSplitDone=this.movieSplitDone.bind(this)
     this.scrubberOnChange=this.scrubberOnChange.bind(this)
@@ -54,7 +55,9 @@ class InsightsPanel extends React.Component {
     this.getCurrentSelectedAreaMeta=this.getCurrentSelectedAreaMeta.bind(this)
     this.displayInsightsMessage=this.displayInsightsMessage.bind(this)
     this.saveTemplate=this.saveTemplate.bind(this)
+    this.saveAnnotation=this.saveAnnotation.bind(this)
     this.deleteTemplate=this.deleteTemplate.bind(this)
+    this.deleteAnnotation=this.deleteAnnotation.bind(this)
   }
 
   componentDidMount() {
@@ -482,6 +485,40 @@ class InsightsPanel extends React.Component {
     when_done()
   }
 
+  saveAnnotation(annotation_data, when_done=(()=>{})) {
+    const cur_frameset_hash = this.getScrubberFramesetHash()
+    let deepCopyAnnotations = JSON.parse(JSON.stringify(this.props.annotations))
+    let template_obj = {}
+    if (Object.keys(deepCopyAnnotations).includes(annotation_data['template_id'])) {
+      template_obj = deepCopyAnnotations[annotation_data['template_id']]
+    }
+    let movie_obj = {}
+    if (Object.keys(template_obj).includes(this.props.movie_url)) {
+      movie_obj = template_obj[this.props.movie_url]
+    }
+    let frameset_obj = {}
+    if (Object.keys(movie_obj).includes(cur_frameset_hash)) {
+      frameset_obj = movie_obj[cur_frameset_hash]
+    }
+    let anchor_obj = {}
+    if (Object.keys(frameset_obj).includes(annotation_data['template_anchor_id'])) {
+      anchor_obj = frameset_obj[annotation_data]
+    }
+    anchor_obj['data'] = annotation_data['data']
+    frameset_obj[annotation_data['template_anchor_id']] = anchor_obj
+    movie_obj[cur_frameset_hash] = frameset_obj
+    template_obj[this.props.movie_url] = movie_obj
+    deepCopyAnnotations[annotation_data['template_id']] = template_obj
+    this.props.setAnnotations(deepCopyAnnotations)
+    when_done()
+  }
+
+  deleteAnnotation(scope='all') {
+    if (scope === 'all') {
+     this.props.setAnnotations({})
+    }
+  }
+
   addCurrentTemplateAnchor(scale, x_scaled, y_scaled) {
     const anchor_id = 'anchor_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
     const the_anchor = {
@@ -576,6 +613,7 @@ class InsightsPanel extends React.Component {
       return
     }
     const cur_movies_matches = cur_templates_matches[this.props.movie_url]
+    // TODO this looks redundant, can we use getScrubberFramesetHash and eliminate this method?
     const insight_image_hash = this.props.getFramesetHashForImageUrl(this.state.insights_image)
     if (!Object.keys(cur_movies_matches).includes(insight_image_hash)) {
       return
@@ -595,6 +633,22 @@ class InsightsPanel extends React.Component {
       }
     }
     return []
+  }
+
+  getAnnotations() {
+    if (!Object.keys(this.props.annotations).includes(this.props.current_template_id)) {
+      return
+    }
+    const cur_templates_matches = this.props.annotations[this.props.current_template_id]
+    if (!Object.keys(cur_templates_matches).includes(this.props.movie_url)) {
+      return
+    }
+    const cur_movies_matches = cur_templates_matches[this.props.movie_url]
+    const frameset_hash = this.getScrubberFramesetHash() 
+    if (!Object.keys(cur_movies_matches).includes(frameset_hash)) {
+      return
+    }
+    return cur_movies_matches[frameset_hash]
   }
 
   loadJobResults(job_id) {
@@ -720,6 +774,7 @@ class InsightsPanel extends React.Component {
               insights_image_scale={this.state.insights_image_scale}
               getTemplateMatches={this.getTemplateMatches}
               getSelectedAreas={this.getSelectedAreas}
+              getAnnotations={this.getAnnotations}
               mode={this.state.mode}
               clicked_coords={this.state.clicked_coords}
             />
@@ -762,6 +817,9 @@ class InsightsPanel extends React.Component {
             setCurrentTemplateId={this.props.setCurrentTemplateId}
             saveTemplate={this.saveTemplate}
             deleteTemplate={this.deleteTemplate}
+            saveAnnotation={this.saveAnnotation}
+            deleteAnnotation={this.deleteAnnotation}
+            annotations={this.props.annotations}
           />
         </div>
 
