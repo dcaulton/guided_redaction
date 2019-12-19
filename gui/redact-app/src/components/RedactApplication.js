@@ -68,7 +68,6 @@ class RedactApplication extends React.Component {
     this.clearMovieSelectedAreas=this.clearMovieSelectedAreas.bind(this)
     this.setTemplates=this.setTemplates.bind(this)
     this.setImageScale=this.setImageScale.bind(this)
-    this.setCurrentTemplate=this.setCurrentTemplate.bind(this)
     this.callTemplateScanner=this.callTemplateScanner.bind(this)
     this.getCurrentTemplateAnchors=this.getCurrentTemplateAnchors.bind(this)
     this.doFloodFill=this.doFloodFill.bind(this)
@@ -81,7 +80,7 @@ class RedactApplication extends React.Component {
     this.saveWorkbook=this.saveWorkbook.bind(this)
     this.saveWorkbookName=this.saveWorkbookName.bind(this)
     this.loadWorkbook=this.loadWorkbook.bind(this)
-    this.loadTemplate=this.loadTemplate.bind(this)
+    this.setCurrentTemplateId=this.setCurrentTemplateId.bind(this)
     this.deleteWorkbook=this.deleteWorkbook.bind(this)
     this.addMovieAndSetActive=this.addMovieAndSetActive.bind(this)
     this.setSelectedAreaMetas=this.setSelectedAreaMetas.bind(this)
@@ -171,12 +170,6 @@ class RedactApplication extends React.Component {
         workbooks: the_workbooks,
       })
     }
-  }
-
-  setCurrentTemplate = (current_template_id) => {
-    this.setState({
-      current_template_id: current_template_id,
-    })
   }
 
   componentDidMount() {
@@ -570,17 +563,7 @@ class RedactApplication extends React.Component {
     })
   }
 
-  async loadTemplate(template_id, when_done=null) {
-    if (template_id === '-1') {
-      this.setState({
-        current_template_id: '',
-      }, when_done())
-      return
-    }
-    if (template_id === this.props.current_template_id) {
-      when_done()
-      return
-    }
+  async setCurrentTemplateId(template_id, when_done=(()=>{})) {
     this.setState({
       current_template_id: template_id,
     }, when_done())
@@ -979,7 +962,6 @@ class RedactApplication extends React.Component {
                 doPing={this.doPing}
                 templates={this.state.templates}
                 setTemplates={this.setTemplates}
-                setCurrentTemplate={this.setCurrentTemplate}
                 doFloodFill={this.doFloodFill}
                 doArrowFill={this.doArrowFill}
                 cancelJob={this.cancelJob}
@@ -988,7 +970,7 @@ class RedactApplication extends React.Component {
                 getWorkbooks={this.getWorkbooks}
                 saveWorkbook={this.saveWorkbook}
                 saveWorkbookName={this.saveWorkbookName}
-                loadTemplate={this.loadTemplate}
+                setCurrentTemplateId={this.setCurrentTemplateId}
                 current_template_id={this.state.current_template_id}
                 loadWorkbook={this.loadWorkbook}
                 deleteWorkbook={this.deleteWorkbook}

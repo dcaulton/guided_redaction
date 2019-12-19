@@ -12,6 +12,7 @@ class TemplateControls extends React.Component {
       template_mask_method: '',
       template_match_method: '',
     }
+    this.afterTemplateLoaded=this.afterTemplateLoaded.bind(this)
   }
 
   buildTemplatePickerButton() {                                                 
@@ -56,8 +57,8 @@ class TemplateControls extends React.Component {
   } 
 
   loadNewTemplate() {
-    this.props.setCurrentTemplate('')
-    this.doSleep(500).then(() => {
+    this.props.setCurrentTemplateId('')
+    this.doSleep(200).then(() => {
       this.setState({
         template_name: 'template 1',
         template_scale: '1_1',
@@ -69,11 +70,7 @@ class TemplateControls extends React.Component {
     })
   }
 
-  doTemplateLoad(template_id) {
-    this.props.loadTemplate(
-      template_id, 
-      this.props.displayInsightsMessage('Template has been loaded')
-    )
+  setLocalTemplateVarsFromTemplateId(template_id) {
     const template = this.props.templates[template_id]
     this.setState({
       template_name: template.name,
@@ -82,6 +79,20 @@ class TemplateControls extends React.Component {
       template_match_percent: template.match_percent,
       template_mask_method: template.mask_method,
       template_match_method: template.match_method,
+    })
+  }
+
+  doTemplateLoad(template_id) {
+    this.props.setCurrentTemplateId(
+      template_id, 
+      this.afterTemplateLoaded()
+    )
+  }
+
+  afterTemplateLoaded() {
+    this.props.displayInsightsMessage('Template has been loaded')
+    this.doSleep(200).then(() => {
+      this.setLocalTemplateVarsFromTemplateId(this.props.current_template_id)
     })
   }
 
@@ -94,7 +105,7 @@ class TemplateControls extends React.Component {
       template_name: the_name,
     })
     // I need to do this because setting it as the after clause on setState doesn't pick up the latest state
-    this.doSleep(500).then(() => {
+    this.doSleep(200).then(() => {
       this.doTemplateSave(this.props.displayInsightsMessage('Template has been saved'))
     })
   }
@@ -103,7 +114,7 @@ class TemplateControls extends React.Component {
     this.setState({
       template_scale: value,
     })
-    this.doSleep(500).then(() => {
+    this.doSleep(200).then(() => {
       this.doTemplateSave(this.props.displayInsightsMessage('Template has been saved'))
     })
   }
@@ -112,7 +123,7 @@ class TemplateControls extends React.Component {
     this.setState({
       template_histogram_percent: value,
     })
-    this.doSleep(500).then(() => {
+    this.doSleep(200).then(() => {
       this.doTemplateSave(this.props.displayInsightsMessage('Template has been saved'))
     })
   }
@@ -121,7 +132,7 @@ class TemplateControls extends React.Component {
     this.setState({
       template_match_percent: value,
     })
-    this.doSleep(500).then(() => {
+    this.doSleep(200).then(() => {
       this.doTemplateSave(this.props.displayInsightsMessage('Template has been saved'))
     })
   }
@@ -130,7 +141,7 @@ class TemplateControls extends React.Component {
     this.setState({
       template_mask_method: value,
     })
-    this.doSleep(500).then(() => {
+    this.doSleep(200).then(() => {
       this.doTemplateSave(this.props.displayInsightsMessage('Template has been saved'))
     })
   }
@@ -139,7 +150,7 @@ class TemplateControls extends React.Component {
     this.setState({
       template_match_method: value,
     })
-    this.doSleep(500).then(() => {
+    this.doSleep(200).then(() => {
       this.doTemplateSave(this.props.displayInsightsMessage('Template has been saved'))
     })
   }

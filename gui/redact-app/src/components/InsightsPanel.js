@@ -453,7 +453,7 @@ class InsightsPanel extends React.Component {
     return the_sam
   }
 
-  saveTemplate(template_data, when_done) {
+  saveTemplate(template_data, when_done=(()=>{})) {
     if (!template_data['id']) {
       template_data['id'] = 'template_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
     }
@@ -468,16 +468,16 @@ class InsightsPanel extends React.Component {
     let deepCopyTemplates = JSON.parse(JSON.stringify(this.props.templates))
     deepCopyTemplates[template_data['id']] = template_data
     this.props.setTemplates(deepCopyTemplates)
-    this.props.setCurrentTemplate(template_data['id'])
+    this.props.setCurrentTemplateId(template_data['id'])
     when_done()
   }
 
-  deleteTemplate(template_id, when_done) {
+  deleteTemplate(template_id, when_done=(()=>{})) {
     let deepCopyTemplates = JSON.parse(JSON.stringify(this.props.templates))
     delete deepCopyTemplates[template_id]
     this.props.setTemplates(deepCopyTemplates)
     if (template_id === this.props.current_template_id) {
-      this.props.setCurrentTemplate('')
+      this.props.setCurrentTemplateId('')
     }
     when_done()
   }
@@ -611,7 +611,7 @@ class InsightsPanel extends React.Component {
             let template = request_data['template']
             deepCopyTemplates[template_id] = template
             this.props.setTemplates(deepCopyTemplates)
-            this.props.setCurrentTemplate(template_id)
+            this.props.setCurrentTemplateId(template_id)
 
             const cur_movies = Object.keys(this.props.movies)
             let deepCopyMovies= JSON.parse(JSON.stringify(this.props.movies))
@@ -759,8 +759,7 @@ class InsightsPanel extends React.Component {
             deleteWorkbook={this.props.deleteWorkbook}
             current_template_id={this.props.current_template_id}
             displayInsightsMessage={this.displayInsightsMessage}
-            setCurrentTemplate={this.props.setCurrentTemplate}
-            loadTemplate={this.props.loadTemplate}
+            setCurrentTemplateId={this.props.setCurrentTemplateId}
             saveTemplate={this.saveTemplate}
             deleteTemplate={this.deleteTemplate}
           />

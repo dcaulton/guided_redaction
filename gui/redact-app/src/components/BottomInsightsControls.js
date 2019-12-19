@@ -119,9 +119,8 @@ class BottomInsightsControls extends React.Component {
           templates={this.props.templates}
           current_template_id={this.props.current_template_id}
           displayInsightsMessage={this.props.displayInsightsMessage}
-          loadTemplate={this.props.loadTemplate}
+          setCurrentTemplateId={this.props.setCurrentTemplateId}
           saveTemplate={this.props.saveTemplate}
-          setCurrentTemplate={this.props.setCurrentTemplate}
           deleteTemplate={this.props.deleteTemplate}
         />
 
