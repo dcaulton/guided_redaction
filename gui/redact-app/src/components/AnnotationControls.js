@@ -8,6 +8,7 @@ class AnnotationControls extends React.Component {
       active_template_id: '',
       active_template_anchor_id: '',
     }
+    this.doAnnotationSave=this.doAnnotationSave.bind(this)
   }
 
   doSleep(milliseconds) {
@@ -64,6 +65,14 @@ class AnnotationControls extends React.Component {
   }
 
   doAnnotationSave() {
+    let annotation_data = this.buildAnnotationSavePayload()
+    this.props.saveAnnotation(
+      annotation_data, 
+      this.props.displayInsightsMessage('annotation was saved')
+    )
+  }
+
+  buildAnnotationSavePayload() {
     let the_template_id = this.state.active_template_id
     if (!the_template_id) {
       the_template_id = this.props.current_template_id
@@ -72,15 +81,23 @@ class AnnotationControls extends React.Component {
     if (this.state.active_template_anchor_id) {
       the_anchor_id = this.state.active_template_anchor_id
     }
+    let payload = true
+    if (this.props.getAnnotations()) {
+      const anns = this.props.getAnnotations()
+      if (anns['all'] && 
+          Object.keys(anns).includes('all') && 
+          Object.keys(anns['all']).includes('data') && 
+          anns['all']['data']
+      ) {
+        payload = false
+      }
+    }
     let annotation_data = {
       template_id: the_template_id,
       template_anchor_id: the_anchor_id,
-      data: 'fun stuff goes here',
+      data: payload,
     }
-    this.props.saveAnnotation(
-      annotation_data, 
-      this.props.displayInsightsMessage('annotation was saved')
-    )
+    return annotation_data
   }
 
   doAnnotationDelete(scope='all') {
@@ -88,6 +105,12 @@ class AnnotationControls extends React.Component {
       scope, 
       this.props.displayInsightsMessage('annotation was deleted')
     )
+  }
+
+  doStartInteractiveAdd() {
+    this.props.setKeyDownCallback(32, this.doAnnotationSave)
+    this.props.handleSetMode('add_annotations_interactive')
+    document.getElementById('movie_scrubber').focus()
   }
 
   render() {
@@ -139,6 +162,13 @@ class AnnotationControls extends React.Component {
                       onClick={() => this.doAnnotationDelete('all')}
                   >
                     Delete
+                  </button>
+
+                  <button
+                      className='btn btn-primary m-2'
+                      onClick={() => this.doStartInteractiveAdd()}
+                  >
+                    Interactive Add
                   </button>
 
                 </div>

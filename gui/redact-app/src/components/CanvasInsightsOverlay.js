@@ -144,13 +144,19 @@ class CanvasInsightsOverlay extends React.Component {
   drawAnnotations() {
     const annotations = this.props.getAnnotations()
     if (annotations) {
-      const canvas = this.refs.insights_canvas
-      let ctx = canvas.getContext('2d')
-      ctx.fillStyle = this.annotations_color
-      ctx.font = '30px Arial'
-      const x = canvas.width/2 * this.props.insights_image_scale
-      const y = canvas.height/2 * this.props.insights_image_scale
-      ctx.fillText('Annotated', x, y)
+      let draw_annotation_label = false
+      if (Object.keys(annotations).includes('all') && annotations['all']['data']) {
+        draw_annotation_label = true
+      }
+      if (draw_annotation_label) {
+        const canvas = this.refs.insights_canvas
+        let ctx = canvas.getContext('2d')
+        ctx.fillStyle = this.annotations_color
+        ctx.font = '30px Arial'
+        const x = canvas.width/2 * this.props.insights_image_scale
+        const y = canvas.height/2 * this.props.insights_image_scale
+        ctx.fillText('Annotated', x, y)
+      }
     }
   }
 

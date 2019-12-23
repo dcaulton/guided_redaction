@@ -58,11 +58,29 @@ class InsightsPanel extends React.Component {
     this.saveAnnotation=this.saveAnnotation.bind(this)
     this.deleteTemplate=this.deleteTemplate.bind(this)
     this.deleteAnnotation=this.deleteAnnotation.bind(this)
+    this.handleKeyDown=this.handleKeyDown.bind(this)
+    this.setKeyDownCallback=this.setKeyDownCallback.bind(this)
+    this.keyDownCallbacks = {}
   }
 
   componentDidMount() {
     this.props.getJobs()
     this.props.getWorkbooks()
+  }
+
+  setKeyDownCallback(key_code, the_function) {
+    this.keyDownCallbacks[key_code] = the_function
+  }
+  
+  handleKeyDown(e) {
+    if (this.state.mode === 'add_annotations_interactive') {
+      for (let i=0; i < Object.keys(this.keyDownCallbacks).length; i++) {
+        let key = parseInt(Object.keys(this.keyDownCallbacks)[i], 10)
+        if (e.keyCode === key) {
+          this.keyDownCallbacks[key]()
+        }
+      }
+    }
   }
 
   getCurrentSelectedAreaMeta() {
@@ -245,6 +263,8 @@ class InsightsPanel extends React.Component {
       the_message = 'Select the area to arrow fill'
     } else if (the_mode === 'add_template_mask_zone_1') {
       the_message = 'Select the first corner of the mask zone'
+    } else if (the_mode === 'add_annotations_interactive') {
+      the_message = 'press space to annotate/deannotate, left/right to advance through framesets'
     }
     this.setState({
       mode: the_mode,
@@ -257,6 +277,7 @@ class InsightsPanel extends React.Component {
     const keys = Object.keys(this.props.framesets)
     const new_frameset_hash = keys[value]
     const the_url = this.props.framesets[new_frameset_hash]['images'][0]
+    this.displayInsightsMessage('.')
     this.setState({
       insights_image: the_url,
       insights_title: the_url,
@@ -502,7 +523,7 @@ class InsightsPanel extends React.Component {
     }
     let anchor_obj = {}
     if (Object.keys(frameset_obj).includes(annotation_data['template_anchor_id'])) {
-      anchor_obj = frameset_obj[annotation_data]
+      anchor_obj = frameset_obj[annotation_data['template_anchor_id']]
     }
     anchor_obj['data'] = annotation_data['data']
     frameset_obj[annotation_data['template_anchor_id']] = anchor_obj
@@ -702,6 +723,7 @@ class InsightsPanel extends React.Component {
   }
 
   render() {
+    document.body.onkeydown = this.handleKeyDown
     let workbook_name = this.props.current_workbook_name
     if (!this.props.current_workbook_id) {
       workbook_name += ' (unsaved)'
@@ -792,7 +814,7 @@ class InsightsPanel extends React.Component {
             />
           </div>
           <BottomInsightsControls 
-            setMode={this.handleSetMode}
+            handleSetMode={this.handleSetMode}
             clearCurrentTemplateAnchor={this.clearCurrentTemplateAnchor}
             clearCurrentTemplateMaskZones={this.clearCurrentTemplateMaskZones}
             getCurrentTemplateAnchorNames={this.getCurrentTemplateAnchorNames}
@@ -820,6 +842,8 @@ class InsightsPanel extends React.Component {
             saveAnnotation={this.saveAnnotation}
             deleteAnnotation={this.deleteAnnotation}
             annotations={this.props.annotations}
+            setKeyDownCallback={this.setKeyDownCallback}
+            getAnnotations={this.getAnnotations}
           />
         </div>
 

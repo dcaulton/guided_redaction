@@ -140,6 +140,9 @@ class BottomInsightsControls extends React.Component {
           saveAnnotation={this.props.saveAnnotation}
           deleteAnnotation={this.props.deleteAnnotation}
           annotations={this.props.annotations}
+          handleSetMode={this.props.handleSetMode}
+          setKeyDownCallback={this.props.setKeyDownCallback}
+          getAnnotations={this.props.getAnnotations}
         />
 
         <div className='row bg-light rounded mt-3'>
