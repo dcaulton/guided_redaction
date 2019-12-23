@@ -196,12 +196,12 @@ class TemplateControls extends React.Component {
 
   doAddTemplateAnchor() {
     this.doTemplateSave(() => {})
-    this.props.setMode('add_template_anchor_1')
+    this.props.handleSetMode('add_template_anchor_1')
   }
 
   doAddTemplateMaskZone() {
     this.doTemplateSave(() => {})
-    this.props.setMode('add_template_mask_zone_1')
+    this.props.handleSetMode('add_template_mask_zone_1')
   }
 
   doTemplateSave(when_done) {

@@ -111,7 +111,7 @@ class BottomInsightsControls extends React.Component {
       >
 
         <TemplateControls 
-          setMode={this.props.setMode}
+          handleSetMode={this.props.handleSetMode}
           clearCurrentTemplateAnchor={this.props.clearCurrentTemplateAnchor}
           clearCurrentTemplateMaskZones={this.props.clearCurrentTemplateMaskZones}
           scanTemplate={this.props.scanTemplate}
