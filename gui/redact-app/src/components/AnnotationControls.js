@@ -7,6 +7,7 @@ class AnnotationControls extends React.Component {
     this.state = {
       active_template_id: '',
       active_template_anchor_id: '',
+      ocr_string: '',
     }
     this.doAnnotationSave=this.doAnnotationSave.bind(this)
   }
@@ -18,6 +19,12 @@ class AnnotationControls extends React.Component {
   setActiveTemplateId(the_id) {
     this.setState({
       active_template_id: the_id,
+    })
+  }
+
+  setOcrString(the_string) {
+    this.setState({
+      ocr_string: the_string,
     })
   }
 
@@ -144,36 +151,66 @@ class AnnotationControls extends React.Component {
                 className='row collapse'
             >
               <div id='annotations_main' className='col'>
+              
+                <div className='row bg-light m-3 p-3 border border-primary'>
+                  <div className='col'>
+                    <div className='row'>
+                      <h4>template</h4>
+                    </div>
+                    <div className='row'>
+                      {template_picker}
+                      {template_anchor_picker}
 
-                <div className='row bg-light m-3'>
-                  <h4>templates</h4>
-                  {template_picker}
-                  {template_anchor_picker}
+                      <button
+                          className='btn btn-primary m-2'
+                          onClick={() => this.doAnnotationSave()}
+                      >
+                        Add
+                      </button>
 
-                  <button
-                      className='btn btn-primary m-2'
-                      onClick={() => this.doAnnotationSave()}
-                  >
-                    Add
-                  </button>
+                      <button
+                          className='btn btn-primary m-2'
+                          onClick={() => this.doAnnotationDelete('all')}
+                      >
+                        Delete
+                      </button>
 
-                  <button
-                      className='btn btn-primary m-2'
-                      onClick={() => this.doAnnotationDelete('all')}
-                  >
-                    Delete
-                  </button>
-
-                  <button
-                      className='btn btn-primary m-2'
-                      onClick={() => this.doStartInteractiveAdd()}
-                  >
-                    Interactive Add
-                  </button>
-
+                      <button
+                          className='btn btn-primary m-2'
+                          onClick={() => this.doStartInteractiveAdd()}
+                      >
+                        Interactive Add
+                      </button>
+                    </div>
+                  </div>
                 </div>
+
+                <div className='row bg-light m-3 p-3 border border-primary'>
+                  <div className='col'>
+                    <div className='row'>
+                      <h4>ocr</h4>
+                    </div>
+                    <div className='row'>
+
+                      <div                                                            
+                          className='d-inline ml-2 mt-2'                              
+                      >                                                               
+                          <input                                                      
+                              id='annotate_ocr_string'
+                              size='30'
+                              title='annotate ocr string'
+                              value={this.state.ocr_string}
+                              onChange={(event) => this.setOcrString(event.target.value)}
+                          />
+                      </div> 
+
+                    </div>
+                  </div>
+                </div>
+
               </div>
             </div>
+
           </div>
         </div>
     )

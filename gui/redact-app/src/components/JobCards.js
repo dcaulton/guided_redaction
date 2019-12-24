@@ -23,6 +23,7 @@ class JobCardList extends React.Component {
           displayInsightsMessage={this.props.displayInsightsMessage}
           cancelJob={this.props.cancelJob}
           workbooks={this.props.workbooks}
+          scrubberOnChange={this.props.scrubberOnChange}
         />
         )
       })}
@@ -32,6 +33,24 @@ class JobCardList extends React.Component {
 }
 
 class JobCard extends React.Component {
+
+  constructor(props) {
+    super(props)
+    this.afterJobDataLoaded=this.afterJobDataLoaded.bind(this)
+  }
+
+  doSleep(milliseconds) {
+    return new Promise(resolve => setTimeout(resolve, milliseconds))
+  }
+
+  afterJobDataLoaded() {
+    this.doSleep(200).then(() => {                                              
+      this.props.scrubberOnChange()
+      this.props.displayInsightsMessage('job has been loaded')
+    }) 
+  }
+
+
   getWorkbookName(the_workbook_id) {
     for (let i=0; i < this.props.workbooks.length; i++) {
       if (this.props.workbooks[i]['id'] === the_workbook_id) {
@@ -117,7 +136,7 @@ class JobCard extends React.Component {
             className='btn btn-primary m-2'
             onClick={() => this.props.loadJobResults(
               this.props.job_data['id'],
-              this.props.displayInsightsMessage('job has been loaded')
+              this.afterJobDataLoaded()
             )}
         >
           Load

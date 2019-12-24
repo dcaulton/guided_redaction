@@ -681,7 +681,7 @@ class InsightsPanel extends React.Component {
       width: this.props.image_width,
       height: this.props.image_height,
     }
-    let bottom_y = 50
+    let bottom_y = 80
     let the_display='block'
     if (!this.state.insights_image) {
       the_display='none'
@@ -804,6 +804,7 @@ class InsightsPanel extends React.Component {
             displayInsightsMessage={this.displayInsightsMessage}
             cancelJob={this.props.cancelJob}
             workbooks={this.props.workbooks}
+            scrubberOnChange={this.scrubberOnChange}
           />
         </div>
       </div>

@@ -155,7 +155,9 @@ class CanvasInsightsOverlay extends React.Component {
         ctx.font = '30px Arial'
         const x = canvas.width/2 * this.props.insights_image_scale
         const y = canvas.height/2 * this.props.insights_image_scale
-        ctx.fillText('Annotated', x, y)
+        ctx.fillText('Template Annotated ', x+50, y+50)
+        ctx.globalAlpha = 0.2
+        ctx.fillRect(x, y, x, y)
       }
     }
   }
