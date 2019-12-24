@@ -2,6 +2,7 @@ import React from 'react'
 
 class JobCardList extends React.Component {
   render() {
+    const sorted_jobs = this.props.jobs.sort((a, b) => (a.created_on < b.created_on) ? 1 : -1)
     return (
       <div>
         <div className='row'>
@@ -13,7 +14,7 @@ class JobCardList extends React.Component {
 						Refresh
 					</button>  
         </div>
-      {this.props.jobs.map((value, index) => {
+      {sorted_jobs.map((value, index) => {
         return (
         <JobCard
           key={index}
