@@ -53,7 +53,7 @@ class SelectedAreaControls extends React.Component {
                 <div className='row mt-3 bg-light'>
                   <button
                       className='btn btn-primary ml-2 mt-2'
-                      onClick={() => this.props.setMode('flood_fill_1')}
+                      onClick={() => this.props.handleSetMode('flood_fill_1')}
                   >
                     Flood Fill
                   </button>
@@ -71,7 +71,7 @@ class SelectedAreaControls extends React.Component {
                     </button>
                     <div className='dropdown-menu' aria-labelledby='arrowFillDropdownButton'>
                       <button className='dropdown-item'
-                          onClick={() => this.props.setMode('arrow_fill_1')}
+                          onClick={() => this.props.handleSetMode('arrow_fill_1')}
                       >
                         Simple
                       </button>

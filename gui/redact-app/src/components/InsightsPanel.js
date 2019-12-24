@@ -19,8 +19,8 @@ class InsightsPanel extends React.Component {
       ],
       frameset_starts: {},
       insights_image: '',
-      image_width: 100,
-      image_height: 100,
+      image_width: 1000,
+      image_height: 1000,
       insights_image_scale: 1,
       insights_title: 'Insights, load a movie to get started',
       insights_message: '',
@@ -264,6 +264,8 @@ class InsightsPanel extends React.Component {
       the_message = 'Select the first corner of the mask zone'
     } else if (the_mode === 'add_annotations_interactive') {
       the_message = 'press space to annotate/deannotate, left/right to advance through framesets'
+    } else if (the_mode === 'add_annotations_ocr_start') {
+      the_message = 'Select the first corner of the region the text area'
     }
     this.setState({
       mode: the_mode,
@@ -412,6 +414,10 @@ class InsightsPanel extends React.Component {
       this.doAddTemplateMaskZoneClickOne(scale, x_scaled, y_scaled)
     } else if (this.state.mode === 'add_template_mask_zone_2') {
       this.addCurrentTemplateMaskZone(scale, x_scaled, y_scaled)
+    } else if (this.state.mode === 'add_annotations_ocr_start') {
+      this.doAddAnnotationsOcrStartClickOne(scale, x_scaled, y_scaled)
+    } else if (this.state.mode === 'add_annotations_ocr_end') {
+      this.doAddAnnotationsOcrStartClickOne(scale, x_scaled, y_scaled)
     }
   }
 
@@ -434,6 +440,15 @@ class InsightsPanel extends React.Component {
       clicked_coords: [x_scaled, y_scaled],
       insights_message: 'pick the second corner of the mask zone',
       mode: 'add_template_mask_zone_2',
+    })
+  }
+
+  doAddAnnotationsOcrStartClickOne(scale, x_scaled, y_scaled) {
+    this.setState({
+      insights_image_scale: scale,
+      clicked_coords: [x_scaled, y_scaled],
+      insights_message: 'pick the second corner of the text area',
+      mode: 'add_annotations_ocr_end',
     })
   }
 
@@ -508,29 +523,54 @@ class InsightsPanel extends React.Component {
   saveAnnotation(annotation_data, when_done=(()=>{})) {
     const cur_frameset_hash = this.getScrubberFramesetHash()
     let deepCopyAnnotations = JSON.parse(JSON.stringify(this.props.annotations))
-    let template_obj = {}
-    if (Object.keys(deepCopyAnnotations).includes(annotation_data['template_id'])) {
-      template_obj = deepCopyAnnotations[annotation_data['template_id']]
+
+    if (annotation_data['type'] && annotation_data['type'] === 'template') {
+      let template_obj = {}
+      if (Object.keys(deepCopyAnnotations).includes(annotation_data['template_id'])) {
+        template_obj = deepCopyAnnotations[annotation_data['template_id']]
+      }
+      let movie_obj = {}
+      if (Object.keys(template_obj).includes(this.props.movie_url)) {
+        movie_obj = template_obj[this.props.movie_url]
+      }
+      let frameset_obj = {}
+      if (Object.keys(movie_obj).includes(cur_frameset_hash)) {
+        frameset_obj = movie_obj[cur_frameset_hash]
+      }
+      let anchor_obj = {}
+      if (Object.keys(frameset_obj).includes(annotation_data['template_anchor_id'])) {
+        anchor_obj = frameset_obj[annotation_data['template_anchor_id']]
+      }
+      anchor_obj['data'] = annotation_data['data']
+      frameset_obj[annotation_data['template_anchor_id']] = anchor_obj
+      movie_obj[cur_frameset_hash] = frameset_obj
+      template_obj[this.props.movie_url] = movie_obj
+      deepCopyAnnotations[annotation_data['template_id']] = template_obj
+      this.props.setAnnotations(deepCopyAnnotations)
+      when_done()
     }
-    let movie_obj = {}
-    if (Object.keys(template_obj).includes(this.props.movie_url)) {
-      movie_obj = template_obj[this.props.movie_url]
+    if (annotation_data['type'] && annotation_data['type'] === 'ocr') {
+      let annotation_key = 'ocr:' + annotation_data['data']['match_string']
+
+      let annotation_obj = {}
+      if (Object.keys(deepCopyAnnotations).includes(annotation_key)) {
+        annotation_obj = deepCopyAnnotations[annotation_key]
+      } 
+      let movie_obj = {}
+      if (Object.keys(annotation_obj).includes(this.props.movie_url)) {
+        movie_obj = annotation_obj[this.props.movie_url]
+      }
+      let new_data = {
+        'match_percent': 90,
+      }
+      movie_obj[cur_frameset_hash] = new_data
+      annotation_obj[this.props.movie_url] = movie_obj
+      deepCopyAnnotations[annotation_key] = annotation_obj
+
+      this.props.setAnnotations(deepCopyAnnotations)
+      when_done()
     }
-    let frameset_obj = {}
-    if (Object.keys(movie_obj).includes(cur_frameset_hash)) {
-      frameset_obj = movie_obj[cur_frameset_hash]
-    }
-    let anchor_obj = {}
-    if (Object.keys(frameset_obj).includes(annotation_data['template_anchor_id'])) {
-      anchor_obj = frameset_obj[annotation_data['template_anchor_id']]
-    }
-    anchor_obj['data'] = annotation_data['data']
-    frameset_obj[annotation_data['template_anchor_id']] = anchor_obj
-    movie_obj[cur_frameset_hash] = frameset_obj
-    template_obj[this.props.movie_url] = movie_obj
-    deepCopyAnnotations[annotation_data['template_id']] = template_obj
-    this.props.setAnnotations(deepCopyAnnotations)
-    when_done()
+
   }
 
   deleteAnnotation(scope='all') {

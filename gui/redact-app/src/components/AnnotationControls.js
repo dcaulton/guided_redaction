@@ -36,18 +36,22 @@ class AnnotationControls extends React.Component {
 
   buildTemplateDropdown() {
     const template_keys = Object.keys(this.props.templates)
-    return(
-      <select
-        name='template_id'
-        onChange={(event) => this.setActiveTemplateId(event.target.value)}
-      >
-      {template_keys.map((value, index) => {
-        return (
-          <option key={index} value={this.props.templates[value]['id']}>{this.props.templates[value]['name']}</option>
-        )
-      })}
-      </select>
-    )
+    if (template_keys.length) {
+      return(
+        <select
+          name='template_id'
+          onChange={(event) => this.setActiveTemplateId(event.target.value)}
+        >
+        {template_keys.map((value, index) => {
+          return (
+            <option key={index} value={this.props.templates[value]['id']}>{this.props.templates[value]['name']}</option>
+          )
+        })}
+        </select>
+      )
+    } else {
+      return <span>(no templates found)</span>
+    }
   }
 
   buildTemplateAnchorDropdown() {
@@ -71,15 +75,23 @@ class AnnotationControls extends React.Component {
     )
   }
 
-  doAnnotationSave() {
-    let annotation_data = this.buildAnnotationSavePayload()
-    this.props.saveAnnotation(
-      annotation_data, 
-      this.props.displayInsightsMessage('annotation was saved')
-    )
+  doAnnotationSave(annotation_type='template') {
+    if (annotation_type === 'template') {
+      let annotation_data = this.buildAnnotationSaveTemplatePayload()
+      this.props.saveAnnotation(
+        annotation_data, 
+        this.props.displayInsightsMessage('annotation was saved')
+      )
+    } else if (annotation_type === 'ocr') {
+      let annotation_data = this.buildAnnotationSaveOcrPayload()
+      this.props.saveAnnotation(
+        annotation_data, 
+        this.props.displayInsightsMessage('annotation was saved')
+      )
+    }
   }
 
-  buildAnnotationSavePayload() {
+  buildAnnotationSaveTemplatePayload() {
     let the_template_id = this.state.active_template_id
     if (!the_template_id) {
       the_template_id = this.props.current_template_id
@@ -100,8 +112,21 @@ class AnnotationControls extends React.Component {
       }
     }
     let annotation_data = {
+      type: 'template',
       template_id: the_template_id,
       template_anchor_id: the_anchor_id,
+      data: payload,
+    }
+    return annotation_data
+  }
+
+  buildAnnotationSaveOcrPayload() {
+    // TODO if needed, pull coords from InsightsPanel state to give a box
+    let payload = {
+      match_string: this.state.ocr_string,
+    }
+    let annotation_data = {
+      type: 'ocr',
       data: payload,
     }
     return annotation_data
@@ -123,6 +148,37 @@ class AnnotationControls extends React.Component {
   render() {
     const template_picker = this.buildTemplateDropdown()
     const template_anchor_picker = this.buildTemplateAnchorDropdown()
+    let template_add_button = ''
+    let template_delete_button = ''
+    let template_interactive_add_button = ''
+    if (Object.keys(this.props.templates).length) {
+      template_add_button = (
+        <button
+            className='btn btn-primary m-2'
+            onClick={() => this.doAnnotationSave('template')}
+        >
+          Add
+        </button>
+      )
+
+      template_delete_button = (
+        <button
+            className='btn btn-primary m-2'
+            onClick={() => this.doAnnotationDelete('all')}
+        >
+          Delete
+        </button>
+      )
+
+      template_interactive_add_button = (
+        <button
+            className='btn btn-primary m-2'
+            onClick={() => this.doStartInteractiveAdd()}
+        >
+          Interactive Add
+        </button>
+      )
+    }
     return (
         <div className='row bg-light rounded mt-3'>
           <div className='col'>
@@ -160,27 +216,10 @@ class AnnotationControls extends React.Component {
                     <div className='row'>
                       {template_picker}
                       {template_anchor_picker}
+                      {template_add_button}
+                      {template_delete_button}
+                      {template_interactive_add_button}
 
-                      <button
-                          className='btn btn-primary m-2'
-                          onClick={() => this.doAnnotationSave()}
-                      >
-                        Add
-                      </button>
-
-                      <button
-                          className='btn btn-primary m-2'
-                          onClick={() => this.doAnnotationDelete('all')}
-                      >
-                        Delete
-                      </button>
-
-                      <button
-                          className='btn btn-primary m-2'
-                          onClick={() => this.doStartInteractiveAdd()}
-                      >
-                        Interactive Add
-                      </button>
                     </div>
                   </div>
                 </div>
@@ -203,6 +242,13 @@ class AnnotationControls extends React.Component {
                               onChange={(event) => this.setOcrString(event.target.value)}
                           />
                       </div> 
+
+                      <button
+                          className='btn btn-primary m-2'
+                          onClick={() => this.doAnnotationSave('ocr')}
+                      >
+                        Add
+                      </button>
 
                     </div>
                   </div>

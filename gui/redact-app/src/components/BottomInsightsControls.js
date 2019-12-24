@@ -126,7 +126,7 @@ class BottomInsightsControls extends React.Component {
         />
 
         <SelectedAreaControls
-          setMode={this.props.setMode}
+          handleSetMode={this.props.handleSetMode}
           getCurrentTemplateAnchorNames={this.props.getCurrentTemplateAnchorNames}
           clearMovieSelectedAreas={this.props.clearMovieSelectedAreas}
           setSelectedAreaTemplateAnchor={this.props.setSelectedAreaTemplateAnchor}
