@@ -1,7 +1,24 @@
 import React from 'react';
 
 class FramesetCard extends React.Component {
+
+  buildFramesetHashData(the_hash) {
+    const the_length = the_hash.length
+    let short_hash = the_hash
+    if (the_length > 12) {
+      short_hash = the_hash.substring(0, 2) + '...' +
+        the_hash.substring(the_length-2)
+    }
+    const hash_data = (
+      <span title={the_hash}>
+        {short_hash}
+      </span>
+    )
+    return hash_data
+  }
+
   render() {
+    const hash_span = this.buildFramesetHashData(this.props.frame_hash)
     return (
       <div 
           id={this.props.frame_hash}
@@ -11,7 +28,9 @@ class FramesetCard extends React.Component {
           onDragOver={(event) => event.preventDefault()}
           onDrop={() => this.props.handleDroppedFrameset(this.props.frame_hash)}
       >
-        <div className='frameset_hash'>{this.props.frame_hash}</div>
+        <div className='frameset_hash'>
+          {hash_span}
+        </div>
         <img 
             className='zoomable-image'
             src={this.props.image_url} 

@@ -78,17 +78,30 @@ class JobsViewSet(viewsets.ViewSet):
                     'pretty_created_on': pretty_time,
                     'app': job.app,
                     'operation': job.operation,
-                    'request_data': job.request_data,
-                    'response_data': job.response_data,
                     'workbook_id': job.workbook_id,
                 }
             )
 
         return Response({"jobs": jobs_list})
 
-    def retrieve(self, request, the_uuid):
-        job = Job.objects.get(pk=the_uuid)
-        return Response({"job": job})
+    def retrieve(self, request, pk):
+        job = Job.objects.get(pk=pk)
+        pretty_time = self.pretty_date(job.created_on)
+        job_data = {
+            'id': job.id,
+            'file_uuids_used': job.file_uuids_used,
+            'status': job.status,
+            'workbook_id': job.workbook_id,
+            'description': job.description,
+            'created_on': job.created_on,
+            'pretty_created_on': pretty_time,
+            'app': job.app,
+            'operation': job.operation,
+            'workbook_id': job.workbook_id,
+            'request_data': job.request_data,
+            'response_data': job.response_data,
+        }
+        return Response({"job": job_data})
 
     def get_file_uuids_from_request(self, request_dict):
         uuids = []

@@ -49,7 +49,6 @@ class InsightsPanel extends React.Component {
     this.getCurrentTemplateMaskZones=this.getCurrentTemplateMaskZones.bind(this)
     this.getCurrentTemplateAnchorNames=this.getCurrentTemplateAnchorNames.bind(this)
     this.callPing=this.callPing.bind(this)
-    this.loadJobResults=this.loadJobResults.bind(this)
     this.submitInsightsJob=this.submitInsightsJob.bind(this)
     this.setSelectedAreaTemplateAnchor=this.setSelectedAreaTemplateAnchor.bind(this)
     this.getCurrentSelectedAreaMeta=this.getCurrentSelectedAreaMeta.bind(this)
@@ -672,56 +671,6 @@ class InsightsPanel extends React.Component {
     return cur_movies_matches[frameset_hash]
   }
 
-  loadJobResults(job_id) {
-    for (let i=0; i < this.props.jobs.length; i++) {
-      if (this.props.jobs[i]['id'] === job_id) {
-        const job = this.props.jobs[i]
-        const response_data = JSON.parse(job.response_data)
-        const request_data = JSON.parse(job.request_data)
-        if (job.app === 'analyze' && job.operation === 'scan_template') {
-          const template_id = request_data['template']['id']
-          this.props.setTemplateMatches(template_id, response_data)
-          if (!Object.keys(this.props.templates).includes(template_id)) {
-            let deepCopyTemplates= JSON.parse(JSON.stringify(this.props.templates))
-            let template = request_data['template']
-            deepCopyTemplates[template_id] = template
-            this.props.setTemplates(deepCopyTemplates)
-            this.props.setCurrentTemplateId(template_id)
-
-            const cur_movies = Object.keys(this.props.movies)
-            let deepCopyMovies= JSON.parse(JSON.stringify(this.props.movies))
-            let movie_add = false
-            let movie_url = ''
-            for (let j=0; j < Object.keys(request_data['target_movies']).length; j++)  {
-              movie_url = Object.keys(request_data['target_movies'])[j]
-              if (!cur_movies.includes(movie_url)) {
-                deepCopyMovies[movie_url] = request_data['target_movies'][movie_url]
-                movie_add = true
-              }
-            }
-            if (movie_add) {
-              this.props.addMovieAndSetActive(movie_url, deepCopyMovies, this.movieSplitDone) 
-            }
-          }
-        } else if (job.app === 'parse' && job.operation === 'split_and_hash_movie') {
-          let frames = response_data.frames
-          let framesets = response_data.unique_frames
-          let deepCopyMovies = JSON.parse(JSON.stringify(this.props.movies))
-          deepCopyMovies[request_data['movie_url']] = {
-            frames: frames,
-            framesets: framesets,
-          }
-          this.props.addMovieAndSetActive(
-            request_data['movie_url'], 
-            deepCopyMovies, 
-            this.movieSplitDone
-          ) 
-        }
-
-      }
-    }
-  }
-
   render() {
     document.body.onkeydown = this.handleKeyDown
     let workbook_name = this.props.current_workbook_name
@@ -851,7 +800,8 @@ class InsightsPanel extends React.Component {
           <JobCardList 
             jobs={this.props.jobs}
             getJobs={this.props.getJobs}
-            loadJobResults={this.loadJobResults}
+            loadJobResults={this.props.loadJobResults}
+            displayInsightsMessage={this.displayInsightsMessage}
             cancelJob={this.props.cancelJob}
             workbooks={this.props.workbooks}
           />

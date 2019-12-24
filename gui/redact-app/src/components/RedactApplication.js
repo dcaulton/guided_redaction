@@ -77,13 +77,13 @@ class RedactApplication extends React.Component {
     this.cancelJob=this.cancelJob.bind(this)
     this.submitJob=this.submitJob.bind(this)
     this.getJobs=this.getJobs.bind(this)
+    this.loadJobResults=this.loadJobResults.bind(this)
     this.getWorkbooks=this.getWorkbooks.bind(this)
     this.saveWorkbook=this.saveWorkbook.bind(this)
     this.saveWorkbookName=this.saveWorkbookName.bind(this)
     this.loadWorkbook=this.loadWorkbook.bind(this)
     this.setCurrentTemplateId=this.setCurrentTemplateId.bind(this)
     this.deleteWorkbook=this.deleteWorkbook.bind(this)
-    this.addMovieAndSetActive=this.addMovieAndSetActive.bind(this)
     this.setSelectedAreaMetas=this.setSelectedAreaMetas.bind(this)
     this.afterUuidImagesFetched=this.afterUuidImagesFetched.bind(this)
     this.setAnnotations=this.setAnnotations.bind(this)
@@ -276,8 +276,7 @@ class RedactApplication extends React.Component {
     return []
   }
 
-
-  addMovieAndSetActive(movie_url, movies, theCallback) {
+  addMovieAndSetActive(movie_url, movies, theCallback=(()=>{})) {
     this.setState({
       movie_url: movie_url, 
       frames: movies[movie_url]['frames'],
@@ -458,6 +457,59 @@ class RedactApplication extends React.Component {
     })                                                                          
   }
 
+  async loadJobResults(job_id, when_done=(()=>{})) {
+    let job_url = this.state.jobs_url + '//' + job_id
+    await fetch(job_url, {
+      method: 'GET',
+      headers: this.buildJsonHeaders(),
+    })
+    .then((response) => response.json())
+    .then((responseJson) => {
+			const job = responseJson['job']
+			const response_data = JSON.parse(job.response_data)
+			const request_data = JSON.parse(job.request_data)
+			if (job.app === 'analyze' && job.operation === 'scan_template') {
+				const template_id = request_data['template']['id']
+				this.setTemplateMatches(template_id, response_data)
+				if (!Object.keys(this.state.templates).includes(template_id)) {
+					let deepCopyTemplates= JSON.parse(JSON.stringify(this.state.templates))
+					let template = request_data['template']
+					deepCopyTemplates[template_id] = template
+					this.setTemplates(deepCopyTemplates)
+					this.setCurrentTemplateId(template_id)
+
+					const cur_movies = Object.keys(this.state.movies)
+					let deepCopyMovies= JSON.parse(JSON.stringify(this.state.movies))
+					let movie_add = false
+					let movie_url = ''
+					for (let j=0; j < Object.keys(request_data['target_movies']).length; j++)  {
+						movie_url = Object.keys(request_data['target_movies'])[j]
+						if (!cur_movies.includes(movie_url)) {
+							deepCopyMovies[movie_url] = request_data['target_movies'][movie_url]
+							movie_add = true
+						}
+					}
+					if (movie_add) {
+						this.addMovieAndSetActive(movie_url, deepCopyMovies, this.movieSplitDone)
+					}
+				}
+			} else if (job.app === 'parse' && job.operation === 'split_and_hash_movie') {
+				let frames = response_data.frames
+				let framesets = response_data.unique_frames
+				let deepCopyMovies = JSON.parse(JSON.stringify(this.state.movies))
+				deepCopyMovies[request_data['movie_url']] = {
+					frames: frames,
+					framesets: framesets,
+				}
+				this.addMovieAndSetActive(
+					request_data['movie_url'],
+					deepCopyMovies,
+					when_done,
+				)
+			}
+    })
+  }
+
   async getJobs() {
     let the_url = this.state.jobs_url
     if (this.state.current_workbook_id) {
@@ -577,7 +629,7 @@ class RedactApplication extends React.Component {
     }, when_done())
   }
 
-  async loadWorkbook(workbook_id, when_done=null) {
+  async loadWorkbook(workbook_id, when_done=(()=>{})) {
     if (workbook_id === '-1') {
       this.setState({
         current_workbook_id: '',
@@ -975,6 +1027,7 @@ class RedactApplication extends React.Component {
                 cancelJob={this.cancelJob}
                 submitJob={this.submitJob}
                 getJobs={this.getJobs}
+                loadJobResults={this.loadJobResults}
                 getWorkbooks={this.getWorkbooks}
                 saveWorkbook={this.saveWorkbook}
                 saveWorkbookName={this.saveWorkbookName}
@@ -986,7 +1039,6 @@ class RedactApplication extends React.Component {
                 workbooks={this.state.workbooks}
                 current_workbook_name={this.state.current_workbook_name}
                 current_workbook_id={this.state.current_workbook_id}
-                addMovieAndSetActive={this.addMovieAndSetActive}
                 setSelectedAreaMetas={this.setSelectedAreaMetas}
                 selected_area_metas={this.state.selected_area_metas}
                 current_selected_area_meta_id={this.state.current_selected_area_meta_id}

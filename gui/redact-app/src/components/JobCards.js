@@ -19,6 +19,7 @@ class JobCardList extends React.Component {
           key={index}
           job_data={value}
           loadJobResults={this.props.loadJobResults}
+          displayInsightsMessage={this.props.displayInsightsMessage}
           cancelJob={this.props.cancelJob}
           workbooks={this.props.workbooks}
         />
@@ -113,7 +114,10 @@ class JobCard extends React.Component {
       get_job_button = (
         <button 
             className='btn btn-primary m-2'
-            onClick={() => this.props.loadJobResults(this.props.job_data['id'])}
+            onClick={() => this.props.loadJobResults(
+              this.props.job_data['id'],
+              this.props.displayInsightsMessage('job has been loaded')
+            )}
         >
           Load
         </button>
