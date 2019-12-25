@@ -2,11 +2,14 @@ import os
 import uuid
 
 import simplejson as json
+import base64
 from azure.storage.blob import BlobClient, ContainerClient
 from django.http import HttpResponse
 #from rest_framework import viewsets
 from base import viewsets
 from rest_framework.response import Response
+import cv2
+import numpy as np
 
 from guided_redaction.parse.models import ImageBlob
 from guided_redaction.parse.classes.MovieParser import MovieParser
@@ -266,6 +269,31 @@ class ParseViewSetPing(viewsets.ViewSet):
     def list(self, request):
         return Response({"response": "pong"})
 
+class ParseViewSetCropImage(viewsets.ViewSet):
+    def create(self, request):
+        if not request.data.get("image_url"):
+            return self.error("image_url is required")
+        if not request.data.get("anchor_id"):
+            return self.error("anchor_id is required")
+        if not request.data.get("start"):
+            return self.error("start is required")
+        if not request.data.get("end"):
+            return self.error("end is required")
+        image = requests.get(request.data["image_url"]).content
+        if image:
+            nparr = np.fromstring(image, np.uint8)
+            cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+            start = request.data.get('start')
+            end = request.data.get('end')
+            cropped = cv2_image[start[1]:end[1], start[0]:end[0]]
+            cropped_bytes = cv2.imencode(".png", cropped)[1].tostring()
+            cropped_base64 = base64.b64encode(cropped_bytes)
+            return Response({
+              'anchor_id': request.data.get('anchor_id'),
+              'cropped_image_bytes': cropped_base64,
+            })
+        else:
+            return self.error('could not read image', status_code=422)
 
 class ParseViewSetFetchImage(viewsets.ViewSet):
     def retrieve(self, request, the_uuid, the_image_name):

@@ -91,14 +91,6 @@ class SessionControls extends React.Component {
   render() {
     let workbook_load_button = this.buildWorkbookPickerButton()
     let workbook_delete_button = this.buildWorkbookDeleteButton()
-    let bottom_y = 100
-    const ele = document.getElementById('insights_image_div')
-    if (ele) {
-      bottom_y += ele.offsetHeight
-    }
-    const controls_style = {
-      top: bottom_y,
-    }
 
     return (
         <div className='row bg-light rounded mt-3'>

@@ -32,6 +32,7 @@ class RedactApplication extends React.Component {
       scan_template_url: 'http://127.0.0.1:8000/v1/analyze/scan-template',
       analyze_url: 'http://127.0.0.1:8000/v1/analyze/east-tess',
       redact_url: 'http://127.0.0.1:8000/v1/redact/redact-image',
+      crop_url: 'http://127.0.0.1:8000/v1/parse/crop-image',
       parse_movie_url: 'http://127.0.0.1:8000/v1/parse/split-and-hash-movie',
       zip_movie_url: 'http://127.0.0.1:8000/v1/parse/zip-movie',
       get_images_for_uuid_url: 'http://127.0.0.1:8000/v1/parse/get-images-for-uuid',
@@ -87,6 +88,7 @@ class RedactApplication extends React.Component {
     this.setSelectedAreaMetas=this.setSelectedAreaMetas.bind(this)
     this.afterUuidImagesFetched=this.afterUuidImagesFetched.bind(this)
     this.setAnnotations=this.setAnnotations.bind(this)
+    this.cropImage=this.cropImage.bind(this)
   }
 
   async getImagesForUuid(the_uuid, the_offsets, when_done) {
@@ -98,6 +100,28 @@ class RedactApplication extends React.Component {
     .then((response) => response.json())
     .then((responseJson) => {
       when_done(responseJson['images'], the_offsets)
+    })
+    .catch((error) => {
+      console.error(error);
+    })
+    await response
+  }
+
+  async cropImage(image_url, start, end, anchor_id, when_done=(()=>{})) {
+    const the_url = this.state.crop_url
+    let response = await fetch(the_url, {
+      method: 'POST',
+      headers: this.buildJsonHeaders(),
+      body: JSON.stringify({
+        image_url: image_url,
+        anchor_id: anchor_id,
+        start: start,
+        end: end,
+      }),
+    })
+    .then((response) => response.json())
+    .then((responseJson) => {
+      when_done(responseJson)
     })
     .catch((error) => {
       console.error(error);
@@ -1044,6 +1068,7 @@ class RedactApplication extends React.Component {
                 current_selected_area_meta_id={this.state.current_selected_area_meta_id}
                 setAnnotations={this.setAnnotations}
                 annotations={this.state.annotations}
+                cropImage={this.cropImage}
               />
             </Route>
           </Switch>

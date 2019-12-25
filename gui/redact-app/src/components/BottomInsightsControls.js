@@ -37,6 +37,7 @@ class BottomInsightsControls extends React.Component {
           setCurrentTemplateId={this.props.setCurrentTemplateId}
           saveTemplate={this.props.saveTemplate}
           deleteTemplate={this.props.deleteTemplate}
+          cropImage={this.props.cropImage}
         />
 
         <SelectedAreaControls

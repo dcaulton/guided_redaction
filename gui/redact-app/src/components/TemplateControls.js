@@ -11,8 +11,10 @@ class TemplateControls extends React.Component {
       template_match_percent: 'Match %',
       template_mask_method: '',
       template_match_method: '',
+      template_download_link: '',
     }
     this.afterTemplateLoaded=this.afterTemplateLoaded.bind(this)
+    this.anchorSliceDone=this.anchorSliceDone.bind(this)
   }
 
   buildTemplatePickerButton() {                                                 
@@ -66,6 +68,7 @@ class TemplateControls extends React.Component {
         template_match_percent: 'Match %',
         template_mask_method: '',
         template_match_method: '',
+        template_download_link: '',
       })
     })
   }
@@ -79,6 +82,7 @@ class TemplateControls extends React.Component {
       template_match_percent: template.match_percent,
       template_mask_method: template.mask_method,
       template_match_method: template.match_method,
+      template_download_link: '',
     })
   }
 
@@ -87,6 +91,43 @@ class TemplateControls extends React.Component {
       template_id, 
       this.afterTemplateLoaded()
     )
+  }
+
+  anchorSliceDone(response) {
+    if (this.props.current_template_id) {
+      let cur_template = this.props.templates[this.props.current_template_id]
+      let new_anchors = []
+      for (let i=0; i < cur_template['anchors'].length; i++) {
+        let anchor = cur_template['anchors'][i]
+        if (anchor['id'] === response['anchor_id']) {
+          anchor['image_bytes_png_base64'] = response['cropped_image_bytes']
+        }
+        new_anchors.push(anchor)
+      }
+      cur_template['anchors'] = new_anchors
+
+      let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(cur_template))
+      this.setState({
+        template_download_link: dataStr,
+      })
+      this.props.displayInsightsMessage('Template download link has been created')
+    }
+  }
+
+  doTemplateExport() {
+    if (this.props.current_template_id) {
+      let cur_template = this.props.templates[this.props.current_template_id]
+      for (let i=0; i < cur_template['anchors'].length; i++) {
+        let the_anchor = cur_template['anchors'][i]
+        this.props.cropImage(
+          the_anchor['image'], 
+          the_anchor['start'], 
+          the_anchor['end'], 
+          the_anchor['id'], 
+          this.anchorSliceDone
+        )
+      }
+    }
   }
 
   afterTemplateLoaded() {
@@ -217,6 +258,22 @@ class TemplateControls extends React.Component {
     this.props.saveTemplate(template_data, when_done)
   }
 
+  buildTemplateDownloadButton() {
+    let dl_button = ''
+    if (this.state.template_download_link) {
+      let dl_name = this.state.template_name + '.json'
+      dl_button = (
+        <a 
+          href={this.state.template_download_link}
+          download={dl_name}
+        >
+        download
+        </a>
+      )
+    }
+    return dl_button
+  }
+
   render() {
     let template_saved_unsaved = ''
     if (!this.props.current_template_id) {
@@ -224,6 +281,7 @@ class TemplateControls extends React.Component {
     }
     const template_load_button = this.buildTemplatePickerButton()
     const template_delete_button = this.buildTemplateDeleteButton()
+    const template_download_button = this.buildTemplateDownloadButton()
 
     return (
         <div className='row bg-light rounded'>
@@ -306,6 +364,23 @@ class TemplateControls extends React.Component {
 									>
 										Save
 									</button>
+                </div>
+
+                <div 
+                    className='d-inline'
+                >
+									<button
+											className='btn btn-primary ml-2 mt-2'
+											onClick={() => this.doTemplateExport() }
+									>
+										Export
+									</button>
+                </div>
+
+                <div 
+                    className='d-inline'
+                >
+                  {template_download_button}
                 </div>
 
                 <div className='d-inline'>

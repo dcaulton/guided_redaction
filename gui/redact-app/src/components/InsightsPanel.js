@@ -833,6 +833,7 @@ class InsightsPanel extends React.Component {
             annotations={this.props.annotations}
             setKeyDownCallback={this.setKeyDownCallback}
             getAnnotations={this.getAnnotations}
+            cropImage={this.props.cropImage}
           />
         </div>
 
