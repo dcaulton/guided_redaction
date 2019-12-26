@@ -6,6 +6,7 @@ from guided_redaction.analyze.classes.TemplateMatcher import TemplateMatcher
 from guided_redaction.analyze.classes.ExtentsFinder import ExtentsFinder
 from django.http import HttpResponse, JsonResponse
 import json
+import base64
 import numpy as np
 from django.shortcuts import render
 import requests
@@ -53,6 +54,26 @@ class AnalyzeViewSetScanTemplate(viewsets.ViewSet):
         request_data = request.data
         return self.process_create_request(request_data)
 
+    def get_match_image_for_anchor(self, anchor):
+        if 'image_bytes_png_base64' in anchor:
+            img_base64 = anchor['image_bytes_png_base64']
+            img_bytes = base64.b64decode(img_base64)
+            nparr = np.fromstring(img_bytes, np.uint8)
+            cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+            return cv2_image
+        else:
+            pic_response = requests.get(request_data["source_image_url"])
+            image = pic_response.content
+            if not image:
+                return self.error("couldn't read source image data", status_code=422)
+
+            nparr = np.fromstring(image, np.uint8)
+            cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+            start = anchor.get("start")
+            end = anchor.get("end")
+            match_image = cv2_image[start[1] : end[1], start[0] : end[0]]
+            return match_image
+
     def process_create_request(self, request_data):
         matches = {}
         if not request_data.get("template"):
@@ -64,20 +85,13 @@ class AnalyzeViewSetScanTemplate(viewsets.ViewSet):
         ):
             return self.error("target_movies OR a target_image is required")
         template_matcher = TemplateMatcher(request_data.get('template'))
-        pic_response = requests.get(request_data["source_image_url"])
-        image = pic_response.content
-        if not image:
-            return self.error("couldn't read source image data", status_code=422)
-
-        nparr = np.fromstring(image, np.uint8)
-        cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
         template = request_data.get('template')
         for anchor in template.get("anchors"):
+            match_image = self.get_match_image_for_anchor(anchor)
             start = anchor.get("start")
             end = anchor.get("end")
             size = (end[0] - start[0], end[1] - start[1])
             anchor_id = anchor.get("id")
-            match_image = cv2_image[start[1] : end[1], start[0] : end[0]]
             targets = request_data.get("target_movies")
             for movie_name in targets.keys():
                 framesets = targets[movie_name]["framesets"]
