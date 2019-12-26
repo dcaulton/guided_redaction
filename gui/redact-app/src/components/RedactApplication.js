@@ -89,6 +89,19 @@ class RedactApplication extends React.Component {
     this.afterUuidImagesFetched=this.afterUuidImagesFetched.bind(this)
     this.setAnnotations=this.setAnnotations.bind(this)
     this.cropImage=this.cropImage.bind(this)
+    this.setMovieNickname=this.setMovieNickname.bind(this)
+  }
+
+  setMovieNickname = (movie_url, movie_nickname) => {
+    let deepCopyMovies = JSON.parse(JSON.stringify(this.state.movies))
+    let existing_movie = deepCopyMovies[movie_url]
+    if (existing_movie) {
+      existing_movie['nickname'] = movie_nickname
+      deepCopyMovies[movie_url] = existing_movie
+      this.setState({
+        movies: deepCopyMovies,
+      })
+    }
   }
 
   async getImagesForUuid(the_uuid, the_offsets, when_done) {
@@ -311,6 +324,13 @@ class RedactApplication extends React.Component {
     )
   }
 
+  getMovieNicknameFromUrl(the_url) {
+    let url_parts = the_url.split('/')
+    let name_parts = url_parts[url_parts.length-1].split('.')
+    let file_name_before_dot = name_parts[name_parts.length-2]
+    return file_name_before_dot
+  }
+
   async doMovieSplit(the_url, theCallback) {
     if (!the_url) {
       the_url = this.state.movie_url
@@ -330,7 +350,9 @@ class RedactApplication extends React.Component {
         let frames = responseJson.frames
         let framesets = responseJson.unique_frames
         let deepCopyMovies = JSON.parse(JSON.stringify(this.state.movies))
+        let nickname = this.getMovieNicknameFromUrl(the_url)
         deepCopyMovies[the_url] = {
+          nickname: nickname,
           frames: frames,
           framesets: framesets,
         }
@@ -522,6 +544,7 @@ class RedactApplication extends React.Component {
 				let framesets = response_data.unique_frames
 				let deepCopyMovies = JSON.parse(JSON.stringify(this.state.movies))
 				deepCopyMovies[request_data['movie_url']] = {
+          nickname: this.getMovieNicknameFromUrl(request_data['movie_url']),
 					frames: frames,
 					framesets: framesets,
 				}
@@ -1069,6 +1092,7 @@ class RedactApplication extends React.Component {
                 setAnnotations={this.setAnnotations}
                 annotations={this.state.annotations}
                 cropImage={this.cropImage}
+                setMovieNickname={this.setMovieNickname}
               />
             </Route>
           </Switch>

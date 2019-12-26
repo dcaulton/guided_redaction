@@ -751,6 +751,7 @@ class InsightsPanel extends React.Component {
             getMovieMatchesFound={this.getMovieMatchesFound}
             getMovieSelectedCount={this.getMovieSelectedCount}
             submitInsightsJob={this.submitInsightsJob}
+            setMovieNickname={this.props.setMovieNickname}
           />
         </div>
 

@@ -18,6 +18,7 @@ class MovieCardList extends React.Component {
             getMovieMatchesFound={this.props.getMovieMatchesFound}
             getMovieSelectedCount={this.props.getMovieSelectedCount}
             submitInsightsJob={this.props.submitInsightsJob}
+            setMovieNickname={this.props.setMovieNickname}
         />
         )
       })}
@@ -45,6 +46,21 @@ class MovieCard extends React.Component {
       </span>
     )
     return short_movie_data
+  }
+
+  buildNicknameBlock(movie_url, movies) {
+    let return_arr = []
+    if (Object.keys(movies).includes(movie_url)) {
+      let nickname = movies[movie_url]['nickname']
+      return_arr.push(
+        <input
+            key='1122'
+            value={nickname}
+            onChange={(event) => this.props.setMovieNickname(movie_url, event.target.value)}
+        /> 
+      )
+    }
+    return return_arr
   }
 
   buildMakeActiveButton(this_cards_movie_url, active_status) {
@@ -92,9 +108,12 @@ class MovieCard extends React.Component {
         </button>
     )
 
+    let nickname_block = this.buildNicknameBlock(this.props.this_cards_movie_url, this.props.movies)
+    if (!nickname_block.length) {
+      nickname_block = this.getShortMovieData(this.props.this_cards_movie_url)
+    }
     const framesets_count_message = this.getFramesetsCountMessage(this.props.this_cards_movie_url)
     const make_active_button = this.buildMakeActiveButton(this.props.this_cards_movie_url, active_status)
-    const short_movie_data = this.getShortMovieData(this.props.this_cards_movie_url)
     const found_string = this.props.getMovieMatchesFound(this.props.this_cards_movie_url)
     const selected_string = this.props.getMovieSelectedCount(this.props.this_cards_movie_url)
     let top_div_classname = "row mt-4 card"
@@ -117,7 +136,7 @@ class MovieCard extends React.Component {
               </video>
             </div>
           <div className='row'>
-          {short_movie_data}
+          {nickname_block}
           </div>
           <div className='row'>
             {make_active_button}
