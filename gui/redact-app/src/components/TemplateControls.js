@@ -291,6 +291,38 @@ class TemplateControls extends React.Component {
     return dl_button
   }
 
+  buildAnchorPics() {
+    let return_arr = []
+    if (this.props.current_template_id) {
+      return_arr.push(<span key='992234'>embedded anchors: </span>)
+      let cur_template = this.props.templates[this.props.current_template_id]
+      let anchor_ids = Object.keys(cur_template['anchors'])
+      for (let i=0; i < anchor_ids.length; i++) {
+        const anchor = cur_template['anchors'][anchor_ids[i]]
+        if (anchor['image_bytes_png_base64']) {
+          const b64img = anchor['image_bytes_png_base64']
+          let the_src='https://www.thewholesomedish.com/wp-content/uploads/2019/06/THE-BEST-CLASSIC-TACOS-600X900.jpg'
+          the_src = "data:image/gif;base64," + b64img
+          return_arr.push(
+            <div 
+              key={'hey' + i}
+              className='m-2 p-2 d-inline'
+            >
+              <img 
+                height='100'
+                key={'dapper' + i}
+                alt={anchor['id']}
+                title={anchor['id']}
+                src={the_src}
+              />
+            </div>
+          )
+        }
+      }
+    }
+    return return_arr
+  }
+
   render() {
     let template_saved_unsaved = ''
     if (!this.props.current_template_id) {
@@ -299,6 +331,7 @@ class TemplateControls extends React.Component {
     const template_load_button = this.buildTemplatePickerButton()
     const template_delete_button = this.buildTemplateDeleteButton()
     const template_download_button = this.buildTemplateDownloadButton()
+    const anchor_pics = this.buildAnchorPics()
 
     return (
         <div className='row bg-light rounded'>
@@ -381,39 +414,6 @@ class TemplateControls extends React.Component {
 									>
 										Save
 									</button>
-                </div>
-
-                <div 
-                    className='d-inline'
-                >
-									<button
-											className='btn btn-primary ml-2 mt-2'
-											onClick={() => this.doTemplateExport() }
-									>
-										Export
-									</button>
-                </div>
-
-                <div 
-                    className='d-inline'
-                >
-                  {template_download_button}
-                </div>
-
-                <div 
-                    className='d-inline'
-                >
-                  <div>
-                  <span className='font-weight-bold' >Import Template:</span>
-                  <input 
-                      type="file" 
-                      id="template_file" 
-                      name="template_files[]" 
-                      size='20'
-                      multiple 
-                      onChange={(event) => this.importTemplate(event.target.files)}
-                  />
-                  </div>
                 </div>
 
                 <div className='d-inline'>
@@ -562,6 +562,49 @@ class TemplateControls extends React.Component {
                   </select>
                 </div>
 
+                <div className='row ml-2 mt-3'>
+                  <div 
+                      className='d-inline'
+                  >
+                    <button
+                        className='btn btn-primary ml-2 mt-2'
+                        onClick={() => this.doTemplateExport() }
+                    >
+                      Export
+                    </button>
+                  </div>
+
+                  <div 
+                      className='d-inline'
+                  >
+                    {template_download_button}
+                  </div>
+
+                  <div 
+                      className='d-inline m-2'
+                  >
+                    <div>
+                    <span className='font-weight-bold' >Import Template:</span>
+                    <input 
+                        type="file" 
+                        id="template_file" 
+                        name="template_files[]" 
+                        size='20'
+                        multiple 
+                        onChange={(event) => this.importTemplate(event.target.files)}
+                    />
+                    </div>
+                  </div>
+                </div>
+
+
+
+
+                <div className='row ml-2 mt-3'>
+                  <div className='d-inline ml-2'>
+                    {anchor_pics}
+                  </div>
+                </div>
               </div>
 
             </div>

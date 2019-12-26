@@ -503,10 +503,10 @@ class InsightsPanel extends React.Component {
       template_data['anchors'] = []
       template_data['mask_zones'] = []
     }
-    if (anchors) {
+    if (anchors.length) {
       template_data['anchors'] = anchors
     }
-    if (mask_zones) {
+    if (mask_zones.length) {
       template_data['mask_zones'] = mask_zones
     }
     let deepCopyTemplates = JSON.parse(JSON.stringify(this.props.templates))
