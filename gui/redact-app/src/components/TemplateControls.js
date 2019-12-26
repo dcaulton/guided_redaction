@@ -309,7 +309,8 @@ class TemplateControls extends React.Component {
               className='m-2 p-2 d-inline'
             >
               <img 
-                height='100'
+                max-height='100'
+                max-width='100'
                 key={'dapper' + i}
                 alt={anchor['id']}
                 title={anchor['id']}
@@ -600,7 +601,7 @@ class TemplateControls extends React.Component {
 
 
 
-                <div className='row ml-2 mt-3'>
+                <div className='row m-3'>
                   <div className='d-inline ml-2'>
                     {anchor_pics}
                   </div>

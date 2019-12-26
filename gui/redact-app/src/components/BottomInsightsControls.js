@@ -3,6 +3,7 @@ import TemplateControls from './TemplateControls'
 import AnnotationControls from './AnnotationControls'
 import SelectedAreaControls from './SelectedAreaControls'
 import OcrControls from './OcrControls'
+import ResultsPanel from './ResultsPanel'
 import SessionControls from './SessionControls'
 
 class BottomInsightsControls extends React.Component {
@@ -61,6 +62,10 @@ class BottomInsightsControls extends React.Component {
         />
 
         <OcrControls
+          displayInsightsMessage={this.props.displayInsightsMessage}
+        />
+
+        <ResultsPanel
           displayInsightsMessage={this.props.displayInsightsMessage}
         />
 
