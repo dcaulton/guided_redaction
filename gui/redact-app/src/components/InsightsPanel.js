@@ -491,7 +491,7 @@ class InsightsPanel extends React.Component {
     return the_sam
   }
 
-  saveTemplate(template_data, when_done=(()=>{})) {
+  saveTemplate(template_data, when_done=(()=>{}), anchors=[], mask_zones=[]) {
     if (!template_data['id']) {
       template_data['id'] = 'template_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
     }
@@ -502,6 +502,12 @@ class InsightsPanel extends React.Component {
     } else {
       template_data['anchors'] = []
       template_data['mask_zones'] = []
+    }
+    if (anchors) {
+      template_data['anchors'] = anchors
+    }
+    if (mask_zones) {
+      template_data['mask_zones'] = mask_zones
     }
     let deepCopyTemplates = JSON.parse(JSON.stringify(this.props.templates))
     deepCopyTemplates[template_data['id']] = template_data

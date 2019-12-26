@@ -17,6 +17,23 @@ class TemplateControls extends React.Component {
     this.anchorSliceDone=this.anchorSliceDone.bind(this)
   }
 
+  importTemplate(files) {
+    var app_this = this
+    let reader = new FileReader()
+    reader.onload = (function(evt) {
+      let template = JSON.parse(evt.target.result)
+      if (template['id']) {
+        app_this.props.saveTemplate(
+          template, 
+          app_this.props.displayInsightsMessage('Template has been loaded'),
+          template['anchors'],
+          template['mask_zones']
+        )
+      }
+    })
+    reader.readAsBinaryString(files[0]);
+  }
+
   buildTemplatePickerButton() {                                                 
     let return_array = []                                                       
 		const template_keys = Object.keys(this.props.templates)
@@ -381,6 +398,22 @@ class TemplateControls extends React.Component {
                     className='d-inline'
                 >
                   {template_download_button}
+                </div>
+
+                <div 
+                    className='d-inline'
+                >
+                  <div>
+                  <span className='font-weight-bold' >Import Template:</span>
+                  <input 
+                      type="file" 
+                      id="template_file" 
+                      name="template_files[]" 
+                      size='20'
+                      multiple 
+                      onChange={(event) => this.importTemplate(event.target.files)}
+                  />
+                  </div>
                 </div>
 
                 <div className='d-inline'>
