@@ -3,6 +3,7 @@ import TemplateControls from './TemplateControls'
 import AnnotationControls from './AnnotationControls'
 import SelectedAreaControls from './SelectedAreaControls'
 import OcrControls from './OcrControls'
+import MovieSetsPanel from './MovieSetsPanel'
 import ResultsPanel from './ResultsPanel'
 import SessionControls from './SessionControls'
 
@@ -63,6 +64,13 @@ class BottomInsightsControls extends React.Component {
 
         <OcrControls
           displayInsightsMessage={this.props.displayInsightsMessage}
+        />
+
+        <MovieSetsPanel
+          displayInsightsMessage={this.props.displayInsightsMessage}
+          movie_sets={this.props.movie_sets}
+          setMovieSets={this.props.setMovieSets}
+          draggedId={this.props.draggedId}
         />
 
         <ResultsPanel

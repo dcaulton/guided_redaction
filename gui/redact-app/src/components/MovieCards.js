@@ -19,6 +19,7 @@ class MovieCardList extends React.Component {
             getMovieSelectedCount={this.props.getMovieSelectedCount}
             submitInsightsJob={this.props.submitInsightsJob}
             setMovieNickname={this.props.setMovieNickname}
+            setDraggedId={this.props.setDraggedId}
         />
         )
       })}
@@ -122,7 +123,12 @@ class MovieCard extends React.Component {
     }
 
     return (
-      <div className={top_div_classname}>
+      <div 
+          className={top_div_classname}
+          draggable='true'
+          onDragStart={() => this.props.setDraggedId(this.props.this_cards_movie_url)}
+          onDragOver={(event) => event.preventDefault()}
+      >
         <div className='col'>
             <div className='row'>
               <video 

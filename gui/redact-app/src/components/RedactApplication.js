@@ -43,6 +43,7 @@ class RedactApplication extends React.Component {
       current_workbook_id: '',
       workbooks: [],
       movies: {},
+      movie_sets: {},
       current_template_id: '',
       templates: {},
       template_matches: {},
@@ -90,6 +91,7 @@ class RedactApplication extends React.Component {
     this.setMovieNickname=this.setMovieNickname.bind(this)
     this.getCurrentFramesets=this.getCurrentFramesets.bind(this)
     this.getCurrentFrames=this.getCurrentFrames.bind(this)
+    this.setMovieSets=this.setMovieSets.bind(this)
   }
 
   getCurrentFramesets() {
@@ -108,6 +110,12 @@ class RedactApplication extends React.Component {
       }
     }
     return []
+  }
+
+  setMovieSets(the_movie_sets) {
+    this.setState({
+      movie_sets: the_movie_sets,
+    })
   }
 
   setMovieNickname = (movie_url, movie_nickname) => {
@@ -1121,6 +1129,8 @@ class RedactApplication extends React.Component {
                 annotations={this.state.annotations}
                 cropImage={this.cropImage}
                 setMovieNickname={this.setMovieNickname}
+                movie_sets={this.state.movie_sets}
+                setMovieSets={this.setMovieSets}
               />
             </Route>
           </Switch>

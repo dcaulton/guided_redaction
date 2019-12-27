@@ -27,6 +27,7 @@ class InsightsPanel extends React.Component {
       prev_coords: (0,0),
       clicked_coords: (0,0),
       selected_area_template_anchor: '',
+      draggedId: null,
     }
     this.getSelectedAreas=this.getSelectedAreas.bind(this)
     this.getAnnotations=this.getAnnotations.bind(this)
@@ -60,11 +61,18 @@ class InsightsPanel extends React.Component {
     this.handleKeyDown=this.handleKeyDown.bind(this)
     this.setKeyDownCallback=this.setKeyDownCallback.bind(this)
     this.keyDownCallbacks = {}
+    this.setDraggedId=this.setDraggedId.bind(this)
   }
 
   componentDidMount() {
     this.props.getJobs()
     this.props.getWorkbooks()
+  }
+
+  setDraggedId = (the_id) => {
+    this.setState({
+      draggedId: the_id,
+    })
   }
 
   setKeyDownCallback(key_code, the_function) {
@@ -754,6 +762,7 @@ class InsightsPanel extends React.Component {
             getMovieSelectedCount={this.getMovieSelectedCount}
             submitInsightsJob={this.submitInsightsJob}
             setMovieNickname={this.props.setMovieNickname}
+            setDraggedId={this.setDraggedId}
           />
         </div>
 
@@ -843,6 +852,9 @@ class InsightsPanel extends React.Component {
             setKeyDownCallback={this.setKeyDownCallback}
             getAnnotations={this.getAnnotations}
             cropImage={this.props.cropImage}
+            movie_sets={this.props.movie_sets}
+            setMovieSets={this.props.setMovieSets}
+            draggedId={this.state.draggedId}
           />
         </div>
 
