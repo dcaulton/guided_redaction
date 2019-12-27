@@ -989,29 +989,29 @@ class RedactApplication extends React.Component {
         <nav className="navbar navbar-expand-lg navbar-dark bg-dark">
         <ul className="navbar-nav mr-auto mt-2 mt-lg-0">
           <li className="nav-item">
-            <Link className='nav-link' id='home_link' to='/'>RedactUI</Link>
+            <Link className='nav-link' id='home_link' to='/redact'>RedactUI</Link>
           </li>
           <li className="nav-item">
-            <Link className='nav-link' id='image_panel_link' to='/image'>Images</Link>
+            <Link className='nav-link' id='image_panel_link' to='/redact/image'>Images</Link>
           </li>
           <li className="nav-item">
-            <Link className='nav-link' id='movie_panel_link' to='/movie'>Movies</Link>
+            <Link className='nav-link' id='movie_panel_link' to='/redact/movie'>Movies</Link>
           </li>
           <li className="nav-item">
-            <Link className='nav-link' id='insights_link' to='/insights'>Insights</Link>
+            <Link className='nav-link' id='insights_link' to='/redact/insights'>Insights</Link>
           </li>
         </ul>
         </nav>
         <div id='container' className='container'>
           <Switch>
-            <Route exact path='/'>
+            <Route exact path='/redact'>
               <HomePanel 
                 setMovieUrlCallback={this.handleSetMovieUrl}
                 setImageUrlCallback={this.handleSetImageUrl}
                 showMovieParserLink={this.state.showMovieParserLink}
               />
             </Route>
-            <Route path='/movie'>
+            <Route path='/redact/movie'>
               <MoviePanel 
                 movie_url = {this.state.movie_url}
                 frames={this.state.frames}
@@ -1027,7 +1027,7 @@ class RedactApplication extends React.Component {
                 doMovieSplit={this.doMovieSplit}
               />
             </Route>
-            <Route path='/image'>
+            <Route path='/redact/image'>
               <ImagePanel 
                 mask_method={this.state.mask_method}
                 image_url={this.state.image_url}
@@ -1050,7 +1050,7 @@ class RedactApplication extends React.Component {
                 callRedact={this.callRedact}
               />
             </Route>
-            <Route path='/insights'>
+            <Route path='/redact/insights'>
               <InsightsPanel  
                 setMovieUrlCallback={this.handleSetMovieUrl}
                 doMovieSplit={this.doMovieSplit}
