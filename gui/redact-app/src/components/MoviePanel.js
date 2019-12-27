@@ -67,8 +67,9 @@ class MoviePanel extends React.Component {
   zipUpRedactedImages() {
     const framesets = this.props.getCurrentFramesets()
     let movie_frame_urls = []
-    for (let i=0; i < this.props.frames.length; i++) {
-      let image_url = this.props.frames[i]
+    const frames = this.props.getCurrentFrames()
+    for (let i=0; i < frames.length; i++) {
+      let image_url = frames[i]
       let the_hash = this.props.getFramesetHashForImageUrl(image_url)
       let the_frameset = framesets[the_hash]
       if (('areas_to_redact' in the_frameset) && the_frameset['areas_to_redact'].length > 0) {
@@ -266,7 +267,6 @@ class MoviePanel extends React.Component {
           <div id='frameset_cards' className='col-md-12'>
             <div id='cards_row' className='row m-5'>
               <FramesetCardList 
-                frames={this.props.frames}
                 getCurrentFramesets={this.props.getCurrentFramesets}
                 getNameFor={this.getNameFor}
                 redactFramesetCallback={this.redactFramesetCallback}

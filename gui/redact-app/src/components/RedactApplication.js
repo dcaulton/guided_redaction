@@ -42,7 +42,6 @@ class RedactApplication extends React.Component {
       current_workbook_name: 'workbook 1',
       current_workbook_id: '',
       workbooks: [],
-      frames: [],
       movies: {},
       current_template_id: '',
       templates: {},
@@ -90,12 +89,22 @@ class RedactApplication extends React.Component {
     this.cropImage=this.cropImage.bind(this)
     this.setMovieNickname=this.setMovieNickname.bind(this)
     this.getCurrentFramesets=this.getCurrentFramesets.bind(this)
+    this.getCurrentFrames=this.getCurrentFrames.bind(this)
   }
 
   getCurrentFramesets() {
     if (this.state.movie_url) {
       if (Object.keys(this.state.movies).includes(this.state.movie_url)) {
         return this.state.movies[this.state.movie_url]['framesets']
+      }
+    }
+    return []
+  }
+
+  getCurrentFrames() {
+    if (this.state.movie_url) {
+      if (Object.keys(this.state.movies).includes(this.state.movie_url)) {
+        return this.state.movies[this.state.movie_url]['frames']
       }
     }
     return []
@@ -159,18 +168,26 @@ class RedactApplication extends React.Component {
     let offset_arr = the_offsets.split(',')
     let image_url_arr = []
     for (let i=0; i < offset_arr.length; i++) {
-        image_url_arr.push(image_urls[parseInt(offset_arr[i])])
+      image_url_arr.push(image_urls[parseInt(offset_arr[i])])
     }
-
 
     let the_framesets = {}
     for (let i=0; i < image_url_arr.length; i++) {
       the_framesets[i] = {images: [image_url_arr[i]]}
     }
 
-    this.setState({
+    let movie_obj = {
       frames: image_url_arr,
       framesets: the_framesets,
+    }
+    let new_movie_url = 'some url'
+    let movies_obj = {
+      new_movie_url: movie_obj,
+    }
+
+    this.setState({
+      movies: movies_obj,
+      movie_url: new_movie_url,
     })
     this.handleSetImageUrl(image_url_arr[0])
   }
@@ -241,7 +258,6 @@ class RedactApplication extends React.Component {
     if (this.state.movie_url !== the_url) {
       this.setState({
         movie_url: the_url,
-        frames: the_movie.frames,
       })
     }
     theCallback(the_movie.framesets)
@@ -324,7 +340,6 @@ class RedactApplication extends React.Component {
   addMovieAndSetActive(movie_url, movies, theCallback=(()=>{})) {
     this.setState({
       movie_url: movie_url, 
-      frames: movies[movie_url]['frames'],
       movies: movies,
     },
     theCallback(movies[movie_url]['framesets'])
@@ -836,7 +851,7 @@ class RedactApplication extends React.Component {
             new_frameset_hash = yy[2]
         }
     }
-    console.log(new_frameset) // I get an unused var warning if I don't do this
+    console.log('banana ' + new_frameset + new_frames) // I get an unused var warning if I don't do this
     var img = new Image()
     var app_this = this
     if (create_frameset) {
@@ -849,7 +864,6 @@ class RedactApplication extends React.Component {
               image_height: this.height,
               image_scale: scale,
               frameset_hash: new_frameset_hash,
-              frames: new_frames,
             });
         };
     } else {
@@ -873,7 +887,6 @@ class RedactApplication extends React.Component {
     this.setState({
       movie_url: the_url,
       image_url: '',
-      frames: [],
       frameset_hash: '',
       showMovieParserLink: true,
     })
@@ -986,10 +999,14 @@ class RedactApplication extends React.Component {
     }
     let the_hash = frameset_hash || this.state.frameset_hash
     let frameset = framesets[the_hash]
-    if (Object.keys(frameset).indexOf('areas_to_redact') > -1) {
-        return frameset['areas_to_redact']
+    if (frameset) {
+      if (Object.keys(frameset).indexOf('areas_to_redact') > -1) {
+          return frameset['areas_to_redact']
+      } else {
+          return []
+      }
     } else {
-        return []
+      return []
     }
   }
 
@@ -1027,7 +1044,7 @@ class RedactApplication extends React.Component {
             <Route path='/redact/movie'>
               <MoviePanel 
                 movie_url = {this.state.movie_url}
-                frames={this.state.frames}
+                getCurrentFrames={this.getCurrentFrames}
                 getCurrentFramesets={this.getCurrentFramesets}
                 mask_method = {this.state.mask_method}
                 setImageUrlCallback={this.handleSetImageUrl}
