@@ -180,14 +180,13 @@ class RedactApplication extends React.Component {
       frames: image_url_arr,
       framesets: the_framesets,
     }
-    let new_movie_url = 'some url'
     let movies_obj = {
-      new_movie_url: movie_obj,
+      'new_movie_url': movie_obj,
     }
 
     this.setState({
       movies: movies_obj,
-      movie_url: new_movie_url,
+      movie_url: 'new_movie_url',
     })
     this.handleSetImageUrl(image_url_arr[0])
   }
