@@ -49,7 +49,7 @@ class MoviePanel extends React.Component {
   }
 
   allFramesHaveBeenRedacted() {
-    const framesets = this.props.framesets
+    const framesets = this.props.getCurrentFramesets()
     const keys = Object.keys(framesets)
     for (let i=0; i < keys.length; i++) {
       const key = keys[i]
@@ -65,7 +65,7 @@ class MoviePanel extends React.Component {
   }
 
   zipUpRedactedImages() {
-    let framesets = this.props.framesets
+    const framesets = this.props.getCurrentFramesets()
     let movie_frame_urls = []
     for (let i=0; i < this.props.frames.length; i++) {
       let image_url = this.props.frames[i]
@@ -86,7 +86,7 @@ class MoviePanel extends React.Component {
   }
 
   redactFramesetCallback = (frameset_hash) => {
-    let first_image_url = this.props.framesets[frameset_hash]['images'][0]
+    let first_image_url = this.props.getCurrentFramesets()[frameset_hash]['images'][0]
     this.props.setImageUrlCallback(first_image_url)
     const link_to_next_page = document.getElementById('image_panel_link')
     link_to_next_page.click()
@@ -104,15 +104,16 @@ class MoviePanel extends React.Component {
   callFrameRedactions() {
     this.setState({reassembling_video: true})
     document.getElementById('movieparser_status').innerHTML = 'calling movie reassembler'
-    let frameset_keys = Object.keys(this.props.framesets)
+    let frameset_keys = Object.keys(this.props.getCurrentFramesets())
     for (let i=0; i < frameset_keys.length; i++) {
       let pass_arr = []
       let hash_key = frameset_keys[i]
       const areas_to_redact = this.props.getRedactionFromFrameset(hash_key)
       if (areas_to_redact.length > 0) {
-        let first_image_url = this.props.framesets[hash_key]['images'][0]
-        for (let i=0; i < this.props.framesets[hash_key]['areas_to_redact'].length; i++) {                            
-          let a2r = this.props.framesets[hash_key]['areas_to_redact'][i]
+        const framesets = this.props.getCurrentFramesets()
+        let first_image_url = framesets[hash_key]['images'][0]
+        for (let i=0; i < framesets[hash_key]['areas_to_redact'].length; i++) {                            
+          let a2r = framesets[hash_key]['areas_to_redact'][i]
           pass_arr.push([a2r['start'], a2r['end']])
         }  
         this.props.callRedact(pass_arr, first_image_url, this.afterFrameRedaction)
@@ -155,7 +156,7 @@ class MoviePanel extends React.Component {
 
   render() {
     let framesets_title = ''
-    const framesets_count = Object.keys(this.props.framesets).length
+    const framesets_count = Object.keys(this.props.getCurrentFramesets()).length
     if (framesets_count) {
       framesets_title = (
         <span id='frameset_title'>
@@ -266,7 +267,7 @@ class MoviePanel extends React.Component {
             <div id='cards_row' className='row m-5'>
               <FramesetCardList 
                 frames={this.props.frames}
-                framesets={this.props.framesets}
+                getCurrentFramesets={this.props.getCurrentFramesets}
                 getNameFor={this.getNameFor}
                 redactFramesetCallback={this.redactFramesetCallback}
                 getRedactionFromFrameset={this.props.getRedactionFromFrameset}

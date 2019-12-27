@@ -43,7 +43,6 @@ class RedactApplication extends React.Component {
       current_workbook_id: '',
       workbooks: [],
       frames: [],
-      framesets: {},
       movies: {},
       current_template_id: '',
       templates: {},
@@ -90,6 +89,16 @@ class RedactApplication extends React.Component {
     this.setAnnotations=this.setAnnotations.bind(this)
     this.cropImage=this.cropImage.bind(this)
     this.setMovieNickname=this.setMovieNickname.bind(this)
+    this.getCurrentFramesets=this.getCurrentFramesets.bind(this)
+  }
+
+  getCurrentFramesets() {
+    if (this.state.movie_url) {
+      if (Object.keys(this.state.movies).includes(this.state.movie_url)) {
+        return this.state.movies[this.state.movie_url]['framesets']
+      }
+    }
+    return []
   }
 
   setMovieNickname = (movie_url, movie_nickname) => {
@@ -233,7 +242,6 @@ class RedactApplication extends React.Component {
       this.setState({
         movie_url: the_url,
         frames: the_movie.frames,
-        framesets: the_movie.framesets,
       })
     }
     theCallback(the_movie.framesets)
@@ -266,7 +274,7 @@ class RedactApplication extends React.Component {
       let redacted_image_url = responseJson['redacted_image_url']
       this.setRedactedImageUrl(redacted_image_url)
 
-      let local_framesets = JSON.parse(JSON.stringify(this.state.framesets));
+      let local_framesets = JSON.parse(JSON.stringify(this.getCurrentFramesets()));
       const frameset_hash = this.getFramesetHashForImageUrl(responseJson['original_image_url'])
       let frameset = local_framesets[frameset_hash]
       frameset['redacted_image'] = responseJson['redacted_image_url']
@@ -317,7 +325,6 @@ class RedactApplication extends React.Component {
     this.setState({
       movie_url: movie_url, 
       frames: movies[movie_url]['frames'],
-      framesets: movies[movie_url]['framesets'],
       movies: movies,
     },
     theCallback(movies[movie_url]['framesets'])
@@ -745,9 +752,10 @@ class RedactApplication extends React.Component {
   }
 
   getFramesetHashForImageUrl = (image_url) => {
-    const hashes = Object.keys(this.state.framesets)
+    const framesets = this.getCurrentFramesets()
+    const hashes = Object.keys(framesets)
     for (let i=0; i < hashes.length; i++) {
-      let the_images = this.state.framesets[hashes[i]]['images']
+      let the_images = framesets[hashes[i]]['images']
       if (the_images.includes(image_url)) {
         return hashes[i]
       }
@@ -769,12 +777,13 @@ class RedactApplication extends React.Component {
   }
 
   getNextImageLink() {
-    let hashes = Object.keys(this.state.framesets)
+    const framesets = this.getCurrentFramesets()
+    let hashes = Object.keys(framesets)
     if (this.state.frameset_hash) {
       let cur_index = hashes.indexOf(this.state.frameset_hash)
       if (cur_index < (hashes.length-1)) {
         const next_hash = hashes[cur_index + 1]
-        const next_image_url = this.state.framesets[next_hash]['images'][0]
+        const next_image_url = framesets[next_hash]['images'][0]
         return next_image_url
       } 
     }
@@ -782,12 +791,13 @@ class RedactApplication extends React.Component {
   }
 
   getPrevImageLink() {
-    let hashes = Object.keys(this.state.framesets)
+    const framesets = this.getCurrentFramesets()
+    let hashes = Object.keys(framesets)
     if (this.state.frameset_hash) {
       let cur_index = hashes.indexOf(this.state.frameset_hash)
       if (cur_index > 0) {
         const prev_hash = hashes[cur_index - 1]
-        const prev_image_url = this.state.framesets[prev_hash]['images'][0]
+        const prev_image_url = framesets[prev_hash]['images'][0]
         return prev_image_url
       } 
     }
@@ -810,7 +820,7 @@ class RedactApplication extends React.Component {
     let new_frameset = {}
     let new_frames = []
     let new_frameset_hash = ''
-    if (!this.state.framesets) {
+    if (!this.getCurrentFramesets()) {
         create_frameset = true
         let yy = this.makeNewFrameFrameset(the_url) 
         new_frameset = yy[0]
@@ -826,6 +836,7 @@ class RedactApplication extends React.Component {
             new_frameset_hash = yy[2]
         }
     }
+    console.log(new_frameset) // I get an unused var warning if I don't do this
     var img = new Image()
     var app_this = this
     if (create_frameset) {
@@ -838,7 +849,6 @@ class RedactApplication extends React.Component {
               image_height: this.height,
               image_scale: scale,
               frameset_hash: new_frameset_hash,
-              framesets: new_frameset,
               frames: new_frames,
             });
         };
@@ -864,7 +874,6 @@ class RedactApplication extends React.Component {
       movie_url: the_url,
       image_url: '',
       frames: [],
-      framesets: {},
       frameset_hash: '',
       showMovieParserLink: true,
     })
@@ -872,16 +881,11 @@ class RedactApplication extends React.Component {
   }
 
   handleUpdateFrameset = (the_hash, the_frameset) => {
-    // DMC update the frameset in this.state.movies too, 
-    let new_framesets = this.state.framesets
-    new_framesets[the_hash] = the_frameset
-    let new_movie = this.state.movies[this.state.movie_url]
-    if (new_movie) { 
-      new_movie['framesets'] = new_framesets
-      this.setState({
-        framesets: new_framesets
-      })
-    }
+    let deepCopyMovies= JSON.parse(JSON.stringify(this.state.movies))
+    deepCopyMovies[this.state.movie_url]['framesets'][the_hash] = the_frameset
+    this.setState({
+      movies: deepCopyMovies
+    })
   }
 
   setTemplateMatches = (template_id, the_matches) => {
@@ -939,8 +943,8 @@ class RedactApplication extends React.Component {
   }
 
   handleMergeFramesets = (target_hash, source_hash) => {
-    let deepCopyFramesets = JSON.parse(JSON.stringify(this.state.framesets))
-    const source_frameset = this.state.framesets[source_hash]
+    let deepCopyFramesets = JSON.parse(JSON.stringify(this.getCurrentFramesets()))
+    const source_frameset = deepCopyFramesets[source_hash]
     let new_target_frameset = deepCopyFramesets[target_hash]
     let new_target_images = new_target_frameset['images'].concat(source_frameset['images'])
     if (new_target_frameset['areas_to_redact']) {
@@ -954,25 +958,34 @@ class RedactApplication extends React.Component {
     new_target_frameset['images'] = new_target_images
     deepCopyFramesets[target_hash] = new_target_frameset
     delete deepCopyFramesets[source_hash]
+    let deepCopyMovies = JSON.parse(JSON.stringify(this.state.movies))
+    let cur_movie = deepCopyMovies[this.state.movie_url]
+    cur_movie['framesets'] = deepCopyFramesets
+    deepCopyMovies[this.state.movie_url] = cur_movie
     this.setState({
-      framesets:deepCopyFramesets,
+      movies: deepCopyMovies,
     })
   }
 
   addRedactionToFrameset = (areas_to_redact) => {
-    let deepCopyFramesets = JSON.parse(JSON.stringify(this.state.framesets))
+    let deepCopyFramesets = JSON.parse(JSON.stringify(this.getCurrentFramesets()))
     deepCopyFramesets[this.state.frameset_hash]['areas_to_redact'] = areas_to_redact
+    let deepCopyMovies = JSON.parse(JSON.stringify(this.state.movies))
+    let cur_movie = deepCopyMovies[this.state.movie_url]
+    cur_movie['framesets'] = deepCopyFramesets
+    deepCopyMovies[this.state.movie_url] = cur_movie
     this.setState({
-        framesets: deepCopyFramesets,
+        movies: deepCopyMovies,
     })
   }
 
   getRedactionFromFrameset = (frameset_hash) => {
-    if (!this.state.framesets || !this.state.frameset_hash) {
+    const framesets = this.getCurrentFramesets()
+    if (!framesets || !this.state.frameset_hash) {
         return []
     }
     let the_hash = frameset_hash || this.state.frameset_hash
-    let frameset = this.state.framesets[the_hash]
+    let frameset = framesets[the_hash]
     if (Object.keys(frameset).indexOf('areas_to_redact') > -1) {
         return frameset['areas_to_redact']
     } else {
@@ -1008,14 +1021,14 @@ class RedactApplication extends React.Component {
               <HomePanel 
                 setMovieUrlCallback={this.handleSetMovieUrl}
                 setImageUrlCallback={this.handleSetImageUrl}
-                showMovieParserLink={this.state.showMovieParserLink}
+                showMovieParserLink={this.state.showMovieParserLink}l
               />
             </Route>
             <Route path='/redact/movie'>
               <MoviePanel 
                 movie_url = {this.state.movie_url}
                 frames={this.state.frames}
-                framesets={this.state.framesets}
+                getCurrentFramesets={this.getCurrentFramesets}
                 mask_method = {this.state.mask_method}
                 setImageUrlCallback={this.handleSetImageUrl}
                 getRedactionFromFrameset={this.getRedactionFromFrameset}
@@ -1035,7 +1048,6 @@ class RedactApplication extends React.Component {
                 image_width={this.state.image_width}
                 image_height={this.state.image_height}
                 image_scale={this.state.image_scale}
-                framesets={this.state.framesets}
                 addRedactionToFrameset={this.addRedactionToFrameset}
                 getRedactionFromFrameset={this.getRedactionFromFrameset}
                 setMaskMethod={this.handleSetMaskMethod}
@@ -1057,7 +1069,7 @@ class RedactApplication extends React.Component {
                 getFramesetHashForImageUrl={this.getFramesetHashForImageUrl}
                 movie_url={this.state.movie_url}
                 movies={this.state.movies}
-                framesets={this.state.framesets}
+                getCurrentFramesets={this.getCurrentFramesets}
                 callTemplateScanner={this.callTemplateScanner}
                 getCurrentTemplateAnchors={this.getCurrentTemplateAnchors}
                 setTemplateMatches={this.setTemplateMatches}

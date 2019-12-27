@@ -78,14 +78,15 @@ class FramesetCardList extends React.Component {
   }
 
   render() {
-    let ordered_frame_hashes = Object.keys(this.props.framesets)
+    const framesets = this.props.getCurrentFramesets()
+    let ordered_frame_hashes = Object.keys(framesets)
     let items = ordered_frame_hashes.map((key) =>
       <FramesetCard
         setDraggedId={this.props.setDraggedId}
         handleDroppedFrameset={this.props.handleDroppedFrameset}
         frame_hash={key}
-        image_names={this.getImageNamesList(this.props.framesets[key]['images'])}
-        image_url={this.props.framesets[key]['images'][0]}
+        image_names={this.getImageNamesList(framesets[key]['images'])}
+        image_url={framesets[key]['images'][0]}
         key={key}
         redactFramesetCallback={this.props.redactFramesetCallback}
         redactionDesc={this.getRedactionDesc(key)}

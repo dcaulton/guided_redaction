@@ -275,9 +275,10 @@ class InsightsPanel extends React.Component {
 
   scrubberOnChange() {
     const value = document.getElementById('movie_scrubber').value
-    const keys = Object.keys(this.props.framesets)
+    const framesets = this.props.getCurrentFramesets()
+    const keys = Object.keys(this.props.getCurrentFramesets())
     const new_frameset_hash = keys[value]
-    const the_url = this.props.framesets[new_frameset_hash]['images'][0]
+    const the_url = framesets[new_frameset_hash]['images'][0]
     this.displayInsightsMessage('.')
     this.setState({
       insights_image: the_url,
@@ -659,10 +660,11 @@ class InsightsPanel extends React.Component {
   }
 
   getScrubberFramesetHash() {
+    const framesets = this.props.getCurrentFramesets()
     if (this.props.movie_url && 
         Object.keys(this.props.movies).includes(this.props.movie_url)) {
-      for (let frameset_hash in this.props.framesets) {
-        if (this.props.framesets[frameset_hash]['images'].includes(this.state.insights_image)) {
+      for (let frameset_hash in framesets) {
+        if (framesets[frameset_hash]['images'].includes(this.state.insights_image)) {
           return frameset_hash
         }
       }

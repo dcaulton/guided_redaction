@@ -238,7 +238,6 @@ class ImagePanel extends React.Component {
                   image_file={this.props.image_file}
                 />
                 <CanvasImageOverlay
-                  framesets={this.props.framesets}
                   mode={this.local_state.mode}
                   submode={this.local_state.submode}
                   image_width={this.props.image_width}
