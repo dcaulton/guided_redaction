@@ -113,7 +113,7 @@ class JobCard extends React.Component {
           className='col float-right'
         >
         <img
-          src='../gr_assets/yellow_dot.png'
+          src='../gr_assets/blue_dot.png'
           height='20'
           alt='running'
         />
@@ -126,6 +126,18 @@ class JobCard extends React.Component {
         >
         <img
           src='../gr_assets/green_dot.png'
+          height='20'
+          alt='success'
+        />
+        </div>
+      )
+    } else if (this.props.job_data['status'] === 'created') {
+      status_button = (
+        <div
+          className='col float-right'
+        >
+        <img
+          src='../gr_assets/teal_dot.png'
           height='20'
           alt='success'
         />

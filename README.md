@@ -3,6 +3,8 @@ An API for guided redaction and analysis tasks.
 
 Uses Python, OpenCV and Tesseract and the EAST algorithm to analyze and redact information on images.
 
+Has a GUI to facilitate day to day redaction tasks as well as research.
+
 ## to install the backend
 - Python 3 is required.
 - For desktop, set up a python virtualenv just to keep things tidy.  It's your call on a dockerized server container.
@@ -16,8 +18,12 @@ Uses Python, OpenCV and Tesseract and the EAST algorithm to analyze and redact i
 
 ## to run
 - start django server
--- so change directory to the server, then `python manage.py runserver`
+-- load virtualenv, change directory to guided_redaction/api, then `python manage.py runserver`
 - start npm server
--- so change directory to the gui part, then `npm start`
-- start the http server for the images
--- cd to the directory 'work' for the api part, then `python3 -m http.server 8080`
+-- change directory to the guided_redaction/gui/redact-app, then `npm start`
+- start celerys broker
+-- locally for me that's rabbit mq.  then `rabbitmq-server` 
+- start celery
+-- load virtualenv, cd to guided_redaction/api, then `celery -A server.celery worker  --loglevel=info`
+- make sure images are being served up as urls
+-- for my default home setup, that's nginx on port 8080.  then `sudo nginx` 
