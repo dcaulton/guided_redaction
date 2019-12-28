@@ -15,6 +15,7 @@ class MovieParser:
     working_dir = ""
     scan_method = ""
     image_hash_size = 8
+    frameset_discriminator = 'gray16'
 
     def __init__(self, args):
         self.input_frames_per_second = args.get("ifps", 1)
@@ -27,6 +28,7 @@ class MovieParser:
             'sykes_dev_azure_blob_connection_string'
         )
         self.use_same_directory= args.get('use_same_directory', False)
+        self.frameset_discriminator= args.get("frameset_discriminator", 'gray16')
 
         if self.use_same_directory:
             working_uuid = self.get_movie_dir()
@@ -88,9 +90,12 @@ class MovieParser:
             unique_frames[current_hash] = [image_url]
 
     def get_hash(self, image):
-        resized = cv2.resize(image, (self.image_hash_size + 1, self.image_hash_size))
-        diff = resized[:, 1:] > resized[:, :-1]
-        the_hash = sum([2 ** i for (i, v) in enumerate(diff.flatten()) if v])
+        if (self.frameset_discriminator == 'gray16'):
+            resized = cv2.resize(image, (self.image_hash_size + 1, self.image_hash_size))
+            diff = resized[:, 1:] > resized[:, :-1]
+            the_hash = sum([2 ** i for (i, v) in enumerate(diff.flatten()) if v])
+        else:
+            the_hash = 1
         return the_hash
 
     def zip_movie(self, image_urls, movie_name="output.mp4"):

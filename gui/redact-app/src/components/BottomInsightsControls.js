@@ -105,6 +105,7 @@ class BottomInsightsControls extends React.Component {
           toggleShowResults={this.props.toggleShowResults}
           toggleShowAnnotate={this.props.toggleShowAnnotate}
           toggleShowOcr={this.props.toggleShowOcr}
+          setFramesetDiscriminator={this.props.setFramesetDiscriminator}
         />
 
       </div>

@@ -16,6 +16,7 @@ class RedactApplication extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
+      frameset_discriminator: 'gray16',
       mask_method: 'blur_7x7',
       image_url: '',
       redacted_movie_url: '',
@@ -92,6 +93,13 @@ class RedactApplication extends React.Component {
     this.getCurrentFramesets=this.getCurrentFramesets.bind(this)
     this.getCurrentFrames=this.getCurrentFrames.bind(this)
     this.setMovieSets=this.setMovieSets.bind(this)
+    this.setFramesetDiscriminator=this.setFramesetDiscriminator.bind(this)
+  }
+
+  setFramesetDiscriminator(the_value) {
+    this.setState({
+      frameset_discriminator: the_value,
+    })
   }
 
   getCurrentFramesets() {
@@ -372,6 +380,7 @@ class RedactApplication extends React.Component {
         headers: this.buildJsonHeaders(),
         body: JSON.stringify({
           movie_url: the_url,
+          frameset_descriminator: this.state.frameset_discriminator,
         }),
       })
       .then((response) => response.json())
@@ -1135,6 +1144,8 @@ class RedactApplication extends React.Component {
                 setMovieNickname={this.setMovieNickname}
                 movie_sets={this.state.movie_sets}
                 setMovieSets={this.setMovieSets}
+                frameset_discriminator={this.state.frameset_discriminator}
+                setFramesetDiscriminator={this.setFramesetDiscriminator}
               />
             </Route>
           </Switch>

@@ -216,6 +216,7 @@ class InsightsPanel extends React.Component {
       job_data['operation'] = 'split_and_hash_movie'
       job_data['description'] = 'load and hash movie: ' + extra_data
       job_data['request_data']['movie_url'] = extra_data
+      job_data['request_data']['frameset_discriminator'] = this.props.frameset_discriminator
       this.props.submitJob(job_data)
     }
   }
@@ -938,6 +939,7 @@ class InsightsPanel extends React.Component {
             toggleShowResults={this.toggleShowResults}
             toggleShowAnnotate={this.toggleShowAnnotate}
             toggleShowOcr={this.toggleShowOcr}
+            setFramesetDiscriminator={this.props.setFramesetDiscriminator}
           />
         </div>
 

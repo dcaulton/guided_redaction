@@ -184,6 +184,20 @@ class SessionControls extends React.Component {
                     />
                   </div>
 
+                  <div
+                      className='d-inline ml-2 mt-2'
+                  >   
+                     <select
+                        title='Frameset Discriminator'
+                        name='frameset_discriminator'
+                        onChange={(event) => this.props.setFramesetDiscriminator(event.target.value)}
+                     >
+                      <option value='gray16'>--FramesetDiscriminator--</option>
+                      <option value='gray16'>gray 16 (default)</option>
+                      <option value='gray5'>gray 5</option>
+                    </select>
+                  </div>
+
                 </div>
 
                 <div className='row mt-3 bg-light rounded'>
@@ -251,6 +265,7 @@ class SessionControls extends React.Component {
                   />
                   Show Results
                 </div>
+
 
               </div>
             </div>

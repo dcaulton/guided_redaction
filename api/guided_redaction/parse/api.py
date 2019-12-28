@@ -181,6 +181,7 @@ class ParseViewSetSplitAndHashMovie(viewsets.ViewSet):
             connection_string=the_connection_string,
             image_storage=settings.REDACT_IMAGE_STORAGE,
         )
+
         parser = MovieParser(
             {
                 "debug": settings.DEBUG,
@@ -189,6 +190,7 @@ class ParseViewSetSplitAndHashMovie(viewsets.ViewSet):
                 "scan_method": "unzip",
                 "movie_url": movie_url,
                 "file_writer": fw,
+                "frameset_discriminator": request_data.get('frameset_discriminator'),
             }
         )
         frames = parser.split_movie()
@@ -217,7 +219,6 @@ class ParseViewSetSplitAndHashMovie(viewsets.ViewSet):
                 "unique_frames": resp_data['response_data']['unique_frames'],
             }
         )
-
 
     def collate_image_urls(self, frames, unique_frames):
         new_frames = []
