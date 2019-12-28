@@ -3,6 +3,10 @@ import React from 'react';
 class OcrControls extends React.Component {
 
   render() {
+    if (!this.props.showOcr) {
+      return([])
+    }
+
     return (
         <div className='row bg-light rounded mt-3'>
           <div className='col'>

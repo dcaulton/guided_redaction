@@ -91,6 +91,30 @@ class SessionControls extends React.Component {
   render() {
     let workbook_load_button = this.buildWorkbookPickerButton()
     let workbook_delete_button = this.buildWorkbookDeleteButton()
+    let show_templates_checked = ''
+    if (this.props.showTemplates) {
+      show_templates_checked = 'checked'
+    }
+    let show_selected_area_checked = ''
+    if (this.props.showSelectedArea) {
+      show_selected_area_checked = 'checked'
+    }
+    let show_movie_sets_checked = ''
+    if (this.props.showMovieSets) {
+      show_movie_sets_checked = 'checked'
+    }
+    let show_results_checked = ''
+    if (this.props.showResults) {
+      show_results_checked = 'checked'
+    }
+    let show_annotate_checked = ''
+    if (this.props.showAnnotate) {
+      show_annotate_checked = 'checked'
+    }
+    let show_ocr_checked = ''
+    if (this.props.showOcr) {
+      show_ocr_checked = 'checked'
+    }
 
     return (
         <div className='row bg-light rounded mt-3'>
@@ -121,7 +145,7 @@ class SessionControls extends React.Component {
             >
               <div id='session_main' className='col'>
 
-                <div className='row mt-3 bg-light rounded mt-3'>
+                <div className='row mt-3 bg-light rounded'>
                   <button
                       className='btn btn-primary mt-2 ml-2'
                       onClick={() => this.props.callPing()}
@@ -160,6 +184,72 @@ class SessionControls extends React.Component {
                     />
                   </div>
 
+                </div>
+
+                <div className='row mt-3 bg-light rounded'>
+                  <input
+                    className='ml-2 mr-2 mt-1'
+                    id='toggle_annotate'
+                    checked={show_templates_checked}
+                    type='checkbox'
+                    onChange={() => this.props.toggleShowTemplates()}
+                  />
+                  Show Templates
+                </div>
+
+                <div className='row mt-3 bg-light rounded'>
+                  <input
+                    className='ml-2 mr-2 mt-1'
+                    id='toggle_results'
+                    checked={show_selected_area_checked}
+                    type='checkbox'
+                    onChange={() => this.props.toggleShowSelectedArea()}
+                  />
+                  Show Selected Area
+                </div>
+
+                <div className='row mt-3 bg-light rounded'>
+                  <input
+                    className='ml-2 mr-2 mt-1'
+                    id='toggle_annotate'
+                    checked={show_annotate_checked}
+                    type='checkbox'
+                    onChange={() => this.props.toggleShowAnnotate()}
+                  />
+                  Show Annotate
+                </div>
+
+                <div className='row mt-3 bg-light rounded'>
+                  <input
+                    className='ml-2 mr-2 mt-1'
+                    id='toggle_results'
+                    checked={show_ocr_checked}
+                    type='checkbox'
+                    onChange={() => this.props.toggleShowOcr()}
+                  />
+                  Show Ocr
+                </div>
+
+                <div className='row mt-3 bg-light rounded'>
+                  <input
+                    className='ml-2 mr-2 mt-1'
+                    id='toggle_movie_sets'
+                    checked={show_movie_sets_checked}
+                    type='checkbox'
+                    onChange={() => this.props.toggleShowMovieSets()}
+                  />
+                  Show Movie Sets
+                </div>
+
+                <div className='row mt-3 bg-light rounded'>
+                  <input
+                    className='ml-2 mr-2 mt-1'
+                    id='toggle_results'
+                    checked={show_results_checked}
+                    type='checkbox'
+                    onChange={() => this.props.toggleShowResults()}
+                  />
+                  Show Results
                 </div>
 
               </div>

@@ -324,7 +324,67 @@ class TemplateControls extends React.Component {
     return return_arr
   }
 
+  buildTemplateRunButton() {
+    let movie_set_keys = Object.keys(this.props.movie_sets)
+    return (
+      <div className='d-inline'>
+        <button
+            className='btn btn-primary ml-2 mt-2 dropdown-toggle'
+            type='button'
+            id='scanTemplateDropdownButton'
+            data-toggle='dropdown'
+            area-haspopup='true'
+            area-expanded='false'
+        >
+          Run
+        </button>
+        <div className='dropdown-menu' aria-labelledby='scanTemplateDropdownButton'>
+          <button className='dropdown-item'
+              onClick={() => this.props.scanTemplate('image')}
+          >
+            Image
+          </button>
+          <button className='dropdown-item'
+              onClick={() => this.props.scanTemplate('movie')}
+          >
+            Movie 
+          </button>
+          <button className='dropdown-item'
+              onClick={() => this.props.scanTemplate('all_movies')}
+          >
+            All Movies
+          </button>
+          <button className='dropdown-item'
+              onClick={() => this.props.submitInsightsJob('current_template_current_movie')}
+          >
+            Movie as Job
+          </button>
+          <button className='dropdown-item'
+              onClick={() => this.props.submitInsightsJob('current_template_all_movies')}
+          >
+            All Movies as Job
+          </button>
+    {movie_set_keys.map((value, index) => {
+      return (
+        <button
+            className='dropdown-item'
+            key={index}
+            onClick={() => this.props.submitInsightsJob('current_template_movie_set', value)}
+        >
+          MovieSet '{this.props.movie_sets[value]['name']}' as Job
+        </button>
+      )
+    })}
+        </div>
+      </div>
+    )
+  }
+
   render() {
+    if (!this.props.showTemplates) {                                             
+      return([])                                                                
+    }
+
     let template_saved_unsaved = ''
     if (!this.props.current_template_id) {
       template_saved_unsaved = <span>(unsaved)</span>
@@ -333,6 +393,7 @@ class TemplateControls extends React.Component {
     const template_delete_button = this.buildTemplateDeleteButton()
     const template_download_button = this.buildTemplateDownloadButton()
     const anchor_pics = this.buildAnchorPics()
+    const run_button = this.buildTemplateRunButton()
 
     return (
         <div className='row bg-light rounded'>
@@ -418,43 +479,7 @@ class TemplateControls extends React.Component {
                 </div>
 
                 <div className='d-inline'>
-                  <button
-                      className='btn btn-primary ml-2 mt-2 dropdown-toggle'
-                      type='button'
-                      id='scanTemplateDropdownButton'
-                      data-toggle='dropdown'
-                      area-haspopup='true'
-                      area-expanded='false'
-                  >
-                    Run
-                  </button>
-                  <div className='dropdown-menu' aria-labelledby='scanTemplateDropdownButton'>
-                    <button className='dropdown-item'
-                        onClick={() => this.props.scanTemplate('image')}
-                    >
-                      Image
-                    </button>
-                    <button className='dropdown-item'
-                        onClick={() => this.props.scanTemplate('movie')}
-                    >
-                      Movie 
-                    </button>
-                    <button className='dropdown-item'
-                        onClick={() => this.props.scanTemplate('all_movies')}
-                    >
-                      All Movies
-                    </button>
-                    <button className='dropdown-item'
-                        onClick={() => this.props.submitInsightsJob('current_template_current_movie')}
-                    >
-                      Movie as Job
-                    </button>
-                    <button className='dropdown-item'
-                        onClick={() => this.props.submitInsightsJob('current_template_all_movies')}
-                    >
-                      All Movies as Job
-                    </button>
-                  </div>
+                  {run_button}
                 </div>
 
                 <div className='d-inline'>

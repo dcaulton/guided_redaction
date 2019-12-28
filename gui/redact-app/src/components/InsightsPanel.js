@@ -28,6 +28,12 @@ class InsightsPanel extends React.Component {
       clicked_coords: (0,0),
       selected_area_template_anchor: '',
       draggedId: null,
+      showTemplates: true,
+      showSelectedArea: true,
+      showAnnotate: true,
+      showOcr: true,
+      showMovieSets: true,
+      showResults: true,
     }
     this.getSelectedAreas=this.getSelectedAreas.bind(this)
     this.getAnnotations=this.getAnnotations.bind(this)
@@ -62,6 +68,54 @@ class InsightsPanel extends React.Component {
     this.setKeyDownCallback=this.setKeyDownCallback.bind(this)
     this.keyDownCallbacks = {}
     this.setDraggedId=this.setDraggedId.bind(this)
+    this.toggleShowTemplates=this.toggleShowTemplates.bind(this)
+    this.toggleShowSelectedArea=this.toggleShowSelectedArea.bind(this)
+    this.toggleShowMovieSets=this.toggleShowMovieSets.bind(this)
+    this.toggleShowResults=this.toggleShowResults.bind(this)
+    this.toggleShowAnnotate=this.toggleShowAnnotate.bind(this)
+    this.toggleShowOcr=this.toggleShowOcr.bind(this)
+  }
+
+  toggleShowTemplates() {
+    const new_value = (!this.state.showTemplates)
+    this.setState({
+      showTemplates: new_value,
+    })
+  }
+
+  toggleShowSelectedArea() {
+    const new_value = (!this.state.showSelectedArea)
+    this.setState({
+      showSelectedArea: new_value,
+    })
+  }
+
+  toggleShowMovieSets() {
+    const new_value = (!this.state.showMovieSets)
+    this.setState({
+      showMovieSets: new_value,
+    })
+  }
+
+  toggleShowResults() {
+    const new_value = (!this.state.showResults)
+    this.setState({
+      showResults: new_value,
+    })
+  }
+
+  toggleShowAnnotate() {
+    const new_value = (!this.state.showAnnotate)
+    this.setState({
+      showAnnotate: new_value,
+    })
+  }
+
+  toggleShowOcr() {
+    const new_value = (!this.state.showOcr)
+    this.setState({
+      showOcr: new_value,
+    })
   }
 
   componentDidMount() {
@@ -139,6 +193,23 @@ class InsightsPanel extends React.Component {
       job_data['request_data']['template'] = template
       job_data['request_data']['source_image_url'] = template['anchors'][0]['image']
       job_data['request_data']['target_movies'] = this.props.movies
+      this.props.submitJob(job_data)
+    } else if (job_string === 'current_template_movie_set') {
+      const movie_set_name = this.props.movie_sets[extra_data]['name']
+      let num_movies = this.props.movie_sets[extra_data]['movies'].length.toString()
+      let movies_to_run = {}
+      for (let i=0; i < this.props.movie_sets[extra_data]['movies'].length; i++) {
+        const movie_url = this.props.movie_sets[extra_data]['movies'][i]
+        movies_to_run[movie_url] = this.props.movies[movie_url]
+      }
+      job_data['app'] = 'analyze'
+      job_data['operation'] = 'scan_template'
+      let template = this.props.templates[this.props.current_template_id]
+      job_data['description'] = 'single template (' + template['name'] + ') '+ num_movies+ ' movies (from MovieSet ' + movie_set_name + '), match'
+      job_data['request_data']['template'] = template
+      job_data['request_data']['source_image_url'] = template['anchors'][0]['image']
+      job_data['request_data']['target_movies'] = movies_to_run
+      job_data['request_data']['movie_set_movies'] = this.props.movie_sets[extra_data]
       this.props.submitJob(job_data)
     } else if (job_string === 'load_movie') {
       job_data['app'] = 'parse'
@@ -855,6 +926,18 @@ class InsightsPanel extends React.Component {
             movie_sets={this.props.movie_sets}
             setMovieSets={this.props.setMovieSets}
             draggedId={this.state.draggedId}
+            showTemplates={this.state.showTemplates}
+            showSelectedArea={this.state.showSelectedArea}
+            showMovieSets={this.state.showMovieSets}
+            showResults={this.state.showResults}
+            showAnnotate={this.state.showAnnotate}
+            showOcr={this.state.showOcr}
+            toggleShowTemplates={this.toggleShowTemplates}
+            toggleShowSelectedArea={this.toggleShowSelectedArea}
+            toggleShowMovieSets={this.toggleShowMovieSets}
+            toggleShowResults={this.toggleShowResults}
+            toggleShowAnnotate={this.toggleShowAnnotate}
+            toggleShowOcr={this.toggleShowOcr}
           />
         </div>
 

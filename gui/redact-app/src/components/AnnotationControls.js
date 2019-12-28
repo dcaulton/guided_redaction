@@ -146,6 +146,10 @@ class AnnotationControls extends React.Component {
   }
 
   render() {
+    if (!this.props.showAnnotate) {
+      return([])
+    }
+
     const template_picker = this.buildTemplateDropdown()
     const template_anchor_picker = this.buildTemplateAnchorDropdown()
     let template_add_button = ''
@@ -179,6 +183,7 @@ class AnnotationControls extends React.Component {
         </button>
       )
     }
+
     return (
         <div className='row bg-light rounded mt-3'>
           <div className='col'>

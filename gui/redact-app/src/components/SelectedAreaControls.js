@@ -3,6 +3,9 @@ import React from 'react';
 class SelectedAreaControls extends React.Component {
 
   render() {
+    if (!this.props.showSelectedArea) {                                             
+      return([])                                                                
+    }
     const anchor_names = this.props.getCurrentTemplateAnchorNames()
 
     const sam = this.props.getCurrentSelectedAreaMeta()

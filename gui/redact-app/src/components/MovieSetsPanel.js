@@ -142,6 +142,11 @@ class MovieSetsPanel extends React.Component {
   render() {
     const ms_load_button = this.buildMovieSetPickerButton()
     const ms_movies = this.buildMovieSetMoviesList()
+
+    if (!this.props.showMovieSets) {
+      return([])
+    }
+
     return (
         <div className='row bg-light rounded mt-3'>
           <div className='col'>

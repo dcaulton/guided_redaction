@@ -15,6 +15,10 @@ class ResultsPanel extends React.Component {
   }
 
   render() {
+    if (!this.props.showResults) {
+      return([])
+    }
+
     return (
         <div className='row bg-light rounded mt-3'>
           <div className='col'>

@@ -40,6 +40,8 @@ class BottomInsightsControls extends React.Component {
           saveTemplate={this.props.saveTemplate}
           deleteTemplate={this.props.deleteTemplate}
           cropImage={this.props.cropImage}
+          movie_sets={this.props.movie_sets}
+          showTemplates={this.props.showTemplates}
         />
 
         <SelectedAreaControls
@@ -48,6 +50,7 @@ class BottomInsightsControls extends React.Component {
           clearMovieSelectedAreas={this.props.clearMovieSelectedAreas}
           setSelectedAreaTemplateAnchor={this.props.setSelectedAreaTemplateAnchor}
           getCurrentSelectedAreaMeta={this.props.getCurrentSelectedAreaMeta}
+          showSelectedArea={this.props.showSelectedArea}
         />
 
         <AnnotationControls
@@ -60,10 +63,12 @@ class BottomInsightsControls extends React.Component {
           handleSetMode={this.props.handleSetMode}
           setKeyDownCallback={this.props.setKeyDownCallback}
           getAnnotations={this.props.getAnnotations}
+          showAnnotate={this.props.showAnnotate}
         />
 
         <OcrControls
           displayInsightsMessage={this.props.displayInsightsMessage}
+          showOcr={this.props.showOcr}
         />
 
         <MovieSetsPanel
@@ -71,10 +76,12 @@ class BottomInsightsControls extends React.Component {
           movie_sets={this.props.movie_sets}
           setMovieSets={this.props.setMovieSets}
           draggedId={this.props.draggedId}
+          showMovieSets={this.props.showMovieSets}
         />
 
         <ResultsPanel
           displayInsightsMessage={this.props.displayInsightsMessage}
+          showResults={this.props.showResults}
         />
 
         <SessionControls
@@ -86,6 +93,18 @@ class BottomInsightsControls extends React.Component {
           workbooks={this.props.workbooks}
           deleteWorkbook={this.props.deleteWorkbook}
           loadWorkbook={this.props.loadWorkbook}
+          showTemplates={this.props.showTemplates}
+          showSelectedArea={this.props.showSelectedArea}
+          showMovieSets={this.props.showMovieSets}
+          showResults={this.props.showResults}
+          showAnnotate={this.props.showAnnotate}
+          showOcr={this.props.showOcr}
+          toggleShowTemplates={this.props.toggleShowTemplates}
+          toggleShowSelectedArea={this.props.toggleShowSelectedArea}
+          toggleShowMovieSets={this.props.toggleShowMovieSets}
+          toggleShowResults={this.props.toggleShowResults}
+          toggleShowAnnotate={this.props.toggleShowAnnotate}
+          toggleShowOcr={this.props.toggleShowOcr}
         />
 
       </div>
