@@ -44,6 +44,17 @@ class ParseViewSetGetImagesForUuid(viewsets.ViewSet):
     
 
 class ParseViewSetSplitMovie(viewsets.ViewSet):
+    def get_movie_frame_dimensions(self, frames):
+      if not frames:
+          return []
+      input_url = frames[0]
+      pic_response = requests.get(input_url)
+      img_binary = pic_response.content
+      if img_binary:
+          nparr = np.fromstring(img_binary, np.uint8)
+          cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+          return (cv2_image.shape[1], cv2_image.shape[0])
+
     def create(self, request):
         return_data = {
             'errors_400': [],
@@ -91,10 +102,12 @@ class ParseViewSetSplitMovie(viewsets.ViewSet):
             }
         )
         frames = parser.split_movie()
+        movie_frame_dims = self.get_movie_frame_dimensions(frames)
 
         return Response(
             {
                 "frames": frames,
+                "frame_dimensions": movie_frame_dims,
             }
         )
 
@@ -128,6 +141,17 @@ class ParseViewSetSplitMovie(viewsets.ViewSet):
 
 
 class ParseViewSetSplitAndHashMovie(viewsets.ViewSet):
+    def get_movie_frame_dimensions(self, frames):
+      if not frames:
+          return []
+      input_url = frames[0]
+      pic_response = requests.get(input_url)
+      img_binary = pic_response.content
+      if img_binary:
+          nparr = np.fromstring(img_binary, np.uint8)
+          cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+          return (cv2_image.shape[1], cv2_image.shape[0])
+
     def process_create_request(self, request_data):
         return_data = {
             'errors_400': [],
@@ -172,10 +196,12 @@ class ParseViewSetSplitAndHashMovie(viewsets.ViewSet):
         (new_frames, new_unique_frames) = self.collate_image_urls(
             frames, unique_frames
         )
+        movie_frame_dims = self.get_movie_frame_dimensions(new_frames)
 
         return_data['response_data'] = {
             "frames": new_frames,
             "unique_frames": new_unique_frames,
+            "frame_dimensions": movie_frame_dims,
         }
         return return_data
 

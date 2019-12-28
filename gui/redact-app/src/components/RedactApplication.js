@@ -378,12 +378,14 @@ class RedactApplication extends React.Component {
       .then((responseJson) => {
         let frames = responseJson.frames
         let framesets = responseJson.unique_frames
+        let frame_dimensions = responseJson.frame_dimensions
         let deepCopyMovies = JSON.parse(JSON.stringify(this.state.movies))
         let nickname = this.getMovieNicknameFromUrl(the_url)
         deepCopyMovies[the_url] = {
           nickname: nickname,
           frames: frames,
           framesets: framesets,
+          frame_dimensions: frame_dimensions,
         }
 
         this.addMovieAndSetActive(the_url, deepCopyMovies, theCallback)
@@ -571,11 +573,13 @@ class RedactApplication extends React.Component {
 			} else if (job.app === 'parse' && job.operation === 'split_and_hash_movie') {
 				let frames = response_data.frames
 				let framesets = response_data.unique_frames
+				let frame_dimensions = response_data.frame_dimensions
 				let deepCopyMovies = JSON.parse(JSON.stringify(this.state.movies))
 				deepCopyMovies[request_data['movie_url']] = {
           nickname: this.getMovieNicknameFromUrl(request_data['movie_url']),
 					frames: frames,
 					framesets: framesets,
+          frame_dimensions: frame_dimensions,
 				}
 				this.addMovieAndSetActive(
 					request_data['movie_url'],

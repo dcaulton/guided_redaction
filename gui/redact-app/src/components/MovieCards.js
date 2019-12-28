@@ -94,6 +94,14 @@ class MovieCard extends React.Component {
     return framesets_count_message
   }
 
+  getMovieDimensions(movie_url, movies) {
+    if (Object.keys(movies).includes(movie_url) && movies[movie_url]['frame_dimensions']) {
+      const dims = movies[movie_url]['frame_dimensions']
+      return 'frame size: '+ dims[0].toString() + 'x' + dims[1].toString()
+    }
+    return ''
+  }
+
   render() {
     let active_status = false
     if (this.props.this_cards_movie_url === this.props.active_movie_url) {
@@ -117,6 +125,7 @@ class MovieCard extends React.Component {
     const make_active_button = this.buildMakeActiveButton(this.props.this_cards_movie_url, active_status)
     const found_string = this.props.getMovieMatchesFound(this.props.this_cards_movie_url)
     const selected_string = this.props.getMovieSelectedCount(this.props.this_cards_movie_url)
+    const dims_string = this.getMovieDimensions(this.props.this_cards_movie_url, this.props.movies)
     let top_div_classname = "row mt-4 card"
     if (active_status) {
       top_div_classname = "row mt-4 card active_movie_card"
@@ -156,6 +165,9 @@ class MovieCard extends React.Component {
           </div>
           <div className='row'>
             {selected_string}
+          </div>
+          <div className='row'>
+            {dims_string}
           </div>
         </div>
       </div>
