@@ -105,3 +105,7 @@ div.active_movie_card {
 div#prev_button_col, div#next_button_col{
 padding-top:200px;
 }
+
+input.nickname {
+  font-size: 12px;
+}
