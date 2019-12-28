@@ -395,6 +395,7 @@ class RedactApplication extends React.Component {
           frames: frames,
           framesets: framesets,
           frame_dimensions: frame_dimensions,
+          frameset_discriminator: this.state.frameset_discriminator,
         }
 
         this.addMovieAndSetActive(the_url, deepCopyMovies, theCallback)
@@ -581,6 +582,7 @@ class RedactApplication extends React.Component {
 				}
 			} else if (job.app === 'parse' && job.operation === 'split_and_hash_movie') {
 				let frames = response_data.frames
+        let frameset_discriminator = request_data.frameset_discriminator
 				let framesets = response_data.unique_frames
 				let frame_dimensions = response_data.frame_dimensions
 				let deepCopyMovies = JSON.parse(JSON.stringify(this.state.movies))
@@ -589,6 +591,7 @@ class RedactApplication extends React.Component {
 					frames: frames,
 					framesets: framesets,
           frame_dimensions: frame_dimensions,
+          frameset_discriminator: frameset_discriminator,
 				}
 				this.addMovieAndSetActive(
 					request_data['movie_url'],
