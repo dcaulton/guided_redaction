@@ -84,17 +84,75 @@ class JobCard extends React.Component {
     return job_response_data
   }
 
-  buildJobNameData(job_data) {
+  buildJobHeader(job_data, job_body_id) {
     const jn_length = job_data['id'].length
     let short_job_name = job_data['id']
     if (jn_length > 12) {
       short_job_name = job_data['id'].substring(0, 2) + '...' + 
         job_data['id'].substring(jn_length-2)
     }
+
+    const exp_coll = (
+      <button
+          className='btn btn-link'
+          aria-expanded='false'
+          data-target={'#'+job_body_id}
+          aria-controls={job_body_id}
+          data-toggle='collapse'
+          type='button'
+      >
+        +/-
+      </button>
+    )
+
+
+    let status_button = ''
+    if (this.props.job_data['status'] === 'running') {
+      status_button = (
+        <div
+          className='col float-right'
+        >
+        <img
+          src='../gr_assets/yellow_dot.png'
+          height='20'
+          alt='running'
+        />
+        </div>
+      )
+    } else if (this.props.job_data['status'] === 'success') {
+      status_button = (
+        <div
+          className='col float-right'
+        >
+        <img
+          src='../gr_assets/green_dot.png'
+          height='20'
+          alt='success'
+        />
+        </div>
+      )
+    } else {
+      status_button = (
+        <div
+          className='col float-right'
+        >
+        <img
+          src='../gr_assets/red_dot.png'
+          height='20'
+          alt='failed or unknown status'
+        />
+        </div>
+      )
+    }
+
     const job_name_data = (
-      <span title={this.props.job_data['id']}>
+      <div
+          className='row ml-2'
+      >
         {short_job_name}
-      </span>
+        {exp_coll}
+        {status_button}
+      </div>
     )
     return job_name_data
   }
@@ -152,31 +210,41 @@ class JobCard extends React.Component {
       </button>
     )
 
-    const job_name_data = this.buildJobNameData(this.props.job_data)
+    const job_body_id = 'job_body_' + this.props.job_data['id']
+    const job_header = this.buildJobHeader(this.props.job_data, job_body_id)
     const job_response_data = this.buildJobResponseData(this.props.job_data)
     const job_workbook_block = this.buildJobWorkbookBlock(this.props.job_data)
     const job_desc_data = this.buildJobDescriptionData(this.props.job_data)
     const job_created_on_data = this.buildCreatedOnData(this.props.job_data)
 
     return (
-      <div className='row pl-1 mt-4 card'>
+      <div className='row pl-1 mt-2 card'>
+
         <div className='col'>
+
           <div className='row border-bottom'>
-            {job_name_data}
+            {job_header}
           </div>
-          {job_desc_data}
-          <div className='row h4'>
-            {this.props.job_data['status']}
+
+          <div 
+              id={job_body_id}
+              className='collapse show'
+          >
+            {job_desc_data}
+            <div className='row h4'>
+              {this.props.job_data['status']}
+            </div>
+            {job_response_data}
+            <div className='row mt-1'>
+              {job_created_on_data}
+            </div>
+            {job_workbook_block}
+            <div className='row mt-1'>
+              {get_job_button}
+              {delete_job_button}
+            </div>
           </div>
-          {job_response_data}
-          <div className='row mt-1'>
-            {job_created_on_data}
-          </div>
-          {job_workbook_block}
-          <div className='row mt-1'>
-            {get_job_button}
-            {delete_job_button}
-          </div>
+
         </div>
       </div>
     )
