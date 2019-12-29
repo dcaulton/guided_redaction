@@ -28,7 +28,9 @@ class MovieParser:
             'sykes_dev_azure_blob_connection_string'
         )
         self.use_same_directory= args.get('use_same_directory', False)
-        self.frameset_discriminator= args.get("frameset_discriminator", 'gray16')
+        self.frameset_discriminator= args.get("frameset_discriminator")
+        if not self.frameset_discriminator:
+          self.frameset_discriminator = 'gray16'
 
         if self.use_same_directory:
             working_uuid = self.get_movie_dir()

@@ -9,16 +9,25 @@ class MoviePanel extends React.Component {
       reassembling_video: false,
       draggedId: null,
       zoom_image_url: '',
+      message: '.',
     }
-    this.getNameFor = this.getNameFor.bind(this)
-    this.redactFramesetCallback = this.redactFramesetCallback.bind(this)
-    this.callMovieSplit = this.callMovieSplit.bind(this)
-    this.setDraggedId = this.setDraggedId.bind(this)
-    this.setZoomImageUrl= this.setZoomImageUrl.bind(this)
-    this.handleDroppedFrameset = this.handleDroppedFrameset.bind(this)
-    this.allFramesHaveBeenRedacted = this.allFramesHaveBeenRedacted.bind(this)
-    this.afterFrameRedaction= this.afterFrameRedaction.bind(this)
-    this.movieZipCompleted= this.movieZipCompleted.bind(this)
+    this.getNameFor=this.getNameFor.bind(this)
+    this.redactFramesetCallback=this.redactFramesetCallback.bind(this)
+    this.callMovieSplit=this.callMovieSplit.bind(this)
+    this.callReassembleVideo=this.callReassembleVideo.bind(this)
+    this.setDraggedId=this.setDraggedId.bind(this)
+    this.setZoomImageUrl=this.setZoomImageUrl.bind(this)
+    this.handleDroppedFrameset=this.handleDroppedFrameset.bind(this)
+    this.afterFrameRedaction=this.afterFrameRedaction.bind(this)
+    this.movieSplitCompleted=this.movieSplitCompleted.bind(this)
+    this.movieZipCompleted=this.movieZipCompleted.bind(this)
+    this.setMessage=this.setMessage.bind(this)
+  }
+
+  setMessage(the_message) {
+    this.setState({
+      message: the_message,
+    })
   }
 
   setDraggedId = (the_id) => {
@@ -31,15 +40,9 @@ class MoviePanel extends React.Component {
     this.props.handleMergeFramesets(target_id, this.state.draggedId)
   }
 
-  movieSplitWhenDone() {
-    document.getElementById('movieparser_status').innerHTML = 'movie unzipping completed'
-    document.getElementById('parse_video_button').disabled = true;
-    document.getElementById('parse_video_button').innerHTML = 'Movie Parse Called'
-  }
-
   callMovieSplit() {
-    document.getElementById('movieparser_status').innerHTML = 'calling movie unzipper'
-    this.props.doMovieSplit(this.props.movie_url, this.movieSplitWhenDone)
+    this.setMessage('calling movie unzipper')
+    this.props.doMovieSplit(this.props.movie_url, this.movieSplitCompleted)
   }
 
   afterFrameRedaction() {
@@ -78,12 +81,16 @@ class MoviePanel extends React.Component {
         movie_frame_urls.push(image_url)
       }
     }
-    document.getElementById('movieparser_status').innerHTML = 'calling movie zipper'
+    this.setMessage('calling movie zipper')
     this.props.callMovieZip(movie_frame_urls, this.movieZipCompleted)
   }
 
   movieZipCompleted() {
-    document.getElementById('movieparser_status').innerHTML = 'movie zipping completed'
+    this.setMessage('movie zipping completed')
+  }
+
+  movieSplitCompleted() {
+    this.setMessage('movie split completed')
   }
 
   redactFramesetCallback = (frameset_hash) => {
@@ -102,9 +109,9 @@ class MoviePanel extends React.Component {
     return false
   }
 
-  callFrameRedactions() {
+  callReassembleVideo() {
     this.setState({reassembling_video: true})
-    document.getElementById('movieparser_status').innerHTML = 'calling movie reassembler'
+    this.setMessage('calling movie reassembler')
     let frameset_keys = Object.keys(this.props.getCurrentFramesets())
     for (let i=0; i < frameset_keys.length; i++) {
       let pass_arr = []
@@ -120,26 +127,12 @@ class MoviePanel extends React.Component {
         this.props.callRedact(pass_arr, first_image_url, this.afterFrameRedaction)
       } 
     }
-    document.getElementById('reassemble_video_button').disabled = true;
-    document.getElementById('reassemble_video_button').innerHTML = 'Reassemble Called'
   }
 
   getNameFor(image_name) {
     let s = image_name.substring(image_name.lastIndexOf('/')+1, image_name.length);
     s = s.substring(0, s.indexOf('.'))
     return s
-  }
-
-  doMovieParse() {
-    this.callMovieSplit()
-  }
-
-  doButtonReset() {
-    document.getElementById('parse_video_button').disabled = false;
-    document.getElementById('reassemble_video_button').disabled = false;
-    document.getElementById('movieparser_status').innerHTML = 'buttons have been reset to active'
-    document.getElementById('parse_video_button').innerHTML = 'Parse'
-    document.getElementById('reassemble_video_button').innerHTML = 'Reassemble Video'
   }
 
   setZoomImageUrl = (the_url) => {
@@ -155,48 +148,24 @@ class MoviePanel extends React.Component {
     }
   }
 
-  render() {
-    let framesets_title = ''
-    const framesets_count = Object.keys(this.props.getCurrentFramesets()).length
-    if (framesets_count) {
-      framesets_title = (
-        <span id='frameset_title'>
-          Showing {framesets_count} framesets
-        </span>
-      )
-    }
-    let source_video_string = <h3>&nbsp;</h3>
+  buildVideoTitle() {
+    let title_string = <h3>&nbsp;</h3>
     const movie_filename = this.get_filename(this.props.movie_url)
     if (movie_filename) {
-      source_video_string = <h3>Source Video for {movie_filename}</h3>
-    }
-    let redacted_video_element = <div />
-
-    if (this.props.redacted_movie_url) {
-      redacted_video_element = (
-        <div>
-            <h3>Redacted Video</h3>
-            <div id='redacted_video_url'></div>
-            <video id='redacted_video_id' controls >
-              <source 
-                  id='redacted_video_source'
-                  src={this.props.redacted_movie_url}
-                  type="video/mp4" 
-              />
-              Your browser does not support the video tag.
-            </video>
-            <a 
-                href={this.props.redacted_movie_url}
-                download={this.props.redacted_movie_url}
-            >
-              download movie
-            </a>
-          </div>
+      title_string = (
+        <div
+        >
+          <h5>
+          Video for {movie_filename}
+          </h5>
+        </div>
       )
     }
+    return title_string
+  }
 
+  buildImageZoomModal() {
     return (
-    <div>
       <div 
           id='image-zoom-modal'
           style={{display: this.state.zoom_image_url? 'block' : 'none' }}
@@ -207,62 +176,116 @@ class MoviePanel extends React.Component {
             onClick={() => this.setZoomImageUrl('')}
         />
       </div>
+    )
+  }
+
+  buildVideoDiv() {
+    return (
+      <div id='video_div' className='col-md-6'>
+        <video id='video_id' controls >
+          <source 
+              src={this.props.movie_url}
+              type="video/mp4" 
+          />
+          Your browser does not support the video tag.
+        </video>
+      </div>
+    )
+  }
+
+  buildFramesetsTitle() {
+  }
+
+  buildRedactedVideoDiv() {
+    let redacted_video_element = <div />
+    if (this.props.redacted_movie_url) {
+      redacted_video_element = (
+        <div>
+          <h3>Redacted Video</h3>
+          <div id='redacted_video_url'></div>
+          <video id='redacted_video_id' controls >
+            <source 
+                id='redacted_video_source'
+                src={this.props.redacted_movie_url}
+                type="video/mp4" 
+            />
+            Your browser does not support the video tag.
+          </video>
+          <a 
+              href={this.props.redacted_movie_url}
+              download={this.props.redacted_movie_url}
+          >
+            download movie
+          </a>
+        </div>
+      )
+    }
+
+    return (
+      <div 
+          id='redacted_video_div' 
+          className='col-md-6'
+      >
+        {redacted_video_element}
+      </div>
+    )
+  }
+
+  buildFramesetsCountMessage() {
+    let framesets_title = ''
+    const framesets_count = Object.keys(this.props.getCurrentFramesets()).length
+    if (framesets_count) {
+      framesets_title = (
+        <span id='frameset_title'>
+          Showing {framesets_count} framesets
+        </span>
+      )
+    }
+    return framesets_title
+  }
+
+  render() {
+    let title = this.buildVideoTitle()
+    const image_zoom_modal = this.buildImageZoomModal()
+    const video_div = this.buildVideoDiv()
+    const redacted_video_div = this.buildRedactedVideoDiv()
+    const framesets_count_message = this.buildFramesetsCountMessage()
+
+
+    return (
+    <div>
+
+      {image_zoom_modal}
+
       <div id='movie_parser_panel'>
+        <div 
+            id='movie_parser_header' 
+            className='row m-3'
+        >
+          {title}
+        </div>
+
         <div id='video_and_meta' className='row mt-3'>
           <div id='video_meta_div' className='col-md-12'>
-            <div className='row'>
-              <button 
-                  id='parse_video_button'
-                  className='btn btn-primary' 
-                  onClick={this.doMovieParse.bind(this)}
-              >
-                Parse Video
-              </button>
-              <button 
-                  id='reassemble_video_button'
-                  className='btn btn-primary ml-5' 
-                  onClick={this.callFrameRedactions.bind(this)}
-              >
-                Reassemble Video
-              </button>
-              <button 
-                  className='btn btn-primary ml-5' 
-                  onClick={this.doButtonReset.bind(this)}
-              >
-                Reset
-              </button>
-            </div>
-            <div className='row'>
-              <div 
-                  id='movieparser_status'
-                  className='col-md-6 mt-2'
-              >
-                status
-              </div>
-            </div>
+            <MoviePanelHeader
+              callMovieSplit={this.callMovieSplit}
+              callReassembleVideo={this.callReassembleVideo}
+              message={this.state.message}
+            />
           </div>
 
+          {video_div}
+          {redacted_video_div}
 
-          <div id='video_div' className='col-md-6'>
-            {source_video_string}
-            <video id='video_id' controls >
-              <source 
-                  src={this.props.movie_url}
-                  type="video/mp4" 
-              />
-              Your browser does not support the video tag.
-            </video>
-          </div>
-          <div 
-              id='redacted_video_div' 
-              className='col-md-6'
-          >
-            {redacted_video_element}
-          </div>
+          <MoviePanelAdvancedControls
+            movie_url={this.props.movie_url}
+            movies={this.props.movies}
+          />
+
         </div>
         <div id='frame_and_frameset_data' className='row mt-3'>
           <div id='frame_frameset_header' className='col-md-12'>
-            {framesets_title}
+            {framesets_count_message}
           </div>
           <div id='frameset_cards' className='col-md-12'>
             <div id='cards_row' className='row m-5'>
@@ -280,7 +303,103 @@ class MoviePanel extends React.Component {
         </div>
       </div>
     </div>
+
     );
+  }
+}
+
+class MoviePanelAdvancedControls extends React.Component {
+  render() {
+    let frameset_discriminator = ''
+    let runtime = '0:00'
+    if (Object.keys(this.props.movies).includes(this.props.movie_url)) {
+      const movie = this.props.movies[this.props.movie_url]
+      frameset_discriminator = movie['frameset_discriminator']
+      const num_frames = Object.keys(movie['frames']).length
+      const num_mins = Math.floor(num_frames / 60)
+      const num_secs = num_frames % 60
+      let num_secs_string = num_secs.toString()
+      if (num_secs_string.length === 1) {
+        num_secs_string = '0' + num_secs_string
+      }
+      runtime = num_mins.toString() + ':' + num_secs_string
+    }
+
+    return (
+      <div className='col-md-9 m-2'>
+        <div className='row'>
+          <div
+            className='col h3'
+          >
+            movie info
+          </div>
+          <div className='col'>
+            <button
+                className='btn btn-link'
+                aria-expanded='false'
+                data-target='#advanced_body'
+                aria-controls='advanced_body'
+                data-toggle='collapse'
+                type='button'
+            >
+              show/hide
+            </button>
+          </div>
+        </div>
+
+        <div
+            id='advanced_body'
+            className='row collapse'
+        >
+          <div id='advanced_main' className='col'>
+            <div>movie title</div>
+            <div>number of framesets</div>
+            <div>run time: {runtime}</div>
+            <div>has it been redacted?</div>
+            <div>frameset_discriminator: {frameset_discriminator}</div>
+            <div>loaded templates - load more here if you want</div>
+            <div></div>
+          </div>
+        </div>
+
+      </div>
+    )
+  }
+}
+
+class MoviePanelHeader extends React.Component {
+  render() {
+    return (
+      <div>
+        <div className='row m-2'>
+
+          <button 
+              id='parse_video_button'
+              className='btn btn-primary' 
+              onClick={() => this.props.callMovieSplit()}
+          >
+            Split Video
+          </button>
+
+          <button 
+              id='reassemble_video_button'
+              className='btn btn-primary ml-5' 
+              onClick={() => this.props.callReassembleVideo()}
+          >
+            Reassemble Video
+          </button>
+
+        </div>
+        <div className='row'>
+          <div 
+              id='movieparser_status'
+              className='col-md-6 mt-2'
+          >
+            {this.props.message}
+          </div>
+        </div>
+        </div>
+    )
   }
 }
 

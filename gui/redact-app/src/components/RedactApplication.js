@@ -374,36 +374,40 @@ class RedactApplication extends React.Component {
     }
     if (this.state.movies[the_url]) {
       this.setActiveMovie(the_url, theCallback)
-    } else {
-      await fetch(this.state.parse_movie_url, {
-        method: 'POST',
-        headers: this.buildJsonHeaders(),
-        body: JSON.stringify({
-          movie_url: the_url,
-          frameset_descriminator: this.state.frameset_discriminator,
-        }),
-      })
-      .then((response) => response.json())
-      .then((responseJson) => {
-        let frames = responseJson.frames
-        let framesets = responseJson.unique_frames
-        let frame_dimensions = responseJson.frame_dimensions
-        let deepCopyMovies = JSON.parse(JSON.stringify(this.state.movies))
-        let nickname = this.getMovieNicknameFromUrl(the_url)
-        deepCopyMovies[the_url] = {
-          nickname: nickname,
-          frames: frames,
-          framesets: framesets,
-          frame_dimensions: frame_dimensions,
-          frameset_discriminator: this.state.frameset_discriminator,
-        }
+      return
+    } 
 
-        this.addMovieAndSetActive(the_url, deepCopyMovies, theCallback)
-      })
-      .catch((error) => {
-        console.error(error);
-      })
-    }
+    await fetch(this.state.parse_movie_url, {
+      method: 'POST',
+      headers: this.buildJsonHeaders(),
+      body: JSON.stringify({
+        movie_url: the_url,
+        frameset_discriminator: this.state.frameset_discriminator,
+      }),
+    })
+    .then((response) => response.json())
+    .then((responseJson) => {
+      let frames = responseJson.frames
+      let framesets = responseJson.unique_frames
+      let frame_dimensions = responseJson.frame_dimensions
+      let deepCopyMovies = JSON.parse(JSON.stringify(this.state.movies))
+      let nickname = this.getMovieNicknameFromUrl(the_url)
+      deepCopyMovies[the_url] = {
+        nickname: nickname,
+        frames: frames,
+        framesets: framesets,
+        frame_dimensions: frame_dimensions,
+        frameset_discriminator: this.state.frameset_discriminator,
+      }
+
+      this.addMovieAndSetActive(the_url, deepCopyMovies, theCallback)
+    })
+    .then((responseJson) => {
+      theCallback()
+    })
+    .catch((error) => {
+      console.error(error);
+    })
   }
 
   getRedactedMovieFilename() {
@@ -1078,6 +1082,7 @@ class RedactApplication extends React.Component {
                 callRedact={this.callRedact}
                 handleMergeFramesets={this.handleMergeFramesets}
                 doMovieSplit={this.doMovieSplit}
+                movies={this.state.movies}
               />
             </Route>
             <Route path='/redact/image'>

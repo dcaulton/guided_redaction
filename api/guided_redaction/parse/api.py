@@ -182,6 +182,7 @@ class ParseViewSetSplitAndHashMovie(viewsets.ViewSet):
             image_storage=settings.REDACT_IMAGE_STORAGE,
         )
 
+        disc =  request_data.get('frameset_discriminator')
         parser = MovieParser(
             {
                 "debug": settings.DEBUG,
@@ -190,7 +191,7 @@ class ParseViewSetSplitAndHashMovie(viewsets.ViewSet):
                 "scan_method": "unzip",
                 "movie_url": movie_url,
                 "file_writer": fw,
-                "frameset_discriminator": request_data.get('frameset_discriminator'),
+                "frameset_discriminator": disc,
             }
         )
         frames = parser.split_movie()
