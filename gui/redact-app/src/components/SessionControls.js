@@ -192,9 +192,13 @@ class SessionControls extends React.Component {
                         name='frameset_discriminator'
                         onChange={(event) => this.props.setFramesetDiscriminator(event.target.value)}
                      >
-                      <option value='gray16'>--FramesetDiscriminator--</option>
-                      <option value='gray16'>gray 16 (default)</option>
-                      <option value='gray5'>gray 5</option>
+                      <option value='gray8'>--FramesetDiscriminator--</option>
+                      <option value='gray64'>gray 64x64</option>
+                      <option value='gray32'>gray 32x32</option>
+                      <option value='gray16'>gray 16x16</option>
+                      <option value='gray8'>gray 8x8 (default)</option>
+                      <option value='gray6'>gray 6x6</option>
+                      <option value='gray4'>gray 4x4</option>
                     </select>
                   </div>
 

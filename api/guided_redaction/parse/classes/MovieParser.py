@@ -3,6 +3,7 @@ from django import db
 from operator import add
 import os
 import numpy as np
+import re
 import requests
 import uuid
 
@@ -15,7 +16,7 @@ class MovieParser:
     working_dir = ""
     scan_method = ""
     image_hash_size = 8
-    frameset_discriminator = 'gray16'
+    frameset_discriminator = 'gray8'
 
     def __init__(self, args):
         self.input_frames_per_second = args.get("ifps", 1)
@@ -30,7 +31,10 @@ class MovieParser:
         self.use_same_directory= args.get('use_same_directory', False)
         self.frameset_discriminator= args.get("frameset_discriminator")
         if not self.frameset_discriminator:
-          self.frameset_discriminator = 'gray16'
+          self.frameset_discriminator = 'gray8'
+        if re.search('^gray\d+$', self.frameset_discriminator):
+          match_digit =  re.match('^gray(\d+)$', self.frameset_discriminator)[1]
+          self.image_hash_size = int(match_digit)
 
         if self.use_same_directory:
             working_uuid = self.get_movie_dir()
@@ -92,11 +96,13 @@ class MovieParser:
             unique_frames[current_hash] = [image_url]
 
     def get_hash(self, image):
-        if (self.frameset_discriminator == 'gray16'):
+        if re.search('^gray\d+$', self.frameset_discriminator):
+            print('getting gray hash ', self.frameset_discriminator, self.image_hash_size)
             resized = cv2.resize(image, (self.image_hash_size + 1, self.image_hash_size))
             diff = resized[:, 1:] > resized[:, :-1]
             the_hash = sum([2 ** i for (i, v) in enumerate(diff.flatten()) if v])
         else:
+            print('getting not gray hash')
             the_hash = 1
         return the_hash
 

@@ -16,7 +16,7 @@ class RedactApplication extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      frameset_discriminator: 'gray16',
+      frameset_discriminator: 'gray8',
       mask_method: 'blur_7x7',
       image_url: '',
       redacted_movie_url: '',
