@@ -97,7 +97,6 @@ class MovieParser:
 
     def get_hash(self, image):
         if re.search('^gray\d+$', self.frameset_discriminator):
-            print('getting gray hash ', self.frameset_discriminator, self.image_hash_size)
             resized = cv2.resize(image, (self.image_hash_size + 1, self.image_hash_size))
             diff = resized[:, 1:] > resized[:, :-1]
             the_hash = sum([2 ** i for (i, v) in enumerate(diff.flatten()) if v])

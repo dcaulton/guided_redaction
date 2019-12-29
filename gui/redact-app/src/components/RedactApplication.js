@@ -94,6 +94,7 @@ class RedactApplication extends React.Component {
     this.getCurrentFrames=this.getCurrentFrames.bind(this)
     this.setMovieSets=this.setMovieSets.bind(this)
     this.setFramesetDiscriminator=this.setFramesetDiscriminator.bind(this)
+    this.setActiveMovie=this.setActiveMovie.bind(this)
   }
 
   setFramesetDiscriminator(the_value) {
@@ -268,7 +269,7 @@ class RedactApplication extends React.Component {
     }
   }
 
-  setActiveMovie(the_url, theCallback) {
+  setActiveMovie(the_url, theCallback=(()=>{})) {
     const the_movie = this.state.movies[the_url]
     if (this.state.movie_url !== the_url) {
       this.setState({
@@ -581,7 +582,8 @@ class RedactApplication extends React.Component {
 						}
 					}
 					if (movie_add) {
-						this.addMovieAndSetActive(movie_url, deepCopyMovies, this.movieSplitDone)
+						this.addMovieAndSetActive(movie_url, deepCopyMovies, when_done)
+//						this.addMovieAndSetActive(movie_url, deepCopyMovies, this.movieSplitDone)
 					}
 				}
 			} else if (job.app === 'parse' && job.operation === 'split_and_hash_movie') {
@@ -597,11 +599,11 @@ class RedactApplication extends React.Component {
           frame_dimensions: frame_dimensions,
           frameset_discriminator: frameset_discriminator,
 				}
-				this.addMovieAndSetActive(
-					request_data['movie_url'],
-					deepCopyMovies,
-					when_done,
-				)
+        this.addMovieAndSetActive(
+          request_data['movie_url'],
+          deepCopyMovies,
+          when_done,
+        )
 			}
     })
   }
@@ -1110,7 +1112,6 @@ class RedactApplication extends React.Component {
             <Route path='/redact/insights'>
               <InsightsPanel  
                 setMovieUrlCallback={this.handleSetMovieUrl}
-                doMovieSplit={this.doMovieSplit}
                 getFramesetHashForImageUrl={this.getFramesetHashForImageUrl}
                 movie_url={this.state.movie_url}
                 movies={this.state.movies}
@@ -1154,6 +1155,7 @@ class RedactApplication extends React.Component {
                 setMovieSets={this.setMovieSets}
                 frameset_discriminator={this.state.frameset_discriminator}
                 setFramesetDiscriminator={this.setFramesetDiscriminator}
+                setActiveMovie={this.setActiveMovie}
               />
             </Route>
           </Switch>

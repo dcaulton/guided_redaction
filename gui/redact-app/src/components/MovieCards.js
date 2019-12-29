@@ -66,22 +66,26 @@ class MovieCard extends React.Component {
     return return_arr
   }
 
-  buildMakeActiveButton(this_cards_movie_url, active_status) {
-    let make_active_button = (
+  buildMakeActiveButton(this_cards_movie_url) {
+    let make_active_button = ''
+    if (Object.keys(this.props.movies).includes(this_cards_movie_url)) {
+      make_active_button = (
         <button
             className='btn btn-link'
             onClick={() => this.props.setCurrentVideo(this_cards_movie_url)}
         >
         load
         </button>
-    )
-    if (active_status) {
+      )
+    }
+    if (this.props.this_cards_movie_url === this.props.active_movie_url) {
       make_active_button = (
-        <div
-          className='row text-success'
+        <button
+            className='btn btn-link text-success'
+            onClick={() => {}}
         >
-          active
-        </div>
+        active
+        </button>
       )
     }
     return make_active_button
@@ -129,32 +133,31 @@ class MovieCard extends React.Component {
     )
 
   }
-  render() {
-    let active_status = false
-    if (this.props.this_cards_movie_url === this.props.active_movie_url) {
-      active_status = true
-    } 
 
-    let load_as_job_button = (
-        <button
-            className='btn btn-link'
-            onClick={() => this.props.submitInsightsJob('load_movie', this.props.this_cards_movie_url)}
-        >
-        queue
-        </button>
+  buildQueueJobLink() {
+    return (
+      <button
+          className='btn btn-link'
+          onClick={() => this.props.submitInsightsJob('load_movie', this.props.this_cards_movie_url)}
+      >
+      queue
+      </button>
     )
+  }
 
+  render() {
+    let queue_job_button = this.buildQueueJobLink()
     let nickname_block = this.buildNicknameBlock(this.props.this_cards_movie_url, this.props.movies)
     if (!nickname_block.length) {
       nickname_block = this.getShortMovieData(this.props.this_cards_movie_url)
     }
     const framesets_count_message = this.getFramesetsCountMessage(this.props.this_cards_movie_url)
-    const make_active_button = this.buildMakeActiveButton(this.props.this_cards_movie_url, active_status)
+    const make_active_button = this.buildMakeActiveButton(this.props.this_cards_movie_url)
     const found_string = this.props.getMovieMatchesFound(this.props.this_cards_movie_url)
     const selected_string = this.props.getMovieSelectedCount(this.props.this_cards_movie_url)
     const dims_string = this.getMovieDimensions(this.props.this_cards_movie_url, this.props.movies)
     let top_div_classname = "row mt-4 card"
-    if (active_status) {
+    if (this.props.this_cards_movie_url === this.props.active_movie_url) {
       top_div_classname = "row mt-4 card active_movie_card"
     }
     const movie_body_id = 'movie_body_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
@@ -189,7 +192,7 @@ class MovieCard extends React.Component {
               </div>
               <div className='row'>
                 {make_active_button}
-                {load_as_job_button}
+                {queue_job_button}
               </div>
               <div className='row'>
                 {framesets_count_message}

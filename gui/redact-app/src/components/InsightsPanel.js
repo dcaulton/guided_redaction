@@ -74,6 +74,37 @@ class InsightsPanel extends React.Component {
     this.toggleShowResults=this.toggleShowResults.bind(this)
     this.toggleShowAnnotate=this.toggleShowAnnotate.bind(this)
     this.toggleShowOcr=this.toggleShowOcr.bind(this)
+    this.loadInsightsJobResults=this.loadInsightsJobResults.bind(this)
+    this.afterMovieSplitInsightsJobLoaded=this.afterMovieSplitInsightsJobLoaded.bind(this)
+  }
+
+  loadInsightsJobResults(job_id) {
+    const job = this.getJobForId(job_id)
+    if (job.app === 'parse' && job.operation === 'split_and_hash_movie') {
+      this.props.loadJobResults(
+        job_id, 
+        this.afterMovieSplitInsightsJobLoaded
+      )
+    } else {
+      this.props.loadJobResults(job_id) 
+    }
+  }
+
+  doSleep(milliseconds) {
+    return new Promise(resolve => setTimeout(resolve, milliseconds))
+  }
+
+  getJobForId(job_id) {
+    for (let i=0; i < this.props.jobs.length; i++) {
+      if (this.props.jobs[i]['id'] === job_id) {
+        return this.props.jobs[i]
+      }
+    }
+  }
+
+  afterMovieSplitInsightsJobLoaded(framesets) {
+    this.displayInsightsMessage('insights job loaded')
+    this.movieSplitDone(framesets)
   }
 
   toggleShowTemplates() {
@@ -354,9 +385,9 @@ class InsightsPanel extends React.Component {
   }
 
   scrubberOnChange() {
-    const value = document.getElementById('movie_scrubber').value
     const framesets = this.props.getCurrentFramesets()
-    const keys = Object.keys(this.props.getCurrentFramesets())
+    const value = document.getElementById('movie_scrubber').value
+    const keys = Object.keys(framesets)
     const new_frameset_hash = keys[value]
     const the_url = framesets[new_frameset_hash]['images'][0]
     this.displayInsightsMessage('.')
@@ -440,7 +471,7 @@ class InsightsPanel extends React.Component {
   }
 
   setCurrentVideo(video_url) {
-    this.props.doMovieSplit(video_url, this.movieSplitDone)
+    this.props.setActiveMovie(video_url, this.movieSplitDone)
   }
 
   handleImageClick = (e) => {
@@ -799,6 +830,14 @@ class InsightsPanel extends React.Component {
     return cur_movies_matches[frameset_hash]
   }
 
+  getScrubberHeight() {
+    let bottom_y = 80
+    if (this.state.insights_image) {
+      bottom_y += document.getElementById('insights_image_div').offsetHeight
+    }
+    return bottom_y
+  }
+
   render() {
     document.body.onkeydown = this.handleKeyDown
     let workbook_name = this.props.current_workbook_name
@@ -809,14 +848,10 @@ class InsightsPanel extends React.Component {
       width: this.props.image_width,
       height: this.props.image_height,
     }
-    let bottom_y = 80
+    let bottom_y = this.getScrubberHeight()
     let the_display='block'
     if (!this.state.insights_image) {
       the_display='none'
-    }
-    const ele = document.getElementById('insights_image_div')
-    if (ele) {
-      bottom_y += ele.offsetHeight
     }
     const scrubber_style = {
       top: bottom_y,
@@ -947,11 +982,9 @@ class InsightsPanel extends React.Component {
           <JobCardList 
             jobs={this.props.jobs}
             getJobs={this.props.getJobs}
-            loadJobResults={this.props.loadJobResults}
-            displayInsightsMessage={this.displayInsightsMessage}
+            loadInsightsJobResults={this.loadInsightsJobResults}
             cancelJob={this.props.cancelJob}
             workbooks={this.props.workbooks}
-            scrubberOnChange={this.scrubberOnChange}
           />
         </div>
       </div>

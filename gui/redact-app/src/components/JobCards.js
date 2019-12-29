@@ -1,6 +1,7 @@
 import React from 'react'
 
 class JobCardList extends React.Component {
+
   render() {
     const sorted_jobs = this.props.jobs.sort((a, b) => (a.created_on < b.created_on) ? 1 : -1)
     return (
@@ -19,11 +20,9 @@ class JobCardList extends React.Component {
         <JobCard
           key={index}
           job_data={value}
-          loadJobResults={this.props.loadJobResults}
-          displayInsightsMessage={this.props.displayInsightsMessage}
+          loadInsightsJobResults={this.props.loadInsightsJobResults}
           cancelJob={this.props.cancelJob}
           workbooks={this.props.workbooks}
-          scrubberOnChange={this.props.scrubberOnChange}
         />
         )
       })}
@@ -33,23 +32,6 @@ class JobCardList extends React.Component {
 }
 
 class JobCard extends React.Component {
-
-  constructor(props) {
-    super(props)
-    this.afterJobDataLoaded=this.afterJobDataLoaded.bind(this)
-  }
-
-  doSleep(milliseconds) {
-    return new Promise(resolve => setTimeout(resolve, milliseconds))
-  }
-
-  afterJobDataLoaded() {
-    this.doSleep(200).then(() => {                                              
-      this.props.scrubberOnChange()
-      this.props.displayInsightsMessage('job has been loaded')
-    }) 
-  }
-
 
   getWorkbookName(the_workbook_id) {
     for (let i=0; i < this.props.workbooks.length; i++) {
@@ -204,9 +186,8 @@ class JobCard extends React.Component {
       get_job_button = (
         <button 
             className='btn btn-primary m-2'
-            onClick={() => this.props.loadJobResults(
-              this.props.job_data['id'],
-              this.afterJobDataLoaded()
+            onClick={() => this.props.loadInsightsJobResults(
+              this.props.job_data['id']
             )}
         >
           Load
