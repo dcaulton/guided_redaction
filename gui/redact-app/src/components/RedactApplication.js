@@ -285,7 +285,7 @@ class RedactApplication extends React.Component {
   }
 
   componentDidMount() {
-    this.checkForInboundImageOrMovie()
+    this.checkForInboundGetParameters()
     if (!this.state.showMovieParserLink) {
       document.getElementById('movie_panel_link').style.display = 'none'
     }
@@ -827,8 +827,11 @@ class RedactApplication extends React.Component {
     }
   }
 
-  checkForInboundImageOrMovie() {
+  checkForInboundGetParameters() {
     let vars = getUrlVars()
+    if (Object.keys(vars).includes('workbook_id')) {
+      this.loadWorkbook(vars['workbook_id'])
+    }
     if (Object.keys(vars).includes('image_url')) {
         this.handleSetImageUrl(vars['image_url'])
         document.getElementById('image_panel_link').click()
@@ -1109,6 +1112,7 @@ class RedactApplication extends React.Component {
                 setFramesetDiscriminator={this.setFramesetDiscriminator}
                 getRedactedMovieUrl={this.getRedactedMovieUrl}
                 setMovieRedactedUrl={this.setMovieRedactedUrl}
+                templates={this.state.templates}
               />
             </Route>
             <Route path='/redact/image'>

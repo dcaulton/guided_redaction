@@ -211,12 +211,6 @@ class MoviePanel extends React.Component {
             />
             Your browser does not support the video tag.
           </video>
-          <a 
-              href={red_mov_url}
-              download={red_mov_url}
-          >
-            download movie
-          </a>
         </div>
       )
     }
@@ -231,26 +225,11 @@ class MoviePanel extends React.Component {
     )
   }
 
-  buildFramesetsCountMessage() {
-    let framesets_title = ''
-    const framesets_count = Object.keys(this.props.getCurrentFramesets()).length
-    if (framesets_count) {
-      framesets_title = (
-        <span id='frameset_title'>
-          Showing {framesets_count} framesets
-        </span>
-      )
-    }
-    return framesets_title
-  }
-
   render() {
     let title = this.buildVideoTitle()
     const image_zoom_modal = this.buildImageZoomModal()
     const video_div = this.buildVideoDiv()
     const redacted_video_div = this.buildRedactedVideoDiv()
-    const framesets_count_message = this.buildFramesetsCountMessage()
-
 
     return (
     <div>
@@ -282,13 +261,12 @@ class MoviePanel extends React.Component {
             movies={this.props.movies}
             setMessage={this.setMessage}
             setFramesetDiscriminator={this.props.setFramesetDiscriminator}
+            getRedactedMovieUrl={this.props.getRedactedMovieUrl}
+            templates={this.props.templates}
           />
 
         </div>
         <div id='frame_and_frameset_data' className='row mt-3'>
-          <div id='frame_frameset_header' className='col-md-12'>
-            {framesets_count_message}
-          </div>
           <div id='frameset_cards' className='col-md-12'>
             <div id='cards_row' className='row m-5'>
               <FramesetCardList 
@@ -338,29 +316,72 @@ class MoviePanelAdvancedControls extends React.Component {
     )
   }
 
+  buildRedactedMovieDownloadLink() {
+    const red_mov_url = this.props.getRedactedMovieUrl()
+    if (red_mov_url) {
+      return (
+        <a 
+            href={red_mov_url}
+            download={red_mov_url}
+        >
+          download redacted movie
+        </a>
+      )
+    }
+  }
+
+  buildTemplatesString() {
+    let loaded_templates = []
+    if (this.props.templates) {
+      const temp_keys = Object.keys(this.props.templates)
+      for (let i=0; i < temp_keys.length; i++) {
+        loaded_templates.push(this.props.templates[temp_keys[i]]['name'])
+      }
+    }
+    return (
+      <ul>
+      {loaded_templates.map((value, index) => {
+        return (
+          <li key={index}>{value}</li>
+        )
+      })}
+      </ul>
+    )
+  }
+
   render() {
     let frameset_discriminator = ''
     let runtime = '0:00'
     let nickname = ''
     let num_framesets = '0'
     let redacted = 'No'
-    let loaded_templates = []
+    let frame_dimensions = 'unknown'
+    let templates_string = this.buildTemplatesString()
+    const redacted_movie_dl_link = this.buildRedactedMovieDownloadLink()
 
     const fd_dropdown = this.buildFramesetDiscriminatorDropdown()
     if (this.props.movie_url && Object.keys(this.props.movies).includes(this.props.movie_url)) {
       const movie = this.props.movies[this.props.movie_url]
       frameset_discriminator = movie['frameset_discriminator']
       const num_frames = movie['frames'].length
-      const num_framesets = Object.keys(movie['framesets']).length.toString()
+      num_framesets = Object.keys(movie['framesets']).length.toString()
       const num_mins = Math.floor(num_frames / 60)
       const num_secs = num_frames % 60
+      if (Object.keys(movie).includes('frame_dimensions')) {
+        frame_dimensions = movie['frame_dimensions'][0] + 'x' + movie['frame_dimensions'][1]
+      }
       let num_secs_string = num_secs.toString()
       if (num_secs_string.length === 1) {
         num_secs_string = '0' + num_secs_string
       }
       runtime = num_mins.toString() + ':' + num_secs_string
       nickname = movie.nickname
+      const red_mov_url = this.props.getRedactedMovieUrl()
+      if (red_mov_url) {
+        redacted = 'Yes'
+      }
     }
+
 
     return (
       <div className='col-md-9 m-2 bg-light rounded'>
@@ -394,10 +415,14 @@ class MoviePanelAdvancedControls extends React.Component {
               <div>Number of framesets: {num_framesets}</div>
               <div>Run Time: {runtime}</div>
               <div>Redacted? {redacted}</div>
-              <div>frameset_discriminator: {frameset_discriminator}</div>
+              <div>Frameset Discriminator: {frameset_discriminator}</div>
+              <div>Frame Dimensions: {frame_dimensions}</div>
               <div>
                 Loaded Templates:
-                {loaded_templates}
+                {templates_string}
+              </div>
+              <div>
+                {redacted_movie_dl_link}
               </div>
             </div>
             <div 

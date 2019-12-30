@@ -210,6 +210,7 @@ class ParseViewSetSplitAndHashMovie(viewsets.ViewSet):
 
     def create(self, request):
         resp_data = self.process_create_request(request.data)
+        movie_frame_dims = self.get_movie_frame_dimensions(resp_data['response_data']['frames'])
         if resp_data['errors_400']:
             return self.error(resp_data['errors_400'], status_code=400)
         if resp_data['errors_422']:
@@ -218,6 +219,7 @@ class ParseViewSetSplitAndHashMovie(viewsets.ViewSet):
             {
                 "frames": resp_data['response_data']['frames'],
                 "unique_frames": resp_data['response_data']['unique_frames'],
+                "frame_dimensions": movie_frame_dims,
             }
         )
 
