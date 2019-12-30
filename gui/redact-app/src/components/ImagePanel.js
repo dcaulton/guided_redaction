@@ -20,8 +20,14 @@ class ImagePanel extends React.Component {
     this.getImageAndHashDisplay=this.getImageAndHashDisplay.bind(this)
     this.setOcrDoneMessage=this.setOcrDoneMessage.bind(this)
     this.setRedactionDoneMessage=this.setRedactionDoneMessage.bind(this)
+    this.handleClearFramesetRedactions=this.handleClearFramesetRedactions.bind(this)
   }
 
+  handleClearFramesetRedactions() {
+    // TODO have set message be a function, then pass it to clearcurrentframesetredactions
+    this.props.clearCurrentFramesetRedactions()
+    this.local_state.message = 'redactions have been cleared'
+  }
   //TODO THIS whole method can go away now
   handleSetMode = (mode, submode) => {
     const message = getMessage(mode, submode);
@@ -147,8 +153,7 @@ class ImagePanel extends React.Component {
   }
 
   handleResetAreasToRedact = () => {
-    this.props.addRedactionToFrameset([])
-    this.props.setRedactedImageUrl('')
+    this.props.clearCurrentFramesetRedactions()
     document.getElementById('base_image_id').src = this.props.image_url
   }
 
@@ -197,13 +202,17 @@ class ImagePanel extends React.Component {
     }
     return prev_image_link
   }
+  
+  buildTemplateButton() {
+    return ('template button')
+  }
 
   render() {
     let the_image_url = this.props.image_url
     let next_button = this.get_next_button()
     let prev_button = this.get_prev_button()
-    if (this.props.redacted_image_url) {
-      the_image_url = this.props.redacted_image_url
+    if (this.props.getRedactedImageUrl()) {
+      the_image_url = this.props.getRedactedImageUrl()
     }
     return (
       <div id='redaction_panel_container'>
@@ -213,16 +222,18 @@ class ImagePanel extends React.Component {
             <div className='col'>
               <TopImageControls 
                 mode={this.local_state.mode}
+                templates={this.props.templates}
                 display_mode={this.local_state.display_mode}
                 submode={this.local_state.submode}
                 message={this.local_state.message}
                 setModeCallback= {this.handleSetMode}
-                clearRedactAreasCallback = {this.handleResetAreasToRedact}
+                handleClearFramesetRedactions={this.handleClearFramesetRedactions}
                 doRedactCallback = {this.handleRedactCall}
-                changeMaskMethodCallback= {this.props.setMaskMethod}
-                redacted_image_url={this.props.redacted_image_url}
+                changeMaskMethodCallback={this.props.setMaskMethod}
+                getRedactedImageUrl={this.props.getRedactedImageUrl}
                 setImageUrlCallback={this.props.setImageUrlCallback}
                 getImageAndHashDisplay={this.getImageAndHashDisplay}
+                runTemplates={this.props.runTemplates}
               />
             </div>
           </div>

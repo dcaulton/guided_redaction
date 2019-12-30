@@ -1,29 +1,51 @@
 import React from 'react';
 
 class TopImageControls extends React.Component {
-  constructor(props) {
-    super(props)
-    this.handleReset = this.handleReset.bind(this)
-    this.handleRedact = this.handleRedact.bind(this)
-  }
-
-  handleReset() {
-    this.props.clearRedactAreasCallback()
-    this.props.setModeCallback('reset', '')
-  }
-
   handleRedact() {
     this.props.doRedactCallback()
     this.props.setModeCallback('redact', '')
   }
 
+  buildTemplateButton() {
+    const template_keys = Object.keys(this.props.templates)
+    if (!template_keys.length) {
+      return ''
+    }
+    return (
+      <div id='template_div' className='d-inline'>
+        <button className='btn btn-primary dropdown-toggle ml-2' type='button' id='templateDropdownButton'
+            data-toggle='dropdown' aria-haspopup='true' aria-expanded='false'>
+          Template
+        </button>
+        <div className='dropdown-menu' aria-labelledby='tempateDropdownButton'>
+          <button className='dropdown-item' 
+              onClick={() => this.props.runTemplates('all', 'current_image')}
+              href='.'>
+            Run all
+          </button>
+          {template_keys.map((value, index) => {
+            return (
+              <button className='dropdown-item' 
+                  key={index}
+                  onClick={() => this.props.runTemplates(this.props.templates[value]['id'], 'current_image')}
+                  href='.'>
+                Run {this.props.templates[value]['name']}
+              </button>
+            )
+          })}
+        </div>
+      </div>
+    )
+  }
+
   render() {
+    const template_button = this.buildTemplateButton()
     let redacted_link = ''
-    if (this.props.redacted_image_url) {
-      let redacted_filename = this.props.redacted_image_url.split('/') 
+    if (this.props.getRedactedImageUrl()) {
+      let redacted_filename = this.props.getRedactedImageUrl().split('/') 
       redacted_link = (
           <a 
-              href={this.props.redacted_image_url}
+              href={this.props.getRedactedImageUrl()}
               download={redacted_filename}
           >
             download 
@@ -74,6 +96,8 @@ class TopImageControls extends React.Component {
               </div>
             </div>
 
+            {template_button}
+
             <button 
                 className='btn btn-primary ml-2' 
                 onClick={() => this.props.setModeCallback('view', '')}
@@ -83,7 +107,7 @@ class TopImageControls extends React.Component {
             
             <button 
                 className='btn btn-primary ml-2' 
-                onClick={() => this.handleReset()}
+                onClick={() => this.props.handleClearFramesetRedactions()}
                 href='./index.html' >
               Reset
             </button>

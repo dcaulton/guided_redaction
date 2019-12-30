@@ -263,6 +263,7 @@ class MoviePanel extends React.Component {
             setFramesetDiscriminator={this.props.setFramesetDiscriminator}
             getRedactedMovieUrl={this.props.getRedactedMovieUrl}
             templates={this.props.templates}
+            runTemplates={this.props.runTemplates}
           />
 
         </div>
@@ -349,6 +350,38 @@ class MoviePanelAdvancedControls extends React.Component {
     )
   }
 
+  buildTemplateButton() {
+    const template_keys = Object.keys(this.props.templates)
+    if (!template_keys.length) {
+      return ''
+    }
+    return (
+      <div id='template_div' className='d-inline'>
+        <button className='btn btn-primary dropdown-toggle ml-2' type='button' id='templateDropdownButton'
+            data-toggle='dropdown' aria-haspopup='true' aria-expanded='false'>
+          Template
+        </button>
+        <div className='dropdown-menu' aria-labelledby='tempateDropdownButton'>
+          <button className='dropdown-item'
+              onClick={() => this.props.runTemplates('all', 'current_movie')}
+              href='.'>
+            Run all
+          </button>
+          {template_keys.map((value, index) => {
+            return (
+              <button className='dropdown-item'
+                  key={index}
+                  onClick={() => this.props.runTemplates(this.props.templates[value]['id'], 'current_movie')}
+                  href='.'>
+                Run {this.props.templates[value]['name']}
+              </button>
+            )
+          })}
+        </div>
+      </div>
+    )
+  }
+
   render() {
     let frameset_discriminator = ''
     let runtime = '0:00'
@@ -357,6 +390,7 @@ class MoviePanelAdvancedControls extends React.Component {
     let redacted = 'No'
     let frame_dimensions = 'unknown'
     let templates_string = this.buildTemplatesString()
+    let templates_button = this.buildTemplateButton()
     const redacted_movie_dl_link = this.buildRedactedMovieDownloadLink()
 
     const fd_dropdown = this.buildFramesetDiscriminatorDropdown()
@@ -432,6 +466,11 @@ class MoviePanelAdvancedControls extends React.Component {
               <div>
                 <span>set frameset discriminator</span>
                 {fd_dropdown}
+              </div>
+              <div 
+                className='mt-2'
+              >
+                {templates_button}
               </div>
             </div>
           </div>

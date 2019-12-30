@@ -19,7 +19,6 @@ class RedactApplication extends React.Component {
       frameset_discriminator: 'gray8',
       mask_method: 'blur_7x7',
       image_url: '',
-      redacted_image_url: '',
       movie_url: '',
       frameset_hash: '',
       image_width: 0,
@@ -96,6 +95,27 @@ class RedactApplication extends React.Component {
     this.setFramesetDiscriminator=this.setFramesetDiscriminator.bind(this)
     this.setActiveMovie=this.setActiveMovie.bind(this)
     this.getRedactedMovieUrl=this.getRedactedMovieUrl.bind(this)
+    this.runTemplates=this.runTemplates.bind(this)
+    this.clearCurrentFramesetRedactions=this.clearCurrentFramesetRedactions.bind(this)
+    this.getRedactedImageUrl=this.getRedactedImageUrl.bind(this)
+  }
+
+  runTemplates(template_id, target) {
+  console.log('running '+template_id+' on '+target)
+
+  }
+
+  clearCurrentFramesetRedactions(when_done=(()=>{})) {
+    const the_hash = this.getFramesetHashForImageUrl(this.state.image_url)
+    let deepCopyMovies= JSON.parse(JSON.stringify(this.state.movies))
+    if (Object.keys(deepCopyMovies).includes(this.state.movie_url)) {
+      if (Object.keys(deepCopyMovies[this.state.movie_url]['framesets']).includes(the_hash)) {
+        deepCopyMovies[this.state.movie_url]['framesets'][the_hash]['areas_to_redact'] = []
+        this.setState({
+          movies: deepCopyMovies
+        })
+      }
+    }
   }
 
   getRedactedMovieUrl() {
@@ -104,6 +124,19 @@ class RedactApplication extends React.Component {
         let this_movie = this.state.movies[this.state.movie_url]
         if (Object.keys(this_movie).includes('redacted_movie_url')) {
           return this_movie['redacted_movie_url']
+        }
+      }
+    }
+  }
+
+  getRedactedImageUrl() {
+    if (this.state.movie_url) {
+      if (Object.keys(this.state.movies).includes(this.state.movie_url)) {
+        let movie = this.state.movies[this.state.movie_url]
+        if (Object.keys(movie['framesets']).includes(this.state.frameset_hash)) {
+          if (Object.keys(movie['framesets'][this.state.frameset_hash]).includes('redacted_image')) {
+            return movie['framesets'][this.state.frameset_hash]['redacted_image']
+          }
         }
       }
     }
@@ -328,9 +361,6 @@ class RedactApplication extends React.Component {
     })
     .then((response) => response.json())
     .then((responseJson) => {
-      let redacted_image_url = responseJson['redacted_image_url']
-      this.setRedactedImageUrl(redacted_image_url)
-
       let local_framesets = JSON.parse(JSON.stringify(this.getCurrentFramesets()));
       const frameset_hash = this.getFramesetHashForImageUrl(responseJson['original_image_url'])
       let frameset = local_framesets[frameset_hash]
@@ -847,6 +877,9 @@ class RedactApplication extends React.Component {
   getNextImageLink() {
     const framesets = this.getCurrentFramesets()
     let hashes = Object.keys(framesets)
+    if (hashes.length < 2) {
+      return ''
+    }
     if (this.state.frameset_hash) {
       let cur_index = hashes.indexOf(this.state.frameset_hash)
       if (cur_index < (hashes.length-1)) {
@@ -873,64 +906,45 @@ class RedactApplication extends React.Component {
   }
 
   makeNewFrameFrameset(the_url) {
+    if (!Object.keys(this.state.movies).length) {
+      let new_frameset_hash = '1'
+      let new_movie_url = 'whatever'
       let new_frameset = {
-          "-1": {
-              "images": [the_url]
-          }
+        images: [the_url]
       }
-      let new_frames = [the_url]
-      let new_frameset_hash = '-1'
-      return ([new_frameset, new_frames, new_frameset_hash])
+      let framesets = {}
+      framesets[new_frameset_hash] = new_frameset
+      let new_movie = {
+        frames: [the_url],
+        framesets: framesets,
+      }
+      let movies = {}
+      movies[new_movie_url] = new_movie
+      this.setState({
+        movies: movies,
+        movie_url: new_movie_url,
+      })
+      return new_frameset_hash
+    }
+    return 999  // don't expect to ever get here
   }
 
   handleSetImageUrl = (the_url) => {
-    let create_frameset = false
-    let new_frameset = {}
-    let new_frames = []
-    let new_frameset_hash = ''
-    if (!this.getCurrentFramesets()) {
-        create_frameset = true
-        let yy = this.makeNewFrameFrameset(the_url) 
-        new_frameset = yy[0]
-        new_frames = yy[1] 
-        new_frameset_hash = yy[2]
-    } else {
-        new_frameset_hash = this.getFramesetHashForImageUrl(the_url)
-        if (!new_frameset_hash) {
-            create_frameset = true
-            let yy = this.makeNewFrameFrameset(the_url) 
-            new_frameset = yy[0]
-            new_frames = yy[1] 
-            new_frameset_hash = yy[2]
-        }
+    let frameset_hash = this.getFramesetHashForImageUrl(the_url)
+    if (!frameset_hash) {
+      frameset_hash = this.makeNewFrameFrameset(the_url) 
     }
-    console.log('banana ' + new_frameset + new_frames) // I get an unused var warning if I don't do this
     var img = new Image()
     var app_this = this
-    if (create_frameset) {
-        img.onload = function(){
-            const scale = this.width / this.naturalWidth
-            app_this.setState({
-              image_url: the_url,
-              redacted_image_url: '',
-              image_width: this.width,
-              image_height: this.height,
-              image_scale: scale,
-              frameset_hash: new_frameset_hash,
-            });
-        };
-    } else {
-        img.onload = function(){
-            const scale = this.width / this.naturalWidth
-            app_this.setState({
-              image_url: the_url,
-              redacted_image_url: '',
-              image_width: this.width,
-              image_height: this.height,
-              image_scale: scale,
-              frameset_hash: new_frameset_hash,
-            })
-        }
+    img.onload = function(){
+        const scale = this.width / this.naturalWidth
+        app_this.setState({
+          image_url: the_url,
+          image_width: this.width,
+          image_height: this.height,
+          image_scale: scale,
+          frameset_hash: frameset_hash,
+        })
     }
     img.src = the_url
   }
@@ -961,7 +975,7 @@ class RedactApplication extends React.Component {
       template_matches: deepCopyTemplateMatches,
     })
   }
-
+ 
   clearTemplateMatches = (template_id, the_matches) => {
     this.setState({
       template_matches: {},
@@ -993,12 +1007,6 @@ class RedactApplication extends React.Component {
     delete deepCopySelectedAreas[this.state.movie_url]
     this.setState({
       selected_areas: deepCopySelectedAreas,
-    })
-  }
-
-  setRedactedImageUrl = (the_url) => {
-    this.setState({
-      redacted_image_url: the_url,
     })
   }
 
@@ -1113,20 +1121,20 @@ class RedactApplication extends React.Component {
                 getRedactedMovieUrl={this.getRedactedMovieUrl}
                 setMovieRedactedUrl={this.setMovieRedactedUrl}
                 templates={this.state.templates}
+                runTemplates={this.runTemplates}
               />
             </Route>
             <Route path='/redact/image'>
               <ImagePanel 
                 mask_method={this.state.mask_method}
                 image_url={this.state.image_url}
-                redacted_image_url={this.state.redacted_image_url}
+                getRedactedImageUrl={this.getRedactedImageUrl}
                 image_width={this.state.image_width}
                 image_height={this.state.image_height}
                 image_scale={this.state.image_scale}
                 addRedactionToFrameset={this.addRedactionToFrameset}
                 getRedactionFromFrameset={this.getRedactionFromFrameset}
                 setMaskMethod={this.handleSetMaskMethod}
-                setRedactedImageUrl={this.setRedactedImageUrl}
                 setImageUrlCallback={this.handleSetImageUrl}
                 getFramesetHashForImageUrl={this.getFramesetHashForImageUrl}
                 getNextImageLink={this.getNextImageLink}
@@ -1135,6 +1143,9 @@ class RedactApplication extends React.Component {
                 showAdvancedPanels={this.state.showAdvancedPanels}
                 callOcr={this.callOcr}
                 callRedact={this.callRedact}
+                templates={this.state.templates}
+                runTemplates={this.runTemplates}
+                clearCurrentFramesetRedactions={this.clearCurrentFramesetRedactions}
               />
             </Route>
             <Route path='/redact/insights'>
