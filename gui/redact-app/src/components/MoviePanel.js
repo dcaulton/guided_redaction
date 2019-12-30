@@ -6,7 +6,6 @@ class MoviePanel extends React.Component {
   constructor(props) {
     super(props)
     this.state = {
-      reassembling_video: false,
       draggedId: null,
       zoom_image_url: '',
       message: '.',
@@ -41,8 +40,8 @@ class MoviePanel extends React.Component {
   }
 
   callMovieSplit() {
-    this.setMessage('calling movie unzipper')
     this.props.doMovieSplit(this.props.movie_url, this.movieSplitCompleted)
+    this.setMessage('splitting movie into frames')
   }
 
   afterFrameRedaction() {
@@ -81,12 +80,12 @@ class MoviePanel extends React.Component {
         movie_frame_urls.push(image_url)
       }
     }
-    this.setMessage('calling movie zipper')
+    this.setMessage('reassembling frames')
     this.props.callMovieZip(movie_frame_urls, this.movieZipCompleted)
   }
 
   movieZipCompleted() {
-    this.setMessage('movie zipping completed')
+    this.setMessage('movie reassembly completed')
   }
 
   movieSplitCompleted() {
@@ -110,8 +109,8 @@ class MoviePanel extends React.Component {
   }
 
   callReassembleVideo() {
-    this.setState({reassembling_video: true})
     this.setMessage('calling movie reassembler')
+    this.props.setMovieRedactedUrl('')
     let frameset_keys = Object.keys(this.props.getCurrentFramesets())
     for (let i=0; i < frameset_keys.length; i++) {
       let pass_arr = []
@@ -198,7 +197,8 @@ class MoviePanel extends React.Component {
 
   buildRedactedVideoDiv() {
     let redacted_video_element = <div />
-    if (this.props.redacted_movie_url) {
+    const red_mov_url = this.props.getRedactedMovieUrl()
+    if (red_mov_url) {
       redacted_video_element = (
         <div>
           <h3>Redacted Video</h3>
@@ -206,14 +206,14 @@ class MoviePanel extends React.Component {
           <video id='redacted_video_id' controls >
             <source 
                 id='redacted_video_source'
-                src={this.props.redacted_movie_url}
+                src={red_mov_url}
                 type="video/mp4" 
             />
             Your browser does not support the video tag.
           </video>
           <a 
-              href={this.props.redacted_movie_url}
-              download={this.props.redacted_movie_url}
+              href={red_mov_url}
+              download={red_mov_url}
           >
             download movie
           </a>
@@ -280,6 +280,8 @@ class MoviePanel extends React.Component {
           <MoviePanelAdvancedControls
             movie_url={this.props.movie_url}
             movies={this.props.movies}
+            setMessage={this.setMessage}
+            setFramesetDiscriminator={this.props.setFramesetDiscriminator}
           />
 
         </div>
@@ -309,13 +311,47 @@ class MoviePanel extends React.Component {
 }
 
 class MoviePanelAdvancedControls extends React.Component {
+  buildFramesetDiscriminatorDropdown() {
+    return (
+      <div
+          className='d-inline ml-2 mt-2'
+      >
+         <select
+            title='Frameset Discriminator'
+            name='frameset_discriminator'
+            onChange={(event) => 
+              this.props.setFramesetDiscriminator(
+                event.target.value,
+                this.props.setMessage('framework discriminator updated')
+              )
+            }
+         >
+          <option value='gray8'>--FramesetDiscriminator--</option>
+          <option value='gray64'>gray 64x64</option>
+          <option value='gray32'>gray 32x32</option>
+          <option value='gray16'>gray 16x16</option>
+          <option value='gray8'>gray 8x8 (default)</option>
+          <option value='gray6'>gray 6x6</option>
+          <option value='gray4'>gray 4x4</option>
+        </select>
+      </div>
+    )
+  }
+
   render() {
     let frameset_discriminator = ''
     let runtime = '0:00'
-    if (Object.keys(this.props.movies).includes(this.props.movie_url)) {
+    let nickname = ''
+    let num_framesets = '0'
+    let redacted = 'No'
+    let loaded_templates = []
+
+    const fd_dropdown = this.buildFramesetDiscriminatorDropdown()
+    if (this.props.movie_url && Object.keys(this.props.movies).includes(this.props.movie_url)) {
       const movie = this.props.movies[this.props.movie_url]
       frameset_discriminator = movie['frameset_discriminator']
-      const num_frames = Object.keys(movie['frames']).length
+      const num_frames = movie['frames'].length
+      const num_framesets = Object.keys(movie['framesets']).length.toString()
       const num_mins = Math.floor(num_frames / 60)
       const num_secs = num_frames % 60
       let num_secs_string = num_secs.toString()
@@ -323,10 +359,11 @@ class MoviePanelAdvancedControls extends React.Component {
         num_secs_string = '0' + num_secs_string
       }
       runtime = num_mins.toString() + ':' + num_secs_string
+      nickname = movie.nickname
     }
 
     return (
-      <div className='col-md-9 m-2'>
+      <div className='col-md-9 m-2 bg-light rounded'>
         <div className='row'>
           <div
             className='col h3'
@@ -352,13 +389,26 @@ class MoviePanelAdvancedControls extends React.Component {
             className='row collapse'
         >
           <div id='advanced_main' className='col'>
-            <div>movie title</div>
-            <div>number of framesets</div>
-            <div>run time: {runtime}</div>
-            <div>has it been redacted?</div>
-            <div>frameset_discriminator: {frameset_discriminator}</div>
-            <div>loaded templates - load more here if you want</div>
-            <div></div>
+            <div id='movie_info_div m-2'>
+              <div>Title: {nickname}</div>
+              <div>Number of framesets: {num_framesets}</div>
+              <div>Run Time: {runtime}</div>
+              <div>Redacted? {redacted}</div>
+              <div>frameset_discriminator: {frameset_discriminator}</div>
+              <div>
+                Loaded Templates:
+                {loaded_templates}
+              </div>
+            </div>
+            <div 
+                className='border-top p-2'
+                id='movie_controls_div_secondary'
+            >
+              <div>
+                <span>set frameset discriminator</span>
+                {fd_dropdown}
+              </div>
+            </div>
           </div>
         </div>
 
@@ -386,7 +436,7 @@ class MoviePanelHeader extends React.Component {
               className='btn btn-primary ml-5' 
               onClick={() => this.props.callReassembleVideo()}
           >
-            Reassemble Video
+            Redact & Reassemble Video
           </button>
 
         </div>

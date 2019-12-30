@@ -19,7 +19,6 @@ class RedactApplication extends React.Component {
       frameset_discriminator: 'gray8',
       mask_method: 'blur_7x7',
       image_url: '',
-      redacted_movie_url: '',
       redacted_image_url: '',
       movie_url: '',
       frameset_hash: '',
@@ -90,17 +89,43 @@ class RedactApplication extends React.Component {
     this.setAnnotations=this.setAnnotations.bind(this)
     this.cropImage=this.cropImage.bind(this)
     this.setMovieNickname=this.setMovieNickname.bind(this)
+    this.setMovieRedactedUrl=this.setMovieRedactedUrl.bind(this)
     this.getCurrentFramesets=this.getCurrentFramesets.bind(this)
     this.getCurrentFrames=this.getCurrentFrames.bind(this)
     this.setMovieSets=this.setMovieSets.bind(this)
     this.setFramesetDiscriminator=this.setFramesetDiscriminator.bind(this)
     this.setActiveMovie=this.setActiveMovie.bind(this)
+    this.getRedactedMovieUrl=this.getRedactedMovieUrl.bind(this)
   }
 
-  setFramesetDiscriminator(the_value) {
+  getRedactedMovieUrl() {
+    if (this.state.movie_url) {
+      if (Object.keys(this.state.movies).includes(this.state.movie_url)) {
+        let this_movie = this.state.movies[this.state.movie_url]
+        if (Object.keys(this_movie).includes('redacted_movie_url')) {
+          return this_movie['redacted_movie_url']
+        }
+      }
+    }
+  }
+
+  setMovieRedactedUrl(the_url) {
+    let deepCopyMovies = JSON.parse(JSON.stringify(this.state.movies))
+    let existing_movie = deepCopyMovies[this.state.movie_url]
+    if (existing_movie) {
+      existing_movie['redacted_movie_url'] = the_url
+      deepCopyMovies[this.state.movie_url] = existing_movie
+      this.setState({
+        movies: deepCopyMovies,
+      })
+    }
+  }
+
+  setFramesetDiscriminator(the_value, when_done=(()=>{})) {
     this.setState({
       frameset_discriminator: the_value,
-    })
+    },
+    when_done())
   }
 
   getCurrentFramesets() {
@@ -369,15 +394,7 @@ class RedactApplication extends React.Component {
     return file_name_before_dot
   }
 
-  async doMovieSplit(the_url, theCallback) {
-    if (!the_url) {
-      the_url = this.state.movie_url
-    }
-    if (this.state.movies[the_url]) {
-      this.setActiveMovie(the_url, theCallback)
-      return
-    } 
-
+  async doMovieSplit(the_url, theCallback=(()=>{})) {
     await fetch(this.state.parse_movie_url, {
       method: 'POST',
       headers: this.buildJsonHeaders(),
@@ -432,9 +449,13 @@ class RedactApplication extends React.Component {
     })
     .then((response) => response.json())
     .then((responseJson) => {
-      let movie_url = responseJson['movie_url']
+      const movie_url = responseJson['movie_url']
+      const deepCopyMovies= JSON.parse(JSON.stringify(this.state.movies))
+      let movie = deepCopyMovies[this.state.movie_url]
+      movie['redacted_movie_url'] = movie_url
+      deepCopyMovies[this.state.movie_url] = movie
       this.setState({
-        redacted_movie_url: movie_url,
+        movies: deepCopyMovies,
       })
     })
     .then(() => {
@@ -1080,11 +1101,14 @@ class RedactApplication extends React.Component {
                 getRedactionFromFrameset={this.getRedactionFromFrameset}
                 callMovieZip={this.callMovieZip}
                 getFramesetHashForImageUrl={this.getFramesetHashForImageUrl}
-                redacted_movie_url = {this.state.redacted_movie_url}
                 callRedact={this.callRedact}
                 handleMergeFramesets={this.handleMergeFramesets}
                 doMovieSplit={this.doMovieSplit}
                 movies={this.state.movies}
+                frameset_discriminator={this.state.frameset_discriminator}
+                setFramesetDiscriminator={this.setFramesetDiscriminator}
+                getRedactedMovieUrl={this.getRedactedMovieUrl}
+                setMovieRedactedUrl={this.setMovieRedactedUrl}
               />
             </Route>
             <Route path='/redact/image'>
