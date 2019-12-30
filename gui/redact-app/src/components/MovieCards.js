@@ -1,28 +1,71 @@
 import React from 'react'
 
 class MovieCardList extends React.Component {
+  buildMultiIdString() {
+    let build_string = ''
+    let mcw = document.getElementById('movie_card_wrapper')
+    if (mcw) {
+      const movie_cards = Array.from(mcw.children)
+      movie_cards.forEach(el => {
+        build_string += '#' + el.children[0].children[1].id + ','
+      })
+      build_string = build_string.substring(0, build_string.length-1)
+    }
+    return build_string
+  }
+
+  buildCollapseAllCardsLink() {
+    let style = {
+      'fontSize': 'small',
+      'padding': 0,
+    }
+    const ids_to_collapse = this.buildMultiIdString() 
+    return (
+      <div
+        className='d-inline'
+      >
+        <button
+            style={style}
+            className='btn btn-link'
+            aria-expanded='false'
+            data-target={ids_to_collapse}
+            aria-controls={ids_to_collapse}
+            data-toggle='collapse'
+            type='button'
+        >
+          +/-
+        </button>
+      </div>
+    )
+  }
+
   render() {
+    let cacl = this.buildCollapseAllCardsLink()
     return (
       <div>
         <div className='row'>
-          <h3>Videos</h3>
+          <span className='h3 mr-5'>Videos</span>
+          {cacl}
         </div>
-      {this.props.movie_urls.map((value, index) => {
-        return (
-        <MovieCard
-            key={index}
-            setCurrentVideo={this.props.setCurrentVideo}
-            active_movie_url={this.props.movie_url}
-            this_cards_movie_url={value}
-            movies={this.props.movies}
-            getMovieMatchesFound={this.props.getMovieMatchesFound}
-            getMovieSelectedCount={this.props.getMovieSelectedCount}
-            submitInsightsJob={this.props.submitInsightsJob}
-            setMovieNickname={this.props.setMovieNickname}
-            setDraggedId={this.props.setDraggedId}
-        />
-        )
-      })}
+        <div id='movie_card_wrapper'>
+        {this.props.movie_urls.map((value, index) => {
+          return (
+          <MovieCard
+              key={index}
+              setCurrentVideo={this.props.setCurrentVideo}
+              active_movie_url={this.props.movie_url}
+              this_cards_movie_url={value}
+              movies={this.props.movies}
+              getMovieMatchesFound={this.props.getMovieMatchesFound}
+              getMovieSelectedCount={this.props.getMovieSelectedCount}
+              submitInsightsJob={this.props.submitInsightsJob}
+              setMovieNickname={this.props.setMovieNickname}
+              setDraggedId={this.props.setDraggedId}
+              index={index}
+          />
+          )
+        })}
+        </div>
       </div>
     )
   }
@@ -103,7 +146,9 @@ class MovieCard extends React.Component {
   getMovieDimensions(movie_url, movies) {
     if (Object.keys(movies).includes(movie_url) && movies[movie_url]['frame_dimensions']) {
       const dims = movies[movie_url]['frame_dimensions']
-      return 'frame size: '+ dims[0].toString() + 'x' + dims[1].toString()
+      let ts = dims[0].toString() + 'x' + dims[1].toString()
+      ts += ' - ' + movies[movie_url]['frameset_discriminator']
+      return ts
     }
     return ''
   }
@@ -146,6 +191,10 @@ class MovieCard extends React.Component {
   }
 
   render() {
+    let dd_style = {
+      'fontSize': 'small',
+    }
+
     let queue_job_button = this.buildQueueJobLink()
     let nickname_block = this.buildNicknameBlock(this.props.this_cards_movie_url, this.props.movies)
     if (!nickname_block.length) {
@@ -160,8 +209,9 @@ class MovieCard extends React.Component {
     if (this.props.this_cards_movie_url === this.props.active_movie_url) {
       top_div_classname = "row mt-2 card active_movie_card"
     }
-    const movie_body_id = 'movie_body_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
-    const movie_header = this.buildMovieHeader(this.props.movies[this.props.this_cards_movie_url], movie_body_id, nickname_block)
+    const movie_body_id = 'movie_body_' + this.props.index
+    const movie = this.props.movies[this.props.this_cards_movie_url]
+    const movie_header = this.buildMovieHeader(movie, movie_body_id, nickname_block)
 
     return (
       <div 
@@ -194,16 +244,25 @@ class MovieCard extends React.Component {
                 {make_active_button}
                 {queue_job_button}
               </div>
-              <div className='row'>
+              <div 
+                  className='row'
+                  style={dd_style}
+              >
                 {framesets_count_message}
               </div>
-              <div className='row'>
+              <div 
+                  className='row'
+                  style={dd_style}
+              >
                 {found_string}
               </div>
               <div className='row'>
                 {selected_string}
               </div>
-              <div className='row'>
+              <div 
+                  className='row ' 
+                  style={dd_style}
+              >
                 {dims_string}
               </div>
             </div>

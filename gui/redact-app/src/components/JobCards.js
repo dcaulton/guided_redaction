@@ -1,8 +1,45 @@
 import React from 'react'
 
 class JobCardList extends React.Component {
+  buildMultiIdString() {
+    let build_string = ''
+    for (let i=0; i < this.props.jobs.length; i++) {
+      build_string += '#job_card_' + i.toString()
+      if (i < this.props.jobs.length - 1) {
+        build_string += ','
+      }
+    }
+    return build_string
+  }
+
+  buildCollapseAllCardsLink() {
+    let style = {
+      'fontSize': 'small',
+      'padding': 0,
+    }
+    const ids_to_collapse = this.buildMultiIdString()
+
+    return (
+      <div
+        className='d-inline'
+      >
+        <button
+            style={style}
+            className='btn btn-link'
+            aria-expanded='false'
+            data-target={ids_to_collapse}
+            aria-controls={ids_to_collapse}
+            data-toggle='collapse'
+            type='button'
+        >
+          +/-
+        </button>
+      </div>
+    )
+  }
 
   render() {
+    const collapse_all_link = this.buildCollapseAllCardsLink() 
     const sorted_jobs = this.props.jobs.sort((a, b) => (a.created_on < b.created_on) ? 1 : -1)
     return (
       <div>
@@ -14,22 +51,27 @@ class JobCardList extends React.Component {
 					>                                                             
 						Refresh
 					</button>  
+          {collapse_all_link}
         </div>
-      {sorted_jobs.map((value, index) => {
-        return (
-        <JobCard
-          key={index}
-          job_data={value}
-          loadInsightsJobResults={this.props.loadInsightsJobResults}
-          cancelJob={this.props.cancelJob}
-          workbooks={this.props.workbooks}
-        />
-        )
-      })}
+        <div id='job_card_wrapper'>
+          {sorted_jobs.map((value, index) => {
+            return (
+            <JobCard
+              key={index}
+              job_data={value}
+              loadInsightsJobResults={this.props.loadInsightsJobResults}
+              cancelJob={this.props.cancelJob}
+              workbooks={this.props.workbooks}
+              index={index}
+            />
+            )
+          })}
+        </div>
       </div>
     )
   }
 }
+
 
 class JobCard extends React.Component {
 
@@ -74,8 +116,13 @@ class JobCard extends React.Component {
         job_data['id'].substring(jn_length-2)
     }
 
+    let style = {
+      'fontSize': 'small',
+      'padding': 0,
+    }
     const exp_coll = (
       <button
+          style={style}
           className='btn btn-link'
           aria-expanded='false'
           data-target={'#'+job_body_id}
@@ -203,7 +250,7 @@ class JobCard extends React.Component {
       </button>
     )
 
-    const job_body_id = 'job_body_' + this.props.job_data['id']
+    const job_body_id = 'job_card_' + this.props.index
     const job_header = this.buildJobHeader(this.props.job_data, job_body_id)
     const job_response_data = this.buildJobResponseData(this.props.job_data)
     const job_workbook_block = this.buildJobWorkbookBlock(this.props.job_data)
