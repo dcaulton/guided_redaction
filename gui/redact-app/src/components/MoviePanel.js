@@ -165,16 +165,28 @@ class MoviePanel extends React.Component {
 
   buildImageZoomModal() {
     return (
-      <div 
-          id='image-zoom-modal'
-          style={{display: this.state.zoom_image_url? 'block' : 'none' }}
-      >
-        <img 
-            src={this.state.zoom_image_url}
-            alt='zoomed in'
-            onClick={() => this.setZoomImageUrl('')}
-        />
-      </div>
+      <div className="modal" id='moviePanelModal' tabIndex="-1" role="dialog">
+        <div className="modal-dialog modal-xl" id='moviePanelModalInner' role="document">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h5 className="modal-title">Viewing Image</h5>
+              <button type="button" className="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <div className="modal-body">
+                <img 
+                    id='movie_zoom_image'
+                    src={this.state.zoom_image_url}
+                    alt='whatever'
+                />
+            </div>
+            <div className="modal-footer">
+              <button type="button" className="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+          </div>
+        </div>
+      </div>    
     )
   }
 
@@ -190,9 +202,6 @@ class MoviePanel extends React.Component {
         </video>
       </div>
     )
-  }
-
-  buildFramesetsTitle() {
   }
 
   buildRedactedVideoDiv() {
@@ -267,6 +276,7 @@ class MoviePanel extends React.Component {
           />
 
         </div>
+
         <div id='frame_and_frameset_data' className='row mt-3'>
           <div id='frameset_cards' className='col-md-12'>
             <div id='cards_row' className='row m-5'>

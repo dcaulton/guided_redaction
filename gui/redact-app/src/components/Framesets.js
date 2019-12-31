@@ -31,19 +31,23 @@ class FramesetCard extends React.Component {
         <div className='frameset_hash'>
           {hash_span}
         </div>
+
         <img 
             className='zoomable-image'
             src={this.props.image_url} 
             alt='whatever'
             onClick={() => this.props.setZoomImageUrl(this.props.image_url)}
         />
+
         <div className='card-body'>
           <div className='card-text'>{this.props.image_names.length} images</div>
         </div>
+
         <div>
           <p>{this.props.redactionDesc}</p>
         </div>
-        <div>
+
+        <div className='d-inline'>
           <button
             className='btn btn-primary'
             onClick={() => this.props.redactFramesetCallback(this.props.frame_hash)}
@@ -51,6 +55,18 @@ class FramesetCard extends React.Component {
             Redact
           </button>
         </div>
+
+        <div className='d-inline ml-2'>
+          <button
+              type="button"
+              className="btn btn-primary"
+              data-toggle="modal"
+              onClick={() => this.props.setZoomImageUrl(this.props.image_url)}
+              data-target="#moviePanelModal">
+            View
+          </button>
+        </div>
+
       </div>
     )
   }
