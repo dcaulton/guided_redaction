@@ -28,7 +28,6 @@ class Migration(migrations.Migration):
                 ("request_data", models.TextField(null=True)),
                 ("response_data", models.TextField(null=True)),
                 ("parent", models.ForeignKey('self', on_delete=models.CASCADE, null=True)),
-                ("workbook", models.ForeignKey('workbooks.Workbook', on_delete=models.CASCADE, null=True)),
             ]
         )
     ]
