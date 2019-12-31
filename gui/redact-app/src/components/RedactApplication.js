@@ -15,7 +15,11 @@ import {
 class RedactApplication extends React.Component {
   constructor(props) {
     super(props);
+    const api_server_url = 'http://127.0.0.1:8000/'
+    const api_key = ''
     this.state = {
+      api_server_url: api_server_url,
+      api_key: api_key,
       frameset_discriminator: 'gray8',
       mask_method: 'blur_7x7',
       image_url: '',
@@ -24,19 +28,18 @@ class RedactApplication extends React.Component {
       image_width: 0,
       image_height: 0,
       image_scale: 1,
-      api_key: '',
-      ping_url: 'http://127.0.0.1:8000/v1/parse/ping',
-      flood_fill_url: 'http://127.0.0.1:8000/v1/analyze/flood-fill',
-      arrow_fill_url: 'http://127.0.0.1:8000/v1/analyze/arrow-fill',
-      scan_template_url: 'http://127.0.0.1:8000/v1/analyze/scan-template',
-      analyze_url: 'http://127.0.0.1:8000/v1/analyze/east-tess',
-      redact_url: 'http://127.0.0.1:8000/v1/redact/redact-image',
-      crop_url: 'http://127.0.0.1:8000/v1/parse/crop-image',
-      parse_movie_url: 'http://127.0.0.1:8000/v1/parse/split-and-hash-movie',
-      zip_movie_url: 'http://127.0.0.1:8000/v1/parse/zip-movie',
-      get_images_for_uuid_url: 'http://127.0.0.1:8000/v1/parse/get-images-for-uuid',
-      jobs_url: 'http://127.0.0.1:8000/v1/jobs',
-      workbooks_url: 'http://127.0.0.1:8000/v1/workbooks/',
+      ping_url: api_server_url + 'v1/parse/ping',
+      flood_fill_url: api_server_url + 'v1/analyze/flood-fill',
+      arrow_fill_url: api_server_url + 'v1/analyze/arrow-fill',
+      scan_template_url: api_server_url + 'v1/analyze/scan-template',
+      analyze_url: api_server_url + 'v1/analyze/east-tess',
+      redact_url: api_server_url + 'v1/redact/redact-image',
+      crop_url: api_server_url + 'v1/parse/crop-image',
+      parse_movie_url: api_server_url + 'v1/parse/split-and-hash-movie',
+      zip_movie_url: api_server_url + 'v1/parse/zip-movie',
+      get_images_for_uuid_url: api_server_url + 'v1/parse/get-images-for-uuid',
+      jobs_url: api_server_url + 'v1/jobs',
+      workbooks_url: api_server_url + 'v1/workbooks/',
       current_user: 'dave.caulton@sykes.com',
       current_workbook_name: 'workbook 1',
       current_workbook_id: '',
