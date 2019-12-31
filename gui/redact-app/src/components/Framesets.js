@@ -95,7 +95,7 @@ class FramesetCardList extends React.Component {
 
   render() {
     const framesets = this.props.getCurrentFramesets()
-    let ordered_frame_hashes = Object.keys(framesets)
+    let ordered_frame_hashes = this.props.getFramesetHashesInOrder()
     let items = ordered_frame_hashes.map((key) =>
       <FramesetCard
         setDraggedId={this.props.setDraggedId}

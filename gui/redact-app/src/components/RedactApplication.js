@@ -98,11 +98,25 @@ class RedactApplication extends React.Component {
     this.runTemplates=this.runTemplates.bind(this)
     this.clearCurrentFramesetRedactions=this.clearCurrentFramesetRedactions.bind(this)
     this.getRedactedImageUrl=this.getRedactedImageUrl.bind(this)
+    this.getFramesetHashesInOrder=this.getFramesetHashesInOrder.bind(this)
   }
 
   runTemplates(template_id, target) {
   console.log('running '+template_id+' on '+target)
 
+  }
+
+  getFramesetHashesInOrder() {
+    const framesets = this.getCurrentFramesets()
+    const frames = this.getCurrentFrames()
+    let return_arr = []
+    for (let i=0; i < frames.length; i++) {
+      const frameset_hash = this.getFramesetHashForImageUrl(frames[i])
+      if (!return_arr.includes(frameset_hash)) {
+        return_arr.push(frameset_hash)
+      }
+    }
+    return return_arr
   }
 
   clearCurrentFramesetRedactions(when_done=(()=>{})) {
@@ -1083,10 +1097,10 @@ class RedactApplication extends React.Component {
             <Link className='nav-link' id='home_link' to='/redact'>RedactUI</Link>
           </li>
           <li className="nav-item">
-            <Link className='nav-link' id='image_panel_link' to='/redact/image'>Images</Link>
+            <Link className='nav-link' id='image_panel_link' to='/redact/image'>Image</Link>
           </li>
           <li className="nav-item">
-            <Link className='nav-link' id='movie_panel_link' to='/redact/movie'>Movies</Link>
+            <Link className='nav-link' id='movie_panel_link' to='/redact/movie'>Movie</Link>
           </li>
           <li className="nav-item">
             <Link className='nav-link' id='insights_link' to='/redact/insights'>Insights</Link>
@@ -1122,6 +1136,7 @@ class RedactApplication extends React.Component {
                 setMovieRedactedUrl={this.setMovieRedactedUrl}
                 templates={this.state.templates}
                 runTemplates={this.runTemplates}
+                getFramesetHashesInOrder={this.getFramesetHashesInOrder}
               />
             </Route>
             <Route path='/redact/image'>
@@ -1195,6 +1210,7 @@ class RedactApplication extends React.Component {
                 frameset_discriminator={this.state.frameset_discriminator}
                 setFramesetDiscriminator={this.setFramesetDiscriminator}
                 setActiveMovie={this.setActiveMovie}
+//                getFramesetHashesInOrder={this.getFramesetHashesInOrder}
               />
             </Route>
           </Switch>

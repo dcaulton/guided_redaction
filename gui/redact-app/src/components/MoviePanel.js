@@ -288,6 +288,7 @@ class MoviePanel extends React.Component {
                 setDraggedId={this.setDraggedId}
                 handleDroppedFrameset={this.handleDroppedFrameset}
                 setZoomImageUrl={this.setZoomImageUrl}
+                getFramesetHashesInOrder={this.props.getFramesetHashesInOrder}
               />
             </div>
           </div>
