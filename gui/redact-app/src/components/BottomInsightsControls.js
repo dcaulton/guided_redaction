@@ -106,6 +106,8 @@ class BottomInsightsControls extends React.Component {
           toggleShowAnnotate={this.props.toggleShowAnnotate}
           toggleShowOcr={this.props.toggleShowOcr}
           setFramesetDiscriminator={this.props.setFramesetDiscriminator}
+          campaign_movies={this.props.campaign_movies}
+          setCampaignMovies={this.props.setCampaignMovies}
         />
 
       </div>

@@ -15,7 +15,7 @@ import {
 class RedactApplication extends React.Component {
   constructor(props) {
     super(props);
-    const api_server_url = 'http://127.0.0.1:8000/'
+    const api_server_url = 'http://localhost:8000/api/'
     const api_key = ''
     this.state = {
       api_server_url: api_server_url,

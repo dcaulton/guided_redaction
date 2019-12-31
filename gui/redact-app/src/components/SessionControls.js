@@ -88,7 +88,22 @@ class SessionControls extends React.Component {
     return return_array
   }
 
+  buildCampaignMoviesBox() {
+    const campaign_movies_string = this.props.campaign_movies.join('\n')
+    return (
+      <textarea
+         cols='80'
+         rows='10'
+         value={campaign_movies_string}
+         onChange={(event) => this.props.setCampaignMovies(event.target.value)}
+      />
+    )
+//              campaign_movies={this.state.campaign_movies}
+//            setCampaignMovies={this.setCampaignMovies}
+  }
+
   render() {
+    let campaign_movies_box = this.buildCampaignMoviesBox()
     let workbook_load_button = this.buildWorkbookPickerButton()
     let workbook_delete_button = this.buildWorkbookDeleteButton()
     let show_templates_checked = ''
@@ -270,6 +285,9 @@ class SessionControls extends React.Component {
                   Show Results
                 </div>
 
+                <div className='d-inline'>
+                  {campaign_movies_box}
+                </div>
 
               </div>
             </div>

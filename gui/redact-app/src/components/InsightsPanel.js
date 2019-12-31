@@ -76,6 +76,14 @@ class InsightsPanel extends React.Component {
     this.toggleShowOcr=this.toggleShowOcr.bind(this)
     this.loadInsightsJobResults=this.loadInsightsJobResults.bind(this)
     this.afterMovieSplitInsightsJobLoaded=this.afterMovieSplitInsightsJobLoaded.bind(this)
+    this.setCampaignMovies=this.setCampaignMovies.bind(this)
+  }
+
+  setCampaignMovies(the_url_string) {
+    const movies = the_url_string.split('\n')
+    this.setState({
+      campaign_movies: movies,
+    })
   }
 
   loadInsightsJobResults(job_id) {
@@ -975,6 +983,8 @@ class InsightsPanel extends React.Component {
             toggleShowAnnotate={this.toggleShowAnnotate}
             toggleShowOcr={this.toggleShowOcr}
             setFramesetDiscriminator={this.props.setFramesetDiscriminator}
+            campaign_movies={this.state.campaign_movies}
+            setCampaignMovies={this.setCampaignMovies}
           />
         </div>
 
