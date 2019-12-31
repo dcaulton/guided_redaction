@@ -234,11 +234,23 @@ class MoviePanel extends React.Component {
     )
   }
 
+  buildFramesetsTitle() {
+    
+    if (Object.keys(this.props.getCurrentFramesets()).length > 0) {
+      return (
+          <div className='col col-lg-10 p-2 border-bottom border-top'>
+          <span className='mt-2 h5'>Framesets - drag and drop to merge</span>
+          </div>
+      )
+    }
+  }
+
   render() {
     let title = this.buildVideoTitle()
     const image_zoom_modal = this.buildImageZoomModal()
     const video_div = this.buildVideoDiv()
     const redacted_video_div = this.buildRedactedVideoDiv()
+    const framesets_title = this.buildFramesetsTitle()
 
     return (
     <div>
@@ -278,8 +290,9 @@ class MoviePanel extends React.Component {
         </div>
 
         <div id='frame_and_frameset_data' className='row mt-3'>
+          {framesets_title}
           <div id='frameset_cards' className='col-md-12'>
-            <div id='cards_row' className='row m-5'>
+            <div id='cards_row' className='row m-2'>
               <FramesetCardList 
                 getCurrentFramesets={this.props.getCurrentFramesets}
                 getNameFor={this.getNameFor}

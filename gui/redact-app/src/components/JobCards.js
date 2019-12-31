@@ -21,7 +21,7 @@ class JobCardList extends React.Component {
 
     return (
       <div
-        className='d-inline'
+        className='d-inline m-2'
       >
         <button
             style={style}

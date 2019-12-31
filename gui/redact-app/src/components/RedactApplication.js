@@ -107,7 +107,6 @@ class RedactApplication extends React.Component {
   }
 
   getFramesetHashesInOrder() {
-    const framesets = this.getCurrentFramesets()
     const frames = this.getCurrentFrames()
     let return_arr = []
     for (let i=0; i < frames.length; i++) {
@@ -890,7 +889,7 @@ class RedactApplication extends React.Component {
 
   getNextImageLink() {
     const framesets = this.getCurrentFramesets()
-    let hashes = Object.keys(framesets)
+    let hashes = this.getFramesetHashesInOrder()
     if (hashes.length < 2) {
       return ''
     }
@@ -907,7 +906,7 @@ class RedactApplication extends React.Component {
 
   getPrevImageLink() {
     const framesets = this.getCurrentFramesets()
-    let hashes = Object.keys(framesets)
+    let hashes = this.getFramesetHashesInOrder()
     if (this.state.frameset_hash) {
       let cur_index = hashes.indexOf(this.state.frameset_hash)
       if (cur_index > 0) {
