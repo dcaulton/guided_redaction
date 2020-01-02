@@ -9,18 +9,66 @@ class MoviePanel extends React.Component {
       draggedId: null,
       zoom_image_url: '',
       message: '.',
+      movie_panel_job_ids: [],
     }
     this.getNameFor=this.getNameFor.bind(this)
     this.redactFramesetCallback=this.redactFramesetCallback.bind(this)
-    this.callMovieSplit=this.callMovieSplit.bind(this)
     this.callReassembleVideo=this.callReassembleVideo.bind(this)
     this.setDraggedId=this.setDraggedId.bind(this)
     this.setZoomImageUrl=this.setZoomImageUrl.bind(this)
     this.handleDroppedFrameset=this.handleDroppedFrameset.bind(this)
     this.afterFrameRedaction=this.afterFrameRedaction.bind(this)
-    this.movieSplitCompleted=this.movieSplitCompleted.bind(this)
     this.movieZipCompleted=this.movieZipCompleted.bind(this)
     this.setMessage=this.setMessage.bind(this)
+    this.checkForJobs=this.checkForJobs.bind(this)
+    this.submitMovieJob=this.submitMovieJob.bind(this)
+    this.afterJobSubmitted=this.afterJobSubmitted.bind(this)
+  }
+
+  checkForJobs() {
+    this.props.getJobs()
+    for (let index in this.props.jobs) {
+      const job = this.props.jobs[index]
+      if (this.state.movie_panel_job_ids.includes(job['id'])) {
+        if (job['status'] === 'success') {
+          this.props.loadJobResults(job['id'])
+          if (job['operation'] === 'split_and_hash_movie') {
+            this.setMessage('movie split completed')
+            this.props.cancelJob(job['id'])
+          }
+        }
+      }
+    }
+    setTimeout(this.checkForJobs, 2000 );
+  }
+
+  afterJobSubmitted(responseJson) {
+    let deepCopyJobIds= JSON.parse(JSON.stringify(this.state.movie_panel_job_ids))
+    this.setMessage('job was submitted')
+    deepCopyJobIds.push(responseJson['job_id'])
+    this.setState({
+      movie_panel_job_ids: deepCopyJobIds,
+    })
+  }
+
+  submitMovieJob(job_string, extra_data = '') {
+    let job_data = {
+      request_data: {},
+    }
+    if (job_string === 'split_and_hash_video') {
+      job_data['app'] = 'parse'
+      job_data['operation'] = 'split_and_hash_movie'
+      job_data['description'] = 'load and hash movie: ' + extra_data
+      job_data['request_data']['movie_url'] = extra_data
+      job_data['request_data']['frameset_discriminator'] = this.props.frameset_discriminator
+      this.props.submitJob(job_data, this.afterJobSubmitted)
+    } else if (job_string === 'movie_panel_redact_and_reassemble_video') {
+      console.log('redact and reassemble called')
+    }
+  }
+
+  componentDidMount() {
+    this.checkForJobs()
   }
 
   setMessage(the_message) {
@@ -37,11 +85,6 @@ class MoviePanel extends React.Component {
 
   handleDroppedFrameset = (target_id) => {
     this.props.handleMergeFramesets(target_id, this.state.draggedId)
-  }
-
-  callMovieSplit() {
-    this.props.doMovieSplit(this.props.movie_url, this.movieSplitCompleted)
-    this.setMessage('splitting movie into frames')
   }
 
   afterFrameRedaction() {
@@ -86,10 +129,6 @@ class MoviePanel extends React.Component {
 
   movieZipCompleted() {
     this.setMessage('movie reassembly completed')
-  }
-
-  movieSplitCompleted() {
-    this.setMessage('movie split completed')
   }
 
   redactFramesetCallback = (frameset_hash) => {
@@ -210,7 +249,6 @@ class MoviePanel extends React.Component {
     if (red_mov_url) {
       redacted_video_element = (
         <div>
-          <h3>Redacted Video</h3>
           <div id='redacted_video_url'></div>
           <video id='redacted_video_id' controls >
             <source 
@@ -220,6 +258,7 @@ class MoviePanel extends React.Component {
             />
             Your browser does not support the video tag.
           </video>
+          <h3>Redacted Video</h3>
         </div>
       )
     }
@@ -271,6 +310,8 @@ class MoviePanel extends React.Component {
               callMovieSplit={this.callMovieSplit}
               callReassembleVideo={this.callReassembleVideo}
               message={this.state.message}
+              submitMovieJob={this.submitMovieJob}
+              movie_url={this.props.movie_url}
             />
           </div>
 
@@ -285,6 +326,7 @@ class MoviePanel extends React.Component {
             getRedactedMovieUrl={this.props.getRedactedMovieUrl}
             templates={this.props.templates}
             runTemplates={this.props.runTemplates}
+            setMaskMethod={this.props.setMaskMethod}
           />
 
         </div>
@@ -496,6 +538,23 @@ class MoviePanelAdvancedControls extends React.Component {
               >
                 {templates_button}
               </div>
+
+              <div>
+                <span>set mask method</span>
+                <select
+                    className='ml-2'
+                    name='mask_method'
+                    onChange={(event) => this.props.setMaskMethod(event.target.value)}
+                >
+                  <option value='blur_7x7'>--- Mask Method ---</option>
+                  <option value='blur_7x7'>Gaussian Blur 7x7</option>
+                  <option value='blur_21x21'>Gaussian Blur 21x21</option>
+                  <option value='blur_median'>Median Blur</option>
+                  <option value='black_rectangle'>Black Rectangle</option>
+                  <option value='green_outline'>Green Outline</option>
+                </select>
+              </div>
+
             </div>
           </div>
         </div>
@@ -514,7 +573,7 @@ class MoviePanelHeader extends React.Component {
           <button 
               id='parse_video_button'
               className='btn btn-primary' 
-              onClick={() => this.props.callMovieSplit()}
+              onClick={() => this.props.submitMovieJob('split_and_hash_video', this.props.movie_url)}
           >
             Split Video
           </button>

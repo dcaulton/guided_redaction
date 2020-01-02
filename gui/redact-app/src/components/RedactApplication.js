@@ -61,7 +61,6 @@ class RedactApplication extends React.Component {
     this.getNextImageLink=this.getNextImageLink.bind(this)
     this.getPrevImageLink=this.getPrevImageLink.bind(this)
     this.handleMergeFramesets=this.handleMergeFramesets.bind(this)
-    this.doMovieSplit=this.doMovieSplit.bind(this)
     this.callOcr=this.callOcr.bind(this)
     this.callRedact=this.callRedact.bind(this)
     this.callMovieZip=this.callMovieZip.bind(this)
@@ -440,40 +439,6 @@ class RedactApplication extends React.Component {
     return file_name_before_dot
   }
 
-  async doMovieSplit(the_url, theCallback=(()=>{})) {
-    await fetch(this.state.parse_movie_url, {
-      method: 'POST',
-      headers: this.buildJsonHeaders(),
-      body: JSON.stringify({
-        movie_url: the_url,
-        frameset_discriminator: this.state.frameset_discriminator,
-      }),
-    })
-    .then((response) => response.json())
-    .then((responseJson) => {
-      let frames = responseJson.frames
-      let framesets = responseJson.unique_frames
-      let frame_dimensions = responseJson.frame_dimensions
-      let deepCopyMovies = JSON.parse(JSON.stringify(this.state.movies))
-      let nickname = this.getMovieNicknameFromUrl(the_url)
-      deepCopyMovies[the_url] = {
-        nickname: nickname,
-        frames: frames,
-        framesets: framesets,
-        frame_dimensions: frame_dimensions,
-        frameset_discriminator: this.state.frameset_discriminator,
-      }
-
-      this.addMovieAndSetActive(the_url, deepCopyMovies, theCallback)
-    })
-    .then((responseJson) => {
-      theCallback()
-    })
-    .catch((error) => {
-      console.error(error);
-    })
-  }
-
   getRedactedMovieFilename() {
     //TODO this is not friendly to file names with more than one period, or with a slash in them
     let parts = this.state.movie_url.split('/')
@@ -650,7 +615,6 @@ class RedactApplication extends React.Component {
 					}
 					if (movie_add) {
 						this.addMovieAndSetActive(movie_url, deepCopyMovies, when_done)
-//						this.addMovieAndSetActive(movie_url, deepCopyMovies, this.movieSplitDone)
 					}
 				}
 			} else if (job.app === 'parse' && job.operation === 'split_and_hash_movie') {
@@ -693,7 +657,7 @@ class RedactApplication extends React.Component {
     })
   }
 
-  async submitJob(the_job_data) {
+  async submitJob(the_job_data, when_done=(()=>{})) {
     await fetch(this.state.jobs_url + '/', {
       method: 'POST',
       headers: this.buildJsonHeaders(),
@@ -706,6 +670,10 @@ class RedactApplication extends React.Component {
         description: the_job_data['description'],
         workbook_id: this.state.current_workbook_id,
       }),
+    })
+    .then((response) => response.json())
+    .then((responseJson) => {
+      when_done(responseJson)
     })
     .then(() => {
       this.getJobs()
@@ -722,14 +690,17 @@ class RedactApplication extends React.Component {
     //   even if I specify this.state.jobs_url with no trailing slash, the 
     //   get call for getJobs() will append a slash, then 404 on me
     let the_url = this.state.jobs_url + '//' + the_uuid
+console.log('mango cancelling job at '+the_url)
     await fetch(the_url, {
       method: 'DELETE',
       headers: this.buildJsonHeaders(),
     })
     .then(() => {
+console.log('looks good')
       this.getJobs()
     })
     .catch((error) => {
+console.log('whoops')
       console.error(error);
     })
   }
@@ -1124,13 +1095,13 @@ class RedactApplication extends React.Component {
                 getCurrentFrames={this.getCurrentFrames}
                 getCurrentFramesets={this.getCurrentFramesets}
                 mask_method = {this.state.mask_method}
+                setMaskMethod={this.handleSetMaskMethod}
                 setImageUrlCallback={this.handleSetImageUrl}
                 getRedactionFromFrameset={this.getRedactionFromFrameset}
                 callMovieZip={this.callMovieZip}
                 getFramesetHashForImageUrl={this.getFramesetHashForImageUrl}
                 callRedact={this.callRedact}
                 handleMergeFramesets={this.handleMergeFramesets}
-                doMovieSplit={this.doMovieSplit}
                 movies={this.state.movies}
                 frameset_discriminator={this.state.frameset_discriminator}
                 setFramesetDiscriminator={this.setFramesetDiscriminator}
@@ -1139,6 +1110,11 @@ class RedactApplication extends React.Component {
                 templates={this.state.templates}
                 runTemplates={this.runTemplates}
                 getFramesetHashesInOrder={this.getFramesetHashesInOrder}
+                getJobs={this.getJobs}
+                submitJob={this.submitJob}
+                loadJobResults={this.loadJobResults}
+                cancelJob={this.cancelJob}
+                jobs={this.state.jobs}
               />
             </Route>
             <Route path='/redact/image'>
@@ -1212,7 +1188,6 @@ class RedactApplication extends React.Component {
                 frameset_discriminator={this.state.frameset_discriminator}
                 setFramesetDiscriminator={this.setFramesetDiscriminator}
                 setActiveMovie={this.setActiveMovie}
-//                getFramesetHashesInOrder={this.getFramesetHashesInOrder}
               />
             </Route>
           </Switch>
