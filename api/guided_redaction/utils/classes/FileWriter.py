@@ -9,11 +9,12 @@ class FileWriter():
 
     working_dir = ''
 
-    def __init__(self, working_dir, base_url, connection_string, image_storage):
+    def __init__(self, working_dir, base_url, connection_string, image_storage, image_request_verify_headers):
         self.working_dir = working_dir
         self.base_url = base_url
         self.connection_string = connection_string
         self.image_storage = image_storage
+        self.image_request_verify_headers = image_request_verify_headers
 
     def get_images_from_uuid(self, the_uuid):
         if self.image_storage == 'file':
@@ -108,7 +109,10 @@ class FileWriter():
             (x_part, file_part) = os.path.split(image_url_list[0])
             (y_part, uuid_part) = os.path.split(x_part)
 
-            pic_response = requests.get(image_url_list[0])
+            pic_response = requests.get(
+              image_url_list[0],
+              verify=self.image_request_verify_headers,
+            )
             img_binary = pic_response.content
             if img_binary:
                 nparr = np.fromstring(img_binary, np.uint8)
@@ -127,7 +131,10 @@ class FileWriter():
         num_frames = len(image_url_list)
         for count, output_frame_url in enumerate(image_url_list):
             percent_done = str(count+1) + '/' + str(num_frames)
-            pic_response = requests.get(output_frame_url)
+            pic_response = requests.get(
+              output_frame_url,
+              verify=self.image_request_verify_headers,
+            )
             img_binary = pic_response.content
             if img_binary:
                 nparr = np.fromstring(img_binary, np.uint8)

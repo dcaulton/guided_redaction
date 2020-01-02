@@ -8,6 +8,7 @@ from django.http import HttpResponse, JsonResponse
 import json
 import base64
 import numpy as np
+from django.conf import settings
 from django.shortcuts import render
 import requests
 #from rest_framework import viewsets
@@ -27,7 +28,10 @@ class AnalyzeViewSetEastTess(viewsets.ViewSet):
             return HttpResponse("roi_end_x is required", status=400)
         if not request.data.get("roi_end_y"):
             return HttpResponse("roi_end_y is required", status=400)
-        pic_response = requests.get(request.data["image_url"])
+        pic_response = requests.get(
+          request.data["image_url"],
+          verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
+        )
         image = pic_response.content
         if image:
             roi_start_x = int(request.data["roi_start_x"])
@@ -62,7 +66,10 @@ class AnalyzeViewSetScanTemplate(viewsets.ViewSet):
             cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
             return cv2_image
         else:
-            pic_response = requests.get(request_data["source_image_url"])
+            pic_response = requests.get(
+              request_data["source_image_url"],
+              verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
+            )
             image = pic_response.content
             if not image:
                 return self.error("couldn't read source image data", status_code=422)
@@ -98,7 +105,10 @@ class AnalyzeViewSetScanTemplate(viewsets.ViewSet):
                 for frameset_hash in framesets.keys():
                     frameset = framesets[frameset_hash]
                     one_image_url = frameset["images"][0]
-                    oi_response = requests.get(one_image_url)
+                    oi_response = requests.get(
+                      one_image_url,
+                      verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
+                    )
                     one_image = oi_response.content
                     if one_image:
                         oi_nparr = np.fromstring(one_image, np.uint8)
@@ -120,7 +130,10 @@ class AnalyzeViewSetScanTemplate(viewsets.ViewSet):
                             ] = size
             if request_data.get("image"):
                 image_name = request_data.get("image")
-                oi_response = requests.get(image_name)
+                oi_response = requests.get(
+                  image_name,
+                  verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
+                )
                 one_image = oi_response.content
                 if one_image:
                     oi_nparr = np.fromstring(one_image, np.uint8)
@@ -148,7 +161,10 @@ class AnalyzeViewSetFloodFill(viewsets.ViewSet):
             return self.error("selected_point is required")
         selected_point = request.data.get("selected_point")
         tolerance = request.data.get("tolerance")
-        image = requests.get(request.data["source_image_url"]).content
+        image = requests.get(
+          request.data["source_image_url"],
+          verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
+        ).content
         if image:
             nparr = np.fromstring(image, np.uint8)
             cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
@@ -172,7 +188,10 @@ class AnalyzeViewSetArrowFill(viewsets.ViewSet):
             return self.error("selected_point is required")
         selected_point = request.data.get("selected_point")
         tolerance = request.data.get("tolerance")
-        image = requests.get(request.data["source_image_url"]).content
+        image = requests.get(
+          request.data["source_image_url"],
+          verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
+        ).content
         if image:
             nparr = np.fromstring(image, np.uint8)
             cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)

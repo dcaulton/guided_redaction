@@ -36,6 +36,7 @@ class ParseViewSetGetImagesForUuid(viewsets.ViewSet):
             base_url=the_base_url,
             connection_string=the_connection_string,
             image_storage=settings.REDACT_IMAGE_STORAGE,
+            image_request_verify_headers=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
         )
 
         the_files = fw.get_images_from_uuid(the_uuid)
@@ -48,7 +49,10 @@ class ParseViewSetSplitMovie(viewsets.ViewSet):
       if not frames:
           return []
       input_url = frames[0]
-      pic_response = requests.get(input_url)
+      pic_response = requests.get(
+        input_url,
+        verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
+      )
       img_binary = pic_response.content
       if img_binary:
           nparr = np.fromstring(img_binary, np.uint8)
@@ -76,6 +80,7 @@ class ParseViewSetSplitMovie(viewsets.ViewSet):
             base_url=the_base_url,
             connection_string=the_connection_string,
             image_storage=settings.REDACT_IMAGE_STORAGE,
+            image_request_verify_headers=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
         )
 
         if not request.data.get("movie_url") and not request.data.get("sykes_dev_azure_movie_uuid"):
@@ -99,6 +104,7 @@ class ParseViewSetSplitMovie(viewsets.ViewSet):
                 "movie_url": movie_url,
                 "file_writer": fw,
                 "use_same_directory": True,
+                "image_request_verify_headers": settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
             }
         )
         frames = parser.split_movie()
@@ -145,7 +151,10 @@ class ParseViewSetSplitAndHashMovie(viewsets.ViewSet):
       if not frames:
           return []
       input_url = frames[0]
-      pic_response = requests.get(input_url)
+      pic_response = requests.get(
+        input_url,
+        verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
+      )
       img_binary = pic_response.content
       if img_binary:
           nparr = np.fromstring(img_binary, np.uint8)
@@ -180,6 +189,7 @@ class ParseViewSetSplitAndHashMovie(viewsets.ViewSet):
             base_url=the_base_url,
             connection_string=the_connection_string,
             image_storage=settings.REDACT_IMAGE_STORAGE,
+            image_request_verify_headers=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
         )
 
         disc =  request_data.get('frameset_discriminator')
@@ -192,6 +202,7 @@ class ParseViewSetSplitAndHashMovie(viewsets.ViewSet):
                 "movie_url": movie_url,
                 "file_writer": fw,
                 "frameset_discriminator": disc,
+                "image_request_verify_headers": settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
             }
         )
         frames = parser.split_movie()
@@ -283,9 +294,16 @@ class ParseViewSetZipMovie(viewsets.ViewSet):
             base_url=the_base_url,
             connection_string=the_connection_string,
             image_storage=settings.REDACT_IMAGE_STORAGE,
+            image_request_verify_headers=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
         )
         parser = MovieParser(
-            {"debug": settings.DEBUG, "ifps": 1, "ofps": 1, "file_writer": fw,}
+            {
+                "debug": settings.DEBUG,
+                "ifps": 1,
+                "ofps": 1,
+                "file_writer": fw,
+                "image_request_verify_headers": settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
+            }
         )
         output_url = parser.zip_movie(image_urls, movie_name)
         print("output url is "+ output_url)
@@ -309,7 +327,10 @@ class ParseViewSetCropImage(viewsets.ViewSet):
             return self.error("start is required")
         if not request.data.get("end"):
             return self.error("end is required")
-        image = requests.get(request.data["image_url"]).content
+        image = requests.get(
+          request.data["image_url"],
+          verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
+        ).content
         if image:
             nparr = np.fromstring(image, np.uint8)
             cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)

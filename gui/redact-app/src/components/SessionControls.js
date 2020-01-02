@@ -285,8 +285,11 @@ class SessionControls extends React.Component {
                   Show Results
                 </div>
 
+                <div className='row mt-4'>
                 <div className='d-inline'>
+                  <span className='h5'>Campaign Movies</span>
                   {campaign_movies_box}
+                </div>
                 </div>
 
               </div>

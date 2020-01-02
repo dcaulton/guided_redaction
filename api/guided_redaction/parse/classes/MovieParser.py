@@ -30,6 +30,8 @@ class MovieParser:
         )
         self.use_same_directory= args.get('use_same_directory', False)
         self.frameset_discriminator= args.get("frameset_discriminator")
+        self.image_request_verify_headers = args.get("image_request_verify_headers")
+
         if not self.frameset_discriminator:
           self.frameset_discriminator = 'gray8'
         if re.search('^gray\d+$', self.frameset_discriminator):
@@ -79,7 +81,10 @@ class MovieParser:
     def load_and_hash_frames(self, input_url_list):
         unique_frames = {}
         for input_url in input_url_list:
-            pic_response = requests.get(input_url)
+            pic_response = requests.get(
+              input_url,
+              verify=self.image_request_verify_headers,
+            )
             img_binary = pic_response.content
             if img_binary:
                 nparr = np.fromstring(img_binary, np.uint8)

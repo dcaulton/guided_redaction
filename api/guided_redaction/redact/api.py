@@ -17,7 +17,10 @@ class RedactViewSetRedactImage(viewsets.ViewSet):
             return self.error("image_url is required")
         if not request.data.get("areas_to_redact"):
             return self.error("areas_to_redact is required")
-        pic_response = requests.get(request.data["image_url"])
+        pic_response = requests.get(
+          request.data["image_url"],
+          verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
+        )
         image = pic_response.content
         if image:
             nparr = np.fromstring(image, np.uint8)
@@ -81,6 +84,7 @@ class RedactViewSetRedactImage(viewsets.ViewSet):
             base_url=the_base_url,
             connection_string=the_connection_string,
             image_storage=settings.REDACT_IMAGE_STORAGE,
+            image_request_verify_headers=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
         )
         workdir = fw.create_unique_directory(the_uuid)
         outfilename = os.path.join(workdir, image_name)
