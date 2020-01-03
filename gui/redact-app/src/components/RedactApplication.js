@@ -101,6 +101,7 @@ class RedactApplication extends React.Component {
     this.clearCurrentFramesetRedactions=this.clearCurrentFramesetRedactions.bind(this)
     this.getRedactedImageUrl=this.getRedactedImageUrl.bind(this)
     this.getFramesetHashesInOrder=this.getFramesetHashesInOrder.bind(this)
+    this.getRedactedImageFromFrameset=this.getRedactedImageFromFrameset.bind(this)
   }
 
   runTemplates(template_id, target) {
@@ -363,6 +364,16 @@ class RedactApplication extends React.Component {
     return headers
   }
 
+  storeRedactedImage(responseJson, when_done=(()=>{})) {
+    let local_framesets = JSON.parse(JSON.stringify(this.getCurrentFramesets()));
+    const frameset_hash = this.getFramesetHashForImageUrl(responseJson['original_image_url'])
+    let frameset = local_framesets[frameset_hash]
+    frameset['redacted_image'] = responseJson['redacted_image_url']
+    local_framesets[frameset_hash] = frameset
+    this.handleUpdateFrameset(frameset_hash, frameset)
+    when_done()
+  }
+
   async callRedact(areas_to_redact_short, image_url, when_done) {
     let response = await fetch(this.state.redact_url, {
       method: 'POST',
@@ -376,13 +387,7 @@ class RedactApplication extends React.Component {
     })
     .then((response) => response.json())
     .then((responseJson) => {
-      let local_framesets = JSON.parse(JSON.stringify(this.getCurrentFramesets()));
-      const frameset_hash = this.getFramesetHashForImageUrl(responseJson['original_image_url'])
-      let frameset = local_framesets[frameset_hash]
-      frameset['redacted_image'] = responseJson['redacted_image_url']
-      local_framesets[frameset_hash] = frameset
-      this.handleUpdateFrameset(frameset_hash, frameset)
-
+      this.storeRedactedImage(responseJson)
     })
     .then(() => {
       when_done()
@@ -581,6 +586,87 @@ class RedactApplication extends React.Component {
     })                                                                          
   }
 
+  loadScanTemplateResults(job, when_done=(()=>{})) {
+    const response_data = JSON.parse(job.response_data)
+    const request_data = JSON.parse(job.request_data)
+    const template_id = request_data['template']['id']
+    this.setTemplateMatches(template_id, response_data)
+    if (!Object.keys(this.state.templates).includes(template_id)) {
+      let deepCopyTemplates= JSON.parse(JSON.stringify(this.state.templates))
+      let template = request_data['template']
+      deepCopyTemplates[template_id] = template
+      this.setTemplates(deepCopyTemplates)
+      this.setCurrentTemplateId(template_id)
+
+      const cur_movies = Object.keys(this.state.movies)
+
+
+      let deepCopyMovies= JSON.parse(JSON.stringify(this.state.movies))
+      let movie_add = false
+      let movie_url = ''
+      for (let j=0; j < Object.keys(request_data['target_movies']).length; j++)  {
+        movie_url = Object.keys(request_data['target_movies'])[j]
+        if (!cur_movies.includes(movie_url)) {
+          deepCopyMovies[movie_url] = request_data['target_movies'][movie_url]
+          movie_add = true
+        }
+      }
+      if (movie_add) {
+        this.addMovieAndSetActive(movie_url, deepCopyMovies, when_done)
+      }
+    }
+  }
+
+  loadSplitAndHashResults(job, when_done=(()=>{})) {
+    const response_data = JSON.parse(job.response_data)
+    const request_data = JSON.parse(job.request_data)
+    let frames = response_data.frames
+    let frameset_discriminator = request_data.frameset_discriminator
+    let framesets = response_data.unique_frames
+    let frame_dimensions = response_data.frame_dimensions
+    let deepCopyMovies = JSON.parse(JSON.stringify(this.state.movies))
+    deepCopyMovies[request_data['movie_url']] = {
+      nickname: this.getMovieNicknameFromUrl(request_data['movie_url']),
+      frames: frames,
+      framesets: framesets,
+      frame_dimensions: frame_dimensions,
+      frameset_discriminator: frameset_discriminator,
+    }
+    this.addMovieAndSetActive(
+      request_data['movie_url'],
+      deepCopyMovies,
+      when_done,
+    )
+  }
+
+  async loadRedactResults(job, when_done=(()=>{})) {
+    for (let i=0; i < job.children.length; i++) {
+      const child_id = job.children[i]
+      let job_url = this.state.jobs_url + '//' + child_id
+      await fetch(job_url, {
+        method: 'GET',
+        headers: this.buildJsonHeaders(),
+      })
+      .then((response) => response.json())
+      .then((responseJson) => {
+        const resp_data_string = responseJson['job']['response_data']
+        const resp_data = JSON.parse(resp_data_string)
+        var app_this = this
+        function cancelTheJob() {
+          app_this.cancelJob(job)
+        }
+        if (i === job.children.length-1) {
+          this.storeRedactedImage(resp_data, cancelTheJob)
+        } else {
+          this.storeRedactedImage(resp_data)
+        }
+      })
+      .catch((error) => {
+        console.error(error);
+      })
+    }
+  }
+
   async loadJobResults(job_id, when_done=(()=>{})) {
     let job_url = this.state.jobs_url + '//' + job_id
     await fetch(job_url, {
@@ -590,52 +676,16 @@ class RedactApplication extends React.Component {
     .then((response) => response.json())
     .then((responseJson) => {
 			const job = responseJson['job']
-			const response_data = JSON.parse(job.response_data)
-			const request_data = JSON.parse(job.request_data)
 			if (job.app === 'analyze' && job.operation === 'scan_template') {
-				const template_id = request_data['template']['id']
-				this.setTemplateMatches(template_id, response_data)
-				if (!Object.keys(this.state.templates).includes(template_id)) {
-					let deepCopyTemplates= JSON.parse(JSON.stringify(this.state.templates))
-					let template = request_data['template']
-					deepCopyTemplates[template_id] = template
-					this.setTemplates(deepCopyTemplates)
-					this.setCurrentTemplateId(template_id)
-
-					const cur_movies = Object.keys(this.state.movies)
-					let deepCopyMovies= JSON.parse(JSON.stringify(this.state.movies))
-					let movie_add = false
-					let movie_url = ''
-					for (let j=0; j < Object.keys(request_data['target_movies']).length; j++)  {
-						movie_url = Object.keys(request_data['target_movies'])[j]
-						if (!cur_movies.includes(movie_url)) {
-							deepCopyMovies[movie_url] = request_data['target_movies'][movie_url]
-							movie_add = true
-						}
-					}
-					if (movie_add) {
-						this.addMovieAndSetActive(movie_url, deepCopyMovies, when_done)
-					}
-				}
+        this.loadScanTemplateResults(job, when_done)
 			} else if (job.app === 'parse' && job.operation === 'split_and_hash_movie') {
-				let frames = response_data.frames
-        let frameset_discriminator = request_data.frameset_discriminator
-				let framesets = response_data.unique_frames
-				let frame_dimensions = response_data.frame_dimensions
-				let deepCopyMovies = JSON.parse(JSON.stringify(this.state.movies))
-				deepCopyMovies[request_data['movie_url']] = {
-          nickname: this.getMovieNicknameFromUrl(request_data['movie_url']),
-					frames: frames,
-					framesets: framesets,
-          frame_dimensions: frame_dimensions,
-          frameset_discriminator: frameset_discriminator,
-				}
-        this.addMovieAndSetActive(
-          request_data['movie_url'],
-          deepCopyMovies,
-          when_done,
-        )
-			}
+        this.loadSplitAndHashResults(job, when_done)
+			} else if (job.app === 'redact' && job.operation === 'redact') {
+        this.loadRedactResults(job, when_done)
+      }
+    })
+    .catch((error) => {
+      console.error(error);
     })
   }
 
@@ -683,12 +733,13 @@ class RedactApplication extends React.Component {
     })
   }
 
-  async cancelJob(the_uuid) {
+  async cancelJob(the_job) {
     // the following double slash is wrong but I'm tired of fighting with DRF 
     // It comes back to the api urls file.  If I don't specify a trailing slash
     //   after the jobs base url, 'list jobs' above won't work, because, 
     //   even if I specify this.state.jobs_url with no trailing slash, the 
     //   get call for getJobs() will append a slash, then 404 on me
+    let the_uuid = the_job['id']
     let the_url = this.state.jobs_url + '//' + the_uuid
     await fetch(the_url, {
       method: 'DELETE',
@@ -1055,6 +1106,24 @@ class RedactApplication extends React.Component {
     }
   }
 
+  getRedactedImageFromFrameset = (frameset_hash) => {
+    const framesets = this.getCurrentFramesets()
+    if (!framesets || !this.state.frameset_hash) {
+        return []
+    }
+    let the_hash = frameset_hash || this.state.frameset_hash
+    let frameset = framesets[the_hash]
+    if (frameset) {
+      if (Object.keys(frameset).includes('redacted_image')) {
+          return frameset['redacted_image']
+      } else {
+          return ''
+      }
+    } else {
+      return ''
+    }
+  }
+
   render() {
     if (document.getElementById('movie_panel_link') && this.state.showMovieParserLink) {
       document.getElementById('movie_panel_link').style.display = 'block'
@@ -1095,6 +1164,7 @@ class RedactApplication extends React.Component {
                 setMaskMethod={this.handleSetMaskMethod}
                 setImageUrlCallback={this.handleSetImageUrl}
                 getRedactionFromFrameset={this.getRedactionFromFrameset}
+                getRedactedImageFromFrameset={this.getRedactedImageFromFrameset}
                 callMovieZip={this.callMovieZip}
                 getFramesetHashForImageUrl={this.getFramesetHashForImageUrl}
                 callRedact={this.callRedact}

@@ -8,6 +8,7 @@ from base import viewsets
 from guided_redaction.jobs.models import Job
 from guided_redaction.analyze import tasks as analyze_tasks
 from guided_redaction.parse import tasks as parse_tasks
+from guided_redaction.redact import tasks as redact_tasks
 import json
 import pytz
 import math
@@ -64,8 +65,10 @@ class JobsViewSet(viewsets.ViewSet):
         if 'workbook_id' in request.GET.keys():
             jobs = Job.objects.filter(workbook_id=request.GET['workbook_id'])
         else:
-            jobs = Job.objects.all()
+            jobs = Job.objects.filter(parent_id__isnull=True)
         for job in jobs:
+            children = Job.objects.filter(parent_id=job.id).order_by('sequence')
+            child_ids = [child.id for child in children]
             pretty_time = self.pretty_date(job.created_on)
             jobs_list.append(
                 {
@@ -79,6 +82,7 @@ class JobsViewSet(viewsets.ViewSet):
                     'app': job.app,
                     'operation': job.operation,
                     'workbook_id': job.workbook_id,
+                    'children': child_ids,
                 }
             )
 
@@ -86,6 +90,8 @@ class JobsViewSet(viewsets.ViewSet):
 
     def retrieve(self, request, pk):
         job = Job.objects.get(pk=pk)
+        children = Job.objects.filter(parent_id=job.id).order_by('sequence')
+        child_ids = [child.id for child in children]
         pretty_time = self.pretty_date(job.created_on)
         job_data = {
             'id': job.id,
@@ -98,8 +104,10 @@ class JobsViewSet(viewsets.ViewSet):
             'app': job.app,
             'operation': job.operation,
             'workbook_id': job.workbook_id,
+            'parent_id': job.parent_id,
             'request_data': job.request_data,
             'response_data': job.response_data,
+            'children': child_ids,
         }
         return Response({"job": job_data})
 
@@ -116,7 +124,7 @@ class JobsViewSet(viewsets.ViewSet):
                     uuids.append(uuid_part)
         return uuids
 
-    def create(self, request):
+    def build_single_job(self, request):
         job = Job(
             request_data=json.dumps(request.data.get('request_data')),
             file_uuids_used=json.dumps(self.get_file_uuids_from_request(request.data)),
@@ -130,10 +138,54 @@ class JobsViewSet(viewsets.ViewSet):
             workbook_id=request.data.get('workbook_id'),
         )
         job.save()
-        job_uuid = job.id
+        return job
 
+    def build_composite_job(self, request):
+        if request.data.get('operation') == 'redact':
+            parent_job = Job(
+                request_data=json.dumps(request.data.get('request_data')),
+                file_uuids_used=json.dumps(self.get_file_uuids_from_request(request.data)),
+                owner=request.data.get('owner'),
+                status='created',
+                description=request.data.get('description'),
+                app=request.data.get('app', 'bridezilla'),
+                operation=request.data.get('operation', 'chucky'),
+                sequence=0,
+                elapsed_time=0.0,
+                workbook_id=request.data.get('workbook_id'),
+            )
+            parent_job.save()
+            all_subtask_data = request.data.get('request_data')
+            for index, one_subtasks_data in enumerate(all_subtask_data):
+                desc = ('redact '+ str(len(one_subtasks_data['areas_to_redact']))
+                    + ' areas on ' + one_subtasks_data['image_url'])
+                job = Job(
+                    request_data=json.dumps(request.data.get('request_data')[index]),
+                    file_uuids_used=[], # TODO, figure this out
+                    status='created',
+                    description=desc,
+                    app=request.data.get('app'),
+                    operation=request.data.get('operation'),
+                    sequence=index,
+                    elapsed_time=0.0,
+                    parent=parent_job,
+                )
+                job.save()
+            return parent_job
+
+    def test_if_composite_job(self, request):
+        operation = request.data.get('operation')
+        if operation == 'redact':
+          return True
+        return False
+
+    def create(self, request):
+        is_composite = self.test_if_composite_job(request)
+        if is_composite:
+            job = self.build_composite_job(request)
+        else:
+            job = self.build_single_job(request)
         self.schedule_job(job)
-
         return Response({"job_id": job.id})
 
     def delete(self, request, pk, format=None):
@@ -147,3 +199,5 @@ class JobsViewSet(viewsets.ViewSet):
             analyze_tasks.scan_template.delay(job_uuid)
         if job.app == 'parse' and job.operation == 'split_and_hash_movie':
             parse_tasks.split_and_hash_movie.delay(job_uuid)
+        if job.app == 'redact' and job.operation == 'redact':
+            redact_tasks.redact.delay(job_uuid)

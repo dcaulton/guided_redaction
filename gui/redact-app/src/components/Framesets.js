@@ -19,6 +19,10 @@ class FramesetCard extends React.Component {
 
   render() {
     const hash_span = this.buildFramesetHashData(this.props.frame_hash)
+    let display_image = this.props.image_url
+    if (this.props.getRedactedImageFromFrameset(this.props.frame_hash)) {
+      display_image = this.props.getRedactedImageFromFrameset(this.props.frame_hash)
+    }
     return (
       <div 
           id={this.props.frame_hash}
@@ -61,7 +65,7 @@ class FramesetCard extends React.Component {
               type="button"
               className="btn btn-primary"
               data-toggle="modal"
-              onClick={() => this.props.setZoomImageUrl(this.props.image_url)}
+              onClick={() => this.props.setZoomImageUrl(display_image)}
               data-target="#moviePanelModal">
             View
           </button>
@@ -87,7 +91,12 @@ class FramesetCardList extends React.Component {
   getRedactionDesc(hash_key) {
       const areas_to_redact = this.props.getRedactionFromFrameset(hash_key)
       if (areas_to_redact.length > 0) {
-          return 'has redaction data'
+          const redacted_image = this.props.getRedactedImageFromFrameset(hash_key)
+          if (redacted_image) {
+            return 'redaction complete'
+          } else {
+            return 'redaction specified but not yet run'
+          }
       }  else  {
           return ''
       }
@@ -107,6 +116,7 @@ class FramesetCardList extends React.Component {
         redactFramesetCallback={this.props.redactFramesetCallback}
         redactionDesc={this.getRedactionDesc(key)}
         setZoomImageUrl={this.props.setZoomImageUrl}
+        getRedactedImageFromFrameset={this.props.getRedactedImageFromFrameset}
       />
     );
     return items

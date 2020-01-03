@@ -35,7 +35,11 @@ class MoviePanel extends React.Component {
             this.props.loadJobResults(job['id'])
             if (job['operation'] === 'split_and_hash_movie') {
               this.setMessage('movie split completed')
-              this.props.cancelJob(job['id'])
+              this.props.cancelJob(job)
+            } else if (job['operation'] === 'redact') {
+              this.setMessage('redactions completed')
+              this.props.loadJobResults(job['id'])
+              // TODO supposed to cancel the job too, but it's happening too early
             }
           }
         }
@@ -65,8 +69,36 @@ class MoviePanel extends React.Component {
       job_data['request_data']['movie_url'] = extra_data
       job_data['request_data']['frameset_discriminator'] = this.props.frameset_discriminator
       this.props.submitJob(job_data, this.afterJobSubmitted)
+    } else if (job_string === 'redact_framesets') {
+      job_data['app'] = 'redact'
+      job_data['operation'] = 'redact'
+      job_data['description'] = 'redact images for movie movie: ' + this.props.movie_url
+
+      let all_redaction_images = []
+      let frameset_keys = Object.keys(this.props.getCurrentFramesets())
+      for (let i=0; i < frameset_keys.length; i++) {
+        let pass_arr = []
+        let hash_key = frameset_keys[i]
+        const areas_to_redact = this.props.getRedactionFromFrameset(hash_key)
+        if (areas_to_redact.length > 0) {
+          const framesets = this.props.getCurrentFramesets()
+          let first_image_url = framesets[hash_key]['images'][0]
+          for (let i=0; i < framesets[hash_key]['areas_to_redact'].length; i++) {                            
+            let a2r = framesets[hash_key]['areas_to_redact'][i]
+            pass_arr.push([a2r['start'], a2r['end']])
+          }  
+          all_redaction_images.push({
+            image_url: first_image_url,
+            areas_to_redact: pass_arr,
+            return_type: 'url',
+            mask_method: this.props.mask_method,
+          })
+        } 
+      }
+      job_data['request_data'] = all_redaction_images
+      this.props.submitJob(job_data, this.afterJobSubmitted)
     } else if (job_string === 'movie_panel_redact_and_reassemble_video') {
-      console.log('redact and reassemble called')
+      console.log('redact and reassemble called - NOT SUPPORTED YET')
     }
   }
 
@@ -347,6 +379,7 @@ class MoviePanel extends React.Component {
                 handleDroppedFrameset={this.handleDroppedFrameset}
                 setZoomImageUrl={this.setZoomImageUrl}
                 getFramesetHashesInOrder={this.props.getFramesetHashesInOrder}
+                getRedactedImageFromFrameset={this.props.getRedactedImageFromFrameset}
               />
             </div>
           </div>
@@ -583,12 +616,19 @@ class MoviePanelHeader extends React.Component {
 
           <button 
               id='reassemble_video_button'
-              className='btn btn-primary ml-5' 
+              className='btn btn-primary ml-2' 
               onClick={() => this.props.callReassembleVideo()}
           >
             Redact & Reassemble Video
           </button>
 
+          <button 
+              id='parse_video_button'
+              className='btn btn-primary ml-2' 
+              onClick={() => this.props.submitMovieJob('redact_framesets')}
+          >
+            Redact All Frames
+          </button>
         </div>
         <div className='row'>
           <div 
