@@ -38,8 +38,8 @@ class FramesetCard extends React.Component {
 
         <img 
             className='zoomable-image'
-            src={this.props.image_url} 
-            alt='whatever'
+            src={display_image}
+            alt={display_image}
             onClick={() => this.props.setZoomImageUrl(this.props.image_url)}
         />
 

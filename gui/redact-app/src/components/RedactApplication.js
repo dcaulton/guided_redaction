@@ -1108,9 +1108,6 @@ class RedactApplication extends React.Component {
 
   getRedactedImageFromFrameset = (frameset_hash) => {
     const framesets = this.getCurrentFramesets()
-    if (!framesets || !this.state.frameset_hash) {
-        return []
-    }
     let the_hash = frameset_hash || this.state.frameset_hash
     let frameset = framesets[the_hash]
     if (frameset) {
