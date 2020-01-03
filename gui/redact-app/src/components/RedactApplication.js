@@ -690,17 +690,14 @@ class RedactApplication extends React.Component {
     //   even if I specify this.state.jobs_url with no trailing slash, the 
     //   get call for getJobs() will append a slash, then 404 on me
     let the_url = this.state.jobs_url + '//' + the_uuid
-console.log('mango cancelling job at '+the_url)
     await fetch(the_url, {
       method: 'DELETE',
       headers: this.buildJsonHeaders(),
     })
     .then(() => {
-console.log('looks good')
       this.getJobs()
     })
     .catch((error) => {
-console.log('whoops')
       console.error(error);
     })
   }

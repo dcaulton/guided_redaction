@@ -27,19 +27,21 @@ class MoviePanel extends React.Component {
 
   checkForJobs() {
     this.props.getJobs()
-    for (let index in this.props.jobs) {
-      const job = this.props.jobs[index]
-      if (this.state.movie_panel_job_ids.includes(job['id'])) {
-        if (job['status'] === 'success') {
-          this.props.loadJobResults(job['id'])
-          if (job['operation'] === 'split_and_hash_movie') {
-            this.setMessage('movie split completed')
-            this.props.cancelJob(job['id'])
+    if (this.state.movie_panel_job_ids.length) {
+      for (let index in this.props.jobs) {
+        const job = this.props.jobs[index]
+        if (this.state.movie_panel_job_ids.includes(job['id'])) {
+          if (job['status'] === 'success') {
+            this.props.loadJobResults(job['id'])
+            if (job['operation'] === 'split_and_hash_movie') {
+              this.setMessage('movie split completed')
+              this.props.cancelJob(job['id'])
+            }
           }
         }
       }
+      setTimeout(this.checkForJobs, 2000 );
     }
-    setTimeout(this.checkForJobs, 2000 );
   }
 
   afterJobSubmitted(responseJson) {
@@ -49,6 +51,7 @@ class MoviePanel extends React.Component {
     this.setState({
       movie_panel_job_ids: deepCopyJobIds,
     })
+    setTimeout(this.checkForJobs, 1000);
   }
 
   submitMovieJob(job_string, extra_data = '') {
