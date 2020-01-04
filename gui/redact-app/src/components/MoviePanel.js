@@ -522,12 +522,15 @@ class MoviePanelAdvancedControls extends React.Component {
     return (
       <div className='col-md-9 m-2 bg-light rounded'>
         <div className='row'>
+          
           <div
-            className='col h3'
+            className='col-lg-10 h3 float-left'
           >
             movie info
           </div>
-          <div className='col'>
+          <div 
+              className='d-inline float-right'
+          >
             <button
                 className='btn btn-link'
                 aria-expanded='false'
@@ -545,12 +548,12 @@ class MoviePanelAdvancedControls extends React.Component {
             id='advanced_body'
             className='row collapse'
         >
-          <div id='advanced_main' className='col'>
+          <div id='advanced_main' className='col ml-3'>
             <div id='movie_info_div m-2'>
               <div>Title: {nickname}</div>
               <div>Number of framesets: {num_framesets}</div>
               <div>Run Time: {runtime}</div>
-              <div>Redacted? {redacted}</div>
+              <div>Movie Redacted? {redacted}</div>
               <div>Frameset Discriminator: {frameset_discriminator}</div>
               <div>Frame Dimensions: {frame_dimensions}</div>
               <div>
