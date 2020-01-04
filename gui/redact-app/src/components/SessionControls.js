@@ -88,6 +88,17 @@ class SessionControls extends React.Component {
     return return_array
   }
 
+  buildGlobalStateBox() {
+    return (
+      <textarea
+         cols='80'
+         rows='10'
+         value='paste a json dict here to update'
+         onChange={(event) => this.props.updateGlobalState(event.target.value)}
+      />
+    )
+  }
+
   buildCampaignMoviesBox() {
     const campaign_movies_string = this.props.campaign_movies.join('\n')
     return (
@@ -98,12 +109,11 @@ class SessionControls extends React.Component {
          onChange={(event) => this.props.setCampaignMovies(event.target.value)}
       />
     )
-//              campaign_movies={this.state.campaign_movies}
-//            setCampaignMovies={this.setCampaignMovies}
   }
 
   render() {
     let campaign_movies_box = this.buildCampaignMoviesBox()
+    let update_state_box = this.buildGlobalStateBox()
     let workbook_load_button = this.buildWorkbookPickerButton()
     let workbook_delete_button = this.buildWorkbookDeleteButton()
     let show_templates_checked = ''
@@ -286,10 +296,17 @@ class SessionControls extends React.Component {
                 </div>
 
                 <div className='row mt-4'>
-                <div className='d-inline'>
-                  <span className='h5'>Campaign Movies</span>
-                  {campaign_movies_box}
+                  <div className='d-inline'>
+                    <span className='h5'>Campaign Movies</span>
+                    {campaign_movies_box}
+                  </div>
                 </div>
+
+                <div className='row mt-4'>
+                  <div className='d-inline'>
+                    <span className='h5'>Update Global State</span>
+                    {update_state_box}
+                  </div>
                 </div>
 
               </div>

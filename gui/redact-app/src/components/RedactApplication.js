@@ -114,11 +114,32 @@ class RedactApplication extends React.Component {
     this.getFramesetHashesInOrder=this.getFramesetHashesInOrder.bind(this)
     this.getRedactedImageFromFrameset=this.getRedactedImageFromFrameset.bind(this)
     this.gotoWhenDoneTarget=this.gotoWhenDoneTarget.bind(this)
+    this.updateGlobalState=this.updateGlobalState.bind(this)
   }
 
   runTemplates(template_id, target) {
   console.log('running '+template_id+' on '+target)
 
+  }
+
+  updateGlobalState(the_data) {
+    try {
+      const json_data = JSON.parse(the_data)
+      for (let index in Object.keys(json_data)) {
+        const key = Object.keys(json_data)[index]
+        if (Object.keys(this.state).includes(key)) {
+          const value = this.state[key]
+          let new_state = {}
+          new_state[key] = json_data[key]
+          this.setState(new_state)
+          console.log('updated global state for '+key)
+        } else {
+          console.log('no key found in global state for '+key)
+        }
+      }
+    } catch (e) {
+      console.log('updateGlobalState crashed, probably bad json')
+    }
   }
 
   gotoWhenDoneTarget() {
@@ -1283,6 +1304,7 @@ class RedactApplication extends React.Component {
                 frameset_discriminator={this.state.frameset_discriminator}
                 setFramesetDiscriminator={this.setFramesetDiscriminator}
                 setActiveMovie={this.setActiveMovie}
+                updateGlobalState={this.updateGlobalState}
               />
             </Route>
           </Switch>

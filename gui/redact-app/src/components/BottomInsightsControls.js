@@ -108,6 +108,7 @@ class BottomInsightsControls extends React.Component {
           setFramesetDiscriminator={this.props.setFramesetDiscriminator}
           campaign_movies={this.props.campaign_movies}
           setCampaignMovies={this.props.setCampaignMovies}
+          updateGlobalState={this.props.updateGlobalState}
         />
 
       </div>

@@ -985,6 +985,7 @@ class InsightsPanel extends React.Component {
             setFramesetDiscriminator={this.props.setFramesetDiscriminator}
             campaign_movies={this.state.campaign_movies}
             setCampaignMovies={this.setCampaignMovies}
+            updateGlobalState={this.props.updateGlobalState}
           />
         </div>
 
