@@ -57,6 +57,17 @@ class RedactApplication extends React.Component {
       showMovieParserLink: true,
       showInsightsLink: true,
       showAdvancedPanels: false,
+      whenDoneTarget: '',
+      whenDoneTargetData: {
+        learn_dev: {
+          api_token: '',
+          catalog_uuid: '',
+          get_media_upload_token_url: '',
+          image_post_url: '',
+          media_upload_token: '',
+          landing_url: '',
+        },
+      }
     }
     this.getNextImageLink=this.getNextImageLink.bind(this)
     this.getPrevImageLink=this.getPrevImageLink.bind(this)
@@ -102,11 +113,24 @@ class RedactApplication extends React.Component {
     this.getRedactedImageUrl=this.getRedactedImageUrl.bind(this)
     this.getFramesetHashesInOrder=this.getFramesetHashesInOrder.bind(this)
     this.getRedactedImageFromFrameset=this.getRedactedImageFromFrameset.bind(this)
+    this.gotoWhenDoneTarget=this.gotoWhenDoneTarget.bind(this)
   }
 
   runTemplates(template_id, target) {
   console.log('running '+template_id+' on '+target)
 
+  }
+
+  gotoWhenDoneTarget() {
+    console.log('going to when done target')
+  }
+
+  saveWhenDoneInfo(destination) {
+    if (destination === 'learn_dev') {
+      this.setState({
+        whenDoneTarget: destination,
+      })
+    }
   }
 
   getFramesetHashesInOrder() {
@@ -375,7 +399,7 @@ class RedactApplication extends React.Component {
     when_done()
   }
 
-  async callRedact(areas_to_redact_short, image_url, when_done) {
+  async callRedact(areas_to_redact_short, image_url, when_done=(()=>{})) {
     let response = await fetch(this.state.redact_url, {
       method: 'POST',
       headers: this.buildJsonHeaders(),
@@ -898,6 +922,9 @@ class RedactApplication extends React.Component {
     if (Object.keys(vars).includes('workbook_id')) {
       this.loadWorkbook(vars['workbook_id'])
     }
+    if (Object.keys(vars).includes('when_done')) {
+      this.saveWhenDoneInfo(vars['when_done'])
+    }
     if (Object.keys(vars).includes('image_url')) {
         this.handleSetImageUrl(vars['image_url'])
         document.getElementById('image_panel_link').click()
@@ -906,6 +933,7 @@ class RedactApplication extends React.Component {
         document.getElementById('movie_panel_link').click()
     } else if (Object.keys(vars).includes('image_uuid') && Object.keys(vars).includes('offsets')) {
         this.handleSetImageUuid(vars['image_uuid'], vars['offsets'])
+        this.getImagesForUuid(vars['image_uuid'], vars['offsets'], this.afterUuidImagesFetched)
         document.getElementById('image_panel_link').click()
     }
   }
@@ -1204,6 +1232,8 @@ class RedactApplication extends React.Component {
                 templates={this.state.templates}
                 runTemplates={this.runTemplates}
                 clearCurrentFramesetRedactions={this.clearCurrentFramesetRedactions}
+                whenDoneTarget={this.state.whenDoneTarget}
+                gotoWhenDoneTarget={this.gotoWhenDoneTarget}
               />
             </Route>
             <Route path='/redact/insights'>

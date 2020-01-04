@@ -56,7 +56,7 @@ class FramesetCard extends React.Component {
             className='btn btn-primary'
             onClick={() => this.props.redactFramesetCallback(this.props.frame_hash)}
           >
-            Redact
+            Edit
           </button>
         </div>
 

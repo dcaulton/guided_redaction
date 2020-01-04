@@ -1,7 +1,5 @@
 import React from 'react'
-import {observable} from 'mobx';
 import TopImageControls from './TopImageControls'
-import AdvancedImageControls from './AdvancedImageControls'
 import CanvasImageOverlay from './CanvasImageOverlay'
 import {getMessage, getDisplayMode} from './redact_utils.js'
 
@@ -17,8 +15,8 @@ class ImagePanel extends React.Component {
     }
     this.getImageAndHashDisplay=this.getImageAndHashDisplay.bind(this)
     this.setOcrDoneMessage=this.setOcrDoneMessage.bind(this)
-    this.setRedactionDoneMessage=this.setRedactionDoneMessage.bind(this)
     this.setMessage=this.setMessage.bind(this)
+    this.redactImage=this.redactImage.bind(this)
   }
 
   setMessage(the_message)  {
@@ -28,7 +26,7 @@ class ImagePanel extends React.Component {
   }
 
   //TODO THIS whole method can go away now
-  handleSetMode = (mode, submode) => {
+  setMode = (mode, submode) => {
     const message = getMessage(mode, submode);
     const display_mode = getDisplayMode(mode, submode);
     this.setState({
@@ -170,18 +168,18 @@ class ImagePanel extends React.Component {
     document.getElementById('base_image_id').src = this.props.image_url
   }
 
-  handleRedactCall = () => {
+  redactImage()  {
     let pass_arr = []
     const areas_to_redact = this.props.getRedactionFromFrameset()
     for (let i=0; i < areas_to_redact.length; i++) {
       let a2r = areas_to_redact[i]
       pass_arr.push([a2r['start'], a2r['end']])
     }
-    this.props.callRedact(pass_arr, this.props.image_url, this.setRedactionDoneMessage)
-  }
-
-  setRedactionDoneMessage() {
-    this.setMessage('Regions have been redacted')
+    if (pass_arr.length > 0) {
+      this.props.callRedact(pass_arr, this.props.image_url, this.setMessage('Regions have been redacted'))
+    } else {
+      this.setMessage('Nothing to redact has been specified')
+    }
   }
 
   get_next_button() {
@@ -239,8 +237,8 @@ class ImagePanel extends React.Component {
                 display_mode={this.state.display_mode}
                 submode={this.state.submode}
                 message={this.state.message}
-                setModeCallback= {this.handleSetMode}
-                doRedactCallback = {this.handleRedactCall}
+                setMode= {this.setMode}
+                redactImage={this.redactImage}
                 changeMaskMethodCallback={this.props.setMaskMethod}
                 getRedactedImageUrl={this.props.getRedactedImageUrl}
                 setImageUrlCallback={this.props.setImageUrlCallback}
@@ -248,11 +246,14 @@ class ImagePanel extends React.Component {
                 runTemplates={this.props.runTemplates}
                 setMessage={this.setMessage}
                 clearCurrentFramesetRedactions={this.props.clearCurrentFramesetRedactions}
+                whenDoneTarget={this.props.whenDoneTarget}
+                gotoWhenDoneTarget={this.props.gotoWhenDoneTarget}
               />
             </div>
           </div>
 
-          <div className='row'>
+
+          <div id='image_and_next_prev_buttons' className='row'>
             <div id='prev_button_col' className='col-lg-1'>
               {prev_button}
             </div>
@@ -273,19 +274,12 @@ class ImagePanel extends React.Component {
                   getRedactionFromFrameset={this.props.getRedactionFromFrameset}
                 />
               </div>
-              <div id='advanced_controls_wrapper' className='row'>
-                <div className='col'>
-                  <AdvancedImageControls 
-                    showAdvancedControls={this.props.showAdvancedPanels}
-                    setModeCallback= {this.handleSetMode}
-                  />
-                </div>
-              </div>
             </div>
             <div id='next_button_col' className='col-lg-1'>
               {next_button}
             </div>
           </div>
+
 
         </div>
       </div>

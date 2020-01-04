@@ -3,14 +3,6 @@ div#image_and_canvas_wrapper {
 position: relative;
 }
 
-div#controls_wrapper {
-  position: relative;
-}
-
-div#advanced_controls_wrapper {
-  position: absolute;
-}
-
 div#canvas_div {
   position: absolute;
 }
@@ -105,3 +97,4 @@ padding-top:200px;
 input.nickname {
   font-size: 12px;
 }
+

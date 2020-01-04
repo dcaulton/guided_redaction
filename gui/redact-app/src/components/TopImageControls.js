@@ -1,11 +1,6 @@
 import React from 'react';
 
 class TopImageControls extends React.Component {
-  handleRedact() {
-    this.props.doRedactCallback()
-    this.props.setModeCallback('redact', '')
-  }
-
   buildTemplateButton() {
     const template_keys = Object.keys(this.props.templates)
     if (!template_keys.length) {
@@ -42,7 +37,21 @@ class TopImageControls extends React.Component {
     this.props.clearCurrentFramesetRedactions(this.props.setMessage('image redactions reset'))
   }
 
+  buildWhenDoneLink() {
+    if (this.props.whenDoneTarget) {
+      return (
+        <button 
+            className='btn btn-primary ml-2'  
+            onClick={() => this.props.gotoWhenDoneTarget()}
+        >
+          Goto Learn
+        </button>
+      )
+    }
+  }
+
   render() {
+    const whenDoneLink = this.buildWhenDoneLink()
     const template_button = this.buildTemplateButton()
     let redacted_link = ''
     if (this.props.getRedactedImageUrl()) {
@@ -69,12 +78,12 @@ class TopImageControls extends React.Component {
               </button>
               <div className='dropdown-menu' aria-labelledby='addDropdownButton'>
                 <button className='dropdown-item' 
-                    onClick={() => this.props.setModeCallback('add_1', 'box')}>
+                    onClick={() => this.props.setMode('add_1', 'box')}>
                   Box
                   {this.props.debuginfo}
                 </button>
                 <button className='dropdown-item' 
-                    onClick={() => this.props.setModeCallback('add_1', 'ocr')} 
+                    onClick={() => this.props.setMode('add_1', 'ocr')} 
                     href='.'>
                   OCR
                 </button>
@@ -88,12 +97,12 @@ class TopImageControls extends React.Component {
               </button>
               <div className='dropdown-menu' aria-labelledby='deleteDropdownButton'>
                 <button className='dropdown-item' 
-                    onClick={() => this.props.setModeCallback('delete', 'item')} 
+                    onClick={() => this.props.setMode('delete', 'item')} 
                     href='.'>
                   Item
                 </button>
                 <button className='dropdown-item' 
-                    onClick={() => this.props.setModeCallback('delete_1', 'box_all')} 
+                    onClick={() => this.props.setMode('delete_1', 'box_all')} 
                     href='.'>
                   Box (all in)
                 </button>
@@ -104,7 +113,7 @@ class TopImageControls extends React.Component {
 
             <button 
                 className='btn btn-primary ml-2' 
-                onClick={() => this.props.setModeCallback('view', '')}
+                onClick={() => this.props.setMode('view', '')}
                 href='./index.html' >
               Cancel
             </button>
@@ -118,11 +127,12 @@ class TopImageControls extends React.Component {
           
             <button 
                 className='btn btn-primary ml-2'  
-                onClick={() => this.handleRedact()}
+                onClick={() => this.props.redactImage()}
                 href='./index.html' >
               Redact
             </button>
 
+            {whenDoneLink}
             <div className='d-inline ml-2'>
               <select 
                   name='mask_method'
