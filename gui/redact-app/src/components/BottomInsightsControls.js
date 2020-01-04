@@ -42,6 +42,7 @@ class BottomInsightsControls extends React.Component {
           cropImage={this.props.cropImage}
           movie_sets={this.props.movie_sets}
           showTemplates={this.props.showTemplates}
+          toggleShowTemplates={this.props.toggleShowTemplates}
         />
 
         <SelectedAreaControls
@@ -51,6 +52,7 @@ class BottomInsightsControls extends React.Component {
           setSelectedAreaTemplateAnchor={this.props.setSelectedAreaTemplateAnchor}
           getCurrentSelectedAreaMeta={this.props.getCurrentSelectedAreaMeta}
           showSelectedArea={this.props.showSelectedArea}
+          toggleShowSelectedArea={this.props.toggleShowSelectedArea}
         />
 
         <AnnotationControls
@@ -64,11 +66,13 @@ class BottomInsightsControls extends React.Component {
           setKeyDownCallback={this.props.setKeyDownCallback}
           getAnnotations={this.props.getAnnotations}
           showAnnotate={this.props.showAnnotate}
+          toggleShowAnnotate={this.props.toggleShowAnnotate}
         />
 
         <OcrControls
           displayInsightsMessage={this.props.displayInsightsMessage}
           showOcr={this.props.showOcr}
+          toggleShowOcr={this.props.toggleShowOcr}
         />
 
         <MovieSetsPanel
@@ -77,11 +81,13 @@ class BottomInsightsControls extends React.Component {
           setMovieSets={this.props.setMovieSets}
           draggedId={this.props.draggedId}
           showMovieSets={this.props.showMovieSets}
+          toggleShowMovieSets={this.props.toggleShowMovieSets}
         />
 
         <ResultsPanel
           displayInsightsMessage={this.props.displayInsightsMessage}
           showResults={this.props.showResults}
+          toggleShowResults={this.props.toggleShowResults}
         />
 
         <SessionControls

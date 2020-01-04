@@ -92,8 +92,8 @@ class SessionControls extends React.Component {
     return (
       <textarea
          cols='80'
-         rows='10'
-         value='paste a json dict here to update'
+         rows='2'
+         value=''
          onChange={(event) => this.props.updateGlobalState(event.target.value)}
       />
     )
@@ -304,7 +304,7 @@ class SessionControls extends React.Component {
 
                 <div className='row mt-4'>
                   <div className='d-inline'>
-                    <span className='h5'>Update Global State</span>
+                    <span className='h5'>Update Global State (paste json below)</span>
                     {update_state_box}
                   </div>
                 </div>

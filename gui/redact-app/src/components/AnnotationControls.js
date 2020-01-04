@@ -205,6 +205,15 @@ class AnnotationControls extends React.Component {
                   show/hide
                 </button>
               </div>
+              <div>
+                <div>
+                  <input
+                    className='mr-2 mt-3'
+                    type='checkbox'
+                    onChange={() => this.props.toggleShowAnnotate()}
+                  />
+                </div>
+              </div>
             </div>
 
             <div 

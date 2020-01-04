@@ -128,7 +128,6 @@ class RedactApplication extends React.Component {
       for (let index in Object.keys(json_data)) {
         const key = Object.keys(json_data)[index]
         if (Object.keys(this.state).includes(key)) {
-          const value = this.state[key]
           let new_state = {}
           new_state[key] = json_data[key]
           this.setState(new_state)

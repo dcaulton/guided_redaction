@@ -28,6 +28,15 @@ class OcrControls extends React.Component {
                   show/hide
                 </button>
               </div>
+              <div>
+                <div>
+                  <input
+                    className='mr-2 mt-3'
+                    type='checkbox'
+                    onChange={() => this.props.toggleShowOcr()}
+                  />
+                </div>
+              </div>
             </div>
 
             <div 
