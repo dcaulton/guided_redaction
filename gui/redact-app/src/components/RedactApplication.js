@@ -127,6 +127,7 @@ class RedactApplication extends React.Component {
     if (Object.keys(deepCopyMovies).includes(this.state.movie_url)) {
       if (Object.keys(deepCopyMovies[this.state.movie_url]['framesets']).includes(the_hash)) {
         deepCopyMovies[this.state.movie_url]['framesets'][the_hash]['areas_to_redact'] = []
+        deepCopyMovies[this.state.movie_url]['framesets'][the_hash]['redacted_image'] = ''
         this.setState({
           movies: deepCopyMovies
         })

@@ -8,34 +8,35 @@ import {getMessage, getDisplayMode} from './redact_utils.js'
 class ImagePanel extends React.Component {
   constructor(props) {
     super(props);
-    this.local_state = observable({
+    this.state = {
       mode: 'View',
       submode: null,
       display_mode: 'View',
       message: '',
       last_click: null,
-    })
-    this.state = observable({
-    })
+    }
     this.getImageAndHashDisplay=this.getImageAndHashDisplay.bind(this)
     this.setOcrDoneMessage=this.setOcrDoneMessage.bind(this)
     this.setRedactionDoneMessage=this.setRedactionDoneMessage.bind(this)
-    this.handleClearFramesetRedactions=this.handleClearFramesetRedactions.bind(this)
+    this.setMessage=this.setMessage.bind(this)
   }
 
-  handleClearFramesetRedactions() {
-    // TODO have set message be a function, then pass it to clearcurrentframesetredactions
-    this.props.clearCurrentFramesetRedactions()
-    this.local_state.message = 'redactions have been cleared'
+  setMessage(the_message)  {
+    this.setState({
+      message: the_message,
+    })
   }
+
   //TODO THIS whole method can go away now
   handleSetMode = (mode, submode) => {
     const message = getMessage(mode, submode);
     const display_mode = getDisplayMode(mode, submode);
-    this.local_state.mode = mode
-    this.local_state.submode = submode
-    this.local_state.display_mode = display_mode
-    this.local_state.message = message
+    this.setState({
+      mode: mode,
+      submode: submode,
+      display_mode: display_mode,
+      message: message,
+    })
   }
 
   handleImageClick = (e) => {
@@ -50,49 +51,57 @@ class ImagePanel extends React.Component {
       return
     }
 
-    if (this.local_state.mode === 'add_1') {
-      this.local_state.mode = 'add_2'
-      this.local_state.message = getMessage('add_2', this.local_state.submode)
-      this.local_state.last_click = [x_scaled, y_scaled]
-    } else if (this.local_state.mode === 'add_2') {
+    if (this.state.mode === 'add_1') {
+      this.setState({
+        mode: 'add_2',
+        last_click: [x_scaled, y_scaled],
+      })
+      this.setMessage(getMessage('add_2', this.state.submode))
+    } else if (this.state.mode === 'add_2') {
       this.handleAddSecond(x_scaled, y_scaled)
-    } else if (this.local_state.mode === 'delete') {
+    } else if (this.state.mode === 'delete') {
       this.handleDelete(x_scaled, y_scaled)
-    } else if (this.local_state.mode === 'delete_1') {
-      this.local_state.mode = 'delete_2'
-      this.local_state.message = getMessage('delete_2', this.local_state.submode)
-      this.local_state.last_click = [x_scaled, y_scaled]
-    } else if (this.local_state.mode === 'delete_2') {
+    } else if (this.state.mode === 'delete_1') {
+      this.setState({
+        mode: 'delete_2',
+        last_click: [x_scaled, y_scaled],
+      })
+      this.setMessage(getMessage('delete_2', this.state.submode))
+    } else if (this.state.mode === 'delete_2') {
       this.handleDeleteSecond(x_scaled, y_scaled)
     }
   }
 
   handleAddSecond(x, y) {
-    if (this.local_state.submode === 'box') {
+    if (this.state.submode === 'box') {
       let deepCopyAreasToRedact = this.props.getRedactionFromFrameset()
       let new_a2r = {
-        start: [this.local_state.last_click[0], this.local_state.last_click[1]],
+        start: [this.state.last_click[0], this.state.last_click[1]],
         end: [x, y],
         text: 'you got it hombre',
         id: Math.floor(Math.random() * 1950960),
       }
       deepCopyAreasToRedact.push(new_a2r)
 
-      this.local_state.mode = 'add_1'
-      this.local_state.message = 'region was successfully added, select another region to add, press cancel when done'
-      this.local_state.last_click = null
+      this.setState({
+        mode: 'add_1',
+        last_click: null,
+      })
+      this.setMessage('region was successfully added, select another region to add, press cancel when done')
       this.props.addRedactionToFrameset(deepCopyAreasToRedact)
-    } else if (this.local_state.submode === 'ocr') {
+    } else if (this.state.submode === 'ocr') {
       const current_click = [x, y]
-      this.props.callOcr(current_click, this.local_state.last_click, this.setOcrDoneMessage)
-      this.local_state.mode = 'add_1'
-      this.local_state.message = 'processing OCR, please wait'
-      this.local_state.last_click = null
+      this.props.callOcr(current_click, this.state.last_click, this.setOcrDoneMessage)
+      this.setState({
+        mode: 'add_1',
+        last_click: null,
+      })
+      this.setMessage( 'processing OCR, please wait')
     }
   }
 
   setOcrDoneMessage() {
-    this.local_state.message = 'OCR detected regions were added, select another region to scan, press cancel when done'
+    this.setMessage('OCR detected regions were added, select another region to scan, press cancel when done')
   }
 
   getImageAndHashDisplay() {
@@ -111,12 +120,12 @@ class ImagePanel extends React.Component {
       let a2r = areas_to_redact[i];
       var start_is_within_delete_box = false
       var end_is_within_delete_box = false
-      if (this.local_state.last_click[0] <= a2r['start'][0]  && a2r['start'][0] <= x &&
-          this.local_state.last_click[1] <= a2r['start'][1]  && a2r['start'][1] <= y) {
+      if (this.state.last_click[0] <= a2r['start'][0]  && a2r['start'][0] <= x &&
+          this.state.last_click[1] <= a2r['start'][1]  && a2r['start'][1] <= y) {
         start_is_within_delete_box = true
       } 
-      if (this.local_state.last_click[0] <= a2r['end'][0]  && a2r['end'][0] <= x &&
-          this.local_state.last_click[1] <= a2r['end'][1]  && a2r['end'][1] <= y) {
+      if (this.state.last_click[0] <= a2r['end'][0]  && a2r['end'][0] <= x &&
+          this.state.last_click[1] <= a2r['end'][1]  && a2r['end'][1] <= y) {
         end_is_within_delete_box = true
       } 
       if (start_is_within_delete_box && end_is_within_delete_box) {
@@ -125,12 +134,16 @@ class ImagePanel extends React.Component {
       }
     }
     if (new_areas_to_redact.length !== areas_to_redact.length) {
-      this.local_state.mode = 'delete_1'
-      this.local_state.message = 'region was successfully deleted, select another region to delete, press cancel when done'
+      this.setState({
+        mode: 'delete_1',
+      })
+      this.setMessage('region was successfully deleted, select another region to delete, press cancel when done')
       this.props.addRedactionToFrameset(new_areas_to_redact)
     } else {
-      this.local_state.mode = 'delete_1'
-      this.local_state.message = getMessage('delete_1', this.local_state.submode)
+      this.setState({
+        mode: 'delete_1',
+      })
+      this.setMessage(getMessage('delete_1', this.state.submode))
     }
   }
 
@@ -147,7 +160,7 @@ class ImagePanel extends React.Component {
       
     }
     if (new_areas_to_redact.length !== areas_to_redact.length) {
-      this.local_state.message = 'region was successfully deleted, continue selecting regions, press cancel when done'
+      this.setMessage('region was successfully deleted, continue selecting regions, press cancel when done')
       this.props.addRedactionToFrameset(new_areas_to_redact)
     }
   }
@@ -168,7 +181,7 @@ class ImagePanel extends React.Component {
   }
 
   setRedactionDoneMessage() {
-    this.local_state.message = 'Regions have been redacted'
+    this.setMessage('Regions have been redacted')
   }
 
   get_next_button() {
@@ -221,19 +234,20 @@ class ImagePanel extends React.Component {
           <div id='controls_wrapper' className='row'>
             <div className='col'>
               <TopImageControls 
-                mode={this.local_state.mode}
+                mode={this.state.mode}
                 templates={this.props.templates}
-                display_mode={this.local_state.display_mode}
-                submode={this.local_state.submode}
-                message={this.local_state.message}
+                display_mode={this.state.display_mode}
+                submode={this.state.submode}
+                message={this.state.message}
                 setModeCallback= {this.handleSetMode}
-                handleClearFramesetRedactions={this.handleClearFramesetRedactions}
                 doRedactCallback = {this.handleRedactCall}
                 changeMaskMethodCallback={this.props.setMaskMethod}
                 getRedactedImageUrl={this.props.getRedactedImageUrl}
                 setImageUrlCallback={this.props.setImageUrlCallback}
                 getImageAndHashDisplay={this.getImageAndHashDisplay}
                 runTemplates={this.props.runTemplates}
+                setMessage={this.setMessage}
+                clearCurrentFramesetRedactions={this.props.clearCurrentFramesetRedactions}
               />
             </div>
           </div>
@@ -249,13 +263,13 @@ class ImagePanel extends React.Component {
                   image_file={this.props.image_file}
                 />
                 <CanvasImageOverlay
-                  mode={this.local_state.mode}
-                  submode={this.local_state.submode}
+                  mode={this.state.mode}
+                  submode={this.state.submode}
                   image_width={this.props.image_width}
                   image_height={this.props.image_height}
                   image_scale={this.props.image_scale}
                   clickCallback= {this.handleImageClick}
-                  last_click= {this.local_state.last_click}
+                  last_click= {this.state.last_click}
                   getRedactionFromFrameset={this.props.getRedactionFromFrameset}
                 />
               </div>

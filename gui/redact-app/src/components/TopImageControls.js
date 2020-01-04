@@ -38,6 +38,10 @@ class TopImageControls extends React.Component {
     )
   }
 
+  doClearRedaction() {
+    this.props.clearCurrentFramesetRedactions(this.props.setMessage('image redactions reset'))
+  }
+
   render() {
     const template_button = this.buildTemplateButton()
     let redacted_link = ''
@@ -107,7 +111,7 @@ class TopImageControls extends React.Component {
             
             <button 
                 className='btn btn-primary ml-2' 
-                onClick={() => this.props.handleClearFramesetRedactions()}
+                onClick={() => this.doClearRedaction()}
                 href='./index.html' >
               Reset
             </button>
