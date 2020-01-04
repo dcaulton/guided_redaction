@@ -199,63 +199,92 @@ class InsightsPanel extends React.Component {
     })
   }
 
-  submitInsightsJob(job_string, extra_data) {
+  buildScanTemplateCurTempCurMovJobData(extra_data) {
     let job_data = {
       request_data: {},
     }
+    job_data['app'] = 'analyze'
+    job_data['operation'] = 'scan_template'
+    job_data['description'] = 'single template single movie match'
+    let template = this.props.templates[this.props.current_template_id]
+    job_data['request_data']['template'] = template
+    job_data['request_data']['source_image_url'] = template['anchors'][0]['image']
+    job_data['request_data']['template_id'] = template['id']
+    const wrap = {}
+    wrap[this.props.movie_url] = this.props.movies[this.props.movie_url]
+    job_data['request_data']['target_movies'] = wrap
+    return job_data
+  }
+
+  buildScanTemplateCurTempAllMovJobData(extra_data) {
+    let job_data = {
+      request_data: {},
+    }
+    const num_movies = Object.keys(this.props.movies).length.toString()
+    let num_frames = 0
+    let keys = Object.keys(this.props.movies)
+    for (let i=0; i < keys.length; i++) {
+        const movie = this.props.movies[keys[i]]
+        const num_frameset_keys = Object.keys(movie['framesets']).length
+        num_frames += num_frameset_keys
+    }
+    num_frames = num_frames.toString()
+    job_data['app'] = 'analyze'
+    job_data['operation'] = 'scan_template'
+    job_data['description'] = 'single template '+ num_movies+ ' movies, ('+num_frames+' framesets)  match'
+    let template = this.props.templates[this.props.current_template_id]
+    job_data['request_data']['template'] = template
+    job_data['request_data']['source_image_url'] = template['anchors'][0]['image']
+    job_data['request_data']['target_movies'] = this.props.movies
+    return job_data
+  }
+
+  buildScanTemplateCurTempMovSetJobData(extra_data) {
+    let job_data = {
+      request_data: {},
+    }
+    const movie_set_name = this.props.movie_sets[extra_data]['name']
+    let num_movies = this.props.movie_sets[extra_data]['movies'].length.toString()
+    let movies_to_run = {}
+    for (let i=0; i < this.props.movie_sets[extra_data]['movies'].length; i++) {
+      const movie_url = this.props.movie_sets[extra_data]['movies'][i]
+      movies_to_run[movie_url] = this.props.movies[movie_url]
+    }
+    job_data['app'] = 'analyze'
+    job_data['operation'] = 'scan_template'
+    let template = this.props.templates[this.props.current_template_id]
+    job_data['description'] = 'single template (' + template['name'] + ') '+ num_movies+ ' movies (from MovieSet ' + movie_set_name + '), match'
+    job_data['request_data']['template'] = template
+    job_data['request_data']['source_image_url'] = template['anchors'][0]['image']
+    job_data['request_data']['target_movies'] = movies_to_run
+    job_data['request_data']['movie_set_movies'] = this.props.movie_sets[extra_data]
+    return job_data
+  }
+
+  buildLoadMovieJobData(extra_data) {
+    let job_data = {
+      request_data: {},
+    }
+    job_data['app'] = 'parse'
+    job_data['operation'] = 'split_and_hash_movie'
+    job_data['description'] = 'load and hash movie: ' + extra_data
+    job_data['request_data']['movie_url'] = extra_data
+    job_data['request_data']['frameset_discriminator'] = this.props.frameset_discriminator
+    return job_data
+  }
+
+  submitInsightsJob(job_string, extra_data) {
     if (job_string === 'current_template_current_movie') {
-      job_data['app'] = 'analyze'
-      job_data['operation'] = 'scan_template'
-      job_data['description'] = 'single template single movie match'
-      let template = this.props.templates[this.props.current_template_id]
-      job_data['request_data']['template'] = template
-      job_data['request_data']['source_image_url'] = template['anchors'][0]['image']
-      job_data['request_data']['template_id'] = template['id']
-      const wrap = {}
-      wrap[this.props.movie_url] = this.props.movies[this.props.movie_url]
-      job_data['request_data']['target_movies'] = wrap
+      let job_data = this.buildScanTemplateCurTempCurMovJobData(extra_data)
       this.props.submitJob(job_data)
     } else if (job_string === 'current_template_all_movies') {
-      const num_movies = Object.keys(this.props.movies).length.toString()
-      let num_frames = 0
-      let keys = Object.keys(this.props.movies)
-      for (let i=0; i < keys.length; i++) {
-          const movie = this.props.movies[keys[i]]
-          const num_frameset_keys = Object.keys(movie['framesets']).length
-          num_frames += num_frameset_keys
-      }
-      num_frames = num_frames.toString()
-      job_data['app'] = 'analyze'
-      job_data['operation'] = 'scan_template'
-      job_data['description'] = 'single template '+ num_movies+ ' movies, ('+num_frames+' framesets)  match'
-      let template = this.props.templates[this.props.current_template_id]
-      job_data['request_data']['template'] = template
-      job_data['request_data']['source_image_url'] = template['anchors'][0]['image']
-      job_data['request_data']['target_movies'] = this.props.movies
+      let job_data = this.buildScanTemplateCurTempAllMovJobData(extra_data)
       this.props.submitJob(job_data)
     } else if (job_string === 'current_template_movie_set') {
-      const movie_set_name = this.props.movie_sets[extra_data]['name']
-      let num_movies = this.props.movie_sets[extra_data]['movies'].length.toString()
-      let movies_to_run = {}
-      for (let i=0; i < this.props.movie_sets[extra_data]['movies'].length; i++) {
-        const movie_url = this.props.movie_sets[extra_data]['movies'][i]
-        movies_to_run[movie_url] = this.props.movies[movie_url]
-      }
-      job_data['app'] = 'analyze'
-      job_data['operation'] = 'scan_template'
-      let template = this.props.templates[this.props.current_template_id]
-      job_data['description'] = 'single template (' + template['name'] + ') '+ num_movies+ ' movies (from MovieSet ' + movie_set_name + '), match'
-      job_data['request_data']['template'] = template
-      job_data['request_data']['source_image_url'] = template['anchors'][0]['image']
-      job_data['request_data']['target_movies'] = movies_to_run
-      job_data['request_data']['movie_set_movies'] = this.props.movie_sets[extra_data]
+      let job_data = this.buildScanTemplateCurTempMovSetJobData(extra_data)
       this.props.submitJob(job_data)
     } else if (job_string === 'load_movie') {
-      job_data['app'] = 'parse'
-      job_data['operation'] = 'split_and_hash_movie'
-      job_data['description'] = 'load and hash movie: ' + extra_data
-      job_data['request_data']['movie_url'] = extra_data
-      job_data['request_data']['frameset_discriminator'] = this.props.frameset_discriminator
+      let job_data = this.buildLoadMovieJobData(extra_data)
       this.props.submitJob(job_data)
     }
   }
@@ -328,10 +357,11 @@ class InsightsPanel extends React.Component {
 
   getMovieMatchesFound(movie_url) {
     let message = '0 images matched any anchor'
-    if (!Object.keys(this.props.template_matches).includes(this.props.current_template_id)) {
+    const template_matches = this.props.getCurrentTemplateMatches()
+    if (!Object.keys(template_matches).includes(this.props.current_template_id)) {
       return message
     }
-    const cur_templates_matches = this.props.template_matches[this.props.current_template_id]
+    const cur_templates_matches = template_matches[this.props.current_template_id]
     if (!Object.keys(cur_templates_matches).includes(movie_url)) {
       return message 
     }
@@ -442,8 +472,9 @@ class InsightsPanel extends React.Component {
     } else if (scope === 'all_movies') {
       this.props.setTemplateMatches(this.props.current_template_id, {})
     } else if (scope === 'movie') {
+      const template_matches = this.props.getCurrentTemplateMatches()
       let deepCopy = JSON.parse(JSON.stringify(
-        this.props.template_matches[this.props.current_template_id])
+        template_matches[this.props.current_template_id])
       )
       if (Object.keys(deepCopy).includes(this.props.movie_url)) {
         delete deepCopy[this.props.movie_url]
@@ -792,10 +823,11 @@ class InsightsPanel extends React.Component {
   }
 
   getTemplateMatches() {
-    if (!Object.keys(this.props.template_matches).includes(this.props.current_template_id)) {
+    const template_matches = this.props.getCurrentTemplateMatches()
+    if (!Object.keys(template_matches).includes(this.props.current_template_id)) {
       return
     }
-    const cur_templates_matches = this.props.template_matches[this.props.current_template_id]
+    const cur_templates_matches = template_matches[this.props.current_template_id]
     if (!Object.keys(cur_templates_matches).includes(this.props.movie_url)) {
       return
     }

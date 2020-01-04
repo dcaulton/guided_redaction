@@ -40,6 +40,10 @@ class MoviePanel extends React.Component {
               this.setMessage('redactions completed')
               this.props.loadJobResults(job['id'])
               // TODO supposed to cancel the job too, but it's happening too early
+            } else if (job['operation'] === 'redact') {
+              this.setMessage('template match completed')
+              this.props.loadJobResults(job['id'])
+              this.props.cancelJob(job)
             }
           }
         }
@@ -58,44 +62,81 @@ class MoviePanel extends React.Component {
     setTimeout(this.checkForJobs, 1000);
   }
 
-  submitMovieJob(job_string, extra_data = '') {
+  buildTemplateMatchJobdata(extra_data) {
     let job_data = {
       request_data: {},
     }
+    job_data['app'] = 'analyze'
+    job_data['operation'] = 'scan_template'
+    job_data['description'] = 'single template single movie match'
+    if (extra_data === 'all') {
+      console.log("gotta implement all templates soon, aborting for now")
+      return
+    }
+    let template = this.props.templates[extra_data]
+    job_data['request_data']['template'] = template
+    job_data['request_data']['source_image_url'] = template['anchors'][0]['image']
+    job_data['request_data']['template_id'] = template['id']
+    const wrap = {}                                                                                                   
+    wrap[this.props.movie_url] = this.props.movies[this.props.movie_url]                                              
+    job_data['request_data']['target_movies'] = wrap                                                                  
+    return job_data
+  }
+
+  buildRedactFramesetsJobData(extra_data) {
+    let job_data = {
+      request_data: {},
+    }
+    job_data['app'] = 'redact'
+    job_data['operation'] = 'redact'
+    job_data['description'] = 'redact images for movie movie: ' + this.props.movie_url
+
+    let all_redaction_images = []
+    let frameset_keys = Object.keys(this.props.getCurrentFramesets())
+    for (let i=0; i < frameset_keys.length; i++) {
+      let pass_arr = []
+      let hash_key = frameset_keys[i]
+      const areas_to_redact = this.props.getRedactionFromFrameset(hash_key)
+      if (areas_to_redact.length > 0) {
+        const framesets = this.props.getCurrentFramesets()
+        let first_image_url = framesets[hash_key]['images'][0]
+        for (let i=0; i < framesets[hash_key]['areas_to_redact'].length; i++) {                            
+          let a2r = framesets[hash_key]['areas_to_redact'][i]
+          pass_arr.push([a2r['start'], a2r['end']])
+        }  
+        all_redaction_images.push({
+          image_url: first_image_url,
+          areas_to_redact: pass_arr,
+          return_type: 'url',
+          mask_method: this.props.mask_method,
+        })
+      } 
+    }
+    job_data['request_data'] = all_redaction_images
+    return job_data
+  }
+
+  buildSplitAndHashJobData(extra_data) {
+    let job_data = {
+      request_data: {},
+    }
+    job_data['app'] = 'parse'
+    job_data['operation'] = 'split_and_hash_movie'
+    job_data['description'] = 'load and hash movie: ' + extra_data
+    job_data['request_data']['movie_url'] = extra_data
+    job_data['request_data']['frameset_discriminator'] = this.props.frameset_discriminator
+    return job_data
+  }
+
+  submitMovieJob(job_string, extra_data = '') {
     if (job_string === 'split_and_hash_video') {
-      job_data['app'] = 'parse'
-      job_data['operation'] = 'split_and_hash_movie'
-      job_data['description'] = 'load and hash movie: ' + extra_data
-      job_data['request_data']['movie_url'] = extra_data
-      job_data['request_data']['frameset_discriminator'] = this.props.frameset_discriminator
+      const job_data = this.buildSplitAndHashJobData(extra_data)
       this.props.submitJob(job_data, this.afterJobSubmitted)
     } else if (job_string === 'redact_framesets') {
-      job_data['app'] = 'redact'
-      job_data['operation'] = 'redact'
-      job_data['description'] = 'redact images for movie movie: ' + this.props.movie_url
-
-      let all_redaction_images = []
-      let frameset_keys = Object.keys(this.props.getCurrentFramesets())
-      for (let i=0; i < frameset_keys.length; i++) {
-        let pass_arr = []
-        let hash_key = frameset_keys[i]
-        const areas_to_redact = this.props.getRedactionFromFrameset(hash_key)
-        if (areas_to_redact.length > 0) {
-          const framesets = this.props.getCurrentFramesets()
-          let first_image_url = framesets[hash_key]['images'][0]
-          for (let i=0; i < framesets[hash_key]['areas_to_redact'].length; i++) {                            
-            let a2r = framesets[hash_key]['areas_to_redact'][i]
-            pass_arr.push([a2r['start'], a2r['end']])
-          }  
-          all_redaction_images.push({
-            image_url: first_image_url,
-            areas_to_redact: pass_arr,
-            return_type: 'url',
-            mask_method: this.props.mask_method,
-          })
-        } 
-      }
-      job_data['request_data'] = all_redaction_images
+      const job_data = this.buildRedactFramesetsJobData(extra_data)
+      this.props.submitJob(job_data, this.afterJobSubmitted)
+    } else if (job_string === 'template_match') {
+      const job_data = this.buildTemplateMatchJobdata(extra_data)
       this.props.submitJob(job_data, this.afterJobSubmitted)
     } else if (job_string === 'movie_panel_redact_and_reassemble_video') {
       console.log('redact and reassemble called - NOT SUPPORTED YET')
@@ -362,6 +403,7 @@ class MoviePanel extends React.Component {
             templates={this.props.templates}
             runTemplates={this.props.runTemplates}
             setMaskMethod={this.props.setMaskMethod}
+            submitMovieJob={this.submitMovieJob}
           />
 
         </div>
@@ -465,7 +507,7 @@ class MoviePanelAdvancedControls extends React.Component {
         </button>
         <div className='dropdown-menu' aria-labelledby='tempateDropdownButton'>
           <button className='dropdown-item'
-              onClick={() => this.props.runTemplates('all', 'current_movie')}
+              onClick={() => this.props.submitMovieJob('template_match', 'all')}
               href='.'>
             Run all
           </button>
@@ -473,7 +515,7 @@ class MoviePanelAdvancedControls extends React.Component {
             return (
               <button className='dropdown-item'
                   key={index}
-                  onClick={() => this.props.runTemplates(this.props.templates[value]['id'], 'current_movie')}
+                  onClick={() => this.props.submitMovieJob('template_match', this.props.templates[value]['id'])}
                   href='.'>
                 Run {this.props.templates[value]['name']}
               </button>

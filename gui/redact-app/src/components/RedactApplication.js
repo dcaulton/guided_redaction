@@ -115,11 +115,16 @@ class RedactApplication extends React.Component {
     this.getRedactedImageFromFrameset=this.getRedactedImageFromFrameset.bind(this)
     this.gotoWhenDoneTarget=this.gotoWhenDoneTarget.bind(this)
     this.updateGlobalState=this.updateGlobalState.bind(this)
+    this.getCurrentTemplateMatches=this.getCurrentTemplateMatches.bind(this)
   }
 
   runTemplates(template_id, target) {
   console.log('running '+template_id+' on '+target)
 
+  }
+
+  getCurrentTemplateMatches() {
+    return this.state.template_matches
   }
 
   updateGlobalState(the_data) {
@@ -631,6 +636,53 @@ class RedactApplication extends React.Component {
     })                                                                          
   }
 
+  updateMoviesWithTemplateMatchResults() {
+    let deepCopyMovies= JSON.parse(JSON.stringify(this.state.movies))
+    const template_matches = this.getCurrentTemplateMatches()
+    const template_ids = Object.keys(template_matches)
+    let something_changed = false
+    for (let i=0; i < template_ids.length; i++) {
+      const template_id = template_ids[i]
+      const mask_zones = this.state.templates[template_id]['mask_zones']
+      const movie_urls = Object.keys(template_matches[template_id])
+      for (let j=0; j < movie_urls.length; j++) {
+        const movie_url = movie_urls[j]
+        const frameset_hashes = Object.keys(template_matches[template_id][movie_url])
+        for (let k=0; k < frameset_hashes.length; k++) {
+          const frameset_hash = frameset_hashes[k]
+          // get the first anchor match, any will do
+          const anchor_ids = Object.keys(template_matches[template_id][movie_url][frameset_hash])
+          const anchor_id = anchor_ids[0]
+          const anchor_found_coords = template_matches[template_id][movie_url][frameset_hash][anchor_id]['location']
+          const anchor_spec_coords = this.state.templates[template_id]['anchors'][0]['start']
+          for (let m=0; m < mask_zones.length; m++) {
+            const mask_zone = mask_zones[m]
+            const offset = [
+              anchor_found_coords[0] - anchor_spec_coords[0], 
+              anchor_found_coords[1] - anchor_spec_coords[1]
+            ] 
+            const new_start = [mask_zone['start'][0] + offset[0], mask_zone['start'][1] + offset[1]]
+            const new_end = [mask_zone['end'][0] + offset[0], mask_zone['end'][1] + offset[1]]
+            const new_area_to_redact = {
+              'start': new_start,
+              'end': new_end,
+            }
+            if (!Object.keys(deepCopyMovies[movie_url]['framesets'][frameset_hash]).includes('areas_to_redact')) {
+              deepCopyMovies[movie_url]['framesets'][frameset_hash]['areas_to_redact']= []
+            }
+            deepCopyMovies[movie_url]['framesets'][frameset_hash]['areas_to_redact'].push(new_area_to_redact)
+            something_changed = true
+          }
+        }
+      }
+    }
+    if (something_changed) {
+      this.setState({
+        movies: deepCopyMovies,
+      })
+    }
+  }
+
   loadScanTemplateResults(job, when_done=(()=>{})) {
     const response_data = JSON.parse(job.response_data)
     const request_data = JSON.parse(job.request_data)
@@ -644,15 +696,14 @@ class RedactApplication extends React.Component {
       this.setCurrentTemplateId(template_id)
 
       const cur_movies = Object.keys(this.state.movies)
-
-
       let deepCopyMovies= JSON.parse(JSON.stringify(this.state.movies))
       let movie_add = false
       let movie_url = ''
       for (let j=0; j < Object.keys(request_data['target_movies']).length; j++)  {
         movie_url = Object.keys(request_data['target_movies'])[j]
         if (!cur_movies.includes(movie_url)) {
-          deepCopyMovies[movie_url] = request_data['target_movies'][movie_url]
+          let movie_data = request_data['target_movies'][movie_url]
+          deepCopyMovies[movie_url] = movie_data
           movie_add = true
         }
       }
@@ -660,6 +711,7 @@ class RedactApplication extends React.Component {
         this.addMovieAndSetActive(movie_url, deepCopyMovies, when_done)
       }
     }
+    this.updateMoviesWithTemplateMatchResults()
   }
 
   loadSplitAndHashResults(job, when_done=(()=>{})) {
@@ -1269,7 +1321,7 @@ class RedactApplication extends React.Component {
                 clearTemplateMatches={this.clearTemplateMatches}
                 setSelectedArea={this.setSelectedArea}
                 clearMovieSelectedAreas={this.clearMovieSelectedAreas}
-                template_matches={this.state.template_matches}
+                getCurrentTemplateMatches={this.getCurrentTemplateMatches}
                 selected_areas={this.state.selected_areas}
                 doPing={this.doPing}
                 templates={this.state.templates}
