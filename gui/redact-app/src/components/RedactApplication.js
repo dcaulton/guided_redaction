@@ -947,7 +947,7 @@ class RedactApplication extends React.Component {
     })
     .then((response) => response.json())
     .then((responseJson) => {
-      const dont_add_keys = ['workbooks', 'jobs', 'workbooks_url']
+      const dont_add_keys = ['workbooks', 'jobs', 'workbooks_url', 'whenDoneTarget']
       let wb = responseJson['workbook']
       let wb_state_data = JSON.parse(wb.state_data)
       let wb_keys = Object.keys(wb_state_data)
@@ -1013,11 +1013,11 @@ class RedactApplication extends React.Component {
 
   checkForInboundGetParameters() {
     let vars = getUrlVars()
-    if (Object.keys(vars).includes('workbook_id')) {
-      this.loadWorkbook(vars['workbook_id'])
-    }
     if (Object.keys(vars).includes('when_done')) {
       this.saveWhenDoneInfo(vars['when_done'])
+    } 
+    if (Object.keys(vars).includes('workbook_id')) {
+      this.loadWorkbook(vars['workbook_id'])
     }
     if (Object.keys(vars).includes('image_url')) {
         this.handleSetImageUrl(vars['image_url'])

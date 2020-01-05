@@ -157,6 +157,7 @@ class InsightsPanel extends React.Component {
   }
 
   componentDidMount() {
+    this.scrubberOnChange()
     this.props.getJobs()
     this.props.getWorkbooks()
   }
@@ -401,12 +402,15 @@ class InsightsPanel extends React.Component {
     const value = document.getElementById('movie_scrubber').value
     const keys = Object.keys(framesets)
     const new_frameset_hash = keys[value]
-    const the_url = framesets[new_frameset_hash]['images'][0]
-    this.displayInsightsMessage('.')
-    this.setState({
-      insights_image: the_url,
-      insights_title: the_url,
-    }, this.setImageSize)
+    if (Object.keys(framesets).includes(new_frameset_hash) && 
+        Object.keys(framesets[new_frameset_hash]).includes('images')) {
+      const the_url = framesets[new_frameset_hash]['images'][0]
+      this.displayInsightsMessage('.')
+      this.setState({
+        insights_image: the_url,
+        insights_title: the_url,
+      }, this.setImageSize)
+    }
   }
   
   clearCurrentTemplateAnchor() {
