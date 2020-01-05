@@ -57,6 +57,7 @@ class RedactApplication extends React.Component {
       showMovieParserLink: true,
       showInsightsLink: true,
       showAdvancedPanels: false,
+      whenJobLoaded: {},
       whenDoneTarget: '',
       whenDoneTargetData: {
         learn_dev: {
@@ -69,6 +70,7 @@ class RedactApplication extends React.Component {
         },
       }
     }
+
     this.getNextImageLink=this.getNextImageLink.bind(this)
     this.getPrevImageLink=this.getPrevImageLink.bind(this)
     this.handleMergeFramesets=this.handleMergeFramesets.bind(this)
@@ -115,6 +117,9 @@ class RedactApplication extends React.Component {
     this.gotoWhenDoneTarget=this.gotoWhenDoneTarget.bind(this)
     this.updateGlobalState=this.updateGlobalState.bind(this)
     this.getCurrentTemplateMatches=this.getCurrentTemplateMatches.bind(this)
+    this.watchForJob=this.watchForJob.bind(this)
+    this.unWatchJob=this.unWatchJob.bind(this)
+    this.checkForJobs=this.checkForJobs.bind(this)
   }
 
   runTemplates(template_id, target) {
@@ -124,6 +129,49 @@ class RedactApplication extends React.Component {
 
   getCurrentTemplateMatches() {
     return this.state.template_matches
+  }
+
+  unWatchJob(job_id) {
+    let deepCopyCallbacks = JSON.parse(JSON.stringify(this.state.whenJobLoaded))
+    delete deepCopyCallbacks[job_id]
+    this.setState({
+      whenJobLoaded: deepCopyCallbacks,
+    })
+  }
+
+  watchForJob(job_id, callback=(()=>{}), deleteJob=false) {
+    let deepCopyCallbacks = JSON.parse(JSON.stringify(this.state.whenJobLoaded))
+    deepCopyCallbacks[job_id] = {}
+    deepCopyCallbacks[job_id]['callback'] = callback
+    deepCopyCallbacks[job_id]['delete'] = deleteJob
+    this.setState({
+      whenJobLoaded: deepCopyCallbacks,
+    })
+  }
+
+  checkForJobs() {
+    const jobIdsToCheckFor = Object.keys(this.state.whenJobLoaded)
+    if (jobIdsToCheckFor.length) {
+      this.getJobs()
+      for (let index in this.state.jobs) {
+        const job = this.state.jobs[index]
+        if (jobIdsToCheckFor.includes(job['id'])) {
+          if (job['status'] === 'success') {
+            const callback = this.state.whenJobLoaded[job['id']]['callback']
+            const deleteJob = this.state.whenJobLoaded[job['id']]['delete']
+            this.loadJobResults(job['id'], callback)
+            if (deleteJob) {
+              this.cancelJob(job)
+            }
+            if (callback) {
+              callback()
+            }
+            this.unWatchJob(job['id'])
+          }
+        }
+      }
+    }
+    setTimeout(this.checkForJobs, 2000);
   }
 
   updateGlobalState(the_data) {
@@ -390,6 +438,7 @@ class RedactApplication extends React.Component {
     if (!this.state.showInsightsLink) {
       document.getElementById('insights_link').style.display = 'none'
     }
+    this.checkForJobs()
   }
 
   setActiveMovie(the_url, theCallback=(()=>{})) {
@@ -602,7 +651,6 @@ class RedactApplication extends React.Component {
     })                                                                          
   }
 
-//lala
   updateMoviesWithTemplateMatchResults(template_id) {
     let deepCopyMovies= JSON.parse(JSON.stringify(this.state.movies))
     const template_matches = this.getCurrentTemplateMatches()
@@ -616,7 +664,6 @@ class RedactApplication extends React.Component {
         const frameset_hashes = Object.keys(template_match[movie_url])
         for (let k=0; k < frameset_hashes.length; k++) {
           const frameset_hash = frameset_hashes[k]
-          // get the first anchor match, any will do
           const anchor_ids = Object.keys(template_match[movie_url][frameset_hash])
           const anchor_id = anchor_ids[0]
           const anchor_found_coords = template_match[movie_url][frameset_hash][anchor_id]['location']
@@ -678,6 +725,7 @@ class RedactApplication extends React.Component {
       }
     }
     this.updateMoviesWithTemplateMatchResults(template_id)
+    when_done()
   }
 
   loadSplitAndHashResults(job, when_done=(()=>{})) {
@@ -724,6 +772,9 @@ class RedactApplication extends React.Component {
           this.storeRedactedImage(resp_data)
         }
       })
+      .then((responseJson) => {
+        when_done()
+      })
       .catch((error) => {
         console.error(error);
       })
@@ -740,15 +791,13 @@ class RedactApplication extends React.Component {
     .then((responseJson) => {
 			const job = responseJson['job']
 			if (job.app === 'analyze' && job.operation === 'scan_template') {
-        this.loadScanTemplateResults(job)
+        this.loadScanTemplateResults(job, when_done)
 			} else if (job.app === 'parse' && job.operation === 'split_and_hash_movie') {
+//        this.loadSplitAndHashResults(job)
         this.loadSplitAndHashResults(job, when_done)
 			} else if (job.app === 'redact' && job.operation === 'redact') {
         this.loadRedactResults(job, when_done)
       }
-    })
-    .then((responseJson) => {
-      when_done()
     })
     .catch((error) => {
       console.error(error);
@@ -773,7 +822,7 @@ class RedactApplication extends React.Component {
     })
   }
 
-  async submitJob(the_job_data, when_done=(()=>{})) {
+  async submitJob(the_job_data, when_submit_complete=(()=>{}), cancel_after_loading=false, when_fetched=(()=>{})) {
     await fetch(this.state.jobs_url + '/', {
       method: 'POST',
       headers: this.buildJsonHeaders(),
@@ -789,7 +838,11 @@ class RedactApplication extends React.Component {
     })
     .then((response) => response.json())
     .then((responseJson) => {
-      when_done(responseJson)
+      when_submit_complete(responseJson)
+      return responseJson
+    })
+    .then((responseJson) => {
+      this.watchForJob(responseJson['job_id'], when_fetched, cancel_after_loading)
     })
     .then(() => {
       this.getJobs()
@@ -1249,6 +1302,7 @@ class RedactApplication extends React.Component {
                 loadJobResults={this.loadJobResults}
                 cancelJob={this.cancelJob}
                 jobs={this.state.jobs}
+                watchForJob={this.watchForJob}
               />
             </Route>
             <Route path='/redact/image'>

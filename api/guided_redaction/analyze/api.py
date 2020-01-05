@@ -67,7 +67,7 @@ class AnalyzeViewSetScanTemplate(viewsets.ViewSet):
             return cv2_image
         else:
             pic_response = requests.get(
-              request_data["source_image_url"],
+              anchor["image"],
               verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
             )
             image = pic_response.content

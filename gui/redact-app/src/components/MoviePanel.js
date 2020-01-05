@@ -9,7 +9,6 @@ class MoviePanel extends React.Component {
       draggedId: null,
       zoom_image_url: '',
       message: '.',
-      movie_panel_job_ids: [],
     }
     this.getNameFor=this.getNameFor.bind(this)
     this.redactFramesetCallback=this.redactFramesetCallback.bind(this)
@@ -20,53 +19,9 @@ class MoviePanel extends React.Component {
     this.afterFrameRedaction=this.afterFrameRedaction.bind(this)
     this.movieZipCompleted=this.movieZipCompleted.bind(this)
     this.setMessage=this.setMessage.bind(this)
-    this.checkForJobs=this.checkForJobs.bind(this)
     this.submitMovieJob=this.submitMovieJob.bind(this)
-    this.afterJobSubmitted=this.afterJobSubmitted.bind(this)
   }
 
-  
-  checkForJobs() {
-    this.props.getJobs()
-    if (this.state.movie_panel_job_ids.length) {
-      for (let index in this.props.jobs) {
-        const job = this.props.jobs[index]
-        if (this.state.movie_panel_job_ids.includes(job['id'])) {
-          if (job['status'] === 'success') {
-            this.props.loadJobResults(job['id'])
-            if (job['operation'] === 'split_and_hash_movie') {
-              this.setMessage('movie split completed')
-              this.props.cancelJob(job)
-            } else if (job['operation'] === 'redact') {
-              this.setMessage('redactions completed')
-              this.props.loadJobResults(job['id'])
-              // TODO supposed to cancel the job too, but it's happening too early
-              //   try using the method below, I got the callback working on loadJobResults
-              //   sometime after this problem appeared
-            } else if (job['operation'] === 'scan_template') {
-              function cancelTheJob() {
-                this.props.cancelJob(job)
-                this.setMessage('template match completed')
-              }
-              let boundCancelTheJob=cancelTheJob.bind(this)
-              this.props.loadJobResults(job['id'], boundCancelTheJob)
-            }
-          }
-        }
-      }
-      setTimeout(this.checkForJobs, 2000 );
-    }
-  }
-
-  afterJobSubmitted(responseJson) {
-    let deepCopyJobIds= JSON.parse(JSON.stringify(this.state.movie_panel_job_ids))
-    this.setMessage('job was submitted')
-    deepCopyJobIds.push(responseJson['job_id'])
-    this.setState({
-      movie_panel_job_ids: deepCopyJobIds,
-    })
-    setTimeout(this.checkForJobs, 1000);
-  }
 
   buildTemplateMatchJobdata(extra_data) {
     let job_data = {
@@ -137,20 +92,30 @@ class MoviePanel extends React.Component {
   submitMovieJob(job_string, extra_data = '') {
     if (job_string === 'split_and_hash_video') {
       const job_data = this.buildSplitAndHashJobData(extra_data)
-      this.props.submitJob(job_data, this.afterJobSubmitted)
+      function afterLoaded() {
+        this.setMessage('movie split completed')
+      }
+      let boundAfterLoaded=afterLoaded.bind(this)
+      this.props.submitJob(job_data, this.setMessage('job was submitted'), true, boundAfterLoaded)
     } else if (job_string === 'redact_framesets') {
       const job_data = this.buildRedactFramesetsJobData(extra_data)
-      this.props.submitJob(job_data, this.afterJobSubmitted)
+      function afterLoaded() {
+        this.setMessage('frameset redactions completed')
+      }
+      let boundAfterLoaded=afterLoaded.bind(this)
+      // deleting chained jobs is a little buggy, needs clean up
+      // for now we'll clean up manually from the insights panel
+      this.props.submitJob(job_data, this.setMessage('job was submitted'), false, boundAfterLoaded)
     } else if (job_string === 'template_match') {
       const job_data = this.buildTemplateMatchJobdata(extra_data)
-      this.props.submitJob(job_data, this.afterJobSubmitted)
+      function afterLoaded() {
+        this.setMessage('template match completed')
+      }
+      let boundAfterLoaded=afterLoaded.bind(this)
+      this.props.submitJob(job_data, this.setMessage('job was submitted'), true, boundAfterLoaded)
     } else if (job_string === 'movie_panel_redact_and_reassemble_video') {
       console.log('redact and reassemble called - NOT SUPPORTED YET')
     }
-  }
-
-  componentDidMount() {
-    this.checkForJobs()
   }
 
   setMessage(the_message) {
