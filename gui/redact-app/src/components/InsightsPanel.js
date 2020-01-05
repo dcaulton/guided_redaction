@@ -43,7 +43,6 @@ class InsightsPanel extends React.Component {
     this.handleSetMode=this.handleSetMode.bind(this)
     this.clearCurrentTemplateAnchor=this.clearCurrentTemplateAnchor.bind(this)
     this.clearCurrentTemplateMaskZones=this.clearCurrentTemplateMaskZones.bind(this)
-    this.scanTemplate=this.scanTemplate.bind(this)
     this.getTemplateMatches=this.getTemplateMatches.bind(this)
     this.clearTemplateMatches=this.clearTemplateMatches.bind(this)
     this.clearSelectedAreas=this.clearSelectedAreas.bind(this)
@@ -328,31 +327,6 @@ class InsightsPanel extends React.Component {
       return (cur_template_anchor_image_name === this.state.insights_image)
     }
     return false
-  }
-
-  scanTemplate(scope) {
-    if (scope === 'all_movies') {
-      this.props.callTemplateScanner(
-        this.props.current_template_id, 
-        this.state.insights_image, 
-        this.props.movies
-      )
-    } else if (scope === 'movie') {
-      const the_movie = this.props.movies[this.props.movie_url]
-      const wrap = {}
-      wrap[this.props.movie_url] = the_movie
-      this.props.callTemplateScanner(
-        this.props.current_template_id, 
-        this.state.insights_image, wrap
-      )
-    } else if (scope === 'image') {
-      this.props.callTemplateScanner(
-        this.props.current_template_id, 
-        this.state.insights_image, 
-        [], 
-        this.props.insights_image
-      )
-    }
   }
 
   getMovieMatchesFound(movie_url) {
@@ -972,7 +946,6 @@ class InsightsPanel extends React.Component {
             clearCurrentTemplateAnchor={this.clearCurrentTemplateAnchor}
             clearCurrentTemplateMaskZones={this.clearCurrentTemplateMaskZones}
             getCurrentTemplateAnchorNames={this.getCurrentTemplateAnchorNames}
-            scanTemplate={this.scanTemplate}
             clearTemplateMatches={this.clearTemplateMatches}
             clearSelectedAreas={this.clearSelectedAreas}
             clearMovieSelectedAreas={this.props.clearMovieSelectedAreas}

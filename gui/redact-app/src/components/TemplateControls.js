@@ -340,29 +340,14 @@ class TemplateControls extends React.Component {
         </button>
         <div className='dropdown-menu' aria-labelledby='scanTemplateDropdownButton'>
           <button className='dropdown-item'
-              onClick={() => this.props.scanTemplate('image')}
-          >
-            Image
-          </button>
-          <button className='dropdown-item'
-              onClick={() => this.props.scanTemplate('movie')}
-          >
-            Movie 
-          </button>
-          <button className='dropdown-item'
-              onClick={() => this.props.scanTemplate('all_movies')}
-          >
-            All Movies
-          </button>
-          <button className='dropdown-item'
               onClick={() => this.props.submitInsightsJob('current_template_current_movie')}
           >
-            Movie as Job
+            Movie
           </button>
           <button className='dropdown-item'
               onClick={() => this.props.submitInsightsJob('current_template_all_movies')}
           >
-            All Movies as Job
+            All Movies
           </button>
     {movie_set_keys.map((value, index) => {
       return (

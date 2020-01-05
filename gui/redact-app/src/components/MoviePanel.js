@@ -25,6 +25,7 @@ class MoviePanel extends React.Component {
     this.afterJobSubmitted=this.afterJobSubmitted.bind(this)
   }
 
+  
   checkForJobs() {
     this.props.getJobs()
     if (this.state.movie_panel_job_ids.length) {
@@ -40,10 +41,15 @@ class MoviePanel extends React.Component {
               this.setMessage('redactions completed')
               this.props.loadJobResults(job['id'])
               // TODO supposed to cancel the job too, but it's happening too early
-            } else if (job['operation'] === 'redact') {
-              this.setMessage('template match completed')
-              this.props.loadJobResults(job['id'])
-              this.props.cancelJob(job)
+              //   try using the method below, I got the callback working on loadJobResults
+              //   sometime after this problem appeared
+            } else if (job['operation'] === 'scan_template') {
+              function cancelTheJob() {
+                this.props.cancelJob(job)
+                this.setMessage('template match completed')
+              }
+              let boundCancelTheJob=cancelTheJob.bind(this)
+              this.props.loadJobResults(job['id'], boundCancelTheJob)
             }
           }
         }

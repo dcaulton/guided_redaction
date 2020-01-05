@@ -30,7 +30,6 @@ class BottomInsightsControls extends React.Component {
           handleSetMode={this.props.handleSetMode}
           clearCurrentTemplateAnchor={this.props.clearCurrentTemplateAnchor}
           clearCurrentTemplateMaskZones={this.props.clearCurrentTemplateMaskZones}
-          scanTemplate={this.props.scanTemplate}
           submitInsightsJob={this.props.submitInsightsJob}
           clearTemplateMatches={this.props.clearTemplateMatches}
           templates={this.props.templates}
