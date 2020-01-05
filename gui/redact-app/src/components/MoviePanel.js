@@ -388,6 +388,8 @@ class MoviePanel extends React.Component {
               message={this.state.message}
               submitMovieJob={this.submitMovieJob}
               movie_url={this.props.movie_url}
+              templates={this.props.templates}
+              runTemplates={this.props.runTemplates}
             />
           </div>
 
@@ -400,8 +402,6 @@ class MoviePanel extends React.Component {
             setMessage={this.setMessage}
             setFramesetDiscriminator={this.props.setFramesetDiscriminator}
             getRedactedMovieUrl={this.props.getRedactedMovieUrl}
-            templates={this.props.templates}
-            runTemplates={this.props.runTemplates}
             setMaskMethod={this.props.setMaskMethod}
             submitMovieJob={this.submitMovieJob}
           />
@@ -494,38 +494,6 @@ class MoviePanelAdvancedControls extends React.Component {
     )
   }
 
-  buildTemplateButton() {
-    const template_keys = Object.keys(this.props.templates)
-    if (!template_keys.length) {
-      return ''
-    }
-    return (
-      <div id='template_div' className='d-inline'>
-        <button className='btn btn-primary dropdown-toggle ml-2' type='button' id='templateDropdownButton'
-            data-toggle='dropdown' aria-haspopup='true' aria-expanded='false'>
-          Template
-        </button>
-        <div className='dropdown-menu' aria-labelledby='tempateDropdownButton'>
-          <button className='dropdown-item'
-              onClick={() => this.props.submitMovieJob('template_match', 'all')}
-              href='.'>
-            Run all
-          </button>
-          {template_keys.map((value, index) => {
-            return (
-              <button className='dropdown-item'
-                  key={index}
-                  onClick={() => this.props.submitMovieJob('template_match', this.props.templates[value]['id'])}
-                  href='.'>
-                Run {this.props.templates[value]['name']}
-              </button>
-            )
-          })}
-        </div>
-      </div>
-    )
-  }
-
   render() {
     let frameset_discriminator = ''
     let runtime = '0:00'
@@ -534,7 +502,6 @@ class MoviePanelAdvancedControls extends React.Component {
     let redacted = 'No'
     let frame_dimensions = 'unknown'
     let templates_string = this.buildTemplatesString()
-    let templates_button = this.buildTemplateButton()
     const redacted_movie_dl_link = this.buildRedactedMovieDownloadLink()
 
     const fd_dropdown = this.buildFramesetDiscriminatorDropdown()
@@ -614,11 +581,6 @@ class MoviePanelAdvancedControls extends React.Component {
                 <span>set frameset discriminator</span>
                 {fd_dropdown}
               </div>
-              <div 
-                className='mt-2'
-              >
-                {templates_button}
-              </div>
 
               <div>
                 <span>set mask method</span>
@@ -646,7 +608,40 @@ class MoviePanelAdvancedControls extends React.Component {
 }
 
 class MoviePanelHeader extends React.Component {
+   buildTemplateButton() {
+    const template_keys = Object.keys(this.props.templates)
+    if (!template_keys.length) {
+      return ''
+    }
+    return (
+      <div id='template_div' className='d-inline'>
+        <button className='btn btn-primary dropdown-toggle ml-2' type='button' id='templateDropdownButton'
+            data-toggle='dropdown' aria-haspopup='true' aria-expanded='false'>
+          Template
+        </button>
+        <div className='dropdown-menu' aria-labelledby='tempateDropdownButton'>
+          <button className='dropdown-item'
+              onClick={() => this.props.submitMovieJob('template_match', 'all')}
+              href='.'>
+            Run all
+          </button>
+          {template_keys.map((value, index) => {
+            return (
+              <button className='dropdown-item ml-2'
+                  key={index}
+                  onClick={() => this.props.submitMovieJob('template_match', this.props.templates[value]['id'])}
+                  href='.'>
+                Run {this.props.templates[value]['name']}
+              </button>
+            )
+          })}
+        </div>
+      </div>
+    )
+  }
+
   render() {
+    let templates_button = this.buildTemplateButton()
     return (
       <div>
         <div className='row m-2'>
@@ -666,6 +661,8 @@ class MoviePanelHeader extends React.Component {
           >
             Redact & Reassemble Video
           </button>
+
+          {templates_button}
 
           <button 
               id='parse_video_button'

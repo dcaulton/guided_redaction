@@ -1,38 +1,6 @@
 import React from 'react';
 
 class TopImageControls extends React.Component {
-  buildTemplateButton() {
-    const template_keys = Object.keys(this.props.templates)
-    if (!template_keys.length) {
-      return ''
-    }
-    return (
-      <div id='template_div' className='d-inline'>
-        <button className='btn btn-primary dropdown-toggle ml-2' type='button' id='templateDropdownButton'
-            data-toggle='dropdown' aria-haspopup='true' aria-expanded='false'>
-          Template
-        </button>
-        <div className='dropdown-menu' aria-labelledby='tempateDropdownButton'>
-          <button className='dropdown-item' 
-              onClick={() => this.props.runTemplates('all', 'current_image')}
-              href='.'>
-            Run all
-          </button>
-          {template_keys.map((value, index) => {
-            return (
-              <button className='dropdown-item' 
-                  key={index}
-                  onClick={() => this.props.runTemplates(this.props.templates[value]['id'], 'current_image')}
-                  href='.'>
-                Run {this.props.templates[value]['name']}
-              </button>
-            )
-          })}
-        </div>
-      </div>
-    )
-  }
-
   doClearRedaction() {
     this.props.clearCurrentFramesetRedactions(this.props.setMessage('image redactions reset'))
   }
@@ -48,6 +16,38 @@ class TopImageControls extends React.Component {
         </button>
       )
     }
+  }
+
+  buildTemplateButton() {
+    const template_keys = Object.keys(this.props.templates)
+    if (!template_keys.length) {
+      return ''
+    }
+    return (
+      <div id='template_div' className='d-inline'>
+        <button className='btn btn-primary dropdown-toggle ml-2' type='button' id='templateDropdownButton'
+            data-toggle='dropdown' aria-haspopup='true' aria-expanded='false'>
+          Template
+        </button>
+        <div className='dropdown-menu' aria-labelledby='tempateDropdownButton'>
+          <button className='dropdown-item'
+              onClick={() => this.props.submitMovieJob('template_match', 'all')}
+              href='.'>
+            Run all
+          </button>
+          {template_keys.map((value, index) => {
+            return (
+              <button className='dropdown-item'
+                  key={index}
+                  onClick={() => this.props.submitMovieJob('template_match', this.props.templates[value]['id'])}
+                  href='.'>
+                Run {this.props.templates[value]['name']}
+              </button>
+            )
+          })}
+        </div>
+      </div>
+    )
   }
 
   render() {
