@@ -87,10 +87,8 @@ class ParseViewSetSplitMovie(viewsets.ViewSet):
             return self.error("movie_url or sykes_dev_azure_movie_uuid is required")
         if request.data.get('movie_url'):
             movie_url = request.data.get("movie_url")
-            print('dada movie url is ', movie_url)
         elif request.data.get('sykes_dev_azure_movie_uuid'):
             the_uuid = request.data.get('sykes_dev_azure_movie_uuid')
-            print('the uuid is '+ the_uuid)
             movie_url = self.get_movie_url_from_sykes_dev(the_uuid, fw)
         if not movie_url:
             return self.error("couldn't read movie data", status_code=422)
@@ -274,13 +272,32 @@ class ParseViewSetMakeUrl(viewsets.ViewSet):
 
 class ParseViewSetZipMovie(viewsets.ViewSet):
     def create(self, request):
-        if not request.data.get("image_urls"):
-            return self.error("image_urls is required")
-        if not request.data.get("movie_name"):
-            return self.error("movie_name is required")
-        image_urls = request.data["image_urls"]
-        movie_name = request.data["movie_name"]
-        print("saving to "+ movie_name)
+        resp_data = self.process_create_request(request.data)
+        movie_frame_dims = self.get_movie_frame_dimensions(resp_data['response_data']['frames'])
+        if resp_data['errors_400']:
+            return self.error(resp_data['errors_400'], status_code=400)
+        if resp_data['errors_422']:
+            return self.error(resp_data['errors_422'], status_code=422)
+        resp_payload = {
+            "movie_url": resp_data['response_data']['movie_url'],
+        }
+        return Response(resp_payload)
+
+    def process_create_request(self, request_data):
+        return_data = {
+            'errors_400': [],
+            'errors_422': [],
+            'response_data': None,
+        }
+        if not request_data.get("image_urls"):
+            return_data['errors_400'].append("image_urls is required")
+        if not request_data.get("movie_name"):
+            return_data['errors_400'].append("movie_name is required")
+        if return_data['errors_400']:
+            return return_data
+        image_urls = request_data["image_urls"]
+        movie_name = request_data["movie_name"]
+
         the_connection_string = ""
         if settings.REDACT_IMAGE_STORAGE == "mysql":
             the_base_url = request.build_absolute_uri(settings.REDACT_MYSQL_BASE_URL)
@@ -305,12 +322,13 @@ class ParseViewSetZipMovie(viewsets.ViewSet):
                 "image_request_verify_headers": settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
             }
         )
+
         output_url = parser.zip_movie(image_urls, movie_name)
-        print("output url is "+ output_url)
-        wrap = {
+
+        return_data['response_data'] = {
             "movie_url": output_url,
         }
-        return Response(wrap)
+        return return_data
 
 
 class ParseViewSetPing(viewsets.ViewSet):
@@ -318,6 +336,7 @@ class ParseViewSetPing(viewsets.ViewSet):
         return Response({"response": "pong"})
 
 class ParseViewSetCropImage(viewsets.ViewSet):
+
     def create(self, request):
         if not request.data.get("image_url"):
             return self.error("image_url is required")

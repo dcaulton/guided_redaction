@@ -12,12 +12,9 @@ class MoviePanel extends React.Component {
     }
     this.getNameFor=this.getNameFor.bind(this)
     this.redactFramesetCallback=this.redactFramesetCallback.bind(this)
-    this.callReassembleVideo=this.callReassembleVideo.bind(this)
     this.setDraggedId=this.setDraggedId.bind(this)
     this.setZoomImageUrl=this.setZoomImageUrl.bind(this)
     this.handleDroppedFrameset=this.handleDroppedFrameset.bind(this)
-    this.afterFrameRedaction=this.afterFrameRedaction.bind(this)
-    this.movieZipCompleted=this.movieZipCompleted.bind(this)
     this.setMessage=this.setMessage.bind(this)
     this.submitMovieJob=this.submitMovieJob.bind(this)
   }
@@ -77,6 +74,29 @@ class MoviePanel extends React.Component {
     return job_data
   }
 
+  buildZipMovieJobdata() {
+    let job_data = {
+      request_data: {},
+    }
+    let image_urls = []
+    let movie = this.props.movies[this.props.movie_url]
+    for (let i=0; i < movie['frames'].length; i++) {
+      const frame_image = movie['frames'][i]
+      const frameset_hash = this.props.getFramesetHashForImageUrl(frame_image)
+      if (Object.keys(movie['framesets'][frameset_hash]).includes('redacted_image')) {
+        image_urls.push(movie['framesets'][frameset_hash]['redacted_image'])
+      } else {
+        image_urls.push(frame_image)
+      }
+    }
+    job_data['app'] = 'parse'
+    job_data['operation'] = 'zip_movie'
+    job_data['description'] = 'zip movie: ' + this.props.movie_url
+    job_data['request_data']['movie_name'] = this.props.getRedactedMovieFilename()
+    job_data['request_data']['image_urls'] = image_urls
+    return job_data
+  }
+
   buildSplitAndHashJobData(extra_data) {
     let job_data = {
       request_data: {},
@@ -96,7 +116,7 @@ class MoviePanel extends React.Component {
         this.setMessage('movie split completed')
       }
       let boundAfterLoaded=afterLoaded.bind(this)
-      this.props.submitJob(job_data, this.setMessage('job was submitted'), true, boundAfterLoaded)
+      this.props.submitJob(job_data, this.setMessage('movie split job was submitted'), true, boundAfterLoaded)
     } else if (job_string === 'redact_framesets') {
       const job_data = this.buildRedactFramesetsJobData(extra_data)
       function afterLoaded() {
@@ -105,14 +125,21 @@ class MoviePanel extends React.Component {
       let boundAfterLoaded=afterLoaded.bind(this)
       // deleting chained jobs is a little buggy, needs clean up
       // for now we'll clean up manually from the insights panel
-      this.props.submitJob(job_data, this.setMessage('job was submitted'), false, boundAfterLoaded)
+      this.props.submitJob(job_data, this.setMessage('redact frames job was submitted'), false, boundAfterLoaded)
     } else if (job_string === 'template_match') {
       const job_data = this.buildTemplateMatchJobdata(extra_data)
       function afterLoaded() {
         this.setMessage('template match completed')
       }
       let boundAfterLoaded=afterLoaded.bind(this)
-      this.props.submitJob(job_data, this.setMessage('job was submitted'), true, boundAfterLoaded)
+      this.props.submitJob(job_data, this.setMessage('template match job was submitted'), true, boundAfterLoaded)
+    } else if (job_string === 'zip_movie') {
+      const job_data = this.buildZipMovieJobdata(extra_data)
+      function afterLoaded() {
+        this.setMessage('movie zip completed')
+      }
+      let boundAfterLoaded=afterLoaded.bind(this)
+      this.props.submitJob(job_data, this.setMessage('zip movie job was submitted'), true, boundAfterLoaded)
     } else if (job_string === 'movie_panel_redact_and_reassemble_video') {
       console.log('redact and reassemble called - NOT SUPPORTED YET')
     }
@@ -134,50 +161,6 @@ class MoviePanel extends React.Component {
     this.props.handleMergeFramesets(target_id, this.state.draggedId)
   }
 
-  afterFrameRedaction() {
-    if (this.allFramesHaveBeenRedacted()) {
-      this.zipUpRedactedImages()
-    }
-  }
-
-  allFramesHaveBeenRedacted() {
-    const framesets = this.props.getCurrentFramesets()
-    const keys = Object.keys(framesets)
-    for (let i=0; i < keys.length; i++) {
-      const key = keys[i]
-      if (framesets[key]['areas_to_redact']) {
-        if (framesets[key]['areas_to_redact'].length > 0) {
-          if (!framesets[key]['redacted_image']) {
-            return false
-          }
-        }
-      }
-    }
-    return true
-  }
-
-  zipUpRedactedImages() {
-    const framesets = this.props.getCurrentFramesets()
-    let movie_frame_urls = []
-    const frames = this.props.getCurrentFrames()
-    for (let i=0; i < frames.length; i++) {
-      let image_url = frames[i]
-      let the_hash = this.props.getFramesetHashForImageUrl(image_url)
-      let the_frameset = framesets[the_hash]
-      if (('areas_to_redact' in the_frameset) && the_frameset['areas_to_redact'].length > 0) {
-        movie_frame_urls.push(the_frameset['redacted_image'])
-      } else {
-        movie_frame_urls.push(image_url)
-      }
-    }
-    this.setMessage('reassembling frames')
-    this.props.callMovieZip(movie_frame_urls, this.movieZipCompleted)
-  }
-
-  movieZipCompleted() {
-    this.setMessage('movie reassembly completed')
-  }
-
   redactFramesetCallback = (frameset_hash) => {
     let first_image_url = this.props.getCurrentFramesets()[frameset_hash]['images'][0]
     this.props.setImageUrlCallback(first_image_url)
@@ -192,26 +175,6 @@ class MoviePanel extends React.Component {
         return true
     }
     return false
-  }
-
-  callReassembleVideo() {
-    this.setMessage('calling movie reassembler')
-    this.props.setMovieRedactedUrl('')
-    let frameset_keys = Object.keys(this.props.getCurrentFramesets())
-    for (let i=0; i < frameset_keys.length; i++) {
-      let pass_arr = []
-      let hash_key = frameset_keys[i]
-      const areas_to_redact = this.props.getRedactionFromFrameset(hash_key)
-      if (areas_to_redact.length > 0) {
-        const framesets = this.props.getCurrentFramesets()
-        let first_image_url = framesets[hash_key]['images'][0]
-        for (let i=0; i < framesets[hash_key]['areas_to_redact'].length; i++) {                            
-          let a2r = framesets[hash_key]['areas_to_redact'][i]
-          pass_arr.push([a2r['start'], a2r['end']])
-        }  
-        this.props.callRedact(pass_arr, first_image_url, this.afterFrameRedaction)
-      } 
-    }
   }
 
   getNameFor(image_name) {
@@ -355,7 +318,6 @@ class MoviePanel extends React.Component {
           <div id='video_meta_div' className='col-md-12'>
             <MoviePanelHeader
               callMovieSplit={this.callMovieSplit}
-              callReassembleVideo={this.callReassembleVideo}
               message={this.state.message}
               submitMovieJob={this.submitMovieJob}
               movie_url={this.props.movie_url}
@@ -625,14 +587,6 @@ class MoviePanelHeader extends React.Component {
             Split Video
           </button>
 
-          <button 
-              id='reassemble_video_button'
-              className='btn btn-primary ml-2' 
-              onClick={() => this.props.callReassembleVideo()}
-          >
-            Redact & Reassemble Video
-          </button>
-
           {templates_button}
 
           <button 
@@ -642,6 +596,15 @@ class MoviePanelHeader extends React.Component {
           >
             Redact All Frames
           </button>
+
+          <button 
+              id='reassemble_video_button'
+              className='btn btn-primary ml-2' 
+              onClick={() => this.props.submitMovieJob('zip_movie')}
+          >
+            Reassemble Video
+          </button>
+
         </div>
         <div className='row'>
           <div 
@@ -651,7 +614,7 @@ class MoviePanelHeader extends React.Component {
             {this.props.message}
           </div>
         </div>
-        </div>
+      </div>
     )
   }
 }

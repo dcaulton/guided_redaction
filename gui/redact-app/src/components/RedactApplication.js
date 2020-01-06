@@ -36,7 +36,7 @@ class RedactApplication extends React.Component {
       redact_url: api_server_url + 'v1/redact/redact-image',
       crop_url: api_server_url + 'v1/parse/crop-image',
       parse_movie_url: api_server_url + 'v1/parse/split-and-hash-movie',
-      zip_movie_url: api_server_url + 'v1/parse/zip-movie',
+//      zip_movie_url: api_server_url + 'v1/parse/zip-movie',
       get_images_for_uuid_url: api_server_url + 'v1/parse/get-images-for-uuid',
       jobs_url: api_server_url + 'v1/jobs',
       workbooks_url: api_server_url + 'v1/workbooks/',
@@ -71,12 +71,12 @@ class RedactApplication extends React.Component {
       }
     }
 
+    this.getRedactedMovieFilename=this.getRedactedMovieFilename.bind(this)
     this.getNextImageLink=this.getNextImageLink.bind(this)
     this.getPrevImageLink=this.getPrevImageLink.bind(this)
     this.handleMergeFramesets=this.handleMergeFramesets.bind(this)
     this.callOcr=this.callOcr.bind(this)
     this.callRedact=this.callRedact.bind(this)
-    this.callMovieZip=this.callMovieZip.bind(this)
     this.setTemplateMatches=this.setTemplateMatches.bind(this)
     this.clearTemplateMatches=this.clearTemplateMatches.bind(this)
     this.setSelectedArea=this.setSelectedArea.bind(this)
@@ -550,36 +550,36 @@ class RedactApplication extends React.Component {
     return new_filename
   }
 
-  async callMovieZip(the_urls, when_done) {
-    document.getElementById('movieparser_status').innerHTML = 'calling movie zipper'
-    let new_movie_name = this.getRedactedMovieFilename()
-    await fetch(this.state.zip_movie_url, {
-      method: 'POST',
-      headers: this.buildJsonHeaders(),
-      body: JSON.stringify({
-        image_urls: the_urls,
-        movie_name: new_movie_name,
-      }),
-    })
-    .then((response) => response.json())
-    .then((responseJson) => {
-      const movie_url = responseJson['movie_url']
-      const deepCopyMovies= JSON.parse(JSON.stringify(this.state.movies))
-      let movie = deepCopyMovies[this.state.movie_url]
-      movie['redacted_movie_url'] = movie_url
-      deepCopyMovies[this.state.movie_url] = movie
-      this.setState({
-        movies: deepCopyMovies,
-      })
-    })
-    .then(() => {
-      when_done()
-    })
-    .catch((error) => {
-      console.error(error);
-    });
-  } 
-
+//  async callMovieZip(the_urls, when_done) {
+//    document.getElementById('movieparser_status').innerHTML = 'calling movie zipper'
+//    let new_movie_name = this.getRedactedMovieFilename()
+//    await fetch(this.state.zip_movie_url, {
+//      method: 'POST',
+//      headers: this.buildJsonHeaders(),
+//      body: JSON.stringify({
+//        image_urls: the_urls,
+//        movie_name: new_movie_name,
+//      }),
+//    })
+//    .then((response) => response.json())
+//    .then((responseJson) => {
+//      const movie_url = responseJson['movie_url']
+//      const deepCopyMovies= JSON.parse(JSON.stringify(this.state.movies))
+//      let movie = deepCopyMovies[this.state.movie_url]
+//      movie['redacted_movie_url'] = movie_url
+//      deepCopyMovies[this.state.movie_url] = movie
+//      this.setState({
+//        movies: deepCopyMovies,
+//      })
+//    })
+//    .then(() => {
+//      when_done()
+//    })
+//    .catch((error) => {
+//      console.error(error);
+//    });
+//  } 
+//
   async doFloodFill(x_scaled, y_scaled, insights_image, selected_areas, cur_hash, selected_area_meta_id) {
     await fetch(this.state.flood_fill_url, {                                      
       method: 'POST',                                                           
@@ -781,6 +781,12 @@ class RedactApplication extends React.Component {
     }
   }
 
+  async loadZipMovieResults(job, when_done=(()=>{})) {
+    const response_data = JSON.parse(job.response_data)
+    const the_url = response_data.movie_url
+    this.setMovieRedactedUrl(the_url) 
+  }
+
   async loadJobResults(job_id, when_done=(()=>{})) {
     let job_url = this.state.jobs_url + '//' + job_id
     await fetch(job_url, {
@@ -793,10 +799,11 @@ class RedactApplication extends React.Component {
 			if (job.app === 'analyze' && job.operation === 'scan_template') {
         this.loadScanTemplateResults(job, when_done)
 			} else if (job.app === 'parse' && job.operation === 'split_and_hash_movie') {
-//        this.loadSplitAndHashResults(job)
         this.loadSplitAndHashResults(job, when_done)
 			} else if (job.app === 'redact' && job.operation === 'redact') {
         this.loadRedactResults(job, when_done)
+			} else if (job.app === 'parse' && job.operation === 'zip_movie') {
+        this.loadZipMovieResults(job, when_done)
       }
     })
     .catch((error) => {
@@ -1285,7 +1292,7 @@ class RedactApplication extends React.Component {
                 setImageUrlCallback={this.handleSetImageUrl}
                 getRedactionFromFrameset={this.getRedactionFromFrameset}
                 getRedactedImageFromFrameset={this.getRedactedImageFromFrameset}
-                callMovieZip={this.callMovieZip}
+                getRedactedMovieFilename={this.getRedactedMovieFilename}
                 getFramesetHashForImageUrl={this.getFramesetHashForImageUrl}
                 callRedact={this.callRedact}
                 handleMergeFramesets={this.handleMergeFramesets}

@@ -25,5 +25,7 @@ Has a GUI to facilitate day to day redaction tasks as well as research.
 -- locally for me that's rabbit mq.  then `rabbitmq-server` 
 - start celery
 -- load virtualenv, cd to guided_redaction/api, then `celery -A server.celery worker  --loglevel=info`
+-- IF RUNNING ON MAC, you need this to make zip_movie work, possibly also on linux systems:
+     `export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES`
 - make sure images are being served up as urls
 -- for my default home setup, that's nginx on port 8080.  then `sudo nginx` 

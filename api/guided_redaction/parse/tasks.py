@@ -2,7 +2,7 @@ from celery import shared_task
 import os
 import json                                                                     
 from guided_redaction.jobs.models import Job                                    
-from guided_redaction.parse.api import ParseViewSetSplitAndHashMovie
+from guided_redaction.parse.api import ParseViewSetSplitAndHashMovie, ParseViewSetZipMovie
 
 
 @shared_task
@@ -39,3 +39,26 @@ def get_file_uuid_from_response(response_dict):
         (y_part, uuid_part) = os.path.split(x_part)
         if uuid_part and len(uuid_part) == 36:
             return uuid_part
+@shared_task
+def zip_movie(job_uuid):
+    job = Job.objects.get(pk=job_uuid)
+    if job:
+        job.status = 'running'
+        job.save()
+        request_data = json.loads(job.request_data)
+        print('zipping movie for job ', job_uuid)
+        pvszm = ParseViewSetZipMovie()
+        response_data = pvszm.process_create_request(request_data)
+        if response_data['errors_400']:
+            job.status = 'failed'
+            job.response_data = json.dumps(response_data['errors_400'])
+        elif response_data['errors_422']:
+            job.status = 'failed'
+            job.response_data = json.dumps(response_data['errors_422'])
+        else:
+            job.response_data = json.dumps(response_data['response_data'])
+            job.status = 'success'
+        job.save()
+    else:
+        print('calling zip_movie on nonexistent job: '+ job_uuid) 
+
