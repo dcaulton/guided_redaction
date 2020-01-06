@@ -322,7 +322,6 @@ class MoviePanel extends React.Component {
               submitMovieJob={this.submitMovieJob}
               movie_url={this.props.movie_url}
               templates={this.props.templates}
-              runTemplates={this.props.runTemplates}
             />
           </div>
 

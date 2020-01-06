@@ -31,7 +31,7 @@ class TopImageControls extends React.Component {
         </button>
         <div className='dropdown-menu' aria-labelledby='tempateDropdownButton'>
           <button className='dropdown-item'
-              onClick={() => this.props.submitMovieJob('template_match', 'all')}
+              onClick={() => this.props.submitImageJob('template_match', 'all')}
               href='.'>
             Run all
           </button>
@@ -39,7 +39,7 @@ class TopImageControls extends React.Component {
             return (
               <button className='dropdown-item'
                   key={index}
-                  onClick={() => this.props.submitMovieJob('template_match', this.props.templates[value]['id'])}
+                  onClick={() => this.props.submitImageJob('template_match', this.props.templates[value]['id'])}
                   href='.'>
                 Run {this.props.templates[value]['name']}
               </button>

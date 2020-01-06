@@ -17,6 +17,53 @@ class ImagePanel extends React.Component {
     this.setOcrDoneMessage=this.setOcrDoneMessage.bind(this)
     this.setMessage=this.setMessage.bind(this)
     this.redactImage=this.redactImage.bind(this)
+    this.submitImageJob=this.submitImageJob.bind(this)
+  }
+
+  submitImageJob(job_string, extra_data = '') {                                                                         
+    if (job_string === 'template_match') {                                                                       
+      const job_data = this.buildTemplateMatchJobdata(extra_data)                                                       
+      function afterLoaded() {                                                                                          
+        this.setMessage('template match completed')                                                                     
+      }                                                                                                                 
+      let boundAfterLoaded=afterLoaded.bind(this)                                                                       
+      this.props.submitJob(job_data, this.setMessage('template match job was submitted'), true, boundAfterLoaded)       
+    } 
+  }  
+
+  buildTemplateMatchJobdata(extra_data) {
+    let job_data = {
+      request_data: {},
+    }
+    job_data['app'] = 'analyze'
+    job_data['operation'] = 'scan_template'
+    job_data['description'] = 'single template single image match'
+    if (extra_data === 'all') {
+      console.log("gotta implement all templates soon, aborting for now")
+      return
+    }
+    let template = this.props.templates[extra_data]
+    job_data['request_data']['template'] = template
+    job_data['request_data']['source_image_url'] = template['anchors'][0]['image']
+    job_data['request_data']['template_id'] = template['id']
+    const wrap = {}
+
+    const fake_movie = this.buildCustomOneImageMovie()
+    wrap[this.props.movie_url] = fake_movie
+    job_data['request_data']['target_movies'] = wrap
+
+    return job_data
+  }
+
+  buildCustomOneImageMovie() {
+    const frameset_hash = this.props.getFramesetHashForImageUrl(this.props.image_url)
+    let newMovie = {
+      framesets: {},
+      frames: [],
+    }
+    newMovie['framesets'][frameset_hash] = this.props.movies[this.props.movie_url]['framesets'][frameset_hash]
+    newMovie['frames'].push(this.props.image_url)
+    return newMovie
   }
 
   setMessage(the_message)  {
@@ -243,11 +290,11 @@ class ImagePanel extends React.Component {
                 getRedactedImageUrl={this.props.getRedactedImageUrl}
                 setImageUrlCallback={this.props.setImageUrlCallback}
                 getImageAndHashDisplay={this.getImageAndHashDisplay}
-                runTemplates={this.props.runTemplates}
                 setMessage={this.setMessage}
                 clearCurrentFramesetRedactions={this.props.clearCurrentFramesetRedactions}
                 whenDoneTarget={this.props.whenDoneTarget}
                 gotoWhenDoneTarget={this.props.gotoWhenDoneTarget}
+                submitImageJob={this.submitImageJob}
               />
             </div>
           </div>

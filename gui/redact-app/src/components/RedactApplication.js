@@ -109,7 +109,6 @@ class RedactApplication extends React.Component {
     this.setFramesetDiscriminator=this.setFramesetDiscriminator.bind(this)
     this.setActiveMovie=this.setActiveMovie.bind(this)
     this.getRedactedMovieUrl=this.getRedactedMovieUrl.bind(this)
-    this.runTemplates=this.runTemplates.bind(this)
     this.clearCurrentFramesetRedactions=this.clearCurrentFramesetRedactions.bind(this)
     this.getRedactedImageUrl=this.getRedactedImageUrl.bind(this)
     this.getFramesetHashesInOrder=this.getFramesetHashesInOrder.bind(this)
@@ -122,10 +121,6 @@ class RedactApplication extends React.Component {
     this.checkForJobs=this.checkForJobs.bind(this)
   }
 
-  runTemplates(template_id, target) {
-  console.log('running '+template_id+' on '+target)
-
-  }
 
   getCurrentTemplateMatches() {
     return this.state.template_matches
@@ -1302,7 +1297,6 @@ class RedactApplication extends React.Component {
                 getRedactedMovieUrl={this.getRedactedMovieUrl}
                 setMovieRedactedUrl={this.setMovieRedactedUrl}
                 templates={this.state.templates}
-                runTemplates={this.runTemplates}
                 getFramesetHashesInOrder={this.getFramesetHashesInOrder}
                 getJobs={this.getJobs}
                 submitJob={this.submitJob}
@@ -1316,6 +1310,8 @@ class RedactApplication extends React.Component {
               <ImagePanel 
                 mask_method={this.state.mask_method}
                 image_url={this.state.image_url}
+                movies={this.state.movies}
+                movie_url = {this.state.movie_url}
                 getRedactedImageUrl={this.getRedactedImageUrl}
                 image_width={this.state.image_width}
                 image_height={this.state.image_height}
@@ -1332,10 +1328,10 @@ class RedactApplication extends React.Component {
                 callOcr={this.callOcr}
                 callRedact={this.callRedact}
                 templates={this.state.templates}
-                runTemplates={this.runTemplates}
                 clearCurrentFramesetRedactions={this.clearCurrentFramesetRedactions}
                 whenDoneTarget={this.state.whenDoneTarget}
                 gotoWhenDoneTarget={this.gotoWhenDoneTarget}
+                submitJob={this.submitJob}
               />
             </Route>
             <Route path='/redact/insights'>
