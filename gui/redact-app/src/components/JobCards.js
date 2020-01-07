@@ -110,17 +110,23 @@ class JobCard extends React.Component {
 
   buildJobHeader(job_data, job_body_id) {
     const jn_length = job_data['id'].length
-    let short_job_name = job_data['id']
+    let sjn = job_data['id']
     if (jn_length > 12) {
-      short_job_name = job_data['id'].substring(0, 2) + '...' + 
+      sjn = job_data['id'].substring(0, 2) + '...' + 
         job_data['id'].substring(jn_length-2)
     }
+    let short_job_name = (
+      <div className='col-md-7'>
+      {sjn}
+      </div>
+    )
 
     let style = {
       'fontSize': 'small',
       'padding': 0,
     }
     const exp_coll = (
+      <div className='col-md-2'>
       <button
           style={style}
           className='btn btn-link'
@@ -132,6 +138,7 @@ class JobCard extends React.Component {
       >
         +/-
       </button>
+      </div>
     )
 
 
@@ -139,7 +146,7 @@ class JobCard extends React.Component {
     if (this.props.job_data['status'] === 'running') {
       status_button = (
         <div
-          className='col float-right'
+          className='col-md-2 float-right'
         >
         <img
           src='../gr_assets/blue_dot.png'
@@ -151,7 +158,7 @@ class JobCard extends React.Component {
     } else if (this.props.job_data['status'] === 'success') {
       status_button = (
         <div
-          className='col float-right'
+          className='col-md-2 float-right'
         >
         <img
           src='../gr_assets/green_dot.png'
@@ -163,7 +170,7 @@ class JobCard extends React.Component {
     } else if (this.props.job_data['status'] === 'created') {
       status_button = (
         <div
-          className='col float-right'
+          className='col-md-2 float-right'
         >
         <img
           src='../gr_assets/teal_dot.png'
@@ -175,7 +182,7 @@ class JobCard extends React.Component {
     } else {
       status_button = (
         <div
-          className='col float-right'
+          className='col-md-2 float-right'
         >
         <img
           src='../gr_assets/red_dot.png'
@@ -188,7 +195,7 @@ class JobCard extends React.Component {
 
     const job_name_data = (
       <div
-          className='row ml-2'
+          className='row'
       >
         {short_job_name}
         {exp_coll}

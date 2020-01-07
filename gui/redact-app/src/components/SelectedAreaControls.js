@@ -42,7 +42,7 @@ class SelectedAreaControls extends React.Component {
                     data-toggle='collapse'
                     type='button'
                 >
-                  show/hide
+                  +/-
                 </button>
               </div>
               <div>
