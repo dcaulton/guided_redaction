@@ -7,6 +7,7 @@ import guided_redaction.parse.urls
 import guided_redaction.redact.urls
 import guided_redaction.jobs.urls
 import guided_redaction.workbooks.urls
+import guided_redaction.codes.urls
 
 router = get_router()
 

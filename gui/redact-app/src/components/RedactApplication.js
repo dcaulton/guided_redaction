@@ -36,7 +36,7 @@ class RedactApplication extends React.Component {
       redact_url: api_server_url + 'v1/redact/redact-image',
       crop_url: api_server_url + 'v1/parse/crop-image',
       parse_movie_url: api_server_url + 'v1/parse/split-and-hash-movie',
-//      zip_movie_url: api_server_url + 'v1/parse/zip-movie',
+      codes_url: api_server_url + 'v1/codes',
       get_images_for_uuid_url: api_server_url + 'v1/parse/get-images-for-uuid',
       jobs_url: api_server_url + 'v1/jobs',
       workbooks_url: api_server_url + 'v1/workbooks/',
