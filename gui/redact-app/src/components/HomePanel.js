@@ -13,7 +13,7 @@ class HomePanel extends React.Component {
           <div className='row'>
             <ImageMovieForm 
               setMovieUrlCallback = {this.props.setMovieUrlCallback}
-              setImageUrlCallback = {this.props.setImageUrlCallback}
+              setImageUrl={this.props.setImageUrl}
               showMovieParserLink = {this.props.showMovieParserLink}
             />
           </div>
@@ -75,7 +75,7 @@ class ImageMovieForm extends React.Component {
 
   setUrl(event) {
     if (this.state.image_or_movie === 'image') {
-      this.props.setImageUrlCallback(event.target.value)
+      this.props.setImageUrl(event.target.value)
     } else {
       this.props.setMovieUrlCallback(event.target.value)
     }

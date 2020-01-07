@@ -163,7 +163,7 @@ class MoviePanel extends React.Component {
 
   redactFramesetCallback = (frameset_hash) => {
     let first_image_url = this.props.getCurrentFramesets()[frameset_hash]['images'][0]
-    this.props.setImageUrlCallback(first_image_url)
+    this.props.setImageUrl(first_image_url)
     const link_to_next_page = document.getElementById('image_panel_link')
     link_to_next_page.click()
   }

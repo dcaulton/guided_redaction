@@ -371,7 +371,7 @@ class RedactApplication extends React.Component {
       movies: movies_obj,
       movie_url: 'new_movie_url',
     })
-    this.handleSetImageUrl(image_url_arr[0])
+    this.setImageUrl(image_url_arr[0])
   }
 
   setTemplates = (the_templates) => {
@@ -399,7 +399,9 @@ class RedactApplication extends React.Component {
     }
   }
 
-  setImageScale= (the_scale) => {
+  setImageScale= () => {
+    const the_scale = (document.getElementById('base_image_id').width /
+      document.getElementById('base_image_id').naturalWidth)
     this.setState({
       image_scale: the_scale,
     })
@@ -545,36 +547,6 @@ class RedactApplication extends React.Component {
     return new_filename
   }
 
-//  async callMovieZip(the_urls, when_done) {
-//    document.getElementById('movieparser_status').innerHTML = 'calling movie zipper'
-//    let new_movie_name = this.getRedactedMovieFilename()
-//    await fetch(this.state.zip_movie_url, {
-//      method: 'POST',
-//      headers: this.buildJsonHeaders(),
-//      body: JSON.stringify({
-//        image_urls: the_urls,
-//        movie_name: new_movie_name,
-//      }),
-//    })
-//    .then((response) => response.json())
-//    .then((responseJson) => {
-//      const movie_url = responseJson['movie_url']
-//      const deepCopyMovies= JSON.parse(JSON.stringify(this.state.movies))
-//      let movie = deepCopyMovies[this.state.movie_url]
-//      movie['redacted_movie_url'] = movie_url
-//      deepCopyMovies[this.state.movie_url] = movie
-//      this.setState({
-//        movies: deepCopyMovies,
-//      })
-//    })
-//    .then(() => {
-//      when_done()
-//    })
-//    .catch((error) => {
-//      console.error(error);
-//    });
-//  } 
-//
   async doFloodFill(x_scaled, y_scaled, insights_image, selected_areas, cur_hash, selected_area_meta_id) {
     await fetch(this.state.flood_fill_url, {                                      
       method: 'POST',                                                           
@@ -1022,7 +994,7 @@ class RedactApplication extends React.Component {
       this.loadWorkbook(vars['workbook_id'])
     }
     if (Object.keys(vars).includes('image_url')) {
-        this.handleSetImageUrl(vars['image_url'])
+        this.setImageUrl(vars['image_url'])
         document.getElementById('image_panel_link').click()
     } else if (Object.keys(vars).includes('movie_url')) {
         this.handleSetMovieUrl(vars['movie_url'])
@@ -1089,7 +1061,7 @@ class RedactApplication extends React.Component {
     return 999  // don't expect to ever get here
   }
 
-  handleSetImageUrl = (the_url) => {
+  setImageUrl = (the_url) => {
     let frameset_hash = this.getFramesetHashForImageUrl(the_url)
     if (!frameset_hash) {
       frameset_hash = this.makeNewFrameFrameset(the_url) 
@@ -1097,16 +1069,20 @@ class RedactApplication extends React.Component {
     var img = new Image()
     var app_this = this
     img.onload = function(){
-        const scale = this.width / this.naturalWidth
+//        const scale = this.width / this.naturalWidth
         app_this.setState({
           image_url: the_url,
           image_width: this.width,
           image_height: this.height,
-          image_scale: scale,
+//          image_scale: scale,
           frameset_hash: frameset_hash,
         })
     }
     img.src = the_url
+    // this shouldn't be needed with what we do onload, but so it is for now
+    //  what we see is that deep linkiong to an image, or the next and prev buttons
+    //  don't update the image scale, but clicking on the image does.
+//    setTimeout(this.calculateAndSetImageScale, 250)
   }
 
   handleSetMovieUrl = (the_url) => {
@@ -1273,7 +1249,7 @@ class RedactApplication extends React.Component {
             <Route exact path='/redact'>
               <HomePanel 
                 setMovieUrlCallback={this.handleSetMovieUrl}
-                setImageUrlCallback={this.handleSetImageUrl}
+                setImageUrl={this.setImageUrl}
                 showMovieParserLink={this.state.showMovieParserLink}l
               />
             </Route>
@@ -1284,7 +1260,7 @@ class RedactApplication extends React.Component {
                 getCurrentFramesets={this.getCurrentFramesets}
                 mask_method = {this.state.mask_method}
                 setMaskMethod={this.handleSetMaskMethod}
-                setImageUrlCallback={this.handleSetImageUrl}
+                setImageUrl={this.setImageUrl}
                 getRedactionFromFrameset={this.getRedactionFromFrameset}
                 getRedactedImageFromFrameset={this.getRedactedImageFromFrameset}
                 getRedactedMovieFilename={this.getRedactedMovieFilename}
@@ -1319,7 +1295,7 @@ class RedactApplication extends React.Component {
                 addRedactionToFrameset={this.addRedactionToFrameset}
                 getRedactionFromFrameset={this.getRedactionFromFrameset}
                 setMaskMethod={this.handleSetMaskMethod}
-                setImageUrlCallback={this.handleSetImageUrl}
+                setImageUrl={this.setImageUrl}
                 getFramesetHashForImageUrl={this.getFramesetHashForImageUrl}
                 getNextImageLink={this.getNextImageLink}
                 getPrevImageLink={this.getPrevImageLink}

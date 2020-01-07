@@ -84,14 +84,12 @@ class ImagePanel extends React.Component {
     })
   }
 
+
   handleImageClick = (e) => {
     let x = e.nativeEvent.offsetX
     let y = e.nativeEvent.offsetY
-    const scale = (document.getElementById('base_image_id').width /
-      document.getElementById('base_image_id').naturalWidth)
-    this.props.setImageScale(scale)
-    const x_scaled = parseInt(x / scale)
-    const y_scaled = parseInt(y / scale)
+    const x_scaled = parseInt(x / this.props.image_scale)
+    const y_scaled = parseInt(y / this.props.image_scale)
     if (x_scaled > this.props.image_width || y_scaled > this.props.image_height) {
       return
     }
@@ -236,7 +234,7 @@ class ImagePanel extends React.Component {
       next_image_link = (
         <button
           className='btn btn-primary'
-          onClick={() => this.props.setImageUrlCallback(next_image_url)}
+          onClick={() => this.props.setImageUrl(next_image_url)}
         >
           Next
         </button>
@@ -252,7 +250,7 @@ class ImagePanel extends React.Component {
       prev_image_link = (
         <button
           className='btn btn-primary'
-          onClick={() => this.props.setImageUrlCallback(prev_image_url)}
+          onClick={() => this.props.setImageUrl(prev_image_url)}
         >
           Prev
         </button>
@@ -288,7 +286,6 @@ class ImagePanel extends React.Component {
                 redactImage={this.redactImage}
                 changeMaskMethodCallback={this.props.setMaskMethod}
                 getRedactedImageUrl={this.props.getRedactedImageUrl}
-                setImageUrlCallback={this.props.setImageUrlCallback}
                 getImageAndHashDisplay={this.getImageAndHashDisplay}
                 setMessage={this.setMessage}
                 clearCurrentFramesetRedactions={this.props.clearCurrentFramesetRedactions}
@@ -309,6 +306,7 @@ class ImagePanel extends React.Component {
                 <BaseImage 
                   image_url={the_image_url}
                   image_file={this.props.image_file}
+                  setImageScale={this.props.setImageScale}
                 />
                 <CanvasImageOverlay
                   mode={this.state.mode}
@@ -343,6 +341,7 @@ class BaseImage extends React.Component {
         <img id='base_image_id' 
           alt={the_src}
           src={the_src}
+          onLoad={this.props.setImageScale}
         />
       </div>
     )
