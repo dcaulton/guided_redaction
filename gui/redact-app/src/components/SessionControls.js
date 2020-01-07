@@ -146,11 +146,11 @@ class SessionControls extends React.Component {
           <div className='col'>
             <div className='row'>
               <div 
-                className='col-lg-9 h3'
+                className='col-lg-10 h3'
               > 
                 session
               </div>
-              <div className='col float-right'>
+              <div className='col-lg-1 float-right'>
                 <button
                     className='btn btn-link'
                     aria-expanded='false'

@@ -24,11 +24,11 @@ class ResultsPanel extends React.Component {
           <div className='col'>
             <div className='row'>
               <div 
-                className='col-lg-9 h3'
+                className='col-lg-10 h3'
               > 
                 results
               </div>
-              <div className='col float-right'>
+              <div className='col-lg-1 float-right'>
                 <button
                     className='btn btn-link'
                     aria-expanded='false'
@@ -41,7 +41,7 @@ class ResultsPanel extends React.Component {
                 </button>
               </div>
 
-              <div>
+              <div className='col-lg-1'>
                 <div>
                   <input
                     className='mr-2 mt-3'
