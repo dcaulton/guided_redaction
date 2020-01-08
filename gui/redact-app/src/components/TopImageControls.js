@@ -30,11 +30,6 @@ class TopImageControls extends React.Component {
           Template
         </button>
         <div className='dropdown-menu' aria-labelledby='tempateDropdownButton'>
-          <button className='dropdown-item'
-              onClick={() => this.props.submitImageJob('template_match', 'all')}
-              href='.'>
-            Run all
-          </button>
           {template_keys.map((value, index) => {
             return (
               <button className='dropdown-item'

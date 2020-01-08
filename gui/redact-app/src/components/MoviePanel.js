@@ -47,7 +47,7 @@ class MoviePanel extends React.Component {
     }
     job_data['app'] = 'redact'
     job_data['operation'] = 'redact'
-    job_data['description'] = 'redact images for movie movie: ' + this.props.movie_url
+    job_data['description'] = 'redact images for movie: ' + this.props.movie_url
 
     let all_redaction_images = []
     let frameset_keys = Object.keys(this.props.getCurrentFramesets())
@@ -67,6 +67,8 @@ class MoviePanel extends React.Component {
           areas_to_redact: pass_arr,
           return_type: 'url',
           mask_method: this.props.mask_method,
+          preserve_working_dir_across_batch: 'true',
+          working_dir: '',
         })
       } 
     }
@@ -552,21 +554,16 @@ class MoviePanelHeader extends React.Component {
           Template
         </button>
         <div className='dropdown-menu' aria-labelledby='tempateDropdownButton'>
-          <button className='dropdown-item'
-              onClick={() => this.props.submitMovieJob('template_match', 'all')}
-              href='.'>
-            Run all
-          </button>
-          {template_keys.map((value, index) => {
-            return (
-              <button className='dropdown-item ml-2'
-                  key={index}
-                  onClick={() => this.props.submitMovieJob('template_match', this.props.templates[value]['id'])}
-                  href='.'>
-                Run {this.props.templates[value]['name']}
-              </button>
-            )
-          })}
+        {template_keys.map((value, index) => {
+          return (
+            <button className='dropdown-item ml-2'
+                key={index}
+                onClick={() => this.props.submitMovieJob('template_match', this.props.templates[value]['id'])}
+                href='.'>
+              Run {this.props.templates[value]['name']}
+            </button>
+          )
+        })}
         </div>
       </div>
     )
