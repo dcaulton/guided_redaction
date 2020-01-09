@@ -12,7 +12,7 @@ class TopImageControls extends React.Component {
             className='btn btn-primary ml-2'  
             onClick={() => this.props.gotoWhenDoneTarget()}
         >
-          Goto Learn
+          Goto Precision Learning 
         </button>
       )
     }

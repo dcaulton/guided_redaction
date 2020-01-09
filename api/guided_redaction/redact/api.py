@@ -58,7 +58,8 @@ class RedactViewSetRedactImage(viewsets.ViewSet):
                 return response
             else:
                 image_hash = str(uuid.uuid4())
-                if (request_data['preserve_working_dir_across_batch'] == 'true' and
+                if ('preserve_working_dir_across_batch' in request_data and
+                        request_data['preserve_working_dir_across_batch'] == 'true' and
                         request_data['working_dir']):
                     image_hash = request_data['working_dir']
                 inbound_image_url = request_data["image_url"]

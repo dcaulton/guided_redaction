@@ -59,16 +59,6 @@ class RedactApplication extends React.Component {
       showAdvancedPanels: false,
       whenJobLoaded: {},
       whenDoneTarget: '',
-      whenDoneTargetData: {
-        learn_dev: {
-          api_token: '',
-          catalog_uuid: '',
-          get_media_upload_token_url: '',
-          image_post_url: '',
-          media_upload_token: '',
-          landing_url: '',
-        },
-      }
     }
 
     this.getRedactedMovieFilename=this.getRedactedMovieFilename.bind(this)
@@ -188,8 +178,55 @@ class RedactApplication extends React.Component {
     }
   }
 
-  gotoWhenDoneTarget() {
+  async gotoWhenDoneTarget() {
     console.log('going to when done target')
+    let target_data = {
+      api_token: '1579c82fcaeff643bc1a8a01540fc2696ce4332d',
+      catalog_uuid: 'dc397e77-cd4a-4426-853b-804484fe4a61',
+      image_post_url: 'https://osmae2lnxs117.amer.sykes.com/microlearning/mixer/create/dc397e77-cd4a-4426-853b-804484fe4a61/d6ed106c-f662-4dcd-83e5-c82be77eae8d/',
+      generic_image_post_url: 'https://osmae2lnxs117.amer.sykes.com/microlearning/mixer/create/CATALOG_UUID/MEDIA_TOKEN_UUID/',
+      media_upload_token: 'd6ed106c-f662-4dcd-83e5-c82be77eae8d',
+    }
+    let submit_url = target_data['image_post_url']
+//    let form_html = '<form id="creation-form" method="POST" action="' + submit_url + '" method=POST">';
+//    for (let key in capturedImages) {
+//      if (capturedImages[key] != undefined) {
+//        form_html += '<input type="hidden" name="image_data" value="' + capturedImages[key] + '" />';
+//      }
+//    }
+//    form_html += '</form>';
+//    $('#form-container').html(form_html);
+//    $('#creation-form').submit();
+
+
+    let form = document.createElement('form')
+    form.id = 'learn_form'
+    form.method = 'POST'
+    form.action = submit_url
+    let input = document.createElement('input')
+    input.name = 'image_data'
+    input.type = 'hidden'
+    input.value = 'https://ergonotes.com/wp-content/uploads/2016/03/movaviscreencapture-start-capture.png'
+    form.appendChild(input)
+    document.body.appendChild(form)
+
+    let headers = {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    }
+    if (this.state.api_key) {
+      headers['Authorization'] = 'Token ' + target_data['api_token']
+    }
+
+    let response = await fetch(submit_url, {
+      method: 'POST',
+      headers: headers,
+    })
+    .then((response) => {console.log(response); return response})
+    .catch((error) => {
+      console.error(error);
+    })
+    await response
+    
   }
 
   saveWhenDoneInfo(destination) {
