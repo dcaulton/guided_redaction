@@ -25,6 +25,13 @@ class TemplateMatcher:
         except:
             pass
 
+        scale = template_data.get('template_scale', '1:1')
+        if scale == '1:1':
+            self.scales = [1]
+        elif scale == '+/-5':
+            self.scales = np.linspace(.95, 1.05, 3)[::-1]
+        print('template matching scales are ')
+        print(self.scales)
 
     def histograms_match(self, template, the_source, template_top_left):
         template_height, template_width, _ = template.shape
