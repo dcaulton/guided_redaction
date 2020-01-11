@@ -108,10 +108,11 @@ class CanvasInsightsOverlay extends React.Component {
       let anchor_id = Object.keys(matches)[i]
       let match = matches[anchor_id]
       let start = match['location']
-      const start_x_scaled = start[0] * this.props.insights_image_scale
+      let template_scale = parseFloat(match['scale'])
+      const start_x_scaled = start[0] * this.props.insights_image_scale 
       const start_y_scaled = start[1] * this.props.insights_image_scale
-      const width_scaled = match['size'][0] * this.props.insights_image_scale
-      const height_scaled = match['size'][1] * this.props.insights_image_scale
+      const width_scaled = match['size'][0] * this.props.insights_image_scale / template_scale
+      const height_scaled = match['size'][1] * this.props.insights_image_scale / template_scale
       ctx.strokeRect(start_x_scaled, start_y_scaled, width_scaled, height_scaled)
     }
   }

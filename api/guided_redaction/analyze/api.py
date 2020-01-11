@@ -113,10 +113,11 @@ class AnalyzeViewSetScanTemplate(viewsets.ViewSet):
                     if one_image:
                         oi_nparr = np.fromstring(one_image, np.uint8)
                         target_image = cv2.imdecode(oi_nparr, cv2.IMREAD_COLOR)
-                        temp_coords = template_matcher.get_template_coords(
+                        match_results = template_matcher.get_template_coords(
                             target_image, match_image
                         )
-                        if temp_coords:
+                        if match_results:
+                            (temp_coords, temp_scale) = match_results
                             if movie_name not in matches:
                                 matches[movie_name] = {}
                             if frameset_hash not in matches[movie_name]:
@@ -128,6 +129,11 @@ class AnalyzeViewSetScanTemplate(viewsets.ViewSet):
                             matches[movie_name][frameset_hash][anchor_id][
                                 "size"
                             ] = size
+                            matches[movie_name][frameset_hash][anchor_id][
+                                "scale"
+                            ] = temp_scale
+            # TODO it looks like this whole branch isn't used any more, remove it?
+            #   We do redact single images via the gui but we package them as 1 frame movies
             if request_data.get("image"):
                 image_name = request_data.get("image")
                 oi_response = requests.get(
@@ -138,7 +144,7 @@ class AnalyzeViewSetScanTemplate(viewsets.ViewSet):
                 if one_image:
                     oi_nparr = np.fromstring(one_image, np.uint8)
                     target_image = cv2.imdecode(oi_nparr, cv2.IMREAD_COLOR)
-                    temp_coords = template_matcher.get_template_coords(
+                    (temp_coords, temp_scale) = template_matcher.get_template_coords(
                         target_image, match_image
                     )
                     if temp_coords:
@@ -146,7 +152,9 @@ class AnalyzeViewSetScanTemplate(viewsets.ViewSet):
                             matches[image_name] = {}
                         matches[image_name][anchor_id] = {}
                         matches[image_name][anchor_id]["location"] = temp_coords
+                        # TODO why is the next line hard coded?  I don't think we get here 
                         matches[image_name][anchor_id]["size"] = (76, 276)
+                        matches[image_name][anchor_id]["scale"] = temp_scale
         return Response({'matches': matches})
 
 

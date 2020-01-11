@@ -516,9 +516,13 @@ class TemplateControls extends React.Component {
                       name='template_scale'
                       onChange={(event) => this.setTemplateScale(event.target.value)}
                   >
-                    <option value='1_1'>--Scale--</option>
-                    <option value='1_1'>1:1</option>
-                    <option value='1_5'>+/- 5%</option>
+                    <option value='1:1'>--Scale--</option>
+                    <option value='1:1'>1:1</option>
+                    <option value='+/-10/1'>+/- 10%, 1% increments</option>
+                    <option value='+/-20/1'>+/- 20%, 1% increments</option>
+                    <option value='+/-25/1'>+/- 25%, 1% increments</option>
+                    <option value='+/-25/5'>+/- 25%, 5% increments</option>
+                    <option value='+/-40/5'>+/-405%, 5% increments</option>
                   </select>
                 </div>
 
