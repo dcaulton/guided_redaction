@@ -672,6 +672,25 @@ class RedactApplication extends React.Component {
           const anchor_id = anchor_ids[0]
           const anchor_found_coords = template_match[movie_url][frameset_hash][anchor_id]['location']
   // TODO TODO TODO scale the box here, make width and height vars
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
           const anchor_found_scale = template_match[movie_url][frameset_hash][anchor_id]['scale']
           const anchor_spec_coords = this.state.templates[template_id]['anchors'][0]['start']
           for (let m=0; m < mask_zones.length; m++) {

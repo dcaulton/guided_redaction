@@ -7,9 +7,7 @@ class TemplateControls extends React.Component {
     this.state = {
       template_name: 'template 1',
       template_scale: '1_1',
-      template_histogram_percent: 'Hist %',
       template_match_percent: 'Match %',
-      template_mask_method: '',
       template_match_method: '',
       template_download_link: '',
     }
@@ -81,9 +79,7 @@ class TemplateControls extends React.Component {
       this.setState({
         template_name: 'template 1',
         template_scale: '1_1',
-        template_histogram_percent: 'Hist %',
         template_match_percent: 'Match %',
-        template_mask_method: '',
         template_match_method: '',
         template_download_link: '',
       })
@@ -95,9 +91,7 @@ class TemplateControls extends React.Component {
     this.setState({
       template_name: template.name,
       template_scale: template.scale,
-      template_histogram_percent: template.histogram_percent, 
       template_match_percent: template.match_percent,
-      template_mask_method: template.mask_method,
       template_match_method: template.match_method,
       template_download_link: '',
     })
@@ -177,27 +171,9 @@ class TemplateControls extends React.Component {
     })
   }
 
-  setTemplateHistogramPercent(value) {
-    this.setState({
-      template_histogram_percent: value,
-    })
-    this.doSleep(200).then(() => {
-      this.doTemplateSave(this.props.displayInsightsMessage('Template has been saved'))
-    })
-  }
-
   setTemplateMatchPercent(value) {
     this.setState({
       template_match_percent: value,
-    })
-    this.doSleep(200).then(() => {
-      this.doTemplateSave(this.props.displayInsightsMessage('Template has been saved'))
-    })
-  }
-
-  setTemplateMaskMethod(value) {
-    this.setState({
-      template_mask_method: value,
     })
     this.doSleep(200).then(() => {
       this.doTemplateSave(this.props.displayInsightsMessage('Template has been saved'))
@@ -267,9 +243,7 @@ class TemplateControls extends React.Component {
       id: this.props.current_template_id,
       name: this.state.template_name,
       scale: this.state.template_scale,
-      histogram_percent: this.state.template_histogram_percent,
       match_percent: this.state.template_match_percent,
-      mask_method: this.state.template_mask_method,
       match_method: this.state.template_match_method,
     }
     this.props.saveTemplate(template_data, when_done)
@@ -517,25 +491,15 @@ class TemplateControls extends React.Component {
                       onChange={(event) => this.setTemplateScale(event.target.value)}
                   >
                     <option value='1:1'>--Scale--</option>
-                    <option value='1:1'>1:1</option>
+                    <option value='1:1'>1:1 (default)</option>
                     <option value='+/-10/1'>+/- 10%, 1% increments</option>
                     <option value='+/-20/1'>+/- 20%, 1% increments</option>
+                    <option value='+/-20/5'>+/- 20%, 5% increments</option>
                     <option value='+/-25/1'>+/- 25%, 1% increments</option>
                     <option value='+/-25/5'>+/- 25%, 5% increments</option>
-                    <option value='+/-40/5'>+/-405%, 5% increments</option>
+                    <option value='+/-40/5'>+/- 40%, 5% increments</option>
+                    <option value='+/-50/5'>+/- 50%, 5% increments</option>
                   </select>
-                </div>
-
-                <div
-                    className='d-inline ml-2 mt-2'
-                >   
-                    <input 
-                        id='template_hist_percent'
-                        size='10'
-                        title='template histogram percent'
-                        value={this.state.template_histogram_percent}
-                        onChange={(event) => this.setTemplateHistogramPercent(event.target.value)}
-                    />
                 </div>
 
                 <div
@@ -561,19 +525,6 @@ class TemplateControls extends React.Component {
                         onChange={(event) => this.setTemplateName(event.target.value)}
                     /> 
                     {template_saved_unsaved}
-                </div>
-
-                <div className='d-inline ml-2'>
-                  <select
-                      name='template_mask_method'
-                      onChange={(event) => this.setTemplateMaskMethod(event.target.value)}
-                  >
-                    <option value='blur_7x7'>--Mask Method--</option>
-                    <option value='blur_7x7'>Gaussian Blur 7x7</option>
-                    <option value='blur_21x21'>Gaussian Blur 21x21</option>
-                    <option value='blur_median'>Median Blur</option>
-                    <option value='black_rectangle'>Black Rectangle</option>
-                  </select>
                 </div>
 
                 <div className='d-inline ml-2'>
