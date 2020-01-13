@@ -178,26 +178,51 @@ class RedactApplication extends React.Component {
     }
   }
 
-  async gotoWhenDoneTarget() {
+//////////////////////////////////////////////////////////////////////////////////
+  getImageBlob(url) {
+    return new Promise( async resolve=>{
+      let response = await fetch(url)
+      let blob = response.blob()
+      resolve(blob)
+    })
+  }
+
+  blobToBase64(blob) {
+    return new Promise( resolve=>{
+      let reader = new FileReader()
+      reader.onload = function() {
+        let dataUrl = reader.result
+        resolve(dataUrl);
+      };
+      reader.readAsDataURL(blob)
+    })
+  }
+
+  async getBase64Image(url) {
+    let blob = await this.getImageBlob(url)
+    let base64 = await this.blobToBase64(blob)
+    return base64
+  }
+
+  async gotoWhenDoneTarget(image_data) {
+    const image_url = 'http://localhost:3000/images/fire_b.jpg'
+    this.getBase64Image(image_url)
+    .then((resp) => {
+    this.gotoWhenDoneTarget2(resp) 
+    })
+  }
+
+  async gotoWhenDoneTarget2(image_data) {
     console.log('going to when done target')
     let target_data = {
       api_token: '1579c82fcaeff643bc1a8a01540fc2696ce4332d',
       catalog_uuid: 'dc397e77-cd4a-4426-853b-804484fe4a61',
-      image_post_url: 'https://osmae2lnxs117.amer.sykes.com/microlearning/mixer/create/dc397e77-cd4a-4426-853b-804484fe4a61/d6ed106c-f662-4dcd-83e5-c82be77eae8d/',
-      generic_image_post_url: 'https://osmae2lnxs117.amer.sykes.com/microlearning/mixer/create/CATALOG_UUID/MEDIA_TOKEN_UUID/',
+      template_uuid: '1435f669-773a-4e1e-ae0a-c43f46995178',
+      image_post_url: 'https://osmae2lnxs117.amer.sykes.com/microlearning/mixer/create/1435f669-773a-4e1e-ae0a-c43f46995178/d6ed106c-f662-4dcd-83e5-c82be77eae8d/',
+      generic_image_post_url: 'https://osmae2lnxs117.amer.sykes.com/microlearning/mixer/create/TEMPLATE_UUID/MEDIA_TOKEN_UUID/',
       media_upload_token: 'd6ed106c-f662-4dcd-83e5-c82be77eae8d',
     }
     let submit_url = target_data['image_post_url']
-//    let form_html = '<form id="creation-form" method="POST" action="' + submit_url + '" method=POST">';
-//    for (let key in capturedImages) {
-//      if (capturedImages[key] != undefined) {
-//        form_html += '<input type="hidden" name="image_data" value="' + capturedImages[key] + '" />';
-//      }
-//    }
-//    form_html += '</form>';
-//    $('#form-container').html(form_html);
-//    $('#creation-form').submit();
-
 
     let form = document.createElement('form')
     form.id = 'learn_form'
@@ -206,7 +231,7 @@ class RedactApplication extends React.Component {
     let input = document.createElement('input')
     input.name = 'image_data'
     input.type = 'hidden'
-    input.value = 'https://ergonotes.com/wp-content/uploads/2016/03/movaviscreencapture-start-capture.png'
+    input.value = image_data
     form.appendChild(input)
     document.body.appendChild(form)
 
@@ -221,7 +246,16 @@ class RedactApplication extends React.Component {
       method: 'POST',
       headers: headers,
     })
-    .then((response) => {console.log(response); return response})
+    .then((response) => {
+      return response.body
+    })
+    .then((body) => {
+      const reader = body.getReader();
+      const utf8Decoder = new TextDecoder('utf-8');
+      reader.read().then(({ done, value }) => {
+    console.log(utf8Decoder.decode(value))
+    })
+    })
     .catch((error) => {
       console.error(error);
     })
