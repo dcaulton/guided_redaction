@@ -34,6 +34,8 @@ class InsightsPanel extends React.Component {
       showOcr: true,
       showMovieSets: true,
       showResults: true,
+      showDiffs: true,
+      imageTypeToDisplay: '',
     }
     this.getSelectedAreas=this.getSelectedAreas.bind(this)
     this.getAnnotations=this.getAnnotations.bind(this)
@@ -73,9 +75,35 @@ class InsightsPanel extends React.Component {
     this.toggleShowResults=this.toggleShowResults.bind(this)
     this.toggleShowAnnotate=this.toggleShowAnnotate.bind(this)
     this.toggleShowOcr=this.toggleShowOcr.bind(this)
+    this.toggleShowDiffs=this.toggleShowDiffs.bind(this)
     this.loadInsightsJobResults=this.loadInsightsJobResults.bind(this)
     this.afterMovieSplitInsightsJobLoaded=this.afterMovieSplitInsightsJobLoaded.bind(this)
     this.setCampaignMovies=this.setCampaignMovies.bind(this)
+    this.blinkDiff=this.blinkDiff.bind(this)
+    this.setImageTypeToDisplay=this.setImageTypeToDisplay.bind(this)
+  }
+
+
+  setImageTypeToDisplay(the_type) {
+    console.log('image type to display is '+the_type)
+    this.setState({
+      imageTypeToDisplay: the_type,
+    })
+  }
+
+  blinkDiff(blink_status) {
+    if (blink_status === 'off') {
+      this.scrubberOnChange()
+      return
+    }
+    const cur_hash = this.getScrubberFramesetHash() 
+    const cur_frameset = this.props.movies[this.props.movie_url]['framesets'][cur_hash]
+    if (Object.keys(cur_frameset).includes('filtered_image_url')) {
+      const filtered_image_url = cur_frameset['filtered_image_url']
+      this.setState({
+        insights_image: filtered_image_url,
+      })
+    }
   }
 
   setCampaignMovies(the_url_string) {
@@ -153,6 +181,13 @@ class InsightsPanel extends React.Component {
     const new_value = (!this.state.showOcr)
     this.setState({
       showOcr: new_value,
+    })
+  }
+
+  toggleShowDiffs() {
+    const new_value = (!this.state.showDiffs)
+    this.setState({
+      showDiffs: new_value,
     })
   }
 
@@ -276,6 +311,22 @@ class InsightsPanel extends React.Component {
     return job_data
   }
 
+  buildCalcDiffsCurMovData(extra_data) {
+    let job_data = {
+      request_data: {},
+    }
+    job_data['app'] = 'analyze'
+    job_data['operation'] = 'filter'
+    job_data['description'] = 'calc diffs for movie: ' + this.props.movie_url
+    job_data['request_data']['frames'] = this.props.movies[this.props.movie_url]['frames']
+    job_data['request_data']['framesets'] = this.props.movies[this.props.movie_url]['framesets']
+    job_data['request_data']['movie_url'] = this.props.movie_url
+    job_data['request_data']['filter_parameters'] = {
+      'filter_operation': 'diff',
+    }
+    return job_data
+  }
+
   submitInsightsJob(job_string, extra_data) {
     if (job_string === 'current_template_current_movie') {
       let job_data = this.buildScanTemplateCurTempCurMovJobData(extra_data)
@@ -288,6 +339,9 @@ class InsightsPanel extends React.Component {
       this.props.submitJob(job_data)
     } else if (job_string === 'load_movie') {
       let job_data = this.buildLoadMovieJobData(extra_data)
+      this.props.submitJob(job_data)
+    } else if (job_string === 'diffs_current_movie') {
+      let job_data = this.buildCalcDiffsCurMovData(extra_data)
       this.props.submitJob(job_data)
     }
   }
@@ -988,16 +1042,21 @@ class InsightsPanel extends React.Component {
             showResults={this.state.showResults}
             showAnnotate={this.state.showAnnotate}
             showOcr={this.state.showOcr}
+            showDiffs={this.state.showDiffs}
             toggleShowTemplates={this.toggleShowTemplates}
             toggleShowSelectedArea={this.toggleShowSelectedArea}
             toggleShowMovieSets={this.toggleShowMovieSets}
             toggleShowResults={this.toggleShowResults}
             toggleShowAnnotate={this.toggleShowAnnotate}
             toggleShowOcr={this.toggleShowOcr}
+            toggleShowDiffs={this.toggleShowDiffs}
             setFramesetDiscriminator={this.props.setFramesetDiscriminator}
             campaign_movies={this.state.campaign_movies}
             setCampaignMovies={this.setCampaignMovies}
             updateGlobalState={this.props.updateGlobalState}
+            blinkDiff={this.blinkDiff}
+            setImageTypeToDisplay={this.setImageTypeToDisplay}
+            imageTypeToDisplay={this.state.imageTypeToDisplay}
           />
         </div>
 

@@ -2,7 +2,7 @@ from celery import shared_task
 import json
 import os
 from guided_redaction.jobs.models import Job
-from guided_redaction.analyze.api import AnalyzeViewSetScanTemplate
+from guided_redaction.analyze.api import AnalyzeViewSetFilter, AnalyzeViewSetScanTemplate
 
 
 @shared_task
@@ -41,3 +41,24 @@ def get_file_uuids_from_response(request_dict):
                 if uuid_part and len(uuid_part) == 36:
                     uuids.append(uuid_part)
     return uuids
+
+@shared_task
+def filter(job_uuid):
+    job = Job.objects.get(pk=job_uuid)
+    if job:
+        job.status = 'running'
+        job.save()
+        print('running filter for job '+ job_uuid)
+        avsf = AnalyzeViewSetFilter()
+        response = avsf.process_create_request(json.loads(job.request_data))
+        job.response_data = json.dumps(response.data)
+        new_uuids = get_file_uuids_from_response(json.loads(job.request_data))
+        if new_uuids:
+            existing_uuids = json.loads(job.file_uuids_used)
+            existing_uuids = existing_uuids + new_uuids
+            job.file_uuids_used = json.dumps(existing_uuids)
+        job.status = 'success'
+        job.save()
+    else:
+        print('calling filter on nonexistent job: '+ job_uuid)
+

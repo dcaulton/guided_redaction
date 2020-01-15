@@ -207,13 +207,15 @@ class RedactApplication extends React.Component {
   async gotoWhenDoneTarget(image_data) {
     const image_url = 'http://localhost:3000/images/fire_b.jpg'
     this.getBase64Image(image_url)
-    .then((resp) => {
-    this.gotoWhenDoneTarget2(resp) 
+    .then((image_data) => {
+      let form = document.getElementById('learn_form')
+      let form_input = document.getElementById('learn_form_input')
+      form_input.value = image_data
+      form.submit()
     })
   }
 
-  async gotoWhenDoneTarget2(image_data) {
-    console.log('going to when done target')
+  getLearnFormUrl() {
     let target_data = {
       api_token: '1579c82fcaeff643bc1a8a01540fc2696ce4332d',
       catalog_uuid: 'dc397e77-cd4a-4426-853b-804484fe4a61',
@@ -223,46 +225,10 @@ class RedactApplication extends React.Component {
       media_upload_token: 'd6ed106c-f662-4dcd-83e5-c82be77eae8d',
     }
     let submit_url = target_data['image_post_url']
-
-    let form = document.createElement('form')
-    form.id = 'learn_form'
-    form.method = 'POST'
-    form.action = submit_url
-    let input = document.createElement('input')
-    input.name = 'image_data'
-    input.type = 'hidden'
-    input.value = image_data
-    form.appendChild(input)
-    document.body.appendChild(form)
-
-    let headers = {
-      'Content-Type': 'application/x-www-form-urlencoded',
-    }
-    if (this.state.api_key) {
-      headers['Authorization'] = 'Token ' + target_data['api_token']
-    }
-
-    let response = await fetch(submit_url, {
-      method: 'POST',
-      headers: headers,
-    })
-    .then((response) => {
-      return response.body
-    })
-    .then((body) => {
-      const reader = body.getReader();
-      const utf8Decoder = new TextDecoder('utf-8');
-      reader.read().then(({ done, value }) => {
-    console.log(utf8Decoder.decode(value))
-    })
-    })
-    .catch((error) => {
-      console.error(error);
-    })
-    await response
-    
+    return submit_url
   }
 
+/////////////////////////////////////////////////////////////////////////
   saveWhenDoneInfo(destination) {
     if (destination === 'learn_dev') {
       this.setState({
@@ -822,6 +788,7 @@ class RedactApplication extends React.Component {
       .then((responseJson) => {
         const resp_data_string = responseJson['job']['response_data']
         const resp_data = JSON.parse(resp_data_string)
+
         var app_this = this
         function cancelTheJob() {
           app_this.cancelJob(job)
@@ -841,6 +808,40 @@ class RedactApplication extends React.Component {
     }
   }
 
+  async loadFilterResults(job, when_done=(()=>{})) {
+      let job_url = this.state.jobs_url + '//' + job.id
+      await fetch(job_url, {
+        method: 'GET',
+        headers: this.buildJsonHeaders(),
+      })
+      .then((response) => response.json())
+      .then((responseJson) => {
+        const req_data_string = responseJson['job']['request_data']
+        const req_data = JSON.parse(req_data_string)
+        const resp_data_string = responseJson['job']['response_data']
+        const resp_data = JSON.parse(resp_data_string)
+        console.log('response data is ')
+        console.log(resp_data)
+        const movie_url = req_data.movie_url
+        const framesets = resp_data.framesets
+        let deepCopyMovies = JSON.parse(JSON.stringify(this.state.movies))
+        for (let i=0; i < Object.keys(framesets).length; i++) {
+          const frameset_hash = Object.keys(framesets)[i]
+          deepCopyMovies[movie_url]['framesets'][frameset_hash]['filtered_image_url'] = framesets[frameset_hash]
+        }
+        this.setState({
+          movies: deepCopyMovies,
+        })
+        return responseJson
+      })
+      .then((responseJson) => {
+        when_done()
+      })
+      .catch((error) => {
+        console.error(error);
+      })
+  }
+
   async loadZipMovieResults(job, when_done=(()=>{})) {
     const response_data = JSON.parse(job.response_data)
     const the_url = response_data.movie_url
@@ -858,6 +859,8 @@ class RedactApplication extends React.Component {
 			const job = responseJson['job']
 			if (job.app === 'analyze' && job.operation === 'scan_template') {
         this.loadScanTemplateResults(job, when_done)
+			} else if (job.app === 'analyze' && job.operation === 'filter') {
+        this.loadFilterResults(job, when_done)
 			} else if (job.app === 'parse' && job.operation === 'split_and_hash_movie') {
         this.loadSplitAndHashResults(job, when_done)
 			} else if (job.app === 'redact' && job.operation === 'redact') {
@@ -1315,7 +1318,26 @@ class RedactApplication extends React.Component {
     }
   }
 
+  buildLearnForm() {
+    const submit_url = this.getLearnFormUrl()
+    return (
+      <form 
+          id='learn_form' 
+          method='POST' 
+          action={submit_url}
+      >
+        <input 
+            type='hidden' 
+            id='learn_form_input' 
+            name='image_data' 
+            type='hidden' 
+        />
+      </form>
+    )
+  }
+
   render() {
+    let learn_form = this.buildLearnForm()
     if (document.getElementById('movie_panel_link') && this.state.showMovieParserLink) {
       document.getElementById('movie_panel_link').style.display = 'block'
     }
@@ -1338,6 +1360,7 @@ class RedactApplication extends React.Component {
         </ul>
         </nav>
         <div id='container' className='container'>
+          {learn_form}
           <Switch>
             <Route exact path='/redact'>
               <HomePanel 

@@ -140,6 +140,10 @@ class SessionControls extends React.Component {
     if (this.props.showOcr) {
       show_ocr_checked = 'checked'
     }
+    let show_diffs_checked = ''
+    if (this.props.showDiffs) {
+      show_diffs_checked = 'checked'
+    }
 
     return (
         <div className='row bg-light rounded mt-3'>
@@ -271,6 +275,17 @@ class SessionControls extends React.Component {
                     onChange={() => this.props.toggleShowOcr()}
                   />
                   Show Ocr
+                </div>
+
+                <div className='row mt-3 bg-light rounded'>
+                  <input
+                    className='ml-2 mr-2 mt-1'
+                    id='toggle_results'
+                    checked={show_diffs_checked}
+                    type='checkbox'
+                    onChange={() => this.props.toggleShowDiffs()}
+                  />
+                  Show Diffs
                 </div>
 
                 <div className='row mt-3 bg-light rounded'>

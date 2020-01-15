@@ -3,6 +3,7 @@ import TemplateControls from './TemplateControls'
 import AnnotationControls from './AnnotationControls'
 import SelectedAreaControls from './SelectedAreaControls'
 import OcrControls from './OcrControls'
+import DiffControls from './DiffControls'
 import MovieSetsPanel from './MovieSetsPanel'
 import ResultsPanel from './ResultsPanel'
 import SessionControls from './SessionControls'
@@ -68,6 +69,17 @@ class BottomInsightsControls extends React.Component {
           toggleShowAnnotate={this.props.toggleShowAnnotate}
         />
 
+        <DiffControls
+          displayInsightsMessage={this.props.displayInsightsMessage}
+          showDiffs={this.props.showDiffs}
+          toggleShowDiffs={this.props.toggleShowDiffs}
+          movie_sets={this.props.movie_sets}
+          submitInsightsJob={this.props.submitInsightsJob}
+          blinkDiff={this.props.blinkDiff}
+          setImageTypeToDisplay={this.props.setImageTypeToDisplay}
+          imageTypeToDisplay={this.props.imageTypeToDisplay}
+        />
+
         <OcrControls
           displayInsightsMessage={this.props.displayInsightsMessage}
           showOcr={this.props.showOcr}
@@ -104,12 +116,14 @@ class BottomInsightsControls extends React.Component {
           showResults={this.props.showResults}
           showAnnotate={this.props.showAnnotate}
           showOcr={this.props.showOcr}
+          showDiffs={this.props.showDiffs}
           toggleShowTemplates={this.props.toggleShowTemplates}
           toggleShowSelectedArea={this.props.toggleShowSelectedArea}
           toggleShowMovieSets={this.props.toggleShowMovieSets}
           toggleShowResults={this.props.toggleShowResults}
           toggleShowAnnotate={this.props.toggleShowAnnotate}
           toggleShowOcr={this.props.toggleShowOcr}
+          toggleShowDiffs={this.props.toggleShowDiffs}
           setFramesetDiscriminator={this.props.setFramesetDiscriminator}
           campaign_movies={this.props.campaign_movies}
           setCampaignMovies={this.props.setCampaignMovies}

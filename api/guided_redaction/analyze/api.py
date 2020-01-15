@@ -1,4 +1,7 @@
 import cv2
+from urllib.parse import urlsplit
+import uuid
+import os
 from guided_redaction.analyze.classes.EastPlusTessGuidedAnalyzer import (
     EastPlusTessGuidedAnalyzer,
 )
@@ -14,6 +17,7 @@ import requests
 #from rest_framework import viewsets
 from base import viewsets
 from rest_framework.response import Response
+from guided_redaction.utils.classes.FileWriter import FileWriter
 
 
 class AnalyzeViewSetEastTess(viewsets.ViewSet):
@@ -210,3 +214,86 @@ class AnalyzeViewSetArrowFill(viewsets.ViewSet):
             return Response({"arrow_fill_regions": regions})
         else:
             return self.error("couldnt read image data", status_code=422)
+
+class AnalyzeViewSetFilter(viewsets.ViewSet):
+    def create_file_writer(self):
+        the_connection_string = ""
+        if settings.REDACT_IMAGE_STORAGE == "azure_blob":
+            the_base_url = settings.REDACT_AZURE_BASE_URL
+            the_connection_string = settings.REDACT_AZURE_BLOB_CONNECTION_STRING
+        else:
+            the_base_url = settings.REDACT_FILE_BASE_URL
+        fw = FileWriter(
+            working_dir=settings.REDACT_FILE_STORAGE_DIR,
+            base_url=the_base_url,
+            connection_string=the_connection_string,
+            image_storage=settings.REDACT_IMAGE_STORAGE,
+            image_request_verify_headers=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
+        )
+        return fw
+
+    def build_result_file_name(self, image_url):
+        inbound_filename = (urlsplit(image_url)[2]).split("/")[-1]
+        (file_basename, file_extension) = os.path.splitext(inbound_filename)
+        new_filename = file_basename + "_filtered" + file_extension
+        return new_filename
+
+    def create(self, request):
+        request_data = request.data
+        return self.process_create_request(request_data)
+
+    def process_create_request(self, request_data):
+        response_framesets = {}
+        if not request_data.get("frames"):
+            return self.error("frames is required")
+        if not request_data.get("framesets"):
+            return self.error("framesets is required")
+        if not request_data.get("filter_parameters"):
+            return self.error("filter_parameters is required")
+
+        fw = self.create_file_writer()
+        frames = request_data.get("frames") 
+        framesets = request_data.get("framesets")
+        ordered_hashes = self.get_frameset_hashes_in_order(frames, framesets)
+        workdir_uuid = str(uuid.uuid4())
+        workdir = fw.create_unique_directory(workdir_uuid)
+        for index, frameset_hash in enumerate(ordered_hashes):
+            if index > 0:
+                cur_image_url = framesets[frameset_hash]['images'][0]
+                cur_img_bin = requests.get(cur_image_url).content
+                if not cur_img_bin:
+                    return self.error("couldn't read source image data: ".cur_image_url, status_code=422)
+                nparr = np.fromstring(cur_img_bin, np.uint8)
+                cur_image_cv2 = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+                cur_image_cv2 = cv2.cvtColor(cur_image_cv2, cv2.COLOR_BGR2GRAY)
+
+                prev_hash = ordered_hashes[index-1]
+                prev_image_url = framesets[prev_hash]['images'][0]
+                prev_img_bin = requests.get(prev_image_url).content
+                if not prev_img_bin:
+                    return self.error("couldn't read source image data: ".prev_image_url, status_code=422)
+                nparr = np.fromstring(prev_img_bin, np.uint8)
+                prev_image_cv2 = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+                prev_image_cv2 = cv2.cvtColor(prev_image_cv2, cv2.COLOR_BGR2GRAY)
+
+                filtered_image_cv2= cv2.subtract(prev_image_cv2, cur_image_cv2)
+                new_file_name = self.build_result_file_name(cur_image_url)
+                outfilename = os.path.join(workdir, new_file_name)
+                file_url = fw.write_cv2_image_to_url(filtered_image_cv2, outfilename)
+                response_framesets[frameset_hash] = file_url
+
+        return Response({'framesets': response_framesets})
+
+    def get_frameset_hash_for_frame(self, frame, framesets):
+        for frameset_hash in framesets:
+            if frame in framesets[frameset_hash]['images']:
+                return frameset_hash
+
+    def get_frameset_hashes_in_order(self, frames, framesets):
+        ret_arr = []
+        for frame in frames:
+            frameset_hash = self.get_frameset_hash_for_frame(frame, framesets)
+            if frameset_hash and frameset_hash not in ret_arr:
+                ret_arr.append(frameset_hash)
+        return ret_arr
+
