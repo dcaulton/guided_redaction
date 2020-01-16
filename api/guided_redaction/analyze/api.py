@@ -243,46 +243,50 @@ class AnalyzeViewSetFilter(viewsets.ViewSet):
         return self.process_create_request(request_data)
 
     def process_create_request(self, request_data):
-        response_framesets = {}
-        if not request_data.get("frames"):
-            return self.error("frames is required")
-        if not request_data.get("framesets"):
-            return self.error("framesets is required")
+        response_movies = {}
+        if not request_data.get("movies"):
+            return self.error("movies is required")
         if not request_data.get("filter_parameters"):
             return self.error("filter_parameters is required")
 
         fw = self.create_file_writer()
-        frames = request_data.get("frames") 
-        framesets = request_data.get("framesets")
-        ordered_hashes = self.get_frameset_hashes_in_order(frames, framesets)
-        workdir_uuid = str(uuid.uuid4())
-        workdir = fw.create_unique_directory(workdir_uuid)
-        for index, frameset_hash in enumerate(ordered_hashes):
-            if index > 0:
-                cur_image_url = framesets[frameset_hash]['images'][0]
-                cur_img_bin = requests.get(cur_image_url).content
-                if not cur_img_bin:
-                    return self.error("couldn't read source image data: ".cur_image_url, status_code=422)
-                nparr = np.fromstring(cur_img_bin, np.uint8)
-                cur_image_cv2 = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-                cur_image_cv2 = cv2.cvtColor(cur_image_cv2, cv2.COLOR_BGR2GRAY)
+        for movie_url in request_data.get("movies"):
+            response_movies[movie_url] = {
+                'framesets': {},
+            }
+            movie = request_data.get('movies')[movie_url]
+            frames = movie['frames']
+            framesets = movie['framesets']
 
-                prev_hash = ordered_hashes[index-1]
-                prev_image_url = framesets[prev_hash]['images'][0]
-                prev_img_bin = requests.get(prev_image_url).content
-                if not prev_img_bin:
-                    return self.error("couldn't read source image data: ".prev_image_url, status_code=422)
-                nparr = np.fromstring(prev_img_bin, np.uint8)
-                prev_image_cv2 = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-                prev_image_cv2 = cv2.cvtColor(prev_image_cv2, cv2.COLOR_BGR2GRAY)
+            ordered_hashes = self.get_frameset_hashes_in_order(frames, framesets)
+            workdir_uuid = str(uuid.uuid4())
+            workdir = fw.create_unique_directory(workdir_uuid)
+            for index, frameset_hash in enumerate(ordered_hashes):
+                if index > 0:
+                    cur_image_url = framesets[frameset_hash]['images'][0]
+                    cur_img_bin = requests.get(cur_image_url).content
+                    if not cur_img_bin:
+                        return self.error("couldn't read source image data: ".cur_image_url, status_code=422)
+                    nparr = np.fromstring(cur_img_bin, np.uint8)
+                    cur_image_cv2 = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+                    cur_image_cv2 = cv2.cvtColor(cur_image_cv2, cv2.COLOR_BGR2GRAY)
 
-                filtered_image_cv2= cv2.subtract(prev_image_cv2, cur_image_cv2)
-                new_file_name = self.build_result_file_name(cur_image_url)
-                outfilename = os.path.join(workdir, new_file_name)
-                file_url = fw.write_cv2_image_to_url(filtered_image_cv2, outfilename)
-                response_framesets[frameset_hash] = file_url
+                    prev_hash = ordered_hashes[index-1]
+                    prev_image_url = framesets[prev_hash]['images'][0]
+                    prev_img_bin = requests.get(prev_image_url).content
+                    if not prev_img_bin:
+                        return self.error("couldn't read source image data: ".prev_image_url, status_code=422)
+                    nparr = np.fromstring(prev_img_bin, np.uint8)
+                    prev_image_cv2 = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+                    prev_image_cv2 = cv2.cvtColor(prev_image_cv2, cv2.COLOR_BGR2GRAY)
 
-        return Response({'framesets': response_framesets})
+                    filtered_image_cv2= cv2.subtract(prev_image_cv2, cur_image_cv2)
+                    new_file_name = self.build_result_file_name(cur_image_url)
+                    outfilename = os.path.join(workdir, new_file_name)
+                    file_url = fw.write_cv2_image_to_url(filtered_image_cv2, outfilename)
+                    response_movies[movie_url]['framesets'][frameset_hash] = file_url
+
+        return Response({'movies': response_movies})
 
     def get_frameset_hash_for_frame(self, frame, framesets):
         for frameset_hash in framesets:

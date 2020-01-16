@@ -816,18 +816,16 @@ class RedactApplication extends React.Component {
       })
       .then((response) => response.json())
       .then((responseJson) => {
-        const req_data_string = responseJson['job']['request_data']
-        const req_data = JSON.parse(req_data_string)
         const resp_data_string = responseJson['job']['response_data']
         const resp_data = JSON.parse(resp_data_string)
-        console.log('response data is ')
-        console.log(resp_data)
-        const movie_url = req_data.movie_url
-        const framesets = resp_data.framesets
         let deepCopyMovies = JSON.parse(JSON.stringify(this.state.movies))
-        for (let i=0; i < Object.keys(framesets).length; i++) {
-          const frameset_hash = Object.keys(framesets)[i]
-          deepCopyMovies[movie_url]['framesets'][frameset_hash]['filtered_image_url'] = framesets[frameset_hash]
+        for (let j=0; j < Object.keys(resp_data.movies).length; j++) {
+          const movie_url = Object.keys(resp_data.movies)[j]
+          let framesets = resp_data.movies[movie_url]['framesets']
+          for (let i=0; i < Object.keys(framesets).length; i++) {
+            const frameset_hash = Object.keys(framesets)[i]
+            deepCopyMovies[movie_url]['framesets'][frameset_hash]['filtered_image_url'] = framesets[frameset_hash]
+          }
         }
         this.setState({
           movies: deepCopyMovies,
@@ -1330,7 +1328,6 @@ class RedactApplication extends React.Component {
             type='hidden' 
             id='learn_form_input' 
             name='image_data' 
-            type='hidden' 
         />
       </form>
     )

@@ -49,6 +49,7 @@ class InsightsPanel extends React.Component {
     this.clearTemplateMatches=this.clearTemplateMatches.bind(this)
     this.clearSelectedAreas=this.clearSelectedAreas.bind(this)
     this.getMovieMatchesFound=this.getMovieMatchesFound.bind(this)
+    this.getMovieDiffsFound=this.getMovieDiffsFound.bind(this)
     this.getMovieSelectedCount=this.getMovieSelectedCount.bind(this)
     this.currentImageIsTemplateAnchorImage=this.currentImageIsTemplateAnchorImage.bind(this)
     this.afterArrowFill=this.afterArrowFill.bind(this)
@@ -94,6 +95,7 @@ class InsightsPanel extends React.Component {
   blinkDiff(blink_status) {
     if (blink_status === 'off') {
       this.scrubberOnChange()
+      document.getElementById('movie_scrubber').focus()
       return
     }
     const cur_hash = this.getScrubberFramesetHash() 
@@ -104,6 +106,7 @@ class InsightsPanel extends React.Component {
         insights_image: filtered_image_url,
       })
     }
+    document.getElementById('movie_scrubber').focus()
   }
 
   setCampaignMovies(the_url_string) {
@@ -311,16 +314,20 @@ class InsightsPanel extends React.Component {
     return job_data
   }
 
-  buildCalcDiffsCurMovData(extra_data) {
+  buildCalcDiffsData(job_type, extra_data) {
     let job_data = {
       request_data: {},
     }
     job_data['app'] = 'analyze'
     job_data['operation'] = 'filter'
-    job_data['description'] = 'calc diffs for movie: ' + this.props.movie_url
-    job_data['request_data']['frames'] = this.props.movies[this.props.movie_url]['frames']
-    job_data['request_data']['framesets'] = this.props.movies[this.props.movie_url]['framesets']
-    job_data['request_data']['movie_url'] = this.props.movie_url
+    if (job_type === 'current_movie') {
+      job_data['request_data']['movies'] = {}
+      job_data['request_data']['movies'][this.props.movie_url] = this.props.movies[this.props.movie_url]
+      job_data['description'] = 'calc diffs for movie: ' + this.props.movie_url
+    } else if (job_type === 'all_movies') {
+      job_data['request_data']['movies'] = this.props.movies
+      job_data['description'] = 'calc diffs for all movies'
+    }
     job_data['request_data']['filter_parameters'] = {
       'filter_operation': 'diff',
     }
@@ -341,11 +348,15 @@ class InsightsPanel extends React.Component {
       let job_data = this.buildLoadMovieJobData(extra_data)
       this.props.submitJob(job_data)
     } else if (job_string === 'diffs_current_movie') {
-      let job_data = this.buildCalcDiffsCurMovData(extra_data)
+      let job_data = this.buildCalcDiffsData('current_movie', extra_data)
+      this.props.submitJob(job_data)
+    } else if (job_string === 'diffs_all_movies') {
+      let job_data = this.buildCalcDiffsData('all_movies', extra_data)
       this.props.submitJob(job_data)
     }
   }
 
+  
   getCurrentTemplateMaskZones() {
     if (Object.keys(this.props.templates).includes(this.props.current_template_id)) {
       return this.props.templates[this.props.current_template_id]['mask_zones']
@@ -388,18 +399,35 @@ class InsightsPanel extends React.Component {
   }
 
   getMovieMatchesFound(movie_url) {
-    let message = '0 images matched any anchor'
     const template_matches = this.props.getCurrentTemplateMatches()
     if (!Object.keys(template_matches).includes(this.props.current_template_id)) {
-      return message
+      return ''
     }
     const cur_templates_matches = template_matches[this.props.current_template_id]
     if (!Object.keys(cur_templates_matches).includes(movie_url)) {
-      return message 
+      return ''
     }
     const cur_movies_matches = cur_templates_matches[movie_url]
     let count = Object.keys(cur_movies_matches).length
-    return count.toString() + ' images matched any anchor'
+    if (count) {
+      return count.toString() + ' template matches'
+    } else {
+      return ''
+    }
+  }
+
+  getMovieDiffsFound(movie_url) {
+    if (Object.keys(this.props.movies).includes(movie_url)) {
+      for (let i=0; i < Object.keys(this.props.movies[movie_url]['framesets']).length; i++) {
+        const frameset_hash = Object.keys(this.props.movies[movie_url]['framesets'])[i]
+          const frameset = this.props.movies[movie_url]['framesets'][frameset_hash]
+          if (Object.keys(frameset).includes('filtered_image_url') && 
+              frameset['filtered_image_url']) {
+            return 'diff images exist'
+          }
+      }
+    }
+    return ''
   }
 
   getMovieSelectedCount(movie_url) {
@@ -941,6 +969,7 @@ class InsightsPanel extends React.Component {
             movie_urls={this.state.campaign_movies}
             movies={this.props.movies}
             getMovieMatchesFound={this.getMovieMatchesFound}
+            getMovieDiffsFound={this.getMovieDiffsFound}
             getMovieSelectedCount={this.getMovieSelectedCount}
             submitInsightsJob={this.submitInsightsJob}
             setMovieNickname={this.props.setMovieNickname}

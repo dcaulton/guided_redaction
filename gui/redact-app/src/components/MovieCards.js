@@ -57,6 +57,7 @@ class MovieCardList extends React.Component {
               this_cards_movie_url={value}
               movies={this.props.movies}
               getMovieMatchesFound={this.props.getMovieMatchesFound}
+              getMovieDiffsFound={this.props.getMovieDiffsFound}
               getMovieSelectedCount={this.props.getMovieSelectedCount}
               submitInsightsJob={this.props.submitInsightsJob}
               setMovieNickname={this.props.setMovieNickname}
@@ -203,6 +204,7 @@ class MovieCard extends React.Component {
     const framesets_count_message = this.getFramesetsCountMessage(this.props.this_cards_movie_url)
     const make_active_button = this.buildMakeActiveButton(this.props.this_cards_movie_url)
     const found_string = this.props.getMovieMatchesFound(this.props.this_cards_movie_url)
+    const diffs_string = this.props.getMovieDiffsFound(this.props.this_cards_movie_url)
     const selected_string = this.props.getMovieSelectedCount(this.props.this_cards_movie_url)
     const dims_string = this.getMovieDimensions(this.props.this_cards_movie_url, this.props.movies)
     let top_div_classname = "row mt-2 card"
@@ -255,6 +257,12 @@ class MovieCard extends React.Component {
                   style={dd_style}
               >
                 {found_string}
+              </div>
+              <div 
+                  className='row'
+                  style={dd_style}
+              >
+                {diffs_string}
               </div>
               <div className='row'>
                 {selected_string}
