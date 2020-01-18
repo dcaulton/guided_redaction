@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'guided_redaction.jobs',
     'guided_redaction.workbooks',
     'guided_redaction.codes',
+    'guided_redaction.link',
     'django_extensions',
     'rest_framework',
     'base',
