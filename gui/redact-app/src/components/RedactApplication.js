@@ -208,10 +208,30 @@ class RedactApplication extends React.Component {
     const image_url = 'http://localhost:3000/images/fire_b.jpg'
     this.getBase64Image(image_url)
     .then((image_data) => {
-      let form = document.getElementById('learn_form')
-      let form_input = document.getElementById('learn_form_input')
-      form_input.value = image_data
-      form.submit()
+      this.doPart2(image_data)
+    })
+  }
+
+  async doPart2(image_data) {
+    let the_url = 'https://osmae2lnxs117.amer.sykes.com/microlearning/mixer/create/1435f669-773a-4e1e-ae0a-c43f46995178/d6ed106c-f662-4dcd-83e5-c82be77eae8d/'
+    let headers = {
+      'Content-Type': 'multipart/form-data',
+      'Authorization': 'Token 1579c82fcaeff643bc1a8a01540fc2696ce4332d',
+    }
+console.log('getting ready to post to learn')
+    let response = await fetch(the_url, {
+      method: 'POST',
+      headers: headers,
+      body: JSON.stringify({
+        image_data: image_data,
+      }),
+    })
+    .then((response) => {
+console.log('hoopity bippity got a response')
+console.log(response)
+    })
+    .catch((error) => {
+      console.error(error);
     })
   }
 
@@ -227,6 +247,8 @@ class RedactApplication extends React.Component {
     let submit_url = target_data['image_post_url']
     return submit_url
   }
+
+
 
 /////////////////////////////////////////////////////////////////////////
   saveWhenDoneInfo(destination) {
@@ -671,37 +693,32 @@ class RedactApplication extends React.Component {
           const anchor_ids = Object.keys(template_match[movie_url][frameset_hash])
           const anchor_id = anchor_ids[0]
           const anchor_found_coords = template_match[movie_url][frameset_hash][anchor_id]['location']
-  // TODO TODO TODO scale the box here, make width and height vars
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
           const anchor_found_scale = template_match[movie_url][frameset_hash][anchor_id]['scale']
           const anchor_spec_coords = this.state.templates[template_id]['anchors'][0]['start']
           for (let m=0; m < mask_zones.length; m++) {
             const mask_zone = mask_zones[m]
-            const offset = [
-              anchor_found_coords[0] - anchor_spec_coords[0], 
-              anchor_found_coords[1] - anchor_spec_coords[1]
-            ] 
+            const mz_size = [
+                (mask_zone['end'][0] - mask_zone['start'][0]) / anchor_found_scale,
+                (mask_zone['end'][1] - mask_zone['start'][1]) / anchor_found_scale,
+            ]
+            let mz_spec_offset = [
+                mask_zone['start'][0] - anchor_spec_coords[0],
+                mask_zone['start'][1] - anchor_spec_coords[1],
+            ]
+            let mz_spec_offset_scaled = [
+                mz_spec_offset[0] / anchor_found_scale,
+                mz_spec_offset[1] / anchor_found_scale
+            ]
 
-            const new_start = [mask_zone['start'][0] + offset[0], mask_zone['start'][1] + offset[1]]
-            const new_end = [mask_zone['end'][0] + offset[0], mask_zone['end'][1] + offset[1]]
+            const new_start = [
+                anchor_found_coords[0] + mz_spec_offset_scaled[0],
+                anchor_found_coords[1] + mz_spec_offset_scaled[1],
+            ]
+
+            const new_end = [
+                new_start[0] + mz_size[0],
+                new_start[1] + mz_size[1]
+            ]
             const new_area_to_redact = {
               'start': new_start,
               'end': new_end,
@@ -1316,25 +1333,7 @@ class RedactApplication extends React.Component {
     }
   }
 
-  buildLearnForm() {
-    const submit_url = this.getLearnFormUrl()
-    return (
-      <form 
-          id='learn_form' 
-          method='POST' 
-          action={submit_url}
-      >
-        <input 
-            type='hidden' 
-            id='learn_form_input' 
-            name='image_data' 
-        />
-      </form>
-    )
-  }
-
   render() {
-    let learn_form = this.buildLearnForm()
     if (document.getElementById('movie_panel_link') && this.state.showMovieParserLink) {
       document.getElementById('movie_panel_link').style.display = 'block'
     }
@@ -1357,7 +1356,6 @@ class RedactApplication extends React.Component {
         </ul>
         </nav>
         <div id='container' className='container'>
-          {learn_form}
           <Switch>
             <Route exact path='/redact'>
               <HomePanel 
