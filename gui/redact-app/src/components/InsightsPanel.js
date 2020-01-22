@@ -1072,6 +1072,8 @@ class InsightsPanel extends React.Component {
             showAnnotate={this.state.showAnnotate}
             showOcr={this.state.showOcr}
             showDiffs={this.state.showDiffs}
+            playSound={this.props.playSound}
+            togglePlaySound={this.props.togglePlaySound}
             toggleShowTemplates={this.toggleShowTemplates}
             toggleShowSelectedArea={this.toggleShowSelectedArea}
             toggleShowMovieSets={this.toggleShowMovieSets}

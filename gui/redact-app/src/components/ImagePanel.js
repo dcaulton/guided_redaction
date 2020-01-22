@@ -208,11 +208,6 @@ class ImagePanel extends React.Component {
     }
   }
 
-  handleResetAreasToRedact = () => {
-    this.props.clearCurrentFramesetRedactions()
-    document.getElementById('base_image_id').src = this.props.image_url
-  }
-
   redactImage()  {
     let pass_arr = []
     const areas_to_redact = this.props.getRedactionFromFrameset()

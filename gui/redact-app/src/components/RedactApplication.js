@@ -43,6 +43,7 @@ class RedactApplication extends React.Component {
       link_url: api_server_url + 'v1/link/learn-dev',
       current_user: 'dave.caulton@sykes.com',
       current_workbook_name: 'workbook 1',
+      playSound: true,
       current_workbook_id: '',
       workbooks: [],
       movies: {},
@@ -110,11 +111,28 @@ class RedactApplication extends React.Component {
     this.watchForJob=this.watchForJob.bind(this)
     this.unWatchJob=this.unWatchJob.bind(this)
     this.checkForJobs=this.checkForJobs.bind(this)
+    this.playTone=this.playTone.bind(this)
+    this.togglePlaySound=this.togglePlaySound.bind(this)
   }
 
 
   getCurrentTemplateMatches() {
     return this.state.template_matches
+  }
+
+  playTone() {
+    if (this.state.playSound) {
+      var context = new AudioContext()
+      var o = context.createOscillator()
+      o.type = "sine"
+      o.frequency.value = 87.31
+      o.connect(context.destination)
+      var  g = context.createGain()
+      o.connect(g)
+      g.connect(context.destination)
+      o.start()
+      g.gain.exponentialRampToValueAtTime(0.00001, context.currentTime + 1)
+    }
   }
 
   unWatchJob(job_id) {
@@ -846,6 +864,7 @@ class RedactApplication extends React.Component {
 			} else if (job.app === 'parse' && job.operation === 'zip_movie') {
         this.loadZipMovieResults(job, when_done)
       }
+      this.playTone()
     })
     .catch((error) => {
       console.error(error);
@@ -942,6 +961,13 @@ class RedactApplication extends React.Component {
     })
   }
 
+  togglePlaySound() {
+    const new_value = (!this.state.playSound)                                                                           
+    this.setState({                                                                                                     
+      playSound: new_value,                                                                                             
+    })   
+  }
+
   async saveWorkbook(when_done=(()=>{})) {
     await fetch(this.state.workbooks_url, {
       method: 'POST',
@@ -950,6 +976,7 @@ class RedactApplication extends React.Component {
         state_data: this.state,
         owner: this.state.current_user,
         name: this.state.current_workbook_name,
+        play_sound: this.state.current_workbook_play_sound,
       }),
     })
     .then((response) => response.json())
@@ -1377,6 +1404,7 @@ class RedactApplication extends React.Component {
                 whenDoneTarget={this.state.whenDoneTarget}
                 gotoWhenDoneTarget={this.gotoWhenDoneTarget}
                 submitJob={this.submitJob}
+                playTone={this.playTone}
               />
             </Route>
             <Route path='/redact/insights'>
@@ -1405,6 +1433,8 @@ class RedactApplication extends React.Component {
                 getWorkbooks={this.getWorkbooks}
                 saveWorkbook={this.saveWorkbook}
                 saveWorkbookName={this.saveWorkbookName}
+                playSound={this.state.playSound}
+                togglePlaySound={this.togglePlaySound}
                 setCurrentTemplateId={this.setCurrentTemplateId}
                 current_template_id={this.state.current_template_id}
                 loadWorkbook={this.loadWorkbook}

@@ -111,6 +111,25 @@ class SessionControls extends React.Component {
     )
   }
 
+  buildWorkbookPlaySoundCheckbox() {
+    let checked_state = ''
+    if (this.props.current_workbook_play_sound) {
+      checked_state = 'checked'
+    } 
+    return (
+      <div className='row mt-3 bg-light rounded'>
+        <input
+          className='ml-2 mr-2 mt-1'
+          id='toggle_play_sound'
+          checked={checked_state}
+          type='checkbox'
+          onChange={(event) => this.setWorkbookSound(event.target.value)}
+        />
+        Play Sound
+      </div>
+    )
+  }
+
   render() {
     let campaign_movies_box = this.buildCampaignMoviesBox()
     let update_state_box = this.buildGlobalStateBox()
@@ -143,6 +162,10 @@ class SessionControls extends React.Component {
     let show_diffs_checked = ''
     if (this.props.showDiffs) {
       show_diffs_checked = 'checked'
+    }
+    let play_sound_checked = ''
+    if (this.props.playSound) {
+      play_sound_checked = 'checked'
     }
 
     return (
@@ -308,6 +331,17 @@ class SessionControls extends React.Component {
                     onChange={() => this.props.toggleShowResults()}
                   />
                   Show Results
+                </div>
+
+                <div className='row mt-3 bg-light rounded'>
+                  <input
+                    className='ml-2 mr-2 mt-1'
+                    id='toggle_play_sound'
+                    checked={play_sound_checked}
+                    type='checkbox'
+                    onChange={() => this.props.togglePlaySound()}
+                  />
+                  Play Sound
                 </div>
 
                 <div className='row mt-4'>

@@ -105,6 +105,8 @@ class BottomInsightsControls extends React.Component {
           current_workbook_name={this.props.current_workbook_name}
           saveWorkbook={this.props.saveWorkbook}
           saveWorkbookName={this.props.saveWorkbookName}
+          playSound={this.props.playSound}
+          togglePlaySound={this.props.togglePlaySound}
           displayInsightsMessage={this.props.displayInsightsMessage}
           callPing={this.props.callPing}
           workbooks={this.props.workbooks}
