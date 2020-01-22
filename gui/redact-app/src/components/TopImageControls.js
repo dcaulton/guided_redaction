@@ -108,13 +108,6 @@ class TopImageControls extends React.Component {
 
             <button 
                 className='btn btn-primary ml-2' 
-                onClick={() => this.props.setMode('view', '')}
-                href='./index.html' >
-              Cancel
-            </button>
-            
-            <button 
-                className='btn btn-primary ml-2' 
                 onClick={() => this.doClearRedaction()}
                 href='./index.html' >
               Reset

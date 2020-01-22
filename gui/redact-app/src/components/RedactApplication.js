@@ -39,7 +39,8 @@ class RedactApplication extends React.Component {
       codes_url: api_server_url + 'v1/codes',
       get_images_for_uuid_url: api_server_url + 'v1/parse/get-images-for-uuid',
       jobs_url: api_server_url + 'v1/jobs',
-      workbooks_url: api_server_url + 'v1/workbooks/',
+      workbooks_url: api_server_url + 'v1/workbooks',
+      link_url: api_server_url + 'v1/link/learn-dev',
       current_user: 'dave.caulton@sykes.com',
       current_workbook_name: 'workbook 1',
       current_workbook_id: '',
@@ -178,79 +179,37 @@ class RedactApplication extends React.Component {
     }
   }
 
-//////////////////////////////////////////////////////////////////////////////////
-  getImageBlob(url) {
-    return new Promise( async resolve=>{
-      let response = await fetch(url)
-      let blob = response.blob()
-      resolve(blob)
-    })
-  }
-
-  blobToBase64(blob) {
-    return new Promise( resolve=>{
-      let reader = new FileReader()
-      reader.onload = function() {
-        let dataUrl = reader.result
-        resolve(dataUrl);
-      };
-      reader.readAsDataURL(blob)
-    })
-  }
-
-  async getBase64Image(url) {
-    let blob = await this.getImageBlob(url)
-    let base64 = await this.blobToBase64(blob)
-    return base64
-  }
-
-  async gotoWhenDoneTarget(image_data) {
-    const image_url = 'http://localhost:3000/images/fire_b.jpg'
-    this.getBase64Image(image_url)
-    .then((image_data) => {
-      this.doPart2(image_data)
-    })
-  }
-
-  async doPart2(image_data) {
-    let the_url = 'https://osmae2lnxs117.amer.sykes.com/microlearning/mixer/create/1435f669-773a-4e1e-ae0a-c43f46995178/d6ed106c-f662-4dcd-83e5-c82be77eae8d/'
-    let headers = {
-      'Content-Type': 'multipart/form-data',
-      'Authorization': 'Token 1579c82fcaeff643bc1a8a01540fc2696ce4332d',
+  async gotoWhenDoneTarget(when_done=(()=>{})) {
+    const the_url = this.state.link_url
+    let image_urls = []
+    let framesets = this.getCurrentFramesets()
+    for (let i=0; i < Object.keys(framesets).length; i++) {
+      const frameset_hash = Object.keys(framesets)[i]
+      const frameset = framesets[frameset_hash]
+      if (Object.keys(frameset).includes('redacted_image_url')) {
+        image_urls.push(frameset['redacted_image_url'])
+      } else {
+        image_urls.push(frameset['images'][0])
+      }
     }
-console.log('getting ready to post to learn')
+
     let response = await fetch(the_url, {
       method: 'POST',
-      headers: headers,
+      headers: this.buildJsonHeaders(),
       body: JSON.stringify({
-        image_data: image_data,
+        image_urls: image_urls,
       }),
     })
-    .then((response) => {
-console.log('hoopity bippity got a response')
-console.log(response)
+    .then((response) => response.json())
+    .then((responseJson) => {
+      when_done(responseJson)
     })
     .catch((error) => {
       console.error(error);
     })
+    await response
   }
 
-  getLearnFormUrl() {
-    let target_data = {
-      api_token: '1579c82fcaeff643bc1a8a01540fc2696ce4332d',
-      catalog_uuid: 'dc397e77-cd4a-4426-853b-804484fe4a61',
-      template_uuid: '1435f669-773a-4e1e-ae0a-c43f46995178',
-      image_post_url: 'https://osmae2lnxs117.amer.sykes.com/microlearning/mixer/create/1435f669-773a-4e1e-ae0a-c43f46995178/d6ed106c-f662-4dcd-83e5-c82be77eae8d/',
-      generic_image_post_url: 'https://osmae2lnxs117.amer.sykes.com/microlearning/mixer/create/TEMPLATE_UUID/MEDIA_TOKEN_UUID/',
-      media_upload_token: 'd6ed106c-f662-4dcd-83e5-c82be77eae8d',
-    }
-    let submit_url = target_data['image_post_url']
-    return submit_url
-  }
-
-
-
-/////////////////////////////////////////////////////////////////////////
   saveWhenDoneInfo(destination) {
     if (destination === 'learn_dev') {
       this.setState({
@@ -670,7 +629,11 @@ console.log(response)
     })                                                                          
     .then((response) => response.json())                                        
     .then((responseJson) => {                                                   
-      when_done_success(responseJson)
+      if (Object.keys(responseJson).includes('response') && responseJson['response'] === 'pong') {
+        when_done_success(responseJson)
+      } else {
+        when_done_failure()
+      }
     })                                                                          
     .catch((error) => {                                                         
       when_done_failure()
@@ -796,7 +759,7 @@ console.log(response)
   async loadRedactResults(job, when_done=(()=>{})) {
     for (let i=0; i < job.children.length; i++) {
       const child_id = job.children[i]
-      let job_url = this.state.jobs_url + '//' + child_id
+      let job_url = this.state.jobs_url + '/' + child_id
       await fetch(job_url, {
         method: 'GET',
         headers: this.buildJsonHeaders(),
@@ -826,7 +789,7 @@ console.log(response)
   }
 
   async loadFilterResults(job, when_done=(()=>{})) {
-      let job_url = this.state.jobs_url + '//' + job.id
+      let job_url = this.state.jobs_url + '/' + job.id
       await fetch(job_url, {
         method: 'GET',
         headers: this.buildJsonHeaders(),
@@ -864,7 +827,7 @@ console.log(response)
   }
 
   async loadJobResults(job_id, when_done=(()=>{})) {
-    let job_url = this.state.jobs_url + '//' + job_id
+    let job_url = this.state.jobs_url + '/' + job_id
     await fetch(job_url, {
       method: 'GET',
       headers: this.buildJsonHeaders(),
@@ -908,7 +871,7 @@ console.log(response)
   }
 
   async submitJob(the_job_data, when_submit_complete=(()=>{}), cancel_after_loading=false, when_fetched=(()=>{})) {
-    await fetch(this.state.jobs_url + '/', {
+    await fetch(this.state.jobs_url, {
       method: 'POST',
       headers: this.buildJsonHeaders(),
       body: JSON.stringify({
@@ -938,13 +901,8 @@ console.log(response)
   }
 
   async cancelJob(the_job) {
-    // the following double slash is wrong but I'm tired of fighting with DRF 
-    // It comes back to the api urls file.  If I don't specify a trailing slash
-    //   after the jobs base url, 'list jobs' above won't work, because, 
-    //   even if I specify this.state.jobs_url with no trailing slash, the 
-    //   get call for getJobs() will append a slash, then 404 on me
     let the_uuid = the_job['id']
-    let the_url = this.state.jobs_url + '//' + the_uuid
+    let the_url = this.state.jobs_url + '/' + the_uuid
     await fetch(the_url, {
       method: 'DELETE',
       headers: this.buildJsonHeaders(),
