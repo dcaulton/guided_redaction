@@ -63,7 +63,7 @@ class TopImageControls extends React.Component {
     return (
       <div className='m-2' id='top_controls_div'>
         <div className='row'>
-          <div className='col col-lg-1'>
+          <div id='felix' className='col col-lg-1'>
           </div>
           <div className='col col-lg-10'>
             <div id='add_div' className='d-inline'>

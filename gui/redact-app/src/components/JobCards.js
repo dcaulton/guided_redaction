@@ -142,17 +142,42 @@ class JobCard extends React.Component {
     )
 
 
+    let green_circle_style = {
+      stroke: '#27A929',
+      strokeWidth: '1px',
+      fill: 'solid',
+    }
+    let light_blue_circle_style = {
+      stroke: '#2DDEFF',
+      strokeWidth: '1px',
+      fill: 'solid',
+    }
+    let dark_blue_circle_style = {
+      stroke: '#443CF3',
+      strokeWidth: '1px',
+      fill: 'solid',
+    }
+    let red_circle_style = {
+      stroke: '#FF1D44',
+      strokeWidth: '1px',
+      fill: 'solid',
+    }
+
     let status_button = ''
     if (this.props.job_data['status'] === 'running') {
       status_button = (
         <div
           className='col-md-2 float-right'
         >
-        <img
-          src='../gr_assets/blue_dot.png'
-          height='20'
-          alt='running'
-        />
+          <svg width='20' height='22' >
+            <circle
+                r='10'
+                fill='#443CF3'
+                cx='10'
+                cy='10'
+                style={dark_blue_circle_style}
+            />
+          </svg>
         </div>
       )
     } else if (this.props.job_data['status'] === 'success') {
@@ -160,11 +185,15 @@ class JobCard extends React.Component {
         <div
           className='col-md-2 float-right'
         >
-        <img
-          src='../gr_assets/green_dot.png'
-          height='20'
-          alt='success'
-        />
+          <svg width='20' height='22' >
+            <circle
+                r='10'
+                fill='#27A929'
+                cx='10'
+                cy='10'
+                style={green_circle_style}
+            />
+          </svg>
         </div>
       )
     } else if (this.props.job_data['status'] === 'created') {
@@ -172,11 +201,15 @@ class JobCard extends React.Component {
         <div
           className='col-md-2 float-right'
         >
-        <img
-          src='../gr_assets/teal_dot.png'
-          height='20'
-          alt='success'
-        />
+          <svg width='20' height='22' >
+            <circle
+                r='10'
+                fill='#2DDEFF'
+                cx='10'
+                cy='10'
+                style={light_blue_circle_style}
+            />
+          </svg>
         </div>
       )
     } else {
@@ -184,11 +217,15 @@ class JobCard extends React.Component {
         <div
           className='col-md-2 float-right'
         >
-        <img
-          src='../gr_assets/red_dot.png'
-          height='20'
-          alt='failed or unknown status'
-        />
+          <svg width='20' height='22' >
+            <circle
+                r='10'
+                fill='#FF1D44'
+                cx='10'
+                cy='10'
+                style={red_circle_style}
+            />
+          </svg>
         </div>
       )
     }
