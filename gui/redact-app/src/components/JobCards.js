@@ -169,9 +169,9 @@ class JobCard extends React.Component {
         <div
           className='col-md-2 float-right'
         >
-          <svg width='20' height='22' >
+          <svg width='20' height='21' >
             <circle
-                r='10'
+                r='9'
                 fill='#443CF3'
                 cx='10'
                 cy='10'
@@ -185,9 +185,9 @@ class JobCard extends React.Component {
         <div
           className='col-md-2 float-right'
         >
-          <svg width='20' height='22' >
+          <svg width='20' height='21' >
             <circle
-                r='10'
+                r='9'
                 fill='#27A929'
                 cx='10'
                 cy='10'
@@ -201,9 +201,9 @@ class JobCard extends React.Component {
         <div
           className='col-md-2 float-right'
         >
-          <svg width='20' height='22' >
+          <svg width='20' height='21' >
             <circle
-                r='10'
+                r='9'
                 fill='#2DDEFF'
                 cx='10'
                 cy='10'
@@ -217,9 +217,9 @@ class JobCard extends React.Component {
         <div
           className='col-md-2 float-right'
         >
-          <svg width='20' height='22' >
+          <svg width='20' height='21' >
             <circle
-                r='10'
+                r='9'
                 fill='#FF1D44'
                 cx='10'
                 cy='10'

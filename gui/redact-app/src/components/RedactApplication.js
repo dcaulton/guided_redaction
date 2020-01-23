@@ -121,18 +121,21 @@ class RedactApplication extends React.Component {
   }
 
   playTone() {
-    if (this.state.playSound) {
-      var context = new AudioContext()
-      var o = context.createOscillator()
-      o.type = "sine"
-      o.frequency.value = 87.31
-      o.connect(context.destination)
-      var  g = context.createGain()
-      o.connect(g)
-      g.connect(context.destination)
-      o.start()
-      g.gain.exponentialRampToValueAtTime(0.00001, context.currentTime + 1)
-    }
+    let context = new AudioContext()
+    var LFO = context.createOscillator()
+    var VCA = context.createGain()
+    var oscillator = context.createOscillator()
+    var  final_gain = context.createGain()
+    oscillator.frequency.value = 148.02
+    LFO.connect(VCA.gain)
+    oscillator.connect(VCA)
+    VCA.connect(final_gain)
+    final_gain.connect(context.destination)
+    LFO.frequency.value = 5
+    LFO.start(0)
+    final_gain.gain.exponentialRampToValueAtTime(1, context.currentTime + .25)
+    oscillator.start(0)
+    final_gain.gain.exponentialRampToValueAtTime(0.00001, context.currentTime + 1.5)
   }
 
   unWatchJob(job_id) {
