@@ -6,6 +6,7 @@ class TemplateControls extends React.Component {
     super(props)
     this.state = {
       template_name: 'template 1',
+      app_name: '',
       template_scale: '1_1',
       template_match_percent: 'Match %',
       template_match_method: '',
@@ -78,6 +79,7 @@ class TemplateControls extends React.Component {
     this.doSleep(200).then(() => {
       this.setState({
         template_name: 'template 1',
+        app_name: '',
         template_scale: '1_1',
         template_match_percent: 'Match %',
         template_match_method: '',
@@ -90,6 +92,7 @@ class TemplateControls extends React.Component {
     const template = this.props.templates[template_id]
     this.setState({
       template_name: template.name,
+      app_name: template.app_name,
       template_scale: template.scale,
       template_match_percent: template.match_percent,
       template_match_method: template.match_method,
@@ -155,6 +158,16 @@ class TemplateControls extends React.Component {
   setTemplateName(the_name) {
     this.setState({
       template_name: the_name,
+    })
+    // I need to do this because setting it as the after clause on setState doesn't pick up the latest state
+    this.doSleep(200).then(() => {
+      this.doTemplateSave(this.props.displayInsightsMessage('Template has been saved'))
+    })
+  }
+
+  setTemplateAppName(the_name) {
+    this.setState({
+      app_name: the_name,
     })
     // I need to do this because setting it as the after clause on setState doesn't pick up the latest state
     this.doSleep(200).then(() => {
@@ -242,6 +255,7 @@ class TemplateControls extends React.Component {
     let template_data = {
       id: this.props.current_template_id,
       name: this.state.template_name,
+      app_name: this.state.app_name,
       scale: this.state.template_scale,
       match_percent: this.state.template_match_percent,
       match_method: this.state.template_match_method,
@@ -520,11 +534,25 @@ class TemplateControls extends React.Component {
                     <input                                                      
                         id='template_name'                                      
                         key='template_name_1'                                   
-                        size='25'                                               
+                        title='template name'
+                        size='15'                                               
                         value={this.state.template_name}
                         onChange={(event) => this.setTemplateName(event.target.value)}
                     /> 
                     {template_saved_unsaved}
+                </div>
+
+                <div
+                    className='d-inline ml-2 mt-2'
+                >   
+                    <input                                                      
+                        id='app_name'                                      
+                        key='app_name_1'                                   
+                        title='app name'
+                        size='15'                                               
+                        value={this.state.app_name}
+                        onChange={(event) => this.setTemplateAppName(event.target.value)}
+                    /> 
                 </div>
 
                 <div className='d-inline ml-2'>
