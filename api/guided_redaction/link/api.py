@@ -89,3 +89,18 @@ class LinkViewSetJunkSniffer(viewsets.ViewSet):
         return Response( {
             "poopsy": 'daisy',
         })
+
+class LinkViewSetCanReach(viewsets.ViewSet):
+    def create(self, request):
+        if not request.data.get("url"):
+            return self.error(["url is required"], status_code=400)
+        can_reach = False
+        url = request.data.get('url')
+        try:
+            response = requests.head(url)
+            if response.status_code == 200:
+                return Response({"can_reach": True})
+            return Response({"can_reach": False})
+        except Exception as e:
+            console.log('can reach exception: ', e)
+            return Response({"can_reach": False})
