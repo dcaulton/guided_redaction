@@ -252,22 +252,27 @@ class ParseViewSetMakeUrl(viewsets.ViewSet):
     def create(self, request):
         file_base_url = settings.REDACT_FILE_BASE_URL
         if request.method == "POST" and "file" in request.FILES:
-            file_obj = request.FILES["file"]
-            file_basename = request.FILES.get("file").name
-            if file_obj:
-                the_uuid = str(uuid.uuid4())
-                workdir = os.path.join(settings.REDACT_FILE_STORAGE_DIR, the_uuid)
-                os.mkdir(workdir)
-                outfilename = os.path.join(workdir, file_basename)
-                fh = open(outfilename, "wb")
-                for chunk in file_obj.chunks():
-                    fh.write(chunk)
-                fh.close()
-                (x_part, file_part) = os.path.split(outfilename)
-                (y_part, uuid_part) = os.path.split(x_part)
-                file_url = "/".join([file_base_url, uuid_part, file_part])
+            try:
+                file_obj = request.FILES["file"]
+                file_basename = request.FILES.get("file").name
+                if file_obj:
+                    the_uuid = str(uuid.uuid4())
+                    workdir = os.path.join(settings.REDACT_FILE_STORAGE_DIR, the_uuid)
+                    os.mkdir(workdir)
+                    outfilename = os.path.join(workdir, file_basename)
+                    fh = open(outfilename, "wb")
+                    for chunk in file_obj.chunks():
+                        fh.write(chunk)
+                    fh.close()
+                    (x_part, file_part) = os.path.split(outfilename)
+                    (y_part, uuid_part) = os.path.split(x_part)
+                    file_url = "/".join([file_base_url, uuid_part, file_part])
 
-                return response({"url": file_url}, status=200)
+                    return Response({"url": file_url})
+            except Exception as e:
+                return self.error([e], status_code=400)
+        else:
+            return self.error(['no file (keyname file) supplied'], status_code=400)
 
 
 class ParseViewSetZipMovie(viewsets.ViewSet):
