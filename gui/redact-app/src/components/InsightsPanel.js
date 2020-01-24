@@ -31,6 +31,7 @@ class InsightsPanel extends React.Component {
       showTemplates: true,
       showSelectedArea: true,
       showAnnotate: true,
+      showTelemetry: true,
       showOcr: true,
       showMovieSets: true,
       showResults: true,
@@ -75,6 +76,7 @@ class InsightsPanel extends React.Component {
     this.toggleShowMovieSets=this.toggleShowMovieSets.bind(this)
     this.toggleShowResults=this.toggleShowResults.bind(this)
     this.toggleShowAnnotate=this.toggleShowAnnotate.bind(this)
+    this.toggleShowTelemetry=this.toggleShowTelemetry.bind(this)
     this.toggleShowOcr=this.toggleShowOcr.bind(this)
     this.toggleShowDiffs=this.toggleShowDiffs.bind(this)
     this.loadInsightsJobResults=this.loadInsightsJobResults.bind(this)
@@ -177,6 +179,13 @@ class InsightsPanel extends React.Component {
     const new_value = (!this.state.showAnnotate)
     this.setState({
       showAnnotate: new_value,
+    })
+  }
+
+  toggleShowTelemetry() {
+    const new_value = (!this.state.showTelemetry)
+    this.setState({
+      showTelemetry: new_value,
     })
   }
 
@@ -1070,6 +1079,7 @@ class InsightsPanel extends React.Component {
             showMovieSets={this.state.showMovieSets}
             showResults={this.state.showResults}
             showAnnotate={this.state.showAnnotate}
+            showTelemetry={this.state.showTelemetry}
             showOcr={this.state.showOcr}
             showDiffs={this.state.showDiffs}
             playSound={this.props.playSound}
@@ -1079,6 +1089,7 @@ class InsightsPanel extends React.Component {
             toggleShowMovieSets={this.toggleShowMovieSets}
             toggleShowResults={this.toggleShowResults}
             toggleShowAnnotate={this.toggleShowAnnotate}
+            toggleShowTelemetry={this.toggleShowTelemetry}
             toggleShowOcr={this.toggleShowOcr}
             toggleShowDiffs={this.toggleShowDiffs}
             setFramesetDiscriminator={this.props.setFramesetDiscriminator}

@@ -1,6 +1,7 @@
 import React from 'react';
 import TemplateControls from './TemplateControls'
 import AnnotationControls from './AnnotationControls'
+import TelemetryControls from './TelemetryControls'
 import SelectedAreaControls from './SelectedAreaControls'
 import OcrControls from './OcrControls'
 import DiffControls from './DiffControls'
@@ -69,6 +70,11 @@ class BottomInsightsControls extends React.Component {
           toggleShowAnnotate={this.props.toggleShowAnnotate}
         />
 
+        <TelemetryControls
+          showTelemetry={this.props.showTelemetry}
+          toggleShowTelemetry={this.props.toggleShowTelemetry}
+        />
+
         <DiffControls
           displayInsightsMessage={this.props.displayInsightsMessage}
           showDiffs={this.props.showDiffs}
@@ -117,6 +123,7 @@ class BottomInsightsControls extends React.Component {
           showMovieSets={this.props.showMovieSets}
           showResults={this.props.showResults}
           showAnnotate={this.props.showAnnotate}
+          showTelemetry={this.props.showTelemetry}
           showOcr={this.props.showOcr}
           showDiffs={this.props.showDiffs}
           toggleShowTemplates={this.props.toggleShowTemplates}
@@ -124,6 +131,7 @@ class BottomInsightsControls extends React.Component {
           toggleShowMovieSets={this.props.toggleShowMovieSets}
           toggleShowResults={this.props.toggleShowResults}
           toggleShowAnnotate={this.props.toggleShowAnnotate}
+          toggleShowTelemetry={this.props.toggleShowTelemetry}
           toggleShowOcr={this.props.toggleShowOcr}
           toggleShowDiffs={this.props.toggleShowDiffs}
           setFramesetDiscriminator={this.props.setFramesetDiscriminator}

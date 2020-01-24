@@ -155,6 +155,10 @@ class SessionControls extends React.Component {
     if (this.props.showAnnotate) {
       show_annotate_checked = 'checked'
     }
+    let show_telemetry_checked = ''
+    if (this.props.showTelemetry) {
+      show_telemetry_checked = 'checked'
+    }
     let show_ocr_checked = ''
     if (this.props.showOcr) {
       show_ocr_checked = 'checked'
@@ -287,6 +291,17 @@ class SessionControls extends React.Component {
                     onChange={() => this.props.toggleShowAnnotate()}
                   />
                   Show Annotate
+                </div>
+
+                <div className='row mt-3 bg-light rounded'>
+                  <input
+                    className='ml-2 mr-2 mt-1'
+                    id='toggle_telemetry'
+                    checked={show_telemetry_checked}
+                    type='checkbox'
+                    onChange={() => this.props.toggleShowTelemetry()}
+                  />
+                  Show Telemetry
                 </div>
 
                 <div className='row mt-3 bg-light rounded'>
