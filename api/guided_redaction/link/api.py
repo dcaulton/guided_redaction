@@ -102,5 +102,5 @@ class LinkViewSetCanReach(viewsets.ViewSet):
                 return Response({"can_reach": True})
             return Response({"can_reach": False})
         except Exception as e:
-            console.log('can reach exception: ', e)
+            print('can reach exception: ', e)
             return Response({"can_reach": False})

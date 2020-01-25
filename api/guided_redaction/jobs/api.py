@@ -130,7 +130,7 @@ class JobsViewSet(viewsets.ViewSet):
         job = Job(
             request_data=json.dumps(request.data.get('request_data')),
             file_uuids_used=json.dumps(self.get_file_uuids_from_request(request.data)),
-            owner=request.data.get('owner'),
+            owner=request.data.get('owner', 'unknown'),
             status='created',
             description=request.data.get('description'),
             app=request.data.get('app', 'bridezilla'),
@@ -147,7 +147,7 @@ class JobsViewSet(viewsets.ViewSet):
             parent_job = Job(
                 request_data=json.dumps(request.data.get('request_data')),
                 file_uuids_used=json.dumps(self.get_file_uuids_from_request(request.data)),
-                owner=request.data.get('owner'),
+                owner=request.data.get('owner', 'unknown'),
                 status='created',
                 description=request.data.get('description'),
                 app=request.data.get('app', 'bridezilla'),

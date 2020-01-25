@@ -41,7 +41,8 @@ class RedactApplication extends React.Component {
       jobs_url: api_server_url + 'v1/jobs',
       workbooks_url: api_server_url + 'v1/workbooks',
       link_url: api_server_url + 'v1/link/learn-dev',
-      current_user: 'dave.caulton@sykes.com',
+      can_see_url: api_server_url + 'v1/link/can-reach',
+      make_url_url: api_server_url + 'v1/parse/make-url',
       current_workbook_name: 'workbook 1',
       playSound: true,
       current_workbook_id: '',
@@ -113,8 +114,100 @@ class RedactApplication extends React.Component {
     this.checkForJobs=this.checkForJobs.bind(this)
     this.playTone=this.playTone.bind(this)
     this.togglePlaySound=this.togglePlaySound.bind(this)
+    this.checkIfApiCanSeeUrl=this.checkIfApiCanSeeUrl.bind(this)
+    this.checkIfGuiCanSeeUrl=this.checkIfGuiCanSeeUrl.bind(this)
+    this.callMakeUrl=this.callMakeUrl.bind(this)
+    this.updateSingleImageMovie=this.updateSingleImageMovie.bind(this)
+    this.setMovies=this.setMovies.bind(this)
   }
 
+  async checkIfApiCanSeeUrl(the_url, when_done=(()=>{})) {
+    let response = await fetch(this.state.can_see_url, {
+      method: 'POST',
+      headers: this.buildJsonHeaders(),
+      body: JSON.stringify({
+        url: the_url,
+      }),
+    })
+    .then((response) => response.json())
+    .then((responseJson) => {
+      when_done(responseJson)
+    })
+    .catch((error) => {
+      console.error(error)
+    })
+    await response
+  }
+
+  async checkIfGuiCanSeeUrl(the_url, when_done=(()=>{})) {
+    let response = await fetch(the_url, {
+      method: 'HEAD',
+    })
+    .then((response) => {
+      if (response.status === 200) {
+        when_done({can_reach: true})
+      } else {
+        when_done({can_reach: false})
+      }
+    })
+    .catch((error) => {
+      when_done({can_reach: false})
+    })
+    await response
+  }
+
+  getImageBlob(url) {
+    return new Promise( async resolve=>{
+      let response = await fetch(url)
+      let blob = response.blob()
+      resolve(blob)
+    })
+  }
+
+  blobToBase64(blob) {
+    return new Promise( resolve=>{
+      let reader = new FileReader()
+      reader.onload = function() {
+        let dataUrl = reader.result
+        resolve(dataUrl);
+      };
+      reader.readAsDataURL(blob)
+    })
+  }
+
+  async getBase64Image(url) {
+    let blob = await this.getImageBlob(url)
+    let base64 = await this.blobToBase64(blob)
+    return base64
+  }
+
+  async callMakeUrl(the_url, when_done=(()=>{})) {
+    this.getBase64Image(the_url)
+    .then((image_data) => {
+      let url_parts = the_url.split('/')
+      let image_name = url_parts[url_parts.length-1]
+      this.postMakeUrlCall(image_data, image_name, when_done)
+    })
+  }
+
+  async postMakeUrlCall(image_data, image_name, when_done=(()=>{})) {
+    let response = await fetch(this.state.make_url_url, {
+      method: 'POST',
+      headers: this.buildJsonHeaders(),
+      body: JSON.stringify({
+        data_uri: image_data,
+        filename: image_name,
+      }),
+    })
+    .then((response) => response.json())
+    .then((responseJson) => {
+      when_done(responseJson)
+    })
+    .catch((error) => {
+      console.error(error)
+    })
+    await response
+  }
 
   getCurrentTemplateMatches() {
     return this.state.template_matches
@@ -125,17 +218,21 @@ class RedactApplication extends React.Component {
     var LFO = context.createOscillator()
     var VCA = context.createGain()
     var oscillator = context.createOscillator()
+    var oscillator2 = context.createOscillator()
     var  final_gain = context.createGain()
-    oscillator.frequency.value = 148.02
+    oscillator.frequency.value = 293.66  // D4 - Root
+    oscillator2.frequency.value = 220.00 // A3 - 5th one octave down
     LFO.connect(VCA.gain)
     oscillator.connect(VCA)
+    oscillator2.connect(VCA)
     VCA.connect(final_gain)
     final_gain.connect(context.destination)
-    LFO.frequency.value = 5
+    LFO.frequency.value = 4
     LFO.start(0)
     final_gain.gain.exponentialRampToValueAtTime(1, context.currentTime + .25)
     oscillator.start(0)
-    final_gain.gain.exponentialRampToValueAtTime(0.00001, context.currentTime + 1.5)
+    oscillator2.start(0)
+    final_gain.gain.exponentialRampToValueAtTime(0.00001, context.currentTime + 1.95)
   }
 
   unWatchJob(job_id) {
@@ -251,6 +348,15 @@ class RedactApplication extends React.Component {
     return return_arr
   }
 
+  updateSingleImageMovie(the_image_url) {
+    let deepCopyMovies= JSON.parse(JSON.stringify(this.state.movies))
+    deepCopyMovies['whatever']['frames'] = [the_image_url]
+    deepCopyMovies['whatever']['framesets'][1]['images'] = [the_image_url]
+    this.setState({
+      movies: deepCopyMovies,
+    })
+  }
+
   clearCurrentFramesetRedactions(when_done=(()=>{})) {
     const the_hash = this.getFramesetHashForImageUrl(this.state.image_url)
     let deepCopyMovies= JSON.parse(JSON.stringify(this.state.movies))
@@ -329,6 +435,12 @@ class RedactApplication extends React.Component {
   setMovieSets(the_movie_sets) {
     this.setState({
       movie_sets: the_movie_sets,
+    })
+  }
+
+  setMovies(the_movies) {
+    this.setState({
+      movies: the_movies,
     })
   }
 
@@ -1350,6 +1462,12 @@ class RedactApplication extends React.Component {
                 setMovieUrlCallback={this.handleSetMovieUrl}
                 setImageUrl={this.setImageUrl}
                 showMovieParserLink={this.state.showMovieParserLink}l
+                can_see_url={this.state.can_see_url}
+                checkIfApiCanSeeUrl={this.checkIfApiCanSeeUrl}
+                checkIfGuiCanSeeUrl={this.checkIfGuiCanSeeUrl}
+                callMakeUrl={this.callMakeUrl}
+                updateSingleImageMovie={this.updateSingleImageMovie}
+                setMovies={this.setMovies}
               />
             </Route>
             <Route path='/redact/movie'>

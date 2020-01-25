@@ -249,6 +249,7 @@ class ParseViewSetSplitAndHashMovie(viewsets.ViewSet):
 
 
 class ParseViewSetMakeUrl(viewsets.ViewSet):
+    # TODO convert this over to use FileWriter
     def create(self, request):
         file_base_url = settings.REDACT_FILE_BASE_URL
         if request.method == "POST" and "file" in request.FILES:
@@ -271,8 +272,25 @@ class ParseViewSetMakeUrl(viewsets.ViewSet):
                     return Response({"url": file_url})
             except Exception as e:
                 return self.error([e], status_code=400)
+        elif request.method == "POST" and request.data.get("data_uri") and request.data.get('filename'):
+            filename = request.data.get("filename")
+            data_uri = request.data.get('data_uri')
+            header, image_data= data_uri.split(",", 1)
+            image_binary = base64.b64decode(image_data)
+
+            the_uuid = str(uuid.uuid4())
+            workdir = os.path.join(settings.REDACT_FILE_STORAGE_DIR, the_uuid)
+            os.mkdir(workdir)
+            outfilename = os.path.join(workdir, filename)
+            fh = open(outfilename, "wb")
+            fh.write(image_binary)
+            fh.close()
+            (x_part, file_part) = os.path.split(outfilename)
+            (y_part, uuid_part) = os.path.split(x_part)
+            file_url = "/".join([file_base_url, uuid_part, file_part])
+            return Response({"url": file_url})
         else:
-            return self.error(['no file (keyname file) supplied'], status_code=400)
+            return self.error(['no file (keyname file) supplied and no data_uri+filename parameters supplied'], status_code=400)
 
 
 class ParseViewSetZipMovie(viewsets.ViewSet):
