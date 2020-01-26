@@ -11,7 +11,6 @@ from rest_framework.response import Response
 import cv2
 import numpy as np
 
-from guided_redaction.parse.models import ImageBlob
 from guided_redaction.parse.classes.MovieParser import MovieParser
 from guided_redaction.utils.classes.FileWriter import FileWriter
 from django.shortcuts import render
@@ -23,9 +22,7 @@ class ParseViewSetGetImagesForUuid(viewsets.ViewSet):
     def list(self, request):
         the_uuid = request.GET['uuid']
         the_connection_string = ""
-        if settings.REDACT_IMAGE_STORAGE == "mysql":
-            the_base_url = request.build_absolute_uri(settings.REDACT_MYSQL_BASE_URL)
-        elif settings.REDACT_IMAGE_STORAGE == "azure_blob":
+        if settings.REDACT_IMAGE_STORAGE == "azure_blob":
             the_base_url = settings.REDACT_AZURE_BASE_URL
             the_connection_string = settings.REDACT_AZURE_BLOB_CONNECTION_STRING
         else:
@@ -67,9 +64,7 @@ class ParseViewSetSplitMovie(viewsets.ViewSet):
         }
 
         the_connection_string = ""
-        if settings.REDACT_IMAGE_STORAGE == "mysql":
-            the_base_url = request.build_absolute_uri(settings.REDACT_MYSQL_BASE_URL)
-        elif settings.REDACT_IMAGE_STORAGE == "azure_blob":
+        if settings.REDACT_IMAGE_STORAGE == "azure_blob":
             the_base_url = settings.REDACT_AZURE_BASE_URL
             the_connection_string = settings.REDACT_AZURE_BLOB_CONNECTION_STRING
         else:
@@ -175,9 +170,7 @@ class ParseViewSetSplitAndHashMovie(viewsets.ViewSet):
             return return_data
 
         the_connection_string = ""
-        if settings.REDACT_IMAGE_STORAGE == "mysql":
-            the_base_url = request.build_absolute_uri(settings.REDACT_MYSQL_BASE_URL)
-        elif settings.REDACT_IMAGE_STORAGE == "azure_blob":
+        if settings.REDACT_IMAGE_STORAGE == "azure_blob":
             the_base_url = settings.REDACT_AZURE_BASE_URL
             the_connection_string = settings.REDACT_AZURE_BLOB_CONNECTION_STRING
         else:
@@ -322,9 +315,7 @@ class ParseViewSetZipMovie(viewsets.ViewSet):
         movie_name = request_data["movie_name"]
 
         the_connection_string = ""
-        if settings.REDACT_IMAGE_STORAGE == "mysql":
-            the_base_url = request.build_absolute_uri(settings.REDACT_MYSQL_BASE_URL)
-        elif settings.REDACT_IMAGE_STORAGE == "azure_blob":
+        if settings.REDACT_IMAGE_STORAGE == "azure_blob":
             the_base_url = settings.REDACT_AZURE_BASE_URL
             the_connection_string = settings.REDACT_AZURE_BLOB_CONNECTION_STRING
         else:
@@ -387,16 +378,3 @@ class ParseViewSetCropImage(viewsets.ViewSet):
             })
         else:
             return self.error('could not read image', status_code=422)
-
-class ParseViewSetFetchImage(viewsets.ViewSet):
-    def retrieve(self, request, the_uuid, the_image_name):
-        ib_list = ImageBlob.objects.filter(uuid=the_uuid).filter(
-            file_name=the_image_name
-        )
-        if ib_list:
-            the_image_blob = ib_list[0]
-            response = HttpResponse(content_type=the_image_blob.asset_type)
-            response["Content-Disposition"] = "attachment; filename=" + the_image_name
-            response.write(the_image_blob.image_data)
-            return response
-        return self.error("image not found", status_code=404)

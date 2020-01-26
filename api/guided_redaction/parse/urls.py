@@ -27,8 +27,5 @@ router.register(
 )
 router.register(r"v1/parse/ping", api.ParseViewSetPing, basename="MarlinPerkins")
 router.register(
-    r"v1/parse/fetch-image", api.ParseViewSetFetchImage, basename="TonyClifton"
-)
-router.register(
     r"v1/parse/crop-image", api.ParseViewSetCropImage, basename="BillyBob"
 )

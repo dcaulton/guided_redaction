@@ -80,10 +80,7 @@ class RedactViewSetRedactImage(viewsets.ViewSet):
 
     def save_image_to_disk(self, cv2_image, image_name, the_uuid):
         the_connection_string = ""
-        if settings.REDACT_IMAGE_STORAGE == "mysql":
-#            the_base_url = request.build_absolute_uri(settings.REDACT_MYSQL_BASE_URL)
-            the_base_url = 'messed_up_until_we_figure_this_out'
-        elif settings.REDACT_IMAGE_STORAGE == "azure_blob":
+        if settings.REDACT_IMAGE_STORAGE == "azure_blob":
             the_base_url = settings.REDACT_AZURE_BASE_URL
             the_connection_string = settings.REDACT_AZURE_BLOB_CONNECTION_STRING
         else:
