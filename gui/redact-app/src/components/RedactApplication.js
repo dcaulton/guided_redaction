@@ -121,6 +121,7 @@ class RedactApplication extends React.Component {
     this.setMovies=this.setMovies.bind(this)
     this.postMakeUrlCall=this.postMakeUrlCall.bind(this)
     this.establishNewOneImageMovie=this.establishNewOneImageMovie.bind(this)
+    this.establishNewMovie=this.establishNewMovie.bind(this)
   }
 
   establishNewOneImageMovie(data_in) {
@@ -131,6 +132,17 @@ class RedactApplication extends React.Component {
     this.setMovies({})
     this.makeNewFrameFrameset(data_in['url'])
     this.setImageUrl(data_in['url'])
+  }
+
+  establishNewMovie(data_in) {
+    if (!Object.keys(data_in).includes('url')) {
+      console.log('error in establishNewMovie incoming data, no url found')
+      return
+    }
+    this.handleSetMovieUrl(data_in['url'])
+    // A hack, but for whatever reason the state isn't ready when the moviePanel renders
+    document.getElementById('image_panel_link').click()
+    document.getElementById('movie_panel_link').click()
   }
 
   async checkIfApiCanSeeUrl(the_url, when_done=(()=>{})) {
@@ -1480,6 +1492,7 @@ class RedactApplication extends React.Component {
                 callMakeUrl={this.callMakeUrl}
                 updateSingleImageMovie={this.updateSingleImageMovie}
                 setMovies={this.setMovies}
+                establishNewOneImageMovie={this.establishNewOneImageMovie}
               />
             </Route>
             <Route path='/redact/movie'>
@@ -1509,6 +1522,8 @@ class RedactApplication extends React.Component {
                 cancelJob={this.cancelJob}
                 jobs={this.state.jobs}
                 watchForJob={this.watchForJob}
+                postMakeUrlCall={this.postMakeUrlCall}
+                establishNewMovie={this.establishNewMovie}
               />
             </Route>
             <Route path='/redact/image'>

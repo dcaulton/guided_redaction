@@ -26,8 +26,9 @@ class HomePanel extends React.Component {
               checkIfApiCanSeeUrl={this.props.checkIfApiCanSeeUrl}
               checkIfGuiCanSeeUrl={this.props.checkIfGuiCanSeeUrl}
               callMakeUrl={this.props.callMakeUrl}
-              updateSingleImageMovie={this.props.updateSingleImageMovie}
               setMovies={this.props.setMovies}
+              establishNewOneImageMovie={this.props.establishNewOneImageMovie}
+
             />
           </div>
         </div>
@@ -67,9 +68,7 @@ class ImageMovieForm extends React.Component {
   // the main data structures for imagePanel and MoviePanel to this new url
     const the_url = call_make_url_response['url']
     if (this.state.image_or_movie === 'image') {
-      this.props.setMovies({})
-      this.props.setImageUrl(the_url)
-      this.props.updateSingleImageMovie(the_url)
+      this.props.establishNewOneImageMovie(the_url)
     } else {
       this.props.setMovies({})
       this.props.setMovieUrlCallback(the_url)

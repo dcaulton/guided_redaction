@@ -9,6 +9,7 @@ class MoviePanel extends React.Component {
       draggedId: null,
       zoom_image_url: '',
       message: '.',
+      uploadMove: false,
     }
     this.getNameFor=this.getNameFor.bind(this)
     this.redactFramesetCallback=this.redactFramesetCallback.bind(this)
@@ -17,8 +18,16 @@ class MoviePanel extends React.Component {
     this.handleDroppedFrameset=this.handleDroppedFrameset.bind(this)
     this.setMessage=this.setMessage.bind(this)
     this.submitMovieJob=this.submitMovieJob.bind(this)
+    this.showMovieUploadTarget=this.showMovieUploadTarget.bind(this)
   }
 
+
+  showMovieUploadTarget() {
+    const value = !this.state.uploadMovie
+    this.setState({
+      uploadMovie: value,
+    })
+  }
 
   buildTemplateMatchJobdata(extra_data) {
     let job_data = {
@@ -242,6 +251,9 @@ class MoviePanel extends React.Component {
   }
 
   buildVideoDiv() {
+    if (this.state.uploadMovie) {
+      return
+    }
     return (
       <div id='video_div' className='col-md-6'>
         <video id='video_id' controls >
@@ -296,12 +308,62 @@ class MoviePanel extends React.Component {
     }
   }
 
+  async handleDownloadedFile(the_file) {
+    let reader = new FileReader()
+    let app_this = this
+    reader.onload = function(e) {
+      app_this.props.postMakeUrlCall(
+        e.target.result,
+        the_file.name,
+        app_this.props.establishNewMovie
+      )
+    }
+    reader.readAsDataURL(the_file)
+    this.setState({
+      uploadMovie: false,
+    })
+  }
+
+  handleDroppedMovie(event) {
+    event.preventDefault()
+    event.stopPropagation()
+    if (event.dataTransfer.files && event.dataTransfer.files.length > 0) {
+      this.handleDownloadedFile(event.dataTransfer.files[0])
+    }
+  }
+
+  buildMovieUploadTarget() {
+    if (this.state.uploadMovie) {
+      let top_style = {
+        height: '270px',
+        'borderStyle': 'dashed',
+        'borderColor': '#CCCCCC',
+        'color': '#888888',
+        'textAlign': 'center',
+        'paddingTop': '90px',
+        'fontSize': '36px',
+      }
+      return (
+        <div 
+          className='col-md-6'
+          style={top_style}
+          draggable='true'
+          onDragOver={(event) => event.preventDefault()}
+          onDrop={(event) => this.handleDroppedMovie(event)}
+        >
+          Drag here to upload
+        </div>
+      )
+    }
+  }
+
   render() {
     let title = this.buildVideoTitle()
     const image_zoom_modal = this.buildImageZoomModal()
     const video_div = this.buildVideoDiv()
     const redacted_video_div = this.buildRedactedVideoDiv()
     const framesets_title = this.buildFramesetsTitle()
+    const movie_upload_target = this.buildMovieUploadTarget()
 
     return (
     <div>
@@ -324,9 +386,11 @@ class MoviePanel extends React.Component {
               submitMovieJob={this.submitMovieJob}
               movie_url={this.props.movie_url}
               templates={this.props.templates}
+              showMovieUploadTarget={this.showMovieUploadTarget}
             />
           </div>
 
+          {movie_upload_target}
           {video_div}
           {redacted_video_div}
 
@@ -599,6 +663,13 @@ class MoviePanelHeader extends React.Component {
               onClick={() => this.props.submitMovieJob('zip_movie')}
           >
             Reassemble Video
+          </button>
+
+          <button 
+              className='btn btn-primary ml-2' 
+              onClick={() => this.props.showMovieUploadTarget()}
+          >
+            Upload New Movie
           </button>
 
         </div>
