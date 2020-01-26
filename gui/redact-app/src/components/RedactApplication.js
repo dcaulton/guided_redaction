@@ -119,6 +119,18 @@ class RedactApplication extends React.Component {
     this.callMakeUrl=this.callMakeUrl.bind(this)
     this.updateSingleImageMovie=this.updateSingleImageMovie.bind(this)
     this.setMovies=this.setMovies.bind(this)
+    this.postMakeUrlCall=this.postMakeUrlCall.bind(this)
+    this.establishNewOneImageMovie=this.establishNewOneImageMovie.bind(this)
+  }
+
+  establishNewOneImageMovie(data_in) {
+    if (!Object.keys(data_in).includes('url')) {
+      console.log('error in establishNewOneImageMovie incoming data, no url found')
+      return
+    }
+    this.setMovies({})
+    this.makeNewFrameFrameset(data_in['url'])
+    this.setImageUrl(data_in['url'])
   }
 
   async checkIfApiCanSeeUrl(the_url, when_done=(()=>{})) {
@@ -1526,6 +1538,8 @@ class RedactApplication extends React.Component {
                 gotoWhenDoneTarget={this.gotoWhenDoneTarget}
                 submitJob={this.submitJob}
                 playTone={this.playTone}
+                postMakeUrlCall={this.postMakeUrlCall}
+                establishNewOneImageMovie={this.establishNewOneImageMovie}
               />
             </Route>
             <Route path='/redact/insights'>

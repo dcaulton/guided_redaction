@@ -50,31 +50,88 @@ class CanvasImageOverlay extends React.Component {
     }
   }
 
+  drawDragDropTarget() {
+    if (!this.props.image_url) {
+      let canvas = this.refs.canvas
+      let ctx = canvas.getContext("2d")
+      ctx.beginPath()
+      ctx.setLineDash([5,10])
+      ctx.moveTo(5,5)
+      ctx.lineTo(495,5)
+      ctx.lineTo(495,495)
+      ctx.lineTo(5,495)
+      ctx.lineTo(5,5)
+      ctx.stroke()
+
+      ctx.font = '48px serif'
+      ctx.fillStyle =  '#AAAAAA'
+      ctx.fillText('drag here to upload', 50, 200)
+    }
+  }
+
   componentDidMount() {
     this.clearCanvasItems()
+    this.drawDragDropTarget()
     this.drawRectangles()
     this.drawCrosshairs()
   }
 
   componentDidUpdate() {
     this.clearCanvasItems()
+    this.drawDragDropTarget()
     this.drawRectangles()
     this.drawCrosshairs()
   }
 
+  getCanvasDims() {
+    if (this.props.image_url) {
+      return [
+      this.props.image_width,
+      this.props.image_height
+      ]
+    } else {
+      return [500,500]
+    }
+  }
+
+  async handleDownloadedFile(the_file) {
+    let reader = new FileReader()
+    let app_this = this
+    reader.onload = function(e) {
+      app_this.props.postMakeUrlCall(
+        e.target.result, 
+        the_file.name, 
+        app_this.props.establishNewOneImageMovie
+      )
+    }
+    reader.readAsDataURL(the_file)
+  }
+
+  handleDroppedImage = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      this.handleDownloadedFile(e.dataTransfer.files[0])
+    }
+  }
+
   render() {
+    const canvasDims = this.getCanvasDims()
     let canvasDivStyle= {
-      width: this.props.image_width,
-      height: this.props.image_height,
+      width: canvasDims[0],
+      height: canvasDims[1],
     }
     return (
       <div id='canvas_div'
         style={canvasDivStyle}
+        draggable='true'
+        onDragOver={(event) => event.preventDefault()}
+        onDrop={(event) => this.handleDroppedImage(event)}
       >
         <canvas id='overlay_canvas' 
           ref='canvas'
-          width={this.props.image_width}
-          height={this.props.image_height}
+          width={canvasDims[0]}
+          height={canvasDims[1]}
           onClick={(e) => this.props.clickCallback(e)}
         />
       </div>

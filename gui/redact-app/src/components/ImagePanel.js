@@ -309,9 +309,12 @@ class ImagePanel extends React.Component {
                   image_width={this.props.image_width}
                   image_height={this.props.image_height}
                   image_scale={this.props.image_scale}
+                  image_url={this.props.image_url}
                   clickCallback= {this.handleImageClick}
                   last_click= {this.state.last_click}
                   getRedactionFromFrameset={this.props.getRedactionFromFrameset}
+                  postMakeUrlCall={this.props.postMakeUrlCall}
+                  establishNewOneImageMovie={this.props.establishNewOneImageMovie}
                 />
               </div>
             </div>
