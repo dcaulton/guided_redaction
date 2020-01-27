@@ -62,6 +62,7 @@ class RedactApplication extends React.Component {
       showAdvancedPanels: false,
       whenJobLoaded: {},
       whenDoneTarget: '',
+      campaign_movies: [],
     }
 
     this.getRedactedMovieFilename=this.getRedactedMovieFilename.bind(this)
@@ -122,6 +123,16 @@ class RedactApplication extends React.Component {
     this.postMakeUrlCall=this.postMakeUrlCall.bind(this)
     this.establishNewOneImageMovie=this.establishNewOneImageMovie.bind(this)
     this.establishNewMovie=this.establishNewMovie.bind(this)
+    this.setCampaignMovies=this.setCampaignMovies.bind(this)
+  }
+
+  setCampaignMovies(movies) {
+    if (typeof movies === 'string' || movies instanceof String) {
+      movies = movies.split('\n')
+    }
+    this.setState({
+      campaign_movies: movies,
+    })
   }
 
   establishNewOneImageMovie(data_in) {
@@ -132,6 +143,7 @@ class RedactApplication extends React.Component {
     this.setMovies({})
     this.makeNewFrameFrameset(data_in['url'])
     this.setImageUrl(data_in['url'])
+    this.setCampaignMovies(['whatever'])
   }
 
   establishNewMovie(data_in) {
@@ -143,6 +155,11 @@ class RedactApplication extends React.Component {
     // A hack, but for whatever reason the state isn't ready when the moviePanel renders
     document.getElementById('image_panel_link').click()
     document.getElementById('movie_panel_link').click()
+    if (!this.state.campaign_movies.includes(data_in['url'])) {
+      let deepCopyCampaignMovies= JSON.parse(JSON.stringify(this.state.campaign_movies))
+      deepCopyCampaignMovies.push(data_in['url'])
+      this.setCampaignMovies(deepCopyCampaignMovies)
+    }
   }
 
   async checkIfApiCanSeeUrl(the_url, when_done=(()=>{})) {
@@ -1606,6 +1623,8 @@ class RedactApplication extends React.Component {
                 setFramesetDiscriminator={this.setFramesetDiscriminator}
                 setActiveMovie={this.setActiveMovie}
                 updateGlobalState={this.updateGlobalState}
+                campaign_movies={this.state.campaign_movies}
+                setCampaignMovies={this.setCampaignMovies}
               />
             </Route>
           </Switch>

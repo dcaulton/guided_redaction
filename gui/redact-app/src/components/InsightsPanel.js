@@ -12,11 +12,6 @@ class InsightsPanel extends React.Component {
       mode: 'view',
       currentCampaign: '',
       campaigns: [],
-      campaign_movies: [
-        'http://localhost:3000/images/0d0b8fd4-75cb-4793-8740-ec78e46d06da.mp4',
-        'http://localhost:3000/images/c708e978-0c4c-493c-a4e7-553a8ac78aa5.mp4',
-        'http://localhost:3000/images/d448ccd5-79b4-4157-8fa1-d9504b2bdf08.mp4',
-      ],
       frameset_starts: {},
       insights_image: '',
       image_width: 1000,
@@ -81,7 +76,6 @@ class InsightsPanel extends React.Component {
     this.toggleShowDiffs=this.toggleShowDiffs.bind(this)
     this.loadInsightsJobResults=this.loadInsightsJobResults.bind(this)
     this.afterMovieSplitInsightsJobLoaded=this.afterMovieSplitInsightsJobLoaded.bind(this)
-    this.setCampaignMovies=this.setCampaignMovies.bind(this)
     this.blinkDiff=this.blinkDiff.bind(this)
     this.setImageTypeToDisplay=this.setImageTypeToDisplay.bind(this)
   }
@@ -109,13 +103,6 @@ class InsightsPanel extends React.Component {
       })
     }
     document.getElementById('movie_scrubber').focus()
-  }
-
-  setCampaignMovies(the_url_string) {
-    const movies = the_url_string.split('\n')
-    this.setState({
-      campaign_movies: movies,
-    })
   }
 
   loadInsightsJobResults(job_id) {
@@ -975,7 +962,7 @@ class InsightsPanel extends React.Component {
           <MovieCardList 
             setCurrentVideo={this.setCurrentVideo}
             movie_url={this.props.movie_url}
-            movie_urls={this.state.campaign_movies}
+            movie_urls={this.props.campaign_movies}
             movies={this.props.movies}
             getMovieMatchesFound={this.getMovieMatchesFound}
             getMovieDiffsFound={this.getMovieDiffsFound}
@@ -1093,8 +1080,8 @@ class InsightsPanel extends React.Component {
             toggleShowOcr={this.toggleShowOcr}
             toggleShowDiffs={this.toggleShowDiffs}
             setFramesetDiscriminator={this.props.setFramesetDiscriminator}
-            campaign_movies={this.state.campaign_movies}
-            setCampaignMovies={this.setCampaignMovies}
+            campaign_movies={this.props.campaign_movies}
+            setCampaignMovies={this.props.setCampaignMovies}
             updateGlobalState={this.props.updateGlobalState}
             blinkDiff={this.blinkDiff}
             setImageTypeToDisplay={this.setImageTypeToDisplay}
