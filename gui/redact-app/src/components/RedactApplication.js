@@ -345,8 +345,8 @@ class RedactApplication extends React.Component {
     for (let i=0; i < Object.keys(framesets).length; i++) {
       const frameset_hash = Object.keys(framesets)[i]
       const frameset = framesets[frameset_hash]
-      if (Object.keys(frameset).includes('redacted_image_url')) {
-        image_urls.push(frameset['redacted_image_url'])
+      if (Object.keys(frameset).includes('redacted_image')) {
+        image_urls.push(frameset['redacted_image'])
       } else {
         image_urls.push(frameset['images'][0])
       }
@@ -362,6 +362,11 @@ class RedactApplication extends React.Component {
     .then((response) => response.json())
     .then((responseJson) => {
       when_done(responseJson)
+      if (Object.keys(responseJson).includes('learn_edit_url')) {
+        window.location.replace(responseJson['learn_edit_url'])
+      } else {
+        alert('no url in learn response, there must be a problem')
+      }
     })
     .catch((error) => {
       console.error(error);

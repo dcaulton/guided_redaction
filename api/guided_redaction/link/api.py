@@ -14,45 +14,40 @@ class LinkViewSetLearnDev(viewsets.ViewSet):
     def create(self, request):
         if not request.data.get("image_urls"):
             return self.error(["image_urls is required"], status_code=400)
-        learn_dev_url = 'https://osmae2lnxs117.amer.sykes.com/microlearning/mixer/create/1435f669-773a-4e1e-ae0a-c43f46995178/d6ed106c-f662-4dcd-83e5-c82be77eae8d/'
-        image_url = 'http://localhost:3000/images/fire_a.png'
-        image_binary = requests.get(image_url).content
-        image_base64 = base64.b64encode(image_binary)
-        data_uri_1 = 'data:image/png;base64,' + image_base64.decode()
-        image_url = 'http://localhost:3000/images/fire_b.png'
-        image_binary = requests.get(image_url).content
-        image_base64 = base64.b64encode(image_binary)
-        data_uri_2 = 'data:image/png;base64,' + image_base64.decode()
-        image_url = 'http://localhost:3000/images/aluminum_channel.png'
-        image_binary = requests.get(image_url).content
-        image_base64 = base64.b64encode(image_binary)
-        data_uri_3 = 'data:image/png;base64,' + image_base64.decode()
+        learn_dev_url = request.data.get(
+            'learn_dev_url', 
+            'https://osmae2lnxs117.amer.sykes.com/microlearning/mixer/create/1435f669-773a-4e1e-ae0a-c43f46995178/d6ed106c-f662-4dcd-83e5-c82be77eae8d/')
+        auth_token = request.data.get('learn_dev_auth_token', '1579c82fcaeff643bc1a8a01540fc2696ce4332d')
+        data_uris = []
+        image_urls = request.data.get('image_urls')
+        for image_url in image_urls:
+            image_binary = requests.get(image_url).content
+            image_base64 = base64.b64encode(image_binary)
+            data_uri = 'data:image/png;base64,' + image_base64.decode()
+            data_uris.append(data_uri)
 
-#        post_data = {
-#          'image_data': [data_uri_1]
-#        }
-#        form_data, content_type = self.encode_multipart_formdata(post_data)
-        form_data, content_type = self.emf2([data_uri_1, data_uri_2, data_uri_3])
+        form_data, content_type = self.build_image_data_formdata(data_uris)
         requests.packages.urllib3.disable_warnings()
         learn_response = requests.post(
             learn_dev_url, 
             data=form_data,
             headers={
               'Content-Type': content_type,
-              'Authorization': 'Token 1579c82fcaeff643bc1a8a01540fc2696ce4332d',
+              'Authorization': 'Token ' + auth_token,
             },
             verify=False,
             allow_redirects=False
         )
-        print(learn_response)
-        print(learn_response.headers)
-        landing_page = learn_response.headers.get('Location', 'NO IDEA')
+
+        landing_page = learn_response.headers.get('Location')
+        if not landing_page:
+            return self.error(['could not get edit url from learn response'], status_code=400)
 
         return Response( {
-            "landing_page": landing_page,
+            "learn_edit_url": landing_page,
         })
 
-    def emf2(self, data_uris):
+    def build_image_data_formdata(self, data_uris):
         # This one is specialized to take three images and put them in the image_data parameter
         boundary = binascii.hexlify(os.urandom(16)).decode('ascii')
         content_type = "multipart/form-data; boundary=%s" % boundary
@@ -82,15 +77,11 @@ class LinkViewSetLearnDev(viewsets.ViewSet):
 
 class LinkViewSetJunkSniffer(viewsets.ViewSet):
     def create(self, request):
-        import pdb; pdb.set_trace()
-        print('===================MANGO============================================')
         print(request.data.keys())
         print(request.headers)
-        if not request.data.get("image_data"):
-            return self.error(["image_data is required"], status_code=400)
-        print('imcoming data is {} long '.format(len(request.data['image_data'])))
+        print(request.data)
         return Response( {
-            "poopsy": 'daisy',
+            "got": "it",
         })
 
 class LinkViewSetCanReach(viewsets.ViewSet):
