@@ -23,12 +23,17 @@ class LinkViewSetLearnDev(viewsets.ViewSet):
         image_binary = requests.get(image_url).content
         image_base64 = base64.b64encode(image_binary)
         data_uri_2 = 'data:image/png;base64,' + image_base64.decode()
+        image_url = 'http://localhost:3000/images/aluminum_channel.png'
+        image_binary = requests.get(image_url).content
+        image_base64 = base64.b64encode(image_binary)
+        data_uri_3 = 'data:image/png;base64,' + image_base64.decode()
 
-        post_data = {
-          'image_data': data_uri_2,
-        }
+#        post_data = {
+#          'image_data': [data_uri_1]
+#        }
+#        form_data, content_type = self.encode_multipart_formdata(post_data)
+        form_data, content_type = self.emf2([data_uri_1, data_uri_2, data_uri_3])
         requests.packages.urllib3.disable_warnings()
-        form_data, content_type = self.encode_multipart_formdata(post_data)
         learn_response = requests.post(
             learn_dev_url, 
             data=form_data,
@@ -41,14 +46,30 @@ class LinkViewSetLearnDev(viewsets.ViewSet):
         )
         print(learn_response)
         print(learn_response.headers)
+        landing_page = learn_response.headers.get('Location', 'NO IDEA')
 
         return Response( {
-            "nice": 'day',
+            "landing_page": landing_page,
         })
 
-    def encode_multipart_formdata(self, fields):
+    def emf2(self, data_uris):
+        # This one is specialized to take three images and put them in the image_data parameter
         boundary = binascii.hexlify(os.urandom(16)).decode('ascii')
+        content_type = "multipart/form-data; boundary=%s" % boundary
+        body = (
+            "".join("--%s\r\n"
+                    "Content-Disposition: form-data; name=\"image_data\"\r\n"
+                    "\r\n"
+                    "%s\r\n" % (boundary, data_uri)
+                    for data_uri in data_uris) +
+            "--%s--\r\n" % boundary
+        )
+        return body, content_type
 
+    def encode_multipart_formdata(self, fields):
+        # This one works for non-repeating elements
+        boundary = binascii.hexlify(os.urandom(16)).decode('ascii')
+        content_type = "multipart/form-data; boundary=%s" % boundary
         body = (
             "".join("--%s\r\n"
                     "Content-Disposition: form-data; name=\"%s\"\r\n"
@@ -57,9 +78,6 @@ class LinkViewSetLearnDev(viewsets.ViewSet):
                     for field, value in fields.items()) +
             "--%s--\r\n" % boundary
         )
-
-        content_type = "multipart/form-data; boundary=%s" % boundary
-
         return body, content_type
 
 class LinkViewSetJunkSniffer(viewsets.ViewSet):
