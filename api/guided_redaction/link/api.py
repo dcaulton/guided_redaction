@@ -8,6 +8,7 @@ import requests
 import base64
 import binascii
 import os
+import ssl
 
 
 class LinkViewSetLearnDev(viewsets.ViewSet):
@@ -28,6 +29,9 @@ class LinkViewSetLearnDev(viewsets.ViewSet):
 
         form_data, content_type = self.build_image_data_formdata(data_uris)
         requests.packages.urllib3.disable_warnings()
+        if (not os.environ.get('PYTHONHTTPSVERIFY', '') and
+            getattr(ssl, '_create_unverified_context', None)):
+            ssl._create_default_https_context = ssl._create_unverified_context
         learn_response = requests.post(
             learn_dev_url, 
             data=form_data,
