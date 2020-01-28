@@ -22,7 +22,10 @@ class LinkViewSetLearnDev(viewsets.ViewSet):
         data_uris = []
         image_urls = request.data.get('image_urls')
         for image_url in image_urls:
-            image_binary = requests.get(image_url).content
+            image_binary = requests.get(
+                image_url,
+                verify=False,
+            ).content
             image_base64 = base64.b64encode(image_binary)
             data_uri = 'data:image/png;base64,' + image_base64.decode()
             data_uris.append(data_uri)
