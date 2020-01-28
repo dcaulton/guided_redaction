@@ -11,11 +11,11 @@ class TemplateMatcher:
         self.template_match_percent = 0.9
         try:
             mp_in = template_data.get('match_percent')
-            if mp_in.find('.') == -1:
-                mp_in = int(mp_in)
+            if mp_in.__class__.__name__ == 'string':
+                mp_in = float(mp_in)
+            if mp_in > 1:
                 mp_in /= 100
-            mp = float(mp_in)
-            self.template_match_percent = mp
+            self.template_match_percent = mp_in
         except Exception as e:
             pass
 
