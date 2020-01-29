@@ -121,9 +121,10 @@ class RedactApplication extends React.Component {
     this.updateSingleImageMovie=this.updateSingleImageMovie.bind(this)
     this.setMovies=this.setMovies.bind(this)
     this.postMakeUrlCall=this.postMakeUrlCall.bind(this)
-    this.establishNewOneImageMovie=this.establishNewOneImageMovie.bind(this)
     this.establishNewMovie=this.establishNewMovie.bind(this)
+    this.establishNewEmptyMovie=this.establishNewEmptyMovie.bind(this)
     this.setCampaignMovies=this.setCampaignMovies.bind(this)
+    this.addImageToMovie=this.addImageToMovie.bind(this)
   }
 
   setCampaignMovies(movies) {
@@ -135,15 +136,47 @@ class RedactApplication extends React.Component {
     })
   }
 
-  establishNewOneImageMovie(data_in) {
+  addImageToMovie(data_in) {
     if (!Object.keys(data_in).includes('url')) {
-      console.log('error in establishNewOneImageMovie incoming data, no url found')
+      console.log('error in addImageToMovie incoming data, no url found')
       return
     }
+    let image_url = data_in['url']
+    let deepCopyMovies= JSON.parse(JSON.stringify(this.state.movies))
+    let movie_url = 'whatever'
+    let deepCopyMovie= JSON.parse(JSON.stringify(deepCopyMovies[movie_url]))
+    let new_hash = (Object.keys(deepCopyMovie['framesets']).length + 1).toString()
+    deepCopyMovie['frames'].push(image_url)
+    deepCopyMovie['framesets'][new_hash] = {
+      images: [image_url]
+    }
+    deepCopyMovies[movie_url] = deepCopyMovie
+    this.setState({
+      movies: deepCopyMovies
+    })
+    this.setImageUrl(image_url)
+  }
+
+  establishNewEmptyMovie(data_in) {
     this.setMovies({})
-    this.makeNewFrameFrameset(data_in['url'])
-    this.setImageUrl(data_in['url'])
-    this.setCampaignMovies(['whatever'])
+    let new_movie_url = 'whatever'
+    let new_movie = {
+      frames: [],
+      framesets: {},
+    }
+    let deepCopyMovies= JSON.parse(JSON.stringify(this.state.movies))
+    deepCopyMovies[new_movie_url] = new_movie
+    this.setState({
+      movies: deepCopyMovies,
+      movie_url: new_movie_url,
+    })
+    if (!this.state.campaign_movies.includes(new_movie_url)) {
+      let deepCopyCampaignMovies= JSON.parse(JSON.stringify(this.state.campaign_movies))
+      deepCopyCampaignMovies.push(new_movie_url)
+      this.setState({
+        campaign_movies: deepCopyCampaignMovies,
+      })
+    }
   }
 
   establishNewMovie(data_in) {
@@ -1514,7 +1547,6 @@ class RedactApplication extends React.Component {
                 callMakeUrl={this.callMakeUrl}
                 updateSingleImageMovie={this.updateSingleImageMovie}
                 setMovies={this.setMovies}
-                establishNewOneImageMovie={this.establishNewOneImageMovie}
               />
             </Route>
             <Route path='/redact/movie'>
@@ -1577,6 +1609,8 @@ class RedactApplication extends React.Component {
                 playTone={this.playTone}
                 postMakeUrlCall={this.postMakeUrlCall}
                 establishNewOneImageMovie={this.establishNewOneImageMovie}
+                establishNewEmptyMovie={this.establishNewEmptyMovie}
+                addImageToMovie={this.addImageToMovie}
               />
             </Route>
             <Route path='/redact/insights'>

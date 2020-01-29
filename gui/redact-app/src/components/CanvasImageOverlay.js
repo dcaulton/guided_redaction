@@ -101,7 +101,7 @@ class CanvasImageOverlay extends React.Component {
       app_this.props.postMakeUrlCall(
         e.target.result, 
         the_file.name, 
-        app_this.props.establishNewOneImageMovie
+        app_this.props.addImageToMovie
       )
     }
     reader.readAsDataURL(the_file)
@@ -111,7 +111,10 @@ class CanvasImageOverlay extends React.Component {
     e.preventDefault()
     e.stopPropagation()
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      this.handleDownloadedFile(e.dataTransfer.files[0])
+      this.props.establishNewEmptyMovie()
+      for (let i=0; i < e.dataTransfer.files.length; i++) {
+        this.handleDownloadedFile(e.dataTransfer.files[i])
+      }
     }
   }
 
