@@ -1086,6 +1086,8 @@ class InsightsPanel extends React.Component {
             blinkDiff={this.blinkDiff}
             setImageTypeToDisplay={this.setImageTypeToDisplay}
             imageTypeToDisplay={this.state.imageTypeToDisplay}
+            whenDoneTarget={this.props.whenDoneTarget}
+            setWhenDoneTarget={this.props.setWhenDoneTarget}
           />
         </div>
 

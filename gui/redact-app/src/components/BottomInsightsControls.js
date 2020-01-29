@@ -138,6 +138,8 @@ class BottomInsightsControls extends React.Component {
           campaign_movies={this.props.campaign_movies}
           setCampaignMovies={this.props.setCampaignMovies}
           updateGlobalState={this.props.updateGlobalState}
+          whenDoneTarget={this.props.whenDoneTarget}
+          setWhenDoneTarget={this.props.setWhenDoneTarget}
         />
 
       </div>

@@ -125,6 +125,13 @@ class RedactApplication extends React.Component {
     this.establishNewEmptyMovie=this.establishNewEmptyMovie.bind(this)
     this.setCampaignMovies=this.setCampaignMovies.bind(this)
     this.addImageToMovie=this.addImageToMovie.bind(this)
+    this.setWhenDoneTarget=this.setWhenDoneTarget.bind(this)
+  }
+
+  setWhenDoneTarget(the_value) {
+    this.setState({
+      whenDoneTarget: the_value,
+    })
   }
 
   setCampaignMovies(movies) {
@@ -1664,6 +1671,8 @@ class RedactApplication extends React.Component {
                 updateGlobalState={this.updateGlobalState}
                 campaign_movies={this.state.campaign_movies}
                 setCampaignMovies={this.setCampaignMovies}
+                whenDoneTarget={this.state.whenDoneTarget}
+                setWhenDoneTarget={this.setWhenDoneTarget}
               />
             </Route>
           </Switch>

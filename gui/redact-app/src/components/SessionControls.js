@@ -130,6 +130,27 @@ class SessionControls extends React.Component {
     )
   }
 
+  buildWhenDoneSelector() {
+    let selected_value = this.props.whenDoneTarget
+    return (
+      <div>
+        <select
+            name='when_done_selector'
+            onChange={(event) => this.props.setWhenDoneTarget(event.target.value)}
+            value={selected_value}
+        >
+          <option value=''>--none--</option>
+          <option value='learn_dev'>Learn Dev</option>
+        </select>
+        <span
+          className='ml-2'
+        >
+          Provide link on Image panel to forward to this instance
+        </span>
+      </div>
+    )
+  }
+
   render() {
     let campaign_movies_box = this.buildCampaignMoviesBox()
     let update_state_box = this.buildGlobalStateBox()
@@ -171,6 +192,7 @@ class SessionControls extends React.Component {
     if (this.props.playSound) {
       play_sound_checked = 'checked'
     }
+    let when_done_selector = this.buildWhenDoneSelector()
 
     return (
         <div className='row bg-light rounded mt-3'>
@@ -357,6 +379,10 @@ class SessionControls extends React.Component {
                     onChange={() => this.props.togglePlaySound()}
                   />
                   Play Sound
+                </div>
+
+                <div className='row mt-3 bg-light rounded'>
+                  {when_done_selector}
                 </div>
 
                 <div className='row mt-4'>
