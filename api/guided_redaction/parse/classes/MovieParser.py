@@ -39,10 +39,9 @@ class MovieParser:
           self.image_hash_size = int(match_digit)
 
         if self.use_same_directory:
-            working_uuid = self.get_movie_dir()
+            self.working_uuid = self.get_movie_dir()
         else:
-            working_uuid = str(uuid.uuid4())
-        self.unique_working_dir = self.file_writer.create_unique_directory(working_uuid)
+            self.working_uuid = str(uuid.uuid4())
 
     def get_movie_dir(self):
         (x_part, file_part) = os.path.split(self.movie_url)
@@ -50,6 +49,7 @@ class MovieParser:
         return uuid_part
 
     def split_movie(self):
+        self.unique_working_dir = self.file_writer.create_unique_directory(self.working_uuid)
         print("splitting movie into frames at "+ self.unique_working_dir)
         video_object = cv2.VideoCapture(self.movie_url)
         success = True

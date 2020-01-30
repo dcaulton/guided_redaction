@@ -170,11 +170,8 @@ class EastTessTestCase(TestCase):
             source_image, [(0,0), (530, 320)]
         )
         cv2.imwrite('/Users/dcaulton/Desktop/dada.png', source_image)
-        print(recognized_text_areas)
         found = 0
         for rta in recognized_text_areas:
-            print('---------------')
-            print(rta['text'])
             if (rta['text'] == self.wisdom[0]):
                 found += 1
                 self.assertTrue(35 < rta['start'][1] < 40)

@@ -15,6 +15,11 @@ router.register(
     basename="Lizzo",
 )
 router.register(
+    r"v1/parse/hash-frames",
+    api.ParseViewSetHashFrames,
+    basename="CamilaCabello",
+)
+router.register(
     r"v1/parse/get-images-for-uuid",
     api.ParseViewSetGetImagesForUuid,
     basename="WierdAl",

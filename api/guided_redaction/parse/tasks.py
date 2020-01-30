@@ -2,7 +2,12 @@ from celery import shared_task
 import os
 import json                                                                     
 from guided_redaction.jobs.models import Job                                    
-from guided_redaction.parse.api import ParseViewSetSplitAndHashMovie, ParseViewSetZipMovie
+from guided_redaction.parse.api import (
+        ParseViewSetSplitAndHashMovie, 
+        ParseViewSetZipMovie,
+        ParseViewSetSplitMovie,
+        ParseViewSetHashFrames
+)
 
 
 @shared_task
@@ -62,3 +67,76 @@ def zip_movie(job_uuid):
     else:
         print('calling zip_movie on nonexistent job: '+ job_uuid) 
 
+@shared_task
+def split_movie(job_uuid):
+    # TODO make this threading aware
+    job = Job.objects.get(pk=job_uuid)
+    if job:
+        job.status = 'running'
+        job.save()
+        request_data = json.loads(job.request_data)
+        pvssahm = ParseViewSetSplitMovie()
+        response_data = pvssahm.process_create_request(request_data)
+        if response_data['errors_400']:
+            job.status = 'failed'
+            job.response_data = json.dumps(response_data['errors_400'])
+        elif response_data['errors_422']:
+            job.status = 'failed'
+            job.response_data = json.dumps(response_data['errors_422'])
+        else:
+            job.response_data = json.dumps(response_data['response_data'])
+            job.status = 'success'
+        job.save()
+    else:
+        print('calling split_movie on nonexistent job: '+ job_uuid) 
+
+@shared_task
+def hash_frames(job_uuid):
+    # TODO make this threading aware
+    job = Job.objects.get(pk=job_uuid)
+    if job:
+        job.status = 'running'
+        job.save()
+        request_data = json.loads(job.request_data)
+        pvssahm = ParseViewSetHashFrames()
+        response_data = pvssahm.process_create_request(request_data)
+        if response_data['errors_400']:
+            job.status = 'failed'
+            job.response_data = json.dumps(response_data['errors_400'])
+        elif response_data['errors_422']:
+            job.status = 'failed'
+            job.response_data = json.dumps(response_data['errors_422'])
+        else:
+            job.response_data = json.dumps(response_data['response_data'])
+            job.status = 'success'
+        job.save()
+    else:
+        print('calling hash_frames on nonexistent job: '+ job_uuid) 
+
+@shared_task
+def split_and_hash_threaded(job_uuid):
+    job = Job.objects.get(pk=job_uuid)
+    if job:
+        job.status = 'running'
+        job.save()
+        request_data = json.loads(job.request_data)
+        print('scanning template for job ', job_uuid)
+        pvssahm = ParseViewSetSplitAndHashMovie()
+        response_data = pvssahm.process_create_request(request_data)
+        if response_data['errors_400']:
+            job.status = 'failed'
+            job.response_data = json.dumps(response_data['errors_400'])
+        elif response_data['errors_422']:
+            job.status = 'failed'
+            job.response_data = json.dumps(response_data['errors_422'])
+        else:
+            job.response_data = json.dumps(response_data['response_data'])
+            new_uuid = get_file_uuid_from_response(response_data['response_data'])
+            if new_uuid:
+                existing_uuids = json.loads(job.file_uuids_used)
+                existing_uuids.append(new_uuid)
+                job.file_uuids_used = json.dumps(existing_uuids)
+            job.status = 'success'
+        job.save()
+    else:
+        print('calling split_and_hash_movie on nonexistent job: '+ job_uuid) 
