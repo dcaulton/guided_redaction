@@ -132,7 +132,7 @@ class JobsViewSet(viewsets.ViewSet):
             file_uuids_used=json.dumps(self.get_file_uuids_from_request(request.data)),
             owner=request.data.get('owner', 'unknown'),
             status='created',
-            description=request.data.get('description'),
+            description=request.data.get('description', 'something weird'),
             app=request.data.get('app', 'bridezilla'),
             operation=request.data.get('operation', 'chucky'),
             sequence=0,
@@ -188,32 +188,16 @@ class JobsViewSet(viewsets.ViewSet):
             workbook_id=request.data.get('workbook_id'),
         )
         parent_job.save()
-        job = Job(
-            request_data=json.dumps(request.data.get('request_data')),
-            file_uuids_used=[], # TODO, figure this out
-            status='created',
-            description='split_movie',
-            app=request.data.get('app'),
-            operation='split_movie',
-            sequence=index,
-            elapsed_time=0.0,
-            parent=parent_job,
-        )
-        job.save()
         return parent_job
 
     def build_composite_job(self, request):
         if request.data.get('operation') == 'redact':
             parent_job = self.build_composite_redact_job(request)
-        elif request.data.get('operation') == 'split_and_hash_threaded':
-            parent_job = self.build_composite_split_and_hash_job(request)
         return parent_job
 
     def test_if_composite_job(self, request):
         operation = request.data.get('operation')
         if operation == 'redact':
-          return True
-        elif operation == 'split_and_hash_threaded':
           return True
         return False
 
@@ -240,7 +224,11 @@ class JobsViewSet(viewsets.ViewSet):
         if job.app == 'parse' and job.operation == 'split_and_hash_movie':
             parse_tasks.split_and_hash_movie.delay(job_uuid)
         if job.app == 'parse' and job.operation == 'split_and_hash_threaded':
-            parse_tasks.split_and_hash_movie_threaded.delay(job_uuid)
+            parse_tasks.split_and_hash_threaded.delay(job_uuid)
+        if job.app == 'parse' and job.operation == 'split_movie':
+            parse_tasks.split_movie_threaded.delay(job_uuid)
+        if job.app == 'parse' and job.operation == 'hash_frames':
+            parse_tasks.hash_frames.delay(job_uuid)
         if job.app == 'redact' and job.operation == 'redact':
             redact_tasks.redact.delay(job_uuid)
         if job.app == 'parse' and job.operation == 'zip_movie':

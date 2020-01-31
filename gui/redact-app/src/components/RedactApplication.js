@@ -1058,7 +1058,8 @@ class RedactApplication extends React.Component {
         this.loadScanTemplateResults(job, when_done)
 			} else if (job.app === 'analyze' && job.operation === 'filter') {
         this.loadFilterResults(job, when_done)
-			} else if (job.app === 'parse' && job.operation === 'split_and_hash_movie') {
+			} else if ((job.app === 'parse' && job.operation === 'split_and_hash_movie') 
+	        || (job.app === 'parse' && job.operation === 'split_and_hash_threaded')) {
         this.loadSplitAndHashResults(job, when_done)
 			} else if (job.app === 'redact' && job.operation === 'redact') {
         this.loadRedactResults(job, when_done)

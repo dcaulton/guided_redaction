@@ -335,8 +335,6 @@ class ParseViewSetHashFrames(viewsets.ViewSet):
         
         unique_frames = parser.load_and_hash_frames(frames)
         (_, new_unique_frames) = collate_image_urls(frames, unique_frames)
-        print('=====================sunday unique frames: ')
-        print(new_unique_frames)
 
         return_data['response_data'] = {
             "unique_frames": new_unique_frames,

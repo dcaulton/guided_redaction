@@ -107,12 +107,15 @@ class InsightsPanel extends React.Component {
 
   loadInsightsJobResults(job_id) {
     const job = this.getJobForId(job_id)
-    if (job.app === 'parse' && job.operation === 'split_and_hash_movie') {
+    if ((job.app === 'parse' && job.operation === 'split_and_hash_movie') 
+       || (job.app === 'parse' && job.operation === 'split_and_hash_threaded')) {
+console.log('FANTA')
       this.props.loadJobResults(
         job_id, 
         this.afterMovieSplitInsightsJobLoaded
       )
     } else {
+console.log('SQUIRT')
       this.props.loadJobResults(job_id) 
     }
   }
@@ -303,8 +306,8 @@ class InsightsPanel extends React.Component {
       request_data: {},
     }
     job_data['app'] = 'parse'
-    job_data['operation'] = 'split_and_hash_movie'
-    job_data['description'] = 'load and hash movie: ' + extra_data
+    job_data['operation'] = 'split_and_hash_threaded'
+    job_data['description'] = 'split and hash threaded: ' + extra_data
     job_data['request_data']['movie_url'] = extra_data
     job_data['request_data']['frameset_discriminator'] = this.props.frameset_discriminator
     return job_data
