@@ -172,6 +172,10 @@ class SessionControls extends React.Component {
     if (this.props.showResults) {
       show_results_checked = 'checked'
     }
+    let show_filesystem_checked = ''
+    if (this.props.showFilesystem) {
+      show_filesystem_checked = 'checked'
+    }
     let show_annotate_checked = ''
     if (this.props.showAnnotate) {
       show_annotate_checked = 'checked'
@@ -368,6 +372,17 @@ class SessionControls extends React.Component {
                     onChange={() => this.props.toggleShowResults()}
                   />
                   Show Results
+                </div>
+
+                <div className='row mt-3 bg-light rounded'>
+                  <input
+                    className='ml-2 mr-2 mt-1'
+                    id='toggle_filesystem'
+                    checked={show_filesystem_checked}
+                    type='checkbox'
+                    onChange={() => this.props.toggleShowFilesystem()}
+                  />
+                  Show Filesystem
                 </div>
 
                 <div className='row mt-3 bg-light rounded'>

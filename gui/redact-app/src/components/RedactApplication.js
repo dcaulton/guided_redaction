@@ -43,6 +43,7 @@ class RedactApplication extends React.Component {
       link_url: api_server_url + 'v1/link/learn-dev',
       can_see_url: api_server_url + 'v1/link/can-reach',
       make_url_url: api_server_url + 'v1/parse/make-url',
+      files_url: api_server_url + 'v1/files',
       current_workbook_name: 'workbook 1',
       playSound: true,
       current_workbook_id: '',
@@ -54,6 +55,7 @@ class RedactApplication extends React.Component {
       template_matches: {},
       annotations: {},
       jobs: [],
+      files: {},
       selected_areas: {},
       selected_area_metas: {},
       current_selected_area_meta_id: '',
@@ -84,6 +86,8 @@ class RedactApplication extends React.Component {
     this.cancelJob=this.cancelJob.bind(this)
     this.submitJob=this.submitJob.bind(this)
     this.getJobs=this.getJobs.bind(this)
+    this.getFiles=this.getFiles.bind(this)
+    this.deleteFile=this.deleteFile.bind(this)
     this.loadJobResults=this.loadJobResults.bind(this)
     this.getWorkbooks=this.getWorkbooks.bind(this)
     this.saveWorkbook=this.saveWorkbook.bind(this)
@@ -650,6 +654,12 @@ class RedactApplication extends React.Component {
     })
   }
 
+  setFiles= (the_files) => {
+    this.setState({
+      files: the_files,
+    })
+  }
+
   setWorkbooks = (the_workbooks) => {
     if (!the_workbooks.length) {
       this.setState({
@@ -1085,6 +1095,36 @@ class RedactApplication extends React.Component {
     .then((response) => response.json())
     .then((responseJson) => {
       this.setJobs(responseJson['jobs'])
+    })
+    .catch((error) => {
+      console.error(error);
+    })
+  }
+
+  async getFiles() {
+    let the_url = this.state.files_url
+    await fetch(the_url, {
+      method: 'GET',
+      headers: this.buildJsonHeaders(),
+    })
+    .then((response) => response.json())
+    .then((responseJson) => {
+      this.setFiles(responseJson)
+    })
+    .catch((error) => {
+      console.error(error);
+    })
+  }
+
+  async deleteFile(the_uuid, when_done=(()=>{})) {
+    let the_url = this.state.files_url + '/' + the_uuid
+    await fetch(the_url, {
+      method: 'DELETE',
+      headers: this.buildJsonHeaders(),
+    })
+    .then(() => {
+      this.getFiles()
+      when_done()
     })
     .catch((error) => {
       console.error(error);
@@ -1643,6 +1683,7 @@ class RedactApplication extends React.Component {
                 cancelJob={this.cancelJob}
                 submitJob={this.submitJob}
                 getJobs={this.getJobs}
+                jobs={this.state.jobs}
                 loadJobResults={this.loadJobResults}
                 getWorkbooks={this.getWorkbooks}
                 saveWorkbook={this.saveWorkbook}
@@ -1653,7 +1694,6 @@ class RedactApplication extends React.Component {
                 current_template_id={this.state.current_template_id}
                 loadWorkbook={this.loadWorkbook}
                 deleteWorkbook={this.deleteWorkbook}
-                jobs={this.state.jobs}
                 workbooks={this.state.workbooks}
                 current_workbook_name={this.state.current_workbook_name}
                 current_workbook_id={this.state.current_workbook_id}
@@ -1674,6 +1714,9 @@ class RedactApplication extends React.Component {
                 setCampaignMovies={this.setCampaignMovies}
                 whenDoneTarget={this.state.whenDoneTarget}
                 setWhenDoneTarget={this.setWhenDoneTarget}
+                files={this.state.files}
+                getFiles={this.getFiles}
+                deleteFile={this.deleteFile}
               />
             </Route>
           </Switch>

@@ -27,6 +27,7 @@ class InsightsPanel extends React.Component {
       showSelectedArea: true,
       showAnnotate: true,
       showTelemetry: true,
+      showFilesystem: true,
       showOcr: true,
       showMovieSets: true,
       showResults: true,
@@ -72,6 +73,7 @@ class InsightsPanel extends React.Component {
     this.toggleShowResults=this.toggleShowResults.bind(this)
     this.toggleShowAnnotate=this.toggleShowAnnotate.bind(this)
     this.toggleShowTelemetry=this.toggleShowTelemetry.bind(this)
+    this.toggleShowFilesystem=this.toggleShowFilesystem.bind(this)
     this.toggleShowOcr=this.toggleShowOcr.bind(this)
     this.toggleShowDiffs=this.toggleShowDiffs.bind(this)
     this.loadInsightsJobResults=this.loadInsightsJobResults.bind(this)
@@ -109,13 +111,11 @@ class InsightsPanel extends React.Component {
     const job = this.getJobForId(job_id)
     if ((job.app === 'parse' && job.operation === 'split_and_hash_movie') 
        || (job.app === 'parse' && job.operation === 'split_and_hash_threaded')) {
-console.log('FANTA')
       this.props.loadJobResults(
         job_id, 
         this.afterMovieSplitInsightsJobLoaded
       )
     } else {
-console.log('SQUIRT')
       this.props.loadJobResults(job_id) 
     }
   }
@@ -176,6 +176,13 @@ console.log('SQUIRT')
     const new_value = (!this.state.showTelemetry)
     this.setState({
       showTelemetry: new_value,
+    })
+  }
+
+  toggleShowFilesystem() {
+    const new_value = (!this.state.showFilesystem)
+    this.setState({
+      showFilesystem: new_value,
     })
   }
 
@@ -1070,6 +1077,7 @@ console.log('SQUIRT')
             showResults={this.state.showResults}
             showAnnotate={this.state.showAnnotate}
             showTelemetry={this.state.showTelemetry}
+            showFilesystem={this.state.showFilesystem}
             showOcr={this.state.showOcr}
             showDiffs={this.state.showDiffs}
             playSound={this.props.playSound}
@@ -1080,6 +1088,7 @@ console.log('SQUIRT')
             toggleShowResults={this.toggleShowResults}
             toggleShowAnnotate={this.toggleShowAnnotate}
             toggleShowTelemetry={this.toggleShowTelemetry}
+            toggleShowFilesystem={this.toggleShowFilesystem}
             toggleShowOcr={this.toggleShowOcr}
             toggleShowDiffs={this.toggleShowDiffs}
             setFramesetDiscriminator={this.props.setFramesetDiscriminator}
@@ -1091,6 +1100,9 @@ console.log('SQUIRT')
             imageTypeToDisplay={this.state.imageTypeToDisplay}
             whenDoneTarget={this.props.whenDoneTarget}
             setWhenDoneTarget={this.props.setWhenDoneTarget}
+            files={this.props.files}
+            getFiles={this.props.getFiles}
+            deleteFile={this.props.deleteFile}
           />
         </div>
 

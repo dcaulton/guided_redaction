@@ -7,6 +7,7 @@ import OcrControls from './OcrControls'
 import DiffControls from './DiffControls'
 import MovieSetsPanel from './MovieSetsPanel'
 import ResultsPanel from './ResultsPanel'
+import FilesystemControls from './FilesystemControls'
 import SessionControls from './SessionControls'
 
 class BottomInsightsControls extends React.Component {
@@ -107,6 +108,15 @@ class BottomInsightsControls extends React.Component {
           toggleShowResults={this.props.toggleShowResults}
         />
 
+        <FilesystemControls
+          showFilesystem={this.props.showFilesystem}
+          toggleShowFilesystem={this.props.toggleShowFilesystem}
+          files={this.props.files}
+          getFiles={this.props.getFiles}
+          deleteFile={this.props.deleteFile}
+          displayInsightsMessage={this.props.displayInsightsMessage}
+        />
+
         <SessionControls
           current_workbook_name={this.props.current_workbook_name}
           saveWorkbook={this.props.saveWorkbook}
@@ -124,6 +134,7 @@ class BottomInsightsControls extends React.Component {
           showResults={this.props.showResults}
           showAnnotate={this.props.showAnnotate}
           showTelemetry={this.props.showTelemetry}
+          showFilesystem={this.props.showFilesystem}
           showOcr={this.props.showOcr}
           showDiffs={this.props.showDiffs}
           toggleShowTemplates={this.props.toggleShowTemplates}
@@ -132,6 +143,7 @@ class BottomInsightsControls extends React.Component {
           toggleShowResults={this.props.toggleShowResults}
           toggleShowAnnotate={this.props.toggleShowAnnotate}
           toggleShowTelemetry={this.props.toggleShowTelemetry}
+          toggleShowFilesystem={this.props.toggleShowFilesystem}
           toggleShowOcr={this.props.toggleShowOcr}
           toggleShowDiffs={this.props.toggleShowDiffs}
           setFramesetDiscriminator={this.props.setFramesetDiscriminator}

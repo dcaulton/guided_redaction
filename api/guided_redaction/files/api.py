@@ -11,6 +11,8 @@ class FilesViewSet(viewsets.ViewSet):
         files_list = {}
         total_overall_space_used = 0
         for (dirpath, dirnames, filenames) in os.walk(settings.REDACT_FILE_STORAGE_DIR):
+            if dirpath == settings.REDACT_FILE_STORAGE_DIR:
+                continue
             files_list[dirpath] = {}
             files_list[dirpath]['files'] = []
             total_dir_space_used = 0
@@ -29,7 +31,7 @@ class FilesViewSet(viewsets.ViewSet):
 
         return Response({
             "files": files_list,
-            "overall space used": '{:,} bytes'.format(total_overall_space_used),
+            "overall_space_used": '{:,} bytes'.format(total_overall_space_used),
         })
 
     def retrieve(self, request, pk):
