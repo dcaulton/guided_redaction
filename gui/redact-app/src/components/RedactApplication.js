@@ -102,7 +102,6 @@ class RedactApplication extends React.Component {
     this.setMovieNickname=this.setMovieNickname.bind(this)
     this.setMovieRedactedUrl=this.setMovieRedactedUrl.bind(this)
     this.getCurrentFramesets=this.getCurrentFramesets.bind(this)
-    this.getCurrentFrames=this.getCurrentFrames.bind(this)
     this.setMovieSets=this.setMovieSets.bind(this)
     this.setFramesetDiscriminator=this.setFramesetDiscriminator.bind(this)
     this.setActiveMovie=this.setActiveMovie.bind(this)
@@ -426,11 +425,21 @@ class RedactApplication extends React.Component {
     }
   }
 
-  getFramesetHashesInOrder() {
-    const frames = this.getCurrentFrames()
+  getFramesetHashesInOrder(framesets=null) {
+    if (framesets === null) {
+      framesets = this.getCurrentFramesets()
+    }
+    let frames = []
+    for (let i=0; i < Object.keys(framesets).length; i++) {
+      let frameset = framesets[Object.keys(framesets)[i]]
+      for (let j=0; j < frameset['images'].length; j++) {
+        frames.push(frameset['images'][j])
+      }
+    }
+    frames.sort()
     let return_arr = []
     for (let i=0; i < frames.length; i++) {
-      const frameset_hash = this.getFramesetHashForImageUrl(frames[i])
+      const frameset_hash = this.getFramesetHashForImageUrl(frames[i], framesets)
       if (!return_arr.includes(frameset_hash)) {
         return_arr.push(frameset_hash)
       }
@@ -508,15 +517,6 @@ class RedactApplication extends React.Component {
     if (this.state.movie_url) {
       if (Object.keys(this.state.movies).includes(this.state.movie_url)) {
         return this.state.movies[this.state.movie_url]['framesets']
-      }
-    }
-    return []
-  }
-
-  getCurrentFrames() {
-    if (this.state.movie_url) {
-      if (Object.keys(this.state.movies).includes(this.state.movie_url)) {
-        return this.state.movies[this.state.movie_url]['frames']
       }
     }
     return []
@@ -1312,8 +1312,11 @@ class RedactApplication extends React.Component {
     }
   }
 
-  getFramesetHashForImageUrl = (image_url) => {
-    const framesets = this.getCurrentFramesets()
+  getFramesetHashForImageUrl = (image_url, framesets=null) => {
+    if (framesets === null) {
+      framesets = this.getCurrentFramesets()
+    }
+
     const hashes = Object.keys(framesets)
     for (let i=0; i < hashes.length; i++) {
       let the_images = framesets[hashes[i]]['images']
@@ -1600,7 +1603,6 @@ class RedactApplication extends React.Component {
             <Route path='/redact/movie'>
               <MoviePanel 
                 movie_url = {this.state.movie_url}
-                getCurrentFrames={this.getCurrentFrames}
                 getCurrentFramesets={this.getCurrentFramesets}
                 mask_method = {this.state.mask_method}
                 setMaskMethod={this.handleSetMaskMethod}
@@ -1663,6 +1665,7 @@ class RedactApplication extends React.Component {
             </Route>
             <Route path='/redact/insights'>
               <InsightsPanel  
+                getFramesetHashesInOrder={this.getFramesetHashesInOrder}
                 setMovieUrlCallback={this.handleSetMovieUrl}
                 getFramesetHashForImageUrl={this.getFramesetHashForImageUrl}
                 movie_url={this.state.movie_url}

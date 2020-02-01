@@ -313,8 +313,10 @@ class InsightsPanel extends React.Component {
       request_data: {},
     }
     job_data['app'] = 'parse'
-    job_data['operation'] = 'split_and_hash_threaded'
-    job_data['description'] = 'split and hash threaded: ' + extra_data
+//    job_data['operation'] = 'split_and_hash_threaded'
+//    job_data['description'] = 'split and hash threaded: ' + extra_data
+    job_data['operation'] = 'split_and_hash_movie'
+    job_data['description'] = 'split and hash movie: ' + extra_data
     job_data['request_data']['movie_url'] = extra_data
     job_data['request_data']['frameset_discriminator'] = this.props.frameset_discriminator
     return job_data
@@ -491,7 +493,7 @@ class InsightsPanel extends React.Component {
   scrubberOnChange() {
     const framesets = this.props.getCurrentFramesets()
     const value = document.getElementById('movie_scrubber').value
-    const keys = Object.keys(framesets)
+    const keys = this.props.getFramesetHashesInOrder()
     const new_frameset_hash = keys[value]
     if (Object.keys(framesets).includes(new_frameset_hash) && 
         Object.keys(framesets[new_frameset_hash]).includes('images')) {
@@ -569,7 +571,7 @@ class InsightsPanel extends React.Component {
   movieSplitDone(new_framesets) {
     const len = Object.keys(new_framesets).length
     document.getElementById('movie_scrubber').max = len-1
-    const first_key = Object.keys(new_framesets)[0]
+    const first_key = this.props.getFramesetHashesInOrder(new_framesets)[0]
     const first_image = new_framesets[first_key]['images'][0]
     this.setState({
       insights_image: first_image,

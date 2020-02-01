@@ -54,7 +54,6 @@ class FilesystemControls extends React.Component {
         {file_keys.map((value, index) => {
           const parts = value.split('/')
           const file_uuid = parts[parts.length-1]
-          let files_list = this.props.files['files'][value]['files']
           let files_count= this.props.files['files'][value]['files'].length
           let files_count_message = files_count.toString() + ' files'
 
