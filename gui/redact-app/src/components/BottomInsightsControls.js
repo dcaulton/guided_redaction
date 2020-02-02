@@ -13,7 +13,7 @@ import SessionControls from './SessionControls'
 class BottomInsightsControls extends React.Component {
 
   render() {
-    let bottom_y = 100
+    let bottom_y = 110
     const ele = document.getElementById('insights_image_div')
     if (ele) {
       bottom_y += ele.offsetHeight

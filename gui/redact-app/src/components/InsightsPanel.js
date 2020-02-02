@@ -313,10 +313,10 @@ class InsightsPanel extends React.Component {
       request_data: {},
     }
     job_data['app'] = 'parse'
-//    job_data['operation'] = 'split_and_hash_threaded'
-//    job_data['description'] = 'split and hash threaded: ' + extra_data
-    job_data['operation'] = 'split_and_hash_movie'
-    job_data['description'] = 'split and hash movie: ' + extra_data
+    job_data['operation'] = 'split_and_hash_threaded'
+    job_data['description'] = 'split and hash threaded: ' + extra_data
+//    job_data['operation'] = 'split_and_hash_movie'
+//    job_data['description'] = 'split and hash movie: ' + extra_data
     job_data['request_data']['movie_url'] = extra_data
     job_data['request_data']['frameset_discriminator'] = this.props.frameset_discriminator
     return job_data
