@@ -1,5 +1,6 @@
 import cv2
 from django import db
+import math
 from operator import add
 import os
 import numpy as np
@@ -11,7 +12,6 @@ import uuid
 class MovieParser:
 
     input_filename = ""
-    input_frames_per_second = 1
     output_frames_per_second = 1
     working_dir = ""
     scan_method = ""
@@ -19,7 +19,6 @@ class MovieParser:
     frameset_discriminator = 'gray8'
 
     def __init__(self, args):
-        self.input_frames_per_second = args.get("ifps", 1)
         self.output_frames_per_second = args.get("ofps", 1)
         self.scan_method = args.get("scan_method")
         self.movie_url = args.get("movie_url")
@@ -51,28 +50,32 @@ class MovieParser:
     def split_movie(self):
         self.unique_working_dir = self.file_writer.create_unique_directory(self.working_uuid)
         print("splitting movie into frames at "+ self.unique_working_dir)
-        video_object = cv2.VideoCapture(self.movie_url)
+        video_capture = cv2.VideoCapture(self.movie_url)
         success = True
-        read_count = 0
         created_count = 0
         files_created = []
+        interval_msec = float(1 / self.output_frames_per_second) * 1000
+        last_time_msec = 0
+        next_time_msec = 0
+        current_position_msec = 0
         try:
-            while success:
-                read_count += 1
-                filename = "frame_{:05d}.png".format(read_count)
-                success, image = video_object.read()
-                filename_full = os.path.join(self.unique_working_dir, filename)
-                if success:
-                    if self.input_frames_per_second > self.output_frames_per_second:
-                        if read_count % (60 / self.output_frames_per_second) != 0:
-                            # drop frames not needed for output based on FPS
-                            print("dropping frame number "+str(read_count)+" due to output_fps") 
-                            continue
+            while True:
+                success, image = video_capture.read()
+                if not success: 
+                    break
+                if current_position_msec >= next_time_msec:
+                    filename = "frame_{:05d}.png".format(created_count)
+                    filename_full = os.path.join(self.unique_working_dir, filename)
                     file_url = self.file_writer.write_cv2_image_to_url(
                         image, filename_full
                     )
                     files_created.append(file_url)
                     created_count += 1
+                    last_time_msec = current_position_msec
+                    cur_frame_pos = math.floor(current_position_msec / interval_msec)
+                    next_frame_pos = cur_frame_pos + 1
+                    next_time_msec = next_frame_pos * interval_msec
+                current_position_msec = video_capture.get(cv2.CAP_PROP_POS_MSEC)
         except Exception as e:
             print("exception encountered unzipping movie frames: "+ e)
         print("{} frames created".format(str(created_count)))
