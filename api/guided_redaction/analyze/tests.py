@@ -169,7 +169,7 @@ class EastTessTestCase(TestCase):
         recognized_text_areas = analyzer.analyze_text(
             source_image, [(0,0), (530, 320)]
         )
-        cv2.imwrite('/Users/dcaulton/Desktop/dada.png', source_image)
+#        cv2.imwrite('/Users/dcaulton/Desktop/dada.png', source_image)
         found = 0
         for rta in recognized_text_areas:
             if (rta['text'] == self.wisdom[0]):

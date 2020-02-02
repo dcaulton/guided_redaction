@@ -131,6 +131,20 @@ class RedactApplication extends React.Component {
     this.setWhenDoneTarget=this.setWhenDoneTarget.bind(this)
   }
 
+  getCurrentUser() {
+    try {
+      if (document.getElementById('App-whoami')) {
+        var name= document.getElementById('App-whoami').children[0].children[1].innerHTML.split(';')[1]
+        if (name) {
+          return name 
+        }
+      }
+    }
+    catch(err) {
+    }
+    return 'unknown'
+  }
+
   setWhenDoneTarget(the_value) {
     this.setState({
       whenDoneTarget: the_value,
@@ -1132,6 +1146,7 @@ class RedactApplication extends React.Component {
   }
 
   async submitJob(the_job_data, when_submit_complete=(()=>{}), cancel_after_loading=false, when_fetched=(()=>{})) {
+    let current_user = this.getCurrentUser()
     await fetch(this.state.jobs_url, {
       method: 'POST',
       headers: this.buildJsonHeaders(),
@@ -1140,7 +1155,7 @@ class RedactApplication extends React.Component {
         operation: the_job_data['operation'],
         request_data: the_job_data['request_data'],
         response_data: the_job_data['response_data'],
-        owner: this.state.current_user,
+        owner: current_user,
         description: the_job_data['description'],
         workbook_id: this.state.current_workbook_id,
       }),
@@ -1211,12 +1226,13 @@ class RedactApplication extends React.Component {
   }
 
   async saveWorkbook(when_done=(()=>{})) {
+    const current_user = this.getCurrentUser()
     await fetch(this.state.workbooks_url, {
       method: 'POST',
       headers: this.buildJsonHeaders(),
       body: JSON.stringify({
         state_data: this.state,
-        owner: this.state.current_user,
+        owner: current_user,
         name: this.state.current_workbook_name,
         play_sound: this.state.current_workbook_play_sound,
       }),

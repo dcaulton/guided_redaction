@@ -37,14 +37,6 @@ class WorkbooksViewSet(viewsets.ViewSet):
         }
         return Response({"workbook": wb_data})
 
-    def get_file_uuids_from_request(self, request_dict):
-        uuids = []
-#                (x_part, file_part) = os.path.split(movie)
-#                (y_part, uuid_part) = os.path.split(x_part)
-#                if uuid_part and len(uuid_part) == 36:
-#                    uuids.append(uuid_part)
-        return uuids
-
     # TODO refine this.  For now we're making it impossible for the caller to create duplicate
     #   workbooks.  I really want to add a PUT or PATCH  endpoint for updates, then make the front end
     #   smart enough to know if a workbook currently exists.
@@ -57,12 +49,12 @@ class WorkbooksViewSet(viewsets.ViewSet):
                 owner=request.data.get('owner')
             ).first()
             workbook.state_data=json.dumps(request.data.get('state_data'))
-            workbook.file_uuids_used=json.dumps(self.get_file_uuids_from_request(request.data))
+            workbook.file_uuids_used=''
             workbook.save()
         else:
             workbook = Workbook(
                 state_data=json.dumps(request.data.get('state_data')),
-                file_uuids_used=json.dumps(self.get_file_uuids_from_request(request.data)),
+                file_uuids_used='',
                 owner=request.data.get('owner'),
                 name=request.data.get('name'),
             )

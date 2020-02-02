@@ -83,6 +83,7 @@ class JobsViewSet(viewsets.ViewSet):
                     'app': job.app,
                     'operation': job.operation,
                     'workbook_id': job.workbook_id,
+                    'owner': job.owner,
                     'children': child_ids,
                 }
             )
@@ -106,6 +107,7 @@ class JobsViewSet(viewsets.ViewSet):
             'app': job.app,
             'operation': job.operation,
             'workbook_id': job.workbook_id,
+            'owner': job.owner,
             'parent_id': job.parent_id,
             'request_data': job.request_data,
             'response_data': job.response_data,
@@ -172,22 +174,6 @@ class JobsViewSet(viewsets.ViewSet):
                 parent=parent_job,
             )
             job.save()
-        return parent_job
-
-    def build_composite_split_and_hash_job(self, request):
-        parent_job = Job(
-            request_data=json.dumps(request.data.get('request_data')),
-            file_uuids_used=json.dumps(self.get_file_uuids_from_request(request.data)),
-            owner=request.data.get('owner', 'unknown'),
-            status='created',
-            description=request.data.get('description'),
-            app=request.data.get('app', 'bridezilla'),
-            operation=request.data.get('operation', 'chucky'),
-            sequence=0,
-            elapsed_time=0.0,
-            workbook_id=request.data.get('workbook_id'),
-        )
-        parent_job.save()
         return parent_job
 
     def build_composite_job(self, request):
