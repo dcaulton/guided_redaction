@@ -1,8 +1,5 @@
-div.App-body {
-padding-top: 0;
-}
-div#app-chooser ul li:nth-child(3) {
-color: orange;
+div#redact_application_wrapper {
+margin-top: -15px;
 }
 div#image_and_canvas_wrapper {
 position: relative;

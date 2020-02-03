@@ -8,7 +8,7 @@ import RedactApplication from './RedactApplication';
 const X = observer(class X extends React.Component {
   render() {
     return (
-      <div className="redact_application_wrapper mt-0">
+      <div className="redact_application_wrapper">
         <RedactApplication />
       </div>
     )
