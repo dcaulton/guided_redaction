@@ -784,9 +784,14 @@ class RedactApplication extends React.Component {
   }
 
   addMovieAndSetActive(movie_url, movies, theCallback=(()=>{})) {
+    let deepCopyCampaignMovies = JSON.parse(JSON.stringify(this.state.campaign_movies))
+    if (!deepCopyCampaignMovies.includes(movie_url)) {
+      deepCopyCampaignMovies.push(movie_url)
+    }
     this.setState({
       movie_url: movie_url, 
       movies: movies,
+      campaign_movies: deepCopyCampaignMovies,
     },
     theCallback(movies[movie_url]['framesets'])
     )

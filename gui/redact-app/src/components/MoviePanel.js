@@ -119,7 +119,7 @@ class MoviePanel extends React.Component {
     }
     job_data['app'] = 'parse'
     job_data['operation'] = 'split_and_hash_threaded'
-    job_data['description'] = 'split and hash video (threaded): ' + extra_data
+    job_data['description'] = 'split and hash threaded from MoviePanel: ' + extra_data
     job_data['request_data']['movie_url'] = extra_data
     job_data['request_data']['frameset_discriminator'] = this.props.frameset_discriminator
     return job_data
@@ -132,7 +132,7 @@ class MoviePanel extends React.Component {
         this.setMessage('movie split completed')
       }
       let boundAfterLoaded=afterLoaded.bind(this)
-      this.props.submitJob(job_data, this.setMessage('movie split job was submitted'), true, boundAfterLoaded)
+      this.props.submitJob(job_data, this.setMessage('movie split job was submitted'), false, boundAfterLoaded)
     } else if (job_string === 'redact_framesets') {
       const job_data = this.buildRedactFramesetsJobData(extra_data)
       function afterLoaded() {
