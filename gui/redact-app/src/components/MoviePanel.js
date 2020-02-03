@@ -21,6 +21,11 @@ class MoviePanel extends React.Component {
     this.showMovieUploadTarget=this.showMovieUploadTarget.bind(this)
   }
 
+  componentDidMount() {
+    if (!this.props.movie_url) {
+      this.showMovieUploadTarget()
+    }
+  }
 
   showMovieUploadTarget() {
     const value = !this.state.uploadMovie
