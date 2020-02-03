@@ -1,6 +1,9 @@
 div.App-body {
 padding-top: 0;
 }
+div#app-chooser ul li:nth-child(3) {
+color: orange;
+}
 div#image_and_canvas_wrapper {
 position: relative;
 }
