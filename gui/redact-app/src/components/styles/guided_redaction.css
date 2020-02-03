@@ -1,4 +1,6 @@
-
+div.App-body {
+padding-top: 0;
+}
 div#image_and_canvas_wrapper {
 position: relative;
 }
