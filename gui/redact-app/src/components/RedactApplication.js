@@ -1600,19 +1600,6 @@ class RedactApplication extends React.Component {
         </nav>
         <div id='container' className='container'>
           <Switch>
-            <Route exact path='/redact'>
-              <HomePanel 
-                setMovieUrlCallback={this.handleSetMovieUrl}
-                setImageUrl={this.setImageUrl}
-                showMovieParserLink={this.state.showMovieParserLink}l
-                can_see_url={this.state.can_see_url}
-                checkIfApiCanSeeUrl={this.checkIfApiCanSeeUrl}
-                checkIfGuiCanSeeUrl={this.checkIfGuiCanSeeUrl}
-                callMakeUrl={this.callMakeUrl}
-                updateSingleImageMovie={this.updateSingleImageMovie}
-                setMovies={this.setMovies}
-              />
-            </Route>
             <Route path='/redact/movie'>
               <MoviePanel 
                 movie_url = {this.state.movie_url}
