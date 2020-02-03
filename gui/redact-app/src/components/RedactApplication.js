@@ -2,7 +2,6 @@ import React from 'react';
 import ImagePanel from './ImagePanel';
 import MoviePanel from './MoviePanel';
 import InsightsPanel from './InsightsPanel';
-import HomePanel from './HomePanel';
 import {getUrlVars} from './redact_utils.js'
 import './styles/guided_redaction.css';
 import {
@@ -1588,7 +1587,7 @@ class RedactApplication extends React.Component {
         <nav className="navbar navbar-expand-lg navbar-dark bg-dark">
         <ul className="navbar-nav mr-auto mt-2 mt-lg-0">
           <li className="nav-item">
-            <Link className='nav-link' id='image_panel_link' to='/redact/image'>Image</Link>
+            <Link className='nav-link' id='image_panel_link' to='/redact'>Image</Link>
           </li>
           <li className="nav-item">
             <Link className='nav-link' id='movie_panel_link' to='/redact/movie'>Movie</Link>
@@ -1630,7 +1629,7 @@ class RedactApplication extends React.Component {
                 establishNewMovie={this.establishNewMovie}
               />
             </Route>
-            <Route path='/redact/image'>
+            <Route path='/redact'>
               <ImagePanel 
                 mask_method={this.state.mask_method}
                 image_url={this.state.image_url}
