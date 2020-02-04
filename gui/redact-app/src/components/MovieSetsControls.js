@@ -1,6 +1,6 @@
 import React from 'react';
 
-class MovieSetsPanel extends React.Component {
+class MovieSetsControls extends React.Component {
   constructor(props) {
     super(props)
     this.state = ({
@@ -234,4 +234,4 @@ class MovieSetsPanel extends React.Component {
   }
 }
 
-export default MovieSetsPanel;
+export default MovieSetsControls;

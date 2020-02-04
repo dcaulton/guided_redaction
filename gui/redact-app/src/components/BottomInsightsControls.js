@@ -5,8 +5,8 @@ import TelemetryControls from './TelemetryControls'
 import SelectedAreaControls from './SelectedAreaControls'
 import OcrControls from './OcrControls'
 import DiffControls from './DiffControls'
-import MovieSetsPanel from './MovieSetsPanel'
-import ResultsPanel from './ResultsPanel'
+import MovieSetsControls from './MovieSetsControls'
+import ResultsControls from './ResultsControls'
 import FilesystemControls from './FilesystemControls'
 import SessionControls from './SessionControls'
 
@@ -93,7 +93,7 @@ class BottomInsightsControls extends React.Component {
           toggleShowOcr={this.props.toggleShowOcr}
         />
 
-        <MovieSetsPanel
+        <MovieSetsControls
           displayInsightsMessage={this.props.displayInsightsMessage}
           movie_sets={this.props.movie_sets}
           setMovieSets={this.props.setMovieSets}
@@ -102,7 +102,7 @@ class BottomInsightsControls extends React.Component {
           toggleShowMovieSets={this.props.toggleShowMovieSets}
         />
 
-        <ResultsPanel
+        <ResultsControls
           displayInsightsMessage={this.props.displayInsightsMessage}
           showResults={this.props.showResults}
           toggleShowResults={this.props.toggleShowResults}

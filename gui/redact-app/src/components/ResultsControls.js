@@ -1,6 +1,6 @@
 import React from 'react';
 
-class ResultsPanel extends React.Component {
+class ResultsControls extends React.Component {
   constructor(props) {
     super(props)
     this.state = ({
@@ -103,4 +103,4 @@ class ResultsPanel extends React.Component {
   }
 }
 
-export default ResultsPanel;
+export default ResultsControls;
