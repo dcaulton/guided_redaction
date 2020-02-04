@@ -120,7 +120,6 @@ class RedactApplication extends React.Component {
     this.togglePlaySound=this.togglePlaySound.bind(this)
     this.checkIfApiCanSeeUrl=this.checkIfApiCanSeeUrl.bind(this)
     this.checkIfGuiCanSeeUrl=this.checkIfGuiCanSeeUrl.bind(this)
-    this.callMakeUrl=this.callMakeUrl.bind(this)
     this.updateSingleImageMovie=this.updateSingleImageMovie.bind(this)
     this.setMovies=this.setMovies.bind(this)
     this.postMakeUrlCall=this.postMakeUrlCall.bind(this)
@@ -279,21 +278,11 @@ class RedactApplication extends React.Component {
     return base64
   }
 
-  async callMakeUrl(the_url, when_done=(()=>{})) {
-    this.getBase64Image(the_url)
-    .then((image_data) => {
-      if ((image_data).length > this.state.upload_size_limit) {
-        // fail the job
-        when_done('File size limit exceeded, aborting')
-        return
-      }
-      let url_parts = the_url.split('/')
-      let image_name = url_parts[url_parts.length-1]
-      this.postMakeUrlCall(image_data, image_name, when_done)
-    })
-  }
-
-  async postMakeUrlCall(image_data, image_name, when_done=(()=>{})) {
+  async postMakeUrlCall(hash_in) {
+    let image_data = hash_in.hasOwnProperty('data_uri')? hash_in['data_uri'] : ''
+    let image_name = hash_in.hasOwnProperty('filename')? hash_in['filename'] : 'no filename'
+    let when_done = hash_in.hasOwnProperty('when_done')? hash_in['when_done'] : (()=>{})
+    let when_failed = hash_in.hasOwnProperty('when_failed')? hash_in['when_failed'] : (()=>{})
     let response = await fetch(this.state.make_url_url, {
       method: 'POST',
       headers: this.buildJsonHeaders(),
@@ -308,6 +297,7 @@ class RedactApplication extends React.Component {
     })
     .catch((error) => {
       console.error(error)
+      when_failed(error)
     })
     await response
   }

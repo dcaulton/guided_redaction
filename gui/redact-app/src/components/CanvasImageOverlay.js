@@ -98,11 +98,12 @@ class CanvasImageOverlay extends React.Component {
     let reader = new FileReader()
     let app_this = this
     reader.onload = function(e) {
-      app_this.props.postMakeUrlCall(
-        e.target.result, 
-        the_file.name, 
-        app_this.props.addImageToMovie
-      )
+      app_this.props.postMakeUrlCall({
+        data_uri: e.target.result, 
+        filename: the_file.name, 
+        when_done: app_this.props.addImageToMovie,
+        when_failed: (err) => {app_this.props.setMessage('make url job failed')},
+      })
     }
     reader.readAsDataURL(the_file)
   }

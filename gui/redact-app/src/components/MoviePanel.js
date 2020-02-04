@@ -305,7 +305,6 @@ class MoviePanel extends React.Component {
   }
 
   buildFramesetsTitle() {
-    
     if (Object.keys(this.props.getCurrentFramesets()).length > 0) {
       return (
           <div className='col col-lg-10 p-2 border-bottom border-top'>
@@ -315,28 +314,29 @@ class MoviePanel extends React.Component {
     }
   }
 
-  async handleDownloadedFile(the_file) {
-    let reader = new FileReader()
-    let app_this = this
-    reader.onload = function(e) {
-      app_this.props.postMakeUrlCall(
-        e.target.result,
-        the_file.name,
-        app_this.props.establishNewMovie
-      )
-    }
-    reader.readAsDataURL(the_file)
-    this.setState({
-      uploadMovie: false,
-    })
-  }
-
   handleDroppedMovie(event) {
     event.preventDefault()
     event.stopPropagation()
     if (event.dataTransfer.files && event.dataTransfer.files.length > 0) {
       this.handleDownloadedFile(event.dataTransfer.files[0])
     }
+  }
+
+  async handleDownloadedFile(the_file) {
+    let reader = new FileReader()
+    let app_this = this
+    reader.onload = function(e) {
+      app_this.props.postMakeUrlCall({
+        data_uri: e.target.result,
+        filename: the_file.name,
+        when_done: app_this.props.establishNewMovie,
+        when_failed: (err) => {app_this.setMessage('make url job failed')}, 
+      })
+    }
+    reader.readAsDataURL(the_file)
+    this.setState({
+      uploadMovie: false,
+    })
   }
 
   buildMovieUploadTarget() {

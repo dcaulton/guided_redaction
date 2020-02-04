@@ -315,6 +315,7 @@ class ImagePanel extends React.Component {
                   last_click= {this.state.last_click}
                   getRedactionFromFrameset={this.props.getRedactionFromFrameset}
                   postMakeUrlCall={this.props.postMakeUrlCall}
+                  setMessage={this.setMessage}
                   establishNewEmptyMovie={this.props.establishNewEmptyMovie}
                   addImageToMovie={this.props.addImageToMovie}
                 />
