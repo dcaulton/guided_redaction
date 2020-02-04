@@ -66,7 +66,8 @@ class JobsViewSet(viewsets.ViewSet):
         if make_failed:
             job.status = 'failed'
             job.save()
-        return Response({"job": job})
+            return Response({"job_updated": True})
+        return Response({"job_updated": False})
 
     def list(self, request):
         jobs_list = []
