@@ -64,6 +64,7 @@ class RedactApplication extends React.Component {
       whenJobLoaded: {},
       whenDoneTarget: '',
       campaign_movies: [],
+      upload_size_limit: 9500000,
     }
 
     this.getRedactedMovieFilename=this.getRedactedMovieFilename.bind(this)
@@ -281,6 +282,11 @@ class RedactApplication extends React.Component {
   async callMakeUrl(the_url, when_done=(()=>{})) {
     this.getBase64Image(the_url)
     .then((image_data) => {
+      if ((image_data).length > this.state.upload_size_limit) {
+        // fail the job
+        when_done('File size limit exceeded, aborting')
+        return
+      }
       let url_parts = the_url.split('/')
       let image_name = url_parts[url_parts.length-1]
       this.postMakeUrlCall(image_data, image_name, when_done)
@@ -1149,7 +1155,11 @@ class RedactApplication extends React.Component {
     })
   }
 
-  async submitJob(the_job_data, when_submit_complete=(()=>{}), cancel_after_loading=false, when_fetched=(()=>{})) {
+  async submitJob(hash_in) {
+    let the_job_data = hash_in.hasOwnProperty('job_data')? hash_in['job_data'] : {}
+    let when_submit_complete = hash_in.hasOwnProperty('after_submit')? hash_in['after_submit'] : (()=>{})
+    let cancel_after_loading = hash_in.hasOwnProperty('cancel_after_loading')? hash_in['cancel_after_loading'] : false
+    let when_fetched = hash_in.hasOwnProperty('after_loaded')? hash_in['after_loaded'] : (()=>{})
     let current_user = this.getCurrentUser()
     await fetch(this.state.jobs_url, {
       method: 'POST',

@@ -21,13 +21,14 @@ class ImagePanel extends React.Component {
   }
 
   submitImageJob(job_string, extra_data = '') {                                                                         
-    if (job_string === 'template_match') {                                                                       
-      const job_data = this.buildTemplateMatchJobdata(extra_data)                                                       
-      function afterLoaded() {                                                                                          
-        this.setMessage('template match completed')                                                                     
-      }                                                                                                                 
-      let boundAfterLoaded=afterLoaded.bind(this)                                                                       
-      this.props.submitJob(job_data, this.setMessage('template match job was submitted'), true, boundAfterLoaded)       
+    if (job_string === 'template_match') {
+      const job_data = this.buildTemplateMatchJobdata(extra_data)
+      this.props.submitJob({
+        job_data: job_data, 
+        after_submit: () => {this.setMessage('template match job was submitted')}, 
+        cancel_after_loading: true, 
+        after_loaded: () => {this.setMessage('template match completed')},
+      })
     } 
   }  
 

@@ -345,22 +345,34 @@ class InsightsPanel extends React.Component {
   submitInsightsJob(job_string, extra_data) {
     if (job_string === 'current_template_current_movie') {
       let job_data = this.buildScanTemplateCurTempCurMovJobData(extra_data)
-      this.props.submitJob(job_data)
+      this.props.submitJob({
+        job_data: job_data,
+      })
     } else if (job_string === 'current_template_all_movies') {
       let job_data = this.buildScanTemplateCurTempAllMovJobData(extra_data)
-      this.props.submitJob(job_data)
+      this.props.submitJob({
+        job_data: job_data,
+      })
     } else if (job_string === 'current_template_movie_set') {
       let job_data = this.buildScanTemplateCurTempMovSetJobData(extra_data)
-      this.props.submitJob(job_data)
+      this.props.submitJob({
+        job_data: job_data,
+      })
     } else if (job_string === 'load_movie') {
       let job_data = this.buildLoadMovieJobData(extra_data)
-      this.props.submitJob(job_data)
+      this.props.submitJob({
+        job_data: job_data
+      })
     } else if (job_string === 'diffs_current_movie') {
       let job_data = this.buildCalcDiffsData('current_movie', extra_data)
-      this.props.submitJob(job_data)
+      this.props.submitJob({
+        job_data: job_data,
+      })
     } else if (job_string === 'diffs_all_movies') {
       let job_data = this.buildCalcDiffsData('all_movies', extra_data)
-      this.props.submitJob(job_data)
+      this.props.submitJob({
+        job_data: job_data,
+      })
     }
   }
 

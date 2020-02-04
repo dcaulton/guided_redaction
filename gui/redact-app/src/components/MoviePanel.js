@@ -128,34 +128,36 @@ class MoviePanel extends React.Component {
   submitMovieJob(job_string, extra_data = '') {
     if (job_string === 'split_and_hash_video') {
       const job_data = this.buildSplitAndHashJobData(extra_data)
-      function afterLoaded() {
-        this.setMessage('movie split completed')
-      }
-      let boundAfterLoaded=afterLoaded.bind(this)
-      this.props.submitJob(job_data, this.setMessage('movie split job was submitted'), false, boundAfterLoaded)
+      this.props.submitJob({
+        job_data:job_data, 
+        after_submit: () => {this.setMessage('movie split job was submitted')}, 
+        cancel_after_loading: true, 
+        after_loaded: () => {this.setMessage('movie split completed')}, 
+      })
     } else if (job_string === 'redact_framesets') {
       const job_data = this.buildRedactFramesetsJobData(extra_data)
-      function afterLoaded() {
-        this.setMessage('frameset redactions completed')
-      }
-      let boundAfterLoaded=afterLoaded.bind(this)
-      // deleting chained jobs is a little buggy, needs clean up
-      // for now we'll clean up manually from the insights panel
-      this.props.submitJob(job_data, this.setMessage('redact frames job was submitted'), false, boundAfterLoaded)
+      this.props.submitJob({
+        job_data: job_data, 
+        after_submit: () => {this.setMessage('redact frames job was submitted')}, 
+        cancel_after_loading: false, 
+        after_loaded: () => {this.setMessage('frameset redactions completed')}, 
+      })
     } else if (job_string === 'template_match') {
       const job_data = this.buildTemplateMatchJobdata(extra_data)
-      function afterLoaded() {
-        this.setMessage('template match completed')
-      }
-      let boundAfterLoaded=afterLoaded.bind(this)
-      this.props.submitJob(job_data, this.setMessage('template match job was submitted'), true, boundAfterLoaded)
+      this.props.submitJob({
+        job_data: job_data, 
+        after_submit: () => {this.setMessage('template match job was submitted')}, 
+        cancel_after_loading: true, 
+        after_loaded: () => {this.setMessage('template match completed')}, 
+      })
     } else if (job_string === 'zip_movie') {
       const job_data = this.buildZipMovieJobdata(extra_data)
-      function afterLoaded() {
-        this.setMessage('movie zip completed')
-      }
-      let boundAfterLoaded=afterLoaded.bind(this)
-      this.props.submitJob(job_data, this.setMessage('zip movie job was submitted'), true, boundAfterLoaded)
+      this.props.submitJob({
+        job_data: job_data, 
+        after_submit: () => {this.setMessage('zip movie job was submitted')}, 
+        cancel_after_loading: true, 
+        after_loaded: () => {this.setMessage('movie zip completed')}, 
+      })
     } else if (job_string === 'movie_panel_redact_and_reassemble_video') {
       console.log('redact and reassemble called - NOT SUPPORTED YET')
     }
