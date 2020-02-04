@@ -1150,6 +1150,7 @@ class RedactApplication extends React.Component {
     let when_submit_complete = hash_in.hasOwnProperty('after_submit')? hash_in['after_submit'] : (()=>{})
     let cancel_after_loading = hash_in.hasOwnProperty('cancel_after_loading')? hash_in['cancel_after_loading'] : false
     let when_fetched = hash_in.hasOwnProperty('after_loaded')? hash_in['after_loaded'] : (()=>{})
+    let when_failed = hash_in.hasOwnProperty('when_failed')? hash_in['when_failed'] : (()=>{})
     let current_user = this.getCurrentUser()
     await fetch(this.state.jobs_url, {
       method: 'POST',
@@ -1177,6 +1178,7 @@ class RedactApplication extends React.Component {
     })
     .catch((error) => {
       console.error(error);
+      when_failed()
     })
   }
 

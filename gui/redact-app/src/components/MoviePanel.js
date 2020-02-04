@@ -133,6 +133,7 @@ class MoviePanel extends React.Component {
         after_submit: () => {this.setMessage('movie split job was submitted')}, 
         cancel_after_loading: true, 
         after_loaded: () => {this.setMessage('movie split completed')}, 
+        when_failed: () => {this.setMessage('movie split failed')},
       })
     } else if (job_string === 'redact_framesets') {
       const job_data = this.buildRedactFramesetsJobData(extra_data)
@@ -141,6 +142,7 @@ class MoviePanel extends React.Component {
         after_submit: () => {this.setMessage('redact frames job was submitted')}, 
         cancel_after_loading: false, 
         after_loaded: () => {this.setMessage('frameset redactions completed')}, 
+        when_failed: () => {this.setMessage('redact frames job failed')},
       })
     } else if (job_string === 'template_match') {
       const job_data = this.buildTemplateMatchJobdata(extra_data)
@@ -149,6 +151,7 @@ class MoviePanel extends React.Component {
         after_submit: () => {this.setMessage('template match job was submitted')}, 
         cancel_after_loading: true, 
         after_loaded: () => {this.setMessage('template match completed')}, 
+        when_failed: () => {this.setMessage('template match job failed')},
       })
     } else if (job_string === 'zip_movie') {
       const job_data = this.buildZipMovieJobdata(extra_data)
@@ -157,6 +160,7 @@ class MoviePanel extends React.Component {
         after_submit: () => {this.setMessage('zip movie job was submitted')}, 
         cancel_after_loading: true, 
         after_loaded: () => {this.setMessage('movie zip completed')}, 
+        when_failed: () => {this.setMessage('zip movie job failed')},
       })
     } else if (job_string === 'movie_panel_redact_and_reassemble_video') {
       console.log('redact and reassemble called - NOT SUPPORTED YET')

@@ -28,6 +28,7 @@ class ImagePanel extends React.Component {
         after_submit: () => {this.setMessage('template match job was submitted')}, 
         cancel_after_loading: true, 
         after_loaded: () => {this.setMessage('template match completed')},
+        when_failed: () => {this.setMessage('template match failed')},
       })
     } 
   }  
