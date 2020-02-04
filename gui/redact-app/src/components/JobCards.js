@@ -271,6 +271,23 @@ class JobCard extends React.Component {
     )
   }
 
+  buildPercentDone(job_data) {
+    if (job_data['elapsed_time'] === 0) {
+      return ''
+    }
+    if (job_data['elapsed_time'] === 1) {
+      return ''
+    }
+    const elapsed_percent = parseInt(job_data['elapsed_time'] * 100).toString() + '% done'
+    return (
+      <div className='row mt-1 pl-3'>
+        <span title={elapsed_percent}>
+          {elapsed_percent}
+        </span>
+      </div>
+    )
+  }
+
   render() {
     let get_job_button = ''
     if (this.props.job_data['status'] === 'success') {
@@ -300,6 +317,7 @@ class JobCard extends React.Component {
     const job_workbook_block = this.buildJobWorkbookBlock(this.props.job_data)
     const job_desc_data = this.buildJobDescriptionData(this.props.job_data)
     const job_created_on_data = this.buildCreatedOnData(this.props.job_data)
+    const job_percent_done = this.buildPercentDone(this.props.job_data)
 
     return (
       <div className='row pl-1 mt-2 card'>
@@ -322,6 +340,7 @@ class JobCard extends React.Component {
             <div className='row mt-1'>
               {job_created_on_data}
             </div>
+            {job_percent_done}
             {job_workbook_block}
             <div className='row mt-1'>
               {get_job_button}

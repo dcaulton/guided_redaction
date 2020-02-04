@@ -136,7 +136,7 @@ def split_and_hash_threaded(job_uuid):
     job = Job.objects.get(pk=job_uuid)
     if job:
         children = Job.objects.filter(parent=job)
-        next_step = evaluate_split_and_hash_threaded_children(children)
+        (next_step, percent_done) = evaluate_split_and_hash_threaded_children(children)
         if next_step:
             print('split and hash threaded next step is '+ next_step)
         else:
@@ -146,6 +146,8 @@ def split_and_hash_threaded(job_uuid):
             return
         elif next_step == 'make_and_dispatch_hash_tasks':
             make_and_dispatch_hash_tasks(job, children)
+            job.elapsed_time = percent_done
+            job.save()
         elif next_step == 'abort':
             print('aborting split and hash threaded, some child tasks have failed')
             job.status = 'failed'
@@ -153,6 +155,9 @@ def split_and_hash_threaded(job_uuid):
             return
         elif next_step == 'wrap_up':
             wrap_up_split_and_hash_threaded(job, children)
+        elif next_step == 'update_complete_percent':
+            job.elapsed_time = percent_done
+            job.save()
         else:
             print('some subtasks arent complete or failed, let them finish')
             return
@@ -177,6 +182,7 @@ def wrap_up_split_and_hash_threaded(parent_job, children):
     resp_data['unique_frames'] = unique_frames
     parent_job.response_data = json.dumps(resp_data)
     parent_job.status = 'success'
+    parent_job.elapsed_time = 1
     parent_job.save()
     print('wrapping up split and hash threaded')
 
@@ -208,15 +214,18 @@ def evaluate_split_and_hash_threaded_children(children):
             hash_frames_children, hash_frames_completed_children, hash_frames_failed_children))
     print_totals()
     if split_movie_children == 0:
-        return 'make_and_dispatch_split_tasks'
+        return ('make_and_dispatch_split_tasks', 0)
     elif hash_frames_children > 0 and hash_frames_children == hash_frames_completed_children:
-        return 'wrap_up'
+        return ('wrap_up', 1)
     elif hash_frames_children > 0 and hash_frames_failed_children > 0:
-        return 'abort'
+        return ('abort', 0)
+    elif hash_frames_children > 0:
+        complete_percent = .5 + .5*(hash_frames_completed_children/hash_frames_children)
+        return ('update_complete_percent', complete_percent)
     elif split_movie_children == split_movie_completed_children and hash_frames_children == 0:
-        return 'make_and_dispatch_hash_tasks'
+        return ('make_and_dispatch_hash_tasks', .5)
     elif split_movie_failed_children > 0:
-        return 'abort'
+        return ('abort', 0)
 
 def make_and_dispatch_hash_tasks(parent_job, split_tasks):
     frames = []
