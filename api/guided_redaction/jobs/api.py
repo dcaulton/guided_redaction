@@ -60,6 +60,14 @@ class JobsViewSet(viewsets.ViewSet):
         return str(day_diff // 365) + " years ago"
 
 
+    def partial_update(self, request, pk=None):
+        job = Job.objects.get(pk=pk)
+        make_failed = request.data.get('make_failed')
+        if make_failed:
+            job.status = 'failed'
+            job.save()
+        return Response({"job": job})
+
     def list(self, request):
         jobs_list = []
         if 'workbook_id' in request.GET.keys():
