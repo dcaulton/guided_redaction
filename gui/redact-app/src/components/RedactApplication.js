@@ -683,7 +683,33 @@ class RedactApplication extends React.Component {
     }
   }
 
+  updateApiUrls(api_server_url) {
+    this.setState({
+      ping_url: api_server_url + 'v1/parse/ping',
+      flood_fill_url: api_server_url + 'v1/analyze/flood-fill',
+      arrow_fill_url: api_server_url + 'v1/analyze/arrow-fill',
+      scan_template_url: api_server_url + 'v1/analyze/scan-template',
+      analyze_url: api_server_url + 'v1/analyze/east-tess',
+      redact_url: api_server_url + 'v1/redact/redact-image',
+      crop_url: api_server_url + 'v1/parse/crop-image',
+      parse_movie_url: api_server_url + 'v1/parse/split-and-hash-movie',
+      codes_url: api_server_url + 'v1/codes',
+      get_images_for_uuid_url: api_server_url + 'v1/parse/get-images-for-uuid',
+      jobs_url: api_server_url + 'v1/jobs',
+      workbooks_url: api_server_url + 'v1/workbooks',
+      link_url: api_server_url + 'v1/link/learn-dev',
+      can_see_url: api_server_url + 'v1/link/can-reach',
+      make_url_url: api_server_url + 'v1/parse/make-url',
+      files_url: api_server_url + 'v1/files',
+    })
+  }
+
   componentDidMount() {
+    if ((!window.location.hostname === 'localhost') 
+        && (!window.location.hostname === '127.0.0.1')) {
+      root_url = 'https://' + console.log(window.location.hostname) + '/api/'
+      updateApiUrls(root_url)
+    }
     this.checkForInboundGetParameters()
     if (!this.state.showMovieParserLink) {
       document.getElementById('movie_panel_link').style.display = 'none'
