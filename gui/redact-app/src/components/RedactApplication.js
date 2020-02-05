@@ -707,8 +707,8 @@ class RedactApplication extends React.Component {
   componentDidMount() {
     if ((!window.location.hostname === 'localhost') 
         && (!window.location.hostname === '127.0.0.1')) {
-      root_url = 'https://' + console.log(window.location.hostname) + '/api/'
-      updateApiUrls(root_url)
+      const root_url = 'https://' + console.log(window.location.hostname) + '/api/'
+      this.updateApiUrls(root_url)
     }
     this.checkForInboundGetParameters()
     if (!this.state.showMovieParserLink) {
