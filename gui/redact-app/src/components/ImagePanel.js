@@ -20,6 +20,11 @@ class ImagePanel extends React.Component {
     this.submitImageJob=this.submitImageJob.bind(this)
   }
 
+
+  componentDidMount() {
+    this.props.checkAndUpdateApiUris()
+  }
+
   submitImageJob(job_string, extra_data = '') {                                                                         
     if (job_string === 'template_match') {
       const job_data = this.buildTemplateMatchJobdata(extra_data)

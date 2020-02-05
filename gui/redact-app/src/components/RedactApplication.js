@@ -128,6 +128,7 @@ class RedactApplication extends React.Component {
     this.setCampaignMovies=this.setCampaignMovies.bind(this)
     this.addImageToMovie=this.addImageToMovie.bind(this)
     this.setWhenDoneTarget=this.setWhenDoneTarget.bind(this)
+    this.checkAndUpdateApiUris=this.checkAndUpdateApiUris.bind(this)
   }
 
   getCurrentUser() {
@@ -704,13 +705,22 @@ class RedactApplication extends React.Component {
     })
   }
 
-  componentDidMount() {
-    if ((!window.location.hostname === 'localhost') 
-        && (!window.location.hostname === '127.0.0.1')) {
-      const root_url = 'https://' + console.log(window.location.hostname) + '/api/'
+  checkAndUpdateApiUris() {
+    if ((window.location.hostname !== 'localhost') 
+        && (window.location.hostname !== '127.0.0.1')) {
+      const root_url = 'https://' + window.location.hostname + '/api/'
       this.updateApiUrls(root_url)
     }
     this.checkForInboundGetParameters()
+  }
+  componentDidMount() {
+    this.checkAndUpdateApiUris() 
+//    if ((window.location.hostname !== 'localhost') 
+//        && (window.location.hostname !== '127.0.0.1')) {
+//      const root_url = 'https://' + window.location.hostname + '/api/'
+//      this.updateApiUrls(root_url)
+//    }
+//    this.checkForInboundGetParameters()
     if (!this.state.showMovieParserLink) {
       document.getElementById('movie_panel_link').style.display = 'none'
     }
@@ -1661,6 +1671,7 @@ class RedactApplication extends React.Component {
                 watchForJob={this.watchForJob}
                 postMakeUrlCall={this.postMakeUrlCall}
                 establishNewMovie={this.establishNewMovie}
+                checkAndUpdateApiUris={this.checkAndUpdateApiUris}
               />
             </Route>
             <Route path='/redact/image'>
@@ -1694,6 +1705,7 @@ class RedactApplication extends React.Component {
                 establishNewOneImageMovie={this.establishNewOneImageMovie}
                 establishNewEmptyMovie={this.establishNewEmptyMovie}
                 addImageToMovie={this.addImageToMovie}
+                checkAndUpdateApiUris={this.checkAndUpdateApiUris}
               />
             </Route>
             <Route path='/redact/insights'>
@@ -1753,6 +1765,7 @@ class RedactApplication extends React.Component {
                 files={this.state.files}
                 getFiles={this.getFiles}
                 deleteFile={this.deleteFile}
+                checkAndUpdateApiUris={this.checkAndUpdateApiUris}
               />
             </Route>
           </Switch>
