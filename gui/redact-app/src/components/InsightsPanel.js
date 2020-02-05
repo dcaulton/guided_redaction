@@ -277,8 +277,8 @@ class InsightsPanel extends React.Component {
     }
     num_frames = num_frames.toString()
     job_data['app'] = 'analyze'
-    job_data['operation'] = 'scan_template'
-    job_data['description'] = 'single template '+ num_movies+ ' movies, ('+num_frames+' framesets)  match'
+    job_data['operation'] = 'scan_template_threaded'
+    job_data['description'] = 'single template '+ num_movies+ ' movies, ('+num_frames+' framesets)  match - threaded'
     let template = this.props.templates[this.props.current_template_id]
     job_data['request_data']['template'] = template
     job_data['request_data']['source_image_url'] = template['anchors'][0]['image']
@@ -298,13 +298,12 @@ class InsightsPanel extends React.Component {
       movies_to_run[movie_url] = this.props.movies[movie_url]
     }
     job_data['app'] = 'analyze'
-    job_data['operation'] = 'scan_template'
+    job_data['operation'] = 'scan_template_threaded'
     let template = this.props.templates[this.props.current_template_id]
-    job_data['description'] = 'single template (' + template['name'] + ') '+ num_movies+ ' movies (from MovieSet ' + movie_set_name + '), match'
+    job_data['description'] = 'single template (' + template['name'] + ') '+ num_movies+ ' movies (from MovieSet ' + movie_set_name + '), match - threaded'
     job_data['request_data']['template'] = template
     job_data['request_data']['source_image_url'] = template['anchors'][0]['image']
     job_data['request_data']['target_movies'] = movies_to_run
-    job_data['request_data']['movie_set_movies'] = this.props.movie_sets[extra_data]
     return job_data
   }
 

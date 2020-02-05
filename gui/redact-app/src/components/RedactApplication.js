@@ -1078,7 +1078,8 @@ class RedactApplication extends React.Component {
     .then((response) => response.json())
     .then((responseJson) => {
 			const job = responseJson['job']
-			if (job.app === 'analyze' && job.operation === 'scan_template') {
+			if ((job.app === 'analyze' && job.operation === 'scan_template')
+			   || (job.app === 'analyze' && job.operation === 'scan_template_threaded')) {
         this.loadScanTemplateResults(job, when_done)
 			} else if (job.app === 'analyze' && job.operation === 'filter') {
         this.loadFilterResults(job, when_done)

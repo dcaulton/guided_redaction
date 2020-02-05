@@ -216,6 +216,8 @@ class JobsViewSet(viewsets.ViewSet):
         job_uuid = job.id
         if job.app == 'analyze' and job.operation == 'scan_template':
             analyze_tasks.scan_template.delay(job_uuid)
+        if job.app == 'analyze' and job.operation == 'scan_template_threaded':
+            analyze_tasks.scan_template_threaded.delay(job_uuid)
         if job.app == 'analyze' and job.operation == 'filter':
             analyze_tasks.filter.delay(job_uuid)
         if job.app == 'parse' and job.operation == 'split_and_hash_movie':
