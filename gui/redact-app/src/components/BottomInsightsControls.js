@@ -25,7 +25,6 @@ class BottomInsightsControls extends React.Component {
     return (
       <div 
           id='bottom_insights_controls' 
-          className='fixed-bottom'
           style={controls_style}
       >
 
@@ -152,6 +151,7 @@ class BottomInsightsControls extends React.Component {
           updateGlobalState={this.props.updateGlobalState}
           whenDoneTarget={this.props.whenDoneTarget}
           setWhenDoneTarget={this.props.setWhenDoneTarget}
+          frameset_discriminator={this.props.frameset_discriminator}
         />
 
       </div>

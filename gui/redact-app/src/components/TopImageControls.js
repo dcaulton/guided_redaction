@@ -45,9 +45,7 @@ class TopImageControls extends React.Component {
     )
   }
 
-  render() {
-    const whenDoneLink = this.buildWhenDoneLink()
-    const template_button = this.buildTemplateButton()
+  buildRedactedLink() {
     let redacted_link = ''
     if (this.props.getRedactedImageUrl()) {
       let redacted_filename = this.props.getRedactedImageUrl().split('/') 
@@ -60,80 +58,103 @@ class TopImageControls extends React.Component {
           </a>
       )
     }
-    return (
-      <div className='m-2' id='top_controls_div'>
-        <div className='row'>
-          <div id='felix' className='col col-lg-1'>
-          </div>
-          <div className='col col-lg-10'>
-            <div id='add_div' className='d-inline'>
-              <button className='btn btn-primary dropdown-toggle' type='button' id='addDropdownButton'
-                  data-toggle='dropdown' aria-haspopup='true' aria-expanded='false'>
-                Add
-              </button>
-              <div className='dropdown-menu' aria-labelledby='addDropdownButton'>
-                <button className='dropdown-item' 
-                    onClick={() => this.props.setMode('add_1', 'box')}>
-                  Box
-                  {this.props.debuginfo}
-                </button>
-                <button className='dropdown-item' 
-                    onClick={() => this.props.setMode('add_1', 'ocr')} 
-                    href='.'>
-                  OCR
-                </button>
-              </div>
-            </div>
+    return redacted_link
+  }
 
-            <div id='delete_div' className='d-inline'>
-              <button className='btn btn-primary dropdown-toggle ml-2' type='button' id='deleteDropdownButton'
-                  data-toggle='dropdown' aria-haspopup='true' aria-expanded='false'>
-                Delete
-              </button>
-              <div className='dropdown-menu' aria-labelledby='deleteDropdownButton'>
-                <button className='dropdown-item' 
-                    onClick={() => this.props.setMode('delete', 'item')} 
-                    href='.'>
-                  Item
-                </button>
-                <button className='dropdown-item' 
-                    onClick={() => this.props.setMode('delete_1', 'box_all')} 
-                    href='.'>
-                  Box (all in)
-                </button>
-              </div>
-            </div>
+  buildAddButton() {
+    return (
+      <div id='add_div' className='d-inline'>
+        <button className='btn btn-primary dropdown-toggle' type='button' id='addDropdownButton'
+            data-toggle='dropdown' aria-haspopup='true' aria-expanded='false'>
+          Add
+        </button>
+        <div className='dropdown-menu' aria-labelledby='addDropdownButton'>
+          <button className='dropdown-item' 
+              onClick={() => this.props.setMode('add_1', 'box')}>
+            Box
+            {this.props.debuginfo}
+          </button>
+          <button className='dropdown-item' 
+              onClick={() => this.props.setMode('add_1', 'ocr')} 
+              href='.'>
+            OCR
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  buildDeleteButton() {
+    return (
+      <div id='delete_div' className='d-inline'>
+        <button className='btn btn-primary dropdown-toggle ml-2' type='button' id='deleteDropdownButton'
+            data-toggle='dropdown' aria-haspopup='true' aria-expanded='false'>
+          Delete
+        </button>
+        <div className='dropdown-menu' aria-labelledby='deleteDropdownButton'>
+          <button className='dropdown-item' 
+              onClick={() => this.props.setMode('delete', 'item')} 
+              href='.'>
+            Item
+          </button>
+          <button className='dropdown-item' 
+              onClick={() => this.props.setMode('delete_1', 'box_all')} 
+              href='.'>
+            Box (all in)
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  buildRedactButton() {
+    return (
+      <button 
+          className='btn btn-primary ml-2'  
+          onClick={() => this.props.redactImage()}
+          href='./index.html' >
+        Redact
+      </button>
+    )
+  }
+
+  buildResetButton() {
+    return (
+      <button 
+          className='btn btn-primary ml-2' 
+          onClick={() => this.doClearRedaction()}
+          href='./index.html' >
+        Reset
+      </button>
+    )
+  }
+
+  render() {
+    const whenDoneLink = this.buildWhenDoneLink()
+    const template_button = this.buildTemplateButton()
+    const redacted_link = this.buildRedactedLink()
+    const add_button = this.buildAddButton()
+    const delete_button = this.buildDeleteButton()
+    const redact_button = this.buildRedactButton()
+    const reset_button = this.buildResetButton()
+
+    return (
+      <div className='mt-2' id='top_controls_div'>
+        <div className='row'>
+          <div className='col col-lg-1' />
+          <div className='col col-lg-10'>
+
+            {add_button}
+
+            {delete_button} 
 
             {template_button}
 
-            <button 
-                className='btn btn-primary ml-2' 
-                onClick={() => this.doClearRedaction()}
-                href='./index.html' >
-              Reset
-            </button>
+            {reset_button}
           
-            <button 
-                className='btn btn-primary ml-2'  
-                onClick={() => this.props.redactImage()}
-                href='./index.html' >
-              Redact
-            </button>
+            {redact_button}
 
             {whenDoneLink}
-            <div className='d-inline ml-2'>
-              <select 
-                  name='mask_method'
-                  onChange={(event) => this.props.changeMaskMethodCallback(event.target.value)}
-              >
-                <option value='blur_7x7'>--- Mask Method ---</option>
-                <option value='blur_7x7'>Gaussian Blur 7x7</option>
-                <option value='blur_21x21'>Gaussian Blur 21x21</option>
-                <option value='blur_median'>Median Blur</option>
-                <option value='black_rectangle'>Black Rectangle</option>
-                <option value='green_outline'>Green Outline</option>
-              </select>
-            </div>
 
             <div id='redacted_image_download_link' className='d-inline ml-2'>
               {redacted_link}
@@ -146,19 +167,14 @@ class TopImageControls extends React.Component {
           <div id='mode_div' className='col-lg-2'>
             <h3 id='mode_header' >{this.props.display_mode}</h3>
           </div>
-          <div id='message_div' className='col-lg-9 mt-1 overflow-hidden'>
-            <div 
-                className='float-left'
-                id='message'
-            >
-              {this.props.message}
-            </div>
+          <div id='message_divx' className='col-lg-9 mt-1 overflow-hidden'>
           </div>
         </div>
+
         <div className='row'>
           <div className='col-lg-1' />
-          <div className='col-lg-10'>
-            {this.props.getImageAndHashDisplay()}
+          <div id='message_div' className='col-lg-10 h5'>
+            {this.props.message}
           </div>
         </div>
       </div>

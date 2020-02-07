@@ -1117,6 +1117,7 @@ class InsightsPanel extends React.Component {
             files={this.props.files}
             getFiles={this.props.getFiles}
             deleteFile={this.props.deleteFile}
+            frameset_discriminator={this.props.frameset_discriminator}
           />
         </div>
 

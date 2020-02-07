@@ -10,10 +10,9 @@ class ImagePanel extends React.Component {
       mode: 'View',
       submode: null,
       display_mode: 'View',
-      message: '',
+      message: '.',
       last_click: null,
     }
-    this.getImageAndHashDisplay=this.getImageAndHashDisplay.bind(this)
     this.setOcrDoneMessage=this.setOcrDoneMessage.bind(this)
     this.setMessage=this.setMessage.bind(this)
     this.redactImage=this.redactImage.bind(this)
@@ -154,15 +153,6 @@ class ImagePanel extends React.Component {
     this.setMessage('OCR detected regions were added, select another region to scan, press cancel when done')
   }
 
-  getImageAndHashDisplay() {
-    if (this.props.image_url) {
-      const parts = this.props.image_url.split('/')
-      const img_filename = parts[parts.length-1]
-      const img_hash = this.props.getFramesetHashForImageUrl(this.props.image_url)
-      return (<span>image: {img_filename}, frameset hash: {img_hash}</span>)
-    }
-  }
-
   handleDeleteSecond(x, y) {
     let new_areas_to_redact = [];
     const areas_to_redact = this.props.getRedactionFromFrameset()
@@ -286,9 +276,8 @@ class ImagePanel extends React.Component {
                 message={this.state.message}
                 setMode= {this.setMode}
                 redactImage={this.redactImage}
-                changeMaskMethodCallback={this.props.setMaskMethod}
                 getRedactedImageUrl={this.props.getRedactedImageUrl}
-                getImageAndHashDisplay={this.getImageAndHashDisplay}
+                image_url={this.props.image_url}
                 setMessage={this.setMessage}
                 clearCurrentFramesetRedactions={this.props.clearCurrentFramesetRedactions}
                 whenDoneTarget={this.props.whenDoneTarget}
@@ -304,7 +293,7 @@ class ImagePanel extends React.Component {
               {prev_button}
             </div>
             <div className='col-lg-10'>
-              <div id='image_and_canvas_wrapper' className='row mt-2'>
+              <div id='image_and_canvas_wrapper' className='row'>
                 <BaseImage 
                   image_url={the_image_url}
                   image_file={this.props.image_file}
@@ -332,6 +321,12 @@ class ImagePanel extends React.Component {
             </div>
           </div>
 
+          <AdvancedImageControls 
+            image_url={this.props.image_url}
+            mask_method={this.props.mask_method}
+            changeMaskMethodCallback={this.props.setMaskMethod}
+            getFramesetHashForImageUrl={this.props.getFramesetHashForImageUrl}
+          />
 
         </div>
       </div>
@@ -350,6 +345,123 @@ class BaseImage extends React.Component {
           src={the_src}
           onLoad={this.props.setImageScale}
         />
+      </div>
+    )
+  }
+}
+
+
+class AdvancedImageControls extends React.Component {
+
+  buildMaskMethodDropdown() {
+    return (
+      <select
+          name='mask_method'
+          value={this.props.mask_method}
+          onChange={(event) => this.props.changeMaskMethodCallback(event.target.value)}
+      >
+        <option value='blur_7x7'>Gaussian Blur 7x7</option>
+        <option value='blur_21x21'>Gaussian Blur 21x21</option>
+        <option value='blur_median'>Median Blur</option>
+        <option value='black_rectangle'>Black Rectangle</option>
+        <option value='green_outline'>Green Outline</option>
+      </select>
+    )
+  }
+
+  getImageDimensions() {
+    if (!this.props.image_url) {
+      return ''
+    }
+    const img_ele = document.getElementById('base_image_id')
+    if (img_ele) {
+      return img_ele.naturalWidth.toString() + 'x' + img_ele.naturalHeight.toString() 
+    }
+  }
+
+  render() {
+    if (!this.props.image_url) {
+      return ''
+    }
+    let bottom_y =550
+    const ele = document.getElementById('image_and_next_prev_buttons')
+    if (ele) {
+      bottom_y += ele.offsetHeight
+    }
+    const controls_style = {
+      top: bottom_y,
+    }
+    const mask_method_dropdown = this.buildMaskMethodDropdown()
+    const dimensions_string = this.getImageDimensions()
+    const frameset_hash = this.props.getFramesetHashForImageUrl(this.props.image_url)
+
+    return (
+      <div id='bottom_image_controls' className='row' style={controls_style}>
+
+        <div className='col-md-1' />
+          <div className='col-md-9 m-2 pb-2 bg-light rounded'>
+            <div className='row'>
+
+              <div
+                className='col-lg-10 h3 float-left'
+              >
+                image info
+              </div>
+              <div
+                  className='d-inline float-right'
+              >
+                <button
+                    className='btn btn-link'
+                    aria-expanded='false'
+                    data-target='#advanced_body'
+                    aria-controls='advanced_body'
+                    data-toggle='collapse'
+                    type='button'
+                >
+                  +/-
+                </button>
+              </div>
+            </div>
+
+            <div
+                id='advanced_body'
+                className='row collapse'
+            >
+              <div id='advanced_main' className='col ml-3'>
+
+                <div className='row'>
+                <span>Image url:</span>
+                <div className='ml-2'>
+                  {this.props.image_url}
+                </div>
+              </div>
+
+              <div className='row'>
+                <span>Frameset Hash:</span>
+                <div className='ml-2'>
+                  {frameset_hash}
+                </div>
+              </div>
+
+              <div className='row'>
+                <span>Dimensions:</span>
+                <div className='ml-2'>
+                  {dimensions_string}
+                </div>
+              </div>
+
+              <div className='row'>
+                <span>set mask method</span>
+                <div className='ml-2'>
+                  {mask_method_dropdown}
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+      </div>  
+
       </div>
     )
   }

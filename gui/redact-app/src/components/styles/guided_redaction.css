@@ -1,14 +1,17 @@
 div.redact_application_wrapper {
-margin-top: -15px;
-}
-div#image_and_canvas_wrapper {
-position: relative;
+  margin-top: -15px;
 }
 
+div#image_and_next_prev_buttons {
+position:relative;
+}
 div#canvas_div {
   position: absolute;
 }
 
+div#image_redactor_panel {
+position:relative;
+}
 canvas {
   background-color: transparent;
   width:100%;
@@ -77,6 +80,11 @@ div#insights_scrubber_div {
 }
 
 div#bottom_insights_controls {
+  position: absolute;
+  width: 100%;
+}
+
+div#bottom_image_controls {
   position: absolute;
   width: 100%;
 }

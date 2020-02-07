@@ -414,6 +414,8 @@ class MoviePanel extends React.Component {
             getRedactedMovieUrl={this.props.getRedactedMovieUrl}
             setMaskMethod={this.props.setMaskMethod}
             submitMovieJob={this.submitMovieJob}
+            mask_method={this.props.mask_method}
+            frameset_discriminator={this.props.frameset_discriminator}
           />
 
         </div>
@@ -452,6 +454,7 @@ class MoviePanelAdvancedControls extends React.Component {
          <select
             title='Frameset Discriminator'
             name='frameset_discriminator'
+            value={this.props.frameset_discriminator}
             onChange={(event) => 
               this.props.setFramesetDiscriminator(
                 event.target.value,
@@ -597,6 +600,7 @@ class MoviePanelAdvancedControls extends React.Component {
                 <select
                     className='ml-2'
                     name='mask_method'
+                    value={this.props.mask_method}
                     onChange={(event) => this.props.setMaskMethod(event.target.value)}
                 >
                   <option value='blur_7x7'>--- Mask Method ---</option>

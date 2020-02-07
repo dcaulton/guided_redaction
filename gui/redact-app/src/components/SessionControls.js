@@ -131,13 +131,12 @@ class SessionControls extends React.Component {
   }
 
   buildWhenDoneSelector() {
-    let selected_value = this.props.whenDoneTarget
     return (
       <div>
         <select
             name='when_done_selector'
             onChange={(event) => this.props.setWhenDoneTarget(event.target.value)}
-            value={selected_value}
+            value={this.props.whenDoneTarget}
         >
           <option value=''>--none--</option>
           <option value='learn_dev'>Learn Dev</option>
@@ -265,13 +264,17 @@ class SessionControls extends React.Component {
                         onChange={(event) => this.props.saveWorkbookName(event.target.value)}
                     />
                   </div>
+                </div>
 
+                <div className='row mt-3 bg-light rounded'>
+                  Frameset Discriminator
                   <div
-                      className='d-inline ml-2 mt-2'
+                      className='d-inline ml-2'
                   >   
                      <select
                         title='Frameset Discriminator'
                         name='frameset_discriminator'
+                        value={this.props.frameset_discriminator}
                         onChange={(event) => this.props.setFramesetDiscriminator(event.target.value)}
                      >
                       <option value='gray8'>--FramesetDiscriminator--</option>
@@ -283,8 +286,8 @@ class SessionControls extends React.Component {
                       <option value='gray4'>gray 4x4</option>
                     </select>
                   </div>
-
                 </div>
+
 
                 <div className='row mt-3 bg-light rounded'>
                   <input
