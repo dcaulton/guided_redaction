@@ -649,8 +649,27 @@ class MoviePanelHeader extends React.Component {
     )
   }
 
+  buildMessage() {
+      if (this.props.message === '.') {
+      let style = {
+        color: '#FFFFFF',
+      }
+      return (
+        <div
+          style={style}
+        >
+          {this.props.message}
+        </div>
+      )
+    } else {
+      return this.props.message
+    }
+  }
+
   render() {
     let templates_button = this.buildTemplateButton()
+    let message = this.buildMessage()
+
     return (
       <div>
         <div className='row m-2'>
@@ -694,7 +713,7 @@ class MoviePanelHeader extends React.Component {
               id='movieparser_status'
               className='col-md-6 mt-2'
           >
-            {this.props.message}
+            {message}
           </div>
         </div>
       </div>

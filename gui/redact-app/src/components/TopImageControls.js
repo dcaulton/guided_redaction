@@ -129,6 +129,23 @@ class TopImageControls extends React.Component {
     )
   }
 
+  buildMessage() {
+    if (this.props.message === '.') {
+      let style = {
+        color: '#FFFFFF',
+      }
+      return (
+        <div 
+          style={style}
+        >
+          {this.props.message}
+        </div>
+      )
+    } else {
+      return this.props.message
+    }
+  }
+
   render() {
     const whenDoneLink = this.buildWhenDoneLink()
     const template_button = this.buildTemplateButton()
@@ -137,6 +154,7 @@ class TopImageControls extends React.Component {
     const delete_button = this.buildDeleteButton()
     const redact_button = this.buildRedactButton()
     const reset_button = this.buildResetButton()
+    const message = this.buildMessage()
 
     return (
       <div className='mt-2' id='top_controls_div'>
@@ -174,7 +192,7 @@ class TopImageControls extends React.Component {
         <div className='row'>
           <div className='col-lg-1' />
           <div id='message_div' className='col-lg-10 h5'>
-            {this.props.message}
+            {message}
           </div>
         </div>
       </div>
