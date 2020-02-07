@@ -219,7 +219,7 @@ class ImagePanel extends React.Component {
     }
   }
 
-  get_next_button() {
+  buildGetNextButton() {
     let next_image_link = ''
     let next_image_url = this.props.getNextImageLink()
     if (next_image_url) {
@@ -235,7 +235,7 @@ class ImagePanel extends React.Component {
     return next_image_link
   }
 
-  get_prev_button() {
+  buildGetPrevButton() {
     let prev_image_link = ''
     let prev_image_url = this.props.getPrevImageLink()
     if (prev_image_url) {
@@ -251,14 +251,10 @@ class ImagePanel extends React.Component {
     return prev_image_link
   }
   
-  buildTemplateButton() {
-    return ('template button')
-  }
-
   render() {
     let the_image_url = this.props.image_url
-    let next_button = this.get_next_button()
-    let prev_button = this.get_prev_button()
+    let next_button = this.buildGetNextButton()
+    let prev_button = this.buildGetPrevButton()
     if (this.props.getRedactedImageUrl()) {
       the_image_url = this.props.getRedactedImageUrl()
     }
@@ -383,10 +379,11 @@ class AdvancedImageControls extends React.Component {
     if (!this.props.image_url) {
       return ''
     }
-    let bottom_y =550
-    const ele = document.getElementById('image_and_next_prev_buttons')
-    if (ele) {
-      bottom_y += ele.offsetHeight
+    let bottom_y = 0
+    const img_ele = document.getElementById('base_image_div')
+    if (img_ele) {
+      const rect = img_ele.getBoundingClientRect()
+      bottom_y = rect['bottom'] - 50
     }
     const controls_style = {
       top: bottom_y,
