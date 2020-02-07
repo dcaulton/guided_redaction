@@ -219,22 +219,6 @@ class MoviePanel extends React.Component {
     }
   }
 
-  buildVideoTitle() {
-    let title_string = <h3>&nbsp;</h3>
-    const movie_filename = this.get_filename(this.props.movie_url)
-    if (movie_filename) {
-      title_string = (
-        <div
-        >
-          <h5>
-          Video for {movie_filename}
-          </h5>
-        </div>
-      )
-    }
-    return title_string
-  }
-
   buildImageZoomModal() {
     return (
       <div className="modal" id='moviePanelModal' tabIndex="-1" role="dialog">
@@ -370,7 +354,6 @@ class MoviePanel extends React.Component {
   }
 
   render() {
-    let title = this.buildVideoTitle()
     const image_zoom_modal = this.buildImageZoomModal()
     const video_div = this.buildVideoDiv()
     const redacted_video_div = this.buildRedactedVideoDiv()
@@ -383,14 +366,7 @@ class MoviePanel extends React.Component {
       {image_zoom_modal}
 
       <div id='movie_parser_panel'>
-        <div 
-            id='movie_parser_header' 
-            className='row m-3'
-        >
-          {title}
-        </div>
-
-        <div id='video_and_meta' className='row mt-3'>
+        <div id='video_and_meta' className='row'>
           <div id='video_meta_div' className='col-md-12'>
             <MoviePanelHeader
               callMovieSplit={this.callMovieSplit}
@@ -575,7 +551,8 @@ class MoviePanelAdvancedControls extends React.Component {
         >
           <div id='advanced_main' className='col ml-3'>
             <div id='movie_info_div m-2'>
-              <div>Title: {nickname}</div>
+              <div>Movie Url: {this.props.movie_url}</div>
+              <div>Nickname: {nickname}</div>
               <div>Number of framesets: {num_framesets}</div>
               <div>Run Time: {runtime}</div>
               <div>Movie Redacted? {redacted}</div>
@@ -718,9 +695,6 @@ class MoviePanelHeader extends React.Component {
   }
 
   buildNewButton() {
-    if (this.props.movie_url === '') {
-      return ''
-    }
     return (
       <button 
           className='btn btn-primary ml-2' 

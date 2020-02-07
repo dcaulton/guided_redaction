@@ -118,6 +118,7 @@ class BottomInsightsControls extends React.Component {
 
         <SessionControls
           current_workbook_name={this.props.current_workbook_name}
+          current_workbook_id={this.props.current_workbook_id}
           saveWorkbook={this.props.saveWorkbook}
           saveWorkbookName={this.props.saveWorkbookName}
           playSound={this.props.playSound}

@@ -150,11 +150,57 @@ class SessionControls extends React.Component {
     )
   }
 
+  buildWorkbookId() {
+    if (this.props.current_workbook_name === '') {
+      return ''
+    }
+    const the_id = this.props.current_workbook_id
+    return (
+      <div className='row ml-2 bg-light'>
+        <div
+            className='d-inline'
+        >
+          Workbook Id: 
+        </div>
+        <div 
+            className='d-inline ml-2'
+        >
+          {the_id}
+        </div>
+      </div>
+    )
+  }
+
+  buildWorkbookName() {
+    return (
+      <div className='row ml-2 mt-3 bg-light'>
+        <div
+            className='d-inline'
+        >
+          Workbook Name: 
+        </div>
+        <div
+            className='d-inline ml-2'
+        >
+          <input 
+              id='workbook_name'
+              key='workbook_name_1'
+              size='20'
+              value={this.props.current_workbook_name}
+              onChange={(event) => this.props.saveWorkbookName(event.target.value)}
+          />
+        </div>
+      </div>
+    )
+  }
+
   render() {
     let campaign_movies_box = this.buildCampaignMoviesBox()
     let update_state_box = this.buildGlobalStateBox()
     let workbook_load_button = this.buildWorkbookPickerButton()
     let workbook_delete_button = this.buildWorkbookDeleteButton()
+    let workbook_name = this.buildWorkbookName()
+    let workbook_id = this.buildWorkbookId()
     let show_templates_checked = ''
     if (this.props.showTemplates) {
       show_templates_checked = 'checked'
@@ -253,18 +299,10 @@ class SessionControls extends React.Component {
                     Save Workbook
                   </button>
 
-                  <div
-                      className='d-inline ml-2 mt-2'
-                  >   
-                    <input 
-                        id='workbook_name'
-                        key='workbook_name_1'
-                        size='20'
-                        value={this.props.current_workbook_name}
-                        onChange={(event) => this.props.saveWorkbookName(event.target.value)}
-                    />
-                  </div>
                 </div>
+
+                {workbook_name}
+                {workbook_id}
 
                 <div className='row mt-3 bg-light rounded'>
                   Frameset Discriminator

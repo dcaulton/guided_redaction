@@ -49,8 +49,73 @@ class ImagePanel extends React.Component {
         after_loaded: () => {this.setMessage('template match completed')},
         when_failed: () => {this.setMessage('template match failed')},
       })
+    } else if (job_string === 'illustrate_box') {
+      const job_data = this.buildIllustrateBoxJobdata(extra_data)
+      console.log('bongo illustrate box job data: ')
+      console.log(job_data)
+      return
+      this.props.submitJob({
+        job_data: job_data, 
+        after_submit: () => {this.setMessage('illustrate job was submitted')}, 
+        cancel_after_loading: true, 
+        after_loaded: () => {this.setMessage('illustration completed')},
+        when_failed: () => {this.setMessage('illustration failed')},
+      })
+    } else if (job_string === 'illustrate_oval') {
+      const job_data = this.buildIllustrateOvalJobdata(extra_data)
+      console.log('bongo illustrate oval job data: ')
+      console.log(job_data)
+      return
+      this.props.submitJob({
+        job_data: job_data, 
+        after_submit: () => {this.setMessage('illustrate job was submitted')}, 
+        cancel_after_loading: true, 
+        after_loaded: () => {this.setMessage('illustration completed')},
+        when_failed: () => {this.setMessage('illustration failed')},
+      })
     } 
   }  
+
+  buildIllustrateOvalJobdata(extra_data) {
+    let job_data = {
+      request_data: {},
+    }
+    job_data['app'] = 'redact'
+    job_data['operation'] = 'illustrate'
+    job_data['description'] = 'illustrate oval'
+    job_data['request_data']['image_url'] = this.props.image_url
+    const radius_x = Math.abs(this.state.last_click[0] - this.state.oval_center[0])
+    const radius_y = Math.abs(extra_data['second_click'][1] - this.state.oval_center[1])
+    const illustration_data = {
+      type: 'oval',
+      shade_outside: this.state.illustrate_shaded,
+      center: this.state.oval_center,
+      radius_x: radius_x,
+      radius_y: radius_y,
+      color: this.props.illustrate_color,
+    }
+    job_data['request_data']['illustration_data'] = illustration_data
+    return job_data
+  }
+
+  buildIllustrateBoxJobdata(extra_data) {
+    let job_data = {
+      request_data: {},
+    }
+    job_data['app'] = 'redact'
+    job_data['operation'] = 'illustrate'
+    job_data['description'] = 'illustrate box'
+    job_data['request_data']['image_url'] = this.props.image_url
+    let illustration_data = {
+      type: 'box',
+      shade_outside: this.state.illustrate_shaded,
+      start: this.state.last_click,
+      end: extra_data['second_click'],
+      color: this.props.illustrate_color,
+    }
+    job_data['request_data']['illustration_data'] = illustration_data
+    return job_data
+  }
 
   buildTemplateMatchJobdata(extra_data) {
     let job_data = {
@@ -167,7 +232,10 @@ class ImagePanel extends React.Component {
       submode: '',
       last_click: [],
     })
-    this.setMessage('illustration box was successfully added')
+    this.submitImageJob(
+      'illustrate_box', 
+      {second_click: [x, y]},
+    )
   }
 
   handleIllustrateOvalFinal(x, y) {
@@ -177,7 +245,10 @@ class ImagePanel extends React.Component {
       last_click: [],
       oval_center: [],
     })
-    this.setMessage('illustration oval was successfully added')
+    this.submitImageJob(
+      'illustrate_oval', 
+      {second_click: [x, y]},
+    )
   }
 
   handleAddSecond(x, y) {
@@ -331,7 +402,6 @@ class ImagePanel extends React.Component {
                 message={this.state.message}
                 setMode= {this.setMode}
                 redactImage={this.redactImage}
-                getRedactedImageUrl={this.props.getRedactedImageUrl}
                 image_url={this.props.image_url}
                 setMessage={this.setMessage}
                 clearCurrentFramesetRedactions={this.props.clearCurrentFramesetRedactions}
@@ -386,6 +456,7 @@ class ImagePanel extends React.Component {
             getFramesetHashForImageUrl={this.props.getFramesetHashForImageUrl}
             setIllustrateColor={this.props.setIllustrateColor}
             illustrateColor={this.props.illustrateColor}
+            getRedactedImageUrl={this.props.getRedactedImageUrl}
           />
 
         </div>
@@ -455,11 +526,38 @@ class AdvancedImageControls extends React.Component {
     }
   }
 
+  buildRedactedLink() {
+    let redacted_link = ''
+    if (this.props.getRedactedImageUrl()) {
+      let redacted_filename = this.props.getRedactedImageUrl().split('/')
+      redacted_link = (
+          <div>
+            <div 
+                className='d-inline'
+            >
+              Redacted Image:
+            </div>
+            <div
+                className='d-inline ml-2'
+            >
+              <a
+                  href={this.props.getRedactedImageUrl()}
+                  download={redacted_filename}
+              >
+                download
+              </a>
+            </div>
+          </div>
+      )
+    }
+    return redacted_link
+  }
+
   render() {
     if (!this.props.image_url) {
       return ''
     }
-    let bottom_y = 0
+    let bottom_y = 100
     const img_ele = document.getElementById('base_image_div')
     if (img_ele) {
       const rect = img_ele.getBoundingClientRect()
@@ -472,6 +570,7 @@ class AdvancedImageControls extends React.Component {
     const illustrate_color_dropdown = this.buildIllustrateColorDropdown()
     const dimensions_string = this.getImageDimensions()
     const frameset_hash = this.props.getFramesetHashForImageUrl(this.props.image_url)
+    const redacted_link = this.buildRedactedLink()
 
     return (
       <div id='bottom_image_controls' className='row' style={controls_style}>
@@ -526,6 +625,10 @@ class AdvancedImageControls extends React.Component {
                 <div className='ml-2'>
                   {dimensions_string}
                 </div>
+              </div>
+
+              <div className='row'>
+                {redacted_link}
               </div>
 
               <div className='row mt-2'>

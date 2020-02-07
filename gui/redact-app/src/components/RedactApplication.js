@@ -10,6 +10,7 @@ import {
   Route,
   Link
 } from "react-router-dom";
+let helpDoc = ''
 
 class RedactApplication extends React.Component {
   constructor(props) {
@@ -1651,6 +1652,11 @@ class RedactApplication extends React.Component {
             <Link className='nav-link' id='insights_link' to='/redact/insights'>Insights</Link>
           </li>
         </ul>
+        <div className='float-right nav-link'>
+          <a id='help_link'  href={helpDoc}>
+            help
+          </a>
+        </div>
         </nav>
         <div id='container' className='container'>
           <Switch>

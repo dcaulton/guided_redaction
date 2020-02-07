@@ -1068,6 +1068,7 @@ class InsightsPanel extends React.Component {
             setSelectedAreaTemplateAnchor={this.setSelectedAreaTemplateAnchor}
             getCurrentSelectedAreaMeta={this.getCurrentSelectedAreaMeta}
             current_workbook_name={this.props.current_workbook_name}
+            current_workbook_id={this.props.current_workbook_id}
             workbooks={this.props.workbooks}
             loadWorkbook={this.props.loadWorkbook}
             deleteWorkbook={this.props.deleteWorkbook}

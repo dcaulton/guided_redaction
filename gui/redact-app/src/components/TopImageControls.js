@@ -51,22 +51,6 @@ class TopImageControls extends React.Component {
     )
   }
 
-  buildRedactedLink() {
-    let redacted_link = ''
-    if (this.props.getRedactedImageUrl()) {
-      let redacted_filename = this.props.getRedactedImageUrl().split('/') 
-      redacted_link = (
-          <a 
-              href={this.props.getRedactedImageUrl()}
-              download={redacted_filename}
-          >
-            download 
-          </a>
-      )
-    }
-    return redacted_link
-  }
-
   buildAddButton() {
     if (this.props.image_url === '') {
       return ''
@@ -134,9 +118,6 @@ class TopImageControls extends React.Component {
   }
 
   buildNewImageButton() {
-    if (this.props.image_url === '') {
-      return ''
-    }
     return (
       <button 
           className='btn btn-primary ml-2'  
@@ -244,7 +225,6 @@ class TopImageControls extends React.Component {
   render() {
     const whenDoneLink = this.buildWhenDoneLink()
     const template_button = this.buildTemplateButton()
-    const redacted_link = this.buildRedactedLink()
     const add_button = this.buildAddButton()
     const delete_button = this.buildDeleteButton()
     const redact_button = this.buildRedactButton()
@@ -276,9 +256,6 @@ class TopImageControls extends React.Component {
 
             {whenDoneLink}
 
-            <div id='redacted_image_download_link' className='d-inline ml-2'>
-              {redacted_link}
-            </div>
           </div>
         </div>
 
