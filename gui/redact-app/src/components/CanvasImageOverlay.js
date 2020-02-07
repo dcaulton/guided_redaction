@@ -4,7 +4,7 @@ class CanvasImageOverlay extends React.Component {
 
   drawCrosshairs() {
     if (this.props.mode === 'add_2' || this.props.mode === 'delete_2' || 
-        this.props.mode === 'add_ocr_2') {
+        this.props.submode === 'ill_box_2' || this.props.mode === 'add_ocr_2') {
       const crosshair_length = 2000
       let start_x = (this.props.last_click[0] - crosshair_length/2) / this.props.image_scale
       let end_x = (this.props.last_click[0] + crosshair_length/2) / this.props.image_scale
@@ -23,6 +23,54 @@ class CanvasImageOverlay extends React.Component {
       ctx.beginPath()
       ctx.moveTo(this.props.last_click[0]*this.props.image_scale, start_y)
       ctx.lineTo(this.props.last_click[0]*this.props.image_scale, end_y)
+      ctx.stroke()
+    }
+
+    if (this.props.submode === 'ill_oval_2' || this.props.submode === 'ill_oval_3') {
+      const crosshair_length = 140
+      let start_x = (this.props.oval_center[0] - crosshair_length/2) / this.props.image_scale
+      let end_x = (this.props.oval_center[0] + crosshair_length/2) / this.props.image_scale
+      let start_y = (this.props.oval_center[1] - crosshair_length/2) / this.props.image_scale
+      let end_y = (this.props.oval_center[1] + crosshair_length/2) / this.props.image_scale
+      const canvas = this.refs.canvas
+      let ctx = canvas.getContext("2d")
+      ctx.strokeStyle = '#FFF'
+      ctx.lineWidth = 1
+
+      ctx.beginPath()
+      ctx.moveTo(start_x, this.props.oval_center[1]*this.props.image_scale)
+      ctx.lineTo(end_x, this.props.oval_center[1]*this.props.image_scale)
+      ctx.stroke()
+
+      ctx.beginPath()
+      ctx.moveTo(this.props.oval_center[0]*this.props.image_scale, start_y)
+      ctx.lineTo(this.props.oval_center[0]*this.props.image_scale, end_y)
+      ctx.stroke()
+
+      ctx.beginPath()
+      ctx.arc(
+        this.props.oval_center[0]*this.props.image_scale, 
+        this.props.oval_center[1]*this.props.image_scale, 
+        30,
+        0,
+        2 * Math.PI
+      )
+      ctx.stroke()
+    }
+
+    if (this.props.submode === 'ill_oval_3') {
+      const crosshair_length = 140
+      let start_x = this.props.last_click[0] / this.props.image_scale
+      let start_y = (this.props.last_click[1] - crosshair_length/2) / this.props.image_scale
+      let end_y = (this.props.last_click[1] + crosshair_length/2) / this.props.image_scale
+      const canvas = this.refs.canvas
+      let ctx = canvas.getContext("2d")
+      ctx.strokeStyle = '#FFF'
+      ctx.lineWidth = 1
+
+      ctx.beginPath()
+      ctx.moveTo(start_x, start_y) 
+      ctx.lineTo(start_x, end_y)
       ctx.stroke()
     }
   }
@@ -61,10 +109,11 @@ class CanvasImageOverlay extends React.Component {
       ctx.lineTo(495,495)
       ctx.lineTo(5,495)
       ctx.lineTo(5,5)
+      ctx.strokeStyle = '#AAAAAA'
       ctx.stroke()
 
       ctx.font = '48px serif'
-      ctx.fillStyle =  '#AAAAAA'
+      ctx.fillStyle = '#AAAAAA'
       ctx.fillText('drag here to upload', 50, 200)
     }
   }

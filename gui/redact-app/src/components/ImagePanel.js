@@ -7,21 +7,36 @@ class ImagePanel extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      mode: 'View',
+      mode: '.',
       submode: null,
-      display_mode: 'View',
+      display_mode: '.',
       message: '.',
       last_click: null,
+      oval_center: null,
+      illustrate_shaded: false,
     }
     this.setOcrDoneMessage=this.setOcrDoneMessage.bind(this)
     this.setMessage=this.setMessage.bind(this)
     this.redactImage=this.redactImage.bind(this)
     this.submitImageJob=this.submitImageJob.bind(this)
+    this.setIllustrateShaded=this.setIllustrateShaded.bind(this)
+    this.newImage=this.newImage.bind(this)
   }
 
 
   componentDidMount() {
     this.props.checkAndUpdateApiUris()
+  }
+
+  newImage() {
+    this.props.setImageUrl('')
+    this.setMode()
+  }
+
+  setIllustrateShaded() {
+    this.setState({
+      illustrate_shaded: true,
+    })
   }
 
   submitImageJob(job_string, extra_data = '') {                                                                         
@@ -79,7 +94,7 @@ class ImagePanel extends React.Component {
   }
 
   //TODO THIS whole method can go away now
-  setMode = (mode, submode) => {
+  setMode = (mode='', submode='') => {
     const message = getMessage(mode, submode);
     const display_mode = getDisplayMode(mode, submode);
     this.setState({
@@ -92,6 +107,9 @@ class ImagePanel extends React.Component {
 
 
   handleImageClick = (e) => {
+    if (this.props.image_url === '') {
+      return
+    }
     let x = e.nativeEvent.offsetX
     let y = e.nativeEvent.offsetY
     const x_scaled = parseInt(x / this.props.image_scale)
@@ -118,7 +136,48 @@ class ImagePanel extends React.Component {
       this.setMessage(getMessage('delete_2', this.state.submode))
     } else if (this.state.mode === 'delete_2') {
       this.handleDeleteSecond(x_scaled, y_scaled)
+    } else if (this.state.submode=== 'ill_oval_1') {
+      this.setState({
+        submode: 'ill_oval_2',
+        oval_center: [x_scaled, y_scaled],
+      })
+      this.setMessage(getMessage('illustrate', 'ill_oval_2'))
+    } else if (this.state.submode=== 'ill_oval_2') {
+      this.setState({
+        submode: 'ill_oval_3',
+        last_click: [x_scaled, y_scaled],
+      })
+      this.setMessage(getMessage('illustrate', 'ill_oval_3'))
+    } else if (this.state.submode=== 'ill_oval_3') {
+      this.handleIllustrateOvalFinal(x_scaled, y_scaled)
+    } else if (this.state.submode === 'ill_box_1') {
+      this.setState({
+        submode: 'ill_box_2',
+        last_click: [x_scaled, y_scaled],
+      })
+      this.setMessage(getMessage('illustrate', 'ill_box_2'))
+    } else if (this.state.submode=== 'ill_box_2') {
+      this.handleIllustrateBoxFinal(x_scaled, y_scaled)
     }
+  }
+
+  handleIllustrateBoxFinal(x, y) {
+    this.setState({
+      mode: '.',
+      submode: '',
+      last_click: [],
+    })
+    this.setMessage('illustration box was successfully added')
+  }
+
+  handleIllustrateOvalFinal(x, y) {
+    this.setState({
+      mode: '.',
+      submode: '',
+      last_click: [],
+      oval_center: [],
+    })
+    this.setMessage('illustration oval was successfully added')
   }
 
   handleAddSecond(x, y) {
@@ -279,6 +338,8 @@ class ImagePanel extends React.Component {
                 whenDoneTarget={this.props.whenDoneTarget}
                 gotoWhenDoneTarget={this.props.gotoWhenDoneTarget}
                 submitImageJob={this.submitImageJob}
+                setIllustrateShaded={this.setIllustrateShaded}
+                newImage={this.newImage}
               />
             </div>
           </div>
@@ -304,6 +365,7 @@ class ImagePanel extends React.Component {
                   image_url={this.props.image_url}
                   clickCallback= {this.handleImageClick}
                   last_click= {this.state.last_click}
+                  oval_center= {this.state.oval_center}
                   getRedactionFromFrameset={this.props.getRedactionFromFrameset}
                   postMakeUrlCall={this.props.postMakeUrlCall}
                   setMessage={this.setMessage}
@@ -322,6 +384,8 @@ class ImagePanel extends React.Component {
             mask_method={this.props.mask_method}
             changeMaskMethodCallback={this.props.setMaskMethod}
             getFramesetHashForImageUrl={this.props.getFramesetHashForImageUrl}
+            setIllustrateColor={this.props.setIllustrateColor}
+            illustrateColor={this.props.illustrateColor}
           />
 
         </div>
@@ -365,6 +429,22 @@ class AdvancedImageControls extends React.Component {
     )
   }
 
+  buildIllustrateColorDropdown() {
+    return (
+      <select
+          name='illustrate_color'
+          value={this.props.illustrateColor}
+          onChange={(event) => this.props.setIllustrateColor(event.target.value)}
+      >
+        <option value='#000000'>Black</option>
+        <option value='#CCCC00'>Gold</option>
+        <option value='#DD0000'>Red</option>
+        <option value='#00DD00'>Green</option>
+        <option value='#FFFFFF'>White</option>
+      </select>
+    )
+  }
+
   getImageDimensions() {
     if (!this.props.image_url) {
       return ''
@@ -389,6 +469,7 @@ class AdvancedImageControls extends React.Component {
       top: bottom_y,
     }
     const mask_method_dropdown = this.buildMaskMethodDropdown()
+    const illustrate_color_dropdown = this.buildIllustrateColorDropdown()
     const dimensions_string = this.getImageDimensions()
     const frameset_hash = this.props.getFramesetHashForImageUrl(this.props.image_url)
 
@@ -447,10 +528,17 @@ class AdvancedImageControls extends React.Component {
                 </div>
               </div>
 
-              <div className='row'>
+              <div className='row mt-2'>
                 <span>set mask method</span>
                 <div className='ml-2'>
                   {mask_method_dropdown}
+                </div>
+              </div>
+
+              <div className='row mt-2'>
+                <span>set illustrate color</span>
+                <div className='ml-2'>
+                  {illustrate_color_dropdown}
                 </div>
               </div>
 

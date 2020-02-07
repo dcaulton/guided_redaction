@@ -64,7 +64,7 @@ class RedactApplication extends React.Component {
       whenJobLoaded: {},
       whenDoneTarget: '',
       campaign_movies: [],
-      upload_size_limit: 9500000,
+      illustrateColor: '#CCCC00',
     }
 
     this.getRedactedMovieFilename=this.getRedactedMovieFilename.bind(this)
@@ -129,6 +129,13 @@ class RedactApplication extends React.Component {
     this.addImageToMovie=this.addImageToMovie.bind(this)
     this.setWhenDoneTarget=this.setWhenDoneTarget.bind(this)
     this.checkAndUpdateApiUris=this.checkAndUpdateApiUris.bind(this)
+    this.setIllustrateColor=this.setIllustrateColor.bind(this)
+  }
+
+  setIllustrateColor(the_color) {
+    this.setState({
+      illustrateColor: the_color,
+    })
   }
 
   getCurrentUser() {
@@ -1462,6 +1469,13 @@ class RedactApplication extends React.Component {
   }
 
   setImageUrl = (the_url) => {
+    if (the_url === '') {
+      this.setState({
+        image_url: '',
+        frameset_hash: '',
+      })
+      return
+    }
     let frameset_hash = this.getFramesetHashForImageUrl(the_url)
     if (!frameset_hash) {
       frameset_hash = this.makeNewFrameFrameset(the_url) 
@@ -1469,20 +1483,14 @@ class RedactApplication extends React.Component {
     var img = new Image()
     var app_this = this
     img.onload = function(){
-//        const scale = this.width / this.naturalWidth
-        app_this.setState({
-          image_url: the_url,
-          image_width: this.width,
-          image_height: this.height,
-//          image_scale: scale,
-          frameset_hash: frameset_hash,
-        })
+      app_this.setState({
+        image_url: the_url,
+        image_width: this.width,
+        image_height: this.height,
+        frameset_hash: frameset_hash,
+      })
     }
     img.src = the_url
-    // this shouldn't be needed with what we do onload, but so it is for now
-    //  what we see is that deep linkiong to an image, or the next and prev buttons
-    //  don't update the image scale, but clicking on the image does.
-//    setTimeout(this.calculateAndSetImageScale, 250)
   }
 
   handleSetMovieUrl = (the_url) => {
@@ -1706,6 +1714,8 @@ class RedactApplication extends React.Component {
                 establishNewEmptyMovie={this.establishNewEmptyMovie}
                 addImageToMovie={this.addImageToMovie}
                 checkAndUpdateApiUris={this.checkAndUpdateApiUris}
+                illustrateColor={this.state.illustrateColor}
+                setIllustrateColor={this.setIllustrateColor}
               />
             </Route>
             <Route path='/redact/insights'>
