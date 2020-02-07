@@ -6,6 +6,9 @@ class TopImageControls extends React.Component {
   }
 
   buildWhenDoneLink() {
+    if (this.props.image_url === '') {
+      return ''
+    }
     if (this.props.whenDoneTarget) {
       return (
         <button 
@@ -19,6 +22,9 @@ class TopImageControls extends React.Component {
   }
 
   buildTemplateButton() {
+    if (this.props.image_url === '') {
+      return ''
+    }
     const template_keys = Object.keys(this.props.templates)
     if (!template_keys.length) {
       return ''
@@ -62,6 +68,9 @@ class TopImageControls extends React.Component {
   }
 
   buildAddButton() {
+    if (this.props.image_url === '') {
+      return ''
+    }
     return (
       <div id='add_div' className='d-inline'>
         <button className='btn btn-primary dropdown-toggle' type='button' id='addDropdownButton'
@@ -85,6 +94,9 @@ class TopImageControls extends React.Component {
   }
 
   buildDeleteButton() {
+    if (this.props.image_url === '') {
+      return ''
+    }
     return (
       <div id='delete_div' className='d-inline'>
         <button className='btn btn-primary dropdown-toggle ml-2' type='button' id='deleteDropdownButton'
@@ -108,6 +120,9 @@ class TopImageControls extends React.Component {
   }
 
   buildRedactButton() {
+    if (this.props.image_url === '') {
+      return ''
+    }
     return (
       <button 
           className='btn btn-primary ml-2'  
@@ -119,6 +134,9 @@ class TopImageControls extends React.Component {
   }
 
   buildNewImageButton() {
+    if (this.props.image_url === '') {
+      return ''
+    }
     return (
       <button 
           className='btn btn-primary ml-2'  
@@ -130,6 +148,9 @@ class TopImageControls extends React.Component {
   }
 
   buildResetButton() {
+    if (this.props.image_url === '') {
+      return ''
+    }
     return (
       <button 
           className='btn btn-primary ml-2' 
@@ -185,6 +206,9 @@ class TopImageControls extends React.Component {
   }
 
   buildIllustrateButton() {
+    if (this.props.image_url === '') {
+      return ''
+    }
     return (
       <div id='illustrate_div' className='d-inline'>
         <button className='btn btn-primary dropdown-toggle ml-2' type='button' id='illustrateDropdownButton'

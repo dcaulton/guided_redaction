@@ -363,7 +363,7 @@ class MoviePanel extends React.Component {
           onDragOver={(event) => event.preventDefault()}
           onDrop={(event) => this.handleDroppedMovie(event)}
         >
-          Drag here to upload
+          Drag movie here to begin work
         </div>
       )
     }
@@ -508,6 +508,9 @@ class MoviePanelAdvancedControls extends React.Component {
   }
 
   render() {
+    if (this.props.movie_url === '') {
+      return ''
+    }
     let frameset_discriminator = ''
     let runtime = '0:00'
     let nickname = ''
@@ -623,6 +626,9 @@ class MoviePanelAdvancedControls extends React.Component {
 
 class MoviePanelHeader extends React.Component {
    buildTemplateButton() {
+    if (this.props.movie_url === '') {
+      return ''
+    }
     const template_keys = Object.keys(this.props.templates)
     if (!template_keys.length) {
       return ''
@@ -666,46 +672,85 @@ class MoviePanelHeader extends React.Component {
     }
   }
 
+  buildSplitButton() {
+    if (this.props.movie_url === '') {
+      return ''
+    }
+    return (
+      <button 
+          id='parse_video_button'
+          className='btn btn-primary' 
+          onClick={() => this.props.submitMovieJob('split_and_hash_video', this.props.movie_url)}
+      >
+        Split Video
+      </button>
+    )
+  }
+
+  buildRedactButton() {
+    if (this.props.movie_url === '') {
+      return ''
+    }
+    return (
+      <button 
+          id='parse_video_button'
+          className='btn btn-primary ml-2' 
+          onClick={() => this.props.submitMovieJob('redact_framesets')}
+      >
+        Redact All Frames
+      </button>
+    )
+  }
+
+  buildReassembleButton() {
+    if (this.props.movie_url === '') {
+      return ''
+    }
+    return (
+      <button 
+          id='reassemble_video_button'
+          className='btn btn-primary ml-2' 
+          onClick={() => this.props.submitMovieJob('zip_movie')}
+      >
+        Reassemble Video
+      </button>
+    )
+  }
+
+  buildNewButton() {
+    if (this.props.movie_url === '') {
+      return ''
+    }
+    return (
+      <button 
+          className='btn btn-primary ml-2' 
+          onClick={() => this.props.showMovieUploadTarget()}
+      >
+        New
+      </button>
+    )
+  }
+
   render() {
     let templates_button = this.buildTemplateButton()
     let message = this.buildMessage()
+    let split_button = this.buildSplitButton()
+    let redact_button = this.buildRedactButton()
+    let reassemble_button = this.buildReassembleButton()
+    let new_button = this.buildNewButton()
 
     return (
       <div>
         <div className='row m-2'>
-
-          <button 
-              id='parse_video_button'
-              className='btn btn-primary' 
-              onClick={() => this.props.submitMovieJob('split_and_hash_video', this.props.movie_url)}
-          >
-            Split Video
-          </button>
+          {split_button}
 
           {templates_button}
 
-          <button 
-              id='parse_video_button'
-              className='btn btn-primary ml-2' 
-              onClick={() => this.props.submitMovieJob('redact_framesets')}
-          >
-            Redact All Frames
-          </button>
+          {redact_button}
 
-          <button 
-              id='reassemble_video_button'
-              className='btn btn-primary ml-2' 
-              onClick={() => this.props.submitMovieJob('zip_movie')}
-          >
-            Reassemble Video
-          </button>
+          {reassemble_button}
 
-          <button 
-              className='btn btn-primary ml-2' 
-              onClick={() => this.props.showMovieUploadTarget()}
-          >
-            Upload New Movie
-          </button>
+          {new_button}
 
         </div>
         <div className='row'>

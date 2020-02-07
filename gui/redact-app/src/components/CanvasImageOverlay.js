@@ -114,7 +114,8 @@ class CanvasImageOverlay extends React.Component {
 
       ctx.font = '48px serif'
       ctx.fillStyle = '#AAAAAA'
-      ctx.fillText('drag here to upload', 50, 200)
+      ctx.fillText('drag images here', 80, 200)
+      ctx.fillText('to begin work', 110, 270)
     }
   }
 

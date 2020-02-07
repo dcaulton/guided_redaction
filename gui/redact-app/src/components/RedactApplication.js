@@ -827,6 +827,9 @@ class RedactApplication extends React.Component {
     if (!deepCopyCampaignMovies.includes(movie_url)) {
       deepCopyCampaignMovies.push(movie_url)
     }
+    if (movies[movie_url]['frames'].length > 0) {
+      this.setImageUrl(movies[movie_url]['frames'][0])
+    }
     this.setState({
       movie_url: movie_url, 
       movies: movies,
