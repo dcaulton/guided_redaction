@@ -2,6 +2,10 @@ div.redact_application_wrapper {
   margin-top: -15px;
 }
 
+a.nav-link:focus {
+  font-weight: bolder;
+  text-decoration: underline;
+}
 div#image_and_next_prev_buttons {
 position:relative;
 }
