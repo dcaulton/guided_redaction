@@ -1119,6 +1119,8 @@ class InsightsPanel extends React.Component {
             getFiles={this.props.getFiles}
             deleteFile={this.props.deleteFile}
             frameset_discriminator={this.props.frameset_discriminator}
+            preserveAllJobs={this.props.preserveAllJobs}
+            togglePreserveAllJobs={this.props.togglePreserveAllJobs}
           />
         </div>
 

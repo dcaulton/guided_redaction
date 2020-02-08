@@ -54,7 +54,7 @@ class ImagePanel extends React.Component {
       this.props.submitJob({
         job_data: job_data, 
         after_submit: () => {this.setMessage('illustrate job was submitted')}, 
-        cancel_after_loading: false, 
+        cancel_after_loading: true, 
         after_loaded: () => {this.setMessage('illustration completed')},
         when_failed: () => {this.setMessage('illustration failed')},
       })
@@ -63,7 +63,7 @@ class ImagePanel extends React.Component {
       this.props.submitJob({
         job_data: job_data, 
         after_submit: () => {this.setMessage('illustrate job was submitted')}, 
-        cancel_after_loading: false, 
+        cancel_after_loading: true, 
         after_loaded: () => {this.setMessage('illustration completed')},
         when_failed: () => {this.setMessage('illustration failed')},
       })

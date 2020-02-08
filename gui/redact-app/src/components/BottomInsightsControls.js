@@ -153,6 +153,8 @@ class BottomInsightsControls extends React.Component {
           whenDoneTarget={this.props.whenDoneTarget}
           setWhenDoneTarget={this.props.setWhenDoneTarget}
           frameset_discriminator={this.props.frameset_discriminator}
+          preserveAllJobs={this.props.preserveAllJobs}
+          togglePreserveAllJobs={this.props.togglePreserveAllJobs}
         />
 
       </div>

@@ -70,6 +70,7 @@ class RedactApplication extends React.Component {
         backgroundDarkenPercent: .5,
         lineWidth: 5,
       },
+      preserveAllJobs: false,
     }
 
     this.getRedactedMovieFilename=this.getRedactedMovieFilename.bind(this)
@@ -137,6 +138,7 @@ class RedactApplication extends React.Component {
     this.setWhenDoneTarget=this.setWhenDoneTarget.bind(this)
     this.checkAndUpdateApiUris=this.checkAndUpdateApiUris.bind(this)
     this.setIllustrateParameters=this.setIllustrateParameters.bind(this)
+    this.togglePreserveAllJobs=this.togglePreserveAllJobs.bind(this)
   }
 
   setIllustrateParameters(hash_in) {
@@ -172,6 +174,13 @@ class RedactApplication extends React.Component {
   setWhenDoneTarget(the_value) {
     this.setState({
       whenDoneTarget: the_value,
+    })
+  }
+
+  togglePreserveAllJobs() {
+    const new_value = (!this.state.preserveAllJobs)
+    this.setState({
+      preserveAllJobs: new_value,
     })
   }
 
@@ -382,7 +391,7 @@ class RedactApplication extends React.Component {
             const callback = this.state.whenJobLoaded[job['id']]['callback']
             const deleteJob = this.state.whenJobLoaded[job['id']]['delete']
             this.loadJobResults(job['id'], callback)
-            if (deleteJob) {
+            if (deleteJob && !this.state.preserveAllJobs) {
               this.cancelJob(job)
             }
             if (callback) {
@@ -1871,6 +1880,8 @@ class RedactApplication extends React.Component {
                 getFiles={this.getFiles}
                 deleteFile={this.deleteFile}
                 checkAndUpdateApiUris={this.checkAndUpdateApiUris}
+                preserveAllJobs={this.state.preserveAllJobs}
+                togglePreserveAllJobs={this.togglePreserveAllJobs}
               />
             </Route>
           </Switch>
