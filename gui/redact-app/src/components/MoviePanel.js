@@ -91,6 +91,14 @@ class MoviePanel extends React.Component {
     return job_data
   }
 
+  buildRedactedMovieFilename() {
+    //TODO this is not friendly to file names with more than one period, or with a slash in them
+    let parts = this.props.movie_url.split('/')
+    let file_parts = parts[parts.length-1].split('.')
+    let new_filename = file_parts[0] + '_redacted.' + file_parts[1]
+    return new_filename
+  }
+
   buildZipMovieJobdata() {
     let job_data = {
       request_data: {},
@@ -109,7 +117,7 @@ class MoviePanel extends React.Component {
     job_data['app'] = 'parse'
     job_data['operation'] = 'zip_movie'
     job_data['description'] = 'zip movie: ' + this.props.movie_url
-    job_data['request_data']['movie_name'] = this.props.getRedactedMovieFilename()
+    job_data['request_data']['movie_name'] = this.buildRedactedMovieFilename()
     job_data['request_data']['image_urls'] = image_urls
     return job_data
   }

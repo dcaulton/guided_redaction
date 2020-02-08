@@ -305,7 +305,7 @@ class JobCard extends React.Component {
     let delete_job_button = (
       <button 
           className='btn btn-primary m-2'
-          onClick={() => this.props.cancelJob(this.props.job_data)}
+          onClick={() => this.props.cancelJob(this.props.job_data['id'])}
       >
         Delete
       </button>

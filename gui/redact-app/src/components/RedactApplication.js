@@ -73,7 +73,6 @@ class RedactApplication extends React.Component {
       preserveAllJobs: false,
     }
 
-    this.getRedactedMovieFilename=this.getRedactedMovieFilename.bind(this)
     this.getNextImageLink=this.getNextImageLink.bind(this)
     this.getPrevImageLink=this.getPrevImageLink.bind(this)
     this.handleMergeFramesets=this.handleMergeFramesets.bind(this)
@@ -122,7 +121,7 @@ class RedactApplication extends React.Component {
     this.updateGlobalState=this.updateGlobalState.bind(this)
     this.getCurrentTemplateMatches=this.getCurrentTemplateMatches.bind(this)
     this.watchForJob=this.watchForJob.bind(this)
-    this.unWatchJob=this.unWatchJob.bind(this)
+    this.unwatchJob=this.unwatchJob.bind(this)
     this.checkForJobs=this.checkForJobs.bind(this)
     this.playTone=this.playTone.bind(this)
     this.togglePlaySound=this.togglePlaySound.bind(this)
@@ -362,7 +361,7 @@ class RedactApplication extends React.Component {
     final_gain.gain.exponentialRampToValueAtTime(0.00001, context.currentTime + 1.95)
   }
 
-  unWatchJob(job_id) {
+  unwatchJob(job_id) {
     let deepCopyCallbacks = JSON.parse(JSON.stringify(this.state.whenJobLoaded))
     delete deepCopyCallbacks[job_id]
     this.setState({
@@ -374,7 +373,11 @@ class RedactApplication extends React.Component {
     let deepCopyCallbacks = JSON.parse(JSON.stringify(this.state.whenJobLoaded))
     deepCopyCallbacks[job_id] = {}
     deepCopyCallbacks[job_id]['callback'] = callback
-    deepCopyCallbacks[job_id]['delete'] = deleteJob
+    if (this.state.preserveAllJobs) {
+      deepCopyCallbacks[job_id]['delete'] = false
+    } else {
+      deepCopyCallbacks[job_id]['delete'] = deleteJob
+    }
     this.setState({
       whenJobLoaded: deepCopyCallbacks,
     })
@@ -389,15 +392,10 @@ class RedactApplication extends React.Component {
         if (jobIdsToCheckFor.includes(job['id'])) {
           if (job['status'] === 'success') {
             const callback = this.state.whenJobLoaded[job['id']]['callback']
-            const deleteJob = this.state.whenJobLoaded[job['id']]['delete']
             this.loadJobResults(job['id'], callback)
-            if (deleteJob && !this.state.preserveAllJobs) {
-              this.cancelJob(job)
-            }
             if (callback) {
               callback()
             }
-            this.unWatchJob(job['id'])
           }
         }
       }
@@ -798,14 +796,13 @@ class RedactApplication extends React.Component {
     return headers
   }
 
-  storeRedactedImage(responseJson, when_done=(()=>{})) {
+  storeRedactedImage(responseJson) {
     let local_framesets = JSON.parse(JSON.stringify(this.getCurrentFramesets()));
     const frameset_hash = this.getFramesetHashForImageUrl(responseJson['original_image_url'])
     let frameset = local_framesets[frameset_hash]
     frameset['redacted_image'] = responseJson['redacted_image_url']
     local_framesets[frameset_hash] = frameset
     this.handleUpdateFrameset(frameset_hash, frameset)
-    when_done()
   }
 
   async callRedact(areas_to_redact_short, image_url, when_done=(()=>{})) {
@@ -884,14 +881,6 @@ class RedactApplication extends React.Component {
     let name_parts = url_parts[url_parts.length-1].split('.')
     let file_name_before_dot = name_parts[name_parts.length-2]
     return file_name_before_dot
-  }
-
-  getRedactedMovieFilename() {
-    //TODO this is not friendly to file names with more than one period, or with a slash in them
-    let parts = this.state.movie_url.split('/')
-    let file_parts = parts[parts.length-1].split('.')
-    let new_filename = file_parts[0] + '_redacted.' + file_parts[1]
-    return new_filename
   }
 
   async doFloodFill(x_scaled, y_scaled, insights_image, selected_areas, cur_hash, selected_area_meta_id) {
@@ -1097,16 +1086,7 @@ class RedactApplication extends React.Component {
       .then((responseJson) => {
         const resp_data_string = responseJson['job']['response_data']
         const resp_data = JSON.parse(resp_data_string)
-
-        var app_this = this
-        function cancelTheJob() {
-          app_this.cancelJob(job)
-        }
-        if (i === job.children.length-1) {
-          this.storeRedactedImage(resp_data, cancelTheJob)
-        } else {
-          this.storeRedactedImage(resp_data)
-        }
+        this.storeRedactedImage(resp_data)
       })
       .then((responseJson) => {
         when_done()
@@ -1155,35 +1135,35 @@ class RedactApplication extends React.Component {
   }
 
   async loadFilterResults(job, when_done=(()=>{})) {
-      let job_url = this.state.jobs_url + '/' + job.id
-      await fetch(job_url, {
-        method: 'GET',
-        headers: this.buildJsonHeaders(),
-      })
-      .then((response) => response.json())
-      .then((responseJson) => {
-        const resp_data_string = responseJson['job']['response_data']
-        const resp_data = JSON.parse(resp_data_string)
-        let deepCopyMovies = JSON.parse(JSON.stringify(this.state.movies))
-        for (let j=0; j < Object.keys(resp_data.movies).length; j++) {
-          const movie_url = Object.keys(resp_data.movies)[j]
-          let framesets = resp_data.movies[movie_url]['framesets']
-          for (let i=0; i < Object.keys(framesets).length; i++) {
-            const frameset_hash = Object.keys(framesets)[i]
-            deepCopyMovies[movie_url]['framesets'][frameset_hash]['filtered_image_url'] = framesets[frameset_hash]
-          }
+    let job_url = this.state.jobs_url + '/' + job.id
+    await fetch(job_url, {
+      method: 'GET',
+      headers: this.buildJsonHeaders(),
+    })
+    .then((response) => response.json())
+    .then((responseJson) => {
+      const resp_data_string = responseJson['job']['response_data']
+      const resp_data = JSON.parse(resp_data_string)
+      let deepCopyMovies = JSON.parse(JSON.stringify(this.state.movies))
+      for (let j=0; j < Object.keys(resp_data.movies).length; j++) {
+        const movie_url = Object.keys(resp_data.movies)[j]
+        let framesets = resp_data.movies[movie_url]['framesets']
+        for (let i=0; i < Object.keys(framesets).length; i++) {
+          const frameset_hash = Object.keys(framesets)[i]
+          deepCopyMovies[movie_url]['framesets'][frameset_hash]['filtered_image_url'] = framesets[frameset_hash]
         }
-        this.setState({
-          movies: deepCopyMovies,
-        })
-        return responseJson
+      }
+      this.setState({
+        movies: deepCopyMovies,
       })
-      .then((responseJson) => {
-        when_done()
-      })
-      .catch((error) => {
-        console.error(error);
-      })
+      return responseJson
+    })
+    .then((responseJson) => {
+      when_done()
+    })
+    .catch((error) => {
+      console.error(error);
+    })
   }
 
   async loadZipMovieResults(job, when_done=(()=>{})) {
@@ -1217,6 +1197,15 @@ class RedactApplication extends React.Component {
         this.loadIllustrateResults(job, when_done)
       }
       this.playTone()
+    })
+    .then(() => {
+      if (Object.keys(this.state.whenJobLoaded).includes(job_id)) {
+        const deleteJob = this.state.whenJobLoaded[job_id]['delete']
+        if (deleteJob) {
+          this.cancelJob(job_id)
+        }
+        this.unwatchJob(job_id)
+      }
     })
     .catch((error) => {
       console.error(error);
@@ -1308,9 +1297,8 @@ class RedactApplication extends React.Component {
     })
   }
 
-  async cancelJob(the_job) {
-    let the_uuid = the_job['id']
-    let the_url = this.state.jobs_url + '/' + the_uuid
+  async cancelJob(job_id) {
+    let the_url = this.state.jobs_url + '/' + job_id
     await fetch(the_url, {
       method: 'DELETE',
       headers: this.buildJsonHeaders(),
@@ -1763,9 +1751,7 @@ class RedactApplication extends React.Component {
                 getRedactionFromFrameset={this.getRedactionFromFrameset}
                 getRedactedImageFromFrameset={this.getRedactedImageFromFrameset}
                 getIllustratedImageFromFrameset={this.getIllustratedImageFromFrameset}
-                getRedactedMovieFilename={this.getRedactedMovieFilename}   // TODO: push into MoviePanel
                 getFramesetHashForImageUrl={this.getFramesetHashForImageUrl}
-                callRedact={this.callRedact}
                 handleMergeFramesets={this.handleMergeFramesets}
                 movies={this.state.movies}
                 frameset_discriminator={this.state.frameset_discriminator}
@@ -1777,7 +1763,6 @@ class RedactApplication extends React.Component {
                 getJobs={this.getJobs}
                 submitJob={this.submitJob}
                 loadJobResults={this.loadJobResults}
-                cancelJob={this.cancelJob}
                 jobs={this.state.jobs}
                 watchForJob={this.watchForJob}
                 postMakeUrlCall={this.postMakeUrlCall}

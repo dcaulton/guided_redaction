@@ -4,6 +4,7 @@ import os
 from django.conf import settings
 from guided_redaction.utils.classes.FileWriter import FileWriter
 from guided_redaction.redact.classes.ImageMasker import ImageMasker
+from guided_redaction.redact.classes.ImageIllustrator import ImageIllustrator
 import numpy as np
 from base import viewsets
 from rest_framework.response import Response
@@ -121,75 +122,10 @@ class RedactViewSetIllustrateImage(viewsets.ViewSet):
             cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 
             ill_data = request_data.get('illustration_data')
-            ill_type = ill_data.get('type')
-            color_in = ill_data.get('color', '#00FF00')
-            color_red = int('0x' + color_in[5:7], 16)
-            color_green = int('0x' + color_in[3:5], 16)
-            color_blue = int('0x' + color_in[1:3], 16)
-            color = (color_red, color_green, color_blue)
-            shade_outside = ill_data.get('shade_outside', False)
-            line_width = int(ill_data.get('line_width', 5))
-            background_darken_ratio = float(ill_data.get('background_darken_ratio', .5))
-            beta = float(1.0 - background_darken_ratio)
-            if ill_type == 'oval':
-                center = ill_data.get('center')
-                radius_x = ill_data.get('radius_x')
-                radius_y = ill_data.get('radius_y')
-                (centerX, centerY) = (int(center[0]), int(center[1]))
-                (axesX, axesY) = (int(radius_x), int(radius_y))
-                illustrated_image = cv2_image.copy()
-                if shade_outside:
-                    overlay = np.zeros(cv2_image.shape, dtype='uint8')
-                    cv2.ellipse(overlay, (centerX, centerY), (axesX, axesY), 0.0, 0.0, 360.0, (255, 255, 255), -1)
-                    highlighted_region_only = cv2.bitwise_and(overlay, illustrated_image)
-                    illustrated_image = cv2.addWeighted(
-                        highlighted_region_only, 
-                        background_darken_ratio, 
-                        illustrated_image, 
-                        beta, 
-                        0, 
-                        illustrated_image
-                    )
-                illustrated_image = cv2.ellipse(
-                    illustrated_image, 
-                    (centerX, centerY), 
-                    (axesX, axesY), 
-                    0.0, 
-                    0.0, 
-                    360.0, 
-                    color, 
-                    line_width
-                )
-
-            elif ill_type == 'box':
-                start = ill_data.get('start')
-                end = ill_data.get('end')
-                (startX, startY) = (int(start[0]), int(start[1]))
-                (endX, endY) = (int(end[0]), int(end[1]))
-                illustrated_image = cv2_image.copy()
-                if shade_outside:
-                    overlay = np.zeros(cv2_image.shape, dtype='uint8')
-                    cv2.rectangle(overlay, (startX, startY), (endX, endY), (255, 255, 255), -1)
-                    highlighted_region_only = cv2.bitwise_and(overlay, illustrated_image)
-                    illustrated_image = cv2.addWeighted(
-                        highlighted_region_only, 
-                        background_darken_ratio, 
-                        illustrated_image, 
-                        beta, 
-                        0, 
-                        illustrated_image
-                    )
-                illustrated_image = cv2.rectangle(
-                    illustrated_image, 
-                    (startX, startY), 
-                    (endX, endY), 
-                    color, 
-                    line_width
-                )
-
-            else:
-                print('unknown illustration type')
-                illustrated_image = cv2_image
+            image_illustrator = ImageIllustrator()
+            illustrated_image = image_illustrator.illustrate(
+                cv2_image, ill_data
+            )
 
             return_type = request_data.get("return_type", "not_inline")
             if return_type == "inline":
@@ -211,6 +147,8 @@ class RedactViewSetIllustrateImage(viewsets.ViewSet):
                 (file_basename, file_extension) = os.path.splitext(inbound_filename)
                 new_filename = file_basename + "_illustrated" + file_extension
                 the_url = save_image_to_disk(illustrated_image, new_filename, image_hash)
+                print('bambi 02')
+                print(the_url)
                 return Response({
                     "illustrated_image_url": the_url,
                     "original_image_url": request_data["image_url"],
