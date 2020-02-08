@@ -2,7 +2,7 @@ from celery import shared_task
 import json
 import os
 from guided_redaction.jobs.models import Job
-from guided_redaction.redact.api import RedactViewSetRedactImage
+from guided_redaction.redact.api import RedactViewSetRedactImage, RedactViewSetIllustrateImage
 
 
 @shared_task
@@ -49,3 +49,15 @@ def get_file_uuid_from_response(response_dict):
         if len(ts) > 1:
             the_uuid = ts[-2]
     return the_uuid
+
+@shared_task
+def illustrate(job_uuid):
+    job = Job.objects.get(pk=job_uuid)
+    if job:
+        job.status = 'running'
+        job.save()
+        rvsri = RedactViewSetIllustrateImage()
+        response = rvsri.process_create_request(json.loads(job.request_data))
+        job.response_data = json.dumps(response.data)
+        job.status = 'success'
+        job.save()

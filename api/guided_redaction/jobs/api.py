@@ -230,6 +230,8 @@ class JobsViewSet(viewsets.ViewSet):
             parse_tasks.hash_frames.delay(job_uuid)
         if job.app == 'redact' and job.operation == 'redact':
             redact_tasks.redact.delay(job_uuid)
+        if job.app == 'redact' and job.operation == 'illustrate':
+            redact_tasks.illustrate.delay(job_uuid)
         if job.app == 'parse' and job.operation == 'zip_movie':
             parse_tasks.zip_movie.delay(job_uuid)
 

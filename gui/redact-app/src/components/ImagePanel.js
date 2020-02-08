@@ -51,25 +51,19 @@ class ImagePanel extends React.Component {
       })
     } else if (job_string === 'illustrate_box') {
       const job_data = this.buildIllustrateBoxJobdata(extra_data)
-      console.log('bongo illustrate box job data: ')
-      console.log(job_data)
-      return
       this.props.submitJob({
         job_data: job_data, 
         after_submit: () => {this.setMessage('illustrate job was submitted')}, 
-        cancel_after_loading: true, 
+        cancel_after_loading: false, 
         after_loaded: () => {this.setMessage('illustration completed')},
         when_failed: () => {this.setMessage('illustration failed')},
       })
     } else if (job_string === 'illustrate_oval') {
       const job_data = this.buildIllustrateOvalJobdata(extra_data)
-      console.log('bongo illustrate oval job data: ')
-      console.log(job_data)
-      return
       this.props.submitJob({
         job_data: job_data, 
         after_submit: () => {this.setMessage('illustrate job was submitted')}, 
-        cancel_after_loading: true, 
+        cancel_after_loading: false, 
         after_loaded: () => {this.setMessage('illustration completed')},
         when_failed: () => {this.setMessage('illustration failed')},
       })
@@ -92,7 +86,9 @@ class ImagePanel extends React.Component {
       center: this.state.oval_center,
       radius_x: radius_x,
       radius_y: radius_y,
-      color: this.props.illustrate_color,
+      color: this.props.illustrateParameters['color'],
+      line_width: parseInt(this.props.illustrateParameters['lineWidth']),
+      background_darken_ratio: parseFloat(this.props.illustrateParameters['backgroundDarkenPercent']),
     }
     job_data['request_data']['illustration_data'] = illustration_data
     return job_data
@@ -111,7 +107,9 @@ class ImagePanel extends React.Component {
       shade_outside: this.state.illustrate_shaded,
       start: this.state.last_click,
       end: extra_data['second_click'],
-      color: this.props.illustrate_color,
+      color: this.props.illustrateParameters['color'],
+      line_width: parseInt(this.props.illustrateParameters['lineWidth']),
+      background_darken_ratio: parseFloat(this.props.illustrateParameters['backgroundDarkenPercent']),
     }
     job_data['request_data']['illustration_data'] = illustration_data
     return job_data
@@ -454,8 +452,8 @@ class ImagePanel extends React.Component {
             mask_method={this.props.mask_method}
             changeMaskMethodCallback={this.props.setMaskMethod}
             getFramesetHashForImageUrl={this.props.getFramesetHashForImageUrl}
-            setIllustrateColor={this.props.setIllustrateColor}
-            illustrateColor={this.props.illustrateColor}
+            setIllustrateParameters={this.props.setIllustrateParameters}
+            illustrateParameters={this.props.illustrateParameters}
             getRedactedImageUrl={this.props.getRedactedImageUrl}
           />
 
@@ -504,14 +502,48 @@ class AdvancedImageControls extends React.Component {
     return (
       <select
           name='illustrate_color'
-          value={this.props.illustrateColor}
-          onChange={(event) => this.props.setIllustrateColor(event.target.value)}
+          value={this.props.illustrateParameters['color']}
+          onChange={(event) => this.props.setIllustrateParameters({color: event.target.value})}
       >
         <option value='#000000'>Black</option>
         <option value='#CCCC00'>Gold</option>
         <option value='#DD0000'>Red</option>
         <option value='#00DD00'>Green</option>
         <option value='#FFFFFF'>White</option>
+      </select>
+    )
+  }
+
+  buildIllustrateLineWidthDropdown() {
+    return (
+      <select
+          name='illustrate_line_width'
+          value={this.props.illustrateParameters['lineWidth']}
+          onChange={(event) => this.props.setIllustrateParameters({lineWidth: event.target.value})}
+      >
+        <option value='1'>1px</option>
+        <option value='2'>2px</option>
+        <option value='3'>3px</option>
+        <option value='5'>5px</option>
+        <option value='10'>10px</option>
+        <option value='20'>20px</option>
+      </select>
+    )
+  }
+
+  buildIllustrateDarkenPercentDropdown() {
+    return (
+      <select
+          name='illustrate_darken_percent'
+          value={this.props.illustrateParameters['backgroundDarkenPercent']}
+          onChange={(event) => this.props.setIllustrateParameters({backgroundDarkenPercent: event.target.value})}
+      >
+        <option value='.1'>10%</option>
+        <option value='.2'>20%</option>
+        <option value='.3'>30%</option>
+        <option value='.5'>50%</option>
+        <option value='.75'>75%</option>
+        <option value='1'>100%</option>
       </select>
     )
   }
@@ -568,6 +600,8 @@ class AdvancedImageControls extends React.Component {
     }
     const mask_method_dropdown = this.buildMaskMethodDropdown()
     const illustrate_color_dropdown = this.buildIllustrateColorDropdown()
+    const illustrate_darken_dropdown = this.buildIllustrateDarkenPercentDropdown()
+    const illustrate_line_width_dropdown = this.buildIllustrateLineWidthDropdown()
     const dimensions_string = this.getImageDimensions()
     const frameset_hash = this.props.getFramesetHashForImageUrl(this.props.image_url)
     const redacted_link = this.buildRedactedLink()
@@ -642,6 +676,20 @@ class AdvancedImageControls extends React.Component {
                 <span>set illustrate color</span>
                 <div className='ml-2'>
                   {illustrate_color_dropdown}
+                </div>
+              </div>
+
+              <div className='row mt-2'>
+                <span>set illustrate line width</span>
+                <div className='ml-2'>
+                  {illustrate_line_width_dropdown}
+                </div>
+              </div>
+
+              <div className='row mt-2'>
+                <span>set illustrate background darken percent</span>
+                <div className='ml-2'>
+                  {illustrate_darken_dropdown}
                 </div>
               </div>
 

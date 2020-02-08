@@ -120,12 +120,15 @@ class RedactViewSetIllustrateImage(viewsets.ViewSet):
 
             ill_data = request_data.get('illustration_data')
             ill_type = ill_data.get('type')
-            color_in = ill_data.get('color')
+            color_in = ill_data.get('color', '#00FF00')
             color_red = int('0x' + color_in[5:7], 16)
             color_green = int('0x' + color_in[3:5], 16)
             color_blue = int('0x' + color_in[1:3], 16)
             color = (color_red, color_green, color_blue)
-            shade_outside = ill_data.get('shade_outside')
+            shade_outside = ill_data.get('shade_outside', False)
+            line_width = int(ill_data.get('line_width', 5))
+            background_darken_ratio = float(ill_data.get('background_darken_ratio', .5))
+            beta = float(1.0 - background_darken_ratio)
             if ill_type == 'oval':
                 center = ill_data.get('center')
                 radius_x = ill_data.get('radius_x')
@@ -139,9 +142,9 @@ class RedactViewSetIllustrateImage(viewsets.ViewSet):
                     highlighted_region_only = cv2.bitwise_and(overlay, illustrated_image)
                     illustrated_image = cv2.addWeighted(
                         highlighted_region_only, 
-                        .51, 
+                        background_darken_ratio, 
                         illustrated_image, 
-                        .49, 
+                        beta, 
                         0, 
                         illustrated_image
                     )
@@ -153,7 +156,7 @@ class RedactViewSetIllustrateImage(viewsets.ViewSet):
                     0.0, 
                     360.0, 
                     color, 
-                    5
+                    line_width
                 )
 
             elif ill_type == 'box':
@@ -168,9 +171,9 @@ class RedactViewSetIllustrateImage(viewsets.ViewSet):
                     highlighted_region_only = cv2.bitwise_and(overlay, illustrated_image)
                     illustrated_image = cv2.addWeighted(
                         highlighted_region_only, 
-                        .51, 
+                        background_darken_ratio, 
                         illustrated_image, 
-                        .49, 
+                        beta, 
                         0, 
                         illustrated_image
                     )
@@ -179,14 +182,14 @@ class RedactViewSetIllustrateImage(viewsets.ViewSet):
                     (startX, startY), 
                     (endX, endY), 
                     color, 
-                    5
+                    line_width
                 )
 
             else:
                 print('unknown illustration type')
                 illustrated_image = cv2_image
 
-            return_type = request_data.get("return_type", "inline")
+            return_type = request_data.get("return_type", "not_inline")
             if return_type == "inline":
                 image_bytes = cv2.imencode(".png", illustrated_image)[1].tostring()
                 #TODO FIX THIS WHEN THE REST OF THE API IS STABLE AND WE CAN RESEARCH

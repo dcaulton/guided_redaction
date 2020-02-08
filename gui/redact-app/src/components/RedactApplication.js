@@ -65,7 +65,11 @@ class RedactApplication extends React.Component {
       whenJobLoaded: {},
       whenDoneTarget: '',
       campaign_movies: [],
-      illustrateColor: '#CCCC00',
+      illustrateParameters: {
+        color: '#CCCC00',
+        backgroundDarkenPercent: .5,
+        lineWidth: 5,
+      },
     }
 
     this.getRedactedMovieFilename=this.getRedactedMovieFilename.bind(this)
@@ -130,12 +134,22 @@ class RedactApplication extends React.Component {
     this.addImageToMovie=this.addImageToMovie.bind(this)
     this.setWhenDoneTarget=this.setWhenDoneTarget.bind(this)
     this.checkAndUpdateApiUris=this.checkAndUpdateApiUris.bind(this)
-    this.setIllustrateColor=this.setIllustrateColor.bind(this)
+    this.setIllustrateParameters=this.setIllustrateParameters.bind(this)
   }
 
-  setIllustrateColor(the_color) {
+  setIllustrateParameters(hash_in) {
+    let deepCopyIllustrateParameters= JSON.parse(JSON.stringify(this.state.illustrateParameters))
+    if (Object.keys(hash_in).includes('color')) {
+      deepCopyIllustrateParameters['color'] = hash_in['color']
+    }
+    if (Object.keys(hash_in).includes('lineWidth')) {
+      deepCopyIllustrateParameters['lineWidth'] = hash_in['lineWidth']
+    }
+    if (Object.keys(hash_in).includes('backgroundDarkenPercent')) {
+      deepCopyIllustrateParameters['backgroundDarkenPercent'] = hash_in['backgroundDarkenPercent']
+    }
     this.setState({
-      illustrateColor: the_color,
+      illustrateParameters: deepCopyIllustrateParameters,
     })
   }
 
@@ -1078,6 +1092,43 @@ class RedactApplication extends React.Component {
     }
   }
 
+  async loadIllustrateResults(job, when_done=(()=>{})) {
+    let job_url = this.state.jobs_url + '/' + job.id
+    await fetch(job_url, {
+      method: 'GET',
+      headers: this.buildJsonHeaders(),
+    })
+    .then((response) => response.json())
+    .then((responseJson) => {
+      const req_data_string = responseJson['job']['request_data']
+      const req_data = JSON.parse(req_data_string)
+      const image_url = req_data['image_url']
+      const resp_data_string = responseJson['job']['response_data']
+      const resp_data = JSON.parse(resp_data_string)
+      let deepCopyMovies = JSON.parse(JSON.stringify(this.state.movies))
+      // TODO add movie_url to the send, otherwise we need to find the movie for this image
+      //DADA
+      let frameset_hash = this.getFramesetHashForImageUrl(image_url)
+      const illus_img_url = resp_data['illustrated_image_url']
+      deepCopyMovies[this.state.movie_url]['framesets'][frameset_hash]['illustrated_image'] = illus_img_url
+      this.setState({
+        movies: deepCopyMovies,
+      })
+      const orig_img_url = deepCopyMovies[this.state.movie_url]['framesets'][frameset_hash]['images'][0]
+      // if the image is still on the screen, replace with the illustrated one
+      if (this.state.image_url === orig_img_url) {
+        this.setImageUrl(illus_img_url)
+      }
+      return responseJson
+    })
+    .then((responseJson) => {
+      when_done()
+    })
+    .catch((error) => {
+      console.error(error);
+    })
+  }
+
   async loadFilterResults(job, when_done=(()=>{})) {
       let job_url = this.state.jobs_url + '/' + job.id
       await fetch(job_url, {
@@ -1137,6 +1188,8 @@ class RedactApplication extends React.Component {
         this.loadRedactResults(job, when_done)
 			} else if (job.app === 'parse' && job.operation === 'zip_movie') {
         this.loadZipMovieResults(job, when_done)
+			} else if (job.app === 'redact' && job.operation === 'illustrate') {
+        this.loadIllustrateResults(job, when_done)
       }
       this.playTone()
     })
@@ -1723,8 +1776,8 @@ class RedactApplication extends React.Component {
                 establishNewEmptyMovie={this.establishNewEmptyMovie}
                 addImageToMovie={this.addImageToMovie}
                 checkAndUpdateApiUris={this.checkAndUpdateApiUris}
-                illustrateColor={this.state.illustrateColor}
-                setIllustrateColor={this.setIllustrateColor}
+                illustrateParameters={this.state.illustrateParameters}
+                setIllustrateParameters={this.setIllustrateParameters}
               />
             </Route>
             <Route path='/redact/insights'>

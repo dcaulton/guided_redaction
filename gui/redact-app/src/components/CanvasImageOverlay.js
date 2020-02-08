@@ -3,17 +3,20 @@ import React from 'react';
 class CanvasImageOverlay extends React.Component {
 
   drawCrosshairs() {
+    let canvas = this.refs.canvas
+    let ctx = canvas.getContext("2d")
+    ctx.strokeStyle = '#3F3'
+    ctx.lineWidth = 1
+    // TODO there is some sloppiness here that needs to be cleaned up.
+    // the add_2 croosshairs need to be divided by image scale, the oval ones need to be multiplied by the same
+    // looks like one is getting the unscaled coords, the other gets the scaled maybe?  
     if (this.props.mode === 'add_2' || this.props.mode === 'delete_2' || 
         this.props.submode === 'ill_box_2' || this.props.mode === 'add_ocr_2') {
-      const crosshair_length = 2000
+      let crosshair_length = 2000
       let start_x = (this.props.last_click[0] - crosshair_length/2) / this.props.image_scale
       let end_x = (this.props.last_click[0] + crosshair_length/2) / this.props.image_scale
       let start_y = (this.props.last_click[1] - crosshair_length/2) / this.props.image_scale
       let end_y = (this.props.last_click[1] + crosshair_length/2) / this.props.image_scale
-      const canvas = this.refs.canvas
-      let ctx = canvas.getContext("2d")
-      ctx.strokeStyle = '#3F3'
-      ctx.lineWidth = 1
 
       ctx.beginPath()
       ctx.moveTo(start_x, this.props.last_click[1]*this.props.image_scale)
@@ -27,15 +30,11 @@ class CanvasImageOverlay extends React.Component {
     }
 
     if (this.props.submode === 'ill_oval_2' || this.props.submode === 'ill_oval_3') {
-      const crosshair_length = 140
-      let start_x = (this.props.oval_center[0] - crosshair_length/2) / this.props.image_scale
-      let end_x = (this.props.oval_center[0] + crosshair_length/2) / this.props.image_scale
-      let start_y = (this.props.oval_center[1] - crosshair_length/2) / this.props.image_scale
-      let end_y = (this.props.oval_center[1] + crosshair_length/2) / this.props.image_scale
-      const canvas = this.refs.canvas
-      let ctx = canvas.getContext("2d")
-      ctx.strokeStyle = '#FFF'
-      ctx.lineWidth = 1
+      let oval_crosshair_length = 140
+      let start_x = (this.props.oval_center[0] - oval_crosshair_length/2) * this.props.image_scale
+      let end_x = (this.props.oval_center[0] + oval_crosshair_length/2) * this.props.image_scale
+      let start_y = (this.props.oval_center[1] - oval_crosshair_length/2) * this.props.image_scale
+      let end_y = (this.props.oval_center[1] + oval_crosshair_length/2) * this.props.image_scale
 
       ctx.beginPath()
       ctx.moveTo(start_x, this.props.oval_center[1]*this.props.image_scale)
@@ -59,14 +58,10 @@ class CanvasImageOverlay extends React.Component {
     }
 
     if (this.props.submode === 'ill_oval_3') {
-      const crosshair_length = 140
-      let start_x = this.props.last_click[0] / this.props.image_scale
-      let start_y = (this.props.last_click[1] - crosshair_length/2) / this.props.image_scale
-      let end_y = (this.props.last_click[1] + crosshair_length/2) / this.props.image_scale
-      const canvas = this.refs.canvas
-      let ctx = canvas.getContext("2d")
-      ctx.strokeStyle = '#FFF'
-      ctx.lineWidth = 1
+      let second_oval_crosshair_length = 140
+      let start_x = this.props.last_click[0] * this.props.image_scale
+      let start_y = (this.props.last_click[1] - second_oval_crosshair_length/2) * this.props.image_scale
+      let end_y = (this.props.last_click[1] + second_oval_crosshair_length/2) * this.props.image_scale
 
       ctx.beginPath()
       ctx.moveTo(start_x, start_y) 
