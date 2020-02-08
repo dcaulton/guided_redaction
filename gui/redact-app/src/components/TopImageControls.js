@@ -1,8 +1,8 @@
 import React from 'react';
 
 class TopImageControls extends React.Component {
-  doClearRedaction() {
-    this.props.clearCurrentFramesetRedactions(this.props.setMessage('image redactions reset'))
+  resetImage() {
+    this.props.clearCurrentFramesetChanges(this.props.setMessage('image has been reset'))
   }
 
   buildWhenDoneLink() {
@@ -135,7 +135,7 @@ class TopImageControls extends React.Component {
     return (
       <button 
           className='btn btn-primary ml-2' 
-          onClick={() => this.doClearRedaction()}
+          onClick={() => this.resetImage()}
           href='./index.html' >
         Reset
       </button>

@@ -111,10 +111,12 @@ class RedactApplication extends React.Component {
     this.setFramesetDiscriminator=this.setFramesetDiscriminator.bind(this)
     this.setActiveMovie=this.setActiveMovie.bind(this)
     this.getRedactedMovieUrl=this.getRedactedMovieUrl.bind(this)
-    this.clearCurrentFramesetRedactions=this.clearCurrentFramesetRedactions.bind(this)
+    this.clearCurrentFramesetChanges=this.clearCurrentFramesetChanges.bind(this)
     this.getRedactedImageUrl=this.getRedactedImageUrl.bind(this)
+    this.getIllustratedImageUrl=this.getIllustratedImageUrl.bind(this)
     this.getFramesetHashesInOrder=this.getFramesetHashesInOrder.bind(this)
     this.getRedactedImageFromFrameset=this.getRedactedImageFromFrameset.bind(this)
+    this.getIllustratedImageFromFrameset=this.getIllustratedImageFromFrameset.bind(this)
     this.gotoWhenDoneTarget=this.gotoWhenDoneTarget.bind(this)
     this.updateGlobalState=this.updateGlobalState.bind(this)
     this.getCurrentTemplateMatches=this.getCurrentTemplateMatches.bind(this)
@@ -488,13 +490,14 @@ class RedactApplication extends React.Component {
     })
   }
 
-  clearCurrentFramesetRedactions(when_done=(()=>{})) {
+  clearCurrentFramesetChanges(when_done=(()=>{})) {
     const the_hash = this.getFramesetHashForImageUrl(this.state.image_url)
     let deepCopyMovies= JSON.parse(JSON.stringify(this.state.movies))
     if (Object.keys(deepCopyMovies).includes(this.state.movie_url)) {
       if (Object.keys(deepCopyMovies[this.state.movie_url]['framesets']).includes(the_hash)) {
-        deepCopyMovies[this.state.movie_url]['framesets'][the_hash]['areas_to_redact'] = []
-        deepCopyMovies[this.state.movie_url]['framesets'][the_hash]['redacted_image'] = ''
+        delete deepCopyMovies[this.state.movie_url]['framesets'][the_hash]['areas_to_redact']
+        delete deepCopyMovies[this.state.movie_url]['framesets'][the_hash]['redacted_image']
+        delete deepCopyMovies[this.state.movie_url]['framesets'][the_hash]['illustrated_image']
         this.setState({
           movies: deepCopyMovies
         })
@@ -520,6 +523,19 @@ class RedactApplication extends React.Component {
         if (Object.keys(movie['framesets']).includes(this.state.frameset_hash)) {
           if (Object.keys(movie['framesets'][this.state.frameset_hash]).includes('redacted_image')) {
             return movie['framesets'][this.state.frameset_hash]['redacted_image']
+          }
+        }
+      }
+    }
+  }
+
+  getIllustratedImageUrl() {
+    if (this.state.movie_url) {
+      if (Object.keys(this.state.movies).includes(this.state.movie_url)) {
+        let movie = this.state.movies[this.state.movie_url]
+        if (Object.keys(movie['framesets']).includes(this.state.frameset_hash)) {
+          if (Object.keys(movie['framesets'][this.state.frameset_hash]).includes('illustrated_image')) {
+            return movie['framesets'][this.state.frameset_hash]['illustrated_image']
           }
         }
       }
@@ -1102,7 +1118,7 @@ class RedactApplication extends React.Component {
     .then((responseJson) => {
       const req_data_string = responseJson['job']['request_data']
       const req_data = JSON.parse(req_data_string)
-      const image_url = req_data['image_url']
+      const image_url = req_data['canonical_image_url']
       const resp_data_string = responseJson['job']['response_data']
       const resp_data = JSON.parse(resp_data_string)
       let deepCopyMovies = JSON.parse(JSON.stringify(this.state.movies))
@@ -1687,6 +1703,21 @@ class RedactApplication extends React.Component {
     }
   }
 
+  getIllustratedImageFromFrameset = (frameset_hash) => {
+    const framesets = this.getCurrentFramesets()
+    let the_hash = frameset_hash || this.state.frameset_hash
+    let frameset = framesets[the_hash]
+    if (frameset) {
+      if (Object.keys(frameset).includes('illustrated_image')) {
+          return frameset['illustrated_image']
+      } else {
+          return ''
+      }
+    } else {
+      return ''
+    }
+  }
+
   render() {
     if (document.getElementById('movie_panel_link') && this.state.showMovieParserLink) {
       document.getElementById('movie_panel_link').style.display = 'block'
@@ -1722,7 +1753,8 @@ class RedactApplication extends React.Component {
                 setImageUrl={this.setImageUrl}
                 getRedactionFromFrameset={this.getRedactionFromFrameset}
                 getRedactedImageFromFrameset={this.getRedactedImageFromFrameset}
-                getRedactedMovieFilename={this.getRedactedMovieFilename}
+                getIllustratedImageFromFrameset={this.getIllustratedImageFromFrameset}
+                getRedactedMovieFilename={this.getRedactedMovieFilename}   // TODO: push into MoviePanel
                 getFramesetHashForImageUrl={this.getFramesetHashForImageUrl}
                 callRedact={this.callRedact}
                 handleMergeFramesets={this.handleMergeFramesets}
@@ -1751,6 +1783,7 @@ class RedactApplication extends React.Component {
                 movies={this.state.movies}
                 movie_url = {this.state.movie_url}
                 getRedactedImageUrl={this.getRedactedImageUrl}
+                getIllustratedImageUrl={this.getIllustratedImageUrl}
                 image_width={this.state.image_width}
                 image_height={this.state.image_height}
                 image_scale={this.state.image_scale}
@@ -1766,7 +1799,7 @@ class RedactApplication extends React.Component {
                 callOcr={this.callOcr}
                 callRedact={this.callRedact}
                 templates={this.state.templates}
-                clearCurrentFramesetRedactions={this.clearCurrentFramesetRedactions}
+                clearCurrentFramesetChanges={this.clearCurrentFramesetChanges}
                 whenDoneTarget={this.state.whenDoneTarget}
                 gotoWhenDoneTarget={this.gotoWhenDoneTarget}
                 submitJob={this.submitJob}

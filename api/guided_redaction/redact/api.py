@@ -104,6 +104,8 @@ class RedactViewSetIllustrateImage(viewsets.ViewSet):
         return self.process_create_request(request_data)
 
     def process_create_request(self, request_data):
+        if not request_data.get("canonical_image_url"):
+            return self.error("canonical_image_url is required")
         if not request_data.get("image_url"):
             return self.error("image_url is required")
         if not request_data.get("illustration_data"):

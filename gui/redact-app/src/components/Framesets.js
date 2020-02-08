@@ -17,12 +17,20 @@ class FramesetCard extends React.Component {
     return hash_data
   }
 
-  render() {
-    const hash_span = this.buildFramesetHashData(this.props.frame_hash)
+  getDisplayImage() {
     let display_image = this.props.image_url
     if (this.props.getRedactedImageFromFrameset(this.props.frame_hash)) {
       display_image = this.props.getRedactedImageFromFrameset(this.props.frame_hash)
     }
+    if (this.props.getIllustratedImageFromFrameset(this.props.frame_hash)) {
+      display_image = this.props.getIllustratedImageFromFrameset(this.props.frame_hash)
+    }
+    return display_image
+  }
+
+  render() {
+    const hash_span = this.buildFramesetHashData(this.props.frame_hash)
+    let display_image = this.getDisplayImage()
     return (
       <div 
           id={this.props.frame_hash}
@@ -117,6 +125,7 @@ class FramesetCardList extends React.Component {
         redactionDesc={this.getRedactionDesc(key)}
         setZoomImageUrl={this.props.setZoomImageUrl}
         getRedactedImageFromFrameset={this.props.getRedactedImageFromFrameset}
+        getIllustratedImageFromFrameset={this.props.getIllustratedImageFromFrameset}
       />
     );
     return items

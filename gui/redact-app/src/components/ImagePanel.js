@@ -77,7 +77,13 @@ class ImagePanel extends React.Component {
     job_data['app'] = 'redact'
     job_data['operation'] = 'illustrate'
     job_data['description'] = 'illustrate oval'
-    job_data['request_data']['image_url'] = this.props.image_url
+    // used to locate where to store the results, we may be submitting a redacted image
+    job_data['request_data']['canonical_image_url'] = this.props.image_url
+    let the_image_url = this.props.image_url
+    if (this.props.getRedactedImageUrl()) {
+      the_image_url = this.props.getRedactedImageUrl()
+    }
+    job_data['request_data']['image_url'] = the_image_url
     const radius_x = Math.abs(this.state.last_click[0] - this.state.oval_center[0])
     const radius_y = Math.abs(extra_data['second_click'][1] - this.state.oval_center[1])
     const illustration_data = {
@@ -101,7 +107,12 @@ class ImagePanel extends React.Component {
     job_data['app'] = 'redact'
     job_data['operation'] = 'illustrate'
     job_data['description'] = 'illustrate box'
-    job_data['request_data']['image_url'] = this.props.image_url
+    job_data['request_data']['canonical_image_url'] = this.props.image_url
+    let the_image_url = this.props.image_url
+    if (this.props.getRedactedImageUrl()) {
+      the_image_url = this.props.getRedactedImageUrl()
+    }
+    job_data['request_data']['image_url'] = the_image_url
     let illustration_data = {
       type: 'box',
       shade_outside: this.state.illustrate_shaded,
@@ -379,13 +390,20 @@ class ImagePanel extends React.Component {
     return prev_image_link
   }
   
-  render() {
+  getImageUrl() {
     let the_image_url = this.props.image_url
-    let next_button = this.buildGetNextButton()
-    let prev_button = this.buildGetPrevButton()
     if (this.props.getRedactedImageUrl()) {
       the_image_url = this.props.getRedactedImageUrl()
     }
+    if (this.props.getIllustratedImageUrl()) {
+      the_image_url = this.props.getIllustratedImageUrl()
+    }
+    return the_image_url
+  }
+  render() {
+    let next_button = this.buildGetNextButton()
+    let prev_button = this.buildGetPrevButton()
+    const the_image_url = this.getImageUrl()
     return (
       <div id='redaction_panel_container'>
         <div id='image_redactor_panel'>
@@ -402,7 +420,7 @@ class ImagePanel extends React.Component {
                 redactImage={this.redactImage}
                 image_url={this.props.image_url}
                 setMessage={this.setMessage}
-                clearCurrentFramesetRedactions={this.props.clearCurrentFramesetRedactions}
+                clearCurrentFramesetChanges={this.props.clearCurrentFramesetChanges}
                 whenDoneTarget={this.props.whenDoneTarget}
                 gotoWhenDoneTarget={this.props.gotoWhenDoneTarget}
                 submitImageJob={this.submitImageJob}
@@ -455,6 +473,7 @@ class ImagePanel extends React.Component {
             setIllustrateParameters={this.props.setIllustrateParameters}
             illustrateParameters={this.props.illustrateParameters}
             getRedactedImageUrl={this.props.getRedactedImageUrl}
+            getIllustratedImageUrl={this.props.getIllustratedImageUrl}
           />
 
         </div>
@@ -585,6 +604,33 @@ class AdvancedImageControls extends React.Component {
     return redacted_link
   }
 
+  buildIllustratedLink() {
+    let illustrated_link = ''
+    if (this.props.getIllustratedImageUrl()) {
+      let illustrated_filename = this.props.getIllustratedImageUrl().split('/')
+      illustrated_link = (
+          <div>
+            <div 
+                className='d-inline'
+            >
+              Illustrated Image:
+            </div>
+            <div
+                className='d-inline ml-2'
+            >
+              <a
+                  href={this.props.getIllustratedImageUrl()}
+                  download={illustrated_filename}
+              >
+                download
+              </a>
+            </div>
+          </div>
+      )
+    }
+    return illustrated_link
+  }
+
   render() {
     if (!this.props.image_url) {
       return ''
@@ -605,6 +651,7 @@ class AdvancedImageControls extends React.Component {
     const dimensions_string = this.getImageDimensions()
     const frameset_hash = this.props.getFramesetHashForImageUrl(this.props.image_url)
     const redacted_link = this.buildRedactedLink()
+    const illustrated_link = this.buildIllustratedLink()
 
     return (
       <div id='bottom_image_controls' className='row' style={controls_style}>
@@ -663,6 +710,10 @@ class AdvancedImageControls extends React.Component {
 
               <div className='row'>
                 {redacted_link}
+              </div>
+
+              <div className='row'>
+                {illustrated_link}
               </div>
 
               <div className='row mt-2'>

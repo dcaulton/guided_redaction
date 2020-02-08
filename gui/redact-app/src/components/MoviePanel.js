@@ -410,6 +410,7 @@ class MoviePanel extends React.Component {
                 setZoomImageUrl={this.setZoomImageUrl}
                 getFramesetHashesInOrder={this.props.getFramesetHashesInOrder}
                 getRedactedImageFromFrameset={this.props.getRedactedImageFromFrameset}
+                getIllustratedImageFromFrameset={this.props.getIllustratedImageFromFrameset}
               />
             </div>
           </div>
