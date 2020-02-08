@@ -2,7 +2,11 @@ from celery import shared_task
 import json
 import os
 from guided_redaction.jobs.models import Job
-from guided_redaction.analyze.api import AnalyzeViewSetFilter, AnalyzeViewSetScanTemplate
+from guided_redaction.analyze.api import (
+    AnalyzeViewSetFilter, 
+    AnalyzeViewSetScanTemplate,
+    AnalyzeViewSetEastTess
+)
 
 
 @shared_task
@@ -158,3 +162,15 @@ def wrap_up_scan_template_threaded(job, children):
     job.response_data = json.dumps(aggregate_response_data)
     job.elapsed_time = 1
     job.save()
+
+@shared_task
+def scan_ocr(job_uuid):
+    job = Job.objects.get(pk=job_uuid)
+    if job:
+        job.status = 'running'
+        job.save()
+        scanner = AnalyzeViewSetEastTess()
+        response = scanner.process_create_request(json.loads(job.request_data))
+        job.response_data = json.dumps(response.data)
+        job.status = 'success'
+        job.save()

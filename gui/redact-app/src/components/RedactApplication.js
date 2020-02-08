@@ -32,7 +32,6 @@ class RedactApplication extends React.Component {
       flood_fill_url: api_server_url + 'v1/analyze/flood-fill',
       arrow_fill_url: api_server_url + 'v1/analyze/arrow-fill',
       scan_template_url: api_server_url + 'v1/analyze/scan-template',
-      analyze_url: api_server_url + 'v1/analyze/east-tess',
       redact_url: api_server_url + 'v1/redact/redact-image',
       crop_url: api_server_url + 'v1/parse/crop-image',
       parse_movie_url: api_server_url + 'v1/parse/split-and-hash-movie',
@@ -76,7 +75,6 @@ class RedactApplication extends React.Component {
     this.getNextImageLink=this.getNextImageLink.bind(this)
     this.getPrevImageLink=this.getPrevImageLink.bind(this)
     this.handleMergeFramesets=this.handleMergeFramesets.bind(this)
-    this.callOcr=this.callOcr.bind(this)
     this.callRedact=this.callRedact.bind(this)
     this.setTemplateMatches=this.setTemplateMatches.bind(this)
     this.clearTemplateMatches=this.clearTemplateMatches.bind(this)
@@ -735,7 +733,6 @@ class RedactApplication extends React.Component {
       flood_fill_url: api_server_url + 'v1/analyze/flood-fill',
       arrow_fill_url: api_server_url + 'v1/analyze/arrow-fill',
       scan_template_url: api_server_url + 'v1/analyze/scan-template',
-      analyze_url: api_server_url + 'v1/analyze/east-tess',
       redact_url: api_server_url + 'v1/redact/redact-image',
       crop_url: api_server_url + 'v1/parse/crop-image',
       parse_movie_url: api_server_url + 'v1/parse/split-and-hash-movie',
@@ -827,36 +824,6 @@ class RedactApplication extends React.Component {
       console.error(error);
     })
     await response
-  }
-
-  callOcr(current_click, last_click, when_done) {
-    fetch(this.state.analyze_url, {
-      method: 'POST',
-      headers: this.buildJsonHeaders(),
-      body: JSON.stringify({
-        roi_start_x: last_click[0],
-        roi_start_y: last_click[1],
-        roi_end_x: current_click[0],
-        roi_end_y: current_click[1],
-        image_url: this.state.image_url,
-      }),
-    })
-    .then((response) => response.json())
-    .then((responseJson) => {
-      let new_areas_to_redact = responseJson['recognized_text_areas']
-      let deepCopyAreasToRedact = this.getRedactionFromFrameset()
-      for (let i=0; i < new_areas_to_redact.length; i++) {
-        deepCopyAreasToRedact.push(new_areas_to_redact[i]);
-      }
-      this.addRedactionToFrameset(deepCopyAreasToRedact)
-    })
-    .then(() => {
-      when_done()
-    })
-    .catch((error) => {
-      console.error(error)
-    })
-    return []
   }
 
   addMovieAndSetActive(movie_url, movies, theCallback=(()=>{})) {
@@ -1112,7 +1079,6 @@ class RedactApplication extends React.Component {
       const resp_data = JSON.parse(resp_data_string)
       let deepCopyMovies = JSON.parse(JSON.stringify(this.state.movies))
       // TODO add movie_url to the send, otherwise we need to find the movie for this image
-      //DADA
       let frameset_hash = this.getFramesetHashForImageUrl(image_url)
       const illus_img_url = resp_data['illustrated_image_url']
       deepCopyMovies[this.state.movie_url]['framesets'][frameset_hash]['illustrated_image'] = illus_img_url
@@ -1172,6 +1138,16 @@ class RedactApplication extends React.Component {
     this.setMovieRedactedUrl(the_url) 
   }
 
+  async loadScanOcrResults(job, when_done=(()=>{})) {
+    const responseJson = JSON.parse(job.response_data)
+    let new_areas_to_redact = responseJson['recognized_text_areas']
+    let deepCopyAreasToRedact = this.getRedactionFromFrameset()
+    for (let i=0; i < new_areas_to_redact.length; i++) {
+      deepCopyAreasToRedact.push(new_areas_to_redact[i]);
+    }
+    this.addRedactionToFrameset(deepCopyAreasToRedact)
+  }
+
   async loadJobResults(job_id, when_done=(()=>{})) {
     let job_url = this.state.jobs_url + '/' + job_id
     await fetch(job_url, {
@@ -1186,6 +1162,8 @@ class RedactApplication extends React.Component {
         this.loadScanTemplateResults(job, when_done)
 			} else if (job.app === 'analyze' && job.operation === 'filter') {
         this.loadFilterResults(job, when_done)
+			} else if (job.app === 'analyze' && job.operation === 'scan_ocr') {
+        this.loadScanOcrResults(job, when_done)
 			} else if ((job.app === 'parse' && job.operation === 'split_and_hash_movie') 
 	        || (job.app === 'parse' && job.operation === 'split_and_hash_threaded')) {
         this.loadSplitAndHashResults(job, when_done)
@@ -1790,7 +1768,6 @@ class RedactApplication extends React.Component {
                 getPrevImageLink={this.getPrevImageLink}
                 setImageScale={this.setImageScale}
                 showAdvancedPanels={this.state.showAdvancedPanels}
-                callOcr={this.callOcr}
                 callRedact={this.callRedact}
                 templates={this.state.templates}
                 clearCurrentFramesetChanges={this.clearCurrentFramesetChanges}

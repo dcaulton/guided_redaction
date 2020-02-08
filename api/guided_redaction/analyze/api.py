@@ -22,26 +22,30 @@ from guided_redaction.utils.classes.FileWriter import FileWriter
 
 class AnalyzeViewSetEastTess(viewsets.ViewSet):
     def create(self, request):
-        if not request.data.get("image_url"):
+        request_data = request.data
+        return self.process_create_request(request_data)
+
+    def process_create_request(self, request_data):
+        if not request_data.get("image_url"):
             return HttpResponse("image_url is required", status=400)
-        if not request.data.get("roi_start_x"):
+        if not request_data.get("roi_start_x"):
             return HttpResponse("roi_start_x is required", status=400)
-        if not request.data.get("roi_start_y"):
+        if not request_data.get("roi_start_y"):
             return HttpResponse("roi_start_y is required", status=400)
-        if not request.data.get("roi_end_x"):
+        if not request_data.get("roi_end_x"):
             return HttpResponse("roi_end_x is required", status=400)
-        if not request.data.get("roi_end_y"):
+        if not request_data.get("roi_end_y"):
             return HttpResponse("roi_end_y is required", status=400)
         pic_response = requests.get(
-          request.data["image_url"],
+          request_data["image_url"],
           verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
         )
         image = pic_response.content
         if image:
-            roi_start_x = int(request.data["roi_start_x"])
-            roi_start_y = int(request.data["roi_start_y"])
-            roi_end_x = int(request.data["roi_end_x"])
-            roi_end_y = int(request.data["roi_end_y"])
+            roi_start_x = int(request_data["roi_start_x"])
+            roi_start_y = int(request_data["roi_start_y"])
+            roi_end_x = int(request_data["roi_end_x"])
+            roi_end_y = int(request_data["roi_end_y"])
             roi_start = (roi_start_x, roi_start_y)
             roi_end = (roi_end_x, roi_end_y)
 

@@ -147,8 +147,6 @@ class RedactViewSetIllustrateImage(viewsets.ViewSet):
                 (file_basename, file_extension) = os.path.splitext(inbound_filename)
                 new_filename = file_basename + "_illustrated" + file_extension
                 the_url = save_image_to_disk(illustrated_image, new_filename, image_hash)
-                print('bambi 02')
-                print(the_url)
                 return Response({
                     "illustrated_image_url": the_url,
                     "original_image_url": request_data["image_url"],

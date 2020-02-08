@@ -15,7 +15,6 @@ class ImagePanel extends React.Component {
       oval_center: null,
       illustrate_shaded: false,
     }
-    this.setOcrDoneMessage=this.setOcrDoneMessage.bind(this)
     this.setMessage=this.setMessage.bind(this)
     this.redactImage=this.redactImage.bind(this)
     this.submitImageJob=this.submitImageJob.bind(this)
@@ -49,6 +48,15 @@ class ImagePanel extends React.Component {
         after_loaded: () => {this.setMessage('template match completed')},
         when_failed: () => {this.setMessage('template match failed')},
       })
+    } else if (job_string === 'scan_ocr') {
+      const job_data = this.buildScanOcrJobdata(extra_data)
+      this.props.submitJob({
+        job_data: job_data, 
+        after_submit: () => {this.setMessage('ocr scan job was submitted')}, 
+        cancel_after_loading: true, 
+        after_loaded: () => {this.setMessage('ocr scan completed')},
+        when_failed: () => {this.setMessage('ocr scan failed')},
+      })
     } else if (job_string === 'illustrate_box') {
       const job_data = this.buildIllustrateBoxJobdata(extra_data)
       this.props.submitJob({
@@ -69,6 +77,21 @@ class ImagePanel extends React.Component {
       })
     } 
   }  
+
+  buildScanOcrJobdata(extra_data) {
+    let job_data = {
+      request_data: {},
+    }
+    job_data['app'] = 'analyze'
+    job_data['operation'] = 'scan_ocr'
+    job_data['description'] = 'scan ocr for image'
+    job_data['request_data']['image_url'] = this.props.image_url
+    job_data['request_data']['roi_start_x'] = this.state.last_click[0]
+    job_data['request_data']['roi_start_y'] = this.state.last_click[1]
+    job_data['request_data']['roi_end_x'] = extra_data['current_click'][0]
+    job_data['request_data']['roi_end_y'] = extra_data['current_click'][1]
+    return job_data
+  }
 
   buildIllustrateOvalJobdata(extra_data) {
     let job_data = {
@@ -278,18 +301,15 @@ class ImagePanel extends React.Component {
       this.setMessage('region was successfully added, select another region to add, press cancel when done')
       this.props.addRedactionToFrameset(deepCopyAreasToRedact)
     } else if (this.state.submode === 'ocr') {
-      const current_click = [x, y]
-      this.props.callOcr(current_click, this.state.last_click, this.setOcrDoneMessage)
+      this.submitImageJob(
+        'scan_ocr', 
+        {current_click: [x, y]},
+      )
       this.setState({
         mode: 'add_1',
         last_click: null,
       })
-      this.setMessage( 'processing OCR, please wait')
     }
-  }
-
-  setOcrDoneMessage() {
-    this.setMessage('OCR detected regions were added, select another region to scan, press cancel when done')
   }
 
   handleDeleteSecond(x, y) {
@@ -400,6 +420,7 @@ class ImagePanel extends React.Component {
     }
     return the_image_url
   }
+
   render() {
     let next_button = this.buildGetNextButton()
     let prev_button = this.buildGetPrevButton()

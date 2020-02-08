@@ -220,6 +220,8 @@ class JobsViewSet(viewsets.ViewSet):
             analyze_tasks.scan_template_threaded.delay(job_uuid)
         if job.app == 'analyze' and job.operation == 'filter':
             analyze_tasks.filter.delay(job_uuid)
+        if job.app == 'analyze' and job.operation == 'scan_ocr':
+            analyze_tasks.scan_ocr.delay(job_uuid)
         if job.app == 'parse' and job.operation == 'split_and_hash_movie':
             parse_tasks.split_and_hash_movie.delay(job_uuid)
         if job.app == 'parse' and job.operation == 'split_and_hash_threaded':
