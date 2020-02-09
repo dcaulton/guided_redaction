@@ -6,7 +6,7 @@ class TopImageControls extends React.Component {
   }
 
   buildWhenDoneLink() {
-    if (this.props.image_url === '') {
+    if (this.props.getImageUrl() === '') {
       return ''
     }
     if (this.props.whenDoneTarget) {
@@ -22,7 +22,7 @@ class TopImageControls extends React.Component {
   }
 
   buildTemplateButton() {
-    if (this.props.image_url === '') {
+    if (this.props.getImageUrl() === '') {
       return ''
     }
     const template_keys = Object.keys(this.props.templates)
@@ -52,7 +52,7 @@ class TopImageControls extends React.Component {
   }
 
   buildAddButton() {
-    if (this.props.image_url === '') {
+    if (this.props.getImageUrl() === '') {
       return ''
     }
     return (
@@ -78,7 +78,7 @@ class TopImageControls extends React.Component {
   }
 
   buildDeleteButton() {
-    if (this.props.image_url === '') {
+    if (this.props.getImageUrl() === '') {
       return ''
     }
     return (
@@ -104,7 +104,7 @@ class TopImageControls extends React.Component {
   }
 
   buildRedactButton() {
-    if (this.props.image_url === '') {
+    if (this.props.getImageUrl() === '') {
       return ''
     }
     return (
@@ -129,7 +129,7 @@ class TopImageControls extends React.Component {
   }
 
   buildResetButton() {
-    if (this.props.image_url === '') {
+    if (this.props.getImageUrl() === '') {
       return ''
     }
     return (
@@ -187,7 +187,7 @@ class TopImageControls extends React.Component {
   }
 
   buildIllustrateButton() {
-    if (this.props.image_url === '') {
+    if (this.props.getImageUrl() === '') {
       return ''
     }
     return (

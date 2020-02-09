@@ -94,7 +94,7 @@ class CanvasImageOverlay extends React.Component {
   }
 
   drawDragDropTarget() {
-    if (!this.props.image_url) {
+    if (!this.props.getImageUrl()) {
       let canvas = this.refs.canvas
       let ctx = canvas.getContext("2d")
       ctx.beginPath()
@@ -129,7 +129,7 @@ class CanvasImageOverlay extends React.Component {
   }
 
   getCanvasDims() {
-    if (this.props.image_url) {
+    if (this.props.getImageUrl()) {
       return [
       this.props.image_width,
       this.props.image_height

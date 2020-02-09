@@ -17,20 +17,9 @@ class FramesetCard extends React.Component {
     return hash_data
   }
 
-  getDisplayImage() {
-    let display_image = this.props.image_url
-    if (this.props.getRedactedImageFromFrameset(this.props.frame_hash)) {
-      display_image = this.props.getRedactedImageFromFrameset(this.props.frame_hash)
-    }
-    if (this.props.getIllustratedImageFromFrameset(this.props.frame_hash)) {
-      display_image = this.props.getIllustratedImageFromFrameset(this.props.frame_hash)
-    }
-    return display_image
-  }
-
   render() {
     const hash_span = this.buildFramesetHashData(this.props.frame_hash)
-    let display_image = this.getDisplayImage()
+    let display_image = this.props.getImageFromFrameset(this.props.frame_hash)
     return (
       <div 
           id={this.props.frame_hash}
@@ -48,7 +37,7 @@ class FramesetCard extends React.Component {
             className='zoomable-image'
             src={display_image}
             alt={display_image}
-            onClick={() => this.props.setZoomImageUrl(this.props.image_url)}
+            onClick={() => this.props.setZoomImageUrl(display_image)}
         />
 
         <div className='card-body'>
@@ -97,17 +86,17 @@ class FramesetCardList extends React.Component {
   }
 
   getRedactionDesc(hash_key) {
-      const areas_to_redact = this.props.getRedactionFromFrameset(hash_key)
-      if (areas_to_redact.length > 0) {
-          const redacted_image = this.props.getRedactedImageFromFrameset(hash_key)
-          if (redacted_image) {
-            return 'redaction complete'
-          } else {
-            return 'redaction specified but not yet run'
-          }
-      }  else  {
-          return ''
-      }
+    const areas_to_redact = this.props.getRedactionFromFrameset(hash_key)
+    if (areas_to_redact.length > 0) {
+        const redacted_image = this.props.getRedactedImageFromFrameset(hash_key)
+        if (redacted_image) {
+          return 'redaction complete'
+        } else {
+          return 'redaction specified but not yet run'
+        }
+    }  else  {
+        return ''
+    }
   }
 
   render() {
@@ -119,13 +108,12 @@ class FramesetCardList extends React.Component {
         handleDroppedFrameset={this.props.handleDroppedFrameset}
         frame_hash={key}
         image_names={this.getImageNamesList(framesets[key]['images'])}
-        image_url={framesets[key]['images'][0]}
         key={key}
         redactFramesetCallback={this.props.redactFramesetCallback}
         redactionDesc={this.getRedactionDesc(key)}
         setZoomImageUrl={this.props.setZoomImageUrl}
+        getImageFromFrameset={this.props.getImageFromFrameset}
         getRedactedImageFromFrameset={this.props.getRedactedImageFromFrameset}
-        getIllustratedImageFromFrameset={this.props.getIllustratedImageFromFrameset}
       />
     );
     return items

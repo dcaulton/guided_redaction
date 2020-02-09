@@ -22,7 +22,6 @@ class RedactApplication extends React.Component {
       api_key: api_key,
       frameset_discriminator: 'gray8',
       mask_method: 'blur_7x7',
-      image_url: '',
       movie_url: '',
       frameset_hash: '',
       image_width: 0,
@@ -110,11 +109,9 @@ class RedactApplication extends React.Component {
     this.setActiveMovie=this.setActiveMovie.bind(this)
     this.getRedactedMovieUrl=this.getRedactedMovieUrl.bind(this)
     this.clearCurrentFramesetChanges=this.clearCurrentFramesetChanges.bind(this)
-    this.getRedactedImageUrl=this.getRedactedImageUrl.bind(this)
-    this.getIllustratedImageUrl=this.getIllustratedImageUrl.bind(this)
     this.getFramesetHashesInOrder=this.getFramesetHashesInOrder.bind(this)
+    this.getImageFromFrameset=this.getImageFromFrameset.bind(this)
     this.getRedactedImageFromFrameset=this.getRedactedImageFromFrameset.bind(this)
-    this.getIllustratedImageFromFrameset=this.getIllustratedImageFromFrameset.bind(this)
     this.gotoWhenDoneTarget=this.gotoWhenDoneTarget.bind(this)
     this.updateGlobalState=this.updateGlobalState.bind(this)
     this.getCurrentTemplateMatches=this.getCurrentTemplateMatches.bind(this)
@@ -136,6 +133,8 @@ class RedactApplication extends React.Component {
     this.checkAndUpdateApiUris=this.checkAndUpdateApiUris.bind(this)
     this.setIllustrateParameters=this.setIllustrateParameters.bind(this)
     this.togglePreserveAllJobs=this.togglePreserveAllJobs.bind(this)
+    this.getImageUrl=this.getImageUrl.bind(this)
+    this.setFramesetHash=this.setFramesetHash.bind(this)
   }
 
   setIllustrateParameters(hash_in) {
@@ -152,6 +151,39 @@ class RedactApplication extends React.Component {
     this.setState({
       illustrateParameters: deepCopyIllustrateParameters,
     })
+  }
+
+  setFramesetHash(the_hash) {
+    this.setState({
+      frameset_hash: the_hash,
+    })
+    const image_url = this.getImageFromFrameset(the_hash)
+    this.setFramesetHash2(image_url, the_hash)
+  }
+
+  setFramesetHash2 = (the_url, frameset_hash='') => {
+    if (the_url === '') {
+      this.setState({
+        frameset_hash: '',
+      })
+      return
+    }
+    if (!frameset_hash) {
+      frameset_hash = this.getFramesetHashForImageUrl(the_url)
+    }
+    if (!frameset_hash) {
+      frameset_hash = this.makeNewFrameFrameset(the_url) 
+    }
+    var img = new Image()
+    var app_this = this
+    img.onload = function(){
+      app_this.setState({
+        image_width: this.width,
+        image_height: this.height,
+        frameset_hash: frameset_hash,
+      })
+    }
+    img.src = the_url
   }
 
   getCurrentUser() {
@@ -208,7 +240,7 @@ class RedactApplication extends React.Component {
     this.setState({
       movies: deepCopyMovies
     })
-    this.setImageUrl(image_url)
+    this.setFramesetHash(new_hash)
   }
 
   establishNewEmptyMovie(data_in) {
@@ -496,7 +528,7 @@ class RedactApplication extends React.Component {
   }
 
   clearCurrentFramesetChanges(when_done=(()=>{})) {
-    const the_hash = this.getFramesetHashForImageUrl(this.state.image_url)
+    const the_hash = this.getFramesetHashForImageUrl(this.getImageUrl())
     let deepCopyMovies= JSON.parse(JSON.stringify(this.state.movies))
     if (Object.keys(deepCopyMovies).includes(this.state.movie_url)) {
       if (Object.keys(deepCopyMovies[this.state.movie_url]['framesets']).includes(the_hash)) {
@@ -516,32 +548,6 @@ class RedactApplication extends React.Component {
         let this_movie = this.state.movies[this.state.movie_url]
         if (Object.keys(this_movie).includes('redacted_movie_url')) {
           return this_movie['redacted_movie_url']
-        }
-      }
-    }
-  }
-
-  getRedactedImageUrl() {
-    if (this.state.movie_url) {
-      if (Object.keys(this.state.movies).includes(this.state.movie_url)) {
-        let movie = this.state.movies[this.state.movie_url]
-        if (Object.keys(movie['framesets']).includes(this.state.frameset_hash)) {
-          if (Object.keys(movie['framesets'][this.state.frameset_hash]).includes('redacted_image')) {
-            return movie['framesets'][this.state.frameset_hash]['redacted_image']
-          }
-        }
-      }
-    }
-  }
-
-  getIllustratedImageUrl() {
-    if (this.state.movie_url) {
-      if (Object.keys(this.state.movies).includes(this.state.movie_url)) {
-        let movie = this.state.movies[this.state.movie_url]
-        if (Object.keys(movie['framesets']).includes(this.state.frameset_hash)) {
-          if (Object.keys(movie['framesets'][this.state.frameset_hash]).includes('illustrated_image')) {
-            return movie['framesets'][this.state.frameset_hash]['illustrated_image']
-          }
         }
       }
     }
@@ -665,7 +671,8 @@ class RedactApplication extends React.Component {
       movies: movies_obj,
       movie_url: 'new_movie_url',
     })
-    this.setImageUrl(image_url_arr[0])
+    let first_hash = Object.keys(the_framesets)[0]
+    this.setFramesetHash(first_hash)
   }
 
   setTemplates = (the_templates) => {
@@ -832,7 +839,8 @@ class RedactApplication extends React.Component {
       deepCopyCampaignMovies.push(movie_url)
     }
     if (movies[movie_url]['frames'].length > 0) {
-      this.setImageUrl(movies[movie_url]['frames'][0])
+      const hashes = this.getFramesetHashesInOrder()
+      this.setFramesetHash(hashes[0])
     }
     this.setState({
       movie_url: movie_url, 
@@ -1074,22 +1082,21 @@ class RedactApplication extends React.Component {
     .then((responseJson) => {
       const req_data_string = responseJson['job']['request_data']
       const req_data = JSON.parse(req_data_string)
-      const image_url = req_data['canonical_image_url']
+      const movie_url = req_data['movie_url']
+      const frameset_hash = req_data['frameset_hash']
       const resp_data_string = responseJson['job']['response_data']
       const resp_data = JSON.parse(resp_data_string)
       let deepCopyMovies = JSON.parse(JSON.stringify(this.state.movies))
-      // TODO add movie_url to the send, otherwise we need to find the movie for this image
-      let frameset_hash = this.getFramesetHashForImageUrl(image_url)
+      if (!Object.keys(deepCopyMovies).includes(movie_url)) {
+        deepCopyMovies[req_data['movie_url']] = req_data['movie']
+      }
       const illus_img_url = resp_data['illustrated_image_url']
-      deepCopyMovies[this.state.movie_url]['framesets'][frameset_hash]['illustrated_image'] = illus_img_url
+      deepCopyMovies[movie_url]['framesets'][frameset_hash]['illustrated_image'] = illus_img_url
       this.setState({
         movies: deepCopyMovies,
+        movie_url: movie_url,
       })
-      const orig_img_url = deepCopyMovies[this.state.movie_url]['framesets'][frameset_hash]['images'][0]
-      // if the image is still on the screen, replace with the illustrated one
-      if (this.state.image_url === orig_img_url) {
-        this.setImageUrl(illus_img_url)
-      }
+      this.setFramesetHash(frameset_hash)
       return responseJson
     })
     .then((responseJson) => {
@@ -1426,6 +1433,56 @@ class RedactApplication extends React.Component {
     }
   }
 
+  getImageUrl() {
+    let the_image_url = ''
+    if (this.state.frameset_hash === '') {
+      return ''
+    }
+    if (this.state.movie_url) {
+      if (Object.keys(this.state.movies).includes(this.state.movie_url)) {
+        let movie = this.state.movies[this.state.movie_url]
+        if (Object.keys(movie['framesets']).includes(this.state.frameset_hash)) {
+          if (movie['framesets'][this.state.frameset_hash]['images'].length > 0) {
+            the_image_url = movie['framesets'][this.state.frameset_hash]['images'][0]
+          }
+        }
+      }
+    }
+    if (this.getRedactedImageUrl()) {
+      the_image_url = this.getRedactedImageUrl()
+    }
+    if (this.getIllustratedImageUrl()) {
+      the_image_url = this.getIllustratedImageUrl()
+    }
+    return the_image_url
+  }
+
+  getRedactedImageUrl() {
+    if (this.state.movie_url) {
+      if (Object.keys(this.state.movies).includes(this.state.movie_url)) {
+        let movie = this.state.movies[this.state.movie_url]
+        if (Object.keys(movie['framesets']).includes(this.state.frameset_hash)) {
+          if (Object.keys(movie['framesets'][this.state.frameset_hash]).includes('redacted_image')) {
+            return movie['framesets'][this.state.frameset_hash]['redacted_image']
+          }
+        }
+      }
+    }
+  }
+
+  getIllustratedImageUrl() {
+    if (this.state.movie_url) {
+      if (Object.keys(this.state.movies).includes(this.state.movie_url)) {
+        let movie = this.state.movies[this.state.movie_url]
+        if (Object.keys(movie['framesets']).includes(this.state.frameset_hash)) {
+          if (Object.keys(movie['framesets'][this.state.frameset_hash]).includes('illustrated_image')) {
+            return movie['framesets'][this.state.frameset_hash]['illustrated_image']
+          }
+        }
+      }
+    }
+  }
+
   getFramesetHashForImageUrl = (image_url, framesets=null) => {
     if (framesets === null) {
       framesets = this.getCurrentFramesets()
@@ -1436,6 +1493,18 @@ class RedactApplication extends React.Component {
       let the_images = framesets[hashes[i]]['images']
       if (the_images.includes(image_url)) {
         return hashes[i]
+      }
+      if (Object.keys(framesets[hashes[i]]).includes('redacted_image')) {
+        const redacted_image = framesets[hashes[i]]['redacted_image']
+        if (redacted_image === image_url) {
+          return hashes[i]
+        }
+      }
+      if (Object.keys(framesets[hashes[i]]).includes('illustrated_image')) {
+        const redacted_image = framesets[hashes[i]]['illustrated_image']
+        if (redacted_image === image_url) {
+          return hashes[i]
+        }
       }
     }
   }
@@ -1448,10 +1517,7 @@ class RedactApplication extends React.Component {
     if (Object.keys(vars).includes('workbook_id')) {
       this.loadWorkbook(vars['workbook_id'])
     }
-    if (Object.keys(vars).includes('image_url')) {
-        this.setImageUrl(vars['image_url'])
-        document.getElementById('image_panel_link').click()
-    } else if (Object.keys(vars).includes('movie_url')) {
+    if (Object.keys(vars).includes('movie_url')) {
         this.handleSetMovieUrl(vars['movie_url'])
         document.getElementById('movie_panel_link').click()
     } else if (Object.keys(vars).includes('image_uuid') && Object.keys(vars).includes('offsets')) {
@@ -1462,7 +1528,6 @@ class RedactApplication extends React.Component {
   }
 
   getNextImageLink() {
-    const framesets = this.getCurrentFramesets()
     let hashes = this.getFramesetHashesInOrder()
     if (hashes.length < 2) {
       return ''
@@ -1470,23 +1535,18 @@ class RedactApplication extends React.Component {
     if (this.state.frameset_hash) {
       let cur_index = hashes.indexOf(this.state.frameset_hash)
       if (cur_index < (hashes.length-1)) {
-        const next_hash = hashes[cur_index + 1]
-        const next_image_url = framesets[next_hash]['images'][0]
-        return next_image_url
+        return hashes[cur_index + 1]
       } 
     }
     return ''
   }
 
   getPrevImageLink() {
-    const framesets = this.getCurrentFramesets()
     let hashes = this.getFramesetHashesInOrder()
     if (this.state.frameset_hash) {
       let cur_index = hashes.indexOf(this.state.frameset_hash)
       if (cur_index > 0) {
-        const prev_hash = hashes[cur_index - 1]
-        const prev_image_url = framesets[prev_hash]['images'][0]
-        return prev_image_url
+        return hashes[cur_index - 1]
       } 
     }
     return ''
@@ -1514,31 +1574,6 @@ class RedactApplication extends React.Component {
       return new_frameset_hash
     }
     return 999  // don't expect to ever get here
-  }
-
-  setImageUrl = (the_url) => {
-    if (the_url === '') {
-      this.setState({
-        image_url: '',
-        frameset_hash: '',
-      })
-      return
-    }
-    let frameset_hash = this.getFramesetHashForImageUrl(the_url)
-    if (!frameset_hash) {
-      frameset_hash = this.makeNewFrameFrameset(the_url) 
-    }
-    var img = new Image()
-    var app_this = this
-    img.onload = function(){
-      app_this.setState({
-        image_url: the_url,
-        image_width: this.width,
-        image_height: this.height,
-        frameset_hash: frameset_hash,
-      })
-    }
-    img.src = the_url
   }
 
   handleSetMovieUrl = (the_url) => {
@@ -1663,6 +1698,22 @@ class RedactApplication extends React.Component {
     }
   }
 
+  getImageFromFrameset(frameset_hash='')  {
+    frameset_hash = frameset_hash || this.state.frameset_hash
+    const framesets = this.getCurrentFramesets()
+    let the_image_url = ''
+    if (Object.keys(framesets).includes(frameset_hash)) {
+      the_image_url = framesets[frameset_hash]['images'][0]
+    }
+    if (this.getRedactedImageFromFrameset(frameset_hash)) {
+      the_image_url = this.getRedactedImageFromFrameset(frameset_hash)
+    }
+    if (this.getIllustratedImageFromFrameset(frameset_hash)) {
+      the_image_url = this.getIllustratedImageFromFrameset(frameset_hash)
+    }
+    return the_image_url
+  }
+
   getRedactedImageFromFrameset = (frameset_hash) => {
     const framesets = this.getCurrentFramesets()
     let the_hash = frameset_hash || this.state.frameset_hash
@@ -1725,10 +1776,10 @@ class RedactApplication extends React.Component {
                 getCurrentFramesets={this.getCurrentFramesets}
                 mask_method = {this.state.mask_method}
                 setMaskMethod={this.handleSetMaskMethod}
-                setImageUrl={this.setImageUrl}
+                setFramesetHash={this.setFramesetHash}
                 getRedactionFromFrameset={this.getRedactionFromFrameset}
+                getImageFromFrameset={this.getImageFromFrameset}
                 getRedactedImageFromFrameset={this.getRedactedImageFromFrameset}
-                getIllustratedImageFromFrameset={this.getIllustratedImageFromFrameset}
                 getFramesetHashForImageUrl={this.getFramesetHashForImageUrl}
                 handleMergeFramesets={this.handleMergeFramesets}
                 movies={this.state.movies}
@@ -1751,18 +1802,16 @@ class RedactApplication extends React.Component {
             <Route path='/redact/image'>
               <ImagePanel 
                 mask_method={this.state.mask_method}
-                image_url={this.state.image_url}
                 movies={this.state.movies}
                 movie_url = {this.state.movie_url}
-                getRedactedImageUrl={this.getRedactedImageUrl}
-                getIllustratedImageUrl={this.getIllustratedImageUrl}
+                getImageUrl={this.getImageUrl}
                 image_width={this.state.image_width}
                 image_height={this.state.image_height}
                 image_scale={this.state.image_scale}
                 addRedactionToFrameset={this.addRedactionToFrameset}
                 getRedactionFromFrameset={this.getRedactionFromFrameset}
                 setMaskMethod={this.handleSetMaskMethod}
-                setImageUrl={this.setImageUrl}
+                setFramesetHash={this.setFramesetHash}
                 getFramesetHashForImageUrl={this.getFramesetHashForImageUrl}
                 getNextImageLink={this.getNextImageLink}
                 getPrevImageLink={this.getPrevImageLink}

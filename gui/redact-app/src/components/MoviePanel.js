@@ -193,8 +193,7 @@ class MoviePanel extends React.Component {
   }
 
   redactFramesetCallback = (frameset_hash) => {
-    let first_image_url = this.props.getCurrentFramesets()[frameset_hash]['images'][0]
-    this.props.setImageUrl(first_image_url)
+    this.props.setFramesetHash(frameset_hash)
     const link_to_next_page = document.getElementById('image_panel_link')
     link_to_next_page.click()
   }
@@ -417,8 +416,8 @@ class MoviePanel extends React.Component {
                 handleDroppedFrameset={this.handleDroppedFrameset}
                 setZoomImageUrl={this.setZoomImageUrl}
                 getFramesetHashesInOrder={this.props.getFramesetHashesInOrder}
+                getImageFromFrameset={this.props.getImageFromFrameset}
                 getRedactedImageFromFrameset={this.props.getRedactedImageFromFrameset}
-                getIllustratedImageFromFrameset={this.props.getIllustratedImageFromFrameset}
               />
             </div>
           </div>
