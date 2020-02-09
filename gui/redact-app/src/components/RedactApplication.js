@@ -71,8 +71,8 @@ class RedactApplication extends React.Component {
       preserveAllJobs: false,
     }
 
-    this.getNextImageLink=this.getNextImageLink.bind(this)
-    this.getPrevImageLink=this.getPrevImageLink.bind(this)
+    this.getNextImageHash=this.getNextImageHash.bind(this)
+    this.getPrevImageHash=this.getPrevImageHash.bind(this)
     this.handleMergeFramesets=this.handleMergeFramesets.bind(this)
     this.callRedact=this.callRedact.bind(this)
     this.setTemplateMatches=this.setTemplateMatches.bind(this)
@@ -153,23 +153,13 @@ class RedactApplication extends React.Component {
     })
   }
 
-  setFramesetHash(the_hash) {
-    this.setState({
-      frameset_hash: the_hash,
-    })
-    const image_url = this.getImageFromFrameset(the_hash)
-    this.setFramesetHash2(image_url, the_hash)
-  }
-
-  setFramesetHash2 = (the_url, frameset_hash='') => {
+  setFramesetHash(frameset_hash) {
+    const the_url = this.getImageFromFrameset(frameset_hash)
     if (the_url === '') {
       this.setState({
         frameset_hash: '',
       })
       return
-    }
-    if (!frameset_hash) {
-      frameset_hash = this.getFramesetHashForImageUrl(the_url)
     }
     if (!frameset_hash) {
       frameset_hash = this.makeNewFrameFrameset(the_url) 
@@ -1434,27 +1424,7 @@ class RedactApplication extends React.Component {
   }
 
   getImageUrl() {
-    let the_image_url = ''
-    if (this.state.frameset_hash === '') {
-      return ''
-    }
-    if (this.state.movie_url) {
-      if (Object.keys(this.state.movies).includes(this.state.movie_url)) {
-        let movie = this.state.movies[this.state.movie_url]
-        if (Object.keys(movie['framesets']).includes(this.state.frameset_hash)) {
-          if (movie['framesets'][this.state.frameset_hash]['images'].length > 0) {
-            the_image_url = movie['framesets'][this.state.frameset_hash]['images'][0]
-          }
-        }
-      }
-    }
-    if (this.getRedactedImageUrl()) {
-      the_image_url = this.getRedactedImageUrl()
-    }
-    if (this.getIllustratedImageUrl()) {
-      the_image_url = this.getIllustratedImageUrl()
-    }
-    return the_image_url
+    return this.getImageFromFrameset(this.state.frameset_hash)
   }
 
   getRedactedImageUrl() {
@@ -1464,19 +1434,6 @@ class RedactApplication extends React.Component {
         if (Object.keys(movie['framesets']).includes(this.state.frameset_hash)) {
           if (Object.keys(movie['framesets'][this.state.frameset_hash]).includes('redacted_image')) {
             return movie['framesets'][this.state.frameset_hash]['redacted_image']
-          }
-        }
-      }
-    }
-  }
-
-  getIllustratedImageUrl() {
-    if (this.state.movie_url) {
-      if (Object.keys(this.state.movies).includes(this.state.movie_url)) {
-        let movie = this.state.movies[this.state.movie_url]
-        if (Object.keys(movie['framesets']).includes(this.state.frameset_hash)) {
-          if (Object.keys(movie['framesets'][this.state.frameset_hash]).includes('illustrated_image')) {
-            return movie['framesets'][this.state.frameset_hash]['illustrated_image']
           }
         }
       }
@@ -1527,7 +1484,7 @@ class RedactApplication extends React.Component {
     }
   }
 
-  getNextImageLink() {
+  getNextImageHash() {
     let hashes = this.getFramesetHashesInOrder()
     if (hashes.length < 2) {
       return ''
@@ -1541,7 +1498,7 @@ class RedactApplication extends React.Component {
     return ''
   }
 
-  getPrevImageLink() {
+  getPrevImageHash() {
     let hashes = this.getFramesetHashesInOrder()
     if (this.state.frameset_hash) {
       let cur_index = hashes.indexOf(this.state.frameset_hash)
@@ -1813,8 +1770,8 @@ class RedactApplication extends React.Component {
                 setMaskMethod={this.handleSetMaskMethod}
                 setFramesetHash={this.setFramesetHash}
                 getFramesetHashForImageUrl={this.getFramesetHashForImageUrl}
-                getNextImageLink={this.getNextImageLink}
-                getPrevImageLink={this.getPrevImageLink}
+                getNextImageHash={this.getNextImageHash}
+                getPrevImageHash={this.getPrevImageHash}
                 setImageScale={this.setImageScale}
                 showAdvancedPanels={this.state.showAdvancedPanels}
                 callRedact={this.callRedact}

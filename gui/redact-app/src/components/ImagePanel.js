@@ -379,7 +379,7 @@ class ImagePanel extends React.Component {
 
   buildGetNextButton() {
     let next_image_link = ''
-    let next_image_hash = this.props.getNextImageLink()
+    let next_image_hash = this.props.getNextImageHash()
     if (next_image_hash) {
       next_image_link = (
         <button
@@ -395,7 +395,7 @@ class ImagePanel extends React.Component {
 
   buildGetPrevButton() {
     let prev_image_link = ''
-    let prev_image_hash = this.props.getPrevImageLink()
+    let prev_image_hash = this.props.getPrevImageHash()
     if (prev_image_hash) {
       prev_image_link = (
         <button
