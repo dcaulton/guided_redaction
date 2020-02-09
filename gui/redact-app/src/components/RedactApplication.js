@@ -246,9 +246,13 @@ class RedactApplication extends React.Component {
       movies: deepCopyMovies,
       movie_url: new_movie_url,
     })
-    if (!this.state.campaign_movies.includes(new_movie_url)) {
+    this.addToCampaignMovies(new_movie_url)
+  }
+
+  addToCampaignMovies(movie_url) {
+    if (!this.state.campaign_movies.includes(movie_url)) {
       let deepCopyCampaignMovies= JSON.parse(JSON.stringify(this.state.campaign_movies))
-      deepCopyCampaignMovies.push(new_movie_url)
+      deepCopyCampaignMovies.push(movie_url)
       this.setState({
         campaign_movies: deepCopyCampaignMovies,
       })
@@ -264,11 +268,7 @@ class RedactApplication extends React.Component {
     // A hack, but for whatever reason the state isn't ready when the moviePanel renders
     document.getElementById('image_panel_link').click()
     document.getElementById('movie_panel_link').click()
-    if (!this.state.campaign_movies.includes(data_in['url'])) {
-      let deepCopyCampaignMovies= JSON.parse(JSON.stringify(this.state.campaign_movies))
-      deepCopyCampaignMovies.push(data_in['url'])
-      this.setCampaignMovies(deepCopyCampaignMovies)
-    }
+    this.addToCampaignMovies(data_in['url'])
   }
 
   async checkIfApiCanSeeUrl(the_url, when_done=(()=>{})) {
@@ -824,10 +824,7 @@ class RedactApplication extends React.Component {
   }
 
   addMovieAndSetActive(movie_url, movies, theCallback=(()=>{})) {
-    let deepCopyCampaignMovies = JSON.parse(JSON.stringify(this.state.campaign_movies))
-    if (!deepCopyCampaignMovies.includes(movie_url)) {
-      deepCopyCampaignMovies.push(movie_url)
-    }
+    this.addToCampaignMovies(movie_url)
     if (movies[movie_url]['frames'].length > 0) {
       const hashes = this.getFramesetHashesInOrder()
       this.setFramesetHash(hashes[0])
@@ -835,7 +832,6 @@ class RedactApplication extends React.Component {
     this.setState({
       movie_url: movie_url, 
       movies: movies,
-      campaign_movies: deepCopyCampaignMovies,
     },
     theCallback(movies[movie_url]['framesets'])
     )
@@ -1086,6 +1082,7 @@ class RedactApplication extends React.Component {
         movies: deepCopyMovies,
         movie_url: movie_url,
       })
+      this.addToCampaignMovies(movie_url)
       this.setFramesetHash(frameset_hash)
       return responseJson
     })
@@ -1098,35 +1095,31 @@ class RedactApplication extends React.Component {
   }
 
   async loadFilterResults(job, when_done=(()=>{})) {
-    let job_url = this.state.jobs_url + '/' + job.id
-    await fetch(job_url, {
-      method: 'GET',
-      headers: this.buildJsonHeaders(),
-    })
-    .then((response) => response.json())
-    .then((responseJson) => {
-      const resp_data_string = responseJson['job']['response_data']
-      const resp_data = JSON.parse(resp_data_string)
-      let deepCopyMovies = JSON.parse(JSON.stringify(this.state.movies))
-      for (let j=0; j < Object.keys(resp_data.movies).length; j++) {
-        const movie_url = Object.keys(resp_data.movies)[j]
-        let framesets = resp_data.movies[movie_url]['framesets']
-        for (let i=0; i < Object.keys(framesets).length; i++) {
-          const frameset_hash = Object.keys(framesets)[i]
-          deepCopyMovies[movie_url]['framesets'][frameset_hash]['filtered_image_url'] = framesets[frameset_hash]
-        }
+    const resp_data = JSON.parse(job.response_data)
+    const req_data = JSON.parse(job.request_data)
+    let deepCopyMovies = JSON.parse(JSON.stringify(this.state.movies))
+    let last_movie_url = ''
+    let last_hash = ''
+    for (let j=0; j < Object.keys(resp_data.movies).length; j++) {
+      const movie_url = Object.keys(resp_data.movies)[j]
+      if (!Object.keys(deepCopyMovies).includes(movie_url)) {
+        deepCopyMovies[movie_url] = req_data['movies'][movie_url]
       }
-      this.setState({
-        movies: deepCopyMovies,
-      })
-      return responseJson
+      this.addToCampaignMovies(movie_url)
+      let framesets = resp_data.movies[movie_url]['framesets']
+      for (let i=0; i < Object.keys(framesets).length; i++) {
+        const frameset_hash = Object.keys(framesets)[i]
+        deepCopyMovies[movie_url]['framesets'][frameset_hash]['filtered_image_url'] = framesets[frameset_hash]
+      }
+      last_movie_url = movie_url
+      let hashes = this.getFramesetHashesInOrder(deepCopyMovies[movie_url]['framesets'])
+      last_hash = hashes[0]
+    }
+    this.setState({
+      movies: deepCopyMovies,
+      movie_url: last_movie_url,
     })
-    .then((responseJson) => {
-      when_done()
-    })
-    .catch((error) => {
-      console.error(error);
-    })
+    this.setFramesetHash(last_hash)
   }
 
   async loadZipMovieResults(job, when_done=(()=>{})) {
@@ -1138,11 +1131,27 @@ class RedactApplication extends React.Component {
   async loadScanOcrResults(job, when_done=(()=>{})) {
     const responseJson = JSON.parse(job.response_data)
     let new_areas_to_redact = responseJson['recognized_text_areas']
-    let deepCopyAreasToRedact = this.getRedactionFromFrameset()
+
+    const req_data = JSON.parse(job.request_data)
+    const movie_url = req_data['movie_url']
+    const frameset_hash = req_data['frameset_hash']
+    let deepCopyMovies = JSON.parse(JSON.stringify(this.state.movies))
+    if (!Object.keys(deepCopyMovies).includes(movie_url)) {
+      deepCopyMovies[movie_url] = req_data['movie']
+    }
+    let deepCopyAreasToRedact = JSON.parse(JSON.stringify(
+      deepCopyMovies[movie_url]['framesets'][frameset_hash]['areas_to_redact']
+    ))
     for (let i=0; i < new_areas_to_redact.length; i++) {
       deepCopyAreasToRedact.push(new_areas_to_redact[i]);
     }
-    this.addRedactionToFrameset(deepCopyAreasToRedact)
+    deepCopyMovies[movie_url]['framesets'][frameset_hash]['areas_to_redact'] = deepCopyAreasToRedact
+    this.setState({
+      movies: deepCopyMovies,
+      movie_url: movie_url,
+    })
+    this.addToCampaignMovies(movie_url)
+    this.setFramesetHash(frameset_hash)
   }
 
   async loadJobResults(job_id, when_done=(()=>{})) {

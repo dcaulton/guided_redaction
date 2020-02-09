@@ -85,6 +85,9 @@ class ImagePanel extends React.Component {
     job_data['app'] = 'analyze'
     job_data['operation'] = 'scan_ocr'
     job_data['description'] = 'scan ocr for image'
+    job_data['request_data']['movie_url'] = this.props.movie_url
+    job_data['request_data']['frameset_hash'] = this.props.getFramesetHashForImageUrl(this.props.getImageUrl())
+    job_data['request_data']['movie'] = this.props.movies[this.props.movie_url]
     job_data['request_data']['image_url'] = this.props.getImageUrl()
     job_data['request_data']['roi_start_x'] = this.state.last_click[0]
     job_data['request_data']['roi_start_y'] = this.state.last_click[1]
@@ -100,9 +103,6 @@ class ImagePanel extends React.Component {
     job_data['app'] = 'redact'
     job_data['operation'] = 'illustrate'
     job_data['description'] = 'illustrate oval'
-    // used to locate where to store the results, we may be submitting a redacted image
-    job_data['request_data']['canonical_image_url'] = this.props.getImageUrl()
-    // useful if we lose the movie but want to restore it by loading this job
     job_data['request_data']['movie_url'] = this.props.movie_url
     job_data['request_data']['frameset_hash'] = this.props.getFramesetHashForImageUrl(this.props.getImageUrl())
     job_data['request_data']['movie'] = this.props.movies[this.props.movie_url]
@@ -130,7 +130,6 @@ class ImagePanel extends React.Component {
     job_data['app'] = 'redact'
     job_data['operation'] = 'illustrate'
     job_data['description'] = 'illustrate box'
-    job_data['request_data']['canonical_image_url'] = this.props.getImageUrl()
     job_data['request_data']['movie_url'] = this.props.movie_url
     job_data['request_data']['frameset_hash'] = this.props.getFramesetHashForImageUrl(this.props.getImageUrl())
     job_data['request_data']['movie'] = this.props.movies[this.props.movie_url]
