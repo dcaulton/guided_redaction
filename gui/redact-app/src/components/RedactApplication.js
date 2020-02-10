@@ -1034,7 +1034,21 @@ class RedactApplication extends React.Component {
 
   async loadRedactSingleResults(job, when_done=(()=>{})) {
     const resp_data = JSON.parse(job.response_data)
-    this.storeRedactedImage(resp_data)
+    const req_data = JSON.parse(job.request_data)
+    const movie_url = req_data['movie_url']
+    const frameset_hash = req_data['frameset_hash']
+    let deepCopyMovies = JSON.parse(JSON.stringify(this.state.movies))
+    if (!Object.keys(deepCopyMovies).includes(movie_url)) {
+      deepCopyMovies[movie_url] = req_data['movie']
+    }
+    const redacted_img_url = resp_data['redacted_image_url']
+    deepCopyMovies[movie_url]['framesets'][frameset_hash]['redacted_image'] = redacted_img_url
+    this.setState({
+      movies: deepCopyMovies,
+      movie_url: movie_url,
+    })
+    this.addToCampaignMovies(movie_url)
+    this.setFramesetHash(frameset_hash)
   }
 
   async loadIllustrateResults(job, when_done=(()=>{})) {

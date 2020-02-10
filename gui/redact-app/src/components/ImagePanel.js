@@ -111,7 +111,7 @@ class ImagePanel extends React.Component {
     }
     job_data['app'] = 'redact'
     job_data['operation'] = 'redact_single'
-    job_data['description'] = 'scan ocr for image'
+    job_data['description'] = 'redact image'
     job_data['request_data']['movie_url'] = this.props.movie_url
     let frameset_hash = this.props.getFramesetHashForImageUrl(this.props.getImageUrl())
     job_data['request_data']['frameset_hash'] = frameset_hash
