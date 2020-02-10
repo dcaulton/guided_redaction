@@ -237,6 +237,10 @@ class SessionControls extends React.Component {
     if (this.props.visibilityFlags['diffs']) {
       show_diffs_checked = 'checked'
     }
+    let show_pipelines_checked = ''
+    if (this.props.visibilityFlags['pipelines']) {
+      show_pipelines_checked = 'checked'
+    }
     let play_sound_checked = ''
     if (this.props.playSound) {
       play_sound_checked = 'checked'
@@ -428,6 +432,17 @@ class SessionControls extends React.Component {
                     onChange={() => this.props.toggleShowVisibility('filesystem')}
                   />
                   Show Filesystem
+                </div>
+
+                <div className='row mt-3 bg-light rounded'>
+                  <input
+                    className='ml-2 mr-2 mt-1'
+                    id='toggle_pipelines'
+                    checked={show_pipelines_checked}
+                    type='checkbox'
+                    onChange={() => this.props.toggleShowVisibility('pipelines')}
+                  />
+                  Show Pipelines
                 </div>
 
                 <div className='row mt-3 bg-light rounded'>

@@ -8,6 +8,7 @@ import DiffControls from './DiffControls'
 import MovieSetsControls from './MovieSetsControls'
 import ResultsControls from './ResultsControls'
 import FilesystemControls from './FilesystemControls'
+import PipelineControls from './PipelineControls'
 import SessionControls from './SessionControls'
 
 class BottomInsightsControls extends React.Component {
@@ -103,6 +104,11 @@ class BottomInsightsControls extends React.Component {
 
         <ResultsControls
           displayInsightsMessage={this.props.displayInsightsMessage}
+          visibilityFlags={this.props.visibilityFlags}
+          toggleShowVisibility={this.props.toggleShowVisibility}
+        />
+
+        <PipelineControls
           visibilityFlags={this.props.visibilityFlags}
           toggleShowVisibility={this.props.toggleShowVisibility}
         />

@@ -33,6 +33,7 @@ class InsightsPanel extends React.Component {
         'movieSets': true,
         'results': true,
         'diffs': true,
+        'pipelines': true,
       },
       imageTypeToDisplay: '',
     }
