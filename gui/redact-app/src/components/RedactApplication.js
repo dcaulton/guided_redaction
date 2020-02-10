@@ -21,7 +21,7 @@ class RedactApplication extends React.Component {
       api_server_url: api_server_url,
       api_key: api_key,
       frameset_discriminator: 'gray8',
-      mask_method: 'blur_7x7',
+      mask_method: 'black_rectangle',
       movie_url: '',
       frameset_hash: '',
       image_width: 0,
@@ -31,7 +31,6 @@ class RedactApplication extends React.Component {
       flood_fill_url: api_server_url + 'v1/analyze/flood-fill',
       arrow_fill_url: api_server_url + 'v1/analyze/arrow-fill',
       scan_template_url: api_server_url + 'v1/analyze/scan-template',
-      redact_url: api_server_url + 'v1/redact/redact-image',
       crop_url: api_server_url + 'v1/parse/crop-image',
       parse_movie_url: api_server_url + 'v1/parse/split-and-hash-movie',
       codes_url: api_server_url + 'v1/codes',
@@ -74,7 +73,6 @@ class RedactApplication extends React.Component {
     this.getNextImageHash=this.getNextImageHash.bind(this)
     this.getPrevImageHash=this.getPrevImageHash.bind(this)
     this.handleMergeFramesets=this.handleMergeFramesets.bind(this)
-    this.callRedact=this.callRedact.bind(this)
     this.setTemplateMatches=this.setTemplateMatches.bind(this)
     this.clearTemplateMatches=this.clearTemplateMatches.bind(this)
     this.setSelectedArea=this.setSelectedArea.bind(this)
@@ -525,6 +523,7 @@ class RedactApplication extends React.Component {
         delete deepCopyMovies[this.state.movie_url]['framesets'][the_hash]['areas_to_redact']
         delete deepCopyMovies[this.state.movie_url]['framesets'][the_hash]['redacted_image']
         delete deepCopyMovies[this.state.movie_url]['framesets'][the_hash]['illustrated_image']
+        deepCopyMovies[this.state.movie_url]['framesets'][the_hash]['areas_to_redact'] = []
         this.setState({
           movies: deepCopyMovies
         })
@@ -730,7 +729,6 @@ class RedactApplication extends React.Component {
       flood_fill_url: api_server_url + 'v1/analyze/flood-fill',
       arrow_fill_url: api_server_url + 'v1/analyze/arrow-fill',
       scan_template_url: api_server_url + 'v1/analyze/scan-template',
-      redact_url: api_server_url + 'v1/redact/redact-image',
       crop_url: api_server_url + 'v1/parse/crop-image',
       parse_movie_url: api_server_url + 'v1/parse/split-and-hash-movie',
       codes_url: api_server_url + 'v1/codes',
@@ -797,30 +795,6 @@ class RedactApplication extends React.Component {
     frameset['redacted_image'] = responseJson['redacted_image_url']
     local_framesets[frameset_hash] = frameset
     this.handleUpdateFrameset(frameset_hash, frameset)
-  }
-
-  async callRedact(areas_to_redact_short, image_url, when_done=(()=>{})) {
-    let response = await fetch(this.state.redact_url, {
-      method: 'POST',
-      headers: this.buildJsonHeaders(),
-      body: JSON.stringify({
-        areas_to_redact: areas_to_redact_short,
-        mask_method: this.state.mask_method,
-        image_url: image_url,
-        return_type: 'url',
-      }),
-    })
-    .then((response) => response.json())
-    .then((responseJson) => {
-      this.storeRedactedImage(responseJson)
-    })
-    .then(() => {
-      when_done()
-    })
-    .catch((error) => {
-      console.error(error);
-    })
-    await response
   }
 
   addMovieAndSetActive(movie_url, movies, theCallback=(()=>{})) {
@@ -1058,6 +1032,11 @@ class RedactApplication extends React.Component {
     }
   }
 
+  async loadRedactSingleResults(job, when_done=(()=>{})) {
+    const resp_data = JSON.parse(job.response_data)
+    this.storeRedactedImage(resp_data)
+  }
+
   async loadIllustrateResults(job, when_done=(()=>{})) {
     let job_url = this.state.jobs_url + '/' + job.id
     await fetch(job_url, {
@@ -1175,6 +1154,8 @@ class RedactApplication extends React.Component {
         this.loadSplitAndHashResults(job, when_done)
 			} else if (job.app === 'redact' && job.operation === 'redact') {
         this.loadRedactResults(job, when_done)
+			} else if (job.app === 'redact' && job.operation === 'redact_single') {
+        this.loadRedactSingleResults(job, when_done)
 			} else if (job.app === 'parse' && job.operation === 'zip_movie') {
         this.loadZipMovieResults(job, when_done)
 			} else if (job.app === 'redact' && job.operation === 'illustrate') {
@@ -1783,7 +1764,6 @@ class RedactApplication extends React.Component {
                 getPrevImageHash={this.getPrevImageHash}
                 setImageScale={this.setImageScale}
                 showAdvancedPanels={this.state.showAdvancedPanels}
-                callRedact={this.callRedact}
                 templates={this.state.templates}
                 clearCurrentFramesetChanges={this.clearCurrentFramesetChanges}
                 whenDoneTarget={this.state.whenDoneTarget}
