@@ -146,7 +146,7 @@ class AnnotationControls extends React.Component {
   }
 
   render() {
-    if (!this.props.showAnnotate) {
+    if (!this.props.visibilityFlags['annotate']) {
       return([])
     }
 
@@ -210,7 +210,7 @@ class AnnotationControls extends React.Component {
                   <input
                     className='mr-2 mt-3'
                     type='checkbox'
-                    onChange={() => this.props.toggleShowAnnotate()}
+                    onChange={() => this.props.toggleShowVisibility('annotate')}
                   />
                 </div>
               </div>

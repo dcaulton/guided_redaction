@@ -15,7 +15,7 @@ class ResultsControls extends React.Component {
   }
 
   render() {
-    if (!this.props.showResults) {
+    if (!this.props.visibilityFlags['results']) {
       return([])
     }
 
@@ -46,7 +46,7 @@ class ResultsControls extends React.Component {
                   <input
                     className='mr-2 mt-3'
                     type='checkbox'
-                    onChange={() => this.props.toggleShowResults()}
+                    onChange={() => this.props.toggleShowVisibility('results')}
                   />
                 </div>
               </div>

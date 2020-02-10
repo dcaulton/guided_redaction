@@ -3,7 +3,7 @@ import React from 'react';
 class TelemetryControls extends React.Component {
 
   render() {
-    if (!this.props.showTelemetry) {
+    if (!this.props.visibilityFlags['telemetry']) {
       return([])
     }
 
@@ -33,7 +33,7 @@ class TelemetryControls extends React.Component {
                   <input
                     className='mr-2 mt-3'
                     type='checkbox'
-                    onChange={() => this.props.toggleShowTelemetry()}
+                    onChange={() => this.props.toggleShowVisibility('telemetry')}
                   />
                 </div>
               </div>

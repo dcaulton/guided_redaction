@@ -42,8 +42,8 @@ class BottomInsightsControls extends React.Component {
           deleteTemplate={this.props.deleteTemplate}
           cropImage={this.props.cropImage}
           movie_sets={this.props.movie_sets}
-          showTemplates={this.props.showTemplates}
-          toggleShowTemplates={this.props.toggleShowTemplates}
+          visibilityFlags={this.props.visibilityFlags}
+          toggleShowVisibility={this.props.toggleShowVisibility}
         />
 
         <SelectedAreaControls
@@ -52,8 +52,8 @@ class BottomInsightsControls extends React.Component {
           clearMovieSelectedAreas={this.props.clearMovieSelectedAreas}
           setSelectedAreaTemplateAnchor={this.props.setSelectedAreaTemplateAnchor}
           getCurrentSelectedAreaMeta={this.props.getCurrentSelectedAreaMeta}
-          showSelectedArea={this.props.showSelectedArea}
-          toggleShowSelectedArea={this.props.toggleShowSelectedArea}
+          visibilityFlags={this.props.visibilityFlags}
+          toggleShowVisibility={this.props.toggleShowVisibility}
         />
 
         <AnnotationControls
@@ -66,19 +66,19 @@ class BottomInsightsControls extends React.Component {
           handleSetMode={this.props.handleSetMode}
           setKeyDownCallback={this.props.setKeyDownCallback}
           getAnnotations={this.props.getAnnotations}
-          showAnnotate={this.props.showAnnotate}
-          toggleShowAnnotate={this.props.toggleShowAnnotate}
+          visibilityFlags={this.props.visibilityFlags}
+          toggleShowVisibility={this.props.toggleShowVisibility}
         />
 
         <TelemetryControls
-          showTelemetry={this.props.showTelemetry}
-          toggleShowTelemetry={this.props.toggleShowTelemetry}
+          visibilityFlags={this.props.visibilityFlags}
+          toggleShowVisibility={this.props.toggleShowVisibility}
         />
 
         <DiffControls
           displayInsightsMessage={this.props.displayInsightsMessage}
-          showDiffs={this.props.showDiffs}
-          toggleShowDiffs={this.props.toggleShowDiffs}
+          visibilityFlags={this.props.visibilityFlags}
+          toggleShowVisibility={this.props.toggleShowVisibility}
           movie_sets={this.props.movie_sets}
           submitInsightsJob={this.props.submitInsightsJob}
           blinkDiff={this.props.blinkDiff}
@@ -88,8 +88,8 @@ class BottomInsightsControls extends React.Component {
 
         <OcrControls
           displayInsightsMessage={this.props.displayInsightsMessage}
-          showOcr={this.props.showOcr}
-          toggleShowOcr={this.props.toggleShowOcr}
+          visibilityFlags={this.props.visibilityFlags}
+          toggleShowVisibility={this.props.toggleShowVisibility}
         />
 
         <MovieSetsControls
@@ -97,19 +97,19 @@ class BottomInsightsControls extends React.Component {
           movie_sets={this.props.movie_sets}
           setMovieSets={this.props.setMovieSets}
           draggedId={this.props.draggedId}
-          showMovieSets={this.props.showMovieSets}
-          toggleShowMovieSets={this.props.toggleShowMovieSets}
+          visibilityFlags={this.props.visibilityFlags}
+          toggleShowVisibility={this.props.toggleShowVisibility}
         />
 
         <ResultsControls
           displayInsightsMessage={this.props.displayInsightsMessage}
-          showResults={this.props.showResults}
-          toggleShowResults={this.props.toggleShowResults}
+          visibilityFlags={this.props.visibilityFlags}
+          toggleShowVisibility={this.props.toggleShowVisibility}
         />
 
         <FilesystemControls
-          showFilesystem={this.props.showFilesystem}
-          toggleShowFilesystem={this.props.toggleShowFilesystem}
+          visibilityFlags={this.props.visibilityFlags}
+          toggleShowVisibility={this.props.toggleShowVisibility}
           files={this.props.files}
           getFiles={this.props.getFiles}
           deleteFile={this.props.deleteFile}
@@ -128,24 +128,8 @@ class BottomInsightsControls extends React.Component {
           workbooks={this.props.workbooks}
           deleteWorkbook={this.props.deleteWorkbook}
           loadWorkbook={this.props.loadWorkbook}
-          showTemplates={this.props.showTemplates}
-          showSelectedArea={this.props.showSelectedArea}
-          showMovieSets={this.props.showMovieSets}
-          showResults={this.props.showResults}
-          showAnnotate={this.props.showAnnotate}
-          showTelemetry={this.props.showTelemetry}
-          showFilesystem={this.props.showFilesystem}
-          showOcr={this.props.showOcr}
-          showDiffs={this.props.showDiffs}
-          toggleShowTemplates={this.props.toggleShowTemplates}
-          toggleShowSelectedArea={this.props.toggleShowSelectedArea}
-          toggleShowMovieSets={this.props.toggleShowMovieSets}
-          toggleShowResults={this.props.toggleShowResults}
-          toggleShowAnnotate={this.props.toggleShowAnnotate}
-          toggleShowTelemetry={this.props.toggleShowTelemetry}
-          toggleShowFilesystem={this.props.toggleShowFilesystem}
-          toggleShowOcr={this.props.toggleShowOcr}
-          toggleShowDiffs={this.props.toggleShowDiffs}
+          visibilityFlags={this.props.visibilityFlags}
+          toggleShowVisibility={this.props.toggleShowVisibility}
           setFramesetDiscriminator={this.props.setFramesetDiscriminator}
           campaign_movies={this.props.campaign_movies}
           setCampaignMovies={this.props.setCampaignMovies}

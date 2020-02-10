@@ -23,15 +23,17 @@ class InsightsPanel extends React.Component {
       clicked_coords: (0,0),
       selected_area_template_anchor: '',
       draggedId: null,
-      showTemplates: true,
-      showSelectedArea: true,
-      showAnnotate: true,
-      showTelemetry: true,
-      showFilesystem: true,
-      showOcr: true,
-      showMovieSets: true,
-      showResults: true,
-      showDiffs: true,
+      visibilityFlags: {
+        'templates': true,
+        'selectedArea': true,
+        'annotate': true,
+        'telemetry': true,
+        'filesystem': true,
+        'ocr': true,
+        'movieSets': true,
+        'results': true,
+        'diffs': true,
+      },
       imageTypeToDisplay: '',
     }
     this.getSelectedAreas=this.getSelectedAreas.bind(this)
@@ -67,15 +69,7 @@ class InsightsPanel extends React.Component {
     this.setKeyDownCallback=this.setKeyDownCallback.bind(this)
     this.keyDownCallbacks = {}
     this.setDraggedId=this.setDraggedId.bind(this)
-    this.toggleShowTemplates=this.toggleShowTemplates.bind(this)
-    this.toggleShowSelectedArea=this.toggleShowSelectedArea.bind(this)
-    this.toggleShowMovieSets=this.toggleShowMovieSets.bind(this)
-    this.toggleShowResults=this.toggleShowResults.bind(this)
-    this.toggleShowAnnotate=this.toggleShowAnnotate.bind(this)
-    this.toggleShowTelemetry=this.toggleShowTelemetry.bind(this)
-    this.toggleShowFilesystem=this.toggleShowFilesystem.bind(this)
-    this.toggleShowOcr=this.toggleShowOcr.bind(this)
-    this.toggleShowDiffs=this.toggleShowDiffs.bind(this)
+    this.toggleShowVisibility=this.toggleShowVisibility.bind(this)
     this.loadInsightsJobResults=this.loadInsightsJobResults.bind(this)
     this.afterMovieSplitInsightsJobLoaded=this.afterMovieSplitInsightsJobLoaded.bind(this)
     this.blinkDiff=this.blinkDiff.bind(this)
@@ -137,66 +131,14 @@ class InsightsPanel extends React.Component {
     this.movieSplitDone(framesets)
   }
 
-  toggleShowTemplates() {
-    const new_value = (!this.state.showTemplates)
+  toggleShowVisibility(flag_name) {
+    let deepCopyVisibilityFlags= JSON.parse(JSON.stringify(this.state.visibilityFlags))
+    if (Object.keys(deepCopyVisibilityFlags).includes(flag_name)) {
+      const new_value = (!deepCopyVisibilityFlags[flag_name])
+      deepCopyVisibilityFlags[flag_name] = new_value
+    }
     this.setState({
-      showTemplates: new_value,
-    })
-  }
-
-  toggleShowSelectedArea() {
-    const new_value = (!this.state.showSelectedArea)
-    this.setState({
-      showSelectedArea: new_value,
-    })
-  }
-
-  toggleShowMovieSets() {
-    const new_value = (!this.state.showMovieSets)
-    this.setState({
-      showMovieSets: new_value,
-    })
-  }
-
-  toggleShowResults() {
-    const new_value = (!this.state.showResults)
-    this.setState({
-      showResults: new_value,
-    })
-  }
-
-  toggleShowAnnotate() {
-    const new_value = (!this.state.showAnnotate)
-    this.setState({
-      showAnnotate: new_value,
-    })
-  }
-
-  toggleShowTelemetry() {
-    const new_value = (!this.state.showTelemetry)
-    this.setState({
-      showTelemetry: new_value,
-    })
-  }
-
-  toggleShowFilesystem() {
-    const new_value = (!this.state.showFilesystem)
-    this.setState({
-      showFilesystem: new_value,
-    })
-  }
-
-  toggleShowOcr() {
-    const new_value = (!this.state.showOcr)
-    this.setState({
-      showOcr: new_value,
-    })
-  }
-
-  toggleShowDiffs() {
-    const new_value = (!this.state.showDiffs)
-    this.setState({
-      showDiffs: new_value,
+      visibilityFlags: deepCopyVisibilityFlags,
     })
   }
 
@@ -1086,26 +1028,10 @@ class InsightsPanel extends React.Component {
             movie_sets={this.props.movie_sets}
             setMovieSets={this.props.setMovieSets}
             draggedId={this.state.draggedId}
-            showTemplates={this.state.showTemplates}
-            showSelectedArea={this.state.showSelectedArea}
-            showMovieSets={this.state.showMovieSets}
-            showResults={this.state.showResults}
-            showAnnotate={this.state.showAnnotate}
-            showTelemetry={this.state.showTelemetry}
-            showFilesystem={this.state.showFilesystem}
-            showOcr={this.state.showOcr}
-            showDiffs={this.state.showDiffs}
+            visibilityFlags={this.state.visibilityFlags}
+            toggleShowVisibility={this.toggleShowVisibility}
             playSound={this.props.playSound}
             togglePlaySound={this.props.togglePlaySound}
-            toggleShowTemplates={this.toggleShowTemplates}
-            toggleShowSelectedArea={this.toggleShowSelectedArea}
-            toggleShowMovieSets={this.toggleShowMovieSets}
-            toggleShowResults={this.toggleShowResults}
-            toggleShowAnnotate={this.toggleShowAnnotate}
-            toggleShowTelemetry={this.toggleShowTelemetry}
-            toggleShowFilesystem={this.toggleShowFilesystem}
-            toggleShowOcr={this.toggleShowOcr}
-            toggleShowDiffs={this.toggleShowDiffs}
             setFramesetDiscriminator={this.props.setFramesetDiscriminator}
             campaign_movies={this.props.campaign_movies}
             setCampaignMovies={this.props.setCampaignMovies}

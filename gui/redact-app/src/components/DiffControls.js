@@ -69,7 +69,7 @@ class DiffControls extends React.Component {
   }
 
   render() {
-    if (!this.props.showDiffs) {
+    if (!this.props.visibilityFlags['diffs']) {
       return([])
     }
     const run_button = this.buildDiffRunButton()
@@ -101,7 +101,7 @@ class DiffControls extends React.Component {
                   <input
                     className='mr-2 mt-3'
                     type='checkbox'
-                    onChange={() => this.toggleShowDiffs}
+                    onChange={() => this.props.toggleShowVisibility('diffs')}
                   />
                 </div>
               </div>

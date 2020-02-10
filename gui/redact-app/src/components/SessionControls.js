@@ -202,39 +202,39 @@ class SessionControls extends React.Component {
     let workbook_name = this.buildWorkbookName()
     let workbook_id = this.buildWorkbookId()
     let show_templates_checked = ''
-    if (this.props.showTemplates) {
+    if (this.props.visibilityFlags['templates']) {
       show_templates_checked = 'checked'
     }
     let show_selected_area_checked = ''
-    if (this.props.showSelectedArea) {
+    if (this.props.visibilityFlags['selectedArea']) {
       show_selected_area_checked = 'checked'
     }
     let show_movie_sets_checked = ''
-    if (this.props.showMovieSets) {
+    if (this.props.visibilityFlags['movieSets']) {
       show_movie_sets_checked = 'checked'
     }
     let show_results_checked = ''
-    if (this.props.showResults) {
+    if (this.props.visibilityFlags['results']) {
       show_results_checked = 'checked'
     }
     let show_filesystem_checked = ''
-    if (this.props.showFilesystem) {
+    if (this.props.visibilityFlags['filesystem']) {
       show_filesystem_checked = 'checked'
     }
     let show_annotate_checked = ''
-    if (this.props.showAnnotate) {
+    if (this.props.visibilityFlags['annotate']) {
       show_annotate_checked = 'checked'
     }
     let show_telemetry_checked = ''
-    if (this.props.showTelemetry) {
+    if (this.props.visibilityFlags['telemetry']) {
       show_telemetry_checked = 'checked'
     }
     let show_ocr_checked = ''
-    if (this.props.showOcr) {
+    if (this.props.visibilityFlags['ocr']) {
       show_ocr_checked = 'checked'
     }
     let show_diffs_checked = ''
-    if (this.props.showDiffs) {
+    if (this.props.visibilityFlags['diffs']) {
       show_diffs_checked = 'checked'
     }
     let play_sound_checked = ''
@@ -337,7 +337,7 @@ class SessionControls extends React.Component {
                     id='toggle_annotate'
                     checked={show_templates_checked}
                     type='checkbox'
-                    onChange={() => this.props.toggleShowTemplates()}
+                    onChange={() => this.props.toggleShowVisibility('templates')}
                   />
                   Show Templates
                 </div>
@@ -348,7 +348,7 @@ class SessionControls extends React.Component {
                     id='toggle_results'
                     checked={show_selected_area_checked}
                     type='checkbox'
-                    onChange={() => this.props.toggleShowSelectedArea()}
+                    onChange={() => this.props.toggleShowVisibility('selectedArea')}
                   />
                   Show Selected Area
                 </div>
@@ -359,7 +359,7 @@ class SessionControls extends React.Component {
                     id='toggle_annotate'
                     checked={show_annotate_checked}
                     type='checkbox'
-                    onChange={() => this.props.toggleShowAnnotate()}
+                    onChange={() => this.props.toggleShowVisibility('annotate')}
                   />
                   Show Annotate
                 </div>
@@ -370,7 +370,7 @@ class SessionControls extends React.Component {
                     id='toggle_telemetry'
                     checked={show_telemetry_checked}
                     type='checkbox'
-                    onChange={() => this.props.toggleShowTelemetry()}
+                    onChange={() => this.props.toggleShowVisibility('telemetry')}
                   />
                   Show Telemetry
                 </div>
@@ -381,7 +381,7 @@ class SessionControls extends React.Component {
                     id='toggle_results'
                     checked={show_ocr_checked}
                     type='checkbox'
-                    onChange={() => this.props.toggleShowOcr()}
+                    onChange={() => this.props.toggleShowVisibility('ocr')}
                   />
                   Show Ocr
                 </div>
@@ -392,7 +392,7 @@ class SessionControls extends React.Component {
                     id='toggle_results'
                     checked={show_diffs_checked}
                     type='checkbox'
-                    onChange={() => this.props.toggleShowDiffs()}
+                    onChange={() => this.props.toggleShowVisibility('diffs')}
                   />
                   Show Diffs
                 </div>
@@ -403,7 +403,7 @@ class SessionControls extends React.Component {
                     id='toggle_movie_sets'
                     checked={show_movie_sets_checked}
                     type='checkbox'
-                    onChange={() => this.props.toggleShowMovieSets()}
+                    onChange={() => this.props.toggleShowVisibility('movieSets')}
                   />
                   Show Movie Sets
                 </div>
@@ -414,7 +414,7 @@ class SessionControls extends React.Component {
                     id='toggle_results'
                     checked={show_results_checked}
                     type='checkbox'
-                    onChange={() => this.props.toggleShowResults()}
+                    onChange={() => this.props.toggleShowVisibility('results')}
                   />
                   Show Results
                 </div>
@@ -425,7 +425,7 @@ class SessionControls extends React.Component {
                     id='toggle_filesystem'
                     checked={show_filesystem_checked}
                     type='checkbox'
-                    onChange={() => this.props.toggleShowFilesystem()}
+                    onChange={() => this.props.toggleShowVisibility('filesystem')}
                   />
                   Show Filesystem
                 </div>

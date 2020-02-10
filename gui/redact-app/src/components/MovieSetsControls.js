@@ -143,7 +143,7 @@ class MovieSetsControls extends React.Component {
     const ms_load_button = this.buildMovieSetPickerButton()
     const ms_movies = this.buildMovieSetMoviesList()
 
-    if (!this.props.showMovieSets) {
+    if (!this.props.visibilityFlags['movieSets']) {
       return([])
     }
 
@@ -173,7 +173,7 @@ class MovieSetsControls extends React.Component {
                   <input
                     className='mr-2 mt-3'
                     type='checkbox'
-                    onChange={() => this.props.toggleShowMovieSets()}
+                    onChange={() => this.props.toggleShowVisibility('movieSets')}
                   />
                 </div>
               </div>

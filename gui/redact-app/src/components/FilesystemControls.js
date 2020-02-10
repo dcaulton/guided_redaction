@@ -147,7 +147,7 @@ class FilesystemControls extends React.Component {
   }
 
   render() {
-    if (!this.props.showFilesystem) {
+    if (!this.props.visibilityFlags['filesystem']) {
       return([])
     }
     const files_list = this.buildFilesList()
@@ -182,7 +182,7 @@ class FilesystemControls extends React.Component {
                   <input
                     className='mr-2 mt-3'
                     type='checkbox'
-                    onChange={() => this.props.toggleShowFilesystem()}
+                    onChange={() => this.props.toggleShowVisibility('filesystem')}
                   />
                 </div>
               </div>

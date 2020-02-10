@@ -354,7 +354,7 @@ class TemplateControls extends React.Component {
   }
 
   render() {
-    if (!this.props.showTemplates) {                                             
+    if (!this.props.visibilityFlags['templates']) {                                             
       return([])                                                                
     }
 
@@ -395,7 +395,7 @@ class TemplateControls extends React.Component {
                   <input
                     className='mr-2 mt-3'
                     type='checkbox'
-                    onChange={() => this.props.toggleShowTemplates()}
+                    onChange={() => this.props.toggleShowVisibility('templates')}
                   />
                 </div>
               </div>

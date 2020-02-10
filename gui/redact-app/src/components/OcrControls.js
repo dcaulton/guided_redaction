@@ -3,7 +3,7 @@ import React from 'react';
 class OcrControls extends React.Component {
 
   render() {
-    if (!this.props.showOcr) {
+    if (!this.props.visibilityFlags['ocr']) {
       return([])
     }
 
@@ -33,7 +33,7 @@ class OcrControls extends React.Component {
                   <input
                     className='mr-2 mt-3'
                     type='checkbox'
-                    onChange={() => this.props.toggleShowOcr()}
+                    onChange={() => this.props.toggleShowVisibility('ocr')}
                   />
                 </div>
               </div>

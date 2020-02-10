@@ -3,8 +3,8 @@ import React from 'react';
 class SelectedAreaControls extends React.Component {
 
   render() {
-    if (!this.props.showSelectedArea) {                                             
-      return([])                                                                
+    if (!this.props.visibilityFlags['selectedArea']) {
+      return([])
     }
     const anchor_names = this.props.getCurrentTemplateAnchorNames()
 
@@ -50,7 +50,7 @@ class SelectedAreaControls extends React.Component {
                   <input
                     className='mr-2 mt-3'
                     type='checkbox'
-                    onChange={() => this.props.toggleShowSelectedArea()}
+                    onChange={() => this.props.toggleShowVisibility('selectedArea')}
                   />
                 </div>
               </div>
