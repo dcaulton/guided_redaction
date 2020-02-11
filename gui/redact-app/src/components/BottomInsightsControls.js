@@ -72,6 +72,15 @@ class BottomInsightsControls extends React.Component {
         />
 
         <TelemetryControls
+          displayInsightsMessage={this.props.displayInsightsMessage}
+          movie_sets={this.props.movie_sets}
+          submitInsightsJob={this.props.submitInsightsJob}
+          telemetry_rules={this.props.telemetry_rules}
+          current_telemetry_rule_id={this.props.current_telemetry_rule_id}
+          telemetry_raw_data={this.props.telemetry_raw_data}
+          setTelemetryRawData={this.props.setTelemetryRawData}
+          setTelemetryRules={this.props.setTelemetryRules}
+          setCurrentTelemetryRuleId={this.props.setCurrentTelemetryRuleId}
           visibilityFlags={this.props.visibilityFlags}
           toggleShowVisibility={this.props.toggleShowVisibility}
         />

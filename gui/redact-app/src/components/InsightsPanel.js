@@ -1048,6 +1048,12 @@ class InsightsPanel extends React.Component {
             frameset_discriminator={this.props.frameset_discriminator}
             preserveAllJobs={this.props.preserveAllJobs}
             togglePreserveAllJobs={this.props.togglePreserveAllJobs}
+            telemetry_rules={this.props.telemetry_rules}
+            current_telemetry_rule_id={this.props.current_telemetry_rule_id}
+            telemetry_raw_data={this.props.telemetry_raw_data}
+            setTelemetryRawData={this.props.setTelemetryRawData}
+            setTelemetryRules={this.props.setTelemetryRules}
+            setCurrentTelemetryRuleId={this.props.setCurrentTelemetryRuleId}
           />
         </div>
 

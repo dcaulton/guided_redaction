@@ -68,6 +68,9 @@ class RedactApplication extends React.Component {
         lineWidth: 5,
       },
       preserveAllJobs: false,
+      telemetry_rules: {},
+      current_telemetry_rule_id: '',
+      telemetry_raw_data: [],
     }
 
     this.getNextImageHash=this.getNextImageHash.bind(this)
@@ -133,6 +136,27 @@ class RedactApplication extends React.Component {
     this.togglePreserveAllJobs=this.togglePreserveAllJobs.bind(this)
     this.getImageUrl=this.getImageUrl.bind(this)
     this.setFramesetHash=this.setFramesetHash.bind(this)
+    this.setTelemetryRawData=this.setTelemetryRawData.bind(this)
+    this.setTelemetryRules=this.setTelemetryRules.bind(this)
+    this.setCurrentTelemetryRuleId=this.setCurrentTelemetryRuleId.bind(this)
+  }
+
+  setTelemetryRawData(raw_data) {
+    this.setState({
+      telemetry_raw_data: raw_data,
+    })
+  }
+
+  setTelemetryRules(rules) {
+    this.setState({
+      telemetry_rules: rules,
+    })
+  }
+
+  setCurrentTelemetryRuleId(rule_id) {
+    this.setState({
+      current_telemetry_rule_id: rule_id,
+    })
   }
 
   setIllustrateParameters(hash_in) {
@@ -1853,6 +1877,12 @@ class RedactApplication extends React.Component {
                 checkAndUpdateApiUris={this.checkAndUpdateApiUris}
                 preserveAllJobs={this.state.preserveAllJobs}
                 togglePreserveAllJobs={this.togglePreserveAllJobs}
+                telemetry_rules={this.state.telemetry_rules}
+                current_telemetry_rule_id={this.state.current_telemetry_rule_id}
+                telemetry_raw_data={this.state.telemetry_raw_data}
+                setTelemetryRawData={this.setTelemetryRawData}
+                setTelemetryRules={this.setTelemetryRules}
+                setCurrentTelemetryRuleId={this.setCurrentTelemetryRuleId}
               />
             </Route>
           </Switch>
