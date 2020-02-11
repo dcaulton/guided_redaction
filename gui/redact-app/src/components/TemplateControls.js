@@ -8,8 +8,8 @@ class TemplateControls extends React.Component {
       template_name: 'template 1',
       app_name: '',
       template_scale: '1_1',
-      template_match_percent: 'Match %',
-      template_match_method: '',
+      template_match_percent: 90,
+      template_match_method: 'any',
       template_download_link: '',
     }
     this.afterTemplateLoaded=this.afterTemplateLoaded.bind(this)
@@ -81,8 +81,8 @@ class TemplateControls extends React.Component {
         template_name: 'template 1',
         app_name: '',
         template_scale: '1_1',
-        template_match_percent: 'Match %',
-        template_match_method: '',
+        template_match_percent: 90,
+        template_match_method: 'any',
         template_download_link: '',
       })
     })
@@ -282,7 +282,7 @@ class TemplateControls extends React.Component {
   buildAnchorPics() {
     let return_arr = []
     if (this.props.current_template_id) {
-      return_arr.push(<span key='992234'>embedded anchors: </span>)
+      return_arr.push(<span key='992234'>Embedded Anchors: </span>)
       let cur_template = this.props.templates[this.props.current_template_id]
       let anchor_ids = Object.keys(cur_template['anchors'])
       for (let i=0; i < anchor_ids.length; i++) {
@@ -294,16 +294,26 @@ class TemplateControls extends React.Component {
           return_arr.push(
             <div 
               key={'hey' + i}
-              className='m-2 p-2 d-inline'
+              className='p-2 border-bottom'
             >
-              <img 
-                max-height='100'
-                max-width='100'
-                key={'dapper' + i}
-                alt={anchor['id']}
-                title={anchor['id']}
-                src={the_src}
-              />
+              <div className='d-inline'>
+                <div className='d-inline'>
+                  Anchor id: 
+                </div>
+                <div className='d-inline ml-2'>
+                  {anchor['id']}
+                </div>
+              </div>
+              <div className='d-inline ml-2'>
+                <img 
+                  max-height='100'
+                  max-width='100'
+                  key={'dapper' + i}
+                  alt={anchor['id']}
+                  title={anchor['id']}
+                  src={the_src}
+                />
+              </div>
             </div>
           )
         }
@@ -406,197 +416,250 @@ class TemplateControls extends React.Component {
                 className='row collapse'
             >
               <div id='template_controls_main' className='col'>
-                <div 
-                    className='d-inline'
-                >
-                  {template_load_button}
-                </div>
 
-                <button
-                    className='btn btn-primary ml-2 mt-2'
-                    onClick={() => this.doAddTemplateAnchor()}
-                >
-                  Add Anchor
-                </button>
-
-                <button
-                    className='btn btn-primary ml-2 mt-2'
-                    onClick={() => this.props.clearCurrentTemplateAnchor()}
-                >
-                  Clear Anchors
-                </button>
-
-                <button
-                    className='btn btn-primary ml-2 mt-2'
-                    onClick={() => this.doAddTemplateMaskZone()}
-                >
-                  Add Mask Zone
-                </button>
-
-                <button
-                    className='btn btn-primary ml-2 mt-2'
-                    onClick={() => this.props.clearCurrentTemplateMaskZones()}
-                >
-                  Clear Zones
-                </button>
-
-                <div 
-                    className='d-inline'
-                >
-                  {template_delete_button}
-                </div>
-
-                <div 
-                    className='d-inline'
-                >
-									<button
-											className='btn btn-primary ml-2 mt-2'
-											onClick={() => 
-                        this.doTemplateSave(
-                          this.props.displayInsightsMessage('Template has been saved')
-                        )
-                      }
-									>
-										Save
-									</button>
-                </div>
-
-                <div className='d-inline'>
-                  {run_button}
-                </div>
-
-                <div className='d-inline'>
-                  <button
-                      className='btn btn-primary ml-2 mt-2 dropdown-toggle'
-                      type='button'
-                      id='deleteTemplateMatchDropdownButton'
-                      data-toggle='dropdown'
-                      area-haspopup='true'
-                      area-expanded='false'
+                <div className='row'>
+                  <div 
+                      className='d-inline'
                   >
-                    Clear Matches
-                  </button>
-                  <div className='dropdown-menu' aria-labelledby='deleteTemplateMatchDropdownButton'>
-                    <button className='dropdown-item'
-                        onClick={() => this.props.clearTemplateMatches('image')}
-                    >
-                      Image
-                    </button>
-                    <button className='dropdown-item'
-                        onClick={() => this.props.clearTemplateMatches('movie')}
-                    >
-                      Movie
-                    </button>
-                    <button className='dropdown-item'
-                        onClick={() => this.props.clearTemplateMatches('all_movies')}
-                    >
-                      All Movies
-                    </button>
-                    <button className='dropdown-item'
-                        onClick={() => this.props.clearTemplateMatches('all_templates')}
-                    >
-                      All Templates
-                    </button>
+                    {template_load_button}
                   </div>
-                </div>
-                <div className='d-inline ml-2'>
-                  <select
-                      name='template_scale'
-                      onChange={(event) => this.setTemplateScale(event.target.value)}
+
+                  <button
+                      className='btn btn-primary ml-2 mt-2'
+                      onClick={() => this.doAddTemplateAnchor()}
                   >
-                    <option value='1:1'>--Scale--</option>
-                    <option value='1:1'>1:1 (default)</option>
-                    <option value='+/-10/1'>+/- 10%, 1% increments</option>
-                    <option value='+/-20/1'>+/- 20%, 1% increments</option>
-                    <option value='+/-20/5'>+/- 20%, 5% increments</option>
-                    <option value='+/-25/1'>+/- 25%, 1% increments</option>
-                    <option value='+/-25/5'>+/- 25%, 5% increments</option>
-                    <option value='+/-40/5'>+/- 40%, 5% increments</option>
-                    <option value='+/-50/5'>+/- 50%, 5% increments</option>
-                  </select>
-                </div>
+                    Add Anchor
+                  </button>
 
-                <div
-                    className='d-inline ml-2 mt-2'
-                >   
-                    <input 
-                        id='template_match_percent'
-                        size='10'
-                        title='template match percent'
-                        value={this.state.template_match_percent}
-                        onChange={(event) => this.setTemplateMatchPercent(event.target.value)}
-                    />
-                </div>
-
-                <div
-                    className='d-inline ml-2 mt-2'
-                >   
-                    <input                                                      
-                        id='template_name'                                      
-                        key='template_name_1'                                   
-                        title='template name'
-                        size='15'                                               
-                        value={this.state.template_name}
-                        onChange={(event) => this.setTemplateName(event.target.value)}
-                    /> 
-                    {template_saved_unsaved}
-                </div>
-
-                <div
-                    className='d-inline ml-2 mt-2'
-                >   
-                    <input                                                      
-                        id='app_name'                                      
-                        key='app_name_1'                                   
-                        title='app name'
-                        size='15'                                               
-                        value={this.state.app_name}
-                        onChange={(event) => this.setTemplateAppName(event.target.value)}
-                    /> 
-                </div>
-
-                <div className='d-inline ml-2'>
-                  <select
-                      name='template_match_method'
-                      onChange={(event) => this.setTemplateMatchMethod(event.target.value)}
+                  <button
+                      className='btn btn-primary ml-2 mt-2'
+                      onClick={() => this.props.clearCurrentTemplateAnchor()}
                   >
-                    <option value='all'>--Match Method--</option>
-                    <option value='all'>Match All Anchors</option>
-                    <option value='any'>Match Any Anchor</option>
-                  </select>
-                </div>
+                    Clear Anchors
+                  </button>
 
-                <div className='row ml-2 mt-3'>
+                  <button
+                      className='btn btn-primary ml-2 mt-2'
+                      onClick={() => this.doAddTemplateMaskZone()}
+                  >
+                    Add Mask Zone
+                  </button>
+
+                  <button
+                      className='btn btn-primary ml-2 mt-2'
+                      onClick={() => this.props.clearCurrentTemplateMaskZones()}
+                  >
+                    Clear Zones
+                  </button>
+
+                  <div 
+                      className='d-inline'
+                  >
+                    {template_delete_button}
+                  </div>
+
                   <div 
                       className='d-inline'
                   >
                     <button
                         className='btn btn-primary ml-2 mt-2'
-                        onClick={() => this.doTemplateExport() }
+                        onClick={() => 
+                          this.doTemplateSave(
+                            this.props.displayInsightsMessage('Template has been saved')
+                          )
+                        }
                     >
-                      Export
+                      Save
                     </button>
                   </div>
 
-                  <div 
-                      className='d-inline'
-                  >
-                    {template_download_button}
+                  <div className='d-inline'>
+                    {run_button}
                   </div>
 
-                  <div 
-                      className='d-inline m-2'
-                  >
-                    <div>
-                    <span className='font-weight-bold' >Import Template:</span>
-                    <input 
-                        type="file" 
-                        id="template_file" 
-                        name="template_files[]" 
-                        size='20'
-                        multiple 
-                        onChange={(event) => this.importTemplate(event.target.files)}
-                    />
+                  <div className='d-inline'>
+                    <button
+                        className='btn btn-primary ml-2 mt-2 dropdown-toggle'
+                        type='button'
+                        id='deleteTemplateMatchDropdownButton'
+                        data-toggle='dropdown'
+                        area-haspopup='true'
+                        area-expanded='false'
+                    >
+                      Clear Matches
+                    </button>
+                    <div className='dropdown-menu' aria-labelledby='deleteTemplateMatchDropdownButton'>
+                      <button className='dropdown-item'
+                          onClick={() => this.props.clearTemplateMatches('image')}
+                      >
+                        Image
+                      </button>
+                      <button className='dropdown-item'
+                          onClick={() => this.props.clearTemplateMatches('movie')}
+                      >
+                        Movie
+                      </button>
+                      <button className='dropdown-item'
+                          onClick={() => this.props.clearTemplateMatches('all_movies')}
+                      >
+                        All Movies
+                      </button>
+                      <button className='dropdown-item'
+                          onClick={() => this.props.clearTemplateMatches('all_templates')}
+                      >
+                        All Templates
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+
+
+                <div className='row mt-2'>
+                  <div className='d-inline ml-2'>
+                    Scale
+                  </div>
+                  <div className='d-inline ml-2'>
+                    <select
+                        name='template_scale'
+                        value={this.props.template_scale}
+                        onChange={(event) => this.setTemplateScale(event.target.value)}
+                    >
+                      <option value='1:1'>actual image scale only</option>
+                      <option value='+/-10/1'>+/- 10%, 1% increments</option>
+                      <option value='+/-20/1'>+/- 20%, 1% increments</option>
+                      <option value='+/-20/5'>+/- 20%, 5% increments</option>
+                      <option value='+/-25/1'>+/- 25%, 1% increments</option>
+                      <option value='+/-25/5'>+/- 25%, 5% increments</option>
+                      <option value='+/-40/5'>+/- 40%, 5% increments</option>
+                      <option value='+/-50/5'>+/- 50%, 5% increments</option>
+                    </select>
+                  </div>
+                </div>
+
+
+                <div className='row mt-2'>
+                  <div className='d-inline ml-2'>
+                    Match Percent
+                  </div>
+                  <div
+                      className='d-inline ml-2'
+                  >   
+                      <input 
+                          id='template_match_percent'
+                          size='4'
+                          title='template match percent'
+                          value={this.state.template_match_percent}
+                          onChange={(event) => this.setTemplateMatchPercent(event.target.value)}
+                      />
+                  </div>
+                </div>
+
+
+                <div className='row mt-2'>
+                  <div className='d-inline ml-2'>
+                    Match Method
+                  </div>
+                  <div className='d-inline ml-2'>
+                    <select
+                        name='template_match_method'
+                        value={this.state.template_match_method}
+                        onChange={(event) => this.setTemplateMatchMethod(event.target.value)}
+                    >
+                      <option value='all'>Match All Anchors</option>
+                      <option value='any'>Match Any Anchor</option>
+                    </select>
+                  </div>
+
+                </div>
+
+
+
+
+
+
+                <div className='row mt-1'>
+                  <div className='d-inline ml-2'>
+                    Template Name: 
+                  </div>
+                  <div
+                      className='d-inline ml-2'
+                  >   
+                      <input                                                      
+                          id='template_name'                                      
+                          key='template_name_1'                                   
+                          title='template name'
+                          size='15'                                               
+                          value={this.state.template_name}
+                          onChange={(event) => this.setTemplateName(event.target.value)}
+                      /> 
+                      {template_saved_unsaved}
+                  </div>
+                </div>
+
+                <div className='row mt-1'>
+                  <div className='d-inline ml-2'>
+                    App Name: 
+                  </div>
+                  <div
+                      className='d-inline ml-2'
+                  >   
+                      <input                                                      
+                          id='app_name'                                      
+                          key='app_name_1'                                   
+                          title='app name'
+                          size='15'                                               
+                          value={this.state.app_name}
+                          onChange={(event) => this.setTemplateAppName(event.target.value)}
+                      /> 
+                  </div>
+                </div>
+
+                <div className='row ml-2 mt-3 border-top'>
+                  <div className='col'>
+                    <div className='row mt-2'>
+                      <div 
+                          className='d-inline'
+                      >
+                        <button
+                            className='btn btn-primary ml-2'
+                            onClick={() => this.doTemplateExport() }
+                        >
+                          Export
+                        </button>
+                      </div>
+
+                      <div 
+                          className='d-inline ml-2'
+                      >
+                        {template_download_button}
+                      </div>
+                    </div>
+
+                    <div className='row'>
+                      <div 
+                          className='d-inline m-2'
+                      >
+                        <div>
+                        <span className='font-weight-bold' >Import Template:</span>
+                        <input 
+                            type="file" 
+                            id="template_file" 
+                            name="template_files[]" 
+                            size='20'
+                            multiple 
+                            onChange={(event) => this.importTemplate(event.target.files)}
+                        />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className='row border-top'>
+                      <div className='row m-3'>
+                        <div className='d-inline ml-2'>
+                          {anchor_pics}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -604,11 +667,6 @@ class TemplateControls extends React.Component {
 
 
 
-                <div className='row m-3'>
-                  <div className='d-inline ml-2'>
-                    {anchor_pics}
-                  </div>
-                </div>
               </div>
 
             </div>
