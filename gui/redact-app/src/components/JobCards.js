@@ -53,7 +53,10 @@ class JobCardList extends React.Component {
 					</button>  
           {collapse_all_link}
         </div>
-        <div id='job_card_wrapper'>
+        <div 
+          id='job_card_wrapper' 
+          className='ml-3'
+        >
           {sorted_jobs.map((value, index) => {
             return (
             <JobCard

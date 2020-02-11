@@ -636,12 +636,11 @@ class TemplateControls extends React.Component {
                       </div>
                     </div>
 
-                    <div className='row'>
-                      <div 
-                          className='d-inline m-2'
-                      >
-                        <div>
-                        <span className='font-weight-bold' >Import Template:</span>
+                    <div className='row mb-2'>
+                      <div className='d-inline mt-1'>
+                        Import Template:
+                      </div>
+                      <div className='d-inline ml-2' >
                         <input 
                             type="file" 
                             id="template_file" 
@@ -650,7 +649,6 @@ class TemplateControls extends React.Component {
                             multiple 
                             onChange={(event) => this.importTemplate(event.target.files)}
                         />
-                        </div>
                       </div>
                     </div>
 
