@@ -265,6 +265,7 @@ class TelemetryControls extends React.Component {
         actions: rule['actions'],
         test_data: rule['test_data'],
       })
+      this.props.setCurrentTelemetryRuleId(rule_id)
       this.props.displayInsightsMessage('telemetry rule loaded')
     }
   }

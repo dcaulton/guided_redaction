@@ -2,11 +2,25 @@ import React from 'react';
 
 class SelectedAreaControls extends React.Component {
 
+  getCurrentTemplateAnchorNames() {
+    if (Object.keys(this.props.templates).includes(this.props.current_template_id)) {
+      let cur_template = this.props.templates[this.props.current_template_id]
+      let return_arr = []
+      for (let i=0; i < Object.keys(cur_template['anchors']).length; i++) {
+        const anchor = cur_template['anchors'][i]
+        return_arr.push(anchor['id'])
+      }
+      return return_arr
+    } else {
+      return []
+    }
+  }
+
   render() {
     if (!this.props.visibilityFlags['selectedArea']) {
       return([])
     }
-    const anchor_names = this.props.getCurrentTemplateAnchorNames()
+    const anchor_names = this.getCurrentTemplateAnchorNames()
 
     const sam = this.props.getCurrentSelectedAreaMeta()
     const or_template_id = sam['origin_template_id']

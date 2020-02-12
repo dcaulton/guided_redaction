@@ -149,7 +149,7 @@ class MoviePanel extends React.Component {
       this.props.submitJob({
         job_data: job_data, 
         after_submit: () => {this.setMessage('redact frames job was submitted')}, 
-        cancel_after_loading: false, 
+        cancel_after_loading: true, 
         after_loaded: () => {this.setMessage('frameset redactions completed')}, 
         when_failed: () => {this.setMessage('redact frames job failed')},
       })

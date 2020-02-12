@@ -31,25 +31,26 @@ class BottomInsightsControls extends React.Component {
 
         <TemplateControls 
           handleSetMode={this.props.handleSetMode}
-          clearCurrentTemplateAnchor={this.props.clearCurrentTemplateAnchor}
-          clearCurrentTemplateMaskZones={this.props.clearCurrentTemplateMaskZones}
+          getCurrentTemplateMatches={this.props.getCurrentTemplateMatches}
           submitInsightsJob={this.props.submitInsightsJob}
-          clearTemplateMatches={this.props.clearTemplateMatches}
           templates={this.props.templates}
           current_template_id={this.props.current_template_id}
           displayInsightsMessage={this.props.displayInsightsMessage}
           setCurrentTemplateId={this.props.setCurrentTemplateId}
-          saveTemplate={this.props.saveTemplate}
-          deleteTemplate={this.props.deleteTemplate}
+          setTemplates={this.props.setTemplates}
           cropImage={this.props.cropImage}
           movie_sets={this.props.movie_sets}
           visibilityFlags={this.props.visibilityFlags}
           toggleShowVisibility={this.props.toggleShowVisibility}
+          addInsightsCallback={this.props.addInsightsCallback}
+          insights_image={this.props.insights_image}
+          movie_url={this.props.movie_url}
         />
 
         <SelectedAreaControls
           handleSetMode={this.props.handleSetMode}
-          getCurrentTemplateAnchorNames={this.props.getCurrentTemplateAnchorNames}
+          templates={this.props.templates}
+          current_template_id={this.props.current_template_id}
           clearMovieSelectedAreas={this.props.clearMovieSelectedAreas}
           setSelectedAreaTemplateAnchor={this.props.setSelectedAreaTemplateAnchor}
           getCurrentSelectedAreaMeta={this.props.getCurrentSelectedAreaMeta}
