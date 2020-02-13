@@ -14,8 +14,8 @@ import base64
 import numpy as np
 from django.conf import settings
 from django.shortcuts import render
+import re
 import requests
-#from rest_framework import viewsets
 from base import viewsets
 from rest_framework.response import Response
 from guided_redaction.utils.classes.FileWriter import FileWriter
@@ -332,25 +332,37 @@ class AnalyzeViewSetTelemetry(viewsets.ViewSet):
         telemetry_raw_data = requests.get(
           telemetry_data['raw_data_url'],
           verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
-        ).content
-        if telemetry_raw_data:
+        ).text
+        telemetry_data = telemetry_raw_data.split('\n')
+        if telemetry_data:
             for movie_url in movies.keys():
+                matching_frames_for_movie = []
                 movie_filename = movie_url.split('/')[-1]
                 movie_id = movie_filename.split('.')[0]
                 if movie_id not in movie_mappings:
                     print('cannot find recording id for movie url ' + movie_url + ', ' + movie_id)
                     print(movie_mappings.keys())
                     continue
-                recording_id = movie_mappings[movie_id]
                 movie = movies[movie_url]
-                matching_frames_for_movie = analyzer.find_matching_frames(
-                    movie_url=movie_url,
-                    recording_id=recording_id,
-                    movie=movie, 
-                    telemetry_raw_data=telemetry_raw_data, 
-                    telemetry_rule=telemetry_rule
-                )
+                recording_id = movie_mappings[movie_id]
+                relevant_telemetry_rows = self.get_relevant_telemetry_rows(recording_id, telemetry_data)
+                if relevant_telemetry_rows:
+                    matching_frames_for_movie = analyzer.find_matching_frames(
+                        movie_url=movie_url,
+                        recording_id=recording_id,
+                        movie=movie, 
+                        telemetry_data=relevant_telemetry_rows, 
+                        telemetry_rule=telemetry_rule
+                    )
                 matching_frames[movie_url] = matching_frames_for_movie
 
         return Response({'matching_frames': matching_frames})
+
+    def get_relevant_telemetry_rows(self, recording_id, telemetry_data):
+        matching_rows = []
+        regex = re.compile(recording_id.upper())
+        for row in telemetry_data:
+            if regex.search(row):
+                matching_rows.append(row)
+        return matching_rows
 
