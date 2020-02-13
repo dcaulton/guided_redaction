@@ -5,6 +5,7 @@ import os
 from guided_redaction.analyze.classes.EastPlusTessGuidedAnalyzer import (
     EastPlusTessGuidedAnalyzer,
 )
+from guided_redaction.analyze.classes.TelemetryAnalyzer import TelemetryAnalyzer
 from guided_redaction.analyze.classes.TemplateMatcher import TemplateMatcher
 from guided_redaction.analyze.classes.ExtentsFinder import ExtentsFinder
 from django.http import HttpResponse, JsonResponse
@@ -304,4 +305,52 @@ class AnalyzeViewSetFilter(viewsets.ViewSet):
             if frameset_hash and frameset_hash not in ret_arr:
                 ret_arr.append(frameset_hash)
         return ret_arr
+
+class AnalyzeViewSetTelemetry(viewsets.ViewSet):
+    def create(self, request):
+        request_data = request.data
+        return self.process_create_request(request_data)
+
+    def process_create_request(self, request_data):
+        if not request_data.get("movies"):
+            return HttpResponse("movies is required", status=400)
+        if not request_data.get("telemetry_data"):
+            return HttpResponse("telemetry_data is required", status=400)
+        if not request_data.get("telemetry_rule"):
+            return HttpResponse("telemetry_rule is required", status=400)
+        movies = request_data["movies"]
+        telemetry_rule = request_data["telemetry_rule"]
+        telemetry_data = request_data["telemetry_data"]
+        if 'raw_data_url' not in telemetry_data.keys():
+            return HttpResponse("telemetry raw data is required", status=400)
+        if 'movie_mappings' not in telemetry_data.keys():
+            return HttpResponse("telemetry movie mappings is required", status=400)
+        movie_mappings = telemetry_data['movie_mappings']
+        analyzer = TelemetryAnalyzer()
+        matching_frames = {}
+
+        telemetry_raw_data = requests.get(
+          telemetry_data['raw_data_url'],
+          verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
+        ).content
+        if telemetry_raw_data:
+            for movie_url in movies.keys():
+                movie_filename = movie_url.split('/')[-1]
+                movie_id = movie_filename.split('.')[0]
+                if movie_id not in movie_mappings:
+                    print('cannot find recording id for movie url ' + movie_url + ', ' + movie_id)
+                    print(movie_mappings.keys())
+                    continue
+                recording_id = movie_mappings[movie_id]
+                movie = movies[movie_url]
+                matching_frames_for_movie = analyzer.find_matching_frames(
+                    movie_url=movie_url,
+                    recording_id=recording_id,
+                    movie=movie, 
+                    telemetry_raw_data=telemetry_raw_data, 
+                    telemetry_rule=telemetry_rule
+                )
+                matching_frames[movie_url] = matching_frames_for_movie
+
+        return Response({'matching_frames': matching_frames})
 
