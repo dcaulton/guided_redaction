@@ -11,7 +11,6 @@ class TelemetryControls extends React.Component {
       start_conditions: [],
       end_conditions: [],
       actions: [],
-      test_data: [],
       unsaved_changes: false,
     }
   }
@@ -26,7 +25,6 @@ class TelemetryControls extends React.Component {
         start_conditions: rule['start_conditions'],
         end_conditions: rule['end_conditions'],
         actions: rule['actions'],
-        test_data: rule['test_data'],
       })
     }
   }
@@ -206,31 +204,54 @@ class TelemetryControls extends React.Component {
     )
   }
 
-  updateTestData(test_data_as_string) {
-    const test_data = test_data_as_string.split('\n')
-    this.setState({
-      test_data: test_data,
-      unsaved_changes: true,
-    })
+  updateMovieMappings(movie_mappings_as_string) {
+    let movie_mappings = {}
+    const movie_mappings_arr = movie_mappings_as_string.split('\n')
+    for (let i=0; i < movie_mappings_arr.length; i++) {
+      const mapping_row = movie_mappings_arr[i]
+      const x = mapping_row.indexOf(':')
+      if (x > -1) {
+         const movie_id = mapping_row.substring(0, x).trim()
+         const recording_id = mapping_row.substring(x+1).trim()
+         movie_mappings[movie_id] = recording_id
+      }
+    }
+    this.props.setTelemetryData(
+      {movie_mappings: movie_mappings}, 
+      (() => {this.props.displayInsightsMessage('Movie mappings have been loaded')}),
+      (() => {this.props.displayInsightsMessage('nasty stuff happened')})
+    )
   }
 
-  buildTestData() {
+  buildMovieMappings() {
+    let movie_mappings = []
+    for (let i=0; i < Object.keys(this.props.telemetry_data['movie_mappings']).length; i++) {
+      const movie_id = Object.keys(this.props.telemetry_data['movie_mappings'])[i]
+      const recording_id = this.props.telemetry_data['movie_mappings'][movie_id]
+      const build_string = movie_id + ' : ' + recording_id
+      movie_mappings.push(build_string)
+    }
+    const movie_mappings_as_string = movie_mappings.join('\n')
+    let text_style = {
+      'fontSize': '10px',
+    }
     return (
       <div>
         <div
             className='d-inline'
         >
-          test_data:
+          movie mappings (in format 'movie_id:recording_id'):
         </div>
         <div
             className='d-inline'
         >
           <textarea
-             id='telemetry_test_data'
+             id='telemetry_movie_mappings'
              cols='80'
-             rows='2'
-             value={this.state.test_data.join('\n')}
-             onChange={(event) => this.updateTestData(event.target.value)}
+             rows='8'
+             style={text_style}
+             value={movie_mappings_as_string}
+             onChange={(event) => this.updateMovieMappings(event.target.value)}
           />
         </div>
       </div>
@@ -245,7 +266,6 @@ class TelemetryControls extends React.Component {
       start_conditions: [],
       end_conditions: [],
       actions: [],
-      test_data: [],
       unsaved_changes: false,
     })
     this.props.displayInsightsMessage('new rule loaded')
@@ -263,7 +283,6 @@ class TelemetryControls extends React.Component {
         start_conditions: rule['start_conditions'],
         end_conditions: rule['end_conditions'],
         actions: rule['actions'],
-        test_data: rule['test_data'],
       })
       this.props.setCurrentTelemetryRuleId(rule_id)
       this.props.displayInsightsMessage('telemetry rule loaded')
@@ -316,35 +335,39 @@ class TelemetryControls extends React.Component {
     var app_this = this
     let reader = new FileReader()
     reader.onload = (function(event) {
-      let raw_data = event.target.result
-      if (raw_data) {
-        app_this.props.setTelemetryRawData(raw_data)
-        app_this.props.displayInsightsMessage('Raw data has been loaded')
-      }
+      app_this.props.setTelemetryData(
+        {
+          raw_data_url: event.target.result,
+          raw_data_filename: files[0].name,
+        }, 
+        (() => {app_this.props.displayInsightsMessage('Raw data has been loaded')}),
+        (() => {app_this.props.displayInsightsMessage('nasty stuff happened')})
+      )
     })
-    reader.readAsBinaryString(files[0]);
+    reader.readAsDataURL(files[0]);
   }
 
   buildRawDataButton() {
     let raw_data_summary = ''
-    if (this.props.telemetry_raw_data.length)  {
-      const num_rows = this.props.telemetry_raw_data.length
-      raw_data_summary = ' (currently loaded with ' + num_rows.toString() + ' rows)'
-
+    if (this.props.telemetry_data['raw_data_url'])  {
+      raw_data_summary = 'Raw data is currently located at '+this.props.telemetry_data['raw_data_url']
     }
     return (
       <div>
         <div className='d-inline mt-1'>
-          Import Raw Telemetry Data {raw_data_summary}:
+          Raw Data:
         </div>
         <div className='d-inline ml-2' >
           <input
               type="file"
-              id="test_data_file"
-              name="test_data_files[]"
+              id="raw_data_file"
+              name="raw_data_files[]"
               size='20'
               onChange={(event) => this.importTelemetryRawData(event.target.files)}
           />
+        </div>
+        <div className='font-italic'>
+          {raw_data_summary}
         </div>
       </div>
     )
@@ -366,7 +389,6 @@ class TelemetryControls extends React.Component {
       start_conditions: this.state.start_conditions,
       end_conditions: this.state.end_conditions,
       actions: this.state.actions,
-      test_data: this.state.test_data,
     }
     let deepCopyTelemetryRules = JSON.parse(JSON.stringify(this.props.telemetry_rules))
     deepCopyTelemetryRules[rule_id] = telemetry_rule
@@ -466,9 +488,9 @@ class TelemetryControls extends React.Component {
     const end_conditions = this.buildEndConditions() 
     const actions = this.buildActions() 
     const raw_data_button = this.buildRawDataButton() 
+    const movie_mappings = this.buildMovieMappings()
     const save_button = this.buildSaveButton() 
     const run_button = this.buildRunButton() 
-    const test_data = this.buildTestData() 
     const test_button = this.buildTestButton() 
 
     return (
@@ -572,19 +594,20 @@ class TelemetryControls extends React.Component {
                 <div 
                     className='row border-top mt-2 pt-1'
                 >
-                  {raw_data_button}
+                  <div className='col ml-5 mr-5'>
+                    <div className='row border-bottom h5'
+                    >
+                      Telemetry Data
+                    </div>
+                    <div className='row'>
+                      {raw_data_button}
+                    </div>
+                    <div className='row mt-2'>
+                      {movie_mappings}
+                    </div>
+                  </div>
                 </div>
   
-                <div 
-                    className='row mt-1'
-                >
-                  {test_data}
-                </div>
-  
-  
-
-
-
   
               </div>
             </div>

@@ -289,6 +289,25 @@ class InsightsPanel extends React.Component {
     return job_data
   }
 
+  buildTelemetryData(job_type, extra_data) {
+    let job_data = {
+      request_data: {},
+    }
+    job_data['app'] = 'analyze'
+    job_data['operation'] = 'telemetry_find_matching_frames'
+    if (job_type === 'current_movie') {
+      job_data['request_data']['movies'] = {}
+      job_data['request_data']['movies'][this.props.movie_url] = this.props.movies[this.props.movie_url]
+      job_data['description'] = 'telemetry, find matching frames for movie: ' + this.props.movie_url
+      job_data['request_data']['telemetry_data'] = this.props.telemetry_data
+      job_data['request_data']['telemetry_rule'] = this.props.telemetry_rules[this.props.current_telemetry_rule_id]
+    } else if (job_type === 'all_movies') {
+      job_data['request_data']['movies'] = this.props.movies
+      job_data['description'] = 'telemetry, find matching frames for all movies'
+    }
+    return job_data
+  }
+
   submitInsightsJob(job_string, extra_data) {
     if (job_string === 'current_template_current_movie') {
       let job_data = this.buildScanTemplateCurTempCurMovJobData(extra_data)
@@ -312,6 +331,11 @@ class InsightsPanel extends React.Component {
       })
     } else if (job_string === 'diffs_current_movie') {
       let job_data = this.buildCalcDiffsData('current_movie', extra_data)
+      this.props.submitJob({
+        job_data: job_data,
+      })
+    } else if (job_string === 'telemetry_current_movie') {
+      let job_data = this.buildTelemetryData('current_movie', extra_data)
       this.props.submitJob({
         job_data: job_data,
       })
@@ -919,8 +943,8 @@ class InsightsPanel extends React.Component {
             togglePreserveAllJobs={this.props.togglePreserveAllJobs}
             telemetry_rules={this.props.telemetry_rules}
             current_telemetry_rule_id={this.props.current_telemetry_rule_id}
-            telemetry_raw_data={this.props.telemetry_raw_data}
-            setTelemetryRawData={this.props.setTelemetryRawData}
+            telemetry_data={this.props.telemetry_data}
+            setTelemetryData={this.props.setTelemetryData}
             setTelemetryRules={this.props.setTelemetryRules}
             setCurrentTelemetryRuleId={this.props.setCurrentTelemetryRuleId}
             addInsightsCallback={this.addInsightsCallback}

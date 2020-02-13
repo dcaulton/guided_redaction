@@ -730,7 +730,7 @@ class TemplateControls extends React.Component {
     return (
       <div>
         <div className='d-inline ml-2'>
-          template id {this.state.id}
+          Template id: {this.state.id}
         </div>
         <div className='d-inline ml-2 font-italic'>
           {unsaved_changes_string}

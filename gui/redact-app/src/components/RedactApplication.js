@@ -70,7 +70,10 @@ class RedactApplication extends React.Component {
       preserveAllJobs: false,
       telemetry_rules: {},
       current_telemetry_rule_id: '',
-      telemetry_raw_data: [],
+      telemetry_data: {
+        raw_data_url: '',
+        movie_mappings: [],
+      },
     }
 
     this.getNextImageHash=this.getNextImageHash.bind(this)
@@ -136,15 +139,36 @@ class RedactApplication extends React.Component {
     this.togglePreserveAllJobs=this.togglePreserveAllJobs.bind(this)
     this.getImageUrl=this.getImageUrl.bind(this)
     this.setFramesetHash=this.setFramesetHash.bind(this)
-    this.setTelemetryRawData=this.setTelemetryRawData.bind(this)
+    this.setTelemetryData=this.setTelemetryData.bind(this)
     this.setTelemetryRules=this.setTelemetryRules.bind(this)
     this.setCurrentTelemetryRuleId=this.setCurrentTelemetryRuleId.bind(this)
   }
 
-  setTelemetryRawData(raw_data) {
-    this.setState({
-      telemetry_raw_data: raw_data,
-    })
+  setTelemetryData(hash_in, when_done=(()=>{}), when_failed=(()=>{})) {
+    if (Object.keys(hash_in).includes('raw_data_url')) {
+      let raw_data_filename = hash_in['raw_data_filename']
+      this.postMakeUrlCall({                                                                                  
+        data_uri: hash_in['raw_data_url'],
+        filename: raw_data_filename,
+        when_done: (responseJson) => {
+          let deepCopyTelemetryData = JSON.parse(JSON.stringify(this.state.telemetry_data))
+          deepCopyTelemetryData['raw_data_url'] = responseJson['url']
+          this.setState({
+            telemetry_data: deepCopyTelemetryData,
+          })
+          when_done()
+        },
+        when_failed: when_failed,
+      }) 
+    }
+    if (Object.keys(hash_in).includes('movie_mappings')) {
+      let deepCopyTelemetryData = JSON.parse(JSON.stringify(this.state.telemetry_data))
+      deepCopyTelemetryData['movie_mappings'] = hash_in['movie_mappings']
+      this.setState({
+        telemetry_data: deepCopyTelemetryData,
+      })
+      when_done()
+    }
   }
 
   setTelemetryRules(rules) {
@@ -1879,8 +1903,8 @@ class RedactApplication extends React.Component {
                 togglePreserveAllJobs={this.togglePreserveAllJobs}
                 telemetry_rules={this.state.telemetry_rules}
                 current_telemetry_rule_id={this.state.current_telemetry_rule_id}
-                telemetry_raw_data={this.state.telemetry_raw_data}
-                setTelemetryRawData={this.setTelemetryRawData}
+                telemetry_data={this.state.telemetry_data}
+                setTelemetryData={this.setTelemetryData}
                 setTelemetryRules={this.setTelemetryRules}
                 setCurrentTelemetryRuleId={this.setCurrentTelemetryRuleId}
               />
