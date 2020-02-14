@@ -194,15 +194,20 @@ class InsightsPanel extends React.Component {
     })
   }
 
-  buildScanOcrCurrentMovieJobData(extra_data) {
+  buildScanOcrMovieJobData(scope, extra_data) {
     let job_data = {
       request_data: {},
     }
     job_data['app'] = 'analyze'
     job_data['operation'] = 'scan_ocr_movie'
-    job_data['description'] = 'scan ocr for one movie'
-    job_data['request_data']['movies'] = {}
-    job_data['request_data']['movies'][this.props.movie_url] = this.props.movies[this.props.movie_url]
+    if (scope === 'current_movie') {
+      job_data['description'] = 'scan ocr for one movie'
+      job_data['request_data']['movies'] = {}
+      job_data['request_data']['movies'][this.props.movie_url] = this.props.movies[this.props.movie_url]
+    } else if (scope === 'all_movies') {
+      job_data['description'] = 'scan ocr for all movies'
+      job_data['request_data']['movies'] = this.props.movies
+    }
     let start_coords = extra_data['start_coords']
     let end_coords = extra_data['end_coords']
     const scan_area_object = {
@@ -339,7 +344,12 @@ class InsightsPanel extends React.Component {
         job_data: job_data,
       })
     } else if (job_string === 'ocr_current_movie') {
-      let job_data = this.buildScanOcrCurrentMovieJobData(extra_data)
+      let job_data = this.buildScanOcrMovieJobData('current_movie', extra_data)
+      this.props.submitJob({
+        job_data: job_data,
+      })
+    } else if (job_string === 'ocr_all_movies') {
+      let job_data = this.buildScanOcrMovieJobData('all_movies', extra_data)
       this.props.submitJob({
         job_data: job_data,
       })
