@@ -71,7 +71,6 @@ class InsightsPanel extends React.Component {
     this.blinkDiff=this.blinkDiff.bind(this)
     this.setImageTypeToDisplay=this.setImageTypeToDisplay.bind(this)
     this.addInsightsCallback=this.addInsightsCallback.bind(this)
-    this.startOcrRegionAdd=this.startOcrRegionAdd.bind(this)
   }
 
 
@@ -204,15 +203,15 @@ class InsightsPanel extends React.Component {
     job_data['description'] = 'scan ocr for one movie'
     job_data['request_data']['movie_url'] = this.props.movie_url
     job_data['request_data']['movie'] = this.props.movies[this.props.movie_url]
-    let start_coords = this.state.clicked_coords
-    let end_coords = extra_data['second_click_coords']
+    let start_coords = extra_data['start_coords']
+    let end_coords = extra_data['end_coords']
     const scan_area_object = {
       'start': start_coords,
       'end': end_coords,
     }
     job_data['request_data']['scan_area'] = scan_area_object
-    console.log('bobby socks scan ocr data is ')
-    console.log(job_data)
+    job_data['request_data']['match_text'] = extra_data['match_text']
+    job_data['request_data']['match_percent'] = extra_data['match_percent']
     return job_data
   }
 
@@ -562,7 +561,7 @@ class InsightsPanel extends React.Component {
     } else if (this.state.mode === 'add_template_anchor_2') {
       if (Object.keys(this.state.callbacks).includes('add_template_anchor_2')) {
         let callback = this.state.callbacks['add_template_anchor_2']
-        callback(this.state.clicked_coords, [x_scaled, y_scaled])
+        callback([x_scaled, y_scaled])
       }
     } else if (this.state.mode === 'flood_fill_1') {
       this.setState({
@@ -600,7 +599,7 @@ class InsightsPanel extends React.Component {
     } else if (this.state.mode === 'add_template_mask_zone_2') {
       if (Object.keys(this.state.callbacks).includes('add_template_mask_zone_2')) {
         let callback = this.state.callbacks['add_template_mask_zone_2']
-        callback(this.state.clicked_coords, [x_scaled, y_scaled])
+        callback([x_scaled, y_scaled])
       }
     } else if (this.state.mode === 'scan_ocr_1') {
       this.setState({
@@ -609,11 +608,10 @@ class InsightsPanel extends React.Component {
         insights_message: 'click second corner',
       })
     } else if (this.state.mode === 'scan_ocr_2') {
-      this.setState({
-        mode: '',
-        insights_message: 'Ocr job has been submitted',
-      })
-      this.submitInsightsJob('ocr_current_movie', {second_click_coords: [x_scaled, y_scaled]})
+      if (Object.keys(this.state.callbacks).includes('scan_ocr_2')) {
+        let callback = this.state.callbacks['scan_ocr_2']
+        callback([x_scaled, y_scaled])
+      }
     } else if (this.state.mode === 'add_annotations_ocr_start') {
       this.doAddAnnotationsOcrStartClickOne(scale, x_scaled, y_scaled)
     } else if (this.state.mode === 'add_annotations_ocr_end') {
@@ -623,13 +621,6 @@ class InsightsPanel extends React.Component {
 
   afterArrowFill() {
     this.displayInsightsMessage('Fill area added, click to add another.')
-  }
-
-  startOcrRegionAdd() {
-    this.setState({
-      mode: 'scan_ocr_1',
-      insights_message: 'Select the first corner of the area to scan',
-    })
   }
 
   doAddTemplateAnchorClickOne(scale, x_scaled, y_scaled) {
@@ -997,7 +988,7 @@ class InsightsPanel extends React.Component {
             setTelemetryRules={this.props.setTelemetryRules}
             setCurrentTelemetryRuleId={this.props.setCurrentTelemetryRuleId}
             addInsightsCallback={this.addInsightsCallback}
-            startOcrRegionAdd={this.startOcrRegionAdd}
+            clicked_coords={this.state.clicked_coords}
           />
         </div>
 

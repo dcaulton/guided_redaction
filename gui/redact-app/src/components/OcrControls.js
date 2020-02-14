@@ -2,25 +2,193 @@ import React from 'react';
 
 class OcrControls extends React.Component {
 
+  constructor(props) {
+    super(props)
+    this.state = {
+      match_text: [],
+      match_percent: 90,
+      start_coords: [],
+      end_coords: [],
+    }
+    this.addOcrZoneCallback=this.addOcrZoneCallback.bind(this)
+  }
+
+  addOcrZoneCallback(end_coords) {
+    const start_coords = this.props.clicked_coords
+    this.setState({
+      start_coords: start_coords,
+      end_coords: end_coords,
+    })
+    this.props.handleSetMode('')
+    this.props.displayInsightsMessage('zone was successfully selected')
+  }
+
   buildPickCornersButton() {
     return (
       <button
           key='000'
-          className='btn btn-primary ml-2'
-          onClick={() => this.props.startOcrRegionAdd() }
+          className='btn btn-primary'
+          onClick={() => this.startOcrRegionAdd() }
       >
         Pick Corners
       </button>
     )
   }
+
+  startOcrRegionAdd() {
+    this.props.handleSetMode('scan_ocr_1')
+    this.props.addInsightsCallback('scan_ocr_2', this.addOcrZoneCallback)
+    this.props.displayInsightsMessage('Select the first corner of the area to scan')
+  }
+
+  packageAndCallSubmitJob(scope) {
+    if (this.state.start_coords.length === 0) {
+      this.props.displayInsightsMessage('Please pick start and end coords before running this job')
+      return
+    }
+    const extra_data = {
+      start_coords: this.state.start_coords,
+      end_coords: this.state.end_coords,
+      match_text: this.state.match_text,
+      match_percent: this.state.match_percent,
+    }
+    this.props.submitInsightsJob(scope, extra_data)
+  }
+
+  buildRunButton() {
+    let movie_set_keys = Object.keys(this.props.movie_sets)
+    return (
+      <div className='d-inline ml-2'>
+        <button
+            className='btn btn-primary dropdown-toggle'
+            type='button'
+            id='runTelemetryDropdownButton'
+            data-toggle='dropdown'
+            area-haspopup='true'
+            area-expanded='false'
+        >
+          Run
+        </button>
+        <div className='dropdown-menu' aria-labelledby='RunTelemetryDropdownButton'>
+          <button className='dropdown-item'
+              onClick={() => this.packageAndCallSubmitJob('ocr_current_movie')}
+          >
+            Movie
+          </button>
+          <button className='dropdown-item'
+              onClick={() => this.packageAndCallSubmitJob('ocr_all_movies')}
+          >
+            All Movies
+          </button>
+            {movie_set_keys.map((value, index) => {
+              return (
+                <button
+                    className='dropdown-item'
+                    key={index}
+                    onClick={() => this.packageAndCallSubmitJob('ocr_movie_set', value)}
+                >
+                  MovieSet '{this.props.movie_sets[value]['name']}' as Job
+                </button>
+              )
+            })}
+        </div>
+      </div>
+    )
+  }
+
+  updateMatchText(rows_as_string) {
+    const match_text = rows_as_string.split('\n')
+    this.setState({
+      match_text: match_text,
+    })
+  }
+
+  buildMatchText() {
+    return (
+      <div className='ml-2 mt-2'>
+        <div>
+          Match On:
+        </div>
+        <div
+            className='d-inline'
+        >
+          <textarea
+             id='match_text'
+             cols='60'
+             rows='3'
+             value={this.state.match_text.join('\n')}
+             onChange={(event) => this.updateMatchText(event.target.value)}
+          />
+        </div>
+      </div>
+    )
+  }
+
+  updateMatchPercent(match_percent) {
+    this.setState({
+      match_percent: match_percent,
+    })
+  }
+
+  buildMatchPercent() {
+    return (
+      <div
+        className='d-inline ml-2 mt-2'
+      >   
+        <div className='d-inline'>
+          Match Percent:
+        </div>
+        <div className='d-inline ml-2'>
+          <input 
+            id='match_percent'
+            size='4'
+            value={this.state.match_percent}
+            onChange={(event) => this.updateMatchPercent(event.target.value)}
+          />
+        </div>
+      </div>
+    )
+  }
+
+  buildStartEndCoords() {
+    if (this.state.start_coords.length === 0 && this.state.end_coords.length === 0) {
+      return ''
+    }
+
+    return (
+      <div className='ml-2'>
+        <div>
+          <div className='d-inline'>
+            start coords:
+          </div>
+          <div className='d-inline ml-2'>
+            [{this.state.start_coords[0]}, {this.state.start_coords[1]}]
+          </div>
+        </div>
+        <div>
+          <div className='d-inline'>
+            end coords:
+          </div>
+          <div className='d-inline ml-2'>
+            [{this.state.end_coords[0]}, {this.state.end_coords[1]}]
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   render() {
     if (!this.props.visibilityFlags['ocr']) {
       return([])
     }
     const pick_button = this.buildPickCornersButton()
+    const run_button = this.buildRunButton()
+    const match_text = this.buildMatchText()
+    const match_percent = this.buildMatchPercent()
+    const start_end_coords = this.buildStartEndCoords()
 
     return (
-        <div className='row bg-light rounded mt-3'>
+        <div className='row bg-light rounded mt-3 pb-2'>
           <div className='col'>
             <div className='row'>
               <div 
@@ -57,91 +225,21 @@ class OcrControls extends React.Component {
             >
               <div id='ocr_main' className='col'>
 
-                <div className='row mt-3 bg-light'>
-                
-                  <div
-                      className='d-inline ml-2 mt-2'
-                  >   
-                      <input 
-                          id='ocr_match_on_text'
-                          size='30'
-                          value='match on text' 
-                          onChange={() => console.log('match on text')}
-                      />
-                  </div>
-
-                  <div
-                      className='d-inline ml-2 mt-2'
-                  >   
-                      <input 
-                          id='ocr_similarity'
-                          size='10'
-                          value='Similarity %' 
-                          onChange={() => console.log('OCR similarity %')}
-                      />
-                  </div>
-
-                  <div className='d-inline'>
-                    <button
-                        className='btn btn-primary ml-2 mt-2 dropdown-toggle'
-                        type='button'
-                        id='scanOcrDropdownButton'
-                        data-toggle='dropdown'
-                        area-haspopup='true'
-                        area-expanded='false'
-                    >
-                      Run
-                    </button>
-                    <div className='dropdown-menu' aria-labelledby='scanOcrDropdownButton'>
-                      <button className='dropdown-item'
-                          onClick={() => alert('scan just this image')}
-                      >
-                        Image
-                      </button>
-                      <button className='dropdown-item'
-                          onClick={() => alert('scan just this movie')}
-                      >
-                        Movie
-                      </button>
-                      <button className='dropdown-item'
-                          onClick={() => alert('scan all movies')}
-                      >
-                        All Movies
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className='d-inline'>
-                    <button
-                        className='btn btn-primary ml-2 mt-2 dropdown-toggle'
-                        type='button'
-                        id='deleteOcrDropdownButton'
-                        data-toggle='dropdown'
-                        area-haspopup='true'
-                        area-expanded='false'
-                    >
-                      Clear
-                    </button>
-                    <div className='dropdown-menu' aria-labelledby='deleteOcrDropdownButton'>
-                      <button className='dropdown-item'
-                          onClick={() => alert('clear OCR data for just this image')}
-                      >
-                        Image
-                      </button>
-                      <button className='dropdown-item'
-                          onClick={() => alert('clear OCR data for all frames of this movie')}
-                      >
-                        Movie
-                      </button>
-                      <button className='dropdown-item'
-                          onClick={() => alert('clear OCR data for all movies')}
-                      >
-                        All Movies
-                      </button>
-                    </div>
-                  </div>
+                <div className='row mt-3 ml-2 bg-light'>
                   {pick_button}
+                  {run_button}
+                </div>
 
+                <div className='row bg-light'>
+                  {match_text}
+                </div>
+
+                <div className='row bg-light'>
+                  {match_percent}
+                </div>
+
+                <div className='row bg-light'>
+                  {start_end_coords}
                 </div>
 
               </div>

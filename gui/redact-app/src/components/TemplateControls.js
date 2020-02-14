@@ -256,7 +256,8 @@ class TemplateControls extends React.Component {
     this.props.handleSetMode('add_template_anchor_1')
   }
 
-  addAnchorCallback(start_coords, end_coords) {
+  addAnchorCallback(end_coords) {
+    const start_coords = this.props.clicked_coords
     const anchor_id = 'anchor_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
     const the_anchor = {
         'id': anchor_id,
@@ -282,7 +283,8 @@ class TemplateControls extends React.Component {
     this.props.handleSetMode('add_template_mask_zone_1')
   }
 
-  addMaskZoneCallback(start_coords, end_coords) {
+  addMaskZoneCallback(end_coords) {
+    const start_coords = this.props.clicked_coords
     const mask_zone_id = 'mask_zone_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
     const the_mask_zone = {
         'id': mask_zone_id,

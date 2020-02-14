@@ -45,6 +45,7 @@ class BottomInsightsControls extends React.Component {
           addInsightsCallback={this.props.addInsightsCallback}
           insights_image={this.props.insights_image}
           movie_url={this.props.movie_url}
+          clicked_coords={this.props.clicked_coords}
         />
 
         <SelectedAreaControls
@@ -98,10 +99,14 @@ class BottomInsightsControls extends React.Component {
         />
 
         <OcrControls
-          startOcrRegionAdd={this.props.startOcrRegionAdd}
           displayInsightsMessage={this.props.displayInsightsMessage}
+          addInsightsCallback={this.props.addInsightsCallback}
           visibilityFlags={this.props.visibilityFlags}
           toggleShowVisibility={this.props.toggleShowVisibility}
+          submitInsightsJob={this.props.submitInsightsJob}
+          handleSetMode={this.props.handleSetMode}
+          movie_sets={this.props.movie_sets}
+          clicked_coords={this.props.clicked_coords}
         />
 
         <MovieSetsControls
