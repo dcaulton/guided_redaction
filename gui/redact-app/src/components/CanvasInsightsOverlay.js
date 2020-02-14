@@ -68,6 +68,7 @@ class CanvasInsightsOverlay extends React.Component {
     if ((this.props.mode === 'add_template_anchor_2') 
         || (this.props.mode === 'add_template_mask_zone_2')
         || (this.props.mode === 'arrow_fill_1')
+        || (this.props.mode === 'scan_ocr_2')
         || (this.props.mode === 'flood_fill_1')) {
       const crosshair_length = 2000
       let start_x = this.props.clicked_coords[0] - crosshair_length/2

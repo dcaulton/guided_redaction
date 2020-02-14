@@ -12,9 +12,6 @@ import uuid
 # tools to use East and Tesseract to find word regions in an image
 class EastPlusTessScanner(EastScanner):
 
-    TEXT_REGION_NOT_CLAIMED = 0
-    TEXT_REGION_HAS_BEEN_CLAIMED = 1
-
     def __init__(self):
         pass
 
@@ -61,7 +58,7 @@ class EastPlusTessScanner(EastScanner):
                 "end": lower_right,
                 "text": text,
                 "centroid": centroid,
-                "claimed": self.TEXT_REGION_NOT_CLAIMED,
+                "source": "ocr: east+tess",
             }
             text_regions.append(recognized_text_area)
 

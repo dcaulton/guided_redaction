@@ -98,6 +98,7 @@ class BottomInsightsControls extends React.Component {
         />
 
         <OcrControls
+          startOcrRegionAdd={this.props.startOcrRegionAdd}
           displayInsightsMessage={this.props.displayInsightsMessage}
           visibilityFlags={this.props.visibilityFlags}
           toggleShowVisibility={this.props.toggleShowVisibility}

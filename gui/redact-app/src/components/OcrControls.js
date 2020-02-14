@@ -2,10 +2,22 @@ import React from 'react';
 
 class OcrControls extends React.Component {
 
+  buildPickCornersButton() {
+    return (
+      <button
+          key='000'
+          className='btn btn-primary ml-2'
+          onClick={() => this.props.startOcrRegionAdd() }
+      >
+        Pick Corners
+      </button>
+    )
+  }
   render() {
     if (!this.props.visibilityFlags['ocr']) {
       return([])
     }
+    const pick_button = this.buildPickCornersButton()
 
     return (
         <div className='row bg-light rounded mt-3'>
@@ -128,6 +140,7 @@ class OcrControls extends React.Component {
                       </button>
                     </div>
                   </div>
+                  {pick_button}
 
                 </div>
 

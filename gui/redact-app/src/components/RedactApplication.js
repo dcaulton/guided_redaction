@@ -986,6 +986,7 @@ class RedactApplication extends React.Component {
             const new_area_to_redact = {
               'start': new_start,
               'end': new_end,
+              'source': 'template',
             }
             if (!Object.keys(deepCopyMovies[movie_url]['framesets'][frameset_hash]).includes('areas_to_redact')) {
               deepCopyMovies[movie_url]['framesets'][frameset_hash]['areas_to_redact']= []
@@ -1169,7 +1170,13 @@ class RedactApplication extends React.Component {
     this.setMovieRedactedUrl(the_url) 
   }
 
-  async loadScanOcrResults(job, when_done=(()=>{})) {
+  async loadScanOcrMovieResults(job, when_done=(()=>{})) {
+    console.log('loading scan ocr results for movie')
+    console.log(job.response_data)
+
+  }
+
+  async loadScanOcrImageResults(job, when_done=(()=>{})) {
     const responseJson = JSON.parse(job.response_data)
     let new_areas_to_redact = responseJson['recognized_text_areas']
 
@@ -1179,6 +1186,9 @@ class RedactApplication extends React.Component {
     let deepCopyMovies = JSON.parse(JSON.stringify(this.state.movies))
     if (!Object.keys(deepCopyMovies).includes(movie_url)) {
       deepCopyMovies[movie_url] = req_data['movie']
+    }
+    if (!Object.keys(deepCopyMovies[movie_url]['framesets'][frameset_hash]).includes('areas_to_redact')) {
+      deepCopyMovies[movie_url]['framesets'][frameset_hash]['areas_to_redact'] = []
     }
     let deepCopyAreasToRedact = JSON.parse(JSON.stringify(
       deepCopyMovies[movie_url]['framesets'][frameset_hash]['areas_to_redact']
@@ -1209,8 +1219,10 @@ class RedactApplication extends React.Component {
         this.loadScanTemplateResults(job, when_done)
 			} else if (job.app === 'analyze' && job.operation === 'filter') {
         this.loadFilterResults(job, when_done)
-			} else if (job.app === 'analyze' && job.operation === 'scan_ocr') {
-        this.loadScanOcrResults(job, when_done)
+			} else if (job.app === 'analyze' && job.operation === 'scan_ocr_image') {
+        this.loadScanOcrImageResults(job, when_done)
+			} else if (job.app === 'analyze' && job.operation === 'scan_ocr_movie') {
+        this.loadScanOcrMovieResults(job, when_done)
 			} else if ((job.app === 'parse' && job.operation === 'split_and_hash_movie') 
 	        || (job.app === 'parse' && job.operation === 'split_and_hash_threaded')) {
         this.loadSplitAndHashResults(job, when_done)

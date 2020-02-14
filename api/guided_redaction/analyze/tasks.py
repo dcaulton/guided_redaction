@@ -76,6 +76,8 @@ def filter(job_uuid):
 def scan_template_threaded(job_uuid):
     job = Job.objects.get(pk=job_uuid)
     if job:
+        if job.status in ['success', 'failed']:
+            return
         children = Job.objects.filter(parent=job)
         (next_step, percent_done) = evaluate_scan_template_threaded_children(children)
         print('next step is {}, percent done {}'.format(next_step, percent_done))
@@ -112,7 +114,7 @@ def evaluate_scan_template_threaded_children(children):
     elif scan_template_children > 0:
         complete_percent = scan_template_completed_children/scan_template_children
         return ('update_percent_complete', complete_percent)
-    elif split_movie_failed_children > 0:
+    elif split_template_failed_children > 0:
         return ('abort', 0)
 
 def build_and_dispatch_scan_template_threaded_children(parent_job):
@@ -122,7 +124,7 @@ def build_and_dispatch_scan_template_threaded_children(parent_job):
     template = request_data['template']
     source_image_url = request_data['source_image_url']
     movies = request_data['target_movies']
-    for movie_url in movies:
+    for index, movie_url in enumerate(movies.keys()):
         movie = movies[movie_url]
         target_movies = {}
         target_movies[movie_url] = movie
@@ -145,6 +147,9 @@ def build_and_dispatch_scan_template_threaded_children(parent_job):
         job.save()
         print('build_and_dispatch_scan_template_thread_children: dispatching job for movie {}'.format(movie_url))
         scan_template.delay(job.id)
+        # intersperse these evenly in the job stack so we get regular updates
+        if index % 5 == 0:
+            scan_template_threaded.delay(parent_job.id)
 
 def wrap_up_scan_template_threaded(job, children):
     aggregate_response_data = {}
@@ -165,7 +170,7 @@ def wrap_up_scan_template_threaded(job, children):
     job.save()
 
 @shared_task
-def scan_ocr(job_uuid):
+def scan_ocr_image(job_uuid):
     job = Job.objects.get(pk=job_uuid)
     if job:
         job.status = 'running'
@@ -175,6 +180,11 @@ def scan_ocr(job_uuid):
         job.response_data = json.dumps(response.data)
         job.status = 'success'
         job.save()
+
+        if job.parent_id:
+            parent_job = Job.objects.get(pk=job.parent_id)
+            if parent_job.app == 'analyze' and parent_job.operation == 'scan_ocr_movie':
+                scan_ocr_movie.delay(parent_job.id)
 
 @shared_task
 def telemetry_find_matching_frames(job_uuid):
@@ -187,3 +197,107 @@ def telemetry_find_matching_frames(job_uuid):
         job.response_data = json.dumps(response.data)
         job.status = 'success'
         job.save()
+
+@shared_task
+def scan_ocr_movie(job_uuid):
+    job = Job.objects.get(pk=job_uuid)
+    if job:
+        if job.status in ['success', 'failed']:
+            return
+        children = Job.objects.filter(parent=job)
+        (next_step, percent_done) = evaluate_scan_ocr_movie_children(children)
+        print('next step is {}, percent done {}'.format(next_step, percent_done))
+        if next_step == 'build_child_tasks':
+          build_and_dispatch_scan_ocr_movie_children(job)
+        elif next_step == 'update_percent_complete':
+          job.elapsed_time = percent_done
+          job.save()
+        elif next_step == 'wrap_up':
+          wrap_up_scan_ocr_movie(job, children)
+        elif next_step == 'abort':
+          job.status = 'failed'
+          job.save()
+
+def build_and_dispatch_scan_ocr_movie_children(parent_job):
+    parent_job.status = 'running'
+    parent_job.save()
+    request_data = json.loads(parent_job.request_data)
+    movie = request_data['movie']
+    scan_area = request_data['scan_area']
+    roi_start_x = scan_area['start'][0]
+    roi_start_y = scan_area['start'][1]
+    roi_end_x = scan_area['end'][0]
+    roi_end_y = scan_area['end'][1]
+    for index, frameset_hash in enumerate(movie['framesets'].keys()):
+        frameset = movie['framesets'][frameset_hash]
+        first_image_url = frameset['images'][0]
+        request_data = json.dumps({
+            'image_url': first_image_url,
+            'frameset_hash': frameset_hash,
+            'roi_start_x': roi_start_x,
+            'roi_start_y': roi_start_y,
+            'roi_end_x': roi_end_x,
+            'roi_end_y': roi_end_y,
+        })
+        job = Job(
+            request_data=request_data,
+            file_uuids_used=[],
+            status='created',
+            description='scan_ocr for frameset {}'.format(frameset_hash),
+            app='analyze',
+            operation='scan_ocr_image',
+            sequence=0,
+            elapsed_time=0.0,
+            parent=parent_job,
+        )
+        job.save()
+        print('build_and_dispatch_scan_ocr_movie_children: dispatching job for frameset {}'.format(frameset_hash))
+        scan_ocr_image.delay(job.id)
+        # intersperse these evenly in the job stack so we get regular updates
+        if index % 5 == 0:
+            scan_ocr_movie.delay(parent_job.id)
+
+def evaluate_scan_ocr_movie_children(child_jobs):
+    children = 0
+    completed_children = 0
+    failed_children = 0
+    for child in child_jobs:
+        children += 1
+        if child.status == 'success':
+            completed_children += 1
+        elif child.status == 'failed':
+            failed_children += 1
+    def print_totals():
+        print('SCAN OCR CHILDREN: {} COMPLETE: {} FAILED: {}'.format(
+            children, completed_children, failed_children))
+    print_totals()
+    if children == 0:
+        return ('build_child_tasks', 0)
+    elif children == completed_children:
+        return ('wrap_up', 1)
+    elif children > 0:
+        complete_percent = completed_children/children
+        return ('update_percent_complete', complete_percent)
+    elif failed_children > 0:
+        return ('abort', 0)
+
+def wrap_up_scan_ocr_movie(parent_job, children):
+    parent_request_data = json.loads(parent_job.request_data)
+    aggregate_response_data = {}
+    movie_url = parent_request_data['movie_url']
+    aggregate_response_data[movie_url] = {}
+    aggregate_response_data[movie_url]['framesets'] = {}
+    print('========================== WRAPPING UP OCR')
+    for child in children:
+        child_response_data = json.loads(child.response_data)
+        child_request_data = json.loads(child.request_data)
+        frameset_hash = child_request_data['frameset_hash']
+        areas_to_redact = child_response_data['recognized_text_areas']
+        aggregate_response_data[movie_url]['framesets'][frameset_hash] = {}
+        aggregate_response_data[movie_url]['framesets'][frameset_hash]['recognized_text_areas'] = areas_to_redact
+    print('wrap_up_scan_template_threaded: wrapping up parent job')
+    parent_job.status = 'success'
+    parent_job.response_data = json.dumps(aggregate_response_data)
+    parent_job.elapsed_time = 1
+    parent_job.save()
+

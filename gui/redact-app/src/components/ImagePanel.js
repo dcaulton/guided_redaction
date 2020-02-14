@@ -92,7 +92,7 @@ class ImagePanel extends React.Component {
       request_data: {},
     }
     job_data['app'] = 'analyze'
-    job_data['operation'] = 'scan_ocr'
+    job_data['operation'] = 'scan_ocr_image'
     job_data['description'] = 'scan ocr for image'
     job_data['request_data']['movie_url'] = this.props.movie_url
     job_data['request_data']['frameset_hash'] = this.props.getFramesetHashForImageUrl(this.props.getImageUrl())
@@ -330,6 +330,7 @@ class ImagePanel extends React.Component {
         start: [this.state.last_click[0], this.state.last_click[1]],
         end: [x, y],
         text: 'you got it hombre',
+        source: 'manual',
         id: Math.floor(Math.random() * 1950960),
       }
       deepCopyAreasToRedact.push(new_a2r)

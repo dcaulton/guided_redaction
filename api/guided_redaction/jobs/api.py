@@ -220,8 +220,10 @@ class JobsViewSet(viewsets.ViewSet):
             analyze_tasks.scan_template_threaded.delay(job_uuid)
         if job.app == 'analyze' and job.operation == 'filter':
             analyze_tasks.filter.delay(job_uuid)
-        if job.app == 'analyze' and job.operation == 'scan_ocr':
-            analyze_tasks.scan_ocr.delay(job_uuid)
+        if job.app == 'analyze' and job.operation == 'scan_ocr_image':
+            analyze_tasks.scan_ocr_image.delay(job_uuid)
+        if job.app == 'analyze' and job.operation == 'scan_ocr_movie':
+            analyze_tasks.scan_ocr_movie.delay(job_uuid)
         if job.app == 'analyze' and job.operation == 'telemetry_find_matching_frames':
             analyze_tasks.telemetry_find_matching_frames.delay(job_uuid)
         if job.app == 'parse' and job.operation == 'split_and_hash_movie':

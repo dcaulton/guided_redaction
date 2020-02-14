@@ -45,7 +45,7 @@ class EastScanner:
         net.setInput(blob)
         (scores, geometry) = net.forward(layerNames)
         end = time.time()
-        print("text detection took"+ str(int(math.ceil(end - start)))+ " seconds")
+        print("text detection took "+ str(int(math.ceil(end - start)))+ " seconds")
 
         (numRows, numCols) = scores.shape[2:4]
         rects = []

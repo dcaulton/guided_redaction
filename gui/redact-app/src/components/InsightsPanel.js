@@ -71,6 +71,7 @@ class InsightsPanel extends React.Component {
     this.blinkDiff=this.blinkDiff.bind(this)
     this.setImageTypeToDisplay=this.setImageTypeToDisplay.bind(this)
     this.addInsightsCallback=this.addInsightsCallback.bind(this)
+    this.startOcrRegionAdd=this.startOcrRegionAdd.bind(this)
   }
 
 
@@ -194,6 +195,27 @@ class InsightsPanel extends React.Component {
     })
   }
 
+  buildScanOcrCurrentMovieJobData(extra_data) {
+    let job_data = {
+      request_data: {},
+    }
+    job_data['app'] = 'analyze'
+    job_data['operation'] = 'scan_ocr_movie'
+    job_data['description'] = 'scan ocr for one movie'
+    job_data['request_data']['movie_url'] = this.props.movie_url
+    job_data['request_data']['movie'] = this.props.movies[this.props.movie_url]
+    let start_coords = this.state.clicked_coords
+    let end_coords = extra_data['second_click_coords']
+    const scan_area_object = {
+      'start': start_coords,
+      'end': end_coords,
+    }
+    job_data['request_data']['scan_area'] = scan_area_object
+    console.log('bobby socks scan ocr data is ')
+    console.log(job_data)
+    return job_data
+  }
+
   buildScanTemplateCurTempCurMovJobData(extra_data) {
     let job_data = {
       request_data: {},
@@ -262,8 +284,6 @@ class InsightsPanel extends React.Component {
     job_data['app'] = 'parse'
     job_data['operation'] = 'split_and_hash_threaded'
     job_data['description'] = 'split and hash threaded: ' + extra_data
-//    job_data['operation'] = 'split_and_hash_movie'
-//    job_data['description'] = 'split and hash movie: ' + extra_data
     job_data['request_data']['movie_url'] = extra_data
     job_data['request_data']['frameset_discriminator'] = this.props.frameset_discriminator
     return job_data
@@ -316,6 +336,11 @@ class InsightsPanel extends React.Component {
       })
     } else if (job_string === 'current_template_all_movies') {
       let job_data = this.buildScanTemplateCurTempAllMovJobData(extra_data)
+      this.props.submitJob({
+        job_data: job_data,
+      })
+    } else if (job_string === 'ocr_current_movie') {
+      let job_data = this.buildScanOcrCurrentMovieJobData(extra_data)
       this.props.submitJob({
         job_data: job_data,
       })
@@ -577,6 +602,18 @@ class InsightsPanel extends React.Component {
         let callback = this.state.callbacks['add_template_mask_zone_2']
         callback(this.state.clicked_coords, [x_scaled, y_scaled])
       }
+    } else if (this.state.mode === 'scan_ocr_1') {
+      this.setState({
+        mode: 'scan_ocr_2',
+        clicked_coords: [x_scaled, y_scaled],
+        insights_message: 'click second corner',
+      })
+    } else if (this.state.mode === 'scan_ocr_2') {
+      this.setState({
+        mode: '',
+        insights_message: 'Ocr job has been submitted',
+      })
+      this.submitInsightsJob('ocr_current_movie', {second_click_coords: [x_scaled, y_scaled]})
     } else if (this.state.mode === 'add_annotations_ocr_start') {
       this.doAddAnnotationsOcrStartClickOne(scale, x_scaled, y_scaled)
     } else if (this.state.mode === 'add_annotations_ocr_end') {
@@ -586,6 +623,13 @@ class InsightsPanel extends React.Component {
 
   afterArrowFill() {
     this.displayInsightsMessage('Fill area added, click to add another.')
+  }
+
+  startOcrRegionAdd() {
+    this.setState({
+      mode: 'scan_ocr_1',
+      insights_message: 'Select the first corner of the area to scan',
+    })
   }
 
   doAddTemplateAnchorClickOne(scale, x_scaled, y_scaled) {
@@ -953,6 +997,7 @@ class InsightsPanel extends React.Component {
             setTelemetryRules={this.props.setTelemetryRules}
             setCurrentTelemetryRuleId={this.props.setCurrentTelemetryRuleId}
             addInsightsCallback={this.addInsightsCallback}
+            startOcrRegionAdd={this.startOcrRegionAdd}
           />
         </div>
 
