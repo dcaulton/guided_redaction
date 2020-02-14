@@ -1,6 +1,7 @@
 from celery import shared_task
 import json
 import os
+from fuzzywuzzy import fuzz
 from guided_redaction.jobs.models import Job
 from guided_redaction.analyze.api import (
     AnalyzeViewSetFilter, 
@@ -222,40 +223,42 @@ def build_and_dispatch_scan_ocr_movie_children(parent_job):
     parent_job.status = 'running'
     parent_job.save()
     request_data = json.loads(parent_job.request_data)
-    movie = request_data['movie']
-    scan_area = request_data['scan_area']
-    roi_start_x = scan_area['start'][0]
-    roi_start_y = scan_area['start'][1]
-    roi_end_x = scan_area['end'][0]
-    roi_end_y = scan_area['end'][1]
-    for index, frameset_hash in enumerate(movie['framesets'].keys()):
-        frameset = movie['framesets'][frameset_hash]
-        first_image_url = frameset['images'][0]
-        request_data = json.dumps({
-            'image_url': first_image_url,
-            'frameset_hash': frameset_hash,
-            'roi_start_x': roi_start_x,
-            'roi_start_y': roi_start_y,
-            'roi_end_x': roi_end_x,
-            'roi_end_y': roi_end_y,
-        })
-        job = Job(
-            request_data=request_data,
-            file_uuids_used=[],
-            status='created',
-            description='scan_ocr for frameset {}'.format(frameset_hash),
-            app='analyze',
-            operation='scan_ocr_image',
-            sequence=0,
-            elapsed_time=0.0,
-            parent=parent_job,
-        )
-        job.save()
-        print('build_and_dispatch_scan_ocr_movie_children: dispatching job for frameset {}'.format(frameset_hash))
-        scan_ocr_image.delay(job.id)
-        # intersperse these evenly in the job stack so we get regular updates
-        if index % 5 == 0:
-            scan_ocr_movie.delay(parent_job.id)
+    for movie_url in request_data['movies']:
+        movie = request_data['movies'][movie_url]
+        scan_area = request_data['scan_area']
+        roi_start_x = scan_area['start'][0]
+        roi_start_y = scan_area['start'][1]
+        roi_end_x = scan_area['end'][0]
+        roi_end_y = scan_area['end'][1]
+        for index, frameset_hash in enumerate(movie['framesets'].keys()):
+            frameset = movie['framesets'][frameset_hash]
+            first_image_url = frameset['images'][0]
+            request_data = json.dumps({
+                'movie_url': movie_url,
+                'image_url': first_image_url,
+                'frameset_hash': frameset_hash,
+                'roi_start_x': roi_start_x,
+                'roi_start_y': roi_start_y,
+                'roi_end_x': roi_end_x,
+                'roi_end_y': roi_end_y,
+            })
+            job = Job(
+                request_data=request_data,
+                file_uuids_used=[],
+                status='created',
+                description='scan_ocr for frameset {}'.format(frameset_hash),
+                app='analyze',
+                operation='scan_ocr_image',
+                sequence=0,
+                elapsed_time=0.0,
+                parent=parent_job,
+            )
+            job.save()
+            print('build_and_dispatch_scan_ocr_movie_children: dispatching job for frameset {}'.format(frameset_hash))
+            scan_ocr_image.delay(job.id)
+            # intersperse these evenly in the job stack so we get regular updates
+            if index % 5 == 0:
+                scan_ocr_movie.delay(parent_job.id)
 
 def evaluate_scan_ocr_movie_children(child_jobs):
     children = 0
@@ -284,16 +287,23 @@ def evaluate_scan_ocr_movie_children(child_jobs):
 def wrap_up_scan_ocr_movie(parent_job, children):
     parent_request_data = json.loads(parent_job.request_data)
     aggregate_response_data = {}
-    movie_url = parent_request_data['movie_url']
-    aggregate_response_data[movie_url] = {}
-    aggregate_response_data[movie_url]['framesets'] = {}
     print('========================== WRAPPING UP OCR')
     for child in children:
         child_response_data = json.loads(child.response_data)
         child_request_data = json.loads(child.request_data)
         frameset_hash = child_request_data['frameset_hash']
+        movie_url = child_request_data['movie_url']
+        if (movie_url not in aggregate_response_data):
+            aggregate_response_data[movie_url] = {}
+            aggregate_response_data[movie_url]['framesets'] = {}
         areas_to_redact = child_response_data['recognized_text_areas']
         aggregate_response_data[movie_url]['framesets'][frameset_hash] = {}
+        if (parent_request_data['match_text'] and parent_request_data['match_percent']):
+            areas_to_redact = find_relevant_areas_from_response(
+                parent_request_data['match_text'], 
+                parent_request_data['match_percent'], 
+                areas_to_redact
+            )
         aggregate_response_data[movie_url]['framesets'][frameset_hash]['recognized_text_areas'] = areas_to_redact
     print('wrap_up_scan_template_threaded: wrapping up parent job')
     parent_job.status = 'success'
@@ -301,3 +311,16 @@ def wrap_up_scan_ocr_movie(parent_job, children):
     parent_job.elapsed_time = 1
     parent_job.save()
 
+def find_relevant_areas_from_response(match_strings, match_percent, areas_to_redact):
+    relevant_areas = []
+    for area in areas_to_redact:
+        subject_string_was_added = False
+        subject_string = area['text']
+        for match_string in match_strings:
+            if subject_string_was_added: 
+                continue
+            partial_ratio = fuzz.partial_ratio(match_string, subject_string)
+            if partial_ratio >= match_percent:
+                subject_string_was_added = True
+                relevant_areas.append(area)
+    return relevant_areas

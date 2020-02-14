@@ -1171,9 +1171,36 @@ class RedactApplication extends React.Component {
   }
 
   async loadScanOcrMovieResults(job, when_done=(()=>{})) {
-    console.log('loading scan ocr results for movie')
-    console.log(job.response_data)
+    const response_data = JSON.parse(job.response_data)
+    const request_data = JSON.parse(job.request_data)
+    let deepCopyMovies = JSON.parse(JSON.stringify(this.state.movies))
+    let last_movie_url = ''
+    let last_hash = ''
 
+    for (let i=0; i < Object.keys(response_data).length; i++) {
+      const movie_url = Object.keys(response_data)[i]
+      last_movie_url = movie_url
+      if (!Object.keys(deepCopyMovies).includes(movie_url)) {
+        deepCopyMovies[movie_url] = request_data['movies'][movie_url]
+      }
+      for (let j=0; j < Object.keys(response_data[movie_url]['framesets']).length; j++) {
+        const frameset_hash = Object.keys(response_data[movie_url]['framesets'])[j]
+        last_hash = frameset_hash
+        const response_frameset = response_data[movie_url]['framesets'][frameset_hash]
+        for (let k=0; k < response_frameset['recognized_text_areas'].length; k++) {
+          if (!Object.keys(deepCopyMovies[movie_url]['framesets'][frameset_hash]).includes('areas_to_redact')) {
+            deepCopyMovies[movie_url]['framesets'][frameset_hash]['areas_to_redact'] = []
+          }
+          const new_area_to_redact = response_frameset['recognized_text_areas'][k]
+          deepCopyMovies[movie_url]['framesets'][frameset_hash]['areas_to_redact'].push(new_area_to_redact)
+        }
+      }
+    }
+    this.setState({
+      movies: deepCopyMovies,
+      movie_url: last_movie_url,
+    })
+    this.setFramesetHash(last_hash)
   }
 
   async loadScanOcrImageResults(job, when_done=(()=>{})) {

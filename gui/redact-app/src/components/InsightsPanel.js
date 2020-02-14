@@ -201,8 +201,8 @@ class InsightsPanel extends React.Component {
     job_data['app'] = 'analyze'
     job_data['operation'] = 'scan_ocr_movie'
     job_data['description'] = 'scan ocr for one movie'
-    job_data['request_data']['movie_url'] = this.props.movie_url
-    job_data['request_data']['movie'] = this.props.movies[this.props.movie_url]
+    job_data['request_data']['movies'] = {}
+    job_data['request_data']['movies'][this.props.movie_url] = this.props.movies[this.props.movie_url]
     let start_coords = extra_data['start_coords']
     let end_coords = extra_data['end_coords']
     const scan_area_object = {
