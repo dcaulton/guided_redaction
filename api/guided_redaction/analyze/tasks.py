@@ -233,7 +233,7 @@ def build_and_dispatch_scan_ocr_movie_children(parent_job):
         for index, frameset_hash in enumerate(movie['framesets'].keys()):
             frameset = movie['framesets'][frameset_hash]
             first_image_url = frameset['images'][0]
-            request_data = json.dumps({
+            child_job_request_data = json.dumps({
                 'movie_url': movie_url,
                 'image_url': first_image_url,
                 'frameset_hash': frameset_hash,
@@ -243,7 +243,7 @@ def build_and_dispatch_scan_ocr_movie_children(parent_job):
                 'roi_end_y': roi_end_y,
             })
             job = Job(
-                request_data=request_data,
+                request_data=child_job_request_data,
                 file_uuids_used=[],
                 status='created',
                 description='scan_ocr for frameset {}'.format(frameset_hash),

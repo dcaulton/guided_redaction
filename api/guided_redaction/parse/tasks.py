@@ -135,6 +135,8 @@ def split_and_hash_threaded(job_uuid):
     print('split and hash threaded, job id is '+str(job_uuid))
     job = Job.objects.get(pk=job_uuid)
     if job:
+        if job.status in ['success', 'failed']:
+            return
         children = Job.objects.filter(parent=job)
         (next_step, percent_done) = evaluate_split_and_hash_threaded_children(children)
         if next_step:
@@ -264,6 +266,8 @@ def make_and_dispatch_hash_tasks(parent_job, split_tasks):
         job.save()
         print('make and dispatch hash tasks, dispatching job '+str(job.id))
         hash_frames.delay(job.id)
+        if i % 3 == 0:
+            split_and_hash_threaded.delay(parent_job.id)
     return
 
 def make_and_dispatch_split_tasks(parent_job):
