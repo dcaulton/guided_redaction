@@ -73,6 +73,24 @@ class InsightsPanel extends React.Component {
     this.setImageTypeToDisplay=this.setImageTypeToDisplay.bind(this)
     this.addInsightsCallback=this.addInsightsCallback.bind(this)
     this.setModalData=this.setModalData.bind(this)
+    this.getCurrentOcrMatches=this.getCurrentOcrMatches.bind(this)
+  }
+
+  getCurrentOcrMatches() {
+    if (Object.keys(this.props.ocr_matches).includes(this.props.movie_url)) {
+      const frameset_hash = this.props.getFramesetHashForImageUrl(this.state.insights_image)
+      if (Object.keys(this.props.ocr_matches).includes(this.props.movie_url)) {
+        const this_movies_matches = this.props.ocr_matches[this.props.movie_url]
+        if (Object.keys(this_movies_matches['framesets']).includes(frameset_hash)) {
+          const this_framesets_matches = this_movies_matches['framesets'][frameset_hash]
+          if (Object.keys(this_framesets_matches).includes('recognized_text_areas')) {
+            const rtas = this_framesets_matches['recognized_text_areas']
+            return rtas
+          }
+        }
+      }
+    }
+    return []
   }
 
   setModalData(the_data) {
@@ -923,6 +941,7 @@ class InsightsPanel extends React.Component {
             submitInsightsJob={this.submitInsightsJob}
             setMovieNickname={this.props.setMovieNickname}
             setDraggedId={this.setDraggedId}
+            ocr_matches={this.props.ocr_matches}
           />
         </div>
 
@@ -967,6 +986,8 @@ class InsightsPanel extends React.Component {
               getAnnotations={this.getAnnotations}
               mode={this.state.mode}
               clicked_coords={this.state.clicked_coords}
+              getCurrentOcrMatches={this.getCurrentOcrMatches}
+              movie_url={this.props.movie_url}
             />
           </div>
 

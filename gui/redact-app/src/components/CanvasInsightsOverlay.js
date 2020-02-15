@@ -10,6 +10,8 @@ class CanvasInsightsOverlay extends React.Component {
     this.template_match_color = '#3F3'
     this.selected_area_color = '#F3F'
     this.annotations_color = '#5DE'
+    this.ocr_color = '#CC0'
+    this.red_color = '#F00'
   }
 
   clearCanvasItems() {
@@ -164,6 +166,29 @@ class CanvasInsightsOverlay extends React.Component {
     }
   }
 
+  drawOcrMatches() {
+    if (this.props.getCurrentOcrMatches()) {
+      const matches = this.props.getCurrentOcrMatches()
+      const canvas = this.refs.insights_canvas
+      let ctx = canvas.getContext('2d')
+      ctx.strokeStyle = this.ocr_color
+      ctx.lineWidth = 10
+      for (let i=0; i < matches.length; i++) {
+        const match = matches[i]
+        ctx.fillStyle = this.ocr_color
+        ctx.globalAlpha = 0.4
+        const start_x_scaled = match['start'][0] * this.props.insights_image_scale - 5
+        const start_y_scaled = match['start'][1] * this.props.insights_image_scale - 5
+        const width = (match['end'][0] * this.props.insights_image_scale) - start_x_scaled + 5
+        const height= (match['end'][1] * this.props.insights_image_scale) - start_y_scaled + 5
+        ctx.fillRect(start_x_scaled, start_y_scaled, width, height)
+        ctx.strokeStyle = this.red_color
+        ctx.lineWidth = 3
+        ctx.strokeRect(start_x_scaled, start_y_scaled, width, height)
+      }
+    }
+    
+  }
   componentDidMount() {
     this.clearCanvasItems()
     this.drawSelectedAreas()
@@ -172,6 +197,7 @@ class CanvasInsightsOverlay extends React.Component {
     this.drawTemplateMaskZones()
     this.drawTemplateMatches()
     this.drawAnnotations()
+    this.drawOcrMatches()
   }
 
   componentDidUpdate() {
@@ -182,6 +208,7 @@ class CanvasInsightsOverlay extends React.Component {
     this.drawTemplateMaskZones()
     this.drawTemplateMatches()
     this.drawAnnotations()
+    this.drawOcrMatches()
   }
 
   render() {

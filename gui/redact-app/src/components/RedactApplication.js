@@ -49,7 +49,8 @@ class RedactApplication extends React.Component {
       movie_sets: {},
       current_template_id: '',
       templates: {},
-      template_matches: {},
+      template_matches: {}, // for insights, assumes current movie
+      ocr_matches: {}, // for insights, has multiple movies
       annotations: {},
       jobs: [],
       files: {},
@@ -170,6 +171,12 @@ class RedactApplication extends React.Component {
       })
       when_done()
     }
+  }
+
+  setOcrMatches(matches) {
+    this.setState({
+      ocr_matches: matches,
+    })
   }
 
   setTelemetryRules(rules) {
@@ -1202,6 +1209,7 @@ class RedactApplication extends React.Component {
       movie_url: last_movie_url,
     })
     this.setFramesetHash(last_hash)
+    this.setOcrMatches(response_data)
   }
 
   async loadScanOcrImageResults(job, when_done=(()=>{})) {
@@ -1977,6 +1985,7 @@ class RedactApplication extends React.Component {
                 setTelemetryRules={this.setTelemetryRules}
                 setCurrentTelemetryRuleId={this.setCurrentTelemetryRuleId}
                 getJobResultData={this.getJobResultData}
+                ocr_matches={this.state.ocr_matches}
               />
             </Route>
           </Switch>

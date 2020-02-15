@@ -63,6 +63,7 @@ class MovieCardList extends React.Component {
               setMovieNickname={this.props.setMovieNickname}
               setDraggedId={this.props.setDraggedId}
               index={index}
+              ocr_matches={this.props.ocr_matches}
           />
           )
         })}
@@ -191,6 +192,25 @@ class MovieCard extends React.Component {
     )
   }
 
+  getOcrMatchesString() {
+    if (Object.keys(this.props.ocr_matches).includes(this.props.this_cards_movie_url)) {
+      let count = 0
+      const ocr_matches_for_movie = this.props.ocr_matches[this.props.this_cards_movie_url]
+      const frameset_hashes = Object.keys(ocr_matches_for_movie['framesets'])
+      for (let i=0; i < frameset_hashes.length; i++) {
+        if (ocr_matches_for_movie['framesets'][frameset_hashes[i]]['recognized_text_areas'].length > 0) {
+          count += 1
+        }
+      }
+      return (
+        <div>
+          {count} ocr matches
+        </div>
+      )
+    }
+    return ''
+  }
+
   render() {
     let dd_style = {
       'fontSize': 'small',
@@ -204,6 +224,7 @@ class MovieCard extends React.Component {
     const framesets_count_message = this.getFramesetsCountMessage(this.props.this_cards_movie_url)
     const make_active_button = this.buildMakeActiveButton(this.props.this_cards_movie_url)
     const found_string = this.props.getMovieMatchesFound(this.props.this_cards_movie_url)
+    const ocr_matches_string = this.getOcrMatchesString()
     const diffs_string = this.props.getMovieDiffsFound(this.props.this_cards_movie_url)
     const selected_string = this.props.getMovieSelectedCount(this.props.this_cards_movie_url)
     const dims_string = this.getMovieDimensions(this.props.this_cards_movie_url, this.props.movies)
@@ -231,6 +252,7 @@ class MovieCard extends React.Component {
               id={movie_body_id}
               className='collapse show'
             >
+
               <div className='row'>
                 <video 
                     id='video_{this.props.key}' 
@@ -242,37 +264,51 @@ class MovieCard extends React.Component {
                   />
                 </video>
               </div>
+
               <div className='row'>
                 {make_active_button}
                 {queue_job_button}
               </div>
+
               <div 
                   className='row'
                   style={dd_style}
               >
                 {framesets_count_message}
               </div>
+
               <div 
                   className='row'
                   style={dd_style}
               >
                 {found_string}
               </div>
+
+              <div 
+                  className='row'
+                  style={dd_style}
+              >
+                {ocr_matches_string}
+              </div>
+
               <div 
                   className='row'
                   style={dd_style}
               >
                 {diffs_string}
               </div>
+
               <div className='row'>
                 {selected_string}
               </div>
+
               <div 
                   className='row ' 
                   style={dd_style}
               >
                 {dims_string}
               </div>
+
             </div>
 
         </div>
