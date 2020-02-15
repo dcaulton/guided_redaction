@@ -135,7 +135,7 @@ class SessionControls extends React.Component {
       <div>
         <select
             name='when_done_selector'
-            onChange={(event) => this.props.setWhenDoneTarget(event.target.value)}
+            onChange={(event) => this.props.setGlobalStateVar('whenDoneTarget', event.target.value)}
             value={this.props.whenDoneTarget}
         >
           <option value=''>--none--</option>
@@ -321,9 +321,8 @@ class SessionControls extends React.Component {
                         title='Frameset Discriminator'
                         name='frameset_discriminator'
                         value={this.props.frameset_discriminator}
-                        onChange={(event) => this.props.setFramesetDiscriminator(event.target.value)}
+                        onChange={(event) => this.props.setGlobalStateVar('frameset_discriminator', event.target.value)}
                      >
-                      <option value='gray8'>--FramesetDiscriminator--</option>
                       <option value='gray64'>gray 64x64</option>
                       <option value='gray32'>gray 32x32</option>
                       <option value='gray16'>gray 16x16</option>

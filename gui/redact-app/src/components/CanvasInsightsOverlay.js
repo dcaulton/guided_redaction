@@ -26,6 +26,7 @@ class CanvasInsightsOverlay extends React.Component {
       let ctx = canvas.getContext('2d')
       ctx.strokeStyle = this.anchor_color
       ctx.lineWidth = 3
+      ctx.globalAlpha = 1
       
       const template_anchors = this.props.templates[this.props.current_template_id]['anchors']
       for (let i=0; i < template_anchors.length; i++) {
@@ -49,6 +50,7 @@ class CanvasInsightsOverlay extends React.Component {
       let ctx = canvas.getContext('2d')
       ctx.strokeStyle = this.mask_zone_color
       ctx.lineWidth = 3
+      ctx.globalAlpha = 1
       
       const template_mask_zones = this.props.templates[this.props.current_template_id]['mask_zones']
       for (let i=0; i < template_mask_zones.length; i++) {
@@ -85,6 +87,7 @@ class CanvasInsightsOverlay extends React.Component {
       let ctx = canvas.getContext("2d")
       ctx.strokeStyle = this.crosshairs_color
       ctx.lineWidth = 1
+      ctx.globalAlpha = 1
 
       ctx.beginPath()
       ctx.moveTo(start_x, this.props.clicked_coords[1]*this.props.insights_image_scale)
@@ -116,6 +119,11 @@ class CanvasInsightsOverlay extends React.Component {
       const start_y_scaled = start[1] * this.props.insights_image_scale
       const width_scaled = match['size'][0] * this.props.insights_image_scale / template_scale
       const height_scaled = match['size'][1] * this.props.insights_image_scale / template_scale
+      ctx.fillStyle = this.template_match_color
+      ctx.globalAlpha = 0.4
+      ctx.fillRect(start_x_scaled, start_y_scaled, width_scaled, height_scaled)
+      ctx.strokeStyle = this.red_color
+      ctx.lineWidth = 3
       ctx.strokeRect(start_x_scaled, start_y_scaled, width_scaled, height_scaled)
     }
   }
@@ -127,6 +135,7 @@ class CanvasInsightsOverlay extends React.Component {
     let ctx = canvas.getContext('2d')
     ctx.strokeStyle = this.selected_area_color
     ctx.lineWidth = 3
+    ctx.globalAlpha = 1
     for (let i=0; i < selected_areas.length; i++) {
       const selected_area = selected_areas[i]
       const start_x_scaled = selected_area['start'][0] * this.props.insights_image_scale

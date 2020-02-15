@@ -284,7 +284,7 @@ class TelemetryControls extends React.Component {
         end_conditions: rule['end_conditions'],
         actions: rule['actions'],
       })
-      this.props.setCurrentTelemetryRuleId(rule_id)
+      this.props.setGlobalStateVar('current_telemetry_rule_id', rule_id)
       this.props.displayInsightsMessage('telemetry rule loaded')
     }
   }
@@ -394,7 +394,7 @@ class TelemetryControls extends React.Component {
     deepCopyTelemetryRules[rule_id] = telemetry_rule
     this.props.setTelemetryRules(deepCopyTelemetryRules)
     this.props.displayInsightsMessage('Telemetry rule has been saved')
-    this.props.setCurrentTelemetryRuleId(rule_id)
+    this.props.setGlobalStateVar('current_telemetry_rule_id', rule_id)
     this.setState({
       id: rule_id,
       unsaved_changes: false,

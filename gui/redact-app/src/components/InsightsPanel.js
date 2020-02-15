@@ -739,7 +739,7 @@ class InsightsPanel extends React.Component {
       movie_obj[cur_frameset_hash] = frameset_obj
       template_obj[this.props.movie_url] = movie_obj
       deepCopyAnnotations[annotation_data['template_id']] = template_obj
-      this.props.setAnnotations(deepCopyAnnotations)
+      this.props.setGlobalStateVar('annotations', deepCopyAnnotations)
       when_done()
     }
     if (annotation_data['type'] && annotation_data['type'] === 'ocr') {
@@ -760,7 +760,7 @@ class InsightsPanel extends React.Component {
       annotation_obj[this.props.movie_url] = movie_obj
       deepCopyAnnotations[annotation_key] = annotation_obj
 
-      this.props.setAnnotations(deepCopyAnnotations)
+      this.props.setGlobalStateVar('annotations', deepCopyAnnotations)
       when_done()
     }
 
@@ -768,7 +768,7 @@ class InsightsPanel extends React.Component {
 
   deleteAnnotation(scope='all') {
     if (scope === 'all') {
-     this.props.setAnnotations({})
+     this.props.setGlobalStateVar('annotations', {})
     }
   }
 
@@ -993,6 +993,7 @@ class InsightsPanel extends React.Component {
           </div>
 
           <BottomInsightsControls 
+            setGlobalStateVar={this.props.setGlobalStateVar}
             handleSetMode={this.handleSetMode}
             template_matches={this.props.template_matches}
             clearSelectedAreas={this.clearSelectedAreas}
@@ -1002,9 +1003,6 @@ class InsightsPanel extends React.Component {
             callPing={this.callPing}
             templates={this.props.templates}
             current_template_id={this.props.current_template_id}
-            setTemplates={this.props.setTemplates}
-            setTemplateMatches={this.props.setTemplateMatches}
-            setCurrentTemplateId={this.props.setCurrentTemplateId}
             submitInsightsJob={this.submitInsightsJob}
             saveWorkbook={this.props.saveWorkbook}
             saveWorkbookName={this.props.saveWorkbookName}
@@ -1023,13 +1021,11 @@ class InsightsPanel extends React.Component {
             getAnnotations={this.getAnnotations}
             cropImage={this.props.cropImage}
             movie_sets={this.props.movie_sets}
-            setMovieSets={this.props.setMovieSets}
             draggedId={this.state.draggedId}
             visibilityFlags={this.state.visibilityFlags}
             toggleShowVisibility={this.toggleShowVisibility}
             playSound={this.props.playSound}
             togglePlaySound={this.props.togglePlaySound}
-            setFramesetDiscriminator={this.props.setFramesetDiscriminator}
             campaign_movies={this.props.campaign_movies}
             setCampaignMovies={this.props.setCampaignMovies}
             updateGlobalState={this.props.updateGlobalState}
@@ -1037,7 +1033,6 @@ class InsightsPanel extends React.Component {
             setImageTypeToDisplay={this.setImageTypeToDisplay}
             imageTypeToDisplay={this.state.imageTypeToDisplay}
             whenDoneTarget={this.props.whenDoneTarget}
-            setWhenDoneTarget={this.props.setWhenDoneTarget}
             files={this.props.files}
             getFiles={this.props.getFiles}
             deleteFile={this.props.deleteFile}
@@ -1049,7 +1044,6 @@ class InsightsPanel extends React.Component {
             telemetry_data={this.props.telemetry_data}
             setTelemetryData={this.props.setTelemetryData}
             setTelemetryRules={this.props.setTelemetryRules}
-            setCurrentTelemetryRuleId={this.props.setCurrentTelemetryRuleId}
             addInsightsCallback={this.addInsightsCallback}
             clicked_coords={this.state.clicked_coords}
           />

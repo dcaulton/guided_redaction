@@ -393,9 +393,8 @@ class MoviePanel extends React.Component {
             movie_url={this.props.movie_url}
             movies={this.props.movies}
             setMessage={this.setMessage}
-            setFramesetDiscriminator={this.props.setFramesetDiscriminator}
             getRedactedMovieUrl={this.props.getRedactedMovieUrl}
-            setMaskMethod={this.props.setMaskMethod}
+            setGlobalStateVar={this.props.setGlobalStateVar}
             submitMovieJob={this.submitMovieJob}
             mask_method={this.props.mask_method}
             frameset_discriminator={this.props.frameset_discriminator}
@@ -440,7 +439,8 @@ class MoviePanelAdvancedControls extends React.Component {
             name='frameset_discriminator'
             value={this.props.frameset_discriminator}
             onChange={(event) => 
-              this.props.setFramesetDiscriminator(
+              this.props.setGlobalStateVar(
+                'frameset_discriminator',
                 event.target.value,
                 this.props.setMessage('framework discriminator updated')
               )
@@ -589,7 +589,7 @@ class MoviePanelAdvancedControls extends React.Component {
                     className='ml-2'
                     name='mask_method'
                     value={this.props.mask_method}
-                    onChange={(event) => this.props.setMaskMethod(event.target.value)}
+                    onChange={(event) => this.props.setGlobalStateVar('mask_method', event.target.value)}
                 >
                   <option value='blur_7x7'>--- Mask Method ---</option>
                   <option value='blur_7x7'>Gaussian Blur 7x7</option>

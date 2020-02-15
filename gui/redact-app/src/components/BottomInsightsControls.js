@@ -30,15 +30,13 @@ class BottomInsightsControls extends React.Component {
       >
 
         <TemplateControls 
+          setGlobalStateVar={this.props.setGlobalStateVar}
           handleSetMode={this.props.handleSetMode}
           template_matches={this.props.template_matches}
           submitInsightsJob={this.props.submitInsightsJob}
           templates={this.props.templates}
           current_template_id={this.props.current_template_id}
           displayInsightsMessage={this.props.displayInsightsMessage}
-          setCurrentTemplateId={this.props.setCurrentTemplateId}
-          setTemplates={this.props.setTemplates}
-          setTemplateMatches={this.props.setTemplateMatches}
           cropImage={this.props.cropImage}
           movie_sets={this.props.movie_sets}
           visibilityFlags={this.props.visibilityFlags}
@@ -83,7 +81,7 @@ class BottomInsightsControls extends React.Component {
           telemetry_data={this.props.telemetry_data}
           setTelemetryData={this.props.setTelemetryData}
           setTelemetryRules={this.props.setTelemetryRules}
-          setCurrentTelemetryRuleId={this.props.setCurrentTelemetryRuleId}
+          setGlobalStateVar={this.props.setGlobalStateVar}
           visibilityFlags={this.props.visibilityFlags}
           toggleShowVisibility={this.props.toggleShowVisibility}
         />
@@ -111,9 +109,9 @@ class BottomInsightsControls extends React.Component {
         />
 
         <MovieSetsControls
+          setGlobalStateVar={this.props.setGlobalStateVar}
           displayInsightsMessage={this.props.displayInsightsMessage}
           movie_sets={this.props.movie_sets}
-          setMovieSets={this.props.setMovieSets}
           draggedId={this.props.draggedId}
           visibilityFlags={this.props.visibilityFlags}
           toggleShowVisibility={this.props.toggleShowVisibility}
@@ -140,6 +138,7 @@ class BottomInsightsControls extends React.Component {
         />
 
         <SessionControls
+          setGlobalStateVar={this.props.setGlobalStateVar}
           current_workbook_name={this.props.current_workbook_name}
           current_workbook_id={this.props.current_workbook_id}
           saveWorkbook={this.props.saveWorkbook}
@@ -153,12 +152,10 @@ class BottomInsightsControls extends React.Component {
           loadWorkbook={this.props.loadWorkbook}
           visibilityFlags={this.props.visibilityFlags}
           toggleShowVisibility={this.props.toggleShowVisibility}
-          setFramesetDiscriminator={this.props.setFramesetDiscriminator}
           campaign_movies={this.props.campaign_movies}
           setCampaignMovies={this.props.setCampaignMovies}
           updateGlobalState={this.props.updateGlobalState}
           whenDoneTarget={this.props.whenDoneTarget}
-          setWhenDoneTarget={this.props.setWhenDoneTarget}
           frameset_discriminator={this.props.frameset_discriminator}
           preserveAllJobs={this.props.preserveAllJobs}
           togglePreserveAllJobs={this.props.togglePreserveAllJobs}

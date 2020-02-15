@@ -27,7 +27,7 @@ class MovieSetsControls extends React.Component {
       movie_set_id = this.state.movie_set_id
     }
     deepCopyMovieSets[movie_set_id] = movie_set
-    this.props.setMovieSets(deepCopyMovieSets)
+    this.props.setGlobalStateVar('movie_sets', deepCopyMovieSets)
     this.props.displayInsightsMessage('movie set saved')
   }
 

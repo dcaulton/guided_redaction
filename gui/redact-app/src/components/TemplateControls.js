@@ -95,7 +95,7 @@ class TemplateControls extends React.Component {
   } 
 
   loadNewTemplate() {
-    this.props.setCurrentTemplateId('')
+    this.props.setGlobalStateVar('current_template_id', '')
     this.setState({
       id: '',
       name: '',
@@ -128,7 +128,7 @@ class TemplateControls extends React.Component {
         unsaved_changes: false,
       })
     }
-    this.props.setCurrentTemplateId(template_id)
+    this.props.setGlobalStateVar('current_template_id', template_id)
     this.props.displayInsightsMessage('Template has been loaded')
   }
 
@@ -241,9 +241,9 @@ class TemplateControls extends React.Component {
   deleteTemplate(template_id) {
     let deepCopyTemplates = JSON.parse(JSON.stringify(this.props.templates))
     delete deepCopyTemplates[template_id]
-    this.props.setTemplates(deepCopyTemplates)
+    this.props.setGlobalStateVar('templates', deepCopyTemplates)
     if (template_id === this.props.current_template_id) {
-      this.props.setCurrentTemplateId('')
+      this.props.setGlobalStateVar('current_template_id', '')
     }
     this.props.displayInsightsMessage('Template was deleted')
   }
@@ -323,8 +323,8 @@ class TemplateControls extends React.Component {
     }
     let deepCopyTemplates = JSON.parse(JSON.stringify(this.props.templates))
     deepCopyTemplates[template_id] = template
-    this.props.setTemplates(deepCopyTemplates)
-    this.props.setCurrentTemplateId(template_id)
+    this.props.setGlobalStateVar('templates', deepCopyTemplates)
+    this.props.setGlobalStateVar('current_template_id', template_id)
     this.setState({
       id: template_id,
       unsaved_changes: false,
@@ -454,16 +454,16 @@ class TemplateControls extends React.Component {
   clearTemplateMatches(scope) {
     let deepCopyTemplateMatches = JSON.parse(JSON.stringify(this.props.template_matches))
     if (scope === 'all_templates') {
-      this.props.setTemplateMatches({})
+      this.props.setGlobalStateVar('template_matches', {})
       this.props.displayInsightsMessage('All template matches have been cleared')
     } else if (scope === 'all_movies') {
       delete deepCopyTemplateMatches[this.props.current_template_id]
-      this.props.setTemplateMatches(deepCopyTemplateMatches)
+      this.props.setGlobalStateVar('template_matches', deepCopyTemplateMatches)
       this.props.displayInsightsMessage('Template matches for this template + all movies have been cleared')
     } else if (scope === 'movie') {
       if (Object.keys(deepCopyTemplateMatches[this.props.current_template_id]).includes(this.props.movie_url)) {
         delete deepCopyTemplateMatches[this.props.current_template_id][this.props.movie_url]
-        this.props.setTemplateMatches(deepCopyTemplateMatches)
+        this.props.setGlobalStateVar('template_matches', deepCopyTemplateMatches)
         this.props.displayInsightsMessage('Template matches for this template + this movie have been cleared')
       }
     }

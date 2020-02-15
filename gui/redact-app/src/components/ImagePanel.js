@@ -513,7 +513,7 @@ class ImagePanel extends React.Component {
           <AdvancedImageControls 
             getImageUrl={this.props.getImageUrl}
             mask_method={this.props.mask_method}
-            changeMaskMethodCallback={this.props.setMaskMethod}
+            setGlobalStateVar={this.props.setGlobalStateVar}
             getFramesetHashForImageUrl={this.props.getFramesetHashForImageUrl}
             setIllustrateParameters={this.props.setIllustrateParameters}
             illustrateParameters={this.props.illustrateParameters}
@@ -549,7 +549,7 @@ class AdvancedImageControls extends React.Component {
       <select
           name='mask_method'
           value={this.props.mask_method}
-          onChange={(event) => this.props.changeMaskMethodCallback(event.target.value)}
+          onChange={(event) => this.props.setGlobalStateVar('mask_method', event.target.value)}
       >
         <option value='blur_7x7'>Gaussian Blur 7x7</option>
         <option value='blur_21x21'>Gaussian Blur 21x21</option>

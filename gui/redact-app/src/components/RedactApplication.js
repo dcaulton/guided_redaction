@@ -80,10 +80,8 @@ class RedactApplication extends React.Component {
     this.getNextImageHash=this.getNextImageHash.bind(this)
     this.getPrevImageHash=this.getPrevImageHash.bind(this)
     this.handleMergeFramesets=this.handleMergeFramesets.bind(this)
-    this.setTemplateMatches=this.setTemplateMatches.bind(this)
     this.setSelectedArea=this.setSelectedArea.bind(this)
     this.clearMovieSelectedAreas=this.clearMovieSelectedAreas.bind(this)
-    this.setTemplates=this.setTemplates.bind(this)
     this.setImageScale=this.setImageScale.bind(this)
     this.doFloodFill=this.doFloodFill.bind(this)
     this.doArrowFill=this.doArrowFill.bind(this)
@@ -98,17 +96,13 @@ class RedactApplication extends React.Component {
     this.saveWorkbook=this.saveWorkbook.bind(this)
     this.saveWorkbookName=this.saveWorkbookName.bind(this)
     this.loadWorkbook=this.loadWorkbook.bind(this)
-    this.setCurrentTemplateId=this.setCurrentTemplateId.bind(this)
     this.deleteWorkbook=this.deleteWorkbook.bind(this)
     this.setSelectedAreaMetas=this.setSelectedAreaMetas.bind(this)
     this.afterUuidImagesFetched=this.afterUuidImagesFetched.bind(this)
-    this.setAnnotations=this.setAnnotations.bind(this)
     this.cropImage=this.cropImage.bind(this)
     this.setMovieNickname=this.setMovieNickname.bind(this)
     this.setMovieRedactedUrl=this.setMovieRedactedUrl.bind(this)
     this.getCurrentFramesets=this.getCurrentFramesets.bind(this)
-    this.setMovieSets=this.setMovieSets.bind(this)
-    this.setFramesetDiscriminator=this.setFramesetDiscriminator.bind(this)
     this.setActiveMovie=this.setActiveMovie.bind(this)
     this.getRedactedMovieUrl=this.getRedactedMovieUrl.bind(this)
     this.clearCurrentFramesetChanges=this.clearCurrentFramesetChanges.bind(this)
@@ -131,7 +125,6 @@ class RedactApplication extends React.Component {
     this.establishNewEmptyMovie=this.establishNewEmptyMovie.bind(this)
     this.setCampaignMovies=this.setCampaignMovies.bind(this)
     this.addImageToMovie=this.addImageToMovie.bind(this)
-    this.setWhenDoneTarget=this.setWhenDoneTarget.bind(this)
     this.checkAndUpdateApiUris=this.checkAndUpdateApiUris.bind(this)
     this.setIllustrateParameters=this.setIllustrateParameters.bind(this)
     this.togglePreserveAllJobs=this.togglePreserveAllJobs.bind(this)
@@ -139,8 +132,15 @@ class RedactApplication extends React.Component {
     this.setFramesetHash=this.setFramesetHash.bind(this)
     this.setTelemetryData=this.setTelemetryData.bind(this)
     this.setTelemetryRules=this.setTelemetryRules.bind(this)
-    this.setCurrentTelemetryRuleId=this.setCurrentTelemetryRuleId.bind(this)
     this.getJobResultData=this.getJobResultData.bind(this)
+    this.setGlobalStateVar=this.setGlobalStateVar.bind(this)
+  }
+
+  setGlobalStateVar(var_name, var_value, when_done=(()=>{})) {
+    this.setState({
+      [var_name]: var_value,
+    },
+    when_done())
   }
 
   setTelemetryData(hash_in, when_done=(()=>{}), when_failed=(()=>{})) {
@@ -179,12 +179,6 @@ class RedactApplication extends React.Component {
   setTelemetryRules(rules) {
     this.setState({
       telemetry_rules: rules,
-    })
-  }
-
-  setCurrentTelemetryRuleId(rule_id) {
-    this.setState({
-      current_telemetry_rule_id: rule_id,
     })
   }
 
@@ -239,12 +233,6 @@ class RedactApplication extends React.Component {
     catch(err) {
     }
     return 'unknown'
-  }
-
-  setWhenDoneTarget(the_value) {
-    this.setState({
-      whenDoneTarget: the_value,
-    })
   }
 
   togglePreserveAllJobs() {
@@ -603,13 +591,6 @@ class RedactApplication extends React.Component {
     }
   }
 
-  setFramesetDiscriminator(the_value, when_done=(()=>{})) {
-    this.setState({
-      frameset_discriminator: the_value,
-    },
-    when_done())
-  }
-
   getCurrentFramesets() {
     if (this.state.movie_url) {
       if (Object.keys(this.state.movies).includes(this.state.movie_url)) {
@@ -617,12 +598,6 @@ class RedactApplication extends React.Component {
       }
     }
     return []
-  }
-
-  setMovieSets(the_movie_sets) {
-    this.setState({
-      movie_sets: the_movie_sets,
-    })
   }
 
   setMovies(the_movies) {
@@ -711,24 +686,6 @@ class RedactApplication extends React.Component {
     })
     let first_hash = Object.keys(the_framesets)[0]
     this.setFramesetHash(first_hash)
-  }
-
-  setTemplates = (the_templates) => {
-    this.setState({
-      templates: the_templates,
-    })
-  }
-
-  setTemplateMatches = (the_template_matches) => {
-    this.setState({
-      template_matches: the_template_matches,
-    })
-  }
-
-  setAnnotations(the_annotations) {
-    this.setState({
-      annotations: the_annotations,
-    })
   }
 
   setSelectedAreaMetas = (the_metas, meta_id_to_make_active='') => {
@@ -1017,13 +974,13 @@ class RedactApplication extends React.Component {
     const template_id = request_data['template']['id']
     let deepCopyTemplateMatches = JSON.parse(JSON.stringify(this.state.template_matches))
     deepCopyTemplateMatches[template_id] = response_data
-    this.setTemplateMatches(deepCopyTemplateMatches)
+    this.setGlobalStateVar('template_matches', deepCopyTemplateMatches)
     if (!Object.keys(this.state.templates).includes(template_id)) {
       let deepCopyTemplates= JSON.parse(JSON.stringify(this.state.templates))
       let template = request_data['template']
       deepCopyTemplates[template_id] = template
-      this.setTemplates(deepCopyTemplates)
-      this.setCurrentTemplateId(template_id)
+      this.setGlobalStateVar('templates', deepCopyTemplates)
+      this.setGlobalStateVar('current_template_id', template_id)
 
       const cur_movies = Object.keys(this.state.movies)
       let deepCopyMovies= JSON.parse(JSON.stringify(this.state.movies))
@@ -1479,12 +1436,6 @@ class RedactApplication extends React.Component {
     })
   }
 
-  async setCurrentTemplateId(template_id, when_done=(()=>{})) {
-    this.setState({
-      current_template_id: template_id,
-    }, when_done())
-  }
-
   async loadWorkbook(workbook_id, when_done=(()=>{})) {
     if (workbook_id === '-1') {
       this.setState({
@@ -1702,12 +1653,6 @@ class RedactApplication extends React.Component {
     })
   }
 
-  handleSetMaskMethod = (mask_method) => {
-    this.setState({
-      mask_method: mask_method,
-    })
-  }
-
   handleMergeFramesets = (target_hash, source_hash) => {
     let deepCopyFramesets = JSON.parse(JSON.stringify(this.getCurrentFramesets()))
     const source_frameset = deepCopyFramesets[source_hash]
@@ -1837,10 +1782,10 @@ class RedactApplication extends React.Component {
           <Switch>
             <Route path='/redact/movie'>
               <MoviePanel 
+                setGlobalStateVar={this.setGlobalStateVar}
                 movie_url = {this.state.movie_url}
                 getCurrentFramesets={this.getCurrentFramesets}
                 mask_method = {this.state.mask_method}
-                setMaskMethod={this.handleSetMaskMethod}
                 setFramesetHash={this.setFramesetHash}
                 getRedactionFromFrameset={this.getRedactionFromFrameset}
                 getImageFromFrameset={this.getImageFromFrameset}
@@ -1849,7 +1794,6 @@ class RedactApplication extends React.Component {
                 handleMergeFramesets={this.handleMergeFramesets}
                 movies={this.state.movies}
                 frameset_discriminator={this.state.frameset_discriminator}
-                setFramesetDiscriminator={this.setFramesetDiscriminator}
                 getRedactedMovieUrl={this.getRedactedMovieUrl}
                 setMovieRedactedUrl={this.setMovieRedactedUrl}
                 templates={this.state.templates}
@@ -1866,6 +1810,7 @@ class RedactApplication extends React.Component {
             </Route>
             <Route path='/redact/image'>
               <ImagePanel 
+                setGlobalStateVar={this.setGlobalStateVar}
                 mask_method={this.state.mask_method}
                 movies={this.state.movies}
                 movie_url = {this.state.movie_url}
@@ -1875,7 +1820,6 @@ class RedactApplication extends React.Component {
                 image_scale={this.state.image_scale}
                 addRedactionToFrameset={this.addRedactionToFrameset}
                 getRedactionFromFrameset={this.getRedactionFromFrameset}
-                setMaskMethod={this.handleSetMaskMethod}
                 setFramesetHash={this.setFramesetHash}
                 getFramesetHashForImageUrl={this.getFramesetHashForImageUrl}
                 getNextImageHash={this.getNextImageHash}
@@ -1899,17 +1843,15 @@ class RedactApplication extends React.Component {
             </Route>
             <Route path='/redact/insights'>
               <InsightsPanel  
+                setGlobalStateVar={this.setGlobalStateVar}
                 getFramesetHashesInOrder={this.getFramesetHashesInOrder}
                 setMovieUrlCallback={this.handleSetMovieUrl}
                 getFramesetHashForImageUrl={this.getFramesetHashForImageUrl}
                 movie_url={this.state.movie_url}
                 movies={this.state.movies}
                 getCurrentFramesets={this.getCurrentFramesets}
-                setTemplateMatches={this.setTemplateMatches}
-                setCurrentTemplateId={this.setCurrentTemplateId}
                 current_template_id={this.state.current_template_id}
                 templates={this.state.templates}
-                setTemplates={this.setTemplates}
                 template_matches={this.state.template_matches}
                 setSelectedArea={this.setSelectedArea}
                 clearMovieSelectedAreas={this.clearMovieSelectedAreas}
@@ -1935,20 +1877,16 @@ class RedactApplication extends React.Component {
                 setSelectedAreaMetas={this.setSelectedAreaMetas}
                 selected_area_metas={this.state.selected_area_metas}
                 current_selected_area_meta_id={this.state.current_selected_area_meta_id}
-                setAnnotations={this.setAnnotations}
                 annotations={this.state.annotations}
                 cropImage={this.cropImage}
                 setMovieNickname={this.setMovieNickname}
                 movie_sets={this.state.movie_sets}
-                setMovieSets={this.setMovieSets}
                 frameset_discriminator={this.state.frameset_discriminator}
-                setFramesetDiscriminator={this.setFramesetDiscriminator}
                 setActiveMovie={this.setActiveMovie}
                 updateGlobalState={this.updateGlobalState}
                 campaign_movies={this.state.campaign_movies}
                 setCampaignMovies={this.setCampaignMovies}
                 whenDoneTarget={this.state.whenDoneTarget}
-                setWhenDoneTarget={this.setWhenDoneTarget}
                 files={this.state.files}
                 getFiles={this.getFiles}
                 deleteFile={this.deleteFile}
@@ -1960,7 +1898,6 @@ class RedactApplication extends React.Component {
                 telemetry_data={this.state.telemetry_data}
                 setTelemetryData={this.setTelemetryData}
                 setTelemetryRules={this.setTelemetryRules}
-                setCurrentTelemetryRuleId={this.setCurrentTelemetryRuleId}
                 getJobResultData={this.getJobResultData}
                 ocr_matches={this.state.ocr_matches}
               />
