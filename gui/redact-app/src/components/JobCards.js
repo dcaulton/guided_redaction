@@ -1,6 +1,7 @@
 import React from 'react'
 
 class JobCardList extends React.Component {
+  
   buildMultiIdString() {
     let build_string = ''
     for (let i=0; i < this.props.jobs.length; i++) {
@@ -66,6 +67,8 @@ class JobCardList extends React.Component {
               cancelJob={this.props.cancelJob}
               workbooks={this.props.workbooks}
               index={index}
+              getJobResultData={this.props.getJobResultData}
+              setModalData={this.props.setModalData}
             />
             )
           })}
@@ -291,10 +294,9 @@ class JobCard extends React.Component {
     )
   }
 
-  render() {
-    let get_job_button = ''
+  buildGetJobButton() {
     if (this.props.job_data['status'] === 'success') {
-      get_job_button = (
+      return (
         <button 
             className='btn btn-primary m-2'
             onClick={() => this.props.loadInsightsJobResults(
@@ -305,7 +307,11 @@ class JobCard extends React.Component {
         </button>
       )
     }
-    let delete_job_button = (
+    return ''
+  }
+
+  buildDeleteJobButton() {
+    return (
       <button 
           className='btn btn-primary m-2'
           onClick={() => this.props.cancelJob(this.props.job_data['id'])}
@@ -313,7 +319,51 @@ class JobCard extends React.Component {
         Delete
       </button>
     )
+  }
 
+  buildJobStatus() {
+    let text_style = {
+      'fontSize': '14px',
+    }
+    if (this.props.job_data['status'] === 'success') {
+      return (
+        <div>
+          <div className='d-inline'>
+            {this.props.job_data['status']}
+          </div>
+          <div 
+              className='d-inline ml-2'
+              style={text_style}
+          >
+            <button
+                type="button"
+                className="border-0"
+                onClick={() => this.showJobResultsInModal(this.props.job_data['id'])}
+                data-toggle="modal"
+                data-target="#insightsPanelModal"
+            >
+            view
+            </button>
+          </div>
+        </div>
+      )
+    }
+    return (
+      <div>
+        <div className='d-inline'>
+          {this.props.job_data['status']}
+        </div>
+      </div>
+    )
+  }
+
+  showJobResultsInModal(job_id) {
+    this.props.getJobResultData(job_id, this.props.setModalData)
+  }
+
+  render() {
+    const get_job_button = this.buildGetJobButton()
+    const delete_job_button = this.buildDeleteJobButton()
     const job_body_id = 'job_card_' + this.props.index
     const job_header = this.buildJobHeader(this.props.job_data, job_body_id)
     const job_response_data = this.buildJobResponseData(this.props.job_data)
@@ -321,6 +371,7 @@ class JobCard extends React.Component {
     const job_desc_data = this.buildJobDescriptionData(this.props.job_data)
     const job_created_on_data = this.buildCreatedOnData(this.props.job_data)
     const job_percent_done = this.buildPercentDone(this.props.job_data)
+    const job_status = this.buildJobStatus()
 
     return (
       <div className='row pl-1 mt-2 card'>
@@ -337,7 +388,7 @@ class JobCard extends React.Component {
           >
             {job_desc_data}
             <div className='row h4'>
-              {this.props.job_data['status']}
+              {job_status}
             </div>
             {job_response_data}
             <div className='row mt-1'>

@@ -188,7 +188,7 @@ class OcrControls extends React.Component {
     const start_end_coords = this.buildStartEndCoords()
 
     return (
-        <div className='row bg-light rounded mt-3 pb-2'>
+        <div className='row bg-light rounded mt-3'>
           <div className='col'>
             <div className='row'>
               <div 
@@ -221,7 +221,7 @@ class OcrControls extends React.Component {
 
             <div 
                 id='ocr_body' 
-                className='row collapse'
+                className='row collapse pb-2'
             >
               <div id='ocr_main' className='col'>
 

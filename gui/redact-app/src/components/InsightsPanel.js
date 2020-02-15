@@ -37,6 +37,7 @@ class InsightsPanel extends React.Component {
       },
       imageTypeToDisplay: '',
       callbacks: {},
+      modal_data: '',
     }
     this.getSelectedAreas=this.getSelectedAreas.bind(this)
     this.getAnnotations=this.getAnnotations.bind(this)
@@ -71,8 +72,14 @@ class InsightsPanel extends React.Component {
     this.blinkDiff=this.blinkDiff.bind(this)
     this.setImageTypeToDisplay=this.setImageTypeToDisplay.bind(this)
     this.addInsightsCallback=this.addInsightsCallback.bind(this)
+    this.setModalData=this.setModalData.bind(this)
   }
 
+  setModalData(the_data) {
+    this.setState({
+      modal_data: the_data,
+    })
+  }
 
   addInsightsCallback(the_key, the_callback) {
     let deepCopyCallbacks = JSON.parse(JSON.stringify(this.state.callbacks))
@@ -201,7 +208,7 @@ class InsightsPanel extends React.Component {
     job_data['app'] = 'analyze'
     job_data['operation'] = 'scan_ocr_movie'
     if (scope === 'current_movie') {
-      job_data['description'] = 'scan ocr for one movie'
+      job_data['description'] = 'scan ocr for one movie: ' + this.props.movie_url
       job_data['request_data']['movies'] = {}
       job_data['request_data']['movies'][this.props.movie_url] = this.props.movies[this.props.movie_url]
     } else if (scope === 'all_movies') {
@@ -850,7 +857,37 @@ class InsightsPanel extends React.Component {
     return bottom_y
   }
 
+  buildInsightsModal() {
+    if (this.state.modal_data) {
+      return (
+        <div className="modal" id='insightsPanelModal' tabIndex="-1" role="dialog">
+          <div className="modal-dialog modal-xl" id='insightsPanelModalInner' role="document">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Viewing Data</h5>
+                <button type="button" className="close" data-dismiss="modal" aria-label="Close">
+                  <span aria-hidden="true">&times;</span>
+                </button>
+              </div>
+              <div className="modal-body">
+                <pre>
+                {this.state.modal_data}
+                </pre>
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-secondary" data-dismiss="modal">Close</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )
+    }
+    return ''
+  }
+
   render() {
+    const insights_modal = this.buildInsightsModal()
+
     document.body.onkeydown = this.handleKeyDown
     let workbook_name = this.props.current_workbook_name
     if (!this.props.current_workbook_id) {
@@ -871,6 +908,9 @@ class InsightsPanel extends React.Component {
     }
     return (
       <div id='insights_panel' className='row mt-5'>
+
+        {insights_modal}
+
         <div id='insights_left' className='col-lg-2'>
           <MovieCardList 
             setCurrentVideo={this.setCurrentVideo}
@@ -903,6 +943,7 @@ class InsightsPanel extends React.Component {
               </div>
             </div>
           </div>
+
           <div 
               id='insights_image_div' 
               className='row'
@@ -928,6 +969,7 @@ class InsightsPanel extends React.Component {
               clicked_coords={this.state.clicked_coords}
             />
           </div>
+
           <div 
               id='insights_scrubber_div' 
               className='row'
@@ -940,6 +982,7 @@ class InsightsPanel extends React.Component {
                 onChange={this.scrubberOnChange}
             />
           </div>
+
           <BottomInsightsControls 
             handleSetMode={this.handleSetMode}
             getCurrentTemplateMatches={this.props.getCurrentTemplateMatches}
@@ -1009,10 +1052,12 @@ class InsightsPanel extends React.Component {
             loadInsightsJobResults={this.loadInsightsJobResults}
             cancelJob={this.props.cancelJob}
             workbooks={this.props.workbooks}
+            getJobResultData={this.props.getJobResultData}
+            setModalData={this.setModalData}
           />
         </div>
       </div>
-    );
+    )
   }
 }
 

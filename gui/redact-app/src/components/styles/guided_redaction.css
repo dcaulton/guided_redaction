@@ -55,6 +55,11 @@ div#moviePanelModalInner img#movie_zoom_image {
   max-height: 100%;
 }
 
+div#insightsPanelModalInner  {
+  max-width: 90%;
+  max-height:90%;
+}
+
 img#insights_image {
   padding: 0;
   margin: 0;

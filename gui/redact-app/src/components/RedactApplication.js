@@ -142,6 +142,7 @@ class RedactApplication extends React.Component {
     this.setTelemetryData=this.setTelemetryData.bind(this)
     this.setTelemetryRules=this.setTelemetryRules.bind(this)
     this.setCurrentTelemetryRuleId=this.setCurrentTelemetryRuleId.bind(this)
+    this.getJobResultData=this.getJobResultData.bind(this)
   }
 
   setTelemetryData(hash_in, when_done=(()=>{}), when_failed=(()=>{})) {
@@ -1232,6 +1233,35 @@ class RedactApplication extends React.Component {
     this.setFramesetHash(frameset_hash)
   }
 
+  async getJobResultData(job_id, when_done=(()=>{})) {
+    let job_url = this.state.jobs_url + '/' + job_id
+    await fetch(job_url, {
+      method: 'GET',
+      headers: this.buildJsonHeaders(),
+    })
+    .then((response) => response.json())
+    .then((responseJson) => {
+      const request = JSON.parse(responseJson['job']['request_data'])
+      const pretty_request = JSON.stringify(request, undefined, 2)
+      const response = JSON.parse(responseJson['job']['response_data'])
+      const pretty_response = JSON.stringify(response, undefined, 2)
+      delete responseJson['job']['request_data']
+      delete responseJson['job']['response_data']
+      const pretty_job = JSON.stringify(responseJson, undefined, 2)
+      const pretty_composite = (
+        '============== JOB CONTROL DATA ===============\n' + 
+        pretty_job + 
+        "\n\n" + 
+        '============== RESPONSE DATA ===============\n' + 
+        pretty_response +
+        "\n\n" + 
+        '============== REQUEST DATA ===============\n' + 
+        pretty_request
+      )
+      when_done(pretty_composite)
+    })
+  }
+
   async loadJobResults(job_id, when_done=(()=>{})) {
     let job_url = this.state.jobs_url + '/' + job_id
     await fetch(job_url, {
@@ -1946,6 +1976,7 @@ class RedactApplication extends React.Component {
                 setTelemetryData={this.setTelemetryData}
                 setTelemetryRules={this.setTelemetryRules}
                 setCurrentTelemetryRuleId={this.setCurrentTelemetryRuleId}
+                getJobResultData={this.getJobResultData}
               />
             </Route>
           </Switch>
