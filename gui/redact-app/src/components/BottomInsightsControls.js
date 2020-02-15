@@ -31,13 +31,14 @@ class BottomInsightsControls extends React.Component {
 
         <TemplateControls 
           handleSetMode={this.props.handleSetMode}
-          getCurrentTemplateMatches={this.props.getCurrentTemplateMatches}
+          template_matches={this.props.template_matches}
           submitInsightsJob={this.props.submitInsightsJob}
           templates={this.props.templates}
           current_template_id={this.props.current_template_id}
           displayInsightsMessage={this.props.displayInsightsMessage}
           setCurrentTemplateId={this.props.setCurrentTemplateId}
           setTemplates={this.props.setTemplates}
+          setTemplateMatches={this.props.setTemplateMatches}
           cropImage={this.props.cropImage}
           movie_sets={this.props.movie_sets}
           visibilityFlags={this.props.visibilityFlags}

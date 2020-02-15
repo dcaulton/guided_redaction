@@ -452,21 +452,21 @@ class TemplateControls extends React.Component {
   }
 
   clearTemplateMatches(scope) {
+    let deepCopyTemplateMatches = JSON.parse(JSON.stringify(this.props.template_matches))
     if (scope === 'all_templates') {
-      this.clearTemplateMatches()
+      this.props.setTemplateMatches({})
+      this.props.displayInsightsMessage('All template matches have been cleared')
     } else if (scope === 'all_movies') {
-      this.props.setTemplateMatches(this.props.current_template_id, {})
+      delete deepCopyTemplateMatches[this.props.current_template_id]
+      this.props.setTemplateMatches(deepCopyTemplateMatches)
+      this.props.displayInsightsMessage('Template matches for this template + all movies have been cleared')
     } else if (scope === 'movie') {
-      const template_matches = this.props.getCurrentTemplateMatches()
-      let deepCopy = JSON.parse(JSON.stringify(
-        template_matches[this.props.current_template_id])
-      )
-      if (Object.keys(deepCopy).includes(this.props.movie_url)) {
-        delete deepCopy[this.props.movie_url]
-        this.props.setTemplateMatches(this.props.current_template_id, deepCopy)
+      if (Object.keys(deepCopyTemplateMatches[this.props.current_template_id]).includes(this.props.movie_url)) {
+        delete deepCopyTemplateMatches[this.props.current_template_id][this.props.movie_url]
+        this.props.setTemplateMatches(deepCopyTemplateMatches)
+        this.props.displayInsightsMessage('Template matches for this template + this movie have been cleared')
       }
     }
-    this.displayInsightsMessage('Template matches have been cleared')
   }
 
   buildNameField() {
@@ -629,11 +629,6 @@ class TemplateControls extends React.Component {
           Clear Matches
         </button>
         <div className='dropdown-menu' aria-labelledby='deleteTemplateMatchDropdownButton'>
-          <button className='dropdown-item'
-              onClick={() => this.clearTemplateMatches('image')}
-          >
-            Image
-          </button>
           <button className='dropdown-item'
               onClick={() => this.clearTemplateMatches('movie')}
           >

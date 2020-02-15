@@ -54,7 +54,6 @@ class InsightsPanel extends React.Component {
     this.afterArrowFill=this.afterArrowFill.bind(this)
     this.afterPingSuccess=this.afterPingSuccess.bind(this)
     this.afterPingFailure=this.afterPingFailure.bind(this)
-    this.getCurrentTemplateMaskZones=this.getCurrentTemplateMaskZones.bind(this)
     this.callPing=this.callPing.bind(this)
     this.submitInsightsJob=this.submitInsightsJob.bind(this)
     this.setSelectedAreaTemplateAnchor=this.setSelectedAreaTemplateAnchor.bind(this)
@@ -410,16 +409,7 @@ class InsightsPanel extends React.Component {
       })
     }
   }
-
   
-  getCurrentTemplateMaskZones() {
-    if (Object.keys(this.props.templates).includes(this.props.current_template_id)) {
-      return this.props.templates[this.props.current_template_id]['mask_zones']
-    } else {
-      return []
-    }
-  }
-
   currentImageIsTemplateAnchorImage() {
     if (this.props.current_template_id) {
       let key = this.props.current_template_id
@@ -440,11 +430,10 @@ class InsightsPanel extends React.Component {
   }
 
   getMovieMatchesFound(movie_url) {
-    const template_matches = this.props.getCurrentTemplateMatches()
-    if (!Object.keys(template_matches).includes(this.props.current_template_id)) {
+    if (!Object.keys(this.props.template_matches).includes(this.props.current_template_id)) {
       return ''
     }
-    const cur_templates_matches = template_matches[this.props.current_template_id]
+    const cur_templates_matches = this.props.template_matches[this.props.current_template_id]
     if (!Object.keys(cur_templates_matches).includes(movie_url)) {
       return ''
     }
@@ -820,11 +809,10 @@ class InsightsPanel extends React.Component {
   }
 
   getTemplateMatches() {
-    const template_matches = this.props.getCurrentTemplateMatches()
-    if (!Object.keys(template_matches).includes(this.props.current_template_id)) {
+    if (!Object.keys(this.props.template_matches).includes(this.props.current_template_id)) {
       return
     }
-    const cur_templates_matches = template_matches[this.props.current_template_id]
+    const cur_templates_matches = this.props.template_matches[this.props.current_template_id]
     if (!Object.keys(cur_templates_matches).includes(this.props.movie_url)) {
       return
     }
@@ -978,8 +966,8 @@ class InsightsPanel extends React.Component {
               height={this.state.image_height}
               clickCallback={this.handleImageClick}
               currentImageIsTemplateAnchorImage={this.currentImageIsTemplateAnchorImage}
-              getCurrentTemplateAnchors={this.props.getCurrentTemplateAnchors}
-              getCurrentTemplateMaskZones={this.getCurrentTemplateMaskZones}
+              templates={this.props.templates}
+              current_template_id={this.props.current_template_id}
               insights_image_scale={this.state.insights_image_scale}
               getTemplateMatches={this.getTemplateMatches}
               getSelectedAreas={this.getSelectedAreas}
@@ -1006,7 +994,7 @@ class InsightsPanel extends React.Component {
 
           <BottomInsightsControls 
             handleSetMode={this.handleSetMode}
-            getCurrentTemplateMatches={this.props.getCurrentTemplateMatches}
+            template_matches={this.props.template_matches}
             clearSelectedAreas={this.clearSelectedAreas}
             clearMovieSelectedAreas={this.props.clearMovieSelectedAreas}
             insights_image={this.state.insights_image}
@@ -1015,6 +1003,7 @@ class InsightsPanel extends React.Component {
             templates={this.props.templates}
             current_template_id={this.props.current_template_id}
             setTemplates={this.props.setTemplates}
+            setTemplateMatches={this.props.setTemplateMatches}
             setCurrentTemplateId={this.props.setCurrentTemplateId}
             submitInsightsJob={this.submitInsightsJob}
             saveWorkbook={this.props.saveWorkbook}

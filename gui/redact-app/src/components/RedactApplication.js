@@ -81,12 +81,10 @@ class RedactApplication extends React.Component {
     this.getPrevImageHash=this.getPrevImageHash.bind(this)
     this.handleMergeFramesets=this.handleMergeFramesets.bind(this)
     this.setTemplateMatches=this.setTemplateMatches.bind(this)
-    this.clearTemplateMatches=this.clearTemplateMatches.bind(this)
     this.setSelectedArea=this.setSelectedArea.bind(this)
     this.clearMovieSelectedAreas=this.clearMovieSelectedAreas.bind(this)
     this.setTemplates=this.setTemplates.bind(this)
     this.setImageScale=this.setImageScale.bind(this)
-    this.getCurrentTemplateAnchors=this.getCurrentTemplateAnchors.bind(this)
     this.doFloodFill=this.doFloodFill.bind(this)
     this.doArrowFill=this.doArrowFill.bind(this)
     this.doPing=this.doPing.bind(this)
@@ -119,7 +117,6 @@ class RedactApplication extends React.Component {
     this.getRedactedImageFromFrameset=this.getRedactedImageFromFrameset.bind(this)
     this.gotoWhenDoneTarget=this.gotoWhenDoneTarget.bind(this)
     this.updateGlobalState=this.updateGlobalState.bind(this)
-    this.getCurrentTemplateMatches=this.getCurrentTemplateMatches.bind(this)
     this.watchForJob=this.watchForJob.bind(this)
     this.unwatchJob=this.unwatchJob.bind(this)
     this.checkForJobs=this.checkForJobs.bind(this)
@@ -407,10 +404,6 @@ class RedactApplication extends React.Component {
       when_failed(error)
     })
     await response
-  }
-
-  getCurrentTemplateMatches() {
-    return this.state.template_matches
   }
 
   playTone() {
@@ -726,6 +719,12 @@ class RedactApplication extends React.Component {
     })
   }
 
+  setTemplateMatches = (the_template_matches) => {
+    this.setState({
+      template_matches: the_template_matches,
+    })
+  }
+
   setAnnotations(the_annotations) {
     this.setState({
       annotations: the_annotations,
@@ -951,7 +950,7 @@ class RedactApplication extends React.Component {
 
   updateMoviesWithTemplateMatchResults(template_id) {
     let deepCopyMovies= JSON.parse(JSON.stringify(this.state.movies))
-    const template_matches = this.getCurrentTemplateMatches()
+    const template_matches = this.state.template_matches
     let something_changed = false
     if (Object.keys(template_matches).includes(template_id)) {
       const template_match = template_matches[template_id]
@@ -1016,7 +1015,9 @@ class RedactApplication extends React.Component {
     const response_data = JSON.parse(job.response_data)
     const request_data = JSON.parse(job.request_data)
     const template_id = request_data['template']['id']
-    this.setTemplateMatches(template_id, response_data)
+    let deepCopyTemplateMatches = JSON.parse(JSON.stringify(this.state.template_matches))
+    deepCopyTemplateMatches[template_id] = response_data
+    this.setTemplateMatches(deepCopyTemplateMatches)
     if (!Object.keys(this.state.templates).includes(template_id)) {
       let deepCopyTemplates= JSON.parse(JSON.stringify(this.state.templates))
       let template = request_data['template']
@@ -1544,14 +1545,6 @@ class RedactApplication extends React.Component {
     })
   }
 
-  getCurrentTemplateAnchors() {
-    if (Object.keys(this.state.templates).includes(this.state.current_template_id)) {
-      return this.state.templates[this.state.current_template_id]['anchors']
-    } else {
-      return []
-    }
-  }
-
   getImageUrl() {
     return this.getImageFromFrameset(this.state.frameset_hash)
   }
@@ -1678,20 +1671,6 @@ class RedactApplication extends React.Component {
     deepCopyMovies[this.state.movie_url]['framesets'][the_hash] = the_frameset
     this.setState({
       movies: deepCopyMovies
-    })
-  }
-
-  setTemplateMatches = (template_id, the_matches) => {
-    let deepCopyTemplateMatches = JSON.parse(JSON.stringify(this.state.template_matches))
-    deepCopyTemplateMatches[template_id] = the_matches
-    this.setState({
-      template_matches: deepCopyTemplateMatches,
-    })
-  }
- 
-  clearTemplateMatches = (template_id, the_matches) => {
-    this.setState({
-      template_matches: {},
     })
   }
 
@@ -1926,16 +1905,16 @@ class RedactApplication extends React.Component {
                 movie_url={this.state.movie_url}
                 movies={this.state.movies}
                 getCurrentFramesets={this.getCurrentFramesets}
-                getCurrentTemplateAnchors={this.getCurrentTemplateAnchors}
                 setTemplateMatches={this.setTemplateMatches}
-                clearTemplateMatches={this.clearTemplateMatches}
-                setSelectedArea={this.setSelectedArea}
-                clearMovieSelectedAreas={this.clearMovieSelectedAreas}
-                getCurrentTemplateMatches={this.getCurrentTemplateMatches}
-                selected_areas={this.state.selected_areas}
-                doPing={this.doPing}
+                setCurrentTemplateId={this.setCurrentTemplateId}
+                current_template_id={this.state.current_template_id}
                 templates={this.state.templates}
                 setTemplates={this.setTemplates}
+                template_matches={this.state.template_matches}
+                setSelectedArea={this.setSelectedArea}
+                clearMovieSelectedAreas={this.clearMovieSelectedAreas}
+                selected_areas={this.state.selected_areas}
+                doPing={this.doPing}
                 doFloodFill={this.doFloodFill}
                 doArrowFill={this.doArrowFill}
                 cancelJob={this.cancelJob}
@@ -1948,8 +1927,6 @@ class RedactApplication extends React.Component {
                 saveWorkbookName={this.saveWorkbookName}
                 playSound={this.state.playSound}
                 togglePlaySound={this.togglePlaySound}
-                setCurrentTemplateId={this.setCurrentTemplateId}
-                current_template_id={this.state.current_template_id}
                 loadWorkbook={this.loadWorkbook}
                 deleteWorkbook={this.deleteWorkbook}
                 workbooks={this.state.workbooks}

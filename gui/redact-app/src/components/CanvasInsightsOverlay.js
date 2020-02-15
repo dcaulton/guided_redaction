@@ -27,7 +27,7 @@ class CanvasInsightsOverlay extends React.Component {
       ctx.strokeStyle = this.anchor_color
       ctx.lineWidth = 3
       
-      const template_anchors = this.props.getCurrentTemplateAnchors()
+      const template_anchors = this.props.templates[this.props.current_template_id]['anchors']
       for (let i=0; i < template_anchors.length; i++) {
         let the_anchor = template_anchors[i]
         if (Object.keys(the_anchor).includes('start')) {
@@ -50,7 +50,7 @@ class CanvasInsightsOverlay extends React.Component {
       ctx.strokeStyle = this.mask_zone_color
       ctx.lineWidth = 3
       
-      const template_mask_zones = this.props.getCurrentTemplateMaskZones()
+      const template_mask_zones = this.props.templates[this.props.current_template_id]['mask_zones']
       for (let i=0; i < template_mask_zones.length; i++) {
         let the_mask_zone= template_mask_zones[i]
         if (Object.keys(the_mask_zone).includes('start')) {
