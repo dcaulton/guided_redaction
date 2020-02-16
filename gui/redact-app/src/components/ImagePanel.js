@@ -475,7 +475,6 @@ class ImagePanel extends React.Component {
             </div>
           </div>
 
-
           <div id='image_and_next_prev_buttons' className='row'>
             <div id='prev_button_col' className='col-lg-1'>
               {prev_button}

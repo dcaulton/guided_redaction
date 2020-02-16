@@ -81,6 +81,19 @@ class JobCardList extends React.Component {
 
 class JobCard extends React.Component {
 
+  constructor(props) {
+    super(props)
+    this.view_image = (
+      <svg width="50" height="30" xmlns="http://www.w3.org/2000/svg">
+        <path d="M 0 14 C 8  2, 22  2, 30 14" stroke="black" fill="transparent"/>
+        <path d="M 0 14 C 8 26, 22 26, 30 14" stroke="black" fill="transparent"/>
+        <circle cx="14" cy="14" r="8" fill="#8D4008"/>
+        <circle cx="14" cy="14" r="4" fill="#000"/>
+        <path d="M 9 14 C 14 2, 8 13, 14 8" stroke="white" fill="transparent" stroke-width="1" />
+      </svg>
+    )
+  }
+
   getWorkbookName(the_workbook_id) {
     for (let i=0; i < this.props.workbooks.length; i++) {
       if (this.props.workbooks[i]['id'] === the_workbook_id) {
@@ -343,7 +356,7 @@ class JobCard extends React.Component {
                 data-toggle="modal"
                 data-target="#insightsPanelModal"
             >
-            view
+              {this.view_image}
             </button>
           </div>
         </div>

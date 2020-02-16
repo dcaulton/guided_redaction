@@ -196,7 +196,7 @@ class MovieCard extends React.Component {
   getSelectedAreasString() {
     if (Object.keys(this.props.selected_areas).includes(this.props.this_cards_movie_url)) {
       const  sa_count = Object.keys(this.props.selected_areas[this.props.this_cards_movie_url]).length
-      const ret_str = sa_count.toString() + ' frameset w/selected areas'
+      const ret_str = sa_count.toString() + ' selected areas'
       return ret_str
     }
     return ''
