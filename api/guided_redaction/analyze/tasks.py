@@ -22,7 +22,22 @@ def scan_template(job_uuid):
         response = avsst.process_create_request(json.loads(job.request_data))
         if not Job.objects.filter(pk=job_uuid).exists():
             return
-        job.response_data = json.dumps(response.data.get('matches'))
+        request = json.loads(job.request_data)
+        if ('match_method' not in request['template'] or
+            request['template']['match_method'] == 'any'):
+            job.response_data = json.dumps(response.data.get('matches'))
+        elif request['template']['match_method'] == 'all':
+            built_response_data = {}
+            all_anchor_keys = set([x['id'] for x in request['template']['anchors']])
+            raw_response = response.data.get('matches')
+            for movie_url in raw_response.keys():
+                built_response_data[movie_url] = {}
+                for frameset_hash in raw_response[movie_url].keys():
+                    anchor_matches = raw_response[movie_url][frameset_hash]
+                    anchor_match_keys = set(raw_response[movie_url][frameset_hash].keys())
+                    if anchor_match_keys == all_anchor_keys:
+                        built_response_data[movie_url][frameset_hash] = raw_response[movie_url][frameset_hash]
+            job.response_data = json.dumps(built_response_data)
         new_uuids = get_file_uuids_from_response(json.loads(job.request_data))
         if new_uuids:
             existing_uuids = json.loads(job.file_uuids_used)
