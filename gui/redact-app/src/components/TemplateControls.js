@@ -522,7 +522,7 @@ class TemplateControls extends React.Component {
         <div className='d-inline ml-2'>
           <select
               name='template_scale'
-              value={this.props.scale}
+              value={this.state.scale}
               onChange={(event) => this.setScale(event.target.value)}
           >
             <option value='1:1'>actual image scale only</option>

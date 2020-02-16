@@ -314,7 +314,9 @@ class MoviePanel extends React.Component {
     event.preventDefault()
     event.stopPropagation()
     if (event.dataTransfer.files && event.dataTransfer.files.length > 0) {
-      this.handleDownloadedFile(event.dataTransfer.files[0])
+      for (let i=0; i < event.dataTransfer.files.length; i++) {
+        this.handleDownloadedFile(event.dataTransfer.files[i])
+      }
     }
   }
 
@@ -354,7 +356,7 @@ class MoviePanel extends React.Component {
           onDragOver={(event) => event.preventDefault()}
           onDrop={(event) => this.handleDroppedMovie(event)}
         >
-          Drag movie here to begin work
+          Drag movies here to begin work
         </div>
       )
     }

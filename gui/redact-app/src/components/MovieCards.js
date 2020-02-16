@@ -187,7 +187,7 @@ class MovieCard extends React.Component {
           className='btn btn-link'
           onClick={() => this.props.submitInsightsJob('load_movie', this.props.this_cards_movie_url)}
       >
-      queue
+      split
       </button>
     )
   }

@@ -13,13 +13,15 @@ from guided_redaction.analyze.api import (
 
 @shared_task
 def scan_template(job_uuid):
-    job = Job.objects.get(pk=job_uuid)
-    if job:
+    if Job.objects.filter(pk=job_uuid).exists():
+        job = Job.objects.get(pk=job_uuid)
         job.status = 'running'
         job.save()
         print('scanning template for job '+ job_uuid)
         avsst = AnalyzeViewSetScanTemplate()
         response = avsst.process_create_request(json.loads(job.request_data))
+        if not Job.objects.filter(pk=job_uuid).exists():
+            return
         job.response_data = json.dumps(response.data.get('matches'))
         new_uuids = get_file_uuids_from_response(json.loads(job.request_data))
         if new_uuids:
@@ -55,13 +57,15 @@ def get_file_uuids_from_response(request_dict):
 
 @shared_task
 def filter(job_uuid):
-    job = Job.objects.get(pk=job_uuid)
-    if job:
+    if Job.objects.filter(pk=job_uuid).exists():
+        job = Job.objects.get(pk=job_uuid)
         job.status = 'running'
         job.save()
         print('running filter for job '+ job_uuid)
         avsf = AnalyzeViewSetFilter()
         response = avsf.process_create_request(json.loads(job.request_data))
+        if not Job.objects.filter(pk=job_uuid).exists():
+            return
         job.response_data = json.dumps(response.data)
         new_uuids = get_file_uuids_from_response(json.loads(job.request_data))
         if new_uuids:
@@ -75,8 +79,8 @@ def filter(job_uuid):
 
 @shared_task
 def scan_template_threaded(job_uuid):
-    job = Job.objects.get(pk=job_uuid)
-    if job:
+    if Job.objects.filter(pk=job_uuid).exists():
+        job = Job.objects.get(pk=job_uuid)
         if job.status in ['success', 'failed']:
             return
         children = Job.objects.filter(parent=job)
@@ -151,18 +155,15 @@ def build_and_dispatch_scan_template_threaded_children(parent_job):
         # intersperse these evenly in the job stack so we get regular updates
         if index % 5 == 0:
             scan_template_threaded.delay(parent_job.id)
+    scan_template_threaded.delay(parent_job.id)
 
 def wrap_up_scan_template_threaded(job, children):
     aggregate_response_data = {}
     for child in children:
         child_response_data = json.loads(child.response_data)
-        # the children will all have just one movie in their response
-        # also, we know that no child failed at this point
-        print('========================== WRAPPING UP')
-        print('child response data keys are {}'.format(child_response_data.keys()))
-        print('zeroth key is {}'.format(list(child_response_data.keys())[0]))
-        movie_url = list(child_response_data.keys())[0]
-        aggregate_response_data[movie_url] = child_response_data[movie_url]
+        if len(child_response_data.keys()) > 0:
+            movie_url = list(child_response_data.keys())[0]
+            aggregate_response_data[movie_url] = child_response_data[movie_url]
 
     print('wrap_up_scan_template_threaded: wrapping up parent job')
     job.status = 'success'
@@ -172,12 +173,14 @@ def wrap_up_scan_template_threaded(job, children):
 
 @shared_task
 def scan_ocr_image(job_uuid):
-    job = Job.objects.get(pk=job_uuid)
-    if job:
+    if Job.objects.filter(pk=job_uuid).exists():
+        job = Job.objects.get(pk=job_uuid)
         job.status = 'running'
         job.save()
         scanner = AnalyzeViewSetEastTess()
         response = scanner.process_create_request(json.loads(job.request_data))
+        if not Job.objects.filter(pk=job_uuid).exists():
+            return
         job.response_data = json.dumps(response.data)
         job.status = 'success'
         job.save()
@@ -189,8 +192,8 @@ def scan_ocr_image(job_uuid):
 
 @shared_task
 def telemetry_find_matching_frames(job_uuid):
-    job = Job.objects.get(pk=job_uuid)
-    if job:
+    if Job.objects.filter(pk=job_uuid).exists():
+        job = Job.objects.get(pk=job_uuid)
         job.status = 'running'
         job.save()
         scanner = AnalyzeViewSetTelemetry()
@@ -201,8 +204,8 @@ def telemetry_find_matching_frames(job_uuid):
 
 @shared_task
 def scan_ocr_movie(job_uuid):
-    job = Job.objects.get(pk=job_uuid)
-    if job:
+    if Job.objects.filter(pk=job_uuid).exists():
+        job = Job.objects.get(pk=job_uuid)
         if job.status in ['success', 'failed']:
             return
         children = Job.objects.filter(parent=job)
@@ -259,6 +262,8 @@ def build_and_dispatch_scan_ocr_movie_children(parent_job):
             # intersperse these evenly in the job stack so we get regular updates
             if index % 5 == 0:
                 scan_ocr_movie.delay(parent_job.id)
+        scan_ocr_movie.delay(parent_job.id)
+    scan_ocr_movie.delay(parent_job.id)
 
 def evaluate_scan_ocr_movie_children(child_jobs):
     children = 0
@@ -290,6 +295,8 @@ def wrap_up_scan_ocr_movie(parent_job, children):
     print('========================== WRAPPING UP OCR')
     for child in children:
         child_response_data = json.loads(child.response_data)
+        if not child_response_data:
+            continue
         child_request_data = json.loads(child.request_data)
         frameset_hash = child_request_data['frameset_hash']
         movie_url = child_request_data['movie_url']

@@ -252,6 +252,9 @@ class InsightsPanel extends React.Component {
     job_data['operation'] = 'scan_template'
     job_data['description'] = 'single template single movie match'
     let template = this.props.templates[this.props.current_template_id]
+    if (!template['scale'] === '1_1') {
+      job_data['description'] += ' - multi scale (' + template['scale'] + ')'
+    }
     job_data['request_data']['template'] = template
     job_data['request_data']['source_image_url'] = template['anchors'][0]['image']
     job_data['request_data']['template_id'] = template['id']
@@ -278,6 +281,9 @@ class InsightsPanel extends React.Component {
     job_data['operation'] = 'scan_template_threaded'
     job_data['description'] = 'single template '+ num_movies+ ' movies, ('+num_frames+' framesets)  match - threaded'
     let template = this.props.templates[this.props.current_template_id]
+    if (!template['scale'] === '1_1') {
+      job_data['description'] += ' - multi scale (' + template['scale'] + ')'
+    }
     job_data['request_data']['template'] = template
     job_data['request_data']['source_image_url'] = template['anchors'][0]['image']
     job_data['request_data']['target_movies'] = this.props.movies
@@ -870,7 +876,7 @@ class InsightsPanel extends React.Component {
           <div className="modal-dialog modal-xl" id='insightsPanelModalInner' role="document">
             <div className="modal-content">
               <div className="modal-header">
-                <h5 className="modal-title">Viewing Data</h5>
+                <h5 className="modal-title">Viewing Job Data</h5>
                 <button type="button" className="close" data-dismiss="modal" aria-label="Close">
                   <span aria-hidden="true">&times;</span>
                 </button>

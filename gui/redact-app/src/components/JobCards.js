@@ -325,7 +325,8 @@ class JobCard extends React.Component {
     let text_style = {
       'fontSize': '14px',
     }
-    if (this.props.job_data['status'] === 'success') {
+    if ((this.props.job_data['status'] === 'success') ||
+       (this.props.job_data['status'] === 'failed')) {
       return (
         <div>
           <div className='d-inline'>
