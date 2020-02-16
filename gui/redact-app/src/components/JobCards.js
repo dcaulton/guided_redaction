@@ -89,7 +89,7 @@ class JobCard extends React.Component {
         <path d="M 0 14 C 8 26, 22 26, 30 14" stroke="black" fill="transparent"/>
         <circle cx="14" cy="14" r="8" fill="#8D4008"/>
         <circle cx="14" cy="14" r="4" fill="#000"/>
-        <path d="M 9 14 C 14 3, 10 14, 14 8" stroke="white" fill="transparent" strokeWidth="1" />
+        <path d="M 9 13 C 10 8, 13 10, 14 9" stroke="#CCCCCC" fill="transparent" strokeWidth="2" />
       </svg>
     )
   }
