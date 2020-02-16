@@ -47,9 +47,6 @@ class InsightsPanel extends React.Component {
     this.handleSetMode=this.handleSetMode.bind(this)
     this.getTemplateMatches=this.getTemplateMatches.bind(this)
     this.clearSelectedAreas=this.clearSelectedAreas.bind(this)
-    this.getMovieMatchesFound=this.getMovieMatchesFound.bind(this)
-    this.getMovieDiffsFound=this.getMovieDiffsFound.bind(this)
-    this.getMovieSelectedCount=this.getMovieSelectedCount.bind(this)
     this.currentImageIsTemplateAnchorImage=this.currentImageIsTemplateAnchorImage.bind(this)
     this.afterArrowFill=this.afterArrowFill.bind(this)
     this.afterPingSuccess=this.afterPingSuccess.bind(this)
@@ -433,47 +430,6 @@ class InsightsPanel extends React.Component {
       return (cur_template_anchor_image_name === this.state.insights_image)
     }
     return false
-  }
-
-  getMovieMatchesFound(movie_url) {
-    if (!Object.keys(this.props.template_matches).includes(this.props.current_template_id)) {
-      return ''
-    }
-    const cur_templates_matches = this.props.template_matches[this.props.current_template_id]
-    if (!Object.keys(cur_templates_matches).includes(movie_url)) {
-      return ''
-    }
-    const cur_movies_matches = cur_templates_matches[movie_url]
-    let count = Object.keys(cur_movies_matches).length
-    if (count) {
-      return count.toString() + ' template matches'
-    } else {
-      return ''
-    }
-  }
-
-  getMovieDiffsFound(movie_url) {
-    if (Object.keys(this.props.movies).includes(movie_url)) {
-      for (let i=0; i < Object.keys(this.props.movies[movie_url]['framesets']).length; i++) {
-        const frameset_hash = Object.keys(this.props.movies[movie_url]['framesets'])[i]
-          const frameset = this.props.movies[movie_url]['framesets'][frameset_hash]
-          if (Object.keys(frameset).includes('filtered_image_url') && 
-              frameset['filtered_image_url']) {
-            return 'diff images exist'
-          }
-      }
-    }
-    return ''
-  }
-
-  getMovieSelectedCount(movie_url) {
-    // returns the number of images from this movie with at least one selected region 
-    if (Object.keys(this.props.selected_areas).includes(movie_url)) {
-      const  sa_count = Object.keys(this.props.selected_areas[movie_url]).length
-      const ret_str = sa_count.toString() + ' with selected areas'
-      return ret_str
-    }
-    return ''
   }
 
   callPing() {
@@ -929,13 +885,13 @@ class InsightsPanel extends React.Component {
             movie_url={this.props.movie_url}
             movie_urls={this.props.campaign_movies}
             movies={this.props.movies}
-            getMovieMatchesFound={this.getMovieMatchesFound}
-            getMovieDiffsFound={this.getMovieDiffsFound}
-            getMovieSelectedCount={this.getMovieSelectedCount}
             submitInsightsJob={this.submitInsightsJob}
             setMovieNickname={this.props.setMovieNickname}
             setDraggedId={this.setDraggedId}
+            current_template_id={this.props.current_template_id}
+            template_matches={this.props.template_matches}
             ocr_matches={this.props.ocr_matches}
+            selected_areas={this.props.selected_areas}
           />
         </div>
 

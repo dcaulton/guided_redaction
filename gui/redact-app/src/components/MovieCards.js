@@ -56,14 +56,15 @@ class MovieCardList extends React.Component {
               active_movie_url={this.props.movie_url}
               this_cards_movie_url={value}
               movies={this.props.movies}
-              getMovieMatchesFound={this.props.getMovieMatchesFound}
-              getMovieDiffsFound={this.props.getMovieDiffsFound}
-              getMovieSelectedCount={this.props.getMovieSelectedCount}
               submitInsightsJob={this.props.submitInsightsJob}
               setMovieNickname={this.props.setMovieNickname}
               setDraggedId={this.props.setDraggedId}
               index={index}
               ocr_matches={this.props.ocr_matches}
+              current_template_id={this.props.current_template_id}
+              template_matches={this.props.template_matches}
+              selected_areas={this.props.selected_areas}
+
           />
           )
         })}
@@ -192,6 +193,42 @@ class MovieCard extends React.Component {
     )
   }
 
+  getSelectedAreasString() {
+    if (Object.keys(this.props.selected_areas).includes(this.props.this_cards_movie_url)) {
+      const  sa_count = Object.keys(this.props.selected_areas[this.props.this_cards_movie_url]).length
+      const ret_str = sa_count.toString() + ' frameset w/selected areas'
+      return ret_str
+    }
+    return ''
+  } 
+
+  getMovieDiffsFound() {
+    if (Object.keys(this.props.movies).includes(this.props.this_cards_movie_url)) {
+      for (let i=0; i < Object.keys(this.props.movies[this.props.this_cards_movie_url]['framesets']).length; i++) {
+        const frameset_hash = Object.keys(this.props.movies[this.props.this_cards_movie_url]['framesets'])[i]
+          const frameset = this.props.movies[this.props.this_cards_movie_url]['framesets'][frameset_hash]
+          if (Object.keys(frameset).includes('filtered_image_url') &&
+              frameset['filtered_image_url']) {
+            return 'diff images exist'
+          }
+      }
+    }
+    return ''
+  }
+
+  getTemplateMatchesString() {
+    if (!Object.keys(this.props.template_matches).includes(this.props.current_template_id)) {
+      return ''
+    }
+    const cur_templates_matches = this.props.template_matches[this.props.current_template_id]
+    if (!Object.keys(cur_templates_matches).includes(this.props.this_cards_movie_url)) {
+      return ''
+    }
+    const cur_movies_matches = cur_templates_matches[this.props.this_cards_movie_url]
+    let count = Object.keys(cur_movies_matches).length
+    return count.toString() + ' template matches'
+  }
+
   getOcrMatchesString() {
     if (Object.keys(this.props.ocr_matches).includes(this.props.this_cards_movie_url)) {
       let count = 0
@@ -223,10 +260,10 @@ class MovieCard extends React.Component {
     }
     const framesets_count_message = this.getFramesetsCountMessage(this.props.this_cards_movie_url)
     const make_active_button = this.buildMakeActiveButton(this.props.this_cards_movie_url)
-    const found_string = this.props.getMovieMatchesFound(this.props.this_cards_movie_url)
+    const template_matches_string = this.getTemplateMatchesString()
     const ocr_matches_string = this.getOcrMatchesString()
-    const diffs_string = this.props.getMovieDiffsFound(this.props.this_cards_movie_url)
-    const selected_string = this.props.getMovieSelectedCount(this.props.this_cards_movie_url)
+    const diffs_string = this.getMovieDiffsFound()
+    const selected_areas_string = this.getSelectedAreasString()
     const dims_string = this.getMovieDimensions(this.props.this_cards_movie_url, this.props.movies)
     let top_div_classname = "row mt-2 card"
     if (this.props.this_cards_movie_url === this.props.active_movie_url) {
@@ -281,7 +318,7 @@ class MovieCard extends React.Component {
                   className='row'
                   style={dd_style}
               >
-                {found_string}
+                {template_matches_string}
               </div>
 
               <div 
@@ -298,8 +335,11 @@ class MovieCard extends React.Component {
                 {diffs_string}
               </div>
 
-              <div className='row'>
-                {selected_string}
+              <div 
+                  className='row'
+                  style={dd_style}
+              >
+                {selected_areas_string}
               </div>
 
               <div 
