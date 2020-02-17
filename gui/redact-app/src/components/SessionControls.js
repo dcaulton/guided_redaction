@@ -472,7 +472,7 @@ class SessionControls extends React.Component {
                     id='toggle_play_sound'
                     checked={play_sound_checked}
                     type='checkbox'
-                    onChange={() => this.props.togglePlaySound()}
+                    onChange={() => this.props.toggleGlobalStateVar('playSound')}
                   />
                   Play Sound
                 </div>
@@ -492,7 +492,7 @@ class SessionControls extends React.Component {
                     id='toggle_preserve_all_jobs'
                     checked={preserve_all_jobs_checked}
                     type='checkbox'
-                    onChange={() => this.props.togglePreserveAllJobs()}
+                    onChange={() => this.props.toggleGlobalStateVar('preserveAllJobs')}
                   />
                   Preserve All Jobs (typically for troubleshooting)
                 </div>

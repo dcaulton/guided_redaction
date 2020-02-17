@@ -117,11 +117,9 @@ class RedactApplication extends React.Component {
     this.unwatchJob=this.unwatchJob.bind(this)
     this.checkForJobs=this.checkForJobs.bind(this)
     this.playTone=this.playTone.bind(this)
-    this.togglePlaySound=this.togglePlaySound.bind(this)
     this.checkIfApiCanSeeUrl=this.checkIfApiCanSeeUrl.bind(this)
     this.checkIfGuiCanSeeUrl=this.checkIfGuiCanSeeUrl.bind(this)
     this.updateSingleImageMovie=this.updateSingleImageMovie.bind(this)
-    this.setMovies=this.setMovies.bind(this)
     this.postMakeUrlCall=this.postMakeUrlCall.bind(this)
     this.establishNewMovie=this.establishNewMovie.bind(this)
     this.establishNewEmptyMovie=this.establishNewEmptyMovie.bind(this)
@@ -129,13 +127,12 @@ class RedactApplication extends React.Component {
     this.addImageToMovie=this.addImageToMovie.bind(this)
     this.checkAndUpdateApiUris=this.checkAndUpdateApiUris.bind(this)
     this.setIllustrateParameters=this.setIllustrateParameters.bind(this)
-    this.togglePreserveAllJobs=this.togglePreserveAllJobs.bind(this)
     this.getImageUrl=this.getImageUrl.bind(this)
     this.setFramesetHash=this.setFramesetHash.bind(this)
     this.setTelemetryData=this.setTelemetryData.bind(this)
-    this.setTelemetryRules=this.setTelemetryRules.bind(this)
     this.getJobResultData=this.getJobResultData.bind(this)
     this.setGlobalStateVar=this.setGlobalStateVar.bind(this)
+    this.toggleGlobalStateVar=this.toggleGlobalStateVar.bind(this)
   }
 
   setGlobalStateVar(var_name, var_value, when_done=(()=>{})) {
@@ -143,6 +140,13 @@ class RedactApplication extends React.Component {
       [var_name]: var_value,
     },
     when_done())
+  }
+
+  toggleGlobalStateVar(var_name) {
+    const new_value = (!this.state[var_name])
+    this.setState({
+      [var_name]: new_value,
+    })
   }
 
   setTelemetryData(hash_in, when_done=(()=>{}), when_failed=(()=>{})) {
@@ -154,9 +158,7 @@ class RedactApplication extends React.Component {
         when_done: (responseJson) => {
           let deepCopyTelemetryData = JSON.parse(JSON.stringify(this.state.telemetry_data))
           deepCopyTelemetryData['raw_data_url'] = responseJson['url']
-          this.setState({
-            telemetry_data: deepCopyTelemetryData,
-          })
+          this.setGlobalStateVar('telemetry_data', deepCopyTelemetryData)
           when_done()
         },
         when_failed: when_failed,
@@ -165,23 +167,9 @@ class RedactApplication extends React.Component {
     if (Object.keys(hash_in).includes('movie_mappings')) {
       let deepCopyTelemetryData = JSON.parse(JSON.stringify(this.state.telemetry_data))
       deepCopyTelemetryData['movie_mappings'] = hash_in['movie_mappings']
-      this.setState({
-        telemetry_data: deepCopyTelemetryData,
-      })
+      this.setGlobalStateVar('telemetry_data', deepCopyTelemetryData)
       when_done()
     }
-  }
-
-  setOcrMatches(matches) {
-    this.setState({
-      ocr_matches: matches,
-    })
-  }
-
-  setTelemetryRules(rules) {
-    this.setState({
-      telemetry_rules: rules,
-    })
   }
 
   setIllustrateParameters(hash_in) {
@@ -195,17 +183,13 @@ class RedactApplication extends React.Component {
     if (Object.keys(hash_in).includes('backgroundDarkenPercent')) {
       deepCopyIllustrateParameters['backgroundDarkenPercent'] = hash_in['backgroundDarkenPercent']
     }
-    this.setState({
-      illustrateParameters: deepCopyIllustrateParameters,
-    })
+    this.setGlobalStateVar('illustrateParameters', deepCopyIllustrateParameters)
   }
 
   setFramesetHash(frameset_hash) {
     const the_url = this.getImageFromFrameset(frameset_hash)
     if (the_url === '') {
-      this.setState({
-        frameset_hash: '',
-      })
+      this.setGlobalStateVar('frameset_hash', '')
       return
     }
     if (!frameset_hash) {
@@ -237,20 +221,11 @@ class RedactApplication extends React.Component {
     return 'unknown'
   }
 
-  togglePreserveAllJobs() {
-    const new_value = (!this.state.preserveAllJobs)
-    this.setState({
-      preserveAllJobs: new_value,
-    })
-  }
-
   setCampaignMovies(movies) {
     if (typeof movies === 'string' || movies instanceof String) {
       movies = movies.split('\n')
     }
-    this.setState({
-      campaign_movies: movies,
-    })
+    this.setGlobalStateVar('campaign_movies', movies)
   }
 
   addImageToMovie(data_in) {
@@ -268,14 +243,12 @@ class RedactApplication extends React.Component {
       images: [image_url]
     }
     deepCopyMovies[movie_url] = deepCopyMovie
-    this.setState({
-      movies: deepCopyMovies
-    })
+    this.setGlobalStateVar('movies', deepCopyMovies)
     this.setFramesetHash(new_hash)
   }
 
   establishNewEmptyMovie(data_in) {
-    this.setMovies({})
+    this.setGlobalStateVar('movies', {})
     let new_movie_url = 'whatever'
     let new_movie = {
       frames: [],
@@ -294,9 +267,7 @@ class RedactApplication extends React.Component {
     if (!this.state.campaign_movies.includes(movie_url)) {
       let deepCopyCampaignMovies= JSON.parse(JSON.stringify(this.state.campaign_movies))
       deepCopyCampaignMovies.push(movie_url)
-      this.setState({
-        campaign_movies: deepCopyCampaignMovies,
-      })
+      this.setGlobalStateVar('campaign_movies', deepCopyCampaignMovies)
     }
   }
 
@@ -421,9 +392,7 @@ class RedactApplication extends React.Component {
   unwatchJob(job_id) {
     let deepCopyCallbacks = JSON.parse(JSON.stringify(this.state.whenJobLoaded))
     delete deepCopyCallbacks[job_id]
-    this.setState({
-      whenJobLoaded: deepCopyCallbacks,
-    })
+    this.setGlobalStateVar('whenJobLoaded', deepCopyCallbacks)
   }
 
   watchForJob(job_id, callback=(()=>{}), deleteJob=false) {
@@ -435,9 +404,7 @@ class RedactApplication extends React.Component {
     } else {
       deepCopyCallbacks[job_id]['delete'] = deleteJob
     }
-    this.setState({
-      whenJobLoaded: deepCopyCallbacks,
-    })
+    this.setGlobalStateVar('whenJobLoaded', deepCopyCallbacks)
   }
 
   checkForJobs() {
@@ -516,11 +483,7 @@ class RedactApplication extends React.Component {
   }
 
   saveWhenDoneInfo(destination) {
-    if (destination === 'learn_dev') {
-      this.setState({
-        whenDoneTarget: destination,
-      })
-    }
+    this.setGlobalStateVar('whenDoneTarget', destination)
   }
 
   getFramesetHashesInOrder(framesets=null) {
@@ -549,9 +512,7 @@ class RedactApplication extends React.Component {
     let deepCopyMovies= JSON.parse(JSON.stringify(this.state.movies))
     deepCopyMovies['whatever']['frames'] = [the_image_url]
     deepCopyMovies['whatever']['framesets'][1]['images'] = [the_image_url]
-    this.setState({
-      movies: deepCopyMovies,
-    })
+    this.setGlobalStateVar('movies', deepCopyMovies)
   }
 
   clearCurrentFramesetChanges(when_done=(()=>{})) {
@@ -563,9 +524,7 @@ class RedactApplication extends React.Component {
         delete deepCopyMovies[this.state.movie_url]['framesets'][the_hash]['redacted_image']
         delete deepCopyMovies[this.state.movie_url]['framesets'][the_hash]['illustrated_image']
         deepCopyMovies[this.state.movie_url]['framesets'][the_hash]['areas_to_redact'] = []
-        this.setState({
-          movies: deepCopyMovies
-        })
+        this.setGlobalStateVar('movies', deepCopyMovies)
       }
     }
   }
@@ -587,9 +546,7 @@ class RedactApplication extends React.Component {
     if (existing_movie) {
       existing_movie['redacted_movie_url'] = the_url
       deepCopyMovies[this.state.movie_url] = existing_movie
-      this.setState({
-        movies: deepCopyMovies,
-      })
+      this.setGlobalStateVar('movies', deepCopyMovies)
     }
   }
 
@@ -602,21 +559,13 @@ class RedactApplication extends React.Component {
     return []
   }
 
-  setMovies(the_movies) {
-    this.setState({
-      movies: the_movies,
-    })
-  }
-
   setMovieNickname = (movie_url, movie_nickname) => {
     let deepCopyMovies = JSON.parse(JSON.stringify(this.state.movies))
     let existing_movie = deepCopyMovies[movie_url]
     if (existing_movie) {
       existing_movie['nickname'] = movie_nickname
       deepCopyMovies[movie_url] = existing_movie
-      this.setState({
-        movies: deepCopyMovies,
-      })
+      this.setGlobalStateVar('movies', deepCopyMovies)
     }
   }
 
@@ -697,30 +646,14 @@ class RedactApplication extends React.Component {
         current_selected_area_meta_id: meta_id_to_make_active,
       })
     } else {
-      this.setState({
-        selected_area_metas: the_metas,
-      })
+      this.setGlobalStateVar('selected_area_metas', the_metas)
     }
   }
 
   setImageScale= () => {
     const the_scale = (document.getElementById('base_image_id').width /
       document.getElementById('base_image_id').naturalWidth)
-    this.setState({
-      image_scale: the_scale,
-    })
-  }
-
-  setJobs = (the_jobs) => {
-    this.setState({
-      jobs: the_jobs,
-    })
-  }
-
-  setFiles= (the_files) => {
-    this.setState({
-      files: the_files,
-    })
+    this.setGlobalStateVar('image_scale', the_scale)
   }
 
   setWorkbooks = (the_workbooks) => {
@@ -731,9 +664,7 @@ class RedactApplication extends React.Component {
         current_workbook_name: 'workbook 1',
       })
     } else {
-      this.setState({
-        workbooks: the_workbooks,
-      })
+      this.setGlobalStateVar('workbooks', the_workbooks)
     }
   }
 
@@ -784,9 +715,7 @@ class RedactApplication extends React.Component {
   setActiveMovie(the_url, theCallback=(()=>{})) {
     const the_movie = this.state.movies[the_url]
     if (this.state.movie_url !== the_url) {
-      this.setState({
-        movie_url: the_url,
-      })
+      this.setGlobalStateVar('movie_url', the_url)
     }
     theCallback(the_movie.framesets)
   }
@@ -964,9 +893,7 @@ class RedactApplication extends React.Component {
       }
     }
     if (something_changed) {
-      this.setState({
-        movies: deepCopyMovies,
-      })
+      this.setGlobalStateVar('movies', deepCopyMovies)
     }
   }
 
@@ -1169,7 +1096,7 @@ class RedactApplication extends React.Component {
       movie_url: last_movie_url,
     })
     this.setFramesetHash(last_hash)
-    this.setOcrMatches(response_data)
+    this.setGlobalStateVar('ocr_matches', response_data)
   }
 
   async loadScanOcrImageResults(job, when_done=(()=>{})) {
@@ -1287,7 +1214,7 @@ class RedactApplication extends React.Component {
     })
     .then((response) => response.json())
     .then((responseJson) => {
-      this.setJobs(responseJson['jobs'])
+      this.setGlobalStateVar('jobs', responseJson['jobs'])
     })
     .catch((error) => {
       console.error(error);
@@ -1302,7 +1229,7 @@ class RedactApplication extends React.Component {
     })
     .then((response) => response.json())
     .then((responseJson) => {
-      this.setFiles(responseJson)
+      this.setGlobalStateVar('files', responseJson)
     })
     .catch((error) => {
       console.error(error);
@@ -1400,13 +1327,6 @@ class RedactApplication extends React.Component {
       current_workbook_name: the_name,
       current_workbook_id: new_workbook_id,
     })
-  }
-
-  togglePlaySound() {
-    const new_value = (!this.state.playSound)                                                                           
-    this.setState({                                                                                                     
-      playSound: new_value,                                                                                             
-    })   
   }
 
   async saveWorkbook(when_done=(()=>{})) {
@@ -1622,9 +1542,7 @@ class RedactApplication extends React.Component {
   handleUpdateFrameset = (the_hash, the_frameset) => {
     let deepCopyMovies= JSON.parse(JSON.stringify(this.state.movies))
     deepCopyMovies[this.state.movie_url]['framesets'][the_hash] = the_frameset
-    this.setState({
-      movies: deepCopyMovies
-    })
+    this.setGlobalStateVar('movies', deepCopyMovies)
   }
 
   // TODO fix this.  If we know the frameset, we don't need the image url
@@ -1642,17 +1560,13 @@ class RedactApplication extends React.Component {
     frameset_obj[the_image] = the_areas
     movie_obj[the_frameset_hash] = frameset_obj
     deepCopySelectedAreas[the_movie] = movie_obj
-    this.setState({
-      selected_areas: deepCopySelectedAreas,
-    })
+    this.setGlobalStateVar('selected_areas', deepCopySelectedAreas)
   }
 
   clearMovieSelectedAreas = (the_movie) => {
     let deepCopySelectedAreas= JSON.parse(JSON.stringify(this.state.selected_areas))
     delete deepCopySelectedAreas[this.state.movie_url]
-    this.setState({
-      selected_areas: deepCopySelectedAreas,
-    })
+    this.setGlobalStateVar('selected_areas', deepCopySelectedAreas)
   }
 
   handleMergeFramesets = (target_hash, source_hash) => {
@@ -1675,9 +1589,7 @@ class RedactApplication extends React.Component {
     let cur_movie = deepCopyMovies[this.state.movie_url]
     cur_movie['framesets'] = deepCopyFramesets
     deepCopyMovies[this.state.movie_url] = cur_movie
-    this.setState({
-      movies: deepCopyMovies,
-    })
+    this.setGlobalStateVar('movies', deepCopyMovies)
   }
 
   addRedactionToFrameset = (areas_to_redact) => {
@@ -1687,9 +1599,7 @@ class RedactApplication extends React.Component {
     let cur_movie = deepCopyMovies[this.state.movie_url]
     cur_movie['framesets'] = deepCopyFramesets
     deepCopyMovies[this.state.movie_url] = cur_movie
-    this.setState({
-        movies: deepCopyMovies,
-    })
+    this.setGlobalStateVar('movies', deepCopyMovies)
   }
 
   getRedactionFromFrameset = (frameset_hash) => {
@@ -1846,6 +1756,7 @@ class RedactApplication extends React.Component {
             <Route path='/redact/insights'>
               <InsightsPanel  
                 setGlobalStateVar={this.setGlobalStateVar}
+                toggleGlobalStateVar={this.toggleGlobalStateVar}
                 getFramesetHashesInOrder={this.getFramesetHashesInOrder}
                 setMovieUrlCallback={this.handleSetMovieUrl}
                 getFramesetHashForImageUrl={this.getFramesetHashForImageUrl}
@@ -1870,7 +1781,6 @@ class RedactApplication extends React.Component {
                 saveWorkbook={this.saveWorkbook}
                 saveWorkbookName={this.saveWorkbookName}
                 playSound={this.state.playSound}
-                togglePlaySound={this.togglePlaySound}
                 loadWorkbook={this.loadWorkbook}
                 deleteWorkbook={this.deleteWorkbook}
                 workbooks={this.state.workbooks}
@@ -1894,12 +1804,10 @@ class RedactApplication extends React.Component {
                 deleteFile={this.deleteFile}
                 checkAndUpdateApiUris={this.checkAndUpdateApiUris}
                 preserveAllJobs={this.state.preserveAllJobs}
-                togglePreserveAllJobs={this.togglePreserveAllJobs}
                 telemetry_rules={this.state.telemetry_rules}
                 current_telemetry_rule_id={this.state.current_telemetry_rule_id}
                 telemetry_data={this.state.telemetry_data}
                 setTelemetryData={this.setTelemetryData}
-                setTelemetryRules={this.setTelemetryRules}
                 getJobResultData={this.getJobResultData}
                 ocr_matches={this.state.ocr_matches}
                 userTone={this.state.userTone}

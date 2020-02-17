@@ -80,7 +80,6 @@ class BottomInsightsControls extends React.Component {
           current_telemetry_rule_id={this.props.current_telemetry_rule_id}
           telemetry_data={this.props.telemetry_data}
           setTelemetryData={this.props.setTelemetryData}
-          setTelemetryRules={this.props.setTelemetryRules}
           setGlobalStateVar={this.props.setGlobalStateVar}
           visibilityFlags={this.props.visibilityFlags}
           toggleShowVisibility={this.props.toggleShowVisibility}
@@ -139,12 +138,12 @@ class BottomInsightsControls extends React.Component {
 
         <SessionControls
           setGlobalStateVar={this.props.setGlobalStateVar}
+          toggleGlobalStateVar={this.props.toggleGlobalStateVar}
           current_workbook_name={this.props.current_workbook_name}
           current_workbook_id={this.props.current_workbook_id}
           saveWorkbook={this.props.saveWorkbook}
           saveWorkbookName={this.props.saveWorkbookName}
           playSound={this.props.playSound}
-          togglePlaySound={this.props.togglePlaySound}
           displayInsightsMessage={this.props.displayInsightsMessage}
           callPing={this.props.callPing}
           workbooks={this.props.workbooks}
@@ -158,7 +157,6 @@ class BottomInsightsControls extends React.Component {
           whenDoneTarget={this.props.whenDoneTarget}
           frameset_discriminator={this.props.frameset_discriminator}
           preserveAllJobs={this.props.preserveAllJobs}
-          togglePreserveAllJobs={this.props.togglePreserveAllJobs}
           userTone={this.props.userTone}
         />
 

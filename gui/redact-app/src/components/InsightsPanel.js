@@ -956,6 +956,7 @@ class InsightsPanel extends React.Component {
 
           <BottomInsightsControls 
             setGlobalStateVar={this.props.setGlobalStateVar}
+            toggleGlobalStateVar={this.props.toggleGlobalStateVar}
             handleSetMode={this.handleSetMode}
             template_matches={this.props.template_matches}
             clearSelectedAreas={this.clearSelectedAreas}
@@ -987,7 +988,6 @@ class InsightsPanel extends React.Component {
             visibilityFlags={this.state.visibilityFlags}
             toggleShowVisibility={this.toggleShowVisibility}
             playSound={this.props.playSound}
-            togglePlaySound={this.props.togglePlaySound}
             campaign_movies={this.props.campaign_movies}
             setCampaignMovies={this.props.setCampaignMovies}
             updateGlobalState={this.props.updateGlobalState}
@@ -1000,7 +1000,6 @@ class InsightsPanel extends React.Component {
             deleteFile={this.props.deleteFile}
             frameset_discriminator={this.props.frameset_discriminator}
             preserveAllJobs={this.props.preserveAllJobs}
-            togglePreserveAllJobs={this.props.togglePreserveAllJobs}
             telemetry_rules={this.props.telemetry_rules}
             current_telemetry_rule_id={this.props.current_telemetry_rule_id}
             telemetry_data={this.props.telemetry_data}

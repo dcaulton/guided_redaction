@@ -12,6 +12,7 @@ class TelemetryControls extends React.Component {
       end_conditions: [],
       actions: [],
       unsaved_changes: false,
+
     }
   }
 
@@ -392,7 +393,7 @@ class TelemetryControls extends React.Component {
     }
     let deepCopyTelemetryRules = JSON.parse(JSON.stringify(this.props.telemetry_rules))
     deepCopyTelemetryRules[rule_id] = telemetry_rule
-    this.props.setTelemetryRules(deepCopyTelemetryRules)
+    this.props.setGlobalStateVar('telemetry_rules', deepCopyTelemetryRules)
     this.props.displayInsightsMessage('Telemetry rule has been saved')
     this.props.setGlobalStateVar('current_telemetry_rule_id', rule_id)
     this.setState({
@@ -414,6 +415,25 @@ class TelemetryControls extends React.Component {
         </button>
       </div>
     )
+  }
+
+  buildScanForTimestampButton() {
+    return (
+      <div
+          className='d-inline'
+      >
+        <button
+            className='btn btn-primary ml-2 mt-2'
+            onClick={() => this.doScanForTimestamp()}
+        >
+          Scan for Timestamp
+        </button>
+      </div>
+    )
+  }
+
+  doScanForTimestamp() {
+console.log('scanning for timestamp')
   }
 
   buildRunButton() {
@@ -492,6 +512,7 @@ class TelemetryControls extends React.Component {
     const save_button = this.buildSaveButton() 
     const run_button = this.buildRunButton() 
     const test_button = this.buildTestButton() 
+    const scan_for_timestamp_button = this.buildScanForTimestampButton() 
 
     return (
         <div className='row bg-light rounded mt-3'>
@@ -538,6 +559,7 @@ class TelemetryControls extends React.Component {
                   {save_button}
                   {run_button}
                   {test_button}
+                  {scan_for_timestamp_button}
                 </div>
   
                 <div 
