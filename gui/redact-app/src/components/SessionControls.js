@@ -150,6 +150,27 @@ class SessionControls extends React.Component {
     )
   }
 
+  buildUserToneSelector() {
+    return (
+      <div>
+        <select
+            name='when_done_selector'
+            onChange={(event) => this.props.setGlobalStateVar('userTone', event.target.value)}
+            value={this.props.userTone}
+        >
+          <option value=''>--none--</option>
+          <option value='lfo'>LFO</option>
+          <option value='kick_snare'>Kick+Snare</option>
+        </select>
+        <span
+          className='ml-2'
+        >
+          user tone
+        </span>
+      </div>
+    )
+  }
+
   buildWorkbookId() {
     if (this.props.current_workbook_name === '') {
       return ''
@@ -250,6 +271,7 @@ class SessionControls extends React.Component {
       preserve_all_jobs_checked = 'checked'
     }
     let when_done_selector = this.buildWhenDoneSelector()
+    let user_tone_selector = this.buildUserToneSelector()
 
     return (
         <div className='row bg-light rounded mt-3'>
@@ -454,6 +476,11 @@ class SessionControls extends React.Component {
                   />
                   Play Sound
                 </div>
+
+                <div className='row mt-3 bg-light rounded'>
+                  {user_tone_selector}
+                </div>
+
 
                 <div className='row mt-3 bg-light rounded'>
                   {when_done_selector}

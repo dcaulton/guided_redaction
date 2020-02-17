@@ -159,6 +159,7 @@ class BottomInsightsControls extends React.Component {
           frameset_discriminator={this.props.frameset_discriminator}
           preserveAllJobs={this.props.preserveAllJobs}
           togglePreserveAllJobs={this.props.togglePreserveAllJobs}
+          userTone={this.props.userTone}
         />
 
       </div>

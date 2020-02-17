@@ -3,6 +3,7 @@ import ImagePanel from './ImagePanel';
 import MoviePanel from './MoviePanel';
 import InsightsPanel from './InsightsPanel';
 import {getUrlVars} from './redact_utils.js'
+import CompositeTone from './Tones.js'
 import './styles/guided_redaction.css';
 import {
   BrowserRouter as Router,
@@ -75,6 +76,7 @@ class RedactApplication extends React.Component {
         raw_data_url: '',
         movie_mappings: [],
       },
+      userTone: 'lfo',
     }
 
     this.getNextImageHash=this.getNextImageHash.bind(this)
@@ -395,25 +397,25 @@ class RedactApplication extends React.Component {
   }
 
   playTone() {
+    if (!this.state.playSound) {
+      return
+    }
     let context = new AudioContext()
-    var LFO = context.createOscillator()
-    var VCA = context.createGain()
-    var oscillator = context.createOscillator()
-    var oscillator2 = context.createOscillator()
-    var  final_gain = context.createGain()
-    oscillator.frequency.value = 293.66  // D4 - Root
-    oscillator2.frequency.value = 220.00 // A3 - 5th one octave down
-    LFO.connect(VCA.gain)
-    oscillator.connect(VCA)
-    oscillator2.connect(VCA)
-    VCA.connect(final_gain)
-    final_gain.connect(context.destination)
-    LFO.frequency.value = 4
-    LFO.start(0)
-    final_gain.gain.exponentialRampToValueAtTime(1, context.currentTime + .25)
-    oscillator.start(0)
-    oscillator2.start(0)
-    final_gain.gain.exponentialRampToValueAtTime(0.00001, context.currentTime + 1.95)
+    var now = context.currentTime;
+    var ct = new CompositeTone()
+    if (this.state.userTone === 'kick_snare') {
+      var kick = ct.makeKick(context);
+      var snare = ct.makeSnare(context);
+      for (let i=0; i < 16; i++) {
+        let offset = now + i * .5
+        kick.trigger(offset);
+        kick.trigger(offset + 0.13);
+        snare.trigger(offset + 0.25);
+      }
+    } else if (this.state.userTone === 'lfo') {
+      var lfo = ct.makeLFO(context)
+      lfo.trigger(now + .75)
+    }
   }
 
   unwatchJob(job_id) {
@@ -1900,6 +1902,7 @@ class RedactApplication extends React.Component {
                 setTelemetryRules={this.setTelemetryRules}
                 getJobResultData={this.getJobResultData}
                 ocr_matches={this.state.ocr_matches}
+                userTone={this.state.userTone}
               />
             </Route>
           </Switch>
