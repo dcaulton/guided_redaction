@@ -1031,6 +1031,26 @@ class RedactApplication extends React.Component {
     })
   }
 
+  async loadGetTimestampResults(job, when_done=(()=>{})) {
+    const resp_data = JSON.parse(job.response_data)
+    const req_data = JSON.parse(job.request_data)
+    let deepCopyMovies = JSON.parse(JSON.stringify(this.state.movies))
+    let last_movie_url = ''
+    for (let j=0; j < Object.keys(resp_data).length; j++) {
+      const movie_url = Object.keys(resp_data)[j]
+      if (!Object.keys(deepCopyMovies).includes(movie_url)) {
+        deepCopyMovies[movie_url] = req_data['movies'][movie_url]
+      }
+      this.addToCampaignMovies(movie_url)
+      deepCopyMovies[movie_url]['start_screen_timestamp'] = resp_data[movie_url]
+      last_movie_url = movie_url
+    }
+    this.setState({
+      movies: deepCopyMovies,
+      movie_url: last_movie_url,
+    })
+  }
+
   async loadFilterResults(job, when_done=(()=>{})) {
     const resp_data = JSON.parse(job.response_data)
     const req_data = JSON.parse(job.request_data)
@@ -1171,6 +1191,8 @@ class RedactApplication extends React.Component {
         this.loadScanTemplateResults(job, when_done)
 			} else if (job.app === 'analyze' && job.operation === 'filter') {
         this.loadFilterResults(job, when_done)
+			} else if (job.app === 'analyze' && job.operation === 'get_blue_screen_timestamp') {
+        this.loadGetTimestampResults(job, when_done)
 			} else if (job.app === 'analyze' && job.operation === 'scan_ocr_image') {
         this.loadScanOcrImageResults(job, when_done)
 			} else if (job.app === 'analyze' && job.operation === 'scan_ocr_movie') {

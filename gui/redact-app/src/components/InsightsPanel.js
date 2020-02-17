@@ -340,6 +340,20 @@ class InsightsPanel extends React.Component {
     return job_data
   }
 
+  buildGetTimestampJobData(scope, extra_data) {
+    let job_data = {
+      request_data: {},
+    }
+    job_data['app'] = 'analyze'
+    job_data['operation'] = 'get_blue_screen_timestamp'
+    if (scope === 'current_movie') {
+      job_data['request_data']['movies'] = {}
+      job_data['request_data']['movies'][this.props.movie_url] = this.props.movies[this.props.movie_url]
+      job_data['description'] = 'get timestamp for movie: ' + this.props.movie_url
+    }
+    return job_data
+  }
+
   buildTelemetryData(job_type, extra_data) {
     let job_data = {
       request_data: {},
@@ -387,6 +401,11 @@ class InsightsPanel extends React.Component {
       })
     } else if (job_string === 'load_movie') {
       let job_data = this.buildLoadMovieJobData(extra_data)
+      this.props.submitJob({
+        job_data: job_data
+      })
+    } else if (job_string === 'get_timestamp_current_movie') {
+      let job_data = this.buildGetTimestampJobData('current_movie', extra_data)
       this.props.submitJob({
         job_data: job_data
       })

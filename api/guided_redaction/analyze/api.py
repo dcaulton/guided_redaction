@@ -42,24 +42,23 @@ class AnalyzeViewSetEastTess(viewsets.ViewSet):
           verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
         )
         image = pic_response.content
-        if image:
-            roi_start_x = int(request_data["roi_start_x"])
-            roi_start_y = int(request_data["roi_start_y"])
-            roi_end_x = int(request_data["roi_end_x"])
-            roi_end_y = int(request_data["roi_end_y"])
-            roi_start = (roi_start_x, roi_start_y)
-            roi_end = (roi_end_x, roi_end_y)
-
-            analyzer = EastPlusTessGuidedAnalyzer()
-            nparr = np.fromstring(image, np.uint8)
-            cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-            recognized_text_areas = analyzer.analyze_text(
-                cv2_image, [roi_start, roi_end]
-            )
-
-            return Response({'recognized_text_areas': recognized_text_areas})
-        else:
+        if not image:
             return self.error("couldnt read image data", status_code=422)
+        roi_start_x = int(request_data["roi_start_x"])
+        roi_start_y = int(request_data["roi_start_y"])
+        roi_end_x = int(request_data["roi_end_x"])
+        roi_end_y = int(request_data["roi_end_y"])
+        roi_start = (roi_start_x, roi_start_y)
+        roi_end = (roi_end_x, roi_end_y)
+
+        analyzer = EastPlusTessGuidedAnalyzer()
+        nparr = np.fromstring(image, np.uint8)
+        cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        recognized_text_areas = analyzer.analyze_text(
+            cv2_image, [roi_start, roi_end]
+        )
+
+        return Response({'recognized_text_areas': recognized_text_areas})
 
 
 class AnalyzeViewSetScanTemplate(viewsets.ViewSet):
@@ -182,16 +181,15 @@ class AnalyzeViewSetFloodFill(viewsets.ViewSet):
           request.data["source_image_url"],
           verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
         ).content
-        if image:
-            nparr = np.fromstring(image, np.uint8)
-            cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-            finder = ExtentsFinder()
-            regions = finder.determine_flood_fill_area(
-                cv2_image, selected_point, tolerance
-            )
-            return Response({"flood_fill_regions": regions})
-        else:
+        if not image:
             return self.error("couldnt read image data", status_code=422)
+        nparr = np.fromstring(image, np.uint8)
+        cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        finder = ExtentsFinder()
+        regions = finder.determine_flood_fill_area(
+            cv2_image, selected_point, tolerance
+        )
+        return Response({"flood_fill_regions": regions})
 
 
 class AnalyzeViewSetArrowFill(viewsets.ViewSet):
@@ -209,16 +207,15 @@ class AnalyzeViewSetArrowFill(viewsets.ViewSet):
           request.data["source_image_url"],
           verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
         ).content
-        if image:
-            nparr = np.fromstring(image, np.uint8)
-            cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-            finder = ExtentsFinder()
-            regions = finder.determine_arrow_fill_area(
-                cv2_image, selected_point, tolerance
-            )
-            return Response({"arrow_fill_regions": regions})
-        else:
+        if not image:
             return self.error("couldnt read image data", status_code=422)
+        nparr = np.fromstring(image, np.uint8)
+        cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        finder = ExtentsFinder()
+        regions = finder.determine_arrow_fill_area(
+            cv2_image, selected_point, tolerance
+        )
+        return Response({"arrow_fill_regions": regions})
 
 class AnalyzeViewSetFilter(viewsets.ViewSet):
     def create_file_writer(self):
@@ -313,18 +310,18 @@ class AnalyzeViewSetTelemetry(viewsets.ViewSet):
 
     def process_create_request(self, request_data):
         if not request_data.get("movies"):
-            return HttpResponse("movies is required", status=400)
+            return self.error("movies is required")
         if not request_data.get("telemetry_data"):
-            return HttpResponse("telemetry_data is required", status=400)
+            return self.error("telemetry_data is required")
         if not request_data.get("telemetry_rule"):
-            return HttpResponse("telemetry_rule is required", status=400)
+            return self.error("telemetry_rule is required")
         movies = request_data["movies"]
         telemetry_rule = request_data["telemetry_rule"]
         telemetry_data = request_data["telemetry_data"]
         if 'raw_data_url' not in telemetry_data.keys():
-            return HttpResponse("telemetry raw data is required", status=400)
+            return self.error("telemetry raw data is required")
         if 'movie_mappings' not in telemetry_data.keys():
-            return HttpResponse("telemetry movie mappings is required", status=400)
+            return self.error("telemetry movie mappings is required")
         movie_mappings = telemetry_data['movie_mappings']
         analyzer = TelemetryAnalyzer()
         matching_frames = {}
@@ -366,3 +363,50 @@ class AnalyzeViewSetTelemetry(viewsets.ViewSet):
                 matching_rows.append(row)
         return matching_rows
 
+class AnalyzeViewSetBlueScreenTimestamp(viewsets.ViewSet):
+    def create(self, request):
+        request_data = request.data
+        return self.process_create_request(request_data)
+
+    def process_create_request(self, request_data):
+        if not request_data.get("movies"):
+            return self.error("movies is required")
+        response_obj = {}
+        analyzer = EastPlusTessGuidedAnalyzer()
+        movies = request_data.get('movies')
+        for movie_url in movies:
+            response_obj[movie_url] = {}
+            if 'frames' not in movies[movie_url]:
+                print('movie {} was not already split into frames'.format(movie_url))
+                continue
+            image_url = movies[movie_url]['frames'][0]
+            pic_response = requests.get(
+              image_url,
+              verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
+            )
+            image = pic_response.content
+            if not image:
+                return self.error('could not retrieve the first frame for '+movie_url)
+            nparr = np.fromstring(image, np.uint8)
+            cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+            recognized_text_areas = analyzer.analyze_text(
+                cv2_image,
+                [(0, 0), (cv2_image.shape[1], cv2_image.shape[0])]
+            )
+            for rta in recognized_text_areas:
+                regex = re.compile('Date:.* (\d+):(\d+):(\d+) ([A|P])M')
+                match = regex.search(rta['text'])
+                if match:
+                    the_hour = match.group(1)
+                    the_minute = match.group(2)
+                    the_second = match.group(3)
+                    the_am_pm = match.group(4)
+                    time_result = {
+                        'hour': the_hour,
+                        'minute': the_minute,
+                        'second': the_second,
+                        'am_pm': the_am_pm + 'M',
+                    }
+                    response_obj[movie_url] = time_result
+                    break
+        return Response(response_obj)

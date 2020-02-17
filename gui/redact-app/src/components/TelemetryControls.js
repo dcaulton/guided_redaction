@@ -424,7 +424,7 @@ class TelemetryControls extends React.Component {
       >
         <button
             className='btn btn-primary ml-2 mt-2'
-            onClick={() => this.doScanForTimestamp()}
+            onClick={() => this.props.submitInsightsJob('get_timestamp_current_movie')}
         >
           Scan for Timestamp
         </button>
