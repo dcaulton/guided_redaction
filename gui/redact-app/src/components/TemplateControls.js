@@ -132,40 +132,33 @@ class TemplateControls extends React.Component {
     this.props.displayInsightsMessage('Template has been loaded')
   }
 
-  anchorSliceDone(response) {
-    if (this.props.current_template_id) {
-      let cur_template = this.props.templates[this.props.current_template_id]
-      let new_anchors = []
-      for (let i=0; i < cur_template['anchors'].length; i++) {
-        let anchor = cur_template['anchors'][i]
-        if (anchor['id'] === response['anchor_id']) {
-          anchor['image_bytes_png_base64'] = response['cropped_image_bytes']
-        }
-        new_anchors.push(anchor)
+  async anchorSliceDone(response) {
+    const anchor_id = response['anchor_id']
+    const cropped_image_bytes = response['cropped_image_bytes']
+    let deepCopyAnchors = JSON.parse(JSON.stringify(this.state.anchors))
+    for (let i=0; i < deepCopyAnchors.length; i++) {
+      let anchor = deepCopyAnchors[i]
+      if (anchor['id'] === anchor_id) {
+        anchor['cropped_image_bytes'] = cropped_image_bytes
       }
-      cur_template['anchors'] = new_anchors
-
-      let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(cur_template))
-      this.setState({
-        download_link: dataStr,
-      })
-      this.props.displayInsightsMessage('Template download link has been created')
     }
+    this.setState({
+      anchors: deepCopyAnchors,
+      unsaved_changes: true,
+    })
   }
 
-  doTemplateExport() {
-    if (this.props.current_template_id) {
-      let cur_template = this.props.templates[this.props.current_template_id]
-      for (let i=0; i < cur_template['anchors'].length; i++) {
-        let the_anchor = cur_template['anchors'][i]
-        this.props.cropImage(
-          the_anchor['image'], 
-          the_anchor['start'], 
-          the_anchor['end'], 
-          the_anchor['id'], 
-          this.anchorSliceDone
-        )
-      }
+  async exportCurrentAnchors() {
+    for (let i=0; i < this.state.anchors.length; i++) {
+      let the_anchor = this.state.anchors[i]
+      let resp = this.props.cropImage(
+        the_anchor['image'], 
+        the_anchor['start'], 
+        the_anchor['end'], 
+        the_anchor['id'], 
+        this.anchorSliceDone
+      )
+      await resp
     }
   }
 
@@ -302,34 +295,38 @@ class TemplateControls extends React.Component {
     this.props.handleSetMode('add_template_mask_zone_3')
   } 
 
-  doSave() {
+  async doSave() {
     if (!this.state.name) {
       this.props.displayInsightsMessage('Save aborted: Name is required for a template')
       return
     }
-    let template_id = 'template_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
-    if (this.state.id) {
-      template_id = this.state.id
-    }
-    let template = {
-      id: this.state.id,
-      name: this.state.name,
-      app_name: this.state.app_name,
-      scale: this.state.scale,
-      match_percent: this.state.match_percent,
-      match_method: this.state.match_method,
-      anchors: this.state.anchors,
-      mask_zones: this.state.mask_zones,
-    }
-    let deepCopyTemplates = JSON.parse(JSON.stringify(this.props.templates))
-    deepCopyTemplates[template_id] = template
-    this.props.setGlobalStateVar('templates', deepCopyTemplates)
-    this.props.setGlobalStateVar('current_template_id', template_id)
-    this.setState({
-      id: template_id,
-      unsaved_changes: false,
+    let eca_response = this.exportCurrentAnchors()
+    .then(() => {
+      let template_id = 'template_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
+      if (this.state.id) {
+        template_id = this.state.id
+      }
+      let template = {
+        id: template_id,
+        name: this.state.name,
+        app_name: this.state.app_name,
+        scale: this.state.scale,
+        match_percent: this.state.match_percent,
+        match_method: this.state.match_method,
+        anchors: this.state.anchors,
+        mask_zones: this.state.mask_zones,
+      }
+      let deepCopyTemplates = JSON.parse(JSON.stringify(this.props.templates))
+      deepCopyTemplates[template_id] = template
+      this.props.setGlobalStateVar('templates', deepCopyTemplates)
+      this.props.setGlobalStateVar('current_template_id', template_id)
+      this.setState({
+        id: template_id,
+        unsaved_changes: false,
+      })
+      this.props.displayInsightsMessage('Template has been saved')
     })
-    this.props.displayInsightsMessage('Template has been saved')
+    await eca_response
   }
 
   buildDownloadButton() {
@@ -353,43 +350,41 @@ class TemplateControls extends React.Component {
 
   buildAnchorPics() {
     let return_arr = []
-    if (this.props.current_template_id) {
-      return_arr.push(<span key='992234'>Embedded Anchors: </span>)
-      let cur_template = this.props.templates[this.props.current_template_id]
-      let anchor_ids = Object.keys(cur_template['anchors'])
-      for (let i=0; i < anchor_ids.length; i++) {
-        const anchor = cur_template['anchors'][anchor_ids[i]]
-        if (anchor['image_bytes_png_base64']) {
-          const b64img = anchor['image_bytes_png_base64']
-          let the_src='https://www.thewholesomedish.com/wp-content/uploads/2019/06/THE-BEST-CLASSIC-TACOS-600X900.jpg'
-          the_src = "data:image/gif;base64," + b64img
-          return_arr.push(
-            <div 
-              key={'hey' + i}
-              className='p-2 border-bottom'
-            >
-              <div className='d-inline'>
-                <div className='d-inline'>
-                  Anchor id: 
-                </div>
-                <div className='d-inline ml-2'>
-                  {anchor['id']}
-                </div>
-              </div>
-              <div className='d-inline ml-2'>
-                <img 
-                  max-height='100'
-                  max-width='100'
-                  key={'dapper' + i}
-                  alt={anchor['id']}
-                  title={anchor['id']}
-                  src={the_src}
-                />
-              </div>
-            </div>
-          )
-        }
+    let anchor_images = []
+    for (let i=0; i < this.state.anchors.length; i++) {
+      let anchor = this.state.anchors[i]
+      if (Object.keys(anchor).includes('cropped_image_bytes')) {
+        anchor_images[anchor['id']] = anchor['cropped_image_bytes']
       }
+    }
+    for (let i=0; i < Object.keys(anchor_images).length; i++) {
+      const anchor_id = Object.keys(anchor_images)[i]
+      const the_src = "data:image/gif;base64," + anchor_images[anchor_id]
+      return_arr.push(
+        <div 
+          key={'hey' + i}
+          className='p-2 border-bottom'
+        >
+          <div className='d-inline'>
+            <div className='d-inline'>
+              Anchor id: 
+            </div>
+            <div className='d-inline ml-2'>
+              {anchor_id}
+            </div>
+          </div>
+          <div className='d-inline ml-2'>
+            <img 
+              max-height='100'
+              max-width='100'
+              key={'dapper' + i}
+              alt={anchor_id}
+              title={anchor_id}
+              src={the_src}
+            />
+          </div>
+        </div>
+      )
     }
     return return_arr
   }
@@ -607,7 +602,7 @@ class TemplateControls extends React.Component {
       >
         <button
             className='btn btn-primary ml-2'
-            onClick={() => this.doTemplateExport() }
+            onClick={() => this.exportCurrentAnchors() }
         >
           Export
         </button>
@@ -711,7 +706,7 @@ class TemplateControls extends React.Component {
   buildIdString() {
     if (!this.props.current_template_id) {
       return (
-        <div className='d-inline ml-2 font-italic'>
+        <div className='d-inline ml-2 font-weight-bold text-danger font-italic h5'>
           this template has not been saved and has no id yet
         </div>
       )
