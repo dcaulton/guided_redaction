@@ -126,7 +126,7 @@ class TelemetryControls extends React.Component {
         <div
             className='d-inline'
         >
-          start conditions:
+          start conditions: [app_name:regex]
         </div>
         <div
             className='d-inline'
@@ -418,16 +418,42 @@ class TelemetryControls extends React.Component {
   }
 
   buildScanForTimestampButton() {
+    let movie_set_keys = Object.keys(this.props.movie_sets)
     return (
-      <div
-          className='d-inline'
-      >
+      <div className='d-inline'>
         <button
-            className='btn btn-primary ml-2 mt-2'
-            onClick={() => this.props.submitInsightsJob('get_timestamp_current_movie')}
+            className='btn btn-primary ml-2 mt-2 dropdown-toggle'
+            type='button'
+            id='runTelemetryDropdownButton'
+            data-toggle='dropdown'
+            area-haspopup='true'
+            area-expanded='false'
         >
           Scan for Timestamp
         </button>
+        <div className='dropdown-menu' aria-labelledby='RunTelemetryDropdownButton'>
+          <button className='dropdown-item'
+              onClick={() => this.props.submitInsightsJob('get_timestamp_current_movie')}
+          >
+            Movie
+          </button>
+          <button className='dropdown-item'
+              onClick={() => this.props.submitInsightsJob('get_timestamp_all_movies')}
+          >
+            All Movies
+          </button>
+            {movie_set_keys.map((value, index) => {
+              return (
+                <button
+                    className='dropdown-item'
+                    key={index}
+                    onClick={() => this.props.submitInsightsJob('telemetry_movie_set', value)}
+                >
+                  MovieSet '{this.props.movie_sets[value]['name']}' as Job
+                </button>
+              )
+            })}
+        </div>
       </div>
     )
   }
@@ -477,25 +503,6 @@ console.log('scanning for timestamp')
     )
   }
 
-  buildTestButton() {
-    return (
-      <div
-          className='d-inline'
-      >
-        <button
-            className='btn btn-primary ml-2 mt-2'
-            onClick={() => this.doTest()}
-        >
-          Test
-        </button>
-      </div>
-    )
-  }
-
-  doTest() {
-    this.props.displayInsightsMessage('WRITE CODE TO DO A TEST')
-  }
-
   render() {
     if (!this.props.visibilityFlags['telemetry']) {
       return([])
@@ -511,7 +518,6 @@ console.log('scanning for timestamp')
     const movie_mappings = this.buildMovieMappings()
     const save_button = this.buildSaveButton() 
     const run_button = this.buildRunButton() 
-    const test_button = this.buildTestButton() 
     const scan_for_timestamp_button = this.buildScanForTimestampButton() 
 
     return (
@@ -558,7 +564,6 @@ console.log('scanning for timestamp')
                   {load_button}
                   {save_button}
                   {run_button}
-                  {test_button}
                   {scan_for_timestamp_button}
                 </div>
   

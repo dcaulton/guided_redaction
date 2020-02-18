@@ -345,11 +345,14 @@ class InsightsPanel extends React.Component {
       request_data: {},
     }
     job_data['app'] = 'analyze'
-    job_data['operation'] = 'get_blue_screen_timestamp'
+    job_data['operation'] = 'get_timestamp'
     if (scope === 'current_movie') {
       job_data['request_data']['movies'] = {}
       job_data['request_data']['movies'][this.props.movie_url] = this.props.movies[this.props.movie_url]
       job_data['description'] = 'get timestamp for movie: ' + this.props.movie_url
+    } else if (scope === 'all_movies') {
+      job_data['request_data']['movies'] = this.props.movies
+      job_data['description'] = 'get timestamp for all movies'
     }
     return job_data
   }
@@ -374,6 +377,10 @@ class InsightsPanel extends React.Component {
   }
 
   submitInsightsJob(job_string, extra_data) {
+    if (!this.props.movie_url) {
+      this.displayInsightsMessage('no movie loaded, cannot submit a job')
+      return
+    }
     if (job_string === 'current_template_current_movie') {
       let job_data = this.buildScanTemplateCurTempCurMovJobData(extra_data)
       this.props.submitJob({
@@ -406,6 +413,11 @@ class InsightsPanel extends React.Component {
       })
     } else if (job_string === 'get_timestamp_current_movie') {
       let job_data = this.buildGetTimestampJobData('current_movie', extra_data)
+      this.props.submitJob({
+        job_data: job_data
+      })
+    } else if (job_string === 'get_timestamp_all_movies') {
+      let job_data = this.buildGetTimestampJobData('all_movies', extra_data)
       this.props.submitJob({
         job_data: job_data
       })

@@ -226,8 +226,8 @@ class JobsViewSet(viewsets.ViewSet):
             analyze_tasks.scan_ocr_movie.delay(job_uuid)
         if job.app == 'analyze' and job.operation == 'telemetry_find_matching_frames':
             analyze_tasks.telemetry_find_matching_frames.delay(job_uuid)
-        if job.app == 'analyze' and job.operation == 'get_blue_screen_timestamp':
-            analyze_tasks.get_blue_screen_timestamp.delay(job_uuid)
+        if job.app == 'analyze' and job.operation == 'get_timestamp':
+            analyze_tasks.get_timestamp.delay(job_uuid)
         if job.app == 'parse' and job.operation == 'split_and_hash_movie':
             parse_tasks.split_and_hash_movie.delay(job_uuid)
         if job.app == 'parse' and job.operation == 'split_and_hash_threaded':

@@ -1042,7 +1042,9 @@ class RedactApplication extends React.Component {
         deepCopyMovies[movie_url] = req_data['movies'][movie_url]
       }
       this.addToCampaignMovies(movie_url)
-      deepCopyMovies[movie_url]['start_screen_timestamp'] = resp_data[movie_url]
+      if (resp_data[movie_url]) {
+        deepCopyMovies[movie_url]['start_screen_timestamp'] = resp_data[movie_url]
+      }
       last_movie_url = movie_url
     }
     this.setState({
@@ -1191,7 +1193,7 @@ class RedactApplication extends React.Component {
         this.loadScanTemplateResults(job, when_done)
 			} else if (job.app === 'analyze' && job.operation === 'filter') {
         this.loadFilterResults(job, when_done)
-			} else if (job.app === 'analyze' && job.operation === 'get_blue_screen_timestamp') {
+			} else if (job.app === 'analyze' && job.operation === 'get_timestamp') {
         this.loadGetTimestampResults(job, when_done)
 			} else if (job.app === 'analyze' && job.operation === 'scan_ocr_image') {
         this.loadScanOcrImageResults(job, when_done)

@@ -1,4 +1,6 @@
 import cv2
+import math
+import datetime
 from urllib.parse import urlsplit
 import uuid
 import os
@@ -363,7 +365,7 @@ class AnalyzeViewSetTelemetry(viewsets.ViewSet):
                 matching_rows.append(row)
         return matching_rows
 
-class AnalyzeViewSetBlueScreenTimestamp(viewsets.ViewSet):
+class AnalyzeViewSetTimestamp(viewsets.ViewSet):
     def create(self, request):
         request_data = request.data
         return self.process_create_request(request_data)
@@ -379,34 +381,144 @@ class AnalyzeViewSetBlueScreenTimestamp(viewsets.ViewSet):
             if 'frames' not in movies[movie_url]:
                 print('movie {} was not already split into frames'.format(movie_url))
                 continue
-            image_url = movies[movie_url]['frames'][0]
-            pic_response = requests.get(
-              image_url,
-              verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
-            )
-            image = pic_response.content
-            if not image:
-                return self.error('could not retrieve the first frame for '+movie_url)
-            nparr = np.fromstring(image, np.uint8)
-            cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-            recognized_text_areas = analyzer.analyze_text(
-                cv2_image,
-                [(0, 0), (cv2_image.shape[1], cv2_image.shape[0])]
-            )
-            for rta in recognized_text_areas:
-                regex = re.compile('Date:.* (\d+):(\d+):(\d+) ([A|P])M')
-                match = regex.search(rta['text'])
-                if match:
-                    the_hour = match.group(1)
-                    the_minute = match.group(2)
-                    the_second = match.group(3)
-                    the_am_pm = match.group(4)
-                    time_result = {
-                        'hour': the_hour,
-                        'minute': the_minute,
-                        'second': the_second,
-                        'am_pm': the_am_pm + 'M',
-                    }
-                    response_obj[movie_url] = time_result
-                    break
+            blue_screen_timestamp = self.get_timestamp_from_blue_screen(movies[movie_url], analyzer)
+            if blue_screen_timestamp:
+                response_obj[movie_url] = blue_screen_timestamp
+            else:
+                taskbar_timestamp = self.get_timestamp_from_task_bar(movies[movie_url], analyzer)
+                if taskbar_timestamp:
+                    response_obj[movie_url] = taskbar_timestamp
         return Response(response_obj)
+
+    def get_timestamp_from_blue_screen(self, movie, analyzer):
+        print('looking for timestamp from blue screen')
+        image_url = movie['frames'][0]
+        pic_response = requests.get(
+          image_url,
+          verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
+        )
+        image = pic_response.content
+        if not image:
+            return self.error('could not retrieve the first frame for '+movie_url)
+        nparr = np.fromstring(image, np.uint8)
+        cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        recognized_text_areas = analyzer.analyze_text(
+            cv2_image,
+            [(0, 0), (cv2_image.shape[1], cv2_image.shape[0])]
+        )
+        for rta in recognized_text_areas:
+            blue_screen_regex = re.compile('Date:.* (\d+):(\d+):(\d+) ([A|P])M')
+            match = blue_screen_regex.search(rta['text'])
+            if match:
+                print('got a hit on the blue screen')
+                the_hour = match.group(1)
+                the_minute = match.group(2)
+                the_second = match.group(3)
+                the_am_pm = match.group(4)
+                time_result = {
+                    'hour': the_hour,
+                    'minute': the_minute,
+                    'second': the_second,
+                    'am_pm': the_am_pm + 'M',
+                }
+                return time_result
+
+    def get_timestamp_from_task_bar(self, movie, analyzer):
+        print('looking for timestamp from taskbar')
+        prev = None
+        cur = None
+        known_hour_at_offset = {}
+        known_minute_at_offset = {}
+        minute_change_at_offset = {}
+        for cur_index, image_url in enumerate(movie['frames']):
+            print('looking at image offset {}'.format(cur_index))
+            prev = cur
+            cur = self.fetch_timestamp_from_image_task_bar(image_url, analyzer, cur_index)
+            if cur and cur['hour'].isnumeric() and not known_hour_at_offset:
+                print('========found a numeric hour')
+                known_hour_at_offset = {
+                    'hour': int(cur['hour']),
+                    'am_pm': cur['am_pm'],
+                    'offset': cur_index,
+                }
+            if cur and prev:
+                print('comparing cur to prev at index {}, {}:{}'.format(cur_index, cur['hour'], cur['minute']))
+                if ((cur['minute'] == (prev['minute'] + 1)) or
+                        (cur['minute'] == 0  and prev['minute'] == 59)):
+                    print('=========we just saw the minute change')
+                    cur_minute_offset = math.floor(cur_index / 60)
+                    cur_second_offset = cur_index % 60
+                    minute_change_at_offset = {
+                        'cur_minute': cur['minute'],
+                        'prev_minute': prev['minute'],
+                        'cur_minute_offset': cur_minute_offset,
+                        'cur_second_offset': cur_second_offset,
+                        'cur_offset': cur_index,
+                    }
+                    break
+        print('========== SUMMARY')
+        print('known hour at offset')
+        print(known_hour_at_offset)
+        print('minute change at offset')
+        print(minute_change_at_offset)
+        if known_hour_at_offset and minute_change_at_offset:
+            the_hour = known_hour_at_offset['hour']
+            # TODO  this isn't quite right, if the minute change happens later, in the am
+            #   and this hour is in the late pm, we'll get a bad result, 
+            #   fix this when I have more energy
+            cur_datetime = datetime.datetime(
+                year=2020,
+                month=1,
+                day=2,
+                hour=known_hour_at_offset['hour'], 
+                minute=minute_change_at_offset['cur_minute'],
+                second=0
+            )
+            start_time  = cur_datetime - datetime.timedelta(seconds=minute_change_at_offset['cur_offset'])
+            start_time_obj = {
+              'hour': start_time.hour,
+              'minute': start_time.minute,
+              'second': start_time.second,
+              'am_pm': known_hour_at_offset['am_pm'],
+            }
+            print('computed start time: {}'.format(start_time_obj))
+            return start_time_obj
+
+    def fetch_timestamp_from_image_task_bar(self, image_url, analyzer, cur_index):
+        pic_response = requests.get(
+          image_url,
+          verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
+        )
+        image = pic_response.content
+        if not image:
+            return 
+        nparr = np.fromstring(image, np.uint8)
+        cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        dim_x = cv2_image.shape[1]
+        dim_y = cv2_image.shape[0]
+        recognized_text_areas = analyzer.analyze_text(
+            cv2_image,
+            [(dim_x-75, dim_y-45), (dim_x, dim_y)]
+        )
+        for rta in recognized_text_areas:
+            text = rta['text']
+            text = text.replace('l', '1')
+            text = text.replace('I', '1')
+            text = text.replace('O', '0')
+            if re.search('\d+/\d+/\d\d\d\d', text):
+                continue  # not interested in dates
+            ord_arr = [ord(x) for x in text]
+            print('looking at {}: {}'.format(text, ord_arr))
+            match = re.search('(\w*)(:?)(\d\d)(\s*)([A|P])M', text)
+            if match:
+                the_hour = match.group(1)
+                the_minute = int(match.group(3))
+                the_am_pm = match.group(5)
+                time_result = {
+                    'hour': the_hour,
+                    'minute': the_minute,
+                    'am_pm': the_am_pm + 'M',
+                }
+                print('got a hit on the taskbar: {}'.format(time_result))
+                return time_result
+

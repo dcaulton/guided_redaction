@@ -7,7 +7,7 @@ from guided_redaction.analyze.api import (
     AnalyzeViewSetFilter, 
     AnalyzeViewSetScanTemplate,
     AnalyzeViewSetTelemetry,
-    AnalyzeViewSetBlueScreenTimestamp,
+    AnalyzeViewSetTimestamp,
     AnalyzeViewSetEastTess
 )
 
@@ -94,13 +94,13 @@ def filter(job_uuid):
         print('calling filter on nonexistent job: '+ job_uuid)
 
 @shared_task
-def get_blue_screen_timestamp(job_uuid):
+def get_timestamp(job_uuid):
     if Job.objects.filter(pk=job_uuid).exists():
         job = Job.objects.get(pk=job_uuid)
         job.status = 'running'
         job.save()
-        print('running get_blue_screen_timestamp for job '+ job_uuid)
-        worker = AnalyzeViewSetBlueScreenTimestamp()
+        print('running get_timestamp for job '+ job_uuid)
+        worker = AnalyzeViewSetTimestamp()
         response = worker.process_create_request(json.loads(job.request_data))
         if not Job.objects.filter(pk=job_uuid).exists():
             return

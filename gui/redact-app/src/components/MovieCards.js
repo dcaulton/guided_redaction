@@ -64,7 +64,6 @@ class MovieCardList extends React.Component {
               current_template_id={this.props.current_template_id}
               template_matches={this.props.template_matches}
               selected_areas={this.props.selected_areas}
-
           />
           )
         })}
@@ -143,7 +142,11 @@ class MovieCard extends React.Component {
       let the_framesets = this.props.movies[this_cards_movie_url]['framesets']
       framesets_count_message = Object.keys(the_framesets).length.toString() + ' framesets'
     }
-    return framesets_count_message
+    return (
+      <div>
+        {framesets_count_message}
+      </div>
+    )
   }
 
   getMovieDimensions(movie_url, movies) {
@@ -151,7 +154,11 @@ class MovieCard extends React.Component {
       const dims = movies[movie_url]['frame_dimensions']
       let ts = dims[0].toString() + 'x' + dims[1].toString()
       ts += ' - ' + movies[movie_url]['frameset_discriminator']
-      return ts
+      return (
+        <div>
+          {ts}
+        </div>
+      )
     }
     return ''
   }
@@ -197,7 +204,11 @@ class MovieCard extends React.Component {
     if (Object.keys(this.props.selected_areas).includes(this.props.this_cards_movie_url)) {
       const  sa_count = Object.keys(this.props.selected_areas[this.props.this_cards_movie_url]).length
       const ret_str = sa_count.toString() + ' selected areas'
-      return ret_str
+      return (
+        <div>
+          {ret_str}
+        </div>
+      )
     }
     return ''
   } 
@@ -209,7 +220,11 @@ class MovieCard extends React.Component {
           const frameset = this.props.movies[this.props.this_cards_movie_url]['framesets'][frameset_hash]
           if (Object.keys(frameset).includes('filtered_image_url') &&
               frameset['filtered_image_url']) {
-            return 'diff images exist'
+            return (
+              <div>
+                diff images exist
+              </div>
+            )
           }
       }
     }
@@ -226,7 +241,11 @@ class MovieCard extends React.Component {
     }
     const cur_movies_matches = cur_templates_matches[this.props.this_cards_movie_url]
     let count = Object.keys(cur_movies_matches).length
-    return count.toString() + ' template matches'
+    return (
+      <div>
+        {count.toString()} template matches
+      </div>
+    )
   }
 
   getOcrMatchesString() {
@@ -244,6 +263,20 @@ class MovieCard extends React.Component {
           {count} ocr matches
         </div>
       )
+    }
+    return ''
+  }
+
+  buildHasTimestampInfo() {
+    if (Object.keys(this.props.movies).includes(this.props.this_cards_movie_url)) {
+      const movie = this.props.movies[this.props.this_cards_movie_url]
+      if (Object.keys(movie).includes('start_screen_timestamp')) {
+        return (
+          <div>
+            has timestamp
+          </div>
+        )
+      }
     }
     return ''
   }
@@ -272,6 +305,7 @@ class MovieCard extends React.Component {
     const movie_body_id = 'movie_body_' + this.props.index
     const movie = this.props.movies[this.props.this_cards_movie_url]
     const movie_header = this.buildMovieHeader(movie, movie_body_id, nickname_block)
+    const has_timestamp_info = this.buildHasTimestampInfo()
 
     return (
       <div 
@@ -312,41 +346,12 @@ class MovieCard extends React.Component {
                   style={dd_style}
               >
                 {framesets_count_message}
-              </div>
-
-              <div 
-                  className='row'
-                  style={dd_style}
-              >
                 {template_matches_string}
-              </div>
-
-              <div 
-                  className='row'
-                  style={dd_style}
-              >
                 {ocr_matches_string}
-              </div>
-
-              <div 
-                  className='row'
-                  style={dd_style}
-              >
                 {diffs_string}
-              </div>
-
-              <div 
-                  className='row'
-                  style={dd_style}
-              >
                 {selected_areas_string}
-              </div>
-
-              <div 
-                  className='row ' 
-                  style={dd_style}
-              >
                 {dims_string}
+                {has_timestamp_info}
               </div>
 
             </div>
