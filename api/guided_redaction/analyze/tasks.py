@@ -111,6 +111,97 @@ def get_timestamp(job_uuid):
         print('calling get_blue_screen_timestamp on nonexistent job: '+ job_uuid)
 
 @shared_task
+def get_timestamp_threaded(job_uuid):
+    if Job.objects.filter(pk=job_uuid).exists():
+        job = Job.objects.get(pk=job_uuid)
+        if job.status in ['success', 'failed']:
+            return
+        children = Job.objects.filter(parent=job)
+        (next_step, percent_done) = evaluate_get_timestamp_threaded_children(children)
+        print('next step is {}, percent done {}'.format(next_step, percent_done))
+        if next_step == 'build_child_tasks':
+          build_and_dispatch_get_timestamp_threaded_children(job)
+        elif next_step == 'update_percent_complete':
+          job.elapsed_time = percent_done
+          job.save()
+        elif next_step == 'wrap_up':
+          wrap_up_get_timestamp_threaded(job, children)
+        elif next_step == 'abort':
+          job.status = 'failed'
+          job.save()
+
+def evaluate_get_timestamp_threaded_children(children):
+    children_count = 0
+    completed_children_count = 0
+    failed_children_count = 0
+    for child in children:
+        if child.operation == 'get_timestamp':
+            children_count += 1
+            if child.status == 'success':
+                completed_children_count += 1
+            elif child.status == 'failed':
+                failed_children_count += 1
+    def print_totals():
+        print('GET TIMESTAMP CHILDREN: {} COMPLETE: {} FAILED: {}'.format(
+            children_count, completed_children_count, failed_children_count))
+    print_totals()
+    if children_count == 0:
+        return ('build_child_tasks', 0)
+    elif children_count == completed_children_count:
+        return ('wrap_up', 1)
+    elif children_count > 0:
+        complete_percent = completed_children_count / children_count
+        return ('update_percent_complete', complete_percent)
+    elif failed_children_count > 0:
+        return ('abort', 0)
+
+def build_and_dispatch_get_timestamp_threaded_children(parent_job):
+    parent_job.status = 'running'
+    parent_job.save()
+    request_data = json.loads(parent_job.request_data)
+    movies = request_data['movies']
+    for index, movie_url in enumerate(movies.keys()):
+        movie = movies[movie_url]
+        target_movies = {}
+        target_movies[movie_url] = movie
+        request_data = json.dumps({
+            'movies': target_movies,
+        })
+        job = Job(
+            request_data=request_data,
+            file_uuids_used=[], # TODO, figure this out
+            status='created',
+            description='get_timestamp for movie {}'.format(movie_url),
+            app='analyze',
+            operation='get_timestamp',
+            sequence=0,
+            elapsed_time=0.0,
+            parent=parent_job,
+        )
+        job.save()
+        print('build_and_dispatch_get_timestamp_thread_children: dispatching job for movie {}'.format(movie_url))
+        get_timestamp.delay(job.id)
+        # intersperse these evenly in the job stack so we get regular updates
+        if index % 5 == 0:
+            get_timestamp_threaded.delay(parent_job.id)
+    get_timestamp_threaded.delay(parent_job.id)
+
+def wrap_up_get_timestamp_threaded(job, children):
+    aggregate_response_data = {}
+    for child in children:
+        child_response_data = json.loads(child.response_data)
+        if len(child_response_data.keys()) > 0:
+            movie_url = list(child_response_data.keys())[0]
+            aggregate_response_data[movie_url] = child_response_data[movie_url]
+
+    print('wrap_up_get_timestamp_threaded: wrapping up parent job')
+    job.status = 'success'
+    job.response_data = json.dumps(aggregate_response_data)
+    job.elapsed_time = 1
+    job.save()
+
+
+@shared_task
 def scan_template_threaded(job_uuid):
     if Job.objects.filter(pk=job_uuid).exists():
         job = Job.objects.get(pk=job_uuid)

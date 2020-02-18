@@ -1193,7 +1193,7 @@ class RedactApplication extends React.Component {
         this.loadScanTemplateResults(job, when_done)
 			} else if (job.app === 'analyze' && job.operation === 'filter') {
         this.loadFilterResults(job, when_done)
-			} else if (job.app === 'analyze' && job.operation === 'get_timestamp') {
+			} else if (job.app === 'analyze' && job.operation === 'get_timestamp_threaded') {
         this.loadGetTimestampResults(job, when_done)
 			} else if (job.app === 'analyze' && job.operation === 'scan_ocr_image') {
         this.loadScanOcrImageResults(job, when_done)

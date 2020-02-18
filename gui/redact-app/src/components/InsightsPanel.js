@@ -345,7 +345,7 @@ class InsightsPanel extends React.Component {
       request_data: {},
     }
     job_data['app'] = 'analyze'
-    job_data['operation'] = 'get_timestamp'
+    job_data['operation'] = 'get_timestamp_threaded'
     if (scope === 'current_movie') {
       job_data['request_data']['movies'] = {}
       job_data['request_data']['movies'][this.props.movie_url] = this.props.movies[this.props.movie_url]

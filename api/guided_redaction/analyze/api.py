@@ -425,66 +425,49 @@ class AnalyzeViewSetTimestamp(viewsets.ViewSet):
 
     def get_timestamp_from_task_bar(self, movie, analyzer):
         print('looking for timestamp from taskbar')
-        prev = None
-        cur = None
-        known_hour_at_offset = {}
+        prev_minute = None
+        cur_minute = None
         known_minute_at_offset = {}
         minute_change_at_offset = {}
         for cur_index, image_url in enumerate(movie['frames']):
-            print('looking at image offset {}'.format(cur_index))
-            prev = cur
-            cur = self.fetch_timestamp_from_image_task_bar(image_url, analyzer, cur_index)
-            if cur and cur['hour'].isnumeric() and not known_hour_at_offset:
-                print('========found a numeric hour')
-                known_hour_at_offset = {
-                    'hour': int(cur['hour']),
-                    'am_pm': cur['am_pm'],
-                    'offset': cur_index,
-                }
-            if cur and prev:
-                print('comparing cur to prev at index {}, {}:{}'.format(cur_index, cur['hour'], cur['minute']))
-                if ((cur['minute'] == (prev['minute'] + 1)) or
-                        (cur['minute'] == 0  and prev['minute'] == 59)):
-                    print('=========we just saw the minute change')
+            print('advancing to frame at offset {}'.format(cur_index))
+            prev_minute = cur_minute
+            cur_minute = self.fetch_minute_from_image_task_bar(image_url, analyzer, cur_index)
+            if cur_minute and prev_minute:
+                print('comparing cur {} to prev {} at index {}'.format(cur_minute, prev_minute, cur_index))
+                if (cur_minute == prev_minute + 1)  or  (cur_minute == 0 and prev_minute == 59):
+                    print('========= just saw the minute change')
                     cur_minute_offset = math.floor(cur_index / 60)
                     cur_second_offset = cur_index % 60
                     minute_change_at_offset = {
-                        'cur_minute': cur['minute'],
-                        'prev_minute': prev['minute'],
+                        'cur_minute': cur_minute,
+                        'prev_minute': prev_minute,
                         'cur_minute_offset': cur_minute_offset,
                         'cur_second_offset': cur_second_offset,
                         'cur_offset': cur_index,
                     }
                     break
         print('========== SUMMARY')
-        print('known hour at offset')
-        print(known_hour_at_offset)
         print('minute change at offset')
         print(minute_change_at_offset)
-        if known_hour_at_offset and minute_change_at_offset:
-            the_hour = known_hour_at_offset['hour']
-            # TODO  this isn't quite right, if the minute change happens later, in the am
-            #   and this hour is in the late pm, we'll get a bad result, 
-            #   fix this when I have more energy
+        if  minute_change_at_offset:
             cur_datetime = datetime.datetime(
                 year=2020,
                 month=1,
                 day=2,
-                hour=known_hour_at_offset['hour'], 
+                hour=10,
                 minute=minute_change_at_offset['cur_minute'],
                 second=0
             )
             start_time  = cur_datetime - datetime.timedelta(seconds=minute_change_at_offset['cur_offset'])
             start_time_obj = {
-              'hour': start_time.hour,
               'minute': start_time.minute,
               'second': start_time.second,
-              'am_pm': known_hour_at_offset['am_pm'],
             }
-            print('computed start time: {}'.format(start_time_obj))
+            print('computed start time: {}:{}'.format(start_time_obj['minute'], start_time_obj['second']))
             return start_time_obj
 
-    def fetch_timestamp_from_image_task_bar(self, image_url, analyzer, cur_index):
+    def fetch_minute_from_image_task_bar(self, image_url, analyzer, cur_index):
         pic_response = requests.get(
           image_url,
           verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
@@ -507,18 +490,8 @@ class AnalyzeViewSetTimestamp(viewsets.ViewSet):
             text = text.replace('O', '0')
             if re.search('\d+/\d+/\d\d\d\d', text):
                 continue  # not interested in dates
-            ord_arr = [ord(x) for x in text]
-            print('looking at {}: {}'.format(text, ord_arr))
             match = re.search('(\w*)(:?)(\d\d)(\s*)([A|P])M', text)
             if match:
-                the_hour = match.group(1)
                 the_minute = int(match.group(3))
-                the_am_pm = match.group(5)
-                time_result = {
-                    'hour': the_hour,
-                    'minute': the_minute,
-                    'am_pm': the_am_pm + 'M',
-                }
-                print('got a hit on the taskbar: {}'.format(time_result))
-                return time_result
+                return the_minute
 
