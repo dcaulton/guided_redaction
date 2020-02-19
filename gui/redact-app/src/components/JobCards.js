@@ -103,28 +103,16 @@ class JobCard extends React.Component {
   }
 
   buildJobWorkbookBlock(job_data) {
-    let job_workbook_name = 'no workbook'
+    let job_workbook_name = '<none>'
     if (job_data['workbook_id']) {
         job_workbook_name = this.getWorkbookName(job_data['workbook_id'])
     }
     let job_workbook_block = (
-      <div className='row mt-1'>
-        {job_workbook_name}
+      <div>
+        workbook: {job_workbook_name}
       </div>
     )
     return job_workbook_block
-  }
-
-  buildJobResponseData(job_data) {
-    let job_response_data = ''
-    if (job_data['status'] === 'failed') {
-      job_response_data = (
-        <div className='row mt-1'>
-          {job_data['response_data']}
-        </div>
-      )
-    }
-    return job_response_data
   }
 
   buildJobHeader(job_data, job_body_id) {
@@ -262,7 +250,6 @@ class JobCard extends React.Component {
   }
 
   buildJobDescriptionData(job_data) {
-    let job_desc_data = ''
     let jd_length = job_data['description'].length
     let jd_desc = job_data['description']
     if (jd_length > 10) {
@@ -270,22 +257,26 @@ class JobCard extends React.Component {
         jd_desc = jd_desc.substring(0,jd_desc.indexOf(':'))
       }
     }
-    job_desc_data = (
-      <div className='row mt-1'>
-        <span title={job_data['description']}>
-          {jd_desc}
-        </span>
+    return (
+      <div>
+        {jd_desc}
       </div>
     )
-    return job_desc_data
   }
 
   buildCreatedOnData(job_data) {
     return (
-      <div className='row mt-1 pl-3'>
-        <span title={job_data['created_on']}>
-          created {job_data['pretty_created_on']}
-        </span>
+      <div>
+        created {job_data['pretty_created_on']}
+      </div>
+    )
+  }
+
+  buildWallClockRunTimeData(job_data) {
+    let wcrt = job_data['wall_clock_run_time'].split('.')[0]
+    return (
+      <div>
+        run time: {wcrt}
       </div>
     )
   }
@@ -299,10 +290,8 @@ class JobCard extends React.Component {
     }
     const elapsed_percent = parseInt(job_data['elapsed_time'] * 100).toString() + '% done'
     return (
-      <div className='row mt-1 pl-3'>
-        <span title={elapsed_percent}>
-          {elapsed_percent}
-        </span>
+      <div>
+        {elapsed_percent}
       </div>
     )
   }
@@ -376,14 +365,18 @@ class JobCard extends React.Component {
   }
 
   render() {
+    let small_style = {
+      'fontSize': 'small',
+      'display': 'block',
+    }
     const get_job_button = this.buildGetJobButton()
     const delete_job_button = this.buildDeleteJobButton()
     const job_body_id = 'job_card_' + this.props.index
     const job_header = this.buildJobHeader(this.props.job_data, job_body_id)
-    const job_response_data = this.buildJobResponseData(this.props.job_data)
     const job_workbook_block = this.buildJobWorkbookBlock(this.props.job_data)
     const job_desc_data = this.buildJobDescriptionData(this.props.job_data)
     const job_created_on_data = this.buildCreatedOnData(this.props.job_data)
+    const wall_clock_run_time_data = this.buildWallClockRunTimeData(this.props.job_data)
     const job_percent_done = this.buildPercentDone(this.props.job_data)
     const job_status = this.buildJobStatus()
 
@@ -400,16 +393,27 @@ class JobCard extends React.Component {
               id={job_body_id}
               className='collapse show'
           >
-            {job_desc_data}
+            <div 
+                className='row mt-1'
+                style={small_style}
+            >
+              {job_desc_data}
+            </div>
+
             <div className='row h4'>
               {job_status}
             </div>
-            {job_response_data}
-            <div className='row mt-1'>
+
+            <div 
+                className='row mt-1'
+                style={small_style}
+            >
               {job_created_on_data}
+              {wall_clock_run_time_data}
+              {job_percent_done}
+              {job_workbook_block}
             </div>
-            {job_percent_done}
-            {job_workbook_block}
+
             <div className='row mt-1'>
               {get_job_button}
               {delete_job_button}

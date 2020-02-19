@@ -487,6 +487,12 @@ class AnalyzeViewSetTimestamp(viewsets.ViewSet):
             text = rta['text']
             text = text.replace('l', '1')
             text = text.replace('I', '1')
+            text = text.replace('[', '1')
+            text = text.replace(']', '1')
+            text = text.replace('i', '1')
+            text = text.replace('|', '1')
+            text = text.replace('{', '1')
+            text = text.replace('}', '1')
             text = text.replace('O', '0')
             if re.search('\d+/\d+/\d\d\d\d', text):
                 continue  # not interested in dates

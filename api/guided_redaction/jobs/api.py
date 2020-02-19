@@ -79,6 +79,7 @@ class JobsViewSet(viewsets.ViewSet):
             children = Job.objects.filter(parent_id=job.id).order_by('sequence')
             child_ids = [child.id for child in children]
             pretty_time = self.pretty_date(job.created_on)
+            wall_clock_run_time = str(job.updated - job.created_on)
             jobs_list.append(
                 {
                     'id': job.id,
@@ -90,6 +91,7 @@ class JobsViewSet(viewsets.ViewSet):
                     'updated': job.updated,
                     'pretty_created_on': pretty_time,
                     'elapsed_time': job.elapsed_time,
+                    'wall_clock_run_time': wall_clock_run_time,
                     'app': job.app,
                     'operation': job.operation,
                     'workbook_id': job.workbook_id,
@@ -105,6 +107,7 @@ class JobsViewSet(viewsets.ViewSet):
         children = Job.objects.filter(parent_id=job.id).order_by('sequence')
         child_ids = [child.id for child in children]
         pretty_time = self.pretty_date(job.created_on)
+        wall_clock_run_time = str(job.updated - job.created_on)
         job_data = {
             'id': job.id,
             'file_uuids_used': job.file_uuids_used,
@@ -115,6 +118,7 @@ class JobsViewSet(viewsets.ViewSet):
             'updated': job.updated,
             'pretty_created_on': pretty_time,
             'elapsed_time': job.elapsed_time,
+            'wall_clock_run_time': wall_clock_run_time,
             'app': job.app,
             'operation': job.operation,
             'workbook_id': job.workbook_id,
