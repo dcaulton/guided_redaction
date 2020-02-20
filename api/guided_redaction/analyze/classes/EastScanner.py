@@ -11,15 +11,16 @@ class EastScanner:
     path_to_east_text_detector = settings.REDACT_EAST_FILE_PATH
     min_confidence = 0.5
 
-    def __init__(self):
-        pass
+    def __init__(self, debug=True):
+        self.debug = debug
 
     def get_areas_to_redact(self, source, input_filename, telemetry_data):
         textareas = self.get_text_areas_from_east(source)
         return textareas
 
     def get_text_areas_from_east(self, source):
-        print("performing text detection with EAST")
+        if self.debug:
+            print("performing text detection with EAST")
         image = source.copy()
 
         # EAST requires h and w to be multiples of 32
@@ -45,7 +46,8 @@ class EastScanner:
         net.setInput(blob)
         (scores, geometry) = net.forward(layerNames)
         end = time.time()
-        print("text detection took "+ str(int(math.ceil(end - start)))+ " seconds")
+        if self.debug:
+            print("text detection took "+ str(int(math.ceil(end - start)))+ " seconds")
 
         (numRows, numCols) = scores.shape[2:4]
         rects = []
@@ -88,5 +90,6 @@ class EastScanner:
             endY = int(endY * rH)
             text_areas.append([(startX, startY), (endX, endY)])
 
-        print("text detection complete")
+        if self.debug:
+            print("text detection complete")
         return text_areas

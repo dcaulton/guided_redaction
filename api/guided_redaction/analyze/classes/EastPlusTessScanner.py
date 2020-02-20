@@ -12,9 +12,6 @@ import uuid
 # tools to use East and Tesseract to find word regions in an image
 class EastPlusTessScanner(EastScanner):
 
-    def __init__(self):
-        pass
-
     # takes text areas detected by EAST, grows them horizontally using opencv morphology operations,
     def grow_selections_and_get_contours(self, image, selections):
         kernel_size = (13, 1)
@@ -62,14 +59,45 @@ class EastPlusTessScanner(EastScanner):
             }
             text_regions.append(recognized_text_area)
 
-        sum_text = (
-            "total text recognition time: "
-            + str(math.ceil(total_tess_time))
-            + " seconds for "
-            + str(len(contours))
-            + " calls"
-        )
-        print(sum_text)
+        if self.debug:
+            sum_text = (
+                "total text recognition time: "
+                + str(math.ceil(total_tess_time))
+                + " seconds for "
+                + str(len(contours))
+                + " calls"
+            )
+            print(sum_text)
+        return text_regions
+
+    def do_tess_on_whole_image(self, image):
+        if len(image.shape) > 2:
+            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        else:
+            gray = image
+        gray = cv2.GaussianBlur(gray, (3, 3), 0)
+
+        text_regions = []
+        total_tess_time = 0
+        copy = image.copy()
+        config = "-l eng --oem 1 --psm 7"
+        start = time.time()
+        text = pytesseract.image_to_string(gray, config=config)
+        end = time.time()
+        total_tess_time += end - start
+        recognized_text_area = {
+            "text": text,
+            "source": "ocr: tess only",
+        }
+        text_regions.append(recognized_text_area)
+
+        if self.debug:
+            sum_text = (
+                "total text recognition time: "
+                + str(math.ceil(total_tess_time))
+                + " seconds for 1 call"
+            )
+            print(sum_text)
         return text_regions
 
     def get_centroid(self, contour):

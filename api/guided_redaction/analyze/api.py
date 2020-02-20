@@ -1,4 +1,5 @@
 import cv2
+import random
 import math
 import datetime
 from urllib.parse import urlsplit
@@ -374,7 +375,7 @@ class AnalyzeViewSetTimestamp(viewsets.ViewSet):
         if not request_data.get("movies"):
             return self.error("movies is required")
         response_obj = {}
-        analyzer = EastPlusTessGuidedAnalyzer()
+        analyzer = EastPlusTessGuidedAnalyzer(debug=False)
         movies = request_data.get('movies')
         for movie_url in movies:
             response_obj[movie_url] = {}
@@ -391,7 +392,6 @@ class AnalyzeViewSetTimestamp(viewsets.ViewSet):
         return Response(response_obj)
 
     def get_timestamp_from_blue_screen(self, movie, analyzer):
-        print('looking for timestamp from blue screen')
         image_url = movie['frames'][0]
         pic_response = requests.get(
           image_url,
@@ -402,6 +402,9 @@ class AnalyzeViewSetTimestamp(viewsets.ViewSet):
             return self.error('could not retrieve the first frame for '+movie_url)
         nparr = np.fromstring(image, np.uint8)
         cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        if not self.screen_is_blue_screen(cv2_image):
+          return
+        print('looking for timestamp from blue screen')
         recognized_text_areas = analyzer.analyze_text(
             cv2_image,
             [(0, 0), (cv2_image.shape[1], cv2_image.shape[0])]
@@ -422,6 +425,19 @@ class AnalyzeViewSetTimestamp(viewsets.ViewSet):
                     'am_pm': the_am_pm + 'M',
                 }
                 return time_result
+
+    def screen_is_blue_screen(self, cv2_image): 
+        dim_y, dim_x = cv2_image.shape[:2]
+        if dim_y < 100 or dim_x < 100:
+            return False
+        swatch = cv2_image[dim_y-20:dim_y, dim_x-20: dim_x]
+
+        for i in range(10):
+            rand_x = random.randint(0, 19)
+            rand_y = random.randint(0, 19)
+            if swatch[rand_y,rand_x][0] != 227 or swatch[rand_y,rand_x][1] != 154 or swatch[rand_y,rand_x][2] != 3:
+                return False
+        return True
 
     def get_timestamp_from_task_bar(self, movie, analyzer):
         print('looking for timestamp from taskbar')
@@ -468,6 +484,7 @@ class AnalyzeViewSetTimestamp(viewsets.ViewSet):
             return start_time_obj
 
     def fetch_minute_from_image_task_bar(self, image_url, analyzer, cur_index):
+        print('fetching minutes from {}'.format(image_url))
         pic_response = requests.get(
           image_url,
           verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
@@ -479,12 +496,22 @@ class AnalyzeViewSetTimestamp(viewsets.ViewSet):
         cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
         dim_x = cv2_image.shape[1]
         dim_y = cv2_image.shape[0]
+
+        time_region_image = cv2_image[dim_y-40:dim_y-20, dim_x-75:dim_x]
+        gray = cv2.cvtColor(time_region_image, cv2.COLOR_BGR2GRAY)
+        bg_color = gray[1,1]
+        if bg_color < 100:  # its light text on dark bg, invert
+            gray = cv2.bitwise_not(gray)
         recognized_text_areas = analyzer.analyze_text(
-            cv2_image,
-            [(dim_x-75, dim_y-45), (dim_x, dim_y)]
+            gray,
+            '',
+            processing_mode='tess_only'
         )
+
         for rta in recognized_text_areas:
             text = rta['text']
+            text_codes = [ord(x) for x in text]
+            print('text in **{}** {}'.format(text, text_codes))
             text = text.replace('l', '1')
             text = text.replace('I', '1')
             text = text.replace('[', '1')
@@ -494,9 +521,10 @@ class AnalyzeViewSetTimestamp(viewsets.ViewSet):
             text = text.replace('{', '1')
             text = text.replace('}', '1')
             text = text.replace('O', '0')
-            if re.search('\d+/\d+/\d\d\d\d', text):
-                continue  # not interested in dates
-            match = re.search('(\w*)(:?)(\d\d)(\s*)([A|P])M', text)
+            text = text.replace('.', ':')
+            text_codes = [ord(x) for x in text]
+            print('--transformed to **{}** {}'.format(text, text_codes))
+            match = re.search('(\w*)(:?)(\d\d)(\s*)(\S)M', text)
             if match:
                 the_minute = int(match.group(3))
                 return the_minute

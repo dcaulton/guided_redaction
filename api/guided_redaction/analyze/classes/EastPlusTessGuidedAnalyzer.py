@@ -3,18 +3,19 @@ from guided_redaction.analyze.classes.EastPlusTessScanner import EastPlusTessSca
 
 
 class EastPlusTessGuidedAnalyzer(EastPlusTessScanner):
-    def __init__(self):
-        pass
 
-    def analyze_text(self, image, region_of_interest):
-        detected_text_areas = self.get_text_areas_from_east(image)
-        detected_text_areas = self.discard_unneeded_areas(
-            region_of_interest, detected_text_areas
-        )
-        detected_contours = self.grow_selections_and_get_contours(
-            image, detected_text_areas
-        )
-        recognized_text_areas = self.do_tess_on_contours(image, detected_contours)
+    def analyze_text(self, image, region_of_interest, processing_mode=''):
+        if processing_mode == 'tess_only':
+            recognized_text_areas = self.do_tess_on_whole_image(image)
+        else:
+            detected_text_areas = self.get_text_areas_from_east(image)
+            detected_text_areas = self.discard_unneeded_areas(
+                region_of_interest, detected_text_areas
+            )
+            detected_contours = self.grow_selections_and_get_contours(
+                image, detected_text_areas
+            )
+            recognized_text_areas = self.do_tess_on_contours(image, detected_contours)
         return recognized_text_areas
 
     def discard_unneeded_areas(self, region_of_interest, areas):
