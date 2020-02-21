@@ -336,12 +336,12 @@ class AnalyzeViewSetTelemetry(viewsets.ViewSet):
         telemetry_data = telemetry_raw_data.split('\n')
         if telemetry_data:
             for movie_url in movies.keys():
+                print('scanning telemetry data for movie {}'.format(movie_url))
                 matching_frames_for_movie = []
                 movie_filename = movie_url.split('/')[-1]
                 movie_id = movie_filename.split('.')[0]
                 if movie_id not in movie_mappings:
-                    print('cannot find recording id for movie url ' + movie_url + ', ' + movie_id)
-                    print(movie_mappings.keys())
+                    print('cannot find recording id for movie url {}, {}, skipping'.format(movie_url, movie_id ))
                     continue
                 movie = movies[movie_url]
                 recording_id = movie_mappings[movie_id]

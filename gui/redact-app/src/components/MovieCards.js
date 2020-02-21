@@ -270,8 +270,8 @@ class MovieCard extends React.Component {
   buildHasTimestampInfo() {
     if (Object.keys(this.props.movies).includes(this.props.this_cards_movie_url)) {
       const movie = this.props.movies[this.props.this_cards_movie_url]
-      if ((Object.keys(movie).includes('start_screen_timestamp')) 
-          && Object.keys(movie['start_screen_timestamp']).length > 0) {
+      if ((Object.keys(movie).includes('start_timestamp')) 
+          && Object.keys(movie['start_timestamp']).length > 0) {
         return (
           <div>
             has timestamp

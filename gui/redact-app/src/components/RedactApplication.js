@@ -1043,7 +1043,7 @@ class RedactApplication extends React.Component {
       }
       this.addToCampaignMovies(movie_url)
       if (resp_data[movie_url]) {
-        deepCopyMovies[movie_url]['start_screen_timestamp'] = resp_data[movie_url]
+        deepCopyMovies[movie_url]['start_timestamp'] = resp_data[movie_url]
       }
       last_movie_url = movie_url
     }

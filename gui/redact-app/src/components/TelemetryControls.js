@@ -8,9 +8,8 @@ class TelemetryControls extends React.Component {
       id: '',
       name: '',
       app_name: '',
+      account: '',
       start_conditions: [],
-      end_conditions: [],
-      actions: [],
       unsaved_changes: false,
 
     }
@@ -23,9 +22,8 @@ class TelemetryControls extends React.Component {
         id: rule['id'],
         name: rule['name'],
         app_name: rule['app_name'],
+        account: rule['account'],
         start_conditions: rule['start_conditions'],
-        end_conditions: rule['end_conditions'],
-        actions: rule['actions'],
       })
     }
   }
@@ -112,6 +110,35 @@ class TelemetryControls extends React.Component {
     )
   }
 
+  setAccount(the_account) {
+    this.setState({
+      account: the_account,
+      unsaved_changes: true,
+    })
+  }
+
+  buildAccountField()  {
+    return (
+      <div>
+        <div className='d-inline ml-2'>
+          Account:
+        </div>
+        <div
+            className='d-inline ml-2'
+        >
+            <input
+                id='telemetry_account'
+                key='telemetry_account_1'
+                title='account'
+                size='15'
+                value={this.state.account}
+                onChange={(event) => this.setAccount(event.target.value)}
+            />
+        </div>
+      </div>
+    )
+  }
+
   updateStartConditions(conditions_as_string) {
     const conditions = conditions_as_string.split('\n')
     this.setState({
@@ -126,7 +153,7 @@ class TelemetryControls extends React.Component {
         <div
             className='d-inline'
         >
-          start conditions: [app_name:regex]
+          regex to match against
         </div>
         <div
             className='d-inline'
@@ -137,68 +164,6 @@ class TelemetryControls extends React.Component {
              rows='2'
              value={this.state.start_conditions.join('\n')}
              onChange={(event) => this.updateStartConditions(event.target.value)}
-          />
-        </div>
-      </div>
-    )
-  }
-
-  updateEndConditions(conditions_as_string) {
-    const conditions = conditions_as_string.split('\n')
-    this.setState({
-      end_conditions: conditions,
-      unsaved_changes: true,
-    })
-  }
-
-  buildEndConditions() {
-    return (
-      <div>
-        <div
-            className='d-inline'
-        >
-          end conditions:
-        </div>
-        <div
-            className='d-inline'
-        >
-          <textarea
-             id='telemetry_start_conditions'
-             cols='80'
-             rows='2'
-             value={this.state.end_conditions.join('\n')}
-             onChange={(event) => this.updateEndConditions(event.target.value)}
-          />
-        </div>
-      </div>
-    )
-  }
-
-  updateActions(actions_as_string) {
-    const actions = actions_as_string.split('\n')
-    this.setState({
-      actions: actions,
-      unsaved_changes: true,
-    })
-  }
-
-  buildActions() {
-    return (
-      <div>
-        <div
-            className='d-inline'
-        >
-          actions:
-        </div>
-        <div
-            className='d-inline'
-        >
-          <textarea
-             id='telemetry_actions'
-             cols='80'
-             rows='2'
-             value={this.state.actions.join('\n')}
-             onChange={(event) => this.updateActions(event.target.value)}
           />
         </div>
       </div>
@@ -248,7 +213,7 @@ class TelemetryControls extends React.Component {
         >
           <textarea
              id='telemetry_movie_mappings'
-             cols='80'
+             cols='115'
              rows='8'
              style={text_style}
              value={movie_mappings_as_string}
@@ -264,9 +229,8 @@ class TelemetryControls extends React.Component {
       id: '',
       name: '',
       app_name: '',
+      account: '',
       start_conditions: [],
-      end_conditions: [],
-      actions: [],
       unsaved_changes: false,
     })
     this.props.displayInsightsMessage('new rule loaded')
@@ -281,9 +245,8 @@ class TelemetryControls extends React.Component {
         id: rule['id'],
         name: rule['name'],
         app_name: rule['app_name'],
+        account: rule['account'],
         start_conditions: rule['start_conditions'],
-        end_conditions: rule['end_conditions'],
-        actions: rule['actions'],
       })
       this.props.setGlobalStateVar('current_telemetry_rule_id', rule_id)
       this.props.displayInsightsMessage('telemetry rule loaded')
@@ -387,9 +350,8 @@ class TelemetryControls extends React.Component {
       id: rule_id,
       name: this.state.name,
       app_name: this.state.app_name,
+      account: this.state.account,
       start_conditions: this.state.start_conditions,
-      end_conditions: this.state.end_conditions,
-      actions: this.state.actions,
     }
     let deepCopyTelemetryRules = JSON.parse(JSON.stringify(this.props.telemetry_rules))
     deepCopyTelemetryRules[rule_id] = telemetry_rule
@@ -458,10 +420,6 @@ class TelemetryControls extends React.Component {
     )
   }
 
-  doScanForTimestamp() {
-console.log('scanning for timestamp')
-  }
-
   buildRunButton() {
     let movie_set_keys = Object.keys(this.props.movie_sets)
     return (
@@ -510,10 +468,9 @@ console.log('scanning for timestamp')
     const id_string = this.buildIdString()
     const name_field = this.buildNameField() 
     const app_name_field = this.buildAppNameField() 
+    const account_field = this.buildAccountField() 
     const load_button = this.buildLoadButton() 
     const start_conditions = this.buildStartConditions() 
-    const end_conditions = this.buildEndConditions() 
-    const actions = this.buildActions() 
     const raw_data_button = this.buildRawDataButton() 
     const movie_mappings = this.buildMovieMappings()
     const save_button = this.buildSaveButton() 
@@ -585,54 +542,25 @@ console.log('scanning for timestamp')
                   {app_name_field}
                 </div>
   
-               
                 <div 
-                    className='row border-top mt-2 font-weight-bold'
+                    className='row mt-1'
                 >
-                  if (these conditions) 
+                  {account_field}
                 </div>
   
+  
                 <div 
-                    className='row'
+                    className='row mt-1'
                 >
                   {start_conditions}
                 </div>
-  
-                <div 
-                    className='row'
-                >
-                  {end_conditions}
-                </div>
-  
- 
 
-                <div 
-                    className='row border-top mt-2 font-weight-bold'
-                >
-                  then (do this)
-                </div>
-  
-                <div 
-                    className='row'
-                >
-                  {actions}
+                <div className='row'>
+                  {raw_data_button}
                 </div>
 
-                <div 
-                    className='row border-top mt-2 pt-1'
-                >
-                  <div className='col ml-5 mr-5'>
-                    <div className='row border-bottom h5'
-                    >
-                      Telemetry Data
-                    </div>
-                    <div className='row'>
-                      {raw_data_button}
-                    </div>
-                    <div className='row mt-2'>
-                      {movie_mappings}
-                    </div>
-                  </div>
+                <div className='row mt-2'>
+                  {movie_mappings}
                 </div>
   
   
