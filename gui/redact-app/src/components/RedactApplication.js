@@ -52,6 +52,7 @@ class RedactApplication extends React.Component {
       templates: {},
       template_matches: {}, // for insights, assumes current movie
       ocr_matches: {}, // for insights, has multiple movies
+      telemetry_matches: {},
       annotations: {},
       jobs: [],
       files: {},
@@ -1121,6 +1122,26 @@ class RedactApplication extends React.Component {
     this.setGlobalStateVar('ocr_matches', response_data)
   }
 
+  async loadTelemetryResults(job, when_done=(()=>{})) {
+    const responseJson = JSON.parse(job.response_data)
+    const req_data = JSON.parse(job.request_data)
+    const rule_id = req_data['telemetry_rule']['id']
+
+    let deepCopyTelemetryMatches = JSON.parse(JSON.stringify(this.state.telemetry_matches))
+    if (!Object.keys(deepCopyTelemetryMatches).includes(rule_id)) {
+      deepCopyTelemetryMatches[rule_id] = {}
+    }
+    for (let i=0; i < Object.keys(responseJson['matching_frames']).length; i++) {
+      const movie_url = Object.keys(responseJson['matching_frames'])[i]
+      const frames = responseJson['matching_frames'][movie_url]
+      if (frames && frames.length > 0) {
+        deepCopyTelemetryMatches[rule_id][movie_url] = frames
+      }
+    }
+    this.setGlobalStateVar('telemetry_matches', deepCopyTelemetryMatches)
+    this.setGlobalStateVar('current_telemetry_rule_id', rule_id)
+  }
+
   async loadScanOcrImageResults(job, when_done=(()=>{})) {
     const responseJson = JSON.parse(job.response_data)
     let new_areas_to_redact = responseJson['recognized_text_areas']
@@ -1199,6 +1220,8 @@ class RedactApplication extends React.Component {
         this.loadScanOcrImageResults(job, when_done)
 			} else if (job.app === 'analyze' && job.operation === 'scan_ocr_movie') {
         this.loadScanOcrMovieResults(job, when_done)
+			} else if (job.app === 'analyze' && job.operation === 'telemetry_find_matching_frames') {
+        this.loadTelemetryResults(job, when_done)
 			} else if ((job.app === 'parse' && job.operation === 'split_and_hash_movie') 
 	        || (job.app === 'parse' && job.operation === 'split_and_hash_threaded')) {
         this.loadSplitAndHashResults(job, when_done)
@@ -1829,6 +1852,7 @@ class RedactApplication extends React.Component {
                 checkAndUpdateApiUris={this.checkAndUpdateApiUris}
                 preserveAllJobs={this.state.preserveAllJobs}
                 telemetry_rules={this.state.telemetry_rules}
+                telemetry_matches={this.state.telemetry_matches}
                 current_telemetry_rule_id={this.state.current_telemetry_rule_id}
                 telemetry_data={this.state.telemetry_data}
                 setTelemetryData={this.setTelemetryData}

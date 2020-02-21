@@ -64,6 +64,11 @@ class MovieCardList extends React.Component {
               current_template_id={this.props.current_template_id}
               template_matches={this.props.template_matches}
               selected_areas={this.props.selected_areas}
+              telemetry_matches={this.props.telemetry_matches}
+              current_telemetry_rule_id={this.props.current_telemetry_rule_id}
+              getFramesetHashForImageUrl={this.props.getFramesetHashForImageUrl}
+              getFramesetHashesInOrder={this.props.getFramesetHashesInOrder}
+              setScrubberToIndex={this.props.setScrubberToIndex}
           />
           )
         })}
@@ -282,6 +287,39 @@ class MovieCard extends React.Component {
     return ''
   }
 
+  showTelemetryFrame(movie_url, offset) {
+    const the_movie = this.props.movies[movie_url]
+    const the_image = the_movie['frames'][offset]
+    const the_frameset = this.props.getFramesetHashForImageUrl(the_image, the_movie['framesets'])
+    const movie_framesets = this.props.getFramesetHashesInOrder(the_movie['framesets'])
+    const image_frameset_index = movie_framesets.indexOf(the_frameset)
+    this.props.setCurrentVideo(movie_url) 
+    setTimeout((() => {this.props.setScrubberToIndex(image_frameset_index)}), 1000)
+  }
+
+  buildHasTelemetryInfo() {
+    if (Object.keys(this.props.telemetry_matches).includes(this.props.current_telemetry_rule_id)) {
+      const tel_matches = this.props.telemetry_matches[this.props.current_telemetry_rule_id]
+      if (Object.keys(tel_matches).includes(this.props.this_cards_movie_url)) {
+        const offset = tel_matches[this.props.this_cards_movie_url][0]
+        return (
+          <div>
+            <div className='d-inline'>
+              telemetry match 
+            </div>
+            <button
+              className='border-0 text-primary'
+              onClick={() => this.showTelemetryFrame(this.props.this_cards_movie_url, offset)}
+            >
+              show
+            </button>
+          </div>
+        )
+      }
+    }
+    return ''
+  }
+
   render() {
     let dd_style = {
       'fontSize': 'small',
@@ -307,6 +345,7 @@ class MovieCard extends React.Component {
     const movie = this.props.movies[this.props.this_cards_movie_url]
     const movie_header = this.buildMovieHeader(movie, movie_body_id, nickname_block)
     const has_timestamp_info = this.buildHasTimestampInfo()
+    const has_telemetry_info = this.buildHasTelemetryInfo()
 
     return (
       <div 
@@ -353,6 +392,7 @@ class MovieCard extends React.Component {
                 {selected_areas_string}
                 {dims_string}
                 {has_timestamp_info}
+                {has_telemetry_info}
               </div>
 
             </div>

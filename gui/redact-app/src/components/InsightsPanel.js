@@ -70,6 +70,12 @@ class InsightsPanel extends React.Component {
     this.addInsightsCallback=this.addInsightsCallback.bind(this)
     this.setModalData=this.setModalData.bind(this)
     this.getCurrentOcrMatches=this.getCurrentOcrMatches.bind(this)
+    this.setScrubberToIndex=this.setScrubberToIndex.bind(this)
+  }
+
+  setScrubberToIndex(the_value) {
+    document.getElementById('movie_scrubber').value = the_value
+    this.scrubberOnChange()
   }
 
   getCurrentOcrMatches() {
@@ -556,7 +562,7 @@ class InsightsPanel extends React.Component {
     }, this.setImageSize(first_image))
   }
 
-  setCurrentVideo(video_url) {
+  setCurrentVideo(video_url, when_done=(()=>{})) {
     this.props.setActiveMovie(video_url, this.movieSplitDone)
   }
 
@@ -923,6 +929,11 @@ class InsightsPanel extends React.Component {
             template_matches={this.props.template_matches}
             ocr_matches={this.props.ocr_matches}
             selected_areas={this.props.selected_areas}
+            telemetry_matches={this.props.telemetry_matches}
+            current_telemetry_rule_id={this.props.current_telemetry_rule_id}
+            getFramesetHashForImageUrl={this.props.getFramesetHashForImageUrl}
+            getFramesetHashesInOrder={this.props.getFramesetHashesInOrder}
+            setScrubberToIndex={this.setScrubberToIndex}
           />
         </div>
 
