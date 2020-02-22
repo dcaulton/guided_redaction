@@ -275,13 +275,20 @@ class MovieCard extends React.Component {
   buildHasTimestampInfo() {
     if (Object.keys(this.props.movies).includes(this.props.this_cards_movie_url)) {
       const movie = this.props.movies[this.props.this_cards_movie_url]
-      if ((Object.keys(movie).includes('start_timestamp')) 
-          && Object.keys(movie['start_timestamp']).length > 0) {
-        return (
-          <div>
-            has timestamp
-          </div>
-        )
+      if (Object.keys(movie).includes('start_timestamp'))  {
+        if (Object.keys(movie['start_timestamp']).length > 0) {
+          return (
+            <div>
+              has timestamp
+            </div>
+          )
+        } else {
+          return (
+            <div>
+              no timestamp
+            </div>
+          )
+        }
       }
     }
     return ''
@@ -305,7 +312,7 @@ class MovieCard extends React.Component {
         return (
           <div>
             <div className='d-inline'>
-              telemetry match 
+              has telemetry match 
             </div>
             <button
               className='border-0 text-primary'
@@ -313,6 +320,14 @@ class MovieCard extends React.Component {
             >
               show
             </button>
+          </div>
+        )
+      } else {
+        return (
+          <div>
+            <div className='d-inline'>
+              no telemetry match 
+            </div>
           </div>
         )
       }
@@ -382,7 +397,7 @@ class MovieCard extends React.Component {
               </div>
 
               <div 
-                  className='row'
+                  className='row pl-1'
                   style={dd_style}
               >
                 {framesets_count_message}

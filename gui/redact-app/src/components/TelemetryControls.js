@@ -48,7 +48,7 @@ class TelemetryControls extends React.Component {
                 id='telemetry_name'
                 key='telemetry_name_1'
                 title='name'
-                size='15'
+                size='25'
                 value={this.state.name}
                 onChange={(event) => this.setName(event.target.value)}
             />

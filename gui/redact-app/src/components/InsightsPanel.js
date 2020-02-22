@@ -253,7 +253,6 @@ class InsightsPanel extends React.Component {
     }
     job_data['app'] = 'analyze'
     job_data['operation'] = 'scan_template'
-    job_data['description'] = 'single template single movie match'
     let template = this.props.templates[this.props.current_template_id]
     if (!template['scale'] === '1_1') {
       job_data['description'] += ' - multi scale (' + template['scale'] + ')'
@@ -261,6 +260,9 @@ class InsightsPanel extends React.Component {
     job_data['request_data']['template'] = template
     job_data['request_data']['source_image_url'] = template['anchors'][0]['image']
     job_data['request_data']['template_id'] = template['id']
+    job_data['description'] = 'single template single movie match: '
+    job_data['description'] += 'template ' + template.name
+    job_data['description'] += ', movie ' + this.props.movie_url.split('/').slice(-1)[0]
     const wrap = {}
     wrap[this.props.movie_url] = this.props.movies[this.props.movie_url]
     job_data['request_data']['target_movies'] = wrap
@@ -284,6 +286,7 @@ class InsightsPanel extends React.Component {
     job_data['operation'] = 'scan_template_threaded'
     job_data['description'] = 'single template '+ num_movies+ ' movies, ('+num_frames+' framesets)  match - threaded'
     let template = this.props.templates[this.props.current_template_id]
+    job_data['description'] += ': template '+ template['name']
     if (!template['scale'] === '1_1') {
       job_data['description'] += ' - multi scale (' + template['scale'] + ')'
     }
@@ -308,9 +311,57 @@ class InsightsPanel extends React.Component {
     job_data['operation'] = 'scan_template_threaded'
     let template = this.props.templates[this.props.current_template_id]
     job_data['description'] = 'single template (' + template['name'] + ') '+ num_movies+ ' movies (from MovieSet ' + movie_set_name + '), match - threaded'
+    job_data['description'] += ': template '+ template['name']
     job_data['request_data']['template'] = template
     job_data['request_data']['source_image_url'] = template['anchors'][0]['image']
     job_data['request_data']['target_movies'] = movies_to_run
+    return job_data
+  }
+
+  buildScanTemplateCurTempTelemetryMatchesJobData(extra_data) {
+    if (!this.props.current_telemetry_rule_id) {
+      this.displayInsightsMessage('no telemetry rule selected, cannot submit a job')
+      return
+    }
+    let job_data = {
+      request_data: {},
+    }
+    let num_frames = 0
+    let movies_to_process = {}
+    let keys = Object.keys(this.props.movies)
+    for (let i=0; i < keys.length; i++) {
+      const movie_url = keys[i]
+      const rule_id = this.props.current_telemetry_rule_id
+      if (Object.keys(this.props.telemetry_matches[rule_id]).includes(movie_url)) {
+        const offset = this.props.telemetry_matches[rule_id][movie_url][0]
+        const movie = this.props.movies[movie_url]
+        const first_frame = movie['frames'][offset]
+        const first_frame_hash = this.props.getFramesetHashForImageUrl(first_frame, movie['framesets'])
+        const frameset_hashes = this.props.getFramesetHashesInOrder(movie['framesets'])
+        const first_frame_offset = frameset_hashes.indexOf(first_frame_hash)
+        const hashes_to_use = frameset_hashes.slice(first_frame_offset)
+        num_frames += hashes_to_use.length
+        movies_to_process[movie_url] = movie
+      }
+    }
+    const num_movies_to_process = Object.keys(movies_to_process).length.toString()
+    if (num_frames === 0) {
+      this.displayInsightsMessage('no telemetry matches, cannot submit a job')
+      return
+    }
+    num_frames = num_frames.toString()
+    job_data['app'] = 'analyze'
+    job_data['operation'] = 'scan_template_threaded'
+    job_data['description'] = 'single template, telemetry match in '+ num_movies_to_process + ' movies, '
+    job_data['description'] += '('+num_frames+' framesets)  match - threaded'
+    let template = this.props.templates[this.props.current_template_id]
+    job_data['description'] += ': template '+ template['name']
+    if (!template['scale'] === '1_1') {
+      job_data['description'] += ' - multi scale (' + template['scale'] + ')'
+    }
+    job_data['request_data']['template'] = template
+    job_data['request_data']['source_image_url'] = template['anchors'][0]['image']
+    job_data['request_data']['target_movies'] = movies_to_process
     return job_data
   }
 
@@ -374,10 +425,13 @@ class InsightsPanel extends React.Component {
     if (job_type === 'current_movie') {
       job_data['request_data']['movies'] = {}
       job_data['request_data']['movies'][this.props.movie_url] = this.props.movies[this.props.movie_url]
-      job_data['description'] = 'telemetry, find matching frames for movie: ' + this.props.movie_url
+      job_data['description'] = 'telemetry, find matching frames for movie'
+      job_data['description'] += ': movie ' + this.props.movie_url
+      job_data['description'] += ', rule ' + this.props.telemetry_rules[this.props.current_telemetry_rule_id]['name']
     } else if (job_type === 'all_movies') {
       job_data['request_data']['movies'] = this.props.movies
       job_data['description'] = 'telemetry, find matching frames for all movies'
+      job_data['description'] += ': rule ' + this.props.telemetry_rules[this.props.current_telemetry_rule_id]['name']
     }
     return job_data
   }
@@ -394,6 +448,11 @@ class InsightsPanel extends React.Component {
       })
     } else if (job_string === 'current_template_all_movies') {
       let job_data = this.buildScanTemplateCurTempAllMovJobData(extra_data)
+      this.props.submitJob({
+        job_data: job_data,
+      })
+    } else if (job_string === 'current_template_telemetry_matches') {
+      let job_data = this.buildScanTemplateCurTempTelemetryMatchesJobData(extra_data)
       this.props.submitJob({
         job_data: job_data,
       })
@@ -1050,6 +1109,12 @@ class InsightsPanel extends React.Component {
             addInsightsCallback={this.addInsightsCallback}
             clicked_coords={this.state.clicked_coords}
             userTone={this.props.userTone}
+            telemetry_matches={this.props.telemetry_matches}
+            setScrubberToIndex={this.setScrubberToIndex}
+            getFramesetHashForImageUrl={this.props.getFramesetHashForImageUrl}
+            getFramesetHashesInOrder={this.props.getFramesetHashesInOrder}
+            movies={this.props.movies}
+            setCurrentVideo={this.setCurrentVideo}
           />
         </div>
 

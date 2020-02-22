@@ -19,22 +19,27 @@ class TemplateControls extends React.Component {
     this.anchorSliceDone=this.anchorSliceDone.bind(this)
     this.addAnchorCallback=this.addAnchorCallback.bind(this)
     this.addMaskZoneCallback=this.addMaskZoneCallback.bind(this)
+    this.setLocalVarsFromTemplate=this.setLocalVarsFromTemplate.bind(this)
+  }
+
+  setLocalVarsFromTemplate(template) {
+    this.setState({
+      id: template['id'],
+      name: template['name'],
+      app_name: template['app_name'],
+      match_percent: template['match_percent'],
+      match_method: template['match_method'],
+      anchors: template['anchors'],
+      mask_zones: template['mask_zones'],
+      download_link: '',
+      unsaved_changes: false,
+    })
   }
 
   componentDidMount() {
     if (this.props.current_template_id) {
       let template = this.props.templates[this.props.current_template_id]
-      this.setState({
-        id: template['id'],
-        name: template['name'],
-        app_name: template['app_name'],
-        match_percent: template['match_percent'],
-        match_method: template['match_method'],
-        anchors: template['anchors'],
-        mask_zones: template['mask_zones'],
-        download_link: '',
-        unsaved_changes: false,
-      })
+      this.setLocalVarsFromTemplate(template)
     }
   }
 
@@ -44,13 +49,13 @@ class TemplateControls extends React.Component {
     reader.onload = (function(evt) {
       let template = JSON.parse(evt.target.result)
       if (template['id']) {
-        app_this.props.saveTemplate(
-          template, 
-          app_this.props.displayInsightsMessage('Template has been loaded'),
-          template['anchors'],
-          template['mask_zones']
-        )
+        app_this.setLocalVarsFromTemplate(template)
+        app_this.props.displayInsightsMessage('Template has been loaded')
       }
+      let deepCopyTemplates = JSON.parse(JSON.stringify(app_this.props.templates))
+      deepCopyTemplates[template['id']] = template
+      app_this.props.setGlobalStateVar('templates', deepCopyTemplates)
+      app_this.props.setGlobalStateVar('current_template_id', template['id'])
     })
     reader.readAsBinaryString(files[0]);
   }
@@ -136,15 +141,48 @@ class TemplateControls extends React.Component {
     const anchor_id = response['anchor_id']
     const cropped_image_bytes = response['cropped_image_bytes']
     let deepCopyAnchors = JSON.parse(JSON.stringify(this.state.anchors))
+    let something_changed = false
     for (let i=0; i < deepCopyAnchors.length; i++) {
       let anchor = deepCopyAnchors[i]
       if (anchor['id'] === anchor_id) {
-        anchor['cropped_image_bytes'] = cropped_image_bytes
+        if (Object.keys(anchor).includes('cropped_image_bytes')) {
+          if (anchor['cropped_image_bytes'] === cropped_image_bytes) {
+            continue
+          } else {
+            anchor['cropped_image_bytes'] = cropped_image_bytes
+            something_changed = true
+          }
+        } else {
+          anchor['cropped_image_bytes'] = cropped_image_bytes
+          something_changed = true
+        }
       }
     }
+    if (something_changed) {
+      this.setState({
+        anchors: deepCopyAnchors,
+        unsaved_changes: true,
+      }, 
+      this.updateDownloadLink)
+    } else {
+      this.updateDownloadLink()
+    }
+  }
+
+  updateDownloadLink() {
+    let cur_template = {
+      id: this.state.id,
+      name: this.state.name,
+      app_name: this.state.app_name,
+      scale: this.state.scale,
+      match_percent: this.state.match_percent,
+      match_method: this.state.match_method,
+      anchors: this.state.anchors,
+      mask_zones: this.state.mask_zones,
+    }
+    let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(cur_template))
     this.setState({
-      anchors: deepCopyAnchors,
-      unsaved_changes: true,
+      download_link: dataStr,
     })
   }
 
@@ -367,7 +405,7 @@ class TemplateControls extends React.Component {
         >
           <div className='d-inline'>
             <div className='d-inline'>
-              Anchor id: 
+              id: 
             </div>
             <div className='d-inline ml-2'>
               {anchor_id}
@@ -414,6 +452,11 @@ class TemplateControls extends React.Component {
           >
             All Movies
           </button>
+          <button className='dropdown-item'
+              onClick={() => this.props.submitInsightsJob('current_template_telemetry_matches')}
+          >
+            Telemetry Matches
+          </button>
     {movie_set_keys.map((value, index) => {
       return (
         <button
@@ -427,7 +470,7 @@ class TemplateControls extends React.Component {
     })}
         </div>
       </div>
-    )
+    ) 
   }
 
   clearAnchors() {
@@ -731,6 +774,67 @@ class TemplateControls extends React.Component {
     )
   }
 
+  showTemplateSource(movie_url, image_frameset_index) {
+    this.props.setCurrentVideo(movie_url)
+    setTimeout((() => {this.props.setScrubberToIndex(image_frameset_index)}), 1000)
+  }
+
+  buildSourceMovieImageInfo() {
+    if (this.state.id) {
+      if (Object.keys(this.props.templates).includes(this.state['id'])) {
+        const template = this.props.templates[this.state['id']]
+        if (template['anchors'].length > 0) {
+          const movie_url = template['anchors'][0]['movie']
+          const image_url = template['anchors'][0]['image']
+          let goto_link = ''
+          if (Object.keys(this.props.movies).includes(movie_url)) {
+            const the_movie = this.props.movies[movie_url]
+            const the_frameset = this.props.getFramesetHashForImageUrl(image_url, the_movie['framesets'])
+            const movie_framesets = this.props.getFramesetHashesInOrder(the_movie['framesets'])
+            const image_frameset_index = movie_framesets.indexOf(the_frameset)
+            goto_link = (
+              <div>
+                <button
+                  className='bg-light border-0 text-primary'
+                  onClick={() => this.showTemplateSource(movie_url, image_frameset_index)}
+                >
+                  goto anchor source frame
+                </button>
+              </div>
+            )
+          }
+          const style = {
+            'fontSize': 'small',
+          }
+          return (
+            <div className='ml-2'>
+              <div>
+                Source Info
+              </div>
+              <div style={style}>
+                <div className='d-inline ml-2'>
+                  Movie url:
+                </div>
+                <div className='d-inline ml-2'>
+                  {movie_url}
+                </div>
+              </div>
+              <div style={style}>
+                <div className='d-inline ml-2'>
+                  Image url:
+                </div>
+                <div className='d-inline ml-2'>
+                  {image_url}
+                </div>
+              </div>
+              {goto_link}
+            </div>
+          )
+        }
+      }
+    }
+  }
+
   render() {
     if (!this.props.visibilityFlags['templates']) {                                             
       return([])                                                                
@@ -755,6 +859,7 @@ class TemplateControls extends React.Component {
     const clear_anchors_button = this.buildClearAnchorsButton()
     const add_mask_zone_button = this.buildAddMaskZoneButton()
     const clear_mask_zones_button = this.buildClearMaskZonesButton()
+    const template_source_movie_image_info = this.buildSourceMovieImageInfo()
 
     return (
         <div className='row bg-light rounded'>
@@ -841,8 +946,20 @@ class TemplateControls extends React.Component {
                     <div className='row mb-2'>
                       {import_button}
                     </div>
+                  </div>
+                </div>
 
-                    <div className='row border-top'>
+                <div className='row mt-3 ml-1 border-top'>
+                  <div className='col'>
+                    <div className='row'>
+                      <div className='h5'>
+                        Anchors
+                      </div>
+
+                      <div className='row mt-1'>
+                        {template_source_movie_image_info}
+                      </div>
+
                       <div className='row m-3'>
                         <div className='d-inline ml-2'>
                           {anchor_pics}

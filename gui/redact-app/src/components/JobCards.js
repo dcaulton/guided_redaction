@@ -258,7 +258,9 @@ class JobCard extends React.Component {
       }
     }
     return (
-      <div>
+      <div
+        title={job_data['description']}
+      >
         {jd_desc}
       </div>
     )
