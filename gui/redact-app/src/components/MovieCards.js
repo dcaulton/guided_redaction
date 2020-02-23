@@ -61,10 +61,10 @@ class MovieCardList extends React.Component {
               setDraggedId={this.props.setDraggedId}
               index={index}
               ocr_matches={this.props.ocr_matches}
-              current_template_id={this.props.current_template_id}
+              tier_1_matches={this.props.tier_1_matches}
               template_matches={this.props.template_matches}
+              current_template_id={this.props.current_template_id}
               selected_areas={this.props.selected_areas}
-              telemetry_matches={this.props.telemetry_matches}
               current_telemetry_rule_id={this.props.current_telemetry_rule_id}
               getFramesetHashForImageUrl={this.props.getFramesetHashForImageUrl}
               getFramesetHashesInOrder={this.props.getFramesetHashesInOrder}
@@ -305,8 +305,8 @@ class MovieCard extends React.Component {
   }
 
   buildHasTelemetryInfo() {
-    if (Object.keys(this.props.telemetry_matches).includes(this.props.current_telemetry_rule_id)) {
-      const tel_matches = this.props.telemetry_matches[this.props.current_telemetry_rule_id]
+    if (Object.keys(this.props.tier_1_matches['telemetry']).includes(this.props.current_telemetry_rule_id)) {
+      const tel_matches = this.props.tier_1_matches['telemetry'][this.props.current_telemetry_rule_id]
       if (Object.keys(tel_matches).includes(this.props.this_cards_movie_url)) {
         const offset = tel_matches[this.props.this_cards_movie_url][0]
         return (

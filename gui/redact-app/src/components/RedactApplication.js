@@ -50,9 +50,13 @@ class RedactApplication extends React.Component {
       movie_sets: {},
       current_template_id: '',
       templates: {},
+      tier_1_matches: {
+        'ocr': {},
+        'template': {},
+        'telemetry': {},
+      },
       template_matches: {}, // for insights, assumes current movie
       ocr_matches: {}, // for insights, has multiple movies
-      telemetry_matches: {},
       annotations: {},
       jobs: [],
       files: {},
@@ -1127,7 +1131,8 @@ class RedactApplication extends React.Component {
     const req_data = JSON.parse(job.request_data)
     const rule_id = req_data['telemetry_rule']['id']
 
-    let deepCopyTelemetryMatches = JSON.parse(JSON.stringify(this.state.telemetry_matches))
+    let deepCopyTier1Matches = JSON.parse(JSON.stringify(this.state.tier_1_matches))
+    let deepCopyTelemetryMatches = deepCopyTier1Matches['telemetry']
     if (!Object.keys(deepCopyTelemetryMatches).includes(rule_id)) {
       deepCopyTelemetryMatches[rule_id] = {}
     }
@@ -1138,7 +1143,8 @@ class RedactApplication extends React.Component {
         deepCopyTelemetryMatches[rule_id][movie_url] = frames
       }
     }
-    this.setGlobalStateVar('telemetry_matches', deepCopyTelemetryMatches)
+    deepCopyTier1Matches['telemetry'] = deepCopyTelemetryMatches
+    this.setGlobalStateVar('tier_1_matches', deepCopyTier1Matches)
     this.setGlobalStateVar('current_telemetry_rule_id', rule_id)
   }
 
@@ -1812,7 +1818,6 @@ class RedactApplication extends React.Component {
                 getCurrentFramesets={this.getCurrentFramesets}
                 current_template_id={this.state.current_template_id}
                 templates={this.state.templates}
-                template_matches={this.state.template_matches}
                 setSelectedArea={this.setSelectedArea}
                 clearMovieSelectedAreas={this.clearMovieSelectedAreas}
                 selected_areas={this.state.selected_areas}
@@ -1852,12 +1857,13 @@ class RedactApplication extends React.Component {
                 checkAndUpdateApiUris={this.checkAndUpdateApiUris}
                 preserveAllJobs={this.state.preserveAllJobs}
                 telemetry_rules={this.state.telemetry_rules}
-                telemetry_matches={this.state.telemetry_matches}
+                template_matches={this.state.template_matches}
+                ocr_matches={this.state.ocr_matches}
+                tier_1_matches={this.state.tier_1_matches}
                 current_telemetry_rule_id={this.state.current_telemetry_rule_id}
                 telemetry_data={this.state.telemetry_data}
                 setTelemetryData={this.setTelemetryData}
                 getJobResultData={this.getJobResultData}
-                ocr_matches={this.state.ocr_matches}
                 userTone={this.state.userTone}
               />
             </Route>

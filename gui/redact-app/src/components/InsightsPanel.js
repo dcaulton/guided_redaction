@@ -332,8 +332,8 @@ class InsightsPanel extends React.Component {
     for (let i=0; i < keys.length; i++) {
       const movie_url = keys[i]
       const rule_id = this.props.current_telemetry_rule_id
-      if (Object.keys(this.props.telemetry_matches[rule_id]).includes(movie_url)) {
-        const offset = this.props.telemetry_matches[rule_id][movie_url][0]
+      if (Object.keys(this.props.tier_1_matches['telemetry'][rule_id]).includes(movie_url)) {
+        const offset = this.props.tier_1_matches['telemetry'][rule_id][movie_url][0]
         const movie = this.props.movies[movie_url]
         const first_frame = movie['frames'][offset]
         const first_frame_hash = this.props.getFramesetHashForImageUrl(first_frame, movie['framesets'])
@@ -987,8 +987,8 @@ class InsightsPanel extends React.Component {
             current_template_id={this.props.current_template_id}
             template_matches={this.props.template_matches}
             ocr_matches={this.props.ocr_matches}
+            tier_1_matches={this.props.tier_1_matches}
             selected_areas={this.props.selected_areas}
-            telemetry_matches={this.props.telemetry_matches}
             current_telemetry_rule_id={this.props.current_telemetry_rule_id}
             getFramesetHashForImageUrl={this.props.getFramesetHashForImageUrl}
             getFramesetHashesInOrder={this.props.getFramesetHashesInOrder}
@@ -1109,7 +1109,6 @@ class InsightsPanel extends React.Component {
             addInsightsCallback={this.addInsightsCallback}
             clicked_coords={this.state.clicked_coords}
             userTone={this.props.userTone}
-            telemetry_matches={this.props.telemetry_matches}
             setScrubberToIndex={this.setScrubberToIndex}
             getFramesetHashForImageUrl={this.props.getFramesetHashForImageUrl}
             getFramesetHashesInOrder={this.props.getFramesetHashesInOrder}
