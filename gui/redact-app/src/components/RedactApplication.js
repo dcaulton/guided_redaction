@@ -55,7 +55,6 @@ class RedactApplication extends React.Component {
         'template': {},
         'telemetry': {},
       },
-      template_matches: {}, // for insights, assumes current movie
       annotations: {},
       jobs: [],
       files: {},
@@ -1891,7 +1890,6 @@ class RedactApplication extends React.Component {
                 checkAndUpdateApiUris={this.checkAndUpdateApiUris}
                 preserveAllJobs={this.state.preserveAllJobs}
                 telemetry_rules={this.state.telemetry_rules}
-                template_matches={this.state.template_matches}
                 tier_1_matches={this.state.tier_1_matches}
                 current_telemetry_rule_id={this.state.current_telemetry_rule_id}
                 current_ocr_rule_id={this.state.current_ocr_rule_id}
