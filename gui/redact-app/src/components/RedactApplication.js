@@ -841,99 +841,125 @@ class RedactApplication extends React.Component {
     })                                                                          
   }
 
-  updateMoviesWithTemplateMatchResults(template_id) {
-    let deepCopyMovies= JSON.parse(JSON.stringify(this.state.movies))
-    const template_matches = this.state.template_matches
-    let something_changed = false
-    if (Object.keys(template_matches).includes(template_id)) {
-      const template_match = template_matches[template_id]
-      const mask_zones = this.state.templates[template_id]['mask_zones']
-      const movie_urls = Object.keys(template_match)
-      for (let j=0; j < movie_urls.length; j++) {
-        const movie_url = movie_urls[j]
-        const frameset_hashes = Object.keys(template_match[movie_url])
-        for (let k=0; k < frameset_hashes.length; k++) {
-          const frameset_hash = frameset_hashes[k]
-          const anchor_ids = Object.keys(template_match[movie_url][frameset_hash])
-          const anchor_id = anchor_ids[0]
-          const anchor_found_coords = template_match[movie_url][frameset_hash][anchor_id]['location']
-          const anchor_found_scale = template_match[movie_url][frameset_hash][anchor_id]['scale']
-          const anchor_spec_coords = this.state.templates[template_id]['anchors'][0]['start']
-          for (let m=0; m < mask_zones.length; m++) {
-            const mask_zone = mask_zones[m]
-            const mz_size = [
-                (mask_zone['end'][0] - mask_zone['start'][0]) / anchor_found_scale,
-                (mask_zone['end'][1] - mask_zone['start'][1]) / anchor_found_scale,
-            ]
-            let mz_spec_offset = [
-                mask_zone['start'][0] - anchor_spec_coords[0],
-                mask_zone['start'][1] - anchor_spec_coords[1],
-            ]
-            let mz_spec_offset_scaled = [
-                mz_spec_offset[0] / anchor_found_scale,
-                mz_spec_offset[1] / anchor_found_scale
-            ]
-
-            const new_start = [
-                anchor_found_coords[0] + mz_spec_offset_scaled[0],
-                anchor_found_coords[1] + mz_spec_offset_scaled[1],
-            ]
-
-            const new_end = [
-                new_start[0] + mz_size[0],
-                new_start[1] + mz_size[1]
-            ]
-            const new_area_to_redact = {
-              'start': new_start,
-              'end': new_end,
-              'source': 'template',
-            }
-            if (!Object.keys(deepCopyMovies[movie_url]['framesets'][frameset_hash]).includes('areas_to_redact')) {
-              deepCopyMovies[movie_url]['framesets'][frameset_hash]['areas_to_redact']= []
-            } 
-            deepCopyMovies[movie_url]['framesets'][frameset_hash]['areas_to_redact'].push(new_area_to_redact)
-            something_changed = true
-          }
+  getMaskZonesForAnchor(template, anchor_id) {
+    let mask_zones = []
+    for (let i=0; i < template['mask_zones'].length; i++) {
+      const mask_zone = template['mask_zones'][i]
+      if (Object.keys(mask_zone).includes('anchor_id')) {
+        if (mask_zone['anchor_id'] === anchor_id) {
+          mask_zones.push(mask_zone)
         }
+      } else {
+        mask_zones.push(mask_zone)
       }
     }
-    if (something_changed) {
-      this.setGlobalStateVar('movies', deepCopyMovies)
+    return mask_zones
+  }
+
+  getAreaToRedactFromTemplateMatch(mask_zone, anchor_id, template, anchor_found_coords, anchor_found_scale) {
+    let anchor = ''
+    for (let i=0; i < template['anchors'].length; i++) {
+      if (template['anchors'][i]['id'] === anchor_id) {
+        anchor = template['anchors'][i]
+      }
     }
+    const anchor_spec_coords = anchor['start']
+
+    const mz_size = [
+        (mask_zone['end'][0] - mask_zone['start'][0]) / anchor_found_scale,
+        (mask_zone['end'][1] - mask_zone['start'][1]) / anchor_found_scale,
+    ]
+    let mz_spec_offset = [
+        mask_zone['start'][0] - anchor_spec_coords[0],
+        mask_zone['start'][1] - anchor_spec_coords[1],
+    ]
+    let mz_spec_offset_scaled = [
+        mz_spec_offset[0] / anchor_found_scale,
+        mz_spec_offset[1] / anchor_found_scale
+    ]
+
+    const new_start = [
+        anchor_found_coords[0] + mz_spec_offset_scaled[0],
+        anchor_found_coords[1] + mz_spec_offset_scaled[1],
+    ]
+
+    const new_end = [
+        new_start[0] + mz_size[0],
+        new_start[1] + mz_size[1]
+    ]
+    const new_area_to_redact = {
+      'start': new_start,
+      'end': new_end,
+      'source': 'template: '+template['id'],
+    }
+    return new_area_to_redact
   }
 
   loadScanTemplateResults(job, when_done=(()=>{})) {
     const response_data = JSON.parse(job.response_data)
     const request_data = JSON.parse(job.request_data)
-    const template_id = request_data['template']['id']
-    let deepCopyTemplateMatches = JSON.parse(JSON.stringify(this.state.template_matches))
-    deepCopyTemplateMatches[template_id] = response_data
-    this.setGlobalStateVar('template_matches', deepCopyTemplateMatches)
-    if (!Object.keys(this.state.templates).includes(template_id)) {
-      let deepCopyTemplates= JSON.parse(JSON.stringify(this.state.templates))
-      let template = request_data['template']
-      deepCopyTemplates[template_id] = template
-      this.setGlobalStateVar('templates', deepCopyTemplates)
-      this.setGlobalStateVar('current_template_id', template_id)
-
-      const cur_movies = Object.keys(this.state.movies)
-      let deepCopyMovies= JSON.parse(JSON.stringify(this.state.movies))
-      let movie_add = false
-      let movie_url = ''
-      for (let j=0; j < Object.keys(request_data['target_movies']).length; j++)  {
-        movie_url = Object.keys(request_data['target_movies'])[j]
-        if (!cur_movies.includes(movie_url)) {
-          let movie_data = request_data['target_movies'][movie_url]
-          deepCopyMovies[movie_url] = movie_data
-          movie_add = true
-        }
-      }
-      if (movie_add) {
-        this.addMovieAndSetActive(movie_url, deepCopyMovies, when_done)
+    let deepCopyMovies= JSON.parse(JSON.stringify(this.state.movies))
+    let deepCopyTemplates= JSON.parse(JSON.stringify(this.state.templates))
+    let something_changed = false
+    let movie_url = ''
+    for (let i=0; i < Object.keys(request_data['target_movies']).length; i++) {
+      movie_url = Object.keys(request_data['target_movies'])[i]
+      if (!Object.keys(deepCopyMovies).includes(movie_url)) {
+        deepCopyMovies[movie_url] = request_data['target_movies'][movie_url]
+        this.addToCampaignMovies(movie_url)
+        something_changed = true
       }
     }
-    this.updateMoviesWithTemplateMatchResults(template_id)
-    when_done()
+    const template = request_data['template']
+
+    if (!Object.keys(this.state.templates).includes(template['id'])) {
+      deepCopyTemplates[template['id']] = template
+      something_changed = true
+    }
+
+    if (request_data['scan_level'] === 'tier_1') {
+      let deepCopyTier1Matches = JSON.parse(JSON.stringify(this.state.tier_1_matches))
+      let deepCopyTemplateMatches = deepCopyTier1Matches['template']
+      deepCopyTemplateMatches[request_data['id']] = response_data
+      deepCopyTier1Matches['template'] = deepCopyTemplateMatches // todo: can we remove this?
+      this.setGlobalStateVar('tier_1_matches', deepCopyTier1Matches)
+      if (something_changed) {
+        this.setGlobalStateVar('templates', deepCopyTemplates)
+        this.setGlobalStateVar('current_template_id', request_data['id'])
+        this.setGlobalStateVar('movies', deepCopyMovies)
+        this.setGlobalStateVar('movie_url', movie_url)
+      }
+      return
+    }
+
+    for (let i=0; i < Object.keys(response_data).length; i++) {
+      movie_url = Object.keys(response_data)[i]
+      for (let j = 0; j < Object.keys(response_data[movie_url]).length; j++) {
+        const frameset_hash = Object.keys(response_data[movie_url])[j]
+        for (let k = 0; k < Object.keys(response_data[movie_url][frameset_hash]).length; k++) {
+          const anchor_id = Object.keys(response_data[movie_url][frameset_hash])[k]
+          const anchor_found_coords = response_data[movie_url][frameset_hash][anchor_id]['location']
+          const anchor_found_scale = response_data[movie_url][frameset_hash][anchor_id]['scale']
+          const mask_zones = this.getMaskZonesForAnchor(template, anchor_id)
+          for (let m=0; m < mask_zones.length; m++) {
+            const mask_zone = mask_zones[m]
+            const area_to_redact = this.getAreaToRedactFromTemplateMatch(
+                mask_zone, anchor_id, template, anchor_found_coords, anchor_found_scale
+            ) 
+            if (!Object.keys(deepCopyMovies[movie_url]['framesets'][frameset_hash]).includes('areas_to_redact')) {
+              deepCopyMovies[movie_url]['framesets'][frameset_hash]['areas_to_redact'] = []
+            }
+            deepCopyMovies[movie_url]['framesets'][frameset_hash]['areas_to_redact'].push(area_to_redact)
+            something_changed = true
+          }
+        }
+      }
+    }
+
+    if (something_changed) {
+      this.setGlobalStateVar('movies', deepCopyMovies)
+      this.setGlobalStateVar('movie_url', movie_url)
+    }
   }
 
   loadSplitAndHashResults(job, when_done=(()=>{})) {

@@ -32,7 +32,7 @@ class BottomInsightsControls extends React.Component {
         <TemplateControls 
           setGlobalStateVar={this.props.setGlobalStateVar}
           handleSetMode={this.props.handleSetMode}
-          template_matches={this.props.template_matches}
+          tier_1_matches={this.props.tier_1_matches}
           submitInsightsJob={this.props.submitInsightsJob}
           templates={this.props.templates}
           current_template_id={this.props.current_template_id}

@@ -50,6 +50,7 @@ class MoviePanel extends React.Component {
     job_data['request_data']['template'] = template
     job_data['request_data']['source_image_url'] = template['anchors'][0]['image']
     job_data['request_data']['template_id'] = template['id']
+    job_data['request_data']['scan_level'] = 'tier_2'
     const wrap = {}                                                                                                   
     wrap[this.props.movie_url] = this.props.movies[this.props.movie_url]                                              
     job_data['request_data']['target_movies'] = wrap                                                                  

@@ -103,6 +103,8 @@ class ImagePanel extends React.Component {
     job_data['request_data']['roi_end_x'] = extra_data['current_click'][0]
     job_data['request_data']['roi_end_y'] = extra_data['current_click'][1]
     job_data['request_data']['scan_level'] = 'tier_2'
+    const ocr_request_id = 'ocr_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
+    job_data['request_data']['id'] = ocr_request_id
     return job_data
   }
 
@@ -204,7 +206,9 @@ class ImagePanel extends React.Component {
     let template = this.props.templates[extra_data]
     job_data['request_data']['template'] = template
     job_data['request_data']['source_image_url'] = template['anchors'][0]['image']
-    job_data['request_data']['template_id'] = template['id']
+    job_data['request_data']['template_id'] = template['id'] // todo: get rid of this soon
+    job_data['request_data']['id'] = template['id']
+    job_data['request_data']['scan_level'] = 'tier_2'
     const wrap = {}
 
     const fake_movie = this.buildCustomOneImageMovie()

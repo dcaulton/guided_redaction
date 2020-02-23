@@ -61,7 +61,6 @@ class MovieCardList extends React.Component {
               setDraggedId={this.props.setDraggedId}
               index={index}
               tier_1_matches={this.props.tier_1_matches}
-              template_matches={this.props.template_matches}
               current_template_id={this.props.current_template_id}
               selected_areas={this.props.selected_areas}
               current_telemetry_rule_id={this.props.current_telemetry_rule_id}
@@ -237,10 +236,11 @@ class MovieCard extends React.Component {
   }
 
   getTemplateMatchesString() {
-    if (!Object.keys(this.props.template_matches).includes(this.props.current_template_id)) {
+    const template_matches = this.props.tier_1_matches['template']
+    if (!Object.keys(template_matches).includes(this.props.current_template_id)) {
       return ''
     }
-    const cur_templates_matches = this.props.template_matches[this.props.current_template_id]
+    const cur_templates_matches = template_matches[this.props.current_template_id]
     if (!Object.keys(cur_templates_matches).includes(this.props.this_cards_movie_url)) {
       return ''
     }

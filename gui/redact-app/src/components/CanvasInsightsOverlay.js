@@ -106,7 +106,7 @@ class CanvasInsightsOverlay extends React.Component {
     let ctx = canvas.getContext('2d')
     ctx.strokeStyle = this.template_match_color
     ctx.lineWidth = 2
-    let matches = this.props.getTemplateMatches()
+    let matches = this.props.getTier1TemplateMatches()
     if (!matches) {
       return
     }

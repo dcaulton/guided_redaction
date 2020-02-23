@@ -59,6 +59,9 @@ class AnnotationControls extends React.Component {
       return ''
     }
     const cur_template = this.props.templates[this.props.current_template_id]
+    if (!cur_template) {
+      return ''
+    }
     return(
       <select
         name='template_anchor_id'

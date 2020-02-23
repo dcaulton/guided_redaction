@@ -11,6 +11,7 @@ class TemplateControls extends React.Component {
       scale: '1_1',
       match_percent: 90,
       match_method: 'any',
+      scan_level: 'tier_1',
       anchors: [],
       mask_zones: [],
       download_link: '',
@@ -29,6 +30,7 @@ class TemplateControls extends React.Component {
       app_name: template['app_name'],
       match_percent: template['match_percent'],
       match_method: template['match_method'],
+      scan_level: template['scan_level'],
       anchors: template['anchors'],
       mask_zones: template['mask_zones'],
       download_link: '',
@@ -108,6 +110,7 @@ class TemplateControls extends React.Component {
       scale: '1_1',
       match_percent: 90,
       match_method: 'any',
+      scan_level: 'tier_1',
       anchors: [],
       mask_zones: [],
       download_link: '',
@@ -127,6 +130,7 @@ class TemplateControls extends React.Component {
         scale: template['scale'],
         match_percent: template['match_percent'],
         match_method: template['match_method'],
+        scan_level: template['scan_level'],
         anchors: template['anchors'],
         mask_zones: template['mask_zones'],
         download_link: '',
@@ -177,6 +181,7 @@ class TemplateControls extends React.Component {
       scale: this.state.scale,
       match_percent: this.state.match_percent,
       match_method: this.state.match_method,
+      scan_level: this.state.scan_level,
       anchors: this.state.anchors,
       mask_zones: this.state.mask_zones,
     }
@@ -231,6 +236,13 @@ class TemplateControls extends React.Component {
   setMatchMethod(value) {
     this.setState({
       match_method: value,
+      unsaved_changes: true,
+    })
+  }
+
+  setScanLevel(value) {
+    this.setState({
+      scan_level: value,
       unsaved_changes: true,
     })
   }
@@ -351,6 +363,7 @@ class TemplateControls extends React.Component {
         scale: this.state.scale,
         match_percent: this.state.match_percent,
         match_method: this.state.match_method,
+        scan_level: this.state.scan_level,
         anchors: this.state.anchors,
         mask_zones: this.state.mask_zones,
       }
@@ -490,18 +503,22 @@ class TemplateControls extends React.Component {
   }
 
   clearTemplateMatches(scope) {
-    let deepCopyTemplateMatches = JSON.parse(JSON.stringify(this.props.template_matches))
+    let deepCopyTier1Matches = JSON.parse(JSON.stringify(this.props.tier_1_matches))
+    let deepCopyTemplateMatches = deepCopyTier1Matches['template']
     if (scope === 'all_templates') {
-      this.props.setGlobalStateVar('template_matches', {})
+      deepCopyTier1Matches['template'] = {}
+      this.props.setGlobalStateVar('tier_1_matches', deepCopyTier1Matches)
       this.props.displayInsightsMessage('All template matches have been cleared')
     } else if (scope === 'all_movies') {
       delete deepCopyTemplateMatches[this.props.current_template_id]
-      this.props.setGlobalStateVar('template_matches', deepCopyTemplateMatches)
+      deepCopyTier1Matches['template'] = deepCopyTemplateMatches
+      this.props.setGlobalStateVar('tier_1_matches', deepCopyTier1Matches)
       this.props.displayInsightsMessage('Template matches for this template + all movies have been cleared')
     } else if (scope === 'movie') {
       if (Object.keys(deepCopyTemplateMatches[this.props.current_template_id]).includes(this.props.movie_url)) {
         delete deepCopyTemplateMatches[this.props.current_template_id][this.props.movie_url]
-        this.props.setGlobalStateVar('template_matches', deepCopyTemplateMatches)
+        deepCopyTier1Matches['template'] = deepCopyTemplateMatches
+        this.props.setGlobalStateVar('tier_1_matches', deepCopyTier1Matches)
         this.props.displayInsightsMessage('Template matches for this template + this movie have been cleared')
       }
     }
@@ -612,6 +629,29 @@ class TemplateControls extends React.Component {
           >
             <option value='all'>Match All Anchors</option>
             <option value='any'>Match Any Anchor</option>
+          </select>
+        </div>
+      </div>
+    )
+  }
+
+  buildScanLevel() {
+    const help_text = "Tier 1 means 'search for areas that match your critieria, then just return a yes if they exist', Tier 2 means 'search for matches, then use the mask zones from the anchors you have matched on to make areas to redact'"
+    return (
+      <div
+          title={help_text}
+      >
+        <div className='d-inline ml-2'>
+          Scan Level
+        </div>
+        <div className='d-inline ml-2'>
+          <select
+              name='template_scan_level'
+              value={this.state.scan_level}
+              onChange={(event) => this.setScanLevel(event.target.value)}
+          >
+            <option value='tier_1'>Tier 1</option>
+            <option value='tier_2'>Tier 2</option>
           </select>
         </div>
       </div>
@@ -851,6 +891,7 @@ class TemplateControls extends React.Component {
     const scale_dropdown = this.buildScaleDropdown() 
     const match_percent = this.buildMatchPercent()
     const match_method = this.buildMatchMethod()
+    const scan_level = this.buildScanLevel()
     const import_button = this.buildImportButton()
     const export_button = this.buildExportButton()
     const clear_matches_button = this.buildClearMatchesButton()
@@ -926,6 +967,10 @@ class TemplateControls extends React.Component {
 
                 <div className='row mt-2'>
                   {match_method}
+                </div>
+
+                <div className='row mt-2'>
+                  {scan_level}
                 </div>
 
                 <div className='row mt-1'>

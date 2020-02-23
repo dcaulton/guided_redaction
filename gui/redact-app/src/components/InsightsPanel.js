@@ -45,7 +45,7 @@ class InsightsPanel extends React.Component {
     this.movieSplitDone=this.movieSplitDone.bind(this)
     this.scrubberOnChange=this.scrubberOnChange.bind(this)
     this.handleSetMode=this.handleSetMode.bind(this)
-    this.getTemplateMatches=this.getTemplateMatches.bind(this)
+    this.getTier1TemplateMatches=this.getTier1TemplateMatches.bind(this)
     this.clearSelectedAreas=this.clearSelectedAreas.bind(this)
     this.currentImageIsTemplateAnchorImage=this.currentImageIsTemplateAnchorImage.bind(this)
     this.afterArrowFill=this.afterArrowFill.bind(this)
@@ -264,13 +264,15 @@ class InsightsPanel extends React.Component {
     }
     job_data['request_data']['template'] = template
     job_data['request_data']['source_image_url'] = template['anchors'][0]['image']
-    job_data['request_data']['template_id'] = template['id']
+    job_data['request_data']['template_id'] = template['id']  // todo get rid of this
     job_data['description'] = 'single template single movie match: '
     job_data['description'] += 'template ' + template.name
     job_data['description'] += ', movie ' + this.props.movie_url.split('/').slice(-1)[0]
     const wrap = {}
     wrap[this.props.movie_url] = this.props.movies[this.props.movie_url]
     job_data['request_data']['target_movies'] = wrap
+    job_data['request_data']['scan_level'] = template['scan_level']
+    job_data['request_data']['id'] = this.props.current_template_id
     return job_data
   }
 
@@ -298,6 +300,8 @@ class InsightsPanel extends React.Component {
     job_data['request_data']['template'] = template
     job_data['request_data']['source_image_url'] = template['anchors'][0]['image']
     job_data['request_data']['target_movies'] = this.props.movies
+    job_data['request_data']['scan_level'] = template['scan_level']
+    job_data['request_data']['id'] = this.props.current_template_id
     return job_data
   }
 
@@ -320,6 +324,8 @@ class InsightsPanel extends React.Component {
     job_data['request_data']['template'] = template
     job_data['request_data']['source_image_url'] = template['anchors'][0]['image']
     job_data['request_data']['target_movies'] = movies_to_run
+    job_data['request_data']['scan_level'] = template['scan_level']
+    job_data['request_data']['id'] = this.props.current_template_id
     return job_data
   }
 
@@ -367,6 +373,8 @@ class InsightsPanel extends React.Component {
     job_data['request_data']['template'] = template
     job_data['request_data']['source_image_url'] = template['anchors'][0]['image']
     job_data['request_data']['target_movies'] = movies_to_process
+    job_data['request_data']['scan_level'] = template['scan_level']
+    job_data['request_data']['id'] = this.props.current_template_id
     return job_data
   }
 
@@ -419,7 +427,7 @@ class InsightsPanel extends React.Component {
     return job_data
   }
 
-  buildTelemetryData(job_type, extra_data) {
+  buildScanTelemetryData(job_type, extra_data) {
     let job_data = {
       request_data: {},
     }
@@ -427,6 +435,8 @@ class InsightsPanel extends React.Component {
     job_data['operation'] = 'telemetry_find_matching_frames'
     job_data['request_data']['telemetry_data'] = this.props.telemetry_data
     job_data['request_data']['telemetry_rule'] = this.props.telemetry_rules[this.props.current_telemetry_rule_id]
+    job_data['request_data']['id'] = this.props.current_telemetry_rule_id
+    job_data['request_data']['scan_level'] = 'tier_1' // this is the only thing that makes sense for telemetry
     if (job_type === 'current_movie') {
       job_data['request_data']['movies'] = {}
       job_data['request_data']['movies'][this.props.movie_url] = this.props.movies[this.props.movie_url]
@@ -497,12 +507,12 @@ class InsightsPanel extends React.Component {
         job_data: job_data,
       })
     } else if (job_string === 'telemetry_current_movie') {
-      let job_data = this.buildTelemetryData('current_movie', extra_data)
+      let job_data = this.buildScanTelemetryData('current_movie', extra_data)
       this.props.submitJob({
         job_data: job_data,
       })
     } else if (job_string === 'telemetry_all_movies') {
-      let job_data = this.buildTelemetryData('all_movies', extra_data)
+      let job_data = this.buildScanTelemetryData('all_movies', extra_data)
       this.props.submitJob({
         job_data: job_data,
       })
@@ -871,11 +881,12 @@ class InsightsPanel extends React.Component {
 
   }
 
-  getTemplateMatches() {
-    if (!Object.keys(this.props.template_matches).includes(this.props.current_template_id)) {
+  getTier1TemplateMatches() {
+    const template_matches = this.props.tier_1_matches['template']
+    if (!Object.keys(template_matches).includes(this.props.current_template_id)) {
       return
     }
-    const cur_templates_matches = this.props.template_matches[this.props.current_template_id]
+    const cur_templates_matches = template_matches[this.props.current_template_id]
     if (!Object.keys(cur_templates_matches).includes(this.props.movie_url)) {
       return
     }
@@ -990,7 +1001,6 @@ class InsightsPanel extends React.Component {
             setMovieNickname={this.props.setMovieNickname}
             setDraggedId={this.setDraggedId}
             current_template_id={this.props.current_template_id}
-            template_matches={this.props.template_matches}
             tier_1_matches={this.props.tier_1_matches}
             selected_areas={this.props.selected_areas}
             current_telemetry_rule_id={this.props.current_telemetry_rule_id}
@@ -1037,7 +1047,7 @@ class InsightsPanel extends React.Component {
               templates={this.props.templates}
               current_template_id={this.props.current_template_id}
               insights_image_scale={this.state.insights_image_scale}
-              getTemplateMatches={this.getTemplateMatches}
+              getTier1TemplateMatches={this.getTier1TemplateMatches}
               getSelectedAreas={this.getSelectedAreas}
               getAnnotations={this.getAnnotations}
               mode={this.state.mode}
@@ -1064,7 +1074,7 @@ class InsightsPanel extends React.Component {
             setGlobalStateVar={this.props.setGlobalStateVar}
             toggleGlobalStateVar={this.props.toggleGlobalStateVar}
             handleSetMode={this.handleSetMode}
-            template_matches={this.props.template_matches}
+            tier_1_matches={this.props.tier_1_matches}
             clearSelectedAreas={this.clearSelectedAreas}
             clearMovieSelectedAreas={this.props.clearMovieSelectedAreas}
             insights_image={this.state.insights_image}
