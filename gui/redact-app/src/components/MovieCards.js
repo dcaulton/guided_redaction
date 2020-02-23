@@ -60,12 +60,12 @@ class MovieCardList extends React.Component {
               setMovieNickname={this.props.setMovieNickname}
               setDraggedId={this.props.setDraggedId}
               index={index}
-              ocr_matches={this.props.ocr_matches}
               tier_1_matches={this.props.tier_1_matches}
               template_matches={this.props.template_matches}
               current_template_id={this.props.current_template_id}
               selected_areas={this.props.selected_areas}
               current_telemetry_rule_id={this.props.current_telemetry_rule_id}
+              current_ocr_rule_id={this.props.current_ocr_rule_id}
               getFramesetHashForImageUrl={this.props.getFramesetHashForImageUrl}
               getFramesetHashesInOrder={this.props.getFramesetHashesInOrder}
               setScrubberToIndex={this.props.setScrubberToIndex}
@@ -254,20 +254,23 @@ class MovieCard extends React.Component {
   }
 
   getOcrMatchesString() {
-    if (Object.keys(this.props.ocr_matches).includes(this.props.this_cards_movie_url)) {
-      let count = 0
-      const ocr_matches_for_movie = this.props.ocr_matches[this.props.this_cards_movie_url]
-      const frameset_hashes = Object.keys(ocr_matches_for_movie['framesets'])
-      for (let i=0; i < frameset_hashes.length; i++) {
-        if (ocr_matches_for_movie['framesets'][frameset_hashes[i]]['recognized_text_areas'].length > 0) {
-          count += 1
+    if (Object.keys(this.props.tier_1_matches['ocr']).includes(this.props.current_ocr_rule_id)) {
+      const this_ocr_rule_matches = this.props.tier_1_matches['ocr'][this.props.current_ocr_rule_id]
+      if (Object.keys(this_ocr_rule_matches).includes(this.props.this_cards_movie_url)) {
+        let count = 0
+        const ocr_matches_for_movie = this_ocr_rule_matches[this.props.this_cards_movie_url]
+        const frameset_hashes = Object.keys(ocr_matches_for_movie['framesets'])
+        for (let i=0; i < frameset_hashes.length; i++) {
+          if (ocr_matches_for_movie['framesets'][frameset_hashes[i]]['recognized_text_areas'].length > 0) {
+            count += 1
+          }
         }
+        return (
+          <div>
+            {count} ocr matches
+          </div>
+        )
       }
-      return (
-        <div>
-          {count} ocr matches
-        </div>
-      )
     }
     return ''
   }
@@ -400,14 +403,32 @@ class MovieCard extends React.Component {
                   className='row pl-1'
                   style={dd_style}
               >
-                {framesets_count_message}
-                {template_matches_string}
-                {ocr_matches_string}
-                {diffs_string}
-                {selected_areas_string}
-                {dims_string}
-                {has_timestamp_info}
-                {has_telemetry_info}
+                <div className='col'>
+                  <div className='row'>
+                    {framesets_count_message}
+                  </div>
+                  <div className='row'>
+                    {template_matches_string}
+                  </div>
+                  <div className='row'>
+                    {ocr_matches_string}
+                  </div>
+                  <div className='row'>
+                    {diffs_string}
+                  </div>
+                  <div className='row'>
+                    {selected_areas_string}
+                  </div>
+                  <div className='row'>
+                    {dims_string}
+                  </div>
+                  <div className='row'>
+                    {has_timestamp_info}
+                  </div>
+                  <div className='row'>
+                    {has_telemetry_info}
+                  </div>
+                </div>
               </div>
 
             </div>

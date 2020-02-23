@@ -102,6 +102,7 @@ class ImagePanel extends React.Component {
     job_data['request_data']['roi_start_y'] = this.state.last_click[1]
     job_data['request_data']['roi_end_x'] = extra_data['current_click'][0]
     job_data['request_data']['roi_end_y'] = extra_data['current_click'][1]
+    job_data['request_data']['scan_level'] = 'tier_2'
     return job_data
   }
 

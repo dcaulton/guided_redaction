@@ -79,15 +79,18 @@ class InsightsPanel extends React.Component {
   }
 
   getCurrentOcrMatches() {
-    if (Object.keys(this.props.ocr_matches).includes(this.props.movie_url)) {
-      const frameset_hash = this.props.getFramesetHashForImageUrl(this.state.insights_image)
-      if (Object.keys(this.props.ocr_matches).includes(this.props.movie_url)) {
-        const this_movies_matches = this.props.ocr_matches[this.props.movie_url]
-        if (Object.keys(this_movies_matches['framesets']).includes(frameset_hash)) {
-          const this_framesets_matches = this_movies_matches['framesets'][frameset_hash]
-          if (Object.keys(this_framesets_matches).includes('recognized_text_areas')) {
-            const rtas = this_framesets_matches['recognized_text_areas']
-            return rtas
+    if (Object.keys(this.props.tier_1_matches['ocr']).includes(this.props.current_ocr_rule_id)) {                       
+      const this_ocr_rule_matches = this.props.tier_1_matches['ocr'][this.props.current_ocr_rule_id]  
+      if (Object.keys(this_ocr_rule_matches).includes(this.props.movie_url)) {
+        const frameset_hash = this.props.getFramesetHashForImageUrl(this.state.insights_image)
+        if (Object.keys(this_ocr_rule_matches).includes(this.props.movie_url)) {
+          const this_movies_matches = this_ocr_rule_matches[this.props.movie_url]
+          if (Object.keys(this_movies_matches['framesets']).includes(frameset_hash)) {
+            const this_framesets_matches = this_movies_matches['framesets'][frameset_hash]
+            if (Object.keys(this_framesets_matches).includes('recognized_text_areas')) {
+              const rtas = this_framesets_matches['recognized_text_areas']
+              return rtas
+            }
           }
         }
       }
@@ -244,6 +247,8 @@ class InsightsPanel extends React.Component {
     job_data['request_data']['scan_area'] = scan_area_object
     job_data['request_data']['match_text'] = extra_data['match_text']
     job_data['request_data']['match_percent'] = extra_data['match_percent']
+    job_data['request_data']['scan_level'] = extra_data['scan_level']
+    job_data['request_data']['id'] = extra_data['id']
     return job_data
   }
 
@@ -986,10 +991,10 @@ class InsightsPanel extends React.Component {
             setDraggedId={this.setDraggedId}
             current_template_id={this.props.current_template_id}
             template_matches={this.props.template_matches}
-            ocr_matches={this.props.ocr_matches}
             tier_1_matches={this.props.tier_1_matches}
             selected_areas={this.props.selected_areas}
             current_telemetry_rule_id={this.props.current_telemetry_rule_id}
+            current_ocr_rule_id={this.props.current_ocr_rule_id}
             getFramesetHashForImageUrl={this.props.getFramesetHashForImageUrl}
             getFramesetHashesInOrder={this.props.getFramesetHashesInOrder}
             setScrubberToIndex={this.setScrubberToIndex}

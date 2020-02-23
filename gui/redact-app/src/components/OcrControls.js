@@ -7,6 +7,7 @@ class OcrControls extends React.Component {
     this.state = {
       match_text: [],
       match_percent: 90,
+      scan_level: 'tier_1',
       start_coords: [],
       end_coords: [],
     }
@@ -46,11 +47,14 @@ class OcrControls extends React.Component {
       this.props.displayInsightsMessage('Please pick start and end coords before running this job')
       return
     }
+    const ocr_request_id = 'ocr_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
     const extra_data = {
+      id: ocr_request_id,
       start_coords: this.state.start_coords,
       end_coords: this.state.end_coords,
       match_text: this.state.match_text,
       match_percent: this.state.match_percent,
+      scan_level: this.state.scan_level,
     }
     this.props.submitInsightsJob(scope, extra_data)
   }
@@ -150,6 +154,36 @@ class OcrControls extends React.Component {
     )
   }
 
+  updateScanLevel(scan_level) {
+    this.setState({
+      scan_level: scan_level,
+    })
+  }
+
+  buildScanLevel() {
+    const help_text = "Tier 1 means 'search for areas that match your critieria, then just return a yes if they exist', Tier 2 means 'search for matches, then turn all areas that match your criteria into areas to redact'"
+    return (
+      <div
+        className='d-inline ml-2 mt-2'
+        title={help_text}
+      >   
+        <div className='d-inline'>
+          Scan Level:
+        </div>
+        <div className='d-inline ml-2'>
+          <select
+              name='ocr_scan_level'
+              value={this.state.scan_level}
+              onChange={(event) => this.setScanLevel(event.target.value)}
+          >
+            <option value='tier_1'>Tier 1</option>
+            <option value='tier_2'>Tier 2</option>
+          </select>
+        </div>
+      </div>
+    )
+  }
+
   buildStartEndCoords() {
     if (this.state.start_coords.length === 0 && this.state.end_coords.length === 0) {
       return ''
@@ -185,6 +219,7 @@ class OcrControls extends React.Component {
     const run_button = this.buildRunButton()
     const match_text = this.buildMatchText()
     const match_percent = this.buildMatchPercent()
+    const scan_level = this.buildScanLevel()
     const start_end_coords = this.buildStartEndCoords()
 
     return (
@@ -236,6 +271,10 @@ class OcrControls extends React.Component {
 
                 <div className='row bg-light'>
                   {match_percent}
+                </div>
+
+                <div className='row bg-light'>
+                  {scan_level}
                 </div>
 
                 <div className='row bg-light'>

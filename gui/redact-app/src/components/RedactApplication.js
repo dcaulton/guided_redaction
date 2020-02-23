@@ -56,7 +56,6 @@ class RedactApplication extends React.Component {
         'telemetry': {},
       },
       template_matches: {}, // for insights, assumes current movie
-      ocr_matches: {}, // for insights, has multiple movies
       annotations: {},
       jobs: [],
       files: {},
@@ -77,6 +76,7 @@ class RedactApplication extends React.Component {
       preserveAllJobs: false,
       telemetry_rules: {},
       current_telemetry_rule_id: '',
+      current_ocr_rule_id: '',
       telemetry_data: {
         raw_data_url: '',
         movie_mappings: [],
@@ -1095,6 +1095,15 @@ class RedactApplication extends React.Component {
   async loadScanOcrMovieResults(job, when_done=(()=>{})) {
     const response_data = JSON.parse(job.response_data)
     const request_data = JSON.parse(job.request_data)
+    if (request_data['scan_level'] === 'tier_1') {
+      let deepCopyTier1Matches = JSON.parse(JSON.stringify(this.state.tier_1_matches))
+      let deepCopyOcrMatches = deepCopyTier1Matches['ocr']
+      deepCopyOcrMatches[request_data['id']] = response_data
+      deepCopyTier1Matches['ocr'] = deepCopyOcrMatches  // is this needed?
+      this.setGlobalStateVar('tier_1_matches', deepCopyTier1Matches)
+      this.setGlobalStateVar('current_ocr_rule_id', request_data['id'])
+      return
+    }
     let deepCopyMovies = JSON.parse(JSON.stringify(this.state.movies))
     let last_movie_url = ''
     let last_hash = ''
@@ -1123,7 +1132,6 @@ class RedactApplication extends React.Component {
       movie_url: last_movie_url,
     })
     this.setFramesetHash(last_hash)
-    this.setGlobalStateVar('ocr_matches', response_data)
   }
 
   async loadTelemetryResults(job, when_done=(()=>{})) {
@@ -1143,7 +1151,7 @@ class RedactApplication extends React.Component {
         deepCopyTelemetryMatches[rule_id][movie_url] = frames
       }
     }
-    deepCopyTier1Matches['telemetry'] = deepCopyTelemetryMatches
+    deepCopyTier1Matches['telemetry'] = deepCopyTelemetryMatches  // is this needed?
     this.setGlobalStateVar('tier_1_matches', deepCopyTier1Matches)
     this.setGlobalStateVar('current_telemetry_rule_id', rule_id)
   }
@@ -1858,9 +1866,9 @@ class RedactApplication extends React.Component {
                 preserveAllJobs={this.state.preserveAllJobs}
                 telemetry_rules={this.state.telemetry_rules}
                 template_matches={this.state.template_matches}
-                ocr_matches={this.state.ocr_matches}
                 tier_1_matches={this.state.tier_1_matches}
                 current_telemetry_rule_id={this.state.current_telemetry_rule_id}
+                current_ocr_rule_id={this.state.current_ocr_rule_id}
                 telemetry_data={this.state.telemetry_data}
                 setTelemetryData={this.setTelemetryData}
                 getJobResultData={this.getJobResultData}
