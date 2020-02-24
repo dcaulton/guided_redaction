@@ -64,31 +64,14 @@ class MoviePanel extends React.Component {
     job_data['app'] = 'redact'
     job_data['operation'] = 'redact'
     job_data['description'] = 'redact images for movie: ' + this.props.movie_url
-
-    let all_redaction_images = []
-    let frameset_keys = Object.keys(this.props.getCurrentFramesets())
-    for (let i=0; i < frameset_keys.length; i++) {
-      let pass_arr = []
-      let hash_key = frameset_keys[i]
-      const areas_to_redact = this.props.getRedactionFromFrameset(hash_key)
-      if (areas_to_redact.length > 0) {
-        const framesets = this.props.getCurrentFramesets()
-        let first_image_url = framesets[hash_key]['images'][0]
-        for (let i=0; i < framesets[hash_key]['areas_to_redact'].length; i++) {                            
-          let a2r = framesets[hash_key]['areas_to_redact'][i]
-          pass_arr.push([a2r['start'], a2r['end']])
-        }  
-        all_redaction_images.push({
-          image_url: first_image_url,
-          areas_to_redact: pass_arr,
-          return_type: 'url',
-          mask_method: this.props.mask_method,
-          preserve_working_dir_across_batch: 'true',
-          working_dir: '',
-        })
-      } 
+    job_data['request_data']['movies'] = {}
+    job_data['request_data']['movies'][this.props.movie_url] = this.props.movies[this.props.movie_url]
+    job_data['request_data']['mask_method'] = this.props.mask_method
+    job_data['request_data']['meta'] = {
+      return_type: 'url',
+      preserve_working_dir_across_batch: 'true',
+      working_dir: '',
     }
-    job_data['request_data'] = all_redaction_images
     return job_data
   }
 

@@ -984,26 +984,30 @@ class RedactApplication extends React.Component {
   }
 
   async loadRedactResults(job, when_done=(()=>{})) {
-    for (let i=0; i < job.children.length; i++) {
-      const child_id = job.children[i]
-      let job_url = this.state.jobs_url + '/' + child_id
-      await fetch(job_url, {
-        method: 'GET',
-        headers: this.buildJsonHeaders(),
-      })
-      .then((response) => response.json())
-      .then((responseJson) => {
-        const resp_data_string = responseJson['job']['response_data']
-        const resp_data = JSON.parse(resp_data_string)
-        this.storeRedactedImage(resp_data)
-      })
-      .then((responseJson) => {
-        when_done()
-      })
-      .catch((error) => {
-        console.error(error);
-      })
+    const response_data = JSON.parse(job.response_data)
+    const request_data = JSON.parse(job.request_data)
+    let deepCopyMovies = JSON.parse(JSON.stringify(this.state.movies))
+    let frameset_hash = ''
+    let movie_url = ''
+    for (let i=0; i < Object.keys(response_data['movies']).length; i++) {
+      movie_url = Object.keys(response_data['movies'])[i]
+      if (!Object.keys(deepCopyMovies).includes(movie_url)) {
+        deepCopyMovies[movie_url] = request_data['movies'][movie_url]
+      }
+      this.addToCampaignMovies(movie_url)
+      const movie = response_data['movies'][movie_url]
+      for (let j=0; j < Object.keys(movie['framesets']).length; j++) {
+        const frameset_hash = Object.keys(movie['framesets'])[j]
+        const frameset = movie['framesets'][frameset_hash]
+        const redacted_image = frameset['redacted_image']
+        deepCopyMovies[movie_url]['framesets'][frameset_hash]['redacted_image'] = redacted_image
+      }
     }
+    this.setState({
+      movies: deepCopyMovies,
+      movie_url: movie_url,
+    })
+    this.setFramesetHash(frameset_hash)
   }
 
   async loadRedactSingleResults(job, when_done=(()=>{})) {
@@ -1012,17 +1016,12 @@ class RedactApplication extends React.Component {
     const movie_url = req_data['movie_url']
     const frameset_hash = req_data['frameset_hash']
     let deepCopyMovies = JSON.parse(JSON.stringify(this.state.movies))
-    if (!Object.keys(deepCopyMovies).includes(movie_url)) {
-      deepCopyMovies[movie_url] = req_data['movie']
-    }
-    const redacted_img_url = resp_data['redacted_image_url']
-    deepCopyMovies[movie_url]['framesets'][frameset_hash]['redacted_image'] = redacted_img_url
+    const redacted_image = resp_data['redacted_image_url']
+    deepCopyMovies[movie_url]['framesets'][frameset_hash]['redacted_image'] = redacted_image
     this.setState({
       movies: deepCopyMovies,
       movie_url: movie_url,
     })
-    this.addToCampaignMovies(movie_url)
-    this.setFramesetHash(frameset_hash)
   }
 
   async loadIllustrateResults(job, when_done=(()=>{})) {

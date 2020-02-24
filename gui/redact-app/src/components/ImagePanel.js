@@ -118,24 +118,23 @@ class ImagePanel extends React.Component {
     job_data['request_data']['movie_url'] = this.props.movie_url
     let frameset_hash = this.props.getFramesetHashForImageUrl(this.props.getImageUrl())
     job_data['request_data']['frameset_hash'] = frameset_hash
-    job_data['request_data']['movie'] = this.props.movies[this.props.movie_url]
     const image_url = this.props.getImageUrl()
     job_data['request_data']['image_url'] = image_url
-
     // I'd like to use true here, even coded it up.  Had to scrap it because, if we 
     //   rredact, then reset, then redact, the image comes through with the same
     //   url.  That means the system doesn't know to display a new version of the image
-    job_data['request_data']['preserve_working_dir_across_batch'] = 'false'
-    job_data['request_data']['working_dir'] = ''
-
-    job_data['request_data']['return_type'] = 'url'
+    job_data['request_data']['meta'] = {
+      preserve_working_dir_across_batch: false,
+      working_dir: '',
+      return_type: 'url',
+    }
     job_data['request_data']['mask_method'] = this.props.mask_method
 
     let frameset = this.props.movies[this.props.movie_url]['framesets'][frameset_hash]
     let pass_arr = []
     for (let i=0; i < frameset['areas_to_redact'].length; i++) {
       let a2r = frameset['areas_to_redact'][i]
-      pass_arr.push([a2r['start'], a2r['end']])
+      pass_arr.push(a2r)
     }
     job_data['request_data']['areas_to_redact'] = pass_arr
     return job_data
