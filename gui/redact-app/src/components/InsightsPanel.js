@@ -247,6 +247,7 @@ class InsightsPanel extends React.Component {
     job_data['request_data']['scan_area'] = scan_area_object
     job_data['request_data']['match_text'] = extra_data['match_text']
     job_data['request_data']['match_percent'] = extra_data['match_percent']
+    job_data['request_data']['skip_east'] = extra_data['skip_east']
     job_data['request_data']['scan_level'] = extra_data['scan_level']
     job_data['request_data']['id'] = extra_data['id']
     return job_data

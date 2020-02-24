@@ -40,6 +40,7 @@ class AnalyzeViewSetEastTess(viewsets.ViewSet):
             return HttpResponse("roi_end_x is required", status=400)
         if not request_data.get("roi_end_y"):
             return HttpResponse("roi_end_y is required", status=400)
+        skip_east = request_data.get("skip_east", False)
         pic_response = requests.get(
           request_data["image_url"],
           verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
@@ -57,9 +58,31 @@ class AnalyzeViewSetEastTess(viewsets.ViewSet):
         analyzer = EastPlusTessGuidedAnalyzer()
         nparr = np.fromstring(image, np.uint8)
         cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-        recognized_text_areas = analyzer.analyze_text(
-            cv2_image, [roi_start, roi_end]
-        )
+        if skip_east:
+            tight_image = cv2_image[roi_start_y:roi_end_y, roi_start_x:roi_end_x]
+            gray = cv2.cvtColor(tight_image, cv2.COLOR_BGR2GRAY)
+            bg_color = gray[1,1]
+            if bg_color < 100:  # its light text on dark bg, invert
+                gray = cv2.bitwise_not(gray)
+            raw_recognized_text_areas = analyzer.analyze_text(
+                gray, 
+                [roi_start, roi_end],
+                processing_mode='tess_only'
+            )
+            recognized_text_areas = []
+            for raw_rta in raw_recognized_text_areas:
+                the_id = 'rta_' + str(random.randint(100000000, 999000000))
+                recognized_text_areas.append({
+                    'id': the_id,
+                    'source': raw_rta['source'],
+                    'start': roi_start,
+                    'end': roi_end,
+                    'text': raw_rta['text']
+                })
+        else:
+            recognized_text_areas = analyzer.analyze_text(
+                cv2_image, [roi_start, roi_end]
+            )
 
         return Response({'recognized_text_areas': recognized_text_areas})
 

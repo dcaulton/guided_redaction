@@ -7,6 +7,7 @@ class OcrControls extends React.Component {
     this.state = {
       match_text: [],
       match_percent: 90,
+      skip_east: false,
       scan_level: 'tier_1',
       start_coords: [],
       end_coords: [],
@@ -54,6 +55,7 @@ class OcrControls extends React.Component {
       end_coords: this.state.end_coords,
       match_text: this.state.match_text,
       match_percent: this.state.match_percent,
+      skip_east: this.state.skip_east,
       scan_level: this.state.scan_level,
     }
     this.props.submitInsightsJob(scope, extra_data)
@@ -154,6 +156,36 @@ class OcrControls extends React.Component {
     )
   }
 
+  toggleSkipEast() {
+    const new_value = (!this.state.skip_east)
+    this.setState({
+      skip_east: new_value,
+    })
+  }
+
+  buildSkipEast() {
+    let checked_state = ''
+    if (this.state.skip_east) {
+      checked_state = 'checked'
+    }
+    return (
+      <div className='ml-2'>
+        <div className='d-inline'>
+          Skip East
+        </div>
+        <div className='d-inline'>
+          <input
+            className='ml-2 mr-2 mt-1'
+            id='toggle_skip_east'
+            checked={checked_state}
+            type='checkbox'
+            onChange={() => this.toggleSkipEast()}
+          />
+        </div>
+      </div>
+    )
+  }
+
   updateScanLevel(scan_level) {
     this.setState({
       scan_level: scan_level,
@@ -219,6 +251,7 @@ class OcrControls extends React.Component {
     const run_button = this.buildRunButton()
     const match_text = this.buildMatchText()
     const match_percent = this.buildMatchPercent()
+    const skip_east = this.buildSkipEast()
     const scan_level = this.buildScanLevel()
     const start_end_coords = this.buildStartEndCoords()
 
@@ -271,6 +304,10 @@ class OcrControls extends React.Component {
 
                 <div className='row bg-light'>
                   {match_percent}
+                </div>
+
+                <div className='row bg-light'>
+                  {skip_east}
                 </div>
 
                 <div className='row bg-light'>

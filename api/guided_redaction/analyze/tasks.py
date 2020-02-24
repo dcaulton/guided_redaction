@@ -361,6 +361,9 @@ def build_and_dispatch_scan_ocr_movie_children(parent_job):
         roi_start_y = scan_area['start'][1]
         roi_end_x = scan_area['end'][0]
         roi_end_y = scan_area['end'][1]
+        skip_east = False
+        if 'skip_east' in request_data:
+            skip_east = request_data['skip_east']
         for index, frameset_hash in enumerate(movie['framesets'].keys()):
             frameset = movie['framesets'][frameset_hash]
             first_image_url = frameset['images'][0]
@@ -372,6 +375,7 @@ def build_and_dispatch_scan_ocr_movie_children(parent_job):
                 'roi_start_y': roi_start_y,
                 'roi_end_x': roi_end_x,
                 'roi_end_y': roi_end_y,
+                'skip_east': skip_east,
             })
             job = Job(
                 request_data=child_job_request_data,

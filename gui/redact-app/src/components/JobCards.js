@@ -329,34 +329,24 @@ class JobCard extends React.Component {
     let text_style = {
       'fontSize': '14px',
     }
-    if ((this.props.job_data['status'] === 'success') ||
-       (this.props.job_data['status'] === 'failed')) {
-      return (
-        <div>
-          <div className='d-inline'>
-            {this.props.job_data['status']}
-          </div>
-          <div 
-              className='d-inline ml-2'
-              style={text_style}
-          >
-            <button
-                type="button"
-                className="border-0"
-                onClick={() => this.showJobResultsInModal(this.props.job_data['id'])}
-                data-toggle="modal"
-                data-target="#insightsPanelModal"
-            >
-              {this.view_image}
-            </button>
-          </div>
-        </div>
-      )
-    }
     return (
       <div>
         <div className='d-inline'>
           {this.props.job_data['status']}
+        </div>
+        <div 
+            className='d-inline ml-2'
+            style={text_style}
+        >
+          <button
+              type="button"
+              className="border-0"
+              onClick={() => this.showJobResultsInModal(this.props.job_data['id'])}
+              data-toggle="modal"
+              data-target="#insightsPanelModal"
+          >
+            {this.view_image}
+          </button>
         </div>
       </div>
     )
