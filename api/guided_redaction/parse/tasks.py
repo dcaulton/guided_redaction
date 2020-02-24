@@ -24,6 +24,9 @@ def split_and_hash_movie(job_uuid):
         print('scanning template for job ', job_uuid)
         pvssahm = ParseViewSetSplitAndHashMovie()
         response_data = pvssahm.process_create_request(request_data)
+        if not Job.objects.filter(pk=job_uuid).exists():
+            return
+        job = Job.objects.get(pk=job_uuid)
         if response_data['errors_400']:
             job.status = 'failed'
             job.response_data = json.dumps(response_data['errors_400'])
@@ -81,6 +84,9 @@ def split_movie(job_uuid):
         request_data = json.loads(job.request_data)
         pvssahm = ParseViewSetSplitMovie()
         response_data = pvssahm.process_create_request(request_data)
+        if not Job.objects.filter(pk=job_uuid).exists():
+            return
+        job = Job.objects.get(pk=job_uuid)
         if response_data['errors_400']:
             job.status = 'failed'
             print('split movie: failed')
@@ -112,6 +118,9 @@ def hash_frames(job_uuid):
         request_data = json.loads(job.request_data)
         pvssahm = ParseViewSetHashFrames()
         response_data = pvssahm.process_create_request(request_data)
+        if not Job.objects.filter(pk=job_uuid).exists():
+            return
+        job = Job.objects.get(pk=job_uuid)
         if response_data['errors_400']:
             job.status = 'failed'
             job.response_data = json.dumps(response_data['errors_400'])

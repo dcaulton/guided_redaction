@@ -23,6 +23,7 @@ def scan_template(job_uuid):
         response = avsst.process_create_request(json.loads(job.request_data))
         if not Job.objects.filter(pk=job_uuid).exists():
             return
+        job = Job.objects.get(pk=job_uuid)
         request = json.loads(job.request_data)
         if ('match_method' not in request['template'] or
             request['template']['match_method'] == 'any'):
@@ -82,6 +83,7 @@ def filter(job_uuid):
         response = avsf.process_create_request(json.loads(job.request_data))
         if not Job.objects.filter(pk=job_uuid).exists():
             return
+        job = Job.objects.get(pk=job_uuid)
         job.response_data = json.dumps(response.data)
         new_uuids = get_file_uuids_from_response(json.loads(job.request_data))
         if new_uuids:
@@ -105,6 +107,7 @@ def get_timestamp(job_uuid):
     response = worker.process_create_request(json.loads(job.request_data))
     if not Job.objects.filter(pk=job_uuid).exists():
         return
+    job = Job.objects.get(pk=job_uuid)
     job.response_data = json.dumps(response.data)
     job.status = 'success'
     job.save()
@@ -309,6 +312,7 @@ def scan_ocr_image(job_uuid):
         response = scanner.process_create_request(json.loads(job.request_data))
         if not Job.objects.filter(pk=job_uuid).exists():
             return
+        job = Job.objects.get(pk=job_uuid)
         job.response_data = json.dumps(response.data)
         job.status = 'success'
         job.save()
@@ -326,6 +330,9 @@ def telemetry_find_matching_frames(job_uuid):
         job.save()
         scanner = AnalyzeViewSetTelemetry()
         response = scanner.process_create_request(json.loads(job.request_data))
+        if not Job.objects.filter(pk=job_uuid).exists():
+            return
+        job = Job.objects.get(pk=job_uuid)
         job.response_data = json.dumps(response.data)
         job.status = 'success'
         job.save()
