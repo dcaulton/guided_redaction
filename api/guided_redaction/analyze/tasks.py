@@ -59,9 +59,9 @@ def get_file_uuids_from_response(request_dict):
         (y_part, uuid_part) = os.path.split(x_part)
         if uuid_part and len(uuid_part) == 36:
             uuids.append(uuid_part)
-    if 'target_movies' in request_dict:
-        for movie_url in request_dict['target_movies'].keys():
-            movie = request_dict['target_movies'][movie_url]
+    if 'movies' in request_dict:
+        for movie_url in request_dict['movies'].keys():
+            movie = request_dict['movies'][movie_url]
             if 'frames' in movie.keys() and movie['frames']:
                 (x_part, file_part) = os.path.split(movie['frames'][0])
                 (y_part, uuid_part) = os.path.split(x_part)
@@ -163,10 +163,10 @@ def build_and_dispatch_get_timestamp_threaded_children(parent_job):
     movies = request_data['movies']
     for index, movie_url in enumerate(movies.keys()):
         movie = movies[movie_url]
-        target_movies = {}
-        target_movies[movie_url] = movie
+        movies = {}
+        movies[movie_url] = movie
         request_data = json.dumps({
-            'movies': target_movies,
+            'movies': movies,
         })
         job = Job(
             request_data=request_data,
@@ -252,15 +252,15 @@ def build_and_dispatch_scan_template_threaded_children(parent_job):
     request_data = json.loads(parent_job.request_data)
     template = request_data['template']
     source_image_url = request_data['source_image_url']
-    movies = request_data['target_movies']
+    movies = request_data['movies']
     for index, movie_url in enumerate(movies.keys()):
         movie = movies[movie_url]
-        target_movies = {}
-        target_movies[movie_url] = movie
+        movies = {}
+        movies[movie_url] = movie
         request_data = json.dumps({
             'template': template,
             'source_image_url': source_image_url,
-            'target_movies': target_movies,
+            'movies': movies,
         })
         job = Job(
             request_data=request_data,

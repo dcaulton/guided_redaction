@@ -212,7 +212,7 @@ class ImagePanel extends React.Component {
 
     const fake_movie = this.buildCustomOneImageMovie()
     wrap[this.props.movie_url] = fake_movie
-    job_data['request_data']['target_movies'] = wrap
+    job_data['request_data']['movies'] = wrap
 
     return job_data
   }

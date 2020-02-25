@@ -53,7 +53,7 @@ class MoviePanel extends React.Component {
     job_data['request_data']['scan_level'] = 'tier_2'
     const wrap = {}                                                                                                   
     wrap[this.props.movie_url] = this.props.movies[this.props.movie_url]                                              
-    job_data['request_data']['target_movies'] = wrap                                                                  
+    job_data['request_data']['movies'] = wrap                                                                  
     return job_data
   }
 

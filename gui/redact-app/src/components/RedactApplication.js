@@ -901,10 +901,10 @@ class RedactApplication extends React.Component {
     let deepCopyTemplates= JSON.parse(JSON.stringify(this.state.templates))
     let something_changed = false
     let movie_url = ''
-    for (let i=0; i < Object.keys(request_data['target_movies']).length; i++) {
-      movie_url = Object.keys(request_data['target_movies'])[i]
+    for (let i=0; i < Object.keys(request_data['movies']).length; i++) {
+      movie_url = Object.keys(request_data['movies'])[i]
       if (!Object.keys(deepCopyMovies).includes(movie_url)) {
-        deepCopyMovies[movie_url] = request_data['target_movies'][movie_url]
+        deepCopyMovies[movie_url] = request_data['movies'][movie_url]
         this.addToCampaignMovies(movie_url)
         something_changed = true
       }
@@ -931,14 +931,14 @@ class RedactApplication extends React.Component {
       return
     }
 
-    for (let i=0; i < Object.keys(response_data).length; i++) {
-      movie_url = Object.keys(response_data)[i]
-      for (let j = 0; j < Object.keys(response_data[movie_url]).length; j++) {
-        const frameset_hash = Object.keys(response_data[movie_url])[j]
-        for (let k = 0; k < Object.keys(response_data[movie_url][frameset_hash]).length; k++) {
-          const anchor_id = Object.keys(response_data[movie_url][frameset_hash])[k]
-          const anchor_found_coords = response_data[movie_url][frameset_hash][anchor_id]['location']
-          const anchor_found_scale = response_data[movie_url][frameset_hash][anchor_id]['scale']
+    for (let i=0; i < Object.keys(response_data['movies']).length; i++) {
+      movie_url = Object.keys(response_data['movies'])[i]
+      for (let j = 0; j < Object.keys(response_data['movies'][movie_url]['framesets']).length; j++) {
+        const frameset_hash = Object.keys(response_data['movies'][movie_url]['framesets'])[j]
+        for (let k = 0; k < Object.keys(response_data['movies'][movie_url]['framesets'][frameset_hash]).length; k++) {
+          const anchor_id = Object.keys(response_data['movies'][movie_url]['framesets'][frameset_hash])[k]
+          const anchor_found_coords = response_data['movies'][movie_url]['framesets'][frameset_hash][anchor_id]['location']
+          const anchor_found_scale = response_data['movies'][movie_url]['framesets'][frameset_hash][anchor_id]['scale']
           const mask_zones = this.getMaskZonesForAnchor(template, anchor_id)
           for (let m=0; m < mask_zones.length; m++) {
             const mask_zone = mask_zones[m]

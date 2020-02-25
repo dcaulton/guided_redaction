@@ -121,10 +121,8 @@ class AnalyzeViewSetScanTemplate(viewsets.ViewSet):
             return self.error("template is required")
         if not request_data.get("source_image_url"):
             return self.error("source_image_url is required")
-        if not request_data.get("target_movies") and not request_data.get(
-            "target_image"
-        ):
-            return self.error("target_movies OR a target_image is required")
+        if not request_data.get("movies"):
+            return self.error("movies is required")
         template_matcher = TemplateMatcher(request_data.get('template'))
         template = request_data.get('template')
         for anchor in template.get("anchors"):
@@ -133,7 +131,7 @@ class AnalyzeViewSetScanTemplate(viewsets.ViewSet):
             end = anchor.get("end")
             size = (end[0] - start[0], end[1] - start[1])
             anchor_id = anchor.get("id")
-            targets = request_data.get("target_movies")
+            targets = request_data.get("movies")
             for movie_name in targets.keys():
                 framesets = targets[movie_name]["framesets"]
                 for frameset_hash in framesets.keys():
@@ -169,29 +167,6 @@ class AnalyzeViewSetScanTemplate(viewsets.ViewSet):
                             matches['movies'][movie_name]['framesets'][frameset_hash][anchor_id][
                                 "scale"
                             ] = temp_scale
-            # TODO it looks like this whole branch isn't used any more, remove it?
-            #   We do redact single images via the gui but we package them as 1 frame movies
-            if request_data.get("image"):
-                image_name = request_data.get("image")
-                oi_response = requests.get(
-                  image_name,
-                  verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
-                )
-                one_image = oi_response.content
-                if one_image:
-                    oi_nparr = np.fromstring(one_image, np.uint8)
-                    target_image = cv2.imdecode(oi_nparr, cv2.IMREAD_COLOR)
-                    (temp_coords, temp_scale) = template_matcher.get_template_coords(
-                        target_image, match_image
-                    )
-                    if temp_coords:
-                        if image_name not in matches:
-                            matches[image_name] = {}
-                        matches[image_name][anchor_id] = {}
-                        matches[image_name][anchor_id]["location"] = temp_coords
-                        # TODO why is the next line hard coded?  I don't think we get here 
-                        matches[image_name][anchor_id]["size"] = (76, 276)
-                        matches[image_name][anchor_id]["scale"] = temp_scale
         return Response({'matches': matches})
 
 

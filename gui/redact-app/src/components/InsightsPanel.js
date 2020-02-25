@@ -271,7 +271,7 @@ class InsightsPanel extends React.Component {
     job_data['description'] += ', movie ' + this.props.movie_url.split('/').slice(-1)[0]
     const wrap = {}
     wrap[this.props.movie_url] = this.props.movies[this.props.movie_url]
-    job_data['request_data']['target_movies'] = wrap
+    job_data['request_data']['movies'] = wrap
     job_data['request_data']['scan_level'] = template['scan_level']
     job_data['request_data']['id'] = this.props.current_template_id
     return job_data
@@ -300,7 +300,7 @@ class InsightsPanel extends React.Component {
     }
     job_data['request_data']['template'] = template
     job_data['request_data']['source_image_url'] = template['anchors'][0]['image']
-    job_data['request_data']['target_movies'] = this.props.movies
+    job_data['request_data']['movies'] = this.props.movies
     job_data['request_data']['scan_level'] = template['scan_level']
     job_data['request_data']['id'] = this.props.current_template_id
     return job_data
@@ -324,7 +324,7 @@ class InsightsPanel extends React.Component {
     job_data['description'] += ': template '+ template['name']
     job_data['request_data']['template'] = template
     job_data['request_data']['source_image_url'] = template['anchors'][0]['image']
-    job_data['request_data']['target_movies'] = movies_to_run
+    job_data['request_data']['movies'] = movies_to_run
     job_data['request_data']['scan_level'] = template['scan_level']
     job_data['request_data']['id'] = this.props.current_template_id
     return job_data
@@ -373,7 +373,7 @@ class InsightsPanel extends React.Component {
     }
     job_data['request_data']['template'] = template
     job_data['request_data']['source_image_url'] = template['anchors'][0]['image']
-    job_data['request_data']['target_movies'] = movies_to_process
+    job_data['request_data']['movies'] = movies_to_process
     job_data['request_data']['scan_level'] = template['scan_level']
     job_data['request_data']['id'] = this.props.current_template_id
     return job_data
