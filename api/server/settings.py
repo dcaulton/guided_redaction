@@ -46,6 +46,8 @@ INSTALLED_APPS = [
     'guided_redaction.link',
     'guided_redaction.files',
     'guided_redaction.scanners',
+    'guided_redaction.attributes',
+    'guided_redaction.pipelines',
     'django_extensions',
     'rest_framework',
     'base',
