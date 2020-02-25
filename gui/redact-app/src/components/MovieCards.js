@@ -68,6 +68,7 @@ class MovieCardList extends React.Component {
               getFramesetHashForImageUrl={this.props.getFramesetHashForImageUrl}
               getFramesetHashesInOrder={this.props.getFramesetHashesInOrder}
               setScrubberToIndex={this.props.setScrubberToIndex}
+              insights_image={this.props.insights_image}
           />
           )
         })}
@@ -253,21 +254,73 @@ class MovieCard extends React.Component {
     )
   }
 
+  setScrubberToNextOcrHit() {
+    const ocr_frameset_hashes = this.getOcrMatchHashesForMovie(this.props.this_cards_movie_url)
+    let movie = this.props.movies[this.props.this_cards_movie_url]
+    const movie_frameset_hashes = this.props.getFramesetHashesInOrder(movie['framesets'])
+    if (this.props.active_movie_url !== this.props.this_cards_movie_url) {
+      this.props.setCurrentVideo(this.props.this_cards_movie_url) 
+      let lowest_position = 99999
+      let ocr_hash = ''
+      let index = 99999
+      for (let i=0; i < ocr_frameset_hashes.length; i++) {
+        ocr_hash = ocr_frameset_hashes[i]
+        index = movie_frameset_hashes.indexOf(ocr_hash)
+        if (index < lowest_position) {
+          lowest_position = index
+        } 
+      }
+      setTimeout((() => {this.props.setScrubberToIndex(lowest_position)}), 1000)
+    } else {
+      const cur_hash = this.props.getFramesetHashForImageUrl(this.props.insights_image)
+      const cur_position = movie_frameset_hashes.indexOf(cur_hash)
+      const remaining_hashes = movie_frameset_hashes.slice(cur_position+1)
+      for (let i=0; i < remaining_hashes.length; i++) {
+        if (ocr_frameset_hashes.includes(remaining_hashes[i])) {
+          const new_index = cur_position + i + 1
+          setTimeout((() => {this.props.setScrubberToIndex(new_index)}), 1000)
+          return
+        }
+      }
+      const first_index = movie_frameset_hashes.indexOf(ocr_frameset_hashes[0])
+      setTimeout((() => {this.props.setScrubberToIndex(first_index)}), 1000)
+    }
+  }
+
+  getOcrMatchHashesForMovie(movie_url) {
+    let hashes = []
+    const this_ocr_rule_matches = this.props.tier_1_matches['ocr'][this.props.current_ocr_rule_id]
+    const ocr_matches_for_movie = this_ocr_rule_matches[movie_url]
+    const frameset_hashes = Object.keys(ocr_matches_for_movie['framesets'])
+    for (let i=0; i < frameset_hashes.length; i++) {
+      if (ocr_matches_for_movie['framesets'][frameset_hashes[i]]['recognized_text_areas'].length > 0) {
+        hashes.push(frameset_hashes[i])
+      }
+    }
+    return hashes
+  }
+
   getOcrMatchesString() {
     if (Object.keys(this.props.tier_1_matches['ocr']).includes(this.props.current_ocr_rule_id)) {
       const this_ocr_rule_matches = this.props.tier_1_matches['ocr'][this.props.current_ocr_rule_id]
       if (Object.keys(this_ocr_rule_matches).includes(this.props.this_cards_movie_url)) {
-        let count = 0
-        const ocr_matches_for_movie = this_ocr_rule_matches[this.props.this_cards_movie_url]
-        const frameset_hashes = Object.keys(ocr_matches_for_movie['framesets'])
-        for (let i=0; i < frameset_hashes.length; i++) {
-          if (ocr_matches_for_movie['framesets'][frameset_hashes[i]]['recognized_text_areas'].length > 0) {
-            count += 1
-          }
+        let count = this.getOcrMatchHashesForMovie(this.props.this_cards_movie_url).length
+        let matches_button = ''
+        if (count > 0) {
+          matches_button = (
+            <button
+              className='border-0 text-primary'
+              onClick={() => this.setScrubberToNextOcrHit()}
+            >
+              next
+            </button>
+          )
         }
+
         return (
           <div>
             {count} ocr matches
+            {matches_button}
           </div>
         )
       }

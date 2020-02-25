@@ -1009,6 +1009,7 @@ class InsightsPanel extends React.Component {
             getFramesetHashForImageUrl={this.props.getFramesetHashForImageUrl}
             getFramesetHashesInOrder={this.props.getFramesetHashesInOrder}
             setScrubberToIndex={this.setScrubberToIndex}
+            insights_image={this.state.insights_image}
           />
         </div>
 
