@@ -242,11 +242,11 @@ class MovieCard extends React.Component {
       return ''
     }
     const cur_templates_matches = template_matches[this.props.current_template_id]
-    if (!Object.keys(cur_templates_matches).includes(this.props.this_cards_movie_url)) {
+    if (!Object.keys(cur_templates_matches['movies']).includes(this.props.this_cards_movie_url)) {
       return ''
     }
-    const cur_movies_matches = cur_templates_matches[this.props.this_cards_movie_url]
-    let count = Object.keys(cur_movies_matches).length
+    const cur_movies_matches = cur_templates_matches['movies'][this.props.this_cards_movie_url]
+    let count = Object.keys(cur_movies_matches['framesets']).length
     return (
       <div>
         {count.toString()} template matches

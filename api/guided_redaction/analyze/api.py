@@ -152,18 +152,21 @@ class AnalyzeViewSetScanTemplate(viewsets.ViewSet):
                         )
                         if match_results:
                             (temp_coords, temp_scale) = match_results
-                            if movie_name not in matches:
-                                matches[movie_name] = {}
-                            if frameset_hash not in matches[movie_name]:
-                                matches[movie_name][frameset_hash] = {}
-                            matches[movie_name][frameset_hash][anchor_id] = {}
-                            matches[movie_name][frameset_hash][anchor_id][
+                            if 'movies' not in matches:
+                                matches['movies'] = {}
+                            if movie_name not in matches['movies']:
+                                matches['movies'][movie_name] = {}
+                                matches['movies'][movie_name]['framesets'] = {}
+                            if frameset_hash not in matches['movies'][movie_name]['framesets']:
+                                matches['movies'][movie_name]['framesets'][frameset_hash] = {}
+                            matches['movies'][movie_name]['framesets'][frameset_hash][anchor_id] = {}
+                            matches['movies'][movie_name]['framesets'][frameset_hash][anchor_id][
                                 "location"
                             ] = temp_coords
-                            matches[movie_name][frameset_hash][anchor_id][
+                            matches['movies'][movie_name]['framesets'][frameset_hash][anchor_id][
                                 "size"
                             ] = size
-                            matches[movie_name][frameset_hash][anchor_id][
+                            matches['movies'][movie_name]['framesets'][frameset_hash][anchor_id][
                                 "scale"
                             ] = temp_scale
             # TODO it looks like this whole branch isn't used any more, remove it?

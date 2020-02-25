@@ -888,16 +888,16 @@ class InsightsPanel extends React.Component {
       return
     }
     const cur_templates_matches = template_matches[this.props.current_template_id]
-    if (!Object.keys(cur_templates_matches).includes(this.props.movie_url)) {
+    if (!Object.keys(cur_templates_matches['movies']).includes(this.props.movie_url)) {
       return
     }
-    const cur_movies_matches = cur_templates_matches[this.props.movie_url]
+    const cur_movies_matches = cur_templates_matches['movies'][this.props.movie_url]
     // TODO this looks redundant, can we use getScrubberFramesetHash and eliminate this method?
     const insight_image_hash = this.props.getFramesetHashForImageUrl(this.state.insights_image)
-    if (!Object.keys(cur_movies_matches).includes(insight_image_hash)) {
+    if (!Object.keys(cur_movies_matches['framesets']).includes(insight_image_hash)) {
       return
     }
-    return cur_movies_matches[insight_image_hash]
+    return cur_movies_matches['framesets'][insight_image_hash]
   }
 
   getSelectedAreas() {
