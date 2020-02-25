@@ -1,12 +1,7 @@
-import uuid
 import json
-import os
-from django.conf import settings
-import requests
 from rest_framework.response import Response
 from base import viewsets
 from guided_redaction.workbooks.models import Workbook
-import json
 
 
 class WorkbooksViewSet(viewsets.ViewSet):
