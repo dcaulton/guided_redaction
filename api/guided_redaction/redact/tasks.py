@@ -68,7 +68,6 @@ def build_and_dispatch_redact_threaded_children(parent_job):
                 }
                 job = Job(
                     request_data=json.dumps(request_data),
-                    file_uuids_used=[], # TODO, figure this out
                     status='created',
                     description='redact image for frameset {}'.format(frameset_hash),
                     app='redact',

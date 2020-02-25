@@ -41,10 +41,7 @@ def scan_template(job_uuid):
                         built_response_data[movie_url][frameset_hash] = raw_response[movie_url][frameset_hash]
             job.response_data = json.dumps(built_response_data)
         new_uuids = get_file_uuids_from_response(json.loads(job.request_data))
-        if new_uuids:
-            existing_uuids = json.loads(job.file_uuids_used)
-            existing_uuids = existing_uuids + new_uuids
-            job.file_uuids_used = json.dumps(existing_uuids)
+        # TODO we should be adding these to the tally of file uuids used for the job here
         job.status = 'success'
         job.save()
 
@@ -86,10 +83,7 @@ def filter(job_uuid):
         job = Job.objects.get(pk=job_uuid)
         job.response_data = json.dumps(response.data)
         new_uuids = get_file_uuids_from_response(json.loads(job.request_data))
-        if new_uuids:
-            existing_uuids = json.loads(job.file_uuids_used)
-            existing_uuids = existing_uuids + new_uuids
-            job.file_uuids_used = json.dumps(existing_uuids)
+        # TODO we should be adding these to the tally of file uuids used for the job here
         job.status = 'success'
         job.save()
     else:
@@ -176,7 +170,6 @@ def build_and_dispatch_get_timestamp_threaded_children(parent_job):
         })
         job = Job(
             request_data=request_data,
-            file_uuids_used=[], # TODO, figure this out
             status='created',
             description='get_timestamp for movie {}'.format(movie_url),
             app='analyze',
@@ -271,7 +264,6 @@ def build_and_dispatch_scan_template_threaded_children(parent_job):
         })
         job = Job(
             request_data=request_data,
-            file_uuids_used=[], # TODO, figure this out
             status='created',
             description='scan_template for movie {}'.format(movie_url),
             app='analyze',
@@ -386,7 +378,6 @@ def build_and_dispatch_scan_ocr_movie_children(parent_job):
             })
             job = Job(
                 request_data=child_job_request_data,
-                file_uuids_used=[],
                 status='created',
                 description='scan_ocr for frameset {}'.format(frameset_hash),
                 app='analyze',

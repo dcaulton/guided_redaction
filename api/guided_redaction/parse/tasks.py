@@ -36,10 +36,7 @@ def split_and_hash_movie(job_uuid):
         else:
             job.response_data = json.dumps(response_data['response_data'])
             new_uuid = get_file_uuid_from_response(response_data['response_data'])
-            if new_uuid:
-                existing_uuids = json.loads(job.file_uuids_used)
-                existing_uuids.append(new_uuid)
-                job.file_uuids_used = json.dumps(existing_uuids)
+            # TODO add to file uuids used for the job
             job.status = 'success'
         job.save()
     else:
@@ -263,7 +260,6 @@ def make_and_dispatch_hash_tasks(parent_job, split_tasks):
         })
         job = Job(
             request_data=request_data,
-            file_uuids_used=[], 
             status='created',
             description='hash_frames',
             app='parse',
@@ -284,7 +280,6 @@ def make_and_dispatch_split_tasks(parent_job):
     parent_job.save()
     job = Job(
         request_data=parent_job.request_data,
-        file_uuids_used=[], # TODO, figure this out
         status='created',
         description='split_movie',
         app='parse',
