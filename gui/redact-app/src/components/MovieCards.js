@@ -236,6 +236,52 @@ class MovieCard extends React.Component {
     return ''
   }
 
+  getTemplateMatchHashesForMovie(movie_url) {
+    let hashes = []
+    const this_template_rule_matches = this.props.tier_1_matches['template'][this.props.current_template_id]
+    const template_matches_for_movie = this_template_rule_matches['movies'][movie_url]
+    const frameset_hashes = Object.keys(template_matches_for_movie['framesets'])
+    for (let i=0; i < frameset_hashes.length; i++) {
+      if (Object.keys(template_matches_for_movie['framesets'][frameset_hashes[i]]).length > 0) {
+        hashes.push(frameset_hashes[i])
+      }
+    }
+    return hashes
+  }
+
+  setScrubberToNextTemplateHit() {
+    const template_frameset_hashes = this.getTemplateMatchHashesForMovie(this.props.this_cards_movie_url)
+    let movie = this.props.movies[this.props.this_cards_movie_url]
+    const movie_frameset_hashes = this.props.getFramesetHashesInOrder(movie['framesets'])
+    if (this.props.active_movie_url !== this.props.this_cards_movie_url) {
+      this.props.setCurrentVideo(this.props.this_cards_movie_url) 
+      let lowest_position = 99999
+      let template_hash = ''
+      let index = 99999
+      for (let i=0; i < template_frameset_hashes.length; i++) {
+        template_hash = template_frameset_hashes[i]
+        index = movie_frameset_hashes.indexOf(template_hash)
+        if (index < lowest_position) {
+          lowest_position = index
+        } 
+      }
+      setTimeout((() => {this.props.setScrubberToIndex(lowest_position)}), 1000)
+    } else {
+      const cur_hash = this.props.getFramesetHashForImageUrl(this.props.insights_image)
+      const cur_position = movie_frameset_hashes.indexOf(cur_hash)
+      const remaining_hashes = movie_frameset_hashes.slice(cur_position+1)
+      for (let i=0; i < remaining_hashes.length; i++) {
+        if (template_frameset_hashes.includes(remaining_hashes[i])) {
+          const new_index = cur_position + i + 1
+          setTimeout((() => {this.props.setScrubberToIndex(new_index)}), 1000)
+          return
+        }
+      }
+      const first_index = movie_frameset_hashes.indexOf(template_frameset_hashes[0])
+      setTimeout((() => {this.props.setScrubberToIndex(first_index)}), 1000)
+    }
+  }
+
   getTemplateMatchesString() {
     const template_matches = this.props.tier_1_matches['template']
     if (!Object.keys(template_matches).includes(this.props.current_template_id)) {
@@ -247,9 +293,22 @@ class MovieCard extends React.Component {
     }
     const cur_movies_matches = cur_templates_matches['movies'][this.props.this_cards_movie_url]
     let count = Object.keys(cur_movies_matches['framesets']).length
+    let matches_button = ''
+    if (count > 0) {
+      matches_button = (
+        <button
+          className='border-0 text-primary'
+          onClick={() => this.setScrubberToNextTemplateHit()}
+        >
+          next
+        </button>
+      )
+    }
+
     return (
       <div>
         {count.toString()} template matches
+        {matches_button}
       </div>
     )
   }
