@@ -131,10 +131,14 @@ class AnalyzeViewSetScanTemplate(viewsets.ViewSet):
             end = anchor.get("end")
             size = (end[0] - start[0], end[1] - start[1])
             anchor_id = anchor.get("id")
-            targets = request_data.get("movies")
-            for movie_name in targets.keys():
-                framesets = targets[movie_name]["framesets"]
-                for frameset_hash in framesets.keys():
+            targets = request_data['movies']
+            for movie_name in targets:
+                movie = targets[movie_name]
+                if not movie:
+                    print('no movie error for {}'.format(movie_name))
+                    continue
+                framesets = movie["framesets"]
+                for frameset_hash in framesets:
                     frameset = framesets[frameset_hash]
                     one_image_url = frameset["images"][0]
                     oi_response = requests.get(

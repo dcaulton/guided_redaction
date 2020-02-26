@@ -520,6 +520,9 @@ class MovieCard extends React.Component {
                     {framesets_count_message}
                   </div>
                   <div className='row'>
+                    {dims_string}
+                  </div>
+                  <div className='row'>
                     {template_matches_string}
                   </div>
                   <div className='row'>
@@ -530,9 +533,6 @@ class MovieCard extends React.Component {
                   </div>
                   <div className='row'>
                     {selected_areas_string}
-                  </div>
-                  <div className='row'>
-                    {dims_string}
                   </div>
                   <div className='row'>
                     {has_timestamp_info}

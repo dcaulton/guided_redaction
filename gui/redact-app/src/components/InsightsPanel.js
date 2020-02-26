@@ -267,7 +267,7 @@ class InsightsPanel extends React.Component {
     job_data['description'] = 'single template single movie match: '
     job_data['description'] += 'template ' + template.name
     job_data['description'] += ', movie ' + this.props.movie_url.split('/').slice(-1)[0]
-    const wrap = {}
+    let wrap = {}
     wrap[this.props.movie_url] = this.props.movies[this.props.movie_url]
     job_data['request_data']['movies'] = wrap
     job_data['request_data']['scan_level'] = template['scan_level']

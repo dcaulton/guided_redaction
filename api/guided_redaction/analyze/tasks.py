@@ -40,8 +40,6 @@ def scan_template(job_uuid):
                     if anchor_match_keys == all_anchor_keys:
                         built_response_data[movie_url][frameset_hash] = raw_response[movie_url][frameset_hash]
             job.response_data = json.dumps(built_response_data)
-        new_uuids = get_file_uuids_from_response(json.loads(job.request_data))
-        # TODO we should be adding these to the tally of file uuids used for the job here
         job.status = 'success'
         job.save()
 
@@ -51,23 +49,6 @@ def scan_template(job_uuid):
                 scan_template_threaded.delay(parent_job.id)
     else:
         print('calling scan_template on nonexistent job: '+ job_uuid)
-
-def get_file_uuids_from_response(request_dict):
-    uuids = []
-    if 'source_image_url' in request_dict:
-        (x_part, file_part) = os.path.split(request_dict['source_image_url'])
-        (y_part, uuid_part) = os.path.split(x_part)
-        if uuid_part and len(uuid_part) == 36:
-            uuids.append(uuid_part)
-    if 'movies' in request_dict:
-        for movie_url in request_dict['movies'].keys():
-            movie = request_dict['movies'][movie_url]
-            if 'frames' in movie.keys() and movie['frames']:
-                (x_part, file_part) = os.path.split(movie['frames'][0])
-                (y_part, uuid_part) = os.path.split(x_part)
-                if uuid_part and len(uuid_part) == 36:
-                    uuids.append(uuid_part)
-    return uuids
 
 @shared_task
 def filter(job_uuid):
@@ -82,8 +63,6 @@ def filter(job_uuid):
             return
         job = Job.objects.get(pk=job_uuid)
         job.response_data = json.dumps(response.data)
-        new_uuids = get_file_uuids_from_response(json.loads(job.request_data))
-        # TODO we should be adding these to the tally of file uuids used for the job here
         job.status = 'success'
         job.save()
     else:
@@ -253,14 +232,14 @@ def build_and_dispatch_scan_template_threaded_children(parent_job):
     template = request_data['template']
     source_image_url = request_data['source_image_url']
     movies = request_data['movies']
-    for index, movie_url in enumerate(movies.keys()):
-        movie = movies[movie_url]
-        movies = {}
-        movies[movie_url] = movie
+    for index, movie_url in enumerate(movies):
+        movie = movies.get(movie_url)
+        build_movies = {}
+        build_movies[movie_url] = movie
         request_data = json.dumps({
             'template': template,
             'source_image_url': source_image_url,
-            'movies': movies,
+            'movies': build_movies,
         })
         job = Job(
             request_data=request_data,
