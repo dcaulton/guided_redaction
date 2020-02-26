@@ -11,7 +11,7 @@ class TelemetryControls extends React.Component {
       account: '',
       start_conditions: [],
       unsaved_changes: false,
-
+      mappings_format: '1',
     }
   }
 
@@ -172,14 +172,33 @@ class TelemetryControls extends React.Component {
 
   updateMovieMappings(movie_mappings_as_string) {
     let movie_mappings = {}
-    const movie_mappings_arr = movie_mappings_as_string.split('\n')
-    for (let i=0; i < movie_mappings_arr.length; i++) {
-      const mapping_row = movie_mappings_arr[i]
-      const x = mapping_row.indexOf(':')
-      if (x > -1) {
-         const movie_id = mapping_row.substring(0, x).trim()
-         const recording_id = mapping_row.substring(x+1).trim()
-         movie_mappings[movie_id] = recording_id
+    if (this.state.mappings_format === '1') {
+      const movie_mappings_arr = movie_mappings_as_string.split('\n')
+      for (let i=0; i < movie_mappings_arr.length; i++) {
+        const mapping_row = movie_mappings_arr[i]
+        const x = mapping_row.indexOf(':')
+        if (x > -1) {
+           const recording_id = mapping_row.substring(0, x).trim()
+           const transaction_id = mapping_row.substring(x+1).trim()
+           movie_mappings[recording_id] = transaction_id
+        }
+      }
+    } else if (this.state.mappings_format === '2') {
+      let s = movie_mappings_as_string
+      var start_parens = []
+      var i = -1
+      while ((i=s.indexOf('(', i+1)) >= 0) start_parens.push(i)
+      for (let i=0; i < start_parens.length; i++) {
+        const sp_index = start_parens[i]
+        const ep_index = s.indexOf(')', sp_index)
+        const com_index = s.indexOf(',', sp_index)
+        const w1q1_index = s.indexOf("'", sp_index)
+        const w1q2_index = s.indexOf("'", w1q1_index+1)
+        const w2q1_index = s.indexOf("'", com_index)
+        const w2q2_index = s.indexOf("'", w2q1_index+1)
+        const w1 = s.substring(w1q1_index+1, w1q2_index)
+        const w2 = s.substring(w2q1_index+1, w2q2_index)
+        movie_mappings[w1] = w2
       }
     }
     this.props.setTelemetryData(
@@ -189,12 +208,41 @@ class TelemetryControls extends React.Component {
     )
   }
 
+  setMappingsFormat(value) {
+    this.setState({
+      mappings_format: value,
+    })
+  }
+
+  buildMappingsFormatDropdown() {
+    const format_1_string = "transaction_id:recording_id  <newline>"
+    const format_2_string = "[('transaction_id':'recording_id'), ...]"
+    return (
+      <div>
+        <div className='d-inline ml-2'>
+          Mappings Format
+        </div>
+        <div className='d-inline ml-2'>
+          <select
+              name='mappings_format'
+              value={this.state.mappings_format}
+              onChange={(event) => this.setMappingsFormat(event.target.value)}
+          >
+            <option value='1'>{format_1_string}</option>
+            <option value='2'>{format_2_string}</option>
+          </select>
+        </div>
+      </div>
+    )
+  }
+
   buildMovieMappings() {
     let movie_mappings = []
+    const mappings_dropdown = this.buildMappingsFormatDropdown()
     for (let i=0; i < Object.keys(this.props.telemetry_data['movie_mappings']).length; i++) {
-      const movie_id = Object.keys(this.props.telemetry_data['movie_mappings'])[i]
-      const recording_id = this.props.telemetry_data['movie_mappings'][movie_id]
-      const build_string = movie_id + ' : ' + recording_id
+      const recording_id = Object.keys(this.props.telemetry_data['movie_mappings'])[i]
+      const transaction_id = this.props.telemetry_data['movie_mappings'][recording_id]
+      const build_string = recording_id + ' : ' + transaction_id
       movie_mappings.push(build_string)
     }
     const movie_mappings_as_string = movie_mappings.join('\n')
@@ -202,15 +250,22 @@ class TelemetryControls extends React.Component {
       'fontSize': '10px',
     }
     return (
-      <div>
+      <div
+          className='border-top mt-2'
+      >
         <div
-            className='d-inline'
+            className='font-weight-bold mt-2'
         >
-          movie mappings (in format 'movie_id:recording_id'):
+          Movie Mappings
         </div>
-        <div
-            className='d-inline'
-        >
+        <div>
+          (in format 'recording_id:transaction_id'):
+          <span>(movies are named with their recording id)</span>
+        </div>
+        <div>
+          {mappings_dropdown}
+        </div>
+        <div>
           <textarea
              id='telemetry_movie_mappings'
              cols='115'

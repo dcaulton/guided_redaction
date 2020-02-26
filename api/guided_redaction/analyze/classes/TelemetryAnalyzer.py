@@ -10,7 +10,6 @@ class TelemetryAnalyzer:
 
     def find_matching_frames(self, 
             movie_url='',
-            recording_id='',
             movie={},
             telemetry_data=[],
             telemetry_rule=''

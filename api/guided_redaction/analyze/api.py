@@ -345,12 +345,11 @@ class AnalyzeViewSetTelemetry(viewsets.ViewSet):
                     print('cannot find recording id for movie url {}, {}, skipping'.format(movie_url, movie_id ))
                     continue
                 movie = movies[movie_url]
-                recording_id = movie_mappings[movie_id]
-                relevant_telemetry_rows = self.get_relevant_telemetry_rows(recording_id, telemetry_data)
+                transaction_id = movie_mappings[movie_id]
+                relevant_telemetry_rows = self.get_relevant_telemetry_rows(transaction_id, telemetry_data)
                 if relevant_telemetry_rows:
                     matching_frames_for_movie = analyzer.find_matching_frames(
                         movie_url=movie_url,
-                        recording_id=recording_id,
                         movie=movie, 
                         telemetry_data=relevant_telemetry_rows, 
                         telemetry_rule=telemetry_rule
@@ -359,9 +358,9 @@ class AnalyzeViewSetTelemetry(viewsets.ViewSet):
 
         return Response({'matching_frames': matching_frames})
 
-    def get_relevant_telemetry_rows(self, recording_id, telemetry_data):
+    def get_relevant_telemetry_rows(self, transaction_id, telemetry_data):
         matching_rows = []
-        regex = re.compile(recording_id.upper())
+        regex = re.compile(transaction_id.upper())
         for row in telemetry_data:
             if regex.search(row):
                 matching_rows.append(row)
