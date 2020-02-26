@@ -430,9 +430,8 @@ def wrap_up_scan_ocr_movie(parent_job, children):
         child_request_data = json.loads(child.request_data)
         frameset_hash = child_request_data['frameset_hash']
         movie_url = child_request_data['movie_url']
-        if (movie_url not in aggregate_response_data):
-            aggregate_response_data[movie_url] = {}
-            aggregate_response_data[movie_url]['framesets'] = {}
+        if ('movies' not in aggregate_response_data):
+            aggregate_response_data['movies'] = {}
         areas_to_redact = child_response_data['recognized_text_areas']
         if (parent_request_data['match_text'] and parent_request_data['match_percent']):
             areas_to_redact = find_relevant_areas_from_response(
@@ -442,8 +441,11 @@ def wrap_up_scan_ocr_movie(parent_job, children):
             )
             if len(areas_to_redact) == 0:
                 continue
-        aggregate_response_data[movie_url]['framesets'][frameset_hash] = {}
-        aggregate_response_data[movie_url]['framesets'][frameset_hash]['recognized_text_areas'] = areas_to_redact
+        if (movie_url not in aggregate_response_data):
+            aggregate_response_data['movies'][movie_url] = {}
+            aggregate_response_data['movies'][movie_url]['framesets'] = {}
+        aggregate_response_data['movies'][movie_url]['framesets'][frameset_hash] = {}
+        aggregate_response_data['movies'][movie_url]['framesets'][frameset_hash]['recognized_text_areas'] = areas_to_redact
     print('wrap_up_scan_template_threaded: wrapping up parent job')
     parent_job.status = 'success'
     parent_job.response_data = json.dumps(aggregate_response_data)

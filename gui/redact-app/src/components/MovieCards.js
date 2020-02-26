@@ -349,7 +349,7 @@ class MovieCard extends React.Component {
   getOcrMatchHashesForMovie(movie_url) {
     let hashes = []
     const this_ocr_rule_matches = this.props.tier_1_matches['ocr'][this.props.current_ocr_rule_id]
-    const ocr_matches_for_movie = this_ocr_rule_matches[movie_url]
+    const ocr_matches_for_movie = this_ocr_rule_matches['movies'][movie_url]
     const frameset_hashes = Object.keys(ocr_matches_for_movie['framesets'])
     for (let i=0; i < frameset_hashes.length; i++) {
       if (ocr_matches_for_movie['framesets'][frameset_hashes[i]]['recognized_text_areas'].length > 0) {
@@ -362,7 +362,7 @@ class MovieCard extends React.Component {
   getOcrMatchesString() {
     if (Object.keys(this.props.tier_1_matches['ocr']).includes(this.props.current_ocr_rule_id)) {
       const this_ocr_rule_matches = this.props.tier_1_matches['ocr'][this.props.current_ocr_rule_id]
-      if (Object.keys(this_ocr_rule_matches).includes(this.props.this_cards_movie_url)) {
+      if (Object.keys(this_ocr_rule_matches['movies']).includes(this.props.this_cards_movie_url)) {
         let count = this.getOcrMatchHashesForMovie(this.props.this_cards_movie_url).length
         let matches_button = ''
         if (count > 0) {

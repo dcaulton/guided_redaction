@@ -81,16 +81,14 @@ class InsightsPanel extends React.Component {
   getCurrentOcrMatches() {
     if (Object.keys(this.props.tier_1_matches['ocr']).includes(this.props.current_ocr_rule_id)) {                       
       const this_ocr_rule_matches = this.props.tier_1_matches['ocr'][this.props.current_ocr_rule_id]  
-      if (Object.keys(this_ocr_rule_matches).includes(this.props.movie_url)) {
+      if (Object.keys(this_ocr_rule_matches['movies']).includes(this.props.movie_url)) {
+        const this_movies_matches = this_ocr_rule_matches['movies'][this.props.movie_url]
         const frameset_hash = this.props.getFramesetHashForImageUrl(this.state.insights_image)
-        if (Object.keys(this_ocr_rule_matches).includes(this.props.movie_url)) {
-          const this_movies_matches = this_ocr_rule_matches[this.props.movie_url]
-          if (Object.keys(this_movies_matches['framesets']).includes(frameset_hash)) {
-            const this_framesets_matches = this_movies_matches['framesets'][frameset_hash]
-            if (Object.keys(this_framesets_matches).includes('recognized_text_areas')) {
-              const rtas = this_framesets_matches['recognized_text_areas']
-              return rtas
-            }
+        if (Object.keys(this_movies_matches['framesets']).includes(frameset_hash)) {
+          const this_framesets_matches = this_movies_matches['framesets'][frameset_hash]
+          if (Object.keys(this_framesets_matches).includes('recognized_text_areas')) {
+            const rtas = this_framesets_matches['recognized_text_areas']
+            return rtas
           }
         }
       }

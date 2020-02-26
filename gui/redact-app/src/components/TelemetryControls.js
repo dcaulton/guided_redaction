@@ -190,7 +190,6 @@ class TelemetryControls extends React.Component {
       while ((i=s.indexOf('(', i+1)) >= 0) start_parens.push(i)
       for (let i=0; i < start_parens.length; i++) {
         const sp_index = start_parens[i]
-        const ep_index = s.indexOf(')', sp_index)
         const com_index = s.indexOf(',', sp_index)
         const w1q1_index = s.indexOf("'", sp_index)
         const w1q2_index = s.indexOf("'", w1q1_index+1)
