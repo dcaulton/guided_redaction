@@ -434,13 +434,15 @@ def wrap_up_scan_ocr_movie(parent_job, children):
             aggregate_response_data[movie_url] = {}
             aggregate_response_data[movie_url]['framesets'] = {}
         areas_to_redact = child_response_data['recognized_text_areas']
-        aggregate_response_data[movie_url]['framesets'][frameset_hash] = {}
         if (parent_request_data['match_text'] and parent_request_data['match_percent']):
             areas_to_redact = find_relevant_areas_from_response(
                 parent_request_data['match_text'], 
                 parent_request_data['match_percent'], 
                 areas_to_redact
             )
+            if len(areas_to_redact) == 0:
+                continue
+        aggregate_response_data[movie_url]['framesets'][frameset_hash] = {}
         aggregate_response_data[movie_url]['framesets'][frameset_hash]['recognized_text_areas'] = areas_to_redact
     print('wrap_up_scan_template_threaded: wrapping up parent job')
     parent_job.status = 'success'
