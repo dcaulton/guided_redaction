@@ -422,8 +422,8 @@ class MovieCard extends React.Component {
   buildHasTelemetryInfo() {
     if (Object.keys(this.props.tier_1_matches['telemetry']).includes(this.props.current_telemetry_rule_id)) {
       const tel_matches = this.props.tier_1_matches['telemetry'][this.props.current_telemetry_rule_id]
-      if (Object.keys(tel_matches).includes(this.props.this_cards_movie_url)) {
-        const offset = tel_matches[this.props.this_cards_movie_url][0]
+      if (Object.keys(tel_matches['movies']).includes(this.props.this_cards_movie_url)) {
+        const offset = tel_matches['movies'][this.props.this_cards_movie_url][0]
         return (
           <div>
             <div className='d-inline'>

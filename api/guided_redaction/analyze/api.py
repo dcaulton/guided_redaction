@@ -329,6 +329,7 @@ class AnalyzeViewSetTelemetry(viewsets.ViewSet):
         movie_mappings = telemetry_data['movie_mappings']
         analyzer = TelemetryAnalyzer()
         matching_frames = {}
+        matching_frames['movies'] = {}
 
         telemetry_raw_data = requests.get(
           telemetry_data['raw_data_url'],
@@ -354,9 +355,9 @@ class AnalyzeViewSetTelemetry(viewsets.ViewSet):
                         telemetry_data=relevant_telemetry_rows, 
                         telemetry_rule=telemetry_rule
                     )
-                matching_frames[movie_url] = matching_frames_for_movie
+                matching_frames['movies'][movie_url] = matching_frames_for_movie
 
-        return Response({'matching_frames': matching_frames})
+        return Response(matching_frames)
 
     def get_relevant_telemetry_rows(self, transaction_id, telemetry_data):
         matching_rows = []

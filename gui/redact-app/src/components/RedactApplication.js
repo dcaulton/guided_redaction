@@ -1167,12 +1167,13 @@ class RedactApplication extends React.Component {
     let deepCopyTelemetryMatches = deepCopyTier1Matches['telemetry']
     if (!Object.keys(deepCopyTelemetryMatches).includes(rule_id)) {
       deepCopyTelemetryMatches[rule_id] = {}
+      deepCopyTelemetryMatches[rule_id]['movies'] = {}
     }
-    for (let i=0; i < Object.keys(responseJson['matching_frames']).length; i++) {
-      const movie_url = Object.keys(responseJson['matching_frames'])[i]
-      const frames = responseJson['matching_frames'][movie_url]
+    for (let i=0; i < Object.keys(responseJson['movies']).length; i++) {
+      const movie_url = Object.keys(responseJson['movies'])[i]
+      const frames = responseJson['movies'][movie_url]
       if (frames && frames.length > 0) {
-        deepCopyTelemetryMatches[rule_id][movie_url] = frames
+        deepCopyTelemetryMatches[rule_id]['movies'][movie_url] = frames
       }
     }
     deepCopyTier1Matches['telemetry'] = deepCopyTelemetryMatches  // is this needed?

@@ -342,8 +342,8 @@ class InsightsPanel extends React.Component {
     for (let i=0; i < keys.length; i++) {
       const movie_url = keys[i]
       const rule_id = this.props.current_telemetry_rule_id
-      if (Object.keys(this.props.tier_1_matches['telemetry'][rule_id]).includes(movie_url)) {
-        const offset = this.props.tier_1_matches['telemetry'][rule_id][movie_url][0]
+      if (Object.keys(this.props.tier_1_matches['telemetry'][rule_id]['movies']).includes(movie_url)) {
+        const offset = this.props.tier_1_matches['telemetry'][rule_id]['movies'][movie_url][0]
         const movie = this.props.movies[movie_url]
         const first_frame = movie['frames'][offset]
         const first_frame_hash = this.props.getFramesetHashForImageUrl(first_frame, movie['framesets'])
