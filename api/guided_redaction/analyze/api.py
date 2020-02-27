@@ -171,7 +171,7 @@ class AnalyzeViewSetScanTemplate(viewsets.ViewSet):
                             matches['movies'][movie_name]['framesets'][frameset_hash][anchor_id][
                                 "scale"
                             ] = temp_scale
-        return Response({'matches': matches})
+        return Response(matches)
 
 
 class AnalyzeViewSetFloodFill(viewsets.ViewSet):

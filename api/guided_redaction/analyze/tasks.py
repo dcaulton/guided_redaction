@@ -27,11 +27,11 @@ def scan_template(job_uuid):
         request = json.loads(job.request_data)
         if ('match_method' not in request['template'] or
             request['template']['match_method'] == 'any'):
-            job.response_data = json.dumps(response.data.get('matches'))
+            job.response_data = json.dumps(response.data)
         elif request['template']['match_method'] == 'all':
             built_response_data = {}
             all_anchor_keys = set([x['id'] for x in request['template']['anchors']])
-            raw_response = response.data.get('matches')
+            raw_response = response.data
             for movie_url in raw_response.keys():
                 built_response_data[movie_url] = {}
                 for frameset_hash in raw_response[movie_url].keys():
@@ -142,10 +142,10 @@ def build_and_dispatch_get_timestamp_threaded_children(parent_job):
     movies = request_data['movies']
     for index, movie_url in enumerate(movies.keys()):
         movie = movies[movie_url]
-        movies = {}
-        movies[movie_url] = movie
+        build_movies = {}
+        build_movies[movie_url] = movie
         request_data = json.dumps({
-            'movies': movies,
+            'movies': build_movies,
         })
         job = Job(
             request_data=request_data,
@@ -260,12 +260,16 @@ def build_and_dispatch_scan_template_threaded_children(parent_job):
     scan_template_threaded.delay(parent_job.id)
 
 def wrap_up_scan_template_threaded(job, children):
-    aggregate_response_data = {}
+    aggregate_response_data = {
+        'movies': {},
+    }
     for child in children:
         child_response_data = json.loads(child.response_data)
-        if len(child_response_data.keys()) > 0:
-            movie_url = list(child_response_data.keys())[0]
-            aggregate_response_data[movie_url] = child_response_data[movie_url]
+        if not child_response_data:
+            continue
+        if len(child_response_data['movies'].keys()) > 0:
+            movie_url = list(child_response_data['movies'].keys())[0]
+            aggregate_response_data['movies'][movie_url] = child_response_data['movies'][movie_url]
 
     print('wrap_up_scan_template_threaded: wrapping up parent job')
     job.status = 'success'
