@@ -118,9 +118,31 @@ class MoviePanel extends React.Component {
     return job_data
   }
 
+  buildSplitJobData(extra_data) {
+    let job_data = {
+      request_data: {},
+    }
+    job_data['app'] = 'parse'
+    job_data['operation'] = 'split_movie'
+    job_data['description'] = 'split movie from MoviePanel: movie ' + this.props.movie_url
+    job_data['request_data'] = {
+      movie_url: this.props.movie_url,
+    }
+    return job_data
+  }
+
   submitMovieJob(job_string, extra_data = '') {
     if (job_string === 'split_and_hash_video') {
       const job_data = this.buildSplitAndHashJobData(extra_data)
+      this.props.submitJob({
+        job_data:job_data, 
+        after_submit: () => {this.setMessage('movie split job was submitted')}, 
+        cancel_after_loading: true, 
+        after_loaded: () => {this.setMessage('movie split completed')}, 
+        when_failed: () => {this.setMessage('movie split failed')},
+      })
+    } else if (job_string === 'split_movie') {
+      const job_data = this.buildSplitJobData(extra_data)
       this.props.submitJob({
         job_data:job_data, 
         after_submit: () => {this.setMessage('movie split job was submitted')}, 
@@ -477,6 +499,17 @@ class MoviePanelAdvancedControls extends React.Component {
     )
   }
 
+  buildSplitButton() {
+    return (
+      <button className='btn btn-primary'
+          key='5558'
+          onClick={() => this.props.submitMovieJob('split_movie')}
+          href='.'>
+        Split Movie
+      </button>
+    )
+  }
+
   render() {
     if (this.props.movie_url === '') {
       return ''
@@ -488,6 +521,7 @@ class MoviePanelAdvancedControls extends React.Component {
     let redacted = 'No'
     let frame_dimensions = 'unknown'
     let templates_string = this.buildTemplatesString()
+    const split_button = this.buildSplitButton()
     const redacted_movie_dl_link = this.buildRedactedMovieDownloadLink()
 
     const fd_dropdown = this.buildFramesetDiscriminatorDropdown()
@@ -585,6 +619,7 @@ class MoviePanelAdvancedControls extends React.Component {
                   <option value='green_outline'>Green Outline</option>
                 </select>
               </div>
+              <div>{split_button}</div>
 
             </div>
           </div>

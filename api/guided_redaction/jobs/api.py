@@ -186,7 +186,7 @@ class JobsViewSet(viewsets.ViewSet):
         if job.app == 'parse' and job.operation == 'split_and_hash_threaded':
             parse_tasks.split_and_hash_threaded.delay(job_uuid)
         if job.app == 'parse' and job.operation == 'split_movie':
-            parse_tasks.split_movie_threaded.delay(job_uuid)
+            parse_tasks.split_movie.delay(job_uuid)
         if job.app == 'parse' and job.operation == 'hash_frames':
             parse_tasks.hash_frames.delay(job_uuid)
         if job.app == 'redact' and job.operation == 'redact':

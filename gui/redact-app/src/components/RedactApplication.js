@@ -964,20 +964,26 @@ class RedactApplication extends React.Component {
   loadSplitAndHashResults(job, when_done=(()=>{})) {
     const response_data = JSON.parse(job.response_data)
     const request_data = JSON.parse(job.request_data)
-    let frames = response_data.frames
-    let frameset_discriminator = request_data.frameset_discriminator
-    let framesets = response_data.unique_frames
-    let frame_dimensions = response_data.frame_dimensions
     let deepCopyMovies = JSON.parse(JSON.stringify(this.state.movies))
-    deepCopyMovies[request_data['movie_url']] = {
-      nickname: this.getMovieNicknameFromUrl(request_data['movie_url']),
-      frames: frames,
-      framesets: framesets,
-      frame_dimensions: frame_dimensions,
-      frameset_discriminator: frameset_discriminator,
-    }
+    const movie_url = request_data['movie_url']
+    deepCopyMovies[movie_url] = response_data['movies'][movie_url]
+    deepCopyMovies[movie_url]['nickname'] = this.getMovieNicknameFromUrl(movie_url)
     this.addMovieAndSetActive(
-      request_data['movie_url'],
+      movie_url,
+      deepCopyMovies,
+      when_done,
+    )
+  }
+
+  loadSplitResults(job, when_done=(()=>{})) {
+    const response_data = JSON.parse(job.response_data)
+    const request_data = JSON.parse(job.request_data)
+    let deepCopyMovies = JSON.parse(JSON.stringify(this.state.movies))
+    const movie_url = request_data['movie_url']
+    deepCopyMovies[movie_url] = response_data['movies'][movie_url]
+    deepCopyMovies[movie_url]['nickname'] = this.getMovieNicknameFromUrl(movie_url)
+    this.addMovieAndSetActive(
+      movie_url,
       deepCopyMovies,
       when_done,
     )
@@ -1264,6 +1270,8 @@ class RedactApplication extends React.Component {
 			} else if ((job.app === 'parse' && job.operation === 'split_and_hash_movie') 
 	        || (job.app === 'parse' && job.operation === 'split_and_hash_threaded')) {
         this.loadSplitAndHashResults(job, when_done)
+			} else if (job.app === 'parse' && job.operation === 'split_movie') {
+        this.loadSplitResults(job, when_done)
 			} else if (job.app === 'redact' && job.operation === 'redact') {
         this.loadRedactResults(job, when_done)
 			} else if (job.app === 'redact' && job.operation === 'redact_single') {

@@ -18,7 +18,6 @@ from django.conf import settings
 import requests
 
 
-# TODO use this one instead of the one embedded in the classes
 def collate_image_urls(frames, unique_frames):
     new_frames = []
     for frame in frames:
@@ -89,38 +88,19 @@ class ParseViewSetSplitMovie(viewsets.ViewSet):
           return (cv2_image.shape[1], cv2_image.shape[0])
 
     def create(self, request):
-        resp_data = self.process_create_request(request.data)
-        if resp_data['errors_400']:
-            return self.error(resp_data['errors_400'], status_code=400)
-        if resp_data['errors_422']:
-            return self.error(resp_data['errors_422'], status_code=422)
-        return Response(
-            {
-                "frames": resp_data['response_data']['frames'],
-                "frame_dimensions": resp_data['response_data']['frame_dimensions'],
-            }
-        )
+        request_data = request.data
+        return self.process_create_request(request_data)
 
     def process_create_request(self, request_data):
-        return_data = {
-            'errors_400': [],
-            'errors_422': [],
-            'response_data': None,
-        }
         if not request_data.get("movie_url") and not request_data.get('sykes_dev_azure_movie_uuid'):
-            return_data['errors_400'].append("movie_url or sykes_dev_azure_movie_uuid is required")
-        if return_data['errors_400']:
-            return return_data
-
+            return self.error("movie_url or sykes_dev_azure_movie_uuid is required")
         if request_data.get('movie_url'):
             movie_url = request_data.get("movie_url")
         elif request_data.get('sykes_dev_azure_movie_uuid'):
             the_uuid = request_data.get('sykes_dev_azure_movie_uuid')
             movie_url = self.get_movie_url_from_sykes_dev(the_uuid, fw)
         if not movie_url:
-            return_data['errors_422'].append("couldn't read movie data")
-        if return_data['errors_422']:
-            return return_data
+            return self.error("couldn't read movie data")
 
         the_connection_string = ""
         if settings.REDACT_IMAGE_STORAGE == "azure_blob":
@@ -153,11 +133,14 @@ class ParseViewSetSplitMovie(viewsets.ViewSet):
         frames = parser.split_movie()
         movie_frame_dims = self.get_movie_frame_dimensions(frames)
 
-        return_data['response_data'] = {
+        return_data = {}
+        return_data['movies'] = {}
+        return_data['movies'][movie_url] = {
             "frames": frames,
             "frame_dimensions": movie_frame_dims,
+            "framesets": {},
         }
-        return return_data
+        return Response(return_data)
 
     def get_movie_url_from_sykes_dev(self, the_uuid, file_writer):
         blob_name = ''
@@ -188,135 +171,16 @@ class ParseViewSetSplitMovie(viewsets.ViewSet):
                 return file_url
 
 
-class ParseViewSetSplitAndHashMovie(viewsets.ViewSet):
-    def get_movie_frame_dimensions(self, frames):
-      if not frames:
-          return []
-      input_url = frames[0]
-      pic_response = requests.get(
-        input_url,
-        verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
-      )
-      img_binary = pic_response.content
-      if img_binary:
-          nparr = np.fromstring(img_binary, np.uint8)
-          cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-          return (cv2_image.shape[1], cv2_image.shape[0])
-
-    def process_create_request(self, request_data):
-        return_data = {
-            'errors_400': [],
-            'errors_422': [],
-            'response_data': None,
-        }
-        if not request_data.get("movie_url"):
-            return_data['errors_400'].append("movie_url is required")
-        if return_data['errors_400']:
-            return return_data
-        movie_url = request_data.get("movie_url")
-        if not movie_url:
-            return_data['errors_422'].append("couldn't read movie data")
-            return return_data
-
-        the_connection_string = ""
-        if settings.REDACT_IMAGE_STORAGE == "azure_blob":
-            the_base_url = settings.REDACT_AZURE_BASE_URL
-            the_connection_string = settings.REDACT_AZURE_BLOB_CONNECTION_STRING
-        else:
-            the_base_url = settings.REDACT_FILE_BASE_URL
-        fw = FileWriter(
-            working_dir=settings.REDACT_FILE_STORAGE_DIR,
-            base_url=the_base_url,
-            connection_string=the_connection_string,
-            image_storage=settings.REDACT_IMAGE_STORAGE,
-            image_request_verify_headers=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
-        )
-
-        disc =  request_data.get('frameset_discriminator')
-        parser = MovieParser(
-            {
-                "debug": settings.DEBUG,
-                "ifps": 1,
-                "ofps": 1,
-                "scan_method": "unzip",
-                "movie_url": movie_url,
-                "file_writer": fw,
-                "frameset_discriminator": disc,
-                "image_request_verify_headers": settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
-            }
-        )
-
-        frames = parser.split_movie()
-        unique_frames = parser.load_and_hash_frames(frames)
-        (new_frames, new_unique_frames) = self.collate_image_urls(
-            frames, unique_frames
-        )
-        movie_frame_dims = self.get_movie_frame_dimensions(new_frames)
-
-        return_data['response_data'] = {
-            "frames": new_frames,
-            "unique_frames": new_unique_frames,
-            "frame_dimensions": movie_frame_dims,
-        }
-        return return_data
-
-    def create(self, request):
-        resp_data = self.process_create_request(request.data)
-        # TODO use the movie_frame_dims that comes back from process_create_request !
-        movie_frame_dims = self.get_movie_frame_dimensions(resp_data['response_data']['frames'])
-        if resp_data['errors_400']:
-            return self.error(resp_data['errors_400'], status_code=400)
-        if resp_data['errors_422']:
-            return self.error(resp_data['errors_422'], status_code=422)
-        return Response(
-            {
-                "frames": resp_data['response_data']['frames'],
-                "unique_frames": resp_data['response_data']['unique_frames'],
-                "frame_dimensions": movie_frame_dims,
-            }
-        )
-
-    def collate_image_urls(self, frames, unique_frames):
-        new_frames = []
-        for frame in frames:
-            new_frames.append(frame)
-
-        new_unique_frames = {}
-        for uf in unique_frames.keys():
-            new_unique_frames[uf] = {}
-            url_list = []
-            for frame in unique_frames[uf]:
-                url_list.append(frame)
-            new_unique_frames[uf]["images"] = url_list
-
-        return (new_frames, new_unique_frames)
-
-
 class ParseViewSetHashFrames(viewsets.ViewSet):
     def create(self, request):
-        resp_data = self.process_create_request(request.data)
-        if resp_data['errors_400']:
-            return self.error(resp_data['errors_400'], status_code=400)
-        if resp_data['errors_422']:
-            return self.error(resp_data['errors_422'], status_code=422)
-        return Response(
-            {
-                "unique_frames": resp_data['response_data']['unique_frames'],
-            }
-        )
+        request_data = request.data
+        return self.process_create_request(request_data)
 
     def process_create_request(self, request_data):
-        return_data = {
-            'errors_400': [],
-            'errors_422': [],
-            'response_data': None,
-        }
         if not request_data.get("frames"):
-            return_data['errors_400'].append("frames is required")
+            return self.error("frames is required")
         if not request_data.get("frameset_discriminator"):
-            return_data['errors_400'].append("frameset_discriminator is required")
-        if return_data['errors_400']:
-            return return_data
+            return self.error("frameset_discriminator is required")
 
         frames = request_data.get('frames')
         disc =  request_data.get('frameset_discriminator')
@@ -333,13 +197,12 @@ class ParseViewSetHashFrames(viewsets.ViewSet):
             }
         )
         
-        unique_frames = parser.load_and_hash_frames(frames)
-        (_, new_unique_frames) = collate_image_urls(frames, unique_frames)
+        framesets = parser.load_and_hash_frames(frames)
+        (_, new_framesets) = collate_image_urls(frames, framesets)
 
-        return_data['response_data'] = {
-            "unique_frames": new_unique_frames,
-        }
-        return return_data
+        return Response({
+            "framesets": new_framesets,
+        })
 
 
 class ParseViewSetMakeUrl(viewsets.ViewSet):

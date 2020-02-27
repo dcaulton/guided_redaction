@@ -5,11 +5,6 @@ from . import api
 router = get_router()
 
 router.register(
-    r"v1/parse/split-and-hash-movie",
-    api.ParseViewSetSplitAndHashMovie,
-    basename="MaxHeadroom",
-)
-router.register(
     r"v1/parse/split-movie",
     api.ParseViewSetSplitMovie,
     basename="Lizzo",

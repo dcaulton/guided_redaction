@@ -5,7 +5,6 @@ import os
 import json                                                                     
 from guided_redaction.jobs.models import Job                                    
 from guided_redaction.parse.api import (
-        ParseViewSetSplitAndHashMovie, 
         ParseViewSetZipMovie,
         ParseViewSetSplitMovie,
         ParseViewSetHashFrames
@@ -15,95 +14,51 @@ from guided_redaction.parse.api import (
 hash_frames_batch_size = 50
 
 @shared_task
-def split_and_hash_movie(job_uuid):
-    job = Job.objects.get(pk=job_uuid)
-    if job:
-        job.status = 'running'
-        job.save()
-        request_data = json.loads(job.request_data)
-        print('scanning template for job ', job_uuid)
-        pvssahm = ParseViewSetSplitAndHashMovie()
-        response_data = pvssahm.process_create_request(request_data)
-        if not Job.objects.filter(pk=job_uuid).exists():
-            return
-        job = Job.objects.get(pk=job_uuid)
-        if response_data['errors_400']:
-            job.status = 'failed'
-            job.response_data = json.dumps(response_data['errors_400'])
-        elif response_data['errors_422']:
-            job.status = 'failed'
-            job.response_data = json.dumps(response_data['errors_422'])
-        else:
-            job.response_data = json.dumps(response_data['response_data'])
-            new_uuid = get_file_uuid_from_response(response_data['response_data'])
-            # TODO add to file uuids used for the job
-            job.status = 'success'
-        job.save()
-    else:
-        print('calling split_and_hash_movie on nonexistent job: '+ job_uuid) 
-
-def get_file_uuid_from_response(response_dict):
-    if 'frames' in response_dict and response_dict['frames']:
-        (x_part, file_part) = os.path.split(response_dict['frames'][0])
-        (y_part, uuid_part) = os.path.split(x_part)
-        if uuid_part and len(uuid_part) == 36:
-            return uuid_part
-@shared_task
 def zip_movie(job_uuid):
-    job = Job.objects.get(pk=job_uuid)
-    if job:
-        job.status = 'running'
-        job.save()
-        request_data = json.loads(job.request_data)
-        print('zipping movie for job ', job_uuid)
-        pvszm = ParseViewSetZipMovie()
-        response_data = pvszm.process_create_request(request_data)
-        if response_data['errors_400']:
-            job.status = 'failed'
-            job.response_data = json.dumps(response_data['errors_400'])
-        elif response_data['errors_422']:
-            job.status = 'failed'
-            job.response_data = json.dumps(response_data['errors_422'])
-        else:
-            job.response_data = json.dumps(response_data['response_data'])
-            job.status = 'success'
-        job.save()
-    else:
+    if not Job.objects.filter(pk=job_uuid).exists():
         print('calling zip_movie on nonexistent job: '+ job_uuid) 
+        return
+    job = Job.objects.get(pk=job_uuid)
+    job.status = 'running'
+    job.save()
+    request_data = json.loads(job.request_data)
+    print('zipping movie for job ', job_uuid)
+    pvszm = ParseViewSetZipMovie()
+    response_data = pvszm.process_create_request(request_data)
+    if response_data['errors_400']:
+        job.status = 'failed'
+        job.response_data = json.dumps(response_data['errors_400'])
+    elif response_data['errors_422']:
+        job.status = 'failed'
+        job.response_data = json.dumps(response_data['errors_422'])
+    else:
+        job.response_data = json.dumps(response_data['response_data'])
+        job.status = 'success'
+    job.save()
 
 @shared_task
 def split_movie(job_uuid):
-    # TODO make this threading aware
+    if not Job.objects.filter(pk=job_uuid).exists():
+        print('calling split_movie on nonexistent job: '+ job_uuid) 
+        return
     job = Job.objects.get(pk=job_uuid)
     if job:
         job.status = 'running'
         job.save()
         request_data = json.loads(job.request_data)
         pvssahm = ParseViewSetSplitMovie()
-        response_data = pvssahm.process_create_request(request_data)
+        response = pvssahm.process_create_request(request_data)
         if not Job.objects.filter(pk=job_uuid).exists():
             return
         job = Job.objects.get(pk=job_uuid)
-        if response_data['errors_400']:
-            job.status = 'failed'
-            print('split movie: failed')
-            job.response_data = json.dumps(response_data['errors_400'])
-        elif response_data['errors_422']:
-            job.status = 'failed'
-            print('split movie: failed')
-            job.response_data = json.dumps(response_data['errors_422'])
-        else:
-            job.response_data = json.dumps(response_data['response_data'])
-            print('split movie: finished job')
-            job.status = 'success'
+        job.response_data = json.dumps(response.data)
+        job.status = 'success'
         job.save()
 
         if job.parent_id:
             parent_job = Job.objects.get(pk=job.parent_id)
             if parent_job.app == 'parse' and parent_job.operation == 'split_and_hash_threaded':
                 split_and_hash_threaded.delay(parent_job.id)
-    else:
-        print('calling split_movie on nonexistent job: '+ job_uuid) 
 
 @shared_task
 def hash_frames(job_uuid):
@@ -114,19 +69,12 @@ def hash_frames(job_uuid):
         job.save()
         request_data = json.loads(job.request_data)
         pvssahm = ParseViewSetHashFrames()
-        response_data = pvssahm.process_create_request(request_data)
+        response = pvssahm.process_create_request(request_data)
         if not Job.objects.filter(pk=job_uuid).exists():
             return
         job = Job.objects.get(pk=job_uuid)
-        if response_data['errors_400']:
-            job.status = 'failed'
-            job.response_data = json.dumps(response_data['errors_400'])
-        elif response_data['errors_422']:
-            job.status = 'failed'
-            job.response_data = json.dumps(response_data['errors_422'])
-        else:
-            job.response_data = json.dumps(response_data['response_data'])
-            job.status = 'success'
+        job.response_data = json.dumps(response.data)
+        job.status = 'success'
         job.save()
 
         if job.parent_id:
@@ -173,21 +121,23 @@ def split_and_hash_threaded(job_uuid):
         print('calling split_and_hash_movie on nonexistent job: '+ job_uuid) 
 
 def wrap_up_split_and_hash_threaded(parent_job, children):
-    unique_frames = {}
+    framesets = {}
     hash_children = [x for x in children if x.operation == 'hash_frames']
     for hash_child in hash_children:
         child_response_data = json.loads(hash_child.response_data)
-        frameset_hashes = child_response_data['unique_frames'].keys()
+        frameset_hashes = child_response_data['framesets'].keys()
         for frameset_hash in frameset_hashes:
-            if frameset_hash in unique_frames:
-               unique_frames[frameset_hash]['images'] += child_response_data['unique_frames'][frameset_hash]['images']
+            if frameset_hash in framesets:
+               framesets[frameset_hash]['images'] += child_response_data['framesets'][frameset_hash]['images']
             else:
-               unique_frames[frameset_hash] = {}
-               unique_frames[frameset_hash]['images'] = child_response_data['unique_frames'][frameset_hash]['images']
-            unique_frames[frameset_hash]['images'] = sorted(unique_frames[frameset_hash]['images'])
+               framesets[frameset_hash] = {}
+               framesets[frameset_hash]['images'] = child_response_data['framesets'][frameset_hash]['images']
+            framesets[frameset_hash]['images'] = sorted(framesets[frameset_hash]['images'])
         
     resp_data = json.loads(parent_job.response_data)
-    resp_data['unique_frames'] = unique_frames
+    req_data = json.loads(parent_job.request_data)
+    movie_url = req_data['movie_url']
+    resp_data['movies'][movie_url]['framesets'] = framesets 
     parent_job.response_data = json.dumps(resp_data)
     parent_job.status = 'success'
     parent_job.elapsed_time = 1
@@ -239,12 +189,17 @@ def make_and_dispatch_hash_tasks(parent_job, split_tasks):
     frames = []
     for i, split_task in enumerate(split_tasks):
         resp_data = json.loads(split_task.response_data)
-        frames += resp_data['frames']
-        frame_dimensions = resp_data['frame_dimensions']
-    parent_job.response_data = json.dumps({
+        req_data = json.loads(split_task.request_data)
+        movie_url = req_data['movie_url']
+        frames += resp_data['movies'][movie_url]['frames']
+        frame_dimensions = resp_data['movies'][movie_url]['frame_dimensions']
+    movies_obj = {}
+    movies_obj['movies'] = {}
+    movies_obj['movies'][movie_url] = {
         'frames': frames,
         'frame_dimensions': frame_dimensions,
-    })
+    }
+    parent_job.response_data = json.dumps(movies_obj)
     parent_job.save()
 
     frameset_discriminator = json.loads(parent_job.request_data)['frameset_discriminator']
