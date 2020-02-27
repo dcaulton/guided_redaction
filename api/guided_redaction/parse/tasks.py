@@ -127,21 +127,26 @@ def split_and_hash_threaded(job_uuid):
 def wrap_up_split_and_hash_threaded(parent_job, children):
     framesets = {}
     hash_children = [x for x in children if x.operation == 'hash_movie']
+    frameset_discriminator = ''
     for hash_child in hash_children:
         child_response_data = json.loads(hash_child.response_data)
-        frameset_hashes = child_response_data['framesets'].keys()
+        movie_url = list(child_response_data['movies'].keys())[0]
+        if not frameset_discriminator:
+            frameset_discriminator = child_response_data['movies'][movie_url]['frameset_discriminator']
+        frameset_hashes = child_response_data['movies'][movie_url]['framesets'].keys()
         for frameset_hash in frameset_hashes:
             if frameset_hash in framesets:
-               framesets[frameset_hash]['images'] += child_response_data['framesets'][frameset_hash]['images']
+               framesets[frameset_hash]['images'] += child_response_data['movies'][movie_url]['framesets'][frameset_hash]['images']
             else:
                framesets[frameset_hash] = {}
-               framesets[frameset_hash]['images'] = child_response_data['framesets'][frameset_hash]['images']
+               framesets[frameset_hash]['images'] = child_response_data['movies'][movie_url]['framesets'][frameset_hash]['images']
             framesets[frameset_hash]['images'] = sorted(framesets[frameset_hash]['images'])
         
     resp_data = json.loads(parent_job.response_data)
     req_data = json.loads(parent_job.request_data)
     movie_url = req_data['movie_url']
     resp_data['movies'][movie_url]['framesets'] = framesets 
+    resp_data['movies'][movie_url]['frameset_discriminator'] = frameset_discriminator
     parent_job.response_data = json.dumps(resp_data)
     parent_job.status = 'success'
     parent_job.elapsed_time = 1
