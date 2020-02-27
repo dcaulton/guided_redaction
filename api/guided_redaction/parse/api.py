@@ -177,13 +177,12 @@ class ParseViewSetHashFrames(viewsets.ViewSet):
         return self.process_create_request(request_data)
 
     def process_create_request(self, request_data):
-        if not request_data.get("frames"):
-            return self.error("frames is required")
-        if not request_data.get("frameset_discriminator"):
-            return self.error("frameset_discriminator is required")
+        if not request_data.get("movies"):
+            return self.error("movies is required")
 
-        frames = request_data.get('frames')
-        disc =  request_data.get('frameset_discriminator')
+        movie_url = list(request_data['movies'].keys())[0]
+        frames = request_data['movies'][movie_url]['frames']
+        disc = request_data['movies'][movie_url]['frameset_discriminator']
         parser = MovieParser(
             {
                 "debug": False,

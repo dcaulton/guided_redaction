@@ -131,6 +131,20 @@ class MoviePanel extends React.Component {
     return job_data
   }
 
+  buildHashJobData(extra_data) {
+    let job_data = {
+      request_data: {},
+    }
+    job_data['app'] = 'parse'
+    job_data['operation'] = 'hash_movie'
+    job_data['description'] = 'hash movie from MoviePanel: movie ' + this.props.movie_url
+    job_data['request_data'] = {}
+    job_data['request_data']['movies'] = {}
+    job_data['request_data']['movies'][this.props.movie_url] = this.props.movies[this.props.movie_url]
+    job_data['request_data']['movies'][this.props.movie_url]['frameset_discriminator'] = this.props.frameset_discriminator
+    return job_data
+  }
+
   submitMovieJob(job_string, extra_data = '') {
     if (job_string === 'split_and_hash_video') {
       const job_data = this.buildSplitAndHashJobData(extra_data)
@@ -149,6 +163,15 @@ class MoviePanel extends React.Component {
         cancel_after_loading: true, 
         after_loaded: () => {this.setMessage('movie split completed')}, 
         when_failed: () => {this.setMessage('movie split failed')},
+      })
+    } else if (job_string === 'hash_movie') {
+      const job_data = this.buildHashJobData(extra_data)
+      this.props.submitJob({
+        job_data:job_data, 
+        after_submit: () => {this.setMessage('movie hash job was submitted')}, 
+        cancel_after_loading: true, 
+        after_loaded: () => {this.setMessage('movie hash completed')}, 
+        when_failed: () => {this.setMessage('movie hash failed')},
       })
     } else if (job_string === 'redact_framesets') {
       const job_data = this.buildRedactFramesetsJobData(extra_data)
@@ -510,6 +533,17 @@ class MoviePanelAdvancedControls extends React.Component {
     )
   }
 
+  buildHashButton() {
+    return (
+      <button className='btn btn-primary'
+          key='5559'
+          onClick={() => this.props.submitMovieJob('hash_movie')}
+          href='.'>
+        Hash Movie
+      </button>
+    )
+  }
+
   render() {
     if (this.props.movie_url === '') {
       return ''
@@ -518,17 +552,19 @@ class MoviePanelAdvancedControls extends React.Component {
     let runtime = '0:00'
     let nickname = ''
     let num_framesets = '0'
+    let num_frames = '0'
     let redacted = 'No'
     let frame_dimensions = 'unknown'
     let templates_string = this.buildTemplatesString()
     const split_button = this.buildSplitButton()
+    const hash_button = this.buildHashButton()
     const redacted_movie_dl_link = this.buildRedactedMovieDownloadLink()
 
     const fd_dropdown = this.buildFramesetDiscriminatorDropdown()
     if (this.props.movie_url && Object.keys(this.props.movies).includes(this.props.movie_url)) {
       const movie = this.props.movies[this.props.movie_url]
       frameset_discriminator = movie['frameset_discriminator']
-      const num_frames = movie['frames'].length
+      num_frames = movie['frames'].length
       num_framesets = Object.keys(movie['framesets']).length.toString()
       const num_mins = Math.floor(num_frames / 60)
       const num_secs = num_frames % 60
@@ -581,6 +617,7 @@ class MoviePanelAdvancedControls extends React.Component {
             <div id='movie_info_div m-2'>
               <div>Movie Url: {this.props.movie_url}</div>
               <div>Nickname: {nickname}</div>
+              <div>Number of frames: {num_frames.toString()}</div>
               <div>Number of framesets: {num_framesets}</div>
               <div>Run Time: {runtime}</div>
               <div>Movie Redacted? {redacted}</div>
@@ -619,7 +656,14 @@ class MoviePanelAdvancedControls extends React.Component {
                   <option value='green_outline'>Green Outline</option>
                 </select>
               </div>
-              <div>{split_button}</div>
+              <div className='mt-2'>
+                <div className='d-inline'>
+                  {split_button}
+                </div>
+                <div className='d-inline ml-2'>
+                  {hash_button}
+                </div>
+              </div>
 
             </div>
           </div>

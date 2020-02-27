@@ -73,7 +73,11 @@ def hash_frames(job_uuid):
         if not Job.objects.filter(pk=job_uuid).exists():
             return
         job = Job.objects.get(pk=job_uuid)
-        job.response_data = json.dumps(response.data)
+        response_data = response.data
+        movie_url = list(request_data['movies'].keys())[0]
+        movie_obj = request_data
+        movie_obj['movies'][movie_url]['framesets'] = response_data['framesets']
+        job.response_data = json.dumps(movie_obj)
         job.status = 'success'
         job.save()
 
@@ -122,7 +126,7 @@ def split_and_hash_threaded(job_uuid):
 
 def wrap_up_split_and_hash_threaded(parent_job, children):
     framesets = {}
-    hash_children = [x for x in children if x.operation == 'hash_frames']
+    hash_children = [x for x in children if x.operation == 'hash_movie']
     for hash_child in hash_children:
         child_response_data = json.loads(hash_child.response_data)
         frameset_hashes = child_response_data['framesets'].keys()
@@ -159,7 +163,7 @@ def evaluate_split_and_hash_threaded_children(children):
                 split_movie_completed_children += 1
             elif child.status == 'failed':
                 split_movie_failed_children += 1
-        elif child.operation == 'hash_frames':
+        elif child.operation == 'hash_movie':
             hash_frames_children += 1
             if child.status == 'success': 
                 hash_frames_completed_children += 1
@@ -209,16 +213,19 @@ def make_and_dispatch_hash_tasks(parent_job, split_tasks):
         end_point = ((i+1) * hash_frames_batch_size)
         if i == (num_jobs-1):
             end_point = len(frames)
-        request_data = json.dumps({
+        build_movie_obj = {}
+        build_movie_obj['movies'] = {}
+        build_movie_obj['movies'][movie_url] = {
             'frames': frames[start_point:end_point],
             'frameset_discriminator': frameset_discriminator,
-        })
+        }
+        request_data = json.dumps(build_movie_obj)
         job = Job(
             request_data=request_data,
             status='created',
-            description='hash_frames',
+            description='hash_movie',
             app='parse',
-            operation='hash_frames',
+            operation='hash_movie',
             sequence=i,
             elapsed_time=0.0,
             parent=parent_job,
