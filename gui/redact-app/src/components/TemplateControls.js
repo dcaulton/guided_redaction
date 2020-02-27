@@ -440,8 +440,35 @@ class TemplateControls extends React.Component {
     return return_arr
   }
 
+  buildTier1TemplateRunOptions() {
+    if (this.state.scan_level === 'tier_1') {
+      return ''
+    }
+    const tier_1_match_keys = Object.keys(this.props.tier_1_matches['template'])
+    if (tier_1_match_keys.length === 0) {
+      return ''
+    }
+
+    return (
+      <div>
+        {tier_1_match_keys.map((value, index) => {
+          return (
+            <button
+                className='dropdown-item'
+                key={index}
+                onClick={() => this.props.submitInsightsJob('current_template_tier1_template', value)}
+            >
+              Frames matched by template "{this.props.templates[value]['name']}"
+            </button>
+          )
+        })}
+      </div>
+    )
+  }
+
   buildTemplateRunButton() {
     let movie_set_keys = Object.keys(this.props.movie_sets)
+    const tier_1_options = this.buildTier1TemplateRunOptions()
     return (
       <div className='d-inline'>
         <button
@@ -481,6 +508,7 @@ class TemplateControls extends React.Component {
         </button>
       )
     })}
+          {tier_1_options}
         </div>
       </div>
     ) 

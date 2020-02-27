@@ -328,6 +328,43 @@ class InsightsPanel extends React.Component {
     return job_data
   }
 
+  buildScanTemplateCurTempTier1TempJobData(extra_data) {
+    let job_data = {
+      request_data: {},
+    }
+    const tier_1_template_id = extra_data
+    const tier_1_movie_matches = this.props.tier_1_matches['template'][tier_1_template_id]['movies']
+    let movie_build_obj = {}
+    movie_build_obj = {}
+    let movie_count = 0
+    let frameset_count = 0
+    for (let i=0; i < Object.keys(tier_1_movie_matches).length; i++) {
+      movie_count += 1
+      const movie_url = Object.keys(tier_1_movie_matches)[i]
+      movie_build_obj[movie_url] = {}
+      movie_build_obj[movie_url]['framesets'] = {}
+      const frameset_hashes = Object.keys(tier_1_movie_matches[movie_url]['framesets'])
+      for (let j=0; j < frameset_hashes.length; j++) {
+        frameset_count += 1
+        const frameset_hash = frameset_hashes[j]
+        const movie_frameset = this.props.movies[movie_url]['framesets'][frameset_hash]
+        movie_build_obj[movie_url]['framesets'][frameset_hash] = movie_frameset
+      }
+    }
+    job_data['app'] = 'analyze'
+    job_data['operation'] = 'scan_template_threaded'
+    let template = this.props.templates[this.props.current_template_id]
+    job_data['description'] = 'single template match (template ' + template['name'] + ') '
+    job_data['description'] += movie_count.toString() + ' movies '
+    job_data['description'] += frameset_count.toString() + ' framesets'
+    job_data['request_data']['template'] = template
+    job_data['request_data']['source_image_url'] = template['anchors'][0]['image']
+    job_data['request_data']['movies'] = movie_build_obj
+    job_data['request_data']['scan_level'] = template['scan_level']
+    job_data['request_data']['id'] = this.props.current_template_id
+    return job_data
+  }
+
   buildScanTemplateCurTempTelemetryMatchesJobData(extra_data) {
     if (!this.props.current_telemetry_rule_id) {
       this.displayInsightsMessage('no telemetry rule selected, cannot submit a job')
@@ -482,6 +519,11 @@ class InsightsPanel extends React.Component {
       })
     } else if (job_string === 'current_template_movie_set') {
       let job_data = this.buildScanTemplateCurTempMovSetJobData(extra_data)
+      this.props.submitJob({
+        job_data: job_data,
+      })
+    } else if (job_string === 'current_template_tier1_template') {
+      let job_data = this.buildScanTemplateCurTempTier1TempJobData(extra_data)
       this.props.submitJob({
         job_data: job_data,
       })
