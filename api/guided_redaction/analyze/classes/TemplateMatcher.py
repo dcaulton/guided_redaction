@@ -47,6 +47,12 @@ class TemplateMatcher:
             tm_template = template
             tm_source = source
 
+        if 'any' not in dir(tm_source):
+            return ()  
+            # this means we have an unusable image we're scanning for the template
+            # it happens sometimes, I saw it with a large file that was encoded differently
+            # from how we do screencap movies, some kind of windows screencast stuff
+
         found = (0, (-1, -1), 0)
         match_was_found = False
         for scale in self.scales:

@@ -93,8 +93,8 @@ class AnalyzeViewSetScanTemplate(viewsets.ViewSet):
         return self.process_create_request(request_data)
 
     def get_match_image_for_anchor(self, anchor):
-        if 'image_bytes_png_base64' in anchor:
-            img_base64 = anchor['image_bytes_png_base64']
+        if 'cropped_image_bytes' in anchor:
+            img_base64 = anchor['cropped_image_bytes']
             img_bytes = base64.b64decode(img_base64)
             nparr = np.fromstring(img_bytes, np.uint8)
             cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
