@@ -1017,7 +1017,16 @@ class TemplateControls extends React.Component {
     this.props.getScanners()
   }
 
-  getDatabaseTemplatesList() {
+  importAllScanners() {
+    const matches = this.getMatchingScanners() 
+    for (let i=0; i < matches.length; i++) {
+      const match = matches[i]
+      this.props.importScanner(match['id'])
+    }
+    this.props.displayInsightsMessage('All templates have been imported')
+  }
+
+  getMatchingScanners() {
     let matches = []
     for (let i=0; i < this.props.scanners.length; i++) {
       const scanner = this.props.scanners[i]
@@ -1036,6 +1045,11 @@ class TemplateControls extends React.Component {
         }
       }
     }
+    return matches
+  }
+
+  getDatabaseTemplatesList() {
+    const matches = this.getMatchingScanners() 
     if (matches.length === 0) {
       return ''
     }
@@ -1053,7 +1067,15 @@ class TemplateControls extends React.Component {
         >
           <thead>
             <tr>
-              <th scope='col'></th>
+              <th scope='col'>
+                <button
+                  className='btn btn-primary'
+                  style={style}
+                  onClick={() => this.importAllScanners()}
+                >
+                  Import All
+                </button>
+              </th>
               <th scope='col' className='p-1 text-center'>name</th>
               <th scope='col' className='p-1 text-center'>created</th>
               <th scope='col' className='p-1 text-center'>attributes</th>
