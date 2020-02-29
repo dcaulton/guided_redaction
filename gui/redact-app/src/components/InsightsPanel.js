@@ -1175,6 +1175,7 @@ class InsightsPanel extends React.Component {
             scanners={this.props.scanners}
             getScanners={this.props.getScanners}
             deleteScanner={this.props.deleteScanner}
+            importScanner={this.props.importScanner}
           />
         </div>
 

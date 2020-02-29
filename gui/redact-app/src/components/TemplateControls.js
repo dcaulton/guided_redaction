@@ -1067,8 +1067,9 @@ class TemplateControls extends React.Component {
             for (let i=0; i < Object.keys(match['attributes']).length; i++) {
               const attrib_name = Object.keys(match['attributes'])[i]
               const attrib_value = match['attributes'][attrib_name]
+              const key_val='attrib_'+i.toString()
               attributes.push(
-                <div>
+                <div key={key_val}>
                   <div className='d-inline'>
                     {attrib_name} :
                   </div>
@@ -1082,8 +1083,9 @@ class TemplateControls extends React.Component {
             for (let i=0; i < Object.keys(match['content_metadata']).length; i++) {
               const meta_name = Object.keys(match['content_metadata'])[i]
               const meta_value = match['content_metadata'][meta_name]
+              const key_val='meta_'+i.toString()
               meta.push(
-                <div>
+                <div key={key_val}>
                   <div className='d-inline'>
                     {meta_name} :
                   </div>
@@ -1099,7 +1101,10 @@ class TemplateControls extends React.Component {
                   <button
                     className='btn btn-primary'
                     style={style}
-                    onClick={() => this.importScanner(matches['id'])}
+                    onClick={() => this.props.importScanner(
+                      match['id'],
+                      (()=> {this.props.displayInsightsMessage('Template has been imported')})
+                    )}
                   >
                     Import
                   </button>
@@ -1132,14 +1137,6 @@ class TemplateControls extends React.Component {
         </table>
       </div>
     )
-  }
-
-  importScanner(scanner_id) {
-  console.log('importing scanner '+scanner_id)
-  }
-
-  deleteScanner(scanner_id) {
-  console.log('deleting scanner '+scanner_id)
   }
 
   buildDatabaseSection() {

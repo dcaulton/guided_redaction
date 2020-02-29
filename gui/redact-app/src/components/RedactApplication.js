@@ -142,6 +142,7 @@ class RedactApplication extends React.Component {
     this.saveCurrentTemplateToDatabase=this.saveCurrentTemplateToDatabase.bind(this)
     this.getScanners=this.getScanners.bind(this)
     this.deleteScanner=this.deleteScanner.bind(this)
+    this.importScanner=this.importScanner.bind(this)
   }
 
   setGlobalStateVar(var_name, var_value, when_done=(()=>{})) {
@@ -361,6 +362,31 @@ class RedactApplication extends React.Component {
     .then((response) => response.json())
     .then((responseJson) => {
       this.setGlobalStateVar('scanners', responseJson['scanners'])
+    })
+    .catch((error) => {
+      console.error(error);
+    })
+  }
+
+  async importScanner(the_uuid, when_done=(()=>{})) {
+    let the_url = this.state.scanners_url + '/' + the_uuid
+    await fetch(the_url, {
+      method: 'GET',
+      headers: this.buildJsonHeaders(),
+    })
+    .then((response) => response.json())
+    .then((responseJson) => {
+      if (responseJson['scanner']['type'] === 'template') {
+        const template = JSON.parse(responseJson['scanner']['content'])
+        let deepCopyTemplates= JSON.parse(JSON.stringify(this.state.templates))
+        template['attributes'] = responseJson['scanner']['attributes']
+        deepCopyTemplates[template['id']] = template
+        this.setGlobalStateVar('templates', deepCopyTemplates)
+      }
+      return responseJson
+    })
+    .then((responseJson) => {
+      when_done(responseJson)
     })
     .catch((error) => {
       console.error(error);
@@ -1989,6 +2015,7 @@ class RedactApplication extends React.Component {
                 scanners={this.state.scanners}
                 getScanners={this.getScanners}
                 deleteScanner={this.deleteScanner}
+                importScanner={this.importScanner}
               />
             </Route>
           </Switch>
