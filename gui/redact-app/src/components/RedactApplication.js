@@ -41,6 +41,7 @@ class RedactApplication extends React.Component {
       link_url: api_server_url + 'v1/link/learn-dev',
       can_see_url: api_server_url + 'v1/link/can-reach',
       make_url_url: api_server_url + 'v1/parse/make-url',
+      scanners_url: api_server_url + 'v1/scanners',
       files_url: api_server_url + 'v1/files',
       current_workbook_name: 'workbook 1',
       playSound: true,
@@ -57,6 +58,7 @@ class RedactApplication extends React.Component {
       },
       annotations: {},
       jobs: [],
+      scanners: [],
       files: {},
       selected_areas: {},
       selected_area_metas: {},
@@ -137,6 +139,9 @@ class RedactApplication extends React.Component {
     this.getJobResultData=this.getJobResultData.bind(this)
     this.setGlobalStateVar=this.setGlobalStateVar.bind(this)
     this.toggleGlobalStateVar=this.toggleGlobalStateVar.bind(this)
+    this.saveCurrentTemplateToDatabase=this.saveCurrentTemplateToDatabase.bind(this)
+    this.getScanners=this.getScanners.bind(this)
+    this.deleteScanner=this.deleteScanner.bind(this)
   }
 
   setGlobalStateVar(var_name, var_value, when_done=(()=>{})) {
@@ -345,6 +350,62 @@ class RedactApplication extends React.Component {
     let blob = await this.getImageBlob(url)
     let base64 = await this.blobToBase64(blob)
     return base64
+  }
+
+  async getScanners() {
+    let the_url = this.state.scanners_url
+    await fetch(the_url, {
+      method: 'GET',
+      headers: this.buildJsonHeaders(),
+    })
+    .then((response) => response.json())
+    .then((responseJson) => {
+      this.setGlobalStateVar('scanners', responseJson['scanners'])
+    })
+    .catch((error) => {
+      console.error(error);
+    })
+  }
+
+  async deleteScanner(the_uuid, when_done=(()=>{})) {
+    let the_url = this.state.scanners_url + '/' + the_uuid
+    await fetch(the_url, {
+      method: 'DELETE',
+      headers: this.buildJsonHeaders(),
+    })
+    .then(() => {
+      setTimeout(this.getScanners, 500)
+      when_done()
+    })
+    .catch((error) => {
+      console.error(error);
+    })
+  }
+
+  async saveCurrentTemplateToDatabase(when_done=(()=>{})) {
+    let template_data = this.state.templates[this.state.current_template_id]
+    let description_string = ''
+    if (Object.keys(template_data).includes('description')) {
+      description_string = template_data['description']
+    }
+    let response = await fetch(this.state.scanners_url, {
+      method: 'POST',
+      headers: this.buildJsonHeaders(),
+      body: JSON.stringify({
+        type: 'template',
+        name: template_data['name'],
+        description: description_string,
+        content: template_data,
+      }),
+    })
+    .then((response) => response.json())
+    .then((responseJson) => {
+      when_done(responseJson)
+    })
+    .catch((error) => {
+      console.error(error)
+    })
+    await response
   }
 
   async postMakeUrlCall(hash_in) {
@@ -1924,6 +1985,10 @@ class RedactApplication extends React.Component {
                 setTelemetryData={this.setTelemetryData}
                 getJobResultData={this.getJobResultData}
                 userTone={this.state.userTone}
+                saveCurrentTemplateToDatabase={this.saveCurrentTemplateToDatabase}
+                scanners={this.state.scanners}
+                getScanners={this.getScanners}
+                deleteScanner={this.deleteScanner}
               />
             </Route>
           </Switch>

@@ -50,6 +50,10 @@ class BottomInsightsControls extends React.Component {
           getFramesetHashesInOrder={this.props.getFramesetHashesInOrder}
           movies={this.props.movies}
           setCurrentVideo={this.props.setCurrentVideo}
+          saveCurrentTemplateToDatabase={this.props.saveCurrentTemplateToDatabase}
+          scanners={this.props.scanners}
+          getScanners={this.props.getScanners}
+          deleteScanner={this.props.deleteScanner}
         />
 
         <SelectedAreaControls

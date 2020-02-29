@@ -10,7 +10,6 @@ class Attribute(models.Model):
     updated_on = models.DateTimeField(auto_now=True)
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=255)
-    type = models.CharField(max_length=64)
     value = models.CharField(max_length=255)
     scanner = models.ForeignKey(Scanner, on_delete=models.CASCADE, null=True)
     job = models.ForeignKey(Job, on_delete=models.CASCADE, null=True)

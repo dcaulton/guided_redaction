@@ -7,7 +7,7 @@ class TemplateControls extends React.Component {
     this.state = {
       id: '',
       name: '',
-      app_name: '',
+      attributes: {},
       scale: '1_1',
       match_percent: 90,
       match_method: 'any',
@@ -16,6 +16,8 @@ class TemplateControls extends React.Component {
       mask_zones: [],
       download_link: '',
       unsaved_changes: false,
+      attribute_search_name: '',
+      attribute_search_value: '',
     }
     this.anchorSliceDone=this.anchorSliceDone.bind(this)
     this.addAnchorCallback=this.addAnchorCallback.bind(this)
@@ -27,7 +29,7 @@ class TemplateControls extends React.Component {
     this.setState({
       id: template['id'],
       name: template['name'],
-      app_name: template['app_name'],
+      attributes: template['attributes'],
       match_percent: template['match_percent'],
       match_method: template['match_method'],
       scan_level: template['scan_level'],
@@ -106,7 +108,7 @@ class TemplateControls extends React.Component {
     this.setState({
       id: '',
       name: '',
-      app_name: '',
+      attributes: {},
       scale: '1_1',
       match_percent: 90,
       match_method: 'any',
@@ -126,7 +128,7 @@ class TemplateControls extends React.Component {
       this.setState({
         id: template_id,
         name: template['name'],
-        app_name: template['app_name'],
+        attributes: template['attributes'],
         scale: template['scale'],
         match_percent: template['match_percent'],
         match_method: template['match_method'],
@@ -177,7 +179,7 @@ class TemplateControls extends React.Component {
     let cur_template = {
       id: this.state.id,
       name: this.state.name,
-      app_name: this.state.app_name,
+      attributes: this.state.attributes,
       scale: this.state.scale,
       match_percent: this.state.match_percent,
       match_method: this.state.match_method,
@@ -212,11 +214,37 @@ class TemplateControls extends React.Component {
     })
   }
 
-  setAppName(the_name) {
+  setAttribute(name, value) {
+    let deepCopyAttributes = JSON.parse(JSON.stringify(this.state.attributes))
+    deepCopyAttributes[name] = value
     this.setState({
-      app_name: the_name,
+      attributes: deepCopyAttributes,
       unsaved_changes: true,
     })
+    this.props.displayInsightsMessage('Attribute was added')
+  }
+
+  doAddAttribute() {
+    const value_ele = document.getElementById('template_attribute_value')
+    const name_ele = document.getElementById('template_attribute_name')
+    if (value_ele.value && name_ele.value) {
+      this.setAttribute(name_ele.value, value_ele.value)
+      name_ele.value = ''
+      value_ele.value = ''
+    }
+  }
+
+  deleteAttribute(name) {
+    let deepCopyAttributes = JSON.parse(JSON.stringify(this.state.attributes))
+    if (!Object.keys(this.state.attributes).includes(name)) {
+      return
+    }
+    delete deepCopyAttributes[name]
+    this.setState({
+      attributes: deepCopyAttributes,
+      unsaved_changes: true,
+    })
+    this.props.displayInsightsMessage('Attribute was deleted')
   }
 
   setScale(value) {
@@ -345,7 +373,7 @@ class TemplateControls extends React.Component {
     this.props.handleSetMode('add_template_mask_zone_3')
   } 
 
-  async doSave() {
+  async doSave(when_done=(()=>{})) {
     if (!this.state.name) {
       this.props.displayInsightsMessage('Save aborted: Name is required for a template')
       return
@@ -359,7 +387,7 @@ class TemplateControls extends React.Component {
       let template = {
         id: template_id,
         name: this.state.name,
-        app_name: this.state.app_name,
+        attributes: this.state.attributes,
         scale: this.state.scale,
         match_percent: this.state.match_percent,
         match_method: this.state.match_method,
@@ -376,8 +404,19 @@ class TemplateControls extends React.Component {
         unsaved_changes: false,
       })
       this.props.displayInsightsMessage('Template has been saved')
+      return template
+    })
+    .then((template) => {
+      when_done(template)
     })
     await eca_response
+  }
+
+  async doSaveToDatabase() {
+    this.doSave(((response)=>{
+      this.props.saveCurrentTemplateToDatabase()
+      this.props.displayInsightsMessage('Template has been saved to database')
+    }))
   }
 
   buildDownloadButton() {
@@ -574,23 +613,73 @@ class TemplateControls extends React.Component {
     )
   }
 
-  buildAppNameField() {
+  buildAttributesList() {
     return (
         <div>
-        <div className='d-inline ml-2'>
-          App name:
+        <div className='font-weight-bold border-top ml-2'>
+          Attributes
         </div>
-        <div
-            className='d-inline ml-2'
-        >
+        <div>
+          <div className='d-inline ml-2'>
+            Name:
+          </div>
+          <div className='d-inline ml-2'>
             <input
-                id='template_app_name'
-                key='template_app_name_1'
-                title='name'
+                id='template_attribute_name'
+                key='template_attribute_name_1'
+                title='attribute name'
                 size='25'
-                value={this.state.app_name}
-                onChange={(event) => this.setAppName(event.target.value)}
             />
+          </div>
+          <div className='d-inline ml-2'>
+            Value:
+          </div>
+          <div className='d-inline ml-2'>
+            <input
+                id='template_attribute_value'
+                key='template_attribute_value_1'
+                title='attribute value'
+                size='25'
+            />
+          </div>
+          <div className='d-inline ml-2'>
+            <button
+                className='btn btn-primary'
+                key={889922}
+                onClick={() => this.doAddAttribute()}
+            >
+              Add
+            </button>
+          </div>
+        </div>
+        <div>
+          {Object.keys(this.state.attributes).map((name, index) => {
+            return (
+              <div key={index} className='mt-2'>
+                <div className='d-inline'>
+                  Name:
+                </div>
+                <div className='d-inline ml-2'>
+                  {name} 
+                </div>
+                <div className='d-inline ml-4'>
+                  Value:
+                </div>
+                <div className='d-inline'>
+                  {this.state.attributes[name]}
+                </div>
+                <div className='d-inline ml-2'>
+                  <button
+                      className='btn btn-primary'
+                      key={index}
+                      onClick={() => this.deleteAttribute(name)}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            )
+          })}
         </div>
       </div>
     )
@@ -770,6 +859,21 @@ class TemplateControls extends React.Component {
     )
   }
 
+  buildSaveToDatabaseButton() {
+    return (
+      <div 
+          className='d-inline'
+      >
+        <button
+            className='btn btn-primary ml-2 mt-2'
+            onClick={() => this.doSaveToDatabase()}
+        >
+          Save to DB
+        </button>
+      </div>
+    )
+  }
+
   buildAddAnchorButton() {
     return (
       <button
@@ -903,6 +1007,188 @@ class TemplateControls extends React.Component {
     }
   }
 
+  doGetScanners() {
+    const attr_search_name = document.getElementById('template_database_search_attribute_name').value
+    const attr_search_value = document.getElementById('template_database_search_attribute_value').value
+    this.setState({
+      attribute_search_name: attr_search_name,
+      attribute_search_value: attr_search_value,
+    })
+    this.props.getScanners()
+  }
+
+  getDatabaseTemplatesList() {
+    let matches = []
+    for (let i=0; i < this.props.scanners.length; i++) {
+      const scanner = this.props.scanners[i]
+      if (scanner['type'] === 'template') {
+        if (this.state.attribute_search_name || this.state.attribute_search_value) {
+          for (let j=0; j < Object.keys(scanner['attributes']).length; j++) {
+            const attr_name = Object.keys(scanner['attributes'])[j]
+            const attr_value = scanner['attributes'][attr_name]
+            if ((attr_name === this.state.attribute_search_name) && 
+                (attr_value === this.state.attribute_search_value)) {
+              matches.push(scanner)
+            }
+          }
+        } else {
+          matches.push(scanner)
+        }
+      }
+    }
+    if (matches.length === 0) {
+      return ''
+    }
+    let style = {
+      'fontSize': '10px',
+    }
+    return (
+      <div>
+        <div className='font-weight-bold ml-3 mt-3'>
+          Search Results
+        </div>
+        <table 
+          className='table-striped'
+          style={style}
+        >
+          <thead>
+            <tr>
+              <th scope='col'></th>
+              <th scope='col' className='p-1 text-center'>name</th>
+              <th scope='col' className='p-1 text-center'>created</th>
+              <th scope='col' className='p-1 text-center'>attributes</th>
+              <th scope='col' className='p-1 text-center'>metadata</th>
+              <th scope='col'></th>
+            </tr>
+          </thead>
+          <tbody>
+          {matches.map((match, index) => {
+            let attributes = []
+            for (let i=0; i < Object.keys(match['attributes']).length; i++) {
+              const attrib_name = Object.keys(match['attributes'])[i]
+              const attrib_value = match['attributes'][attrib_name]
+              attributes.push(
+                <div>
+                  <div className='d-inline'>
+                    {attrib_name} :
+                  </div>
+                  <div className='d-inline ml-2'>
+                    {attrib_value}
+                  </div>
+                </div>
+              )
+            }
+            let meta = []
+            for (let i=0; i < Object.keys(match['content_metadata']).length; i++) {
+              const meta_name = Object.keys(match['content_metadata'])[i]
+              const meta_value = match['content_metadata'][meta_name]
+              meta.push(
+                <div>
+                  <div className='d-inline'>
+                    {meta_name} :
+                  </div>
+                  <div className='d-inline ml-1'>
+                    {meta_value}
+                  </div>
+                </div>
+              )
+            }
+            return (
+              <tr key={index}>
+                <td className='p-1'>
+                  <button
+                    className='btn btn-primary'
+                    style={style}
+                    onClick={() => this.importScanner(matches['id'])}
+                  >
+                    Import
+                  </button>
+                </td>
+                <td className='p-1'>
+                  {match['name']}
+                </td>
+                <td className='p-1 border-left'>
+                  {match['created_on']}
+                </td>
+                <td className='p-1 border-left'>
+                  {attributes}
+                </td>
+                <td className='p-1 border-left'>
+                  {meta}
+                </td>
+                <td className='p-1'>
+                  <button
+                    className='btn btn-primary'
+                    style={style}
+                    onClick={() => this.props.deleteScanner(match['id'])}
+                  >
+                    Delete
+                  </button>
+                </td>
+              </tr>
+            )
+          })}
+          </tbody>
+        </table>
+      </div>
+    )
+  }
+
+  importScanner(scanner_id) {
+  console.log('importing scanner '+scanner_id)
+  }
+
+  deleteScanner(scanner_id) {
+  console.log('deleting scanner '+scanner_id)
+  }
+
+  buildDatabaseSection() {
+    const database_templates_list = this.getDatabaseTemplatesList()
+    return (
+      <div>
+        <div className='font-weight-bold'>
+          Database
+        </div>
+        <div>
+          <div className='d-inline'>
+            Search by Attribute:
+          </div>
+          <div className='d-inline ml-2'>
+            Name:
+          </div>
+          <div className='d-inline ml-2'>
+            <input 
+                id='template_database_search_attribute_name'
+                size='20'
+                title='template attribute name'
+            />
+          </div>
+          <div className='d-inline ml-2'>
+            Value:
+          </div>
+          <div className='d-inline ml-3'>
+            <input 
+                id='template_database_search_attribute_value'
+                size='20'
+                title='template attribute value'
+            />
+          </div>
+          <div className='d-inline ml-3'>
+            <button
+              className='btn btn-primary'
+              onClick={() => this.doGetScanners()}
+            >
+              Go
+            </button>
+          </div>
+        </div>
+        <div>
+          {database_templates_list}
+        </div>
+      </div>
+    )
+  }
+
   render() {
     if (!this.props.visibilityFlags['templates']) {                                             
       return([])                                                                
@@ -915,7 +1201,7 @@ class TemplateControls extends React.Component {
     const anchor_pics = this.buildAnchorPics()
     const run_button = this.buildTemplateRunButton()
     const template_name = this.buildNameField()
-    const template_app_name = this.buildAppNameField()
+    const attributes_list = this.buildAttributesList()
     const scale_dropdown = this.buildScaleDropdown() 
     const match_percent = this.buildMatchPercent()
     const match_method = this.buildMatchMethod()
@@ -924,11 +1210,13 @@ class TemplateControls extends React.Component {
     const export_button = this.buildExportButton()
     const clear_matches_button = this.buildClearMatchesButton()
     const save_button = this.buildSaveButton()
+    const save_to_database_button = this.buildSaveToDatabaseButton()
     const add_anchor_button = this.buildAddAnchorButton()
     const clear_anchors_button = this.buildClearAnchorsButton()
     const add_mask_zone_button = this.buildAddMaskZoneButton()
     const clear_mask_zones_button = this.buildClearMaskZonesButton()
     const template_source_movie_image_info = this.buildSourceMovieImageInfo()
+    const database_section = this.buildDatabaseSection()
 
     return (
         <div className='row bg-light rounded'>
@@ -977,6 +1265,7 @@ class TemplateControls extends React.Component {
                   {clear_mask_zones_button}
                   {delete_button}
                   {save_button}
+                  {save_to_database_button}
                   {run_button}
                   {clear_matches_button}
                 </div>
@@ -1006,7 +1295,7 @@ class TemplateControls extends React.Component {
                 </div>
 
                 <div className='row mt-1'>
-                  {template_app_name}
+                  {attributes_list}
                 </div>
 
                 <div className='row ml-2 mt-3 border-top'>
@@ -1040,6 +1329,10 @@ class TemplateControls extends React.Component {
                       </div>
                     </div>
                   </div>
+                </div>
+
+                <div className='row mt-3 ml-1 border-top'>
+                  {database_section}
                 </div>
 
               </div>
