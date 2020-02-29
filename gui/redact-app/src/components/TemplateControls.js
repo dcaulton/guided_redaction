@@ -616,7 +616,7 @@ class TemplateControls extends React.Component {
   buildAttributesList() {
     return (
         <div>
-        <div className='font-weight-bold border-top ml-2'>
+        <div className='font-weight-bold'>
           Attributes
         </div>
         <div>
@@ -798,13 +798,13 @@ class TemplateControls extends React.Component {
   buildExportButton() {
     return (
       <div 
-          className='d-inline'
+          className='d-inline mb-1'
       >
         <button
-            className='btn btn-primary ml-2'
+            className='btn btn-primary'
             onClick={() => this.exportCurrentAnchors() }
         >
-          Export
+          Export this Template
         </button>
       </div>
     )
@@ -1313,27 +1313,14 @@ class TemplateControls extends React.Component {
                   {template_name}
                 </div>
 
-                <div className='row mt-1'>
+                <div className='row mt-1 ml-1 mr-1 border-top'>
                   {attributes_list}
                 </div>
 
-                <div className='row ml-2 mt-3 border-top'>
-                  <div className='col'>
-                    <div className='row mt-2'>
-                      {export_button}
-                      {download_button}
-                    </div>
-
-                    <div className='row mb-2'>
-                      {import_button}
-                    </div>
-                  </div>
-                </div>
-
-                <div className='row mt-3 ml-1 border-top'>
+                <div className='row mt-3 ml-1 mr-1 border-top'>
                   <div className='col'>
                     <div className='row'>
-                      <div className='h5'>
+                      <div className='font-weight-bold'>
                         Anchors
                       </div>
 
@@ -1350,7 +1337,23 @@ class TemplateControls extends React.Component {
                   </div>
                 </div>
 
-                <div className='row mt-3 ml-1 border-top'>
+                <div className='row ml-1 mt-3 mr-1 border-top'>
+                  <div className='col'>
+                    <div className='row font-weight-bold'>
+                      Save/Load Files
+                    </div>
+                    <div className='row ml-1 mt-2'>
+                      {export_button}
+                      {download_button}
+                    </div>
+
+                    <div className='row ml-1 mb-2'>
+                      {import_button}
+                    </div>
+                  </div>
+                </div>
+
+                <div className='row mt-3 ml-1 mr-1 border-top'>
                   {database_section}
                 </div>
 
