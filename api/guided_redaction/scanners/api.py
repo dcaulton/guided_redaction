@@ -22,6 +22,7 @@ class ScannersViewSet(viewsets.ViewSet):
                 scanner_metadata['template_id'] = content['id']
                 scanner_metadata['scale'] = content['scale']
                 scanner_metadata['match_method'] = content['match_method']
+                scanner_metadata['match_percent'] = content['match_percent']
                 scanner_metadata['num_anchors'] = len(content['anchors'])
                 scanner_metadata['num_mask_zones'] = len(content['mask_zones'])
             scanners_list.append(
@@ -60,13 +61,15 @@ class ScannersViewSet(viewsets.ViewSet):
         return Response({"scanner": s_data})
 
     def create(self, request):
-        scanner = Scanner(
-            type=request.data.get('type'),
-            name=request.data.get('name'),
-            description=request.data.get('description'),
-        )
-        scanner.save()
-#        import pdb; pdb.set_trace()
+        if Scanner.objects.filter(type=request.data.get('type'), name=request.data.get('name')).exists():
+            scanner = Scanner.objects.filter(type=request.data.get('type'), name=request.data.get('name'))[0]
+        else:
+            scanner = Scanner(
+                type=request.data.get('type'),
+                name=request.data.get('name'),
+                description=request.data.get('description'),
+            )
+            scanner.save()
         request_content = request.data.get('content')
         if 'attributes' in request_content:
             for attribute_name in request_content['attributes']:

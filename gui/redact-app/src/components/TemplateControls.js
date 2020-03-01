@@ -11,7 +11,7 @@ class TemplateControls extends React.Component {
       scale: '1_1',
       match_percent: 90,
       match_method: 'any',
-      scan_level: 'tier_1',
+      scan_level: 'tier_2',
       anchors: [],
       mask_zones: [],
       download_link: '',
@@ -112,7 +112,7 @@ class TemplateControls extends React.Component {
       scale: '1_1',
       match_percent: 90,
       match_method: 'any',
-      scan_level: 'tier_1',
+      scan_level: 'tier_2',
       anchors: [],
       mask_zones: [],
       download_link: '',
@@ -491,13 +491,14 @@ class TemplateControls extends React.Component {
     return (
       <div>
         {tier_1_match_keys.map((value, index) => {
+          const detail_line = 'Frames matched by template ' + this.props.templates[value]['name']
           return (
             <button
                 className='dropdown-item'
                 key={index}
                 onClick={() => this.props.submitInsightsJob('current_template_tier1_template', value)}
             >
-              Frames matched by template "{this.props.templates[value]['name']}"
+              {detail_line}
             </button>
           )
         })}
@@ -536,17 +537,17 @@ class TemplateControls extends React.Component {
           >
             Telemetry Matches
           </button>
-    {movie_set_keys.map((value, index) => {
-      return (
-        <button
-            className='dropdown-item'
-            key={index}
-            onClick={() => this.props.submitInsightsJob('current_template_movie_set', value)}
-        >
-          MovieSet '{this.props.movie_sets[value]['name']}' as Job
-        </button>
-      )
-    })}
+            {movie_set_keys.map((value, index) => {
+              return (
+                <button
+                    className='dropdown-item'
+                    key={index}
+                    onClick={() => this.props.submitInsightsJob('current_template_movie_set', value)}
+                >
+                  MovieSet '{this.props.movie_sets[value]['name']}' as Job
+                </button>
+              )
+            })}
           {tier_1_options}
         </div>
       </div>
@@ -644,7 +645,7 @@ class TemplateControls extends React.Component {
           </div>
           <div className='d-inline ml-2'>
             <button
-                className='btn btn-primary'
+                className='btn btn-primary p-1'
                 key={889922}
                 onClick={() => this.doAddAttribute()}
             >
@@ -767,8 +768,8 @@ class TemplateControls extends React.Component {
               value={this.state.scan_level}
               onChange={(event) => this.setScanLevel(event.target.value)}
           >
-            <option value='tier_1'>Tier 1</option>
-            <option value='tier_2'>Tier 2</option>
+            <option value='tier_1'>Tier 1 (match only)</option>
+            <option value='tier_2'>Tier 2 (match and mask)</option>
           </select>
         </div>
       </div>
@@ -1135,7 +1136,7 @@ class TemplateControls extends React.Component {
                   {match['name']}
                 </td>
                 <td className='p-1 border-left'>
-                  {match['created_on']}
+                  {match['created_on'].substring(0, 16)}
                 </td>
                 <td className='p-1 border-left'>
                   {attributes}
@@ -1194,7 +1195,7 @@ class TemplateControls extends React.Component {
           </div>
           <div className='d-inline ml-3'>
             <button
-              className='btn btn-primary'
+              className='btn btn-primary p-1'
               onClick={() => this.doGetScanners()}
             >
               Go
