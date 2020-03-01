@@ -117,23 +117,24 @@ class AnalyzeViewSetScanTemplate(viewsets.ViewSet):
 
     def process_create_request(self, request_data):
         matches = {}
-        if not request_data.get("template"):
-            return self.error("template is required")
-        if not request_data.get("source_image_url"):
-            return self.error("source_image_url is required")
+        if not request_data.get("templates"):
+            return self.error("templates is required")
+        if not request_data.get("template_id"):
+            return self.error("template_id is required")
         if not request_data.get("movies"):
             return self.error("movies is required")
-        template_matcher = TemplateMatcher(request_data.get('template'))
-        template = request_data.get('template')
+        template_id = request_data.get('template_id')
+        template = request_data.get('templates')[template_id]
+        template_matcher = TemplateMatcher(template)
         for anchor in template.get("anchors"):
             match_image = self.get_match_image_for_anchor(anchor)
             start = anchor.get("start")
             end = anchor.get("end")
             size = (end[0] - start[0], end[1] - start[1])
             anchor_id = anchor.get("id")
-            targets = request_data['movies']
-            for movie_name in targets:
-                movie = targets[movie_name]
+            movies_in = request_data['movies']
+            for movie_name in movies_in:
+                movie = movies_in[movie_name]
                 if not movie:
                     print('no movie error for {}'.format(movie_name))
                     continue

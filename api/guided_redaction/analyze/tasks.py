@@ -18,19 +18,20 @@ def scan_template(job_uuid):
         job = Job.objects.get(pk=job_uuid)
         job.status = 'running'
         job.save()
-        print('scanning template for job '+ job_uuid)
+        print('scanning template for job {}'.format(job_uuid))
         avsst = AnalyzeViewSetScanTemplate()
         response = avsst.process_create_request(json.loads(job.request_data))
         if not Job.objects.filter(pk=job_uuid).exists():
             return
         job = Job.objects.get(pk=job_uuid)
         request = json.loads(job.request_data)
-        if ('match_method' not in request['template'] or
-            request['template']['match_method'] == 'any'):
+        template_id = request['template_id']
+        if ('match_method' not in request['templates'][template_id] or
+            request['templates'][template_id]['match_method'] == 'any'):
             job.response_data = json.dumps(response.data)
-        elif request['template']['match_method'] == 'all':
+        elif request['templates'][template_id]['match_method'] == 'all':
             built_response_data = {}
-            all_anchor_keys = set([x['id'] for x in request['template']['anchors']])
+            all_anchor_keys = set([x['id'] for x in request['templates'][template_id]['anchors']])
             raw_response = response.data
             for movie_url in raw_response.keys():
                 built_response_data[movie_url] = {}
@@ -48,7 +49,7 @@ def scan_template(job_uuid):
             if parent_job.app == 'analyze' and parent_job.operation == 'scan_template_threaded':
                 scan_template_threaded.delay(parent_job.id)
     else:
-        print('calling scan_template on nonexistent job: '+ job_uuid)
+        print('calling scan_template on nonexistent job: {}'.format(job_uuid))
 
 @shared_task
 def filter(job_uuid):
@@ -56,7 +57,7 @@ def filter(job_uuid):
         job = Job.objects.get(pk=job_uuid)
         job.status = 'running'
         job.save()
-        print('running filter for job '+ job_uuid)
+        print('running filter for job {}'.format(job_uuid))
         avsf = AnalyzeViewSetFilter()
         response = avsf.process_create_request(json.loads(job.request_data))
         if not Job.objects.filter(pk=job_uuid).exists():
@@ -71,11 +72,11 @@ def filter(job_uuid):
 @shared_task
 def get_timestamp(job_uuid):
     if not Job.objects.filter(pk=job_uuid).exists():
-        print('calling get_timestamp on nonexistent job: '+ job_uuid)
+        print('calling get_timestamp on nonexistent job: {}'.format(job_uuid))
     job = Job.objects.get(pk=job_uuid)
     job.status = 'running'
     job.save()
-    print('running get_timestamp for job '+ job_uuid)
+    print('running get_timestamp for job {}'.format(job_uuid))
     worker = AnalyzeViewSetTimestamp()
     response = worker.process_create_request(json.loads(job.request_data))
     if not Job.objects.filter(pk=job_uuid).exists():
@@ -182,6 +183,8 @@ def wrap_up_get_timestamp_threaded(job, children):
 
 @shared_task
 def scan_template_threaded(job_uuid):
+    # ASSUMES WE ONLY HAVE ONE TEMPLATE
+    # DOESNT EXPECT TEMPLATE ID, JUST A HASH WITH ONE TEMPLATE
     if Job.objects.filter(pk=job_uuid).exists():
         job = Job.objects.get(pk=job_uuid)
         if job.status in ['success', 'failed']:
@@ -229,22 +232,24 @@ def build_and_dispatch_scan_template_threaded_children(parent_job):
     parent_job.status = 'running'
     parent_job.save()
     request_data = json.loads(parent_job.request_data)
-    template = request_data['template']
-    source_image_url = request_data['source_image_url']
+    template_id = list(request_data['templates'].keys())[0]
+    template = request_data['templates'][template_id]
     movies = request_data['movies']
     for index, movie_url in enumerate(movies):
         movie = movies.get(movie_url)
         build_movies = {}
         build_movies[movie_url] = movie
+        build_templates = {}
+        build_templates[template_id] = template
         request_data = json.dumps({
-            'template': template,
-            'source_image_url': source_image_url,
+            'templates': build_templates,
+            'template_id': template_id,
             'movies': build_movies,
         })
         job = Job(
             request_data=request_data,
             status='created',
-            description='scan_template for movie {}'.format(movie_url),
+            description='scan_template {} for movie {}'.format(template['name'], movie_url),
             app='analyze',
             operation='scan_template',
             sequence=0,

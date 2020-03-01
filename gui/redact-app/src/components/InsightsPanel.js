@@ -258,18 +258,19 @@ class InsightsPanel extends React.Component {
     job_data['app'] = 'analyze'
     job_data['operation'] = 'scan_template'
     let template = this.props.templates[this.props.current_template_id]
+    let template_wrap = {}
+    template_wrap[this.props.current_template_id] = template
     if (!template['scale'] === '1_1') {
       job_data['description'] += ' - multi scale (' + template['scale'] + ')'
     }
-    job_data['request_data']['template'] = template
-    job_data['request_data']['source_image_url'] = template['anchors'][0]['image']
-    job_data['request_data']['template_id'] = template['id']  // todo get rid of this
+    job_data['request_data']['templates'] = template_wrap
+    job_data['request_data']['template_id'] = this.props.current_template_id
     job_data['description'] = 'single template single movie match: '
     job_data['description'] += 'template ' + template.name
     job_data['description'] += ', movie ' + this.props.movie_url.split('/').slice(-1)[0]
-    let wrap = {}
-    wrap[this.props.movie_url] = this.props.movies[this.props.movie_url]
-    job_data['request_data']['movies'] = wrap
+    let movies_wrap = {}
+    movies_wrap[this.props.movie_url] = this.props.movies[this.props.movie_url]
+    job_data['request_data']['movies'] = movies_wrap
     job_data['request_data']['scan_level'] = template['scan_level']
     job_data['request_data']['id'] = this.props.current_template_id
     return job_data
@@ -292,12 +293,14 @@ class InsightsPanel extends React.Component {
     job_data['operation'] = 'scan_template_threaded'
     job_data['description'] = 'single template '+ num_movies+ ' movies, ('+num_frames+' framesets)  match - threaded'
     let template = this.props.templates[this.props.current_template_id]
+    let template_wrap = {}
+    template_wrap[this.props.current_template_id] = template
     job_data['description'] += ': template '+ template['name']
     if (!template['scale'] === '1_1') {
       job_data['description'] += ' - multi scale (' + template['scale'] + ')'
     }
-    job_data['request_data']['template'] = template
-    job_data['request_data']['source_image_url'] = template['anchors'][0]['image']
+    job_data['request_data']['templates'] = template_wrap
+    job_data['request_data']['template_id'] = this.props.current_template_id
     job_data['request_data']['movies'] = this.props.movies
     job_data['request_data']['scan_level'] = template['scan_level']
     job_data['request_data']['id'] = this.props.current_template_id
@@ -318,10 +321,12 @@ class InsightsPanel extends React.Component {
     job_data['app'] = 'analyze'
     job_data['operation'] = 'scan_template_threaded'
     let template = this.props.templates[this.props.current_template_id]
+    let template_wrap = {}
+    template_wrap[this.props.current_template_id] = template
     job_data['description'] = 'single template (' + template['name'] + ') '+ num_movies+ ' movies (from MovieSet ' + movie_set_name + '), match - threaded'
     job_data['description'] += ': template '+ template['name']
-    job_data['request_data']['template'] = template
-    job_data['request_data']['source_image_url'] = template['anchors'][0]['image']
+    job_data['request_data']['templates'] = template_wrap
+    job_data['request_data']['template_id'] = this.props.current_template_id
     job_data['request_data']['movies'] = movies_to_run
     job_data['request_data']['scan_level'] = template['scan_level']
     job_data['request_data']['id'] = this.props.current_template_id
@@ -354,11 +359,13 @@ class InsightsPanel extends React.Component {
     job_data['app'] = 'analyze'
     job_data['operation'] = 'scan_template_threaded'
     let template = this.props.templates[this.props.current_template_id]
+    let template_wrap = {}
+    template_wrap[this.props.current_template_id] = template
     job_data['description'] = 'single template match (template ' + template['name'] + ') '
     job_data['description'] += movie_count.toString() + ' movies '
     job_data['description'] += frameset_count.toString() + ' framesets'
-    job_data['request_data']['template'] = template
-    job_data['request_data']['source_image_url'] = template['anchors'][0]['image']
+    job_data['request_data']['templates'] = template_wrap
+    job_data['request_data']['template_id'] = this.props.current_template_id
     job_data['request_data']['movies'] = movie_build_obj
     job_data['request_data']['scan_level'] = template['scan_level']
     job_data['request_data']['id'] = this.props.current_template_id
@@ -402,12 +409,14 @@ class InsightsPanel extends React.Component {
     job_data['description'] = 'single template, telemetry match in '+ num_movies_to_process + ' movies, '
     job_data['description'] += '('+num_frames+' framesets)  match - threaded'
     let template = this.props.templates[this.props.current_template_id]
+    let template_wrap = {}
+    template_wrap[this.props.current_template_id] = template
     job_data['description'] += ': template '+ template['name']
     if (!template['scale'] === '1_1') {
       job_data['description'] += ' - multi scale (' + template['scale'] + ')'
     }
-    job_data['request_data']['template'] = template
-    job_data['request_data']['source_image_url'] = template['anchors'][0]['image']
+    job_data['request_data']['templates'] = template_wrap
+    job_data['request_data']['template_id'] = [this.props.current_template_id]
     job_data['request_data']['movies'] = movies_to_process
     job_data['request_data']['scan_level'] = template['scan_level']
     job_data['request_data']['id'] = this.props.current_template_id

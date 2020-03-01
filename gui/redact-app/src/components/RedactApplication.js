@@ -996,10 +996,11 @@ class RedactApplication extends React.Component {
         something_changed = true
       }
     }
-    const template = request_data['template']
+    const template_id = request_data['template_id']
+    const template = request_data['templates'][template_id]
 
-    if (!Object.keys(this.state.templates).includes(template['id'])) {
-      deepCopyTemplates[template['id']] = template
+    if (!Object.keys(this.state.templates).includes(template_id)) {
+      deepCopyTemplates[template_id] = template
       something_changed = true
     }
 

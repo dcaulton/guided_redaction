@@ -84,6 +84,15 @@ class ImagePanel extends React.Component {
         after_loaded: () => {this.setMessage('illustration completed')},
         when_failed: () => {this.setMessage('illustration failed')},
       })
+    } else if (job_string === 'template_match_all_templates') {
+      const job_data = this.buildTemplateMatchJobdata({scope: 'all_templates'})
+      this.props.submitJob({
+        job_data: job_data, 
+        after_submit: () => {this.setMessage('template match job was submitted')}, 
+        cancel_after_loading: true, 
+        after_loaded: () => {this.setMessage('template match completed')},
+        when_failed: () => {this.setMessage('template match failed')},
+      })
     } 
   }  
 
@@ -196,23 +205,29 @@ class ImagePanel extends React.Component {
       request_data: {},
     }
     job_data['app'] = 'analyze'
-    job_data['operation'] = 'scan_template'
-    job_data['description'] = 'single template single image match'
-    if (extra_data === 'all') {
-      console.log("gotta implement all templates soon, aborting for now")
-      return
+    let templates_wrap = {}
+    if (extra_data['scope'] === 'all_templates') {
+      job_data['operation'] = 'scan_template_multi'
+      job_data['description'] = 'multiple templates single image match from ImagePanel: '
+      job_data['description'] += 'image ' + this.props.getImageUrl()
+      templates_wrap = this.props.templates
+      const temp_group_id = 'template_group_' + Math.floor(Math.random(10000, 99999)*100000).toString()
+      job_data['request_data']['id'] = temp_group_id
+    } else {
+      job_data['operation'] = 'scan_template'
+      job_data['description'] = 'single template single image match from ImagePanel: '
+      job_data['description'] += 'image ' + this.props.getImageUrl()
+      templates_wrap[extra_data] = this.props.templates[extra_data]
+      job_data['request_data']['id'] = extra_data
+      job_data['request_data']['template_id'] = extra_data
     }
-    let template = this.props.templates[extra_data]
-    job_data['request_data']['template'] = template
-    job_data['request_data']['source_image_url'] = template['anchors'][0]['image']
-    job_data['request_data']['template_id'] = template['id'] // todo: get rid of this soon
-    job_data['request_data']['id'] = template['id']
+    job_data['request_data']['templates'] = templates_wrap
     job_data['request_data']['scan_level'] = 'tier_2'
-    const wrap = {}
+    const movies_wrap = {}
 
     const fake_movie = this.buildCustomOneImageMovie()
-    wrap[this.props.movie_url] = fake_movie
-    job_data['request_data']['movies'] = wrap
+    movies_wrap[this.props.movie_url] = fake_movie
+    job_data['request_data']['movies'] = movies_wrap
 
     return job_data
   }

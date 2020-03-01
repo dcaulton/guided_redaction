@@ -46,6 +46,12 @@ class TopImageControls extends React.Component {
               </button>
             )
           })}
+          <button className='dropdown-item'
+              key='template_all'
+              onClick={() => this.props.submitImageJob('template_match_all_templates')}
+              href='.'>
+            Run All
+          </button>
         </div>
       </div>
     )
