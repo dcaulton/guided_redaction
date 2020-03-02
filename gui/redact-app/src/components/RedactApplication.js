@@ -579,6 +579,11 @@ class RedactApplication extends React.Component {
 
   getFramesetHashesInOrder(framesets=null) {
     if (framesets === null) {
+      if (this.state.movies && this.state.movie_url && Object.keys(this.state.movies).includes(this.state.movie_url)) {
+        if (Object.keys(this.state.movies[this.state.movie_url]).includes('frameset_hashes_in_order')) {
+          return this.state.movies[this.state.movie_url]['frameset_hashes_in_order']
+        }
+      }
       framesets = this.getCurrentFramesets()
     }
     let frames = []
@@ -833,10 +838,13 @@ class RedactApplication extends React.Component {
 
   addMovieAndSetActive(movie_url, movies, theCallback=(()=>{})) {
     this.addToCampaignMovies(movie_url)
+    let deepCopyMovies = movies
     if (movies[movie_url]['frames'].length > 0) {
+      deepCopyMovies = JSON.parse(JSON.stringify(movies))
       const hashes = this.getFramesetHashesInOrder()
       this.setFramesetHash(hashes[0])
-    }
+      deepCopyMovies[movie_url]['frameset_hashes_in_order'] = hashes
+    } 
     this.setState({
       movie_url: movie_url, 
       movies: movies,
