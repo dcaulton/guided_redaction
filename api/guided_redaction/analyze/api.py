@@ -398,7 +398,6 @@ class AnalyzeViewSetTimestamp(viewsets.ViewSet):
         return Response(response_obj)
 
     def get_timestamp_from_blue_screen(self, movie, analyzer):
-        print('abba 01')
         image_url = movie['frames'][0]
         pic_response = requests.get(
           image_url,
@@ -416,7 +415,6 @@ class AnalyzeViewSetTimestamp(viewsets.ViewSet):
             cv2_image,
             [(0, 0), (cv2_image.shape[1], cv2_image.shape[0])]
         )
-        print(recognized_text_areas)
         for rta in recognized_text_areas:
             blue_screen_regex = re.compile('(\d+):(\d+):(\d+) ([A|P])M')
             match = blue_screen_regex.search(rta['text'])

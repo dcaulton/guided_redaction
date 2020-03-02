@@ -981,6 +981,18 @@ class RedactApplication extends React.Component {
     return new_area_to_redact
   }
 
+  getTemplateForAnchor(templates, anchor_id) {
+    for (let i=0; i < Object.keys(templates).length; i++) {
+      const template_id = Object.keys(templates)[i]
+      const template = templates[template_id]
+      for (let j=0; j < template['anchors'].length; j++) {
+        if (template['anchors'][j].id === anchor_id) {
+          return templates[template_id]
+        }
+      }
+    }
+  }
+
   loadScanTemplateResults(job, when_done=(()=>{})) {
     const response_data = JSON.parse(job.response_data)
     const request_data = JSON.parse(job.request_data)
@@ -996,12 +1008,13 @@ class RedactApplication extends React.Component {
         something_changed = true
       }
     }
-    const template_id = request_data['template_id']
-    const template = request_data['templates'][template_id]
-
-    if (!Object.keys(this.state.templates).includes(template_id)) {
-      deepCopyTemplates[template_id] = template
-      something_changed = true
+    let template_id = ''
+    for (let i=0; i < Object.keys(request_data['templates']).length; i++) {
+      template_id = Object.keys(request_data['templates'])[i]
+      if (!Object.keys(this.state.templates).includes(template_id)) {
+        deepCopyTemplates[template_id] = request_data['templates'][template_id]
+        something_changed = true
+      }
     }
 
     if (request_data['scan_level'] === 'tier_1') {
@@ -1012,7 +1025,7 @@ class RedactApplication extends React.Component {
       this.setGlobalStateVar('tier_1_matches', deepCopyTier1Matches)
       if (something_changed) {
         this.setGlobalStateVar('templates', deepCopyTemplates)
-        this.setGlobalStateVar('current_template_id', request_data['id'])
+        this.setGlobalStateVar('current_template_id', template_id)
         this.setGlobalStateVar('movies', deepCopyMovies)
         this.setGlobalStateVar('movie_url', movie_url)
       }
@@ -1027,6 +1040,7 @@ class RedactApplication extends React.Component {
           const anchor_id = Object.keys(response_data['movies'][movie_url]['framesets'][frameset_hash])[k]
           const anchor_found_coords = response_data['movies'][movie_url]['framesets'][frameset_hash][anchor_id]['location']
           const anchor_found_scale = response_data['movies'][movie_url]['framesets'][frameset_hash][anchor_id]['scale']
+          const template = this.getTemplateForAnchor(request_data['templates'], anchor_id) 
           const mask_zones = this.getMaskZonesForAnchor(template, anchor_id)
           for (let m=0; m < mask_zones.length; m++) {
             const mask_zone = mask_zones[m]
@@ -1360,6 +1374,7 @@ class RedactApplication extends React.Component {
     .then((responseJson) => {
 			const job = responseJson['job']
 			if ((job.app === 'analyze' && job.operation === 'scan_template')
+			   || (job.app === 'analyze' && job.operation === 'scan_template_multi')
 			   || (job.app === 'analyze' && job.operation === 'scan_template_threaded')) {
         this.loadScanTemplateResults(job, when_done)
 			} else if (job.app === 'analyze' && job.operation === 'filter') {

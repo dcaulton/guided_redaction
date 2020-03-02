@@ -169,6 +169,8 @@ class JobsViewSet(viewsets.ViewSet):
             analyze_tasks.scan_template.delay(job_uuid)
         if job.app == 'analyze' and job.operation == 'scan_template_threaded':
             analyze_tasks.scan_template_threaded.delay(job_uuid)
+        if job.app == 'analyze' and job.operation == 'scan_template_multi':
+            analyze_tasks.scan_template_multi.delay(job_uuid)
         if job.app == 'analyze' and job.operation == 'filter':
             analyze_tasks.filter.delay(job_uuid)
         if job.app == 'analyze' and job.operation == 'scan_ocr_image':

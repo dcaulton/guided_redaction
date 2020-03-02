@@ -12,6 +12,30 @@ from guided_redaction.analyze.api import (
 )
 
 
+def evaluate_children(operation, child_operation, children):
+    all_children = 0
+    completed_children = 0
+    failed_children = 0
+    for child in children:
+        if child.operation == child_operation:
+            all_children += 1
+            if child.status == 'success':
+                completed_children += 1
+            elif child.status == 'failed':
+                failed_children += 1
+    print('CHILDREN FOR {}: {} COMPLETE: {} FAILED: {}'.format(
+        operation, all_children, completed_children, failed_children
+    ))
+    if all_children == 0:
+        return ('build_child_tasks', 0)
+    elif all_children == completed_children:
+        return ('wrap_up', 1)
+    elif all_children > 0:
+        complete_percent = completed_children/all_children
+        return ('update_percent_complete', complete_percent)
+    elif failed_children > 0:
+        return ('abort', 0)
+
 @shared_task
 def scan_template(job_uuid):
     if Job.objects.filter(pk=job_uuid).exists():
@@ -48,6 +72,8 @@ def scan_template(job_uuid):
             parent_job = Job.objects.get(pk=job.parent_id)
             if parent_job.app == 'analyze' and parent_job.operation == 'scan_template_threaded':
                 scan_template_threaded.delay(parent_job.id)
+            if parent_job.app == 'analyze' and parent_job.operation == 'scan_template_multi':
+                scan_template_multi.delay(parent_job.id)
     else:
         print('calling scan_template on nonexistent job: {}'.format(job_uuid))
 
@@ -98,7 +124,7 @@ def get_timestamp_threaded(job_uuid):
         if job.status in ['success', 'failed']:
             return
         children = Job.objects.filter(parent=job)
-        (next_step, percent_done) = evaluate_get_timestamp_threaded_children(children)
+        (next_step, percent_done) = evaluate_children('GET TIMESTAMP THREADED', 'get_timestamp', children)
         print('next step is {}, percent done {}'.format(next_step, percent_done))
         if next_step == 'build_child_tasks':
           build_and_dispatch_get_timestamp_threaded_children(job)
@@ -110,31 +136,6 @@ def get_timestamp_threaded(job_uuid):
         elif next_step == 'abort':
           job.status = 'failed'
           job.save()
-
-def evaluate_get_timestamp_threaded_children(children):
-    children_count = 0
-    completed_children_count = 0
-    failed_children_count = 0
-    for child in children:
-        if child.operation == 'get_timestamp':
-            children_count += 1
-            if child.status == 'success':
-                completed_children_count += 1
-            elif child.status == 'failed':
-                failed_children_count += 1
-    def print_totals():
-        print('GET TIMESTAMP CHILDREN: {} COMPLETE: {} FAILED: {}'.format(
-            children_count, completed_children_count, failed_children_count))
-    print_totals()
-    if children_count == 0:
-        return ('build_child_tasks', 0)
-    elif children_count == completed_children_count:
-        return ('wrap_up', 1)
-    elif children_count > 0:
-        complete_percent = completed_children_count / children_count
-        return ('update_percent_complete', complete_percent)
-    elif failed_children_count > 0:
-        return ('abort', 0)
 
 def build_and_dispatch_get_timestamp_threaded_children(parent_job):
     parent_job.status = 'running'
@@ -182,6 +183,90 @@ def wrap_up_get_timestamp_threaded(job, children):
 
 
 @shared_task
+def scan_template_multi(job_uuid):
+    # MULTI TEMPLATE MULTI MOVIE
+    if Job.objects.filter(pk=job_uuid).exists():
+        job = Job.objects.get(pk=job_uuid)
+        if job.status in ['success', 'failed']:
+            return
+        children = Job.objects.filter(parent=job)
+        (next_step, percent_done) = evaluate_children('SCAN TEMPLATE MULTI', 'scan_template', children)
+        print('next step is {}, percent done {}'.format(next_step, percent_done))
+        if next_step == 'build_child_tasks':
+          build_and_dispatch_scan_template_multi_children(job)
+        elif next_step == 'update_percent_complete':
+          job.elapsed_time = percent_done
+          job.save()
+        elif next_step == 'wrap_up':
+          wrap_up_scan_template_multi(job, children)
+        elif next_step == 'abort':
+          job.status = 'failed'
+          job.save()
+
+def build_and_dispatch_scan_template_multi_children(parent_job):
+    parent_job.status = 'running'
+    parent_job.save()
+    request_data = json.loads(parent_job.request_data)
+    movies = request_data['movies']
+    total_index = 0
+    for template_id in request_data['templates']:
+        template = request_data['templates'][template_id]
+        build_templates = {}
+        build_templates[template_id] = template
+        for movie_url in request_data['movies']:
+            total_index += 1
+            build_movies = {}
+            build_movies[movie_url] = movies[movie_url]
+            build_request_data = json.dumps({
+                'templates': build_templates,
+                'template_id': template_id,
+                'movies': build_movies,
+            })
+            job = Job(
+                request_data=build_request_data,
+                status='created',
+                description='scan_template {} for movie {}'.format(template['name'], movie_url),
+                app='analyze',
+                operation='scan_template',
+                sequence=0,
+                elapsed_time=0.0,
+                parent=parent_job,
+            )
+            job.save()
+            print('build_and_dispatch_scan_template_multi_children: dispatching job for movie {}'.format(movie_url))
+            scan_template.delay(job.id)
+            # intersperse these evenly in the job stack so we get regular updates
+            if total_index % 5 == 0:
+                scan_template_multi.delay(parent_job.id)
+    scan_template_multi.delay(parent_job.id)
+
+def wrap_up_scan_template_multi(job, children):
+    aggregate_response_data = {
+        'movies': {},
+    }
+    for child in children:
+        child_response_data = json.loads(child.response_data)
+        if not child_response_data:
+            continue
+        if len(child_response_data['movies'].keys()) > 0:
+            movie_url = list(child_response_data['movies'].keys())[0]
+            if movie_url not in aggregate_response_data['movies']:
+                aggregate_response_data['movies'][movie_url] = {}
+                aggregate_response_data['movies'][movie_url]['framesets'] = {}
+            for frameset_hash in child_response_data['movies'][movie_url]['framesets']:
+                if frameset_hash not in aggregate_response_data['movies'][movie_url]['framesets']:
+                    aggregate_response_data['movies'][movie_url]['framesets'][frameset_hash] = {}
+                for anchor_id in child_response_data['movies'][movie_url]['framesets'][frameset_hash]:
+                    aggregate_response_data['movies'][movie_url]['framesets'][frameset_hash][anchor_id] = \
+                        child_response_data['movies'][movie_url]['framesets'][frameset_hash][anchor_id]
+
+    print('wrap_up_scan_template_multi: wrapping up parent job')
+    job.status = 'success'
+    job.response_data = json.dumps(aggregate_response_data)
+    job.elapsed_time = 1
+    job.save()
+
+@shared_task
 def scan_template_threaded(job_uuid):
     # ASSUMES WE ONLY HAVE ONE TEMPLATE
     # DOESNT EXPECT TEMPLATE ID, JUST A HASH WITH ONE TEMPLATE
@@ -190,7 +275,7 @@ def scan_template_threaded(job_uuid):
         if job.status in ['success', 'failed']:
             return
         children = Job.objects.filter(parent=job)
-        (next_step, percent_done) = evaluate_scan_template_threaded_children(children)
+        (next_step, percent_done) = evaluate_children('SCAN TEMPLATE THREADED', 'scan_template', children)
         print('next step is {}, percent done {}'.format(next_step, percent_done))
         if next_step == 'build_child_tasks':
           build_and_dispatch_scan_template_threaded_children(job)
@@ -202,31 +287,6 @@ def scan_template_threaded(job_uuid):
         elif next_step == 'abort':
           job.status = 'failed'
           job.save()
-
-def evaluate_scan_template_threaded_children(children):
-    scan_template_children = 0
-    scan_template_completed_children = 0
-    scan_template_failed_children = 0
-    for child in children:
-        if child.operation == 'scan_template':
-            scan_template_children += 1
-            if child.status == 'success':
-                scan_template_completed_children += 1
-            elif child.status == 'failed':
-                scan_template_failed_children += 1
-    def print_totals():
-        print('SCAN TEMPLATE CHILDREN: {} COMPLETE: {} FAILED: {}'.format(
-            scan_template_children, scan_template_completed_children, scan_template_failed_children))
-    print_totals()
-    if scan_template_children == 0:
-        return ('build_child_tasks', 0)
-    elif scan_template_children == scan_template_completed_children:
-        return ('wrap_up', 1)
-    elif scan_template_children > 0:
-        complete_percent = scan_template_completed_children/scan_template_children
-        return ('update_percent_complete', complete_percent)
-    elif split_template_failed_children > 0:
-        return ('abort', 0)
 
 def build_and_dispatch_scan_template_threaded_children(parent_job):
     parent_job.status = 'running'
@@ -324,7 +384,7 @@ def scan_ocr_movie(job_uuid):
         if job.status in ['success', 'failed']:
             return
         children = Job.objects.filter(parent=job)
-        (next_step, percent_done) = evaluate_scan_ocr_movie_children(children)
+        (next_step, percent_done) = evaluate_children('SCAN OCR MOVIE', 'scan_ocr_image', children)
         print('next step is {}, percent done {}'.format(next_step, percent_done))
         if next_step == 'build_child_tasks':
           build_and_dispatch_scan_ocr_movie_children(job)
@@ -382,30 +442,6 @@ def build_and_dispatch_scan_ocr_movie_children(parent_job):
                 scan_ocr_movie.delay(parent_job.id)
         scan_ocr_movie.delay(parent_job.id)
     scan_ocr_movie.delay(parent_job.id)
-
-def evaluate_scan_ocr_movie_children(child_jobs):
-    children = 0
-    completed_children = 0
-    failed_children = 0
-    for child in child_jobs:
-        children += 1
-        if child.status == 'success':
-            completed_children += 1
-        elif child.status == 'failed':
-            failed_children += 1
-    def print_totals():
-        print('SCAN OCR CHILDREN: {} COMPLETE: {} FAILED: {}'.format(
-            children, completed_children, failed_children))
-    print_totals()
-    if children == 0:
-        return ('build_child_tasks', 0)
-    elif children == completed_children:
-        return ('wrap_up', 1)
-    elif children > 0:
-        complete_percent = completed_children/children
-        return ('update_percent_complete', complete_percent)
-    elif failed_children > 0:
-        return ('abort', 0)
 
 def wrap_up_scan_ocr_movie(parent_job, children):
     parent_request_data = json.loads(parent_job.request_data)

@@ -40,21 +40,29 @@ class MoviePanel extends React.Component {
       request_data: {},
     }
     job_data['app'] = 'analyze'
-    job_data['operation'] = 'scan_template'
-    job_data['description'] = 'single template single movie match'
-    if (extra_data === 'all') {
-      console.log("gotta implement all templates soon, aborting for now")
-      return
+    let templates_wrap = {}
+    if (extra_data === 'all_templates') {
+      job_data['operation'] = 'scan_template_multi'
+      job_data['description'] = 'multi template single movie match from MoviePanel:'
+      job_data['description'] += ' movie ' + this.props.movie_url
+      templates_wrap = this.props.templates
+      const temp_group_id = 'template_group_' + Math.floor(Math.random(10000, 99999)*100000).toString()
+      job_data['request_data']['id'] = temp_group_id
+    } else {
+      let template = this.props.templates[extra_data]
+      job_data['operation'] = 'scan_template'
+      job_data['description'] = 'single template single movie match from MoviePanel:'
+      job_data['description'] += ' template ' + template['name']
+      job_data['description'] += ' movie ' + this.props.movie_url
+      templates_wrap[template['id']] = template
+      job_data['request_data']['template_id'] = template['id']
+      job_data['request_data']['id'] = template['id']
     }
-    let template = this.props.templates[extra_data]
-    let template_wrap = {}
-    template_wrap[template['id']] = template
-    job_data['request_data']['templates'] = template_wrap
-    job_data['request_data']['id'] = template['id']
+    job_data['request_data']['templates'] = templates_wrap
     job_data['request_data']['scan_level'] = 'tier_2'
-    const wrap = {}                                                                                                   
-    wrap[this.props.movie_url] = this.props.movies[this.props.movie_url]                                              
-    job_data['request_data']['movies'] = wrap                                                                  
+    let movies_wrap = {}
+    movies_wrap[this.props.movie_url] = this.props.movies[this.props.movie_url]
+    job_data['request_data']['movies'] = movies_wrap
     return job_data
   }
 
@@ -185,6 +193,15 @@ class MoviePanel extends React.Component {
       })
     } else if (job_string === 'template_match') {
       const job_data = this.buildTemplateMatchJobdata(extra_data)
+      this.props.submitJob({
+        job_data: job_data, 
+        after_submit: () => {this.setMessage('template match job was submitted')}, 
+        cancel_after_loading: true, 
+        after_loaded: () => {this.setMessage('template match completed')}, 
+        when_failed: () => {this.setMessage('template match job failed')},
+      })
+    } else if (job_string === 'template_match_all_templates') {
+      const job_data = this.buildTemplateMatchJobdata('all_templates')
       this.props.submitJob({
         job_data: job_data, 
         after_submit: () => {this.setMessage('template match job was submitted')}, 
@@ -701,6 +718,12 @@ class MoviePanelHeader extends React.Component {
             </button>
           )
         })}
+          <button className='dropdown-item ml-2'
+              key='template_match_all_templates_key'
+              onClick={() => this.props.submitMovieJob('template_match_all_templates')}
+              href='.'>
+            Run all templates
+          </button>
         </div>
       </div>
     )
