@@ -454,6 +454,7 @@ def wrap_up_scan_ocr_movie(parent_job, children):
         child_request_data = json.loads(child.request_data)
         frameset_hash = child_request_data['frameset_hash']
         movie_url = child_request_data['movie_url']
+        print('--------looking at ocr results for {}'.format(movie_url.split('/')[-1]))
         if ('movies' not in aggregate_response_data):
             aggregate_response_data['movies'] = {}
         areas_to_redact = child_response_data['recognized_text_areas']
@@ -479,13 +480,19 @@ def wrap_up_scan_ocr_movie(parent_job, children):
 def find_relevant_areas_from_response(match_strings, match_percent, areas_to_redact):
     relevant_areas = []
     for area in areas_to_redact:
-        subject_string_was_added = False
         subject_string = area['text']
-        for match_string in match_strings:
-            if subject_string_was_added: 
-                continue
-            partial_ratio = fuzz.partial_ratio(match_string, subject_string)
-            if partial_ratio >= match_percent:
-                subject_string_was_added = True
-                relevant_areas.append(area)
+        for pattern in match_strings:
+            pattern_length = len(pattern)
+            subject_string_length = len(subject_string)
+            num_compares = subject_string_length - pattern_length + 1
+            if pattern_length > subject_string_length:
+                ratio = fuzz.ratio(pattern, subject_string)
+                if ratio >= match_percent:
+                    relevant_areas.append(area)
+                    continue
+            for i in range(num_compares):
+                ratio = fuzz.ratio(pattern, subject_string[i:i+pattern_length])
+                if ratio >= match_percent:
+                    relevant_areas.append(area)
+                    continue
     return relevant_areas
