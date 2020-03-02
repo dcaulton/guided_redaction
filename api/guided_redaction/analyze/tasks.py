@@ -466,7 +466,7 @@ def wrap_up_scan_ocr_movie(parent_job, children):
             )
             if len(areas_to_redact) == 0:
                 continue
-        if (movie_url not in aggregate_response_data):
+        if (movie_url not in aggregate_response_data['movies']):
             aggregate_response_data['movies'][movie_url] = {}
             aggregate_response_data['movies'][movie_url]['framesets'] = {}
         aggregate_response_data['movies'][movie_url]['framesets'][frameset_hash] = {}
