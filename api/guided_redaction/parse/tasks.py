@@ -7,6 +7,7 @@ from guided_redaction.jobs.models import Job
 from guided_redaction.parse.api import (
         ParseViewSetZipMovie,
         ParseViewSetSplitMovie,
+        ParseViewSetCopyMovie,
         ParseViewSetHashFrames
 )
 
@@ -259,4 +260,21 @@ def make_and_dispatch_split_tasks(parent_job):
     print('make and dispatch split tasks, dispatching job '+str(job.id))
     split_movie.delay(job.id)
 
-
+@shared_task
+def copy_movie(job_uuid):
+    if not Job.objects.filter(pk=job_uuid).exists():
+        print('calling copy_movie on nonexistent job: '+ job_uuid) 
+        return
+    job = Job.objects.get(pk=job_uuid)
+    if job:
+        job.status = 'running'
+        job.save()
+        request_data = json.loads(job.request_data)
+        worker = ParseViewSetCopyMovie()
+        response = worker.process_create_request(request_data)
+        if not Job.objects.filter(pk=job_uuid).exists():
+            return
+        job = Job.objects.get(pk=job_uuid)
+        job.response_data = json.dumps(response.data)
+        job.status = 'success'
+        job.save()

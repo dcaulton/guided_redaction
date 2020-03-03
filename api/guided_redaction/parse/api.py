@@ -5,7 +5,6 @@ import simplejson as json
 import base64
 from azure.storage.blob import BlobClient, ContainerClient
 from django.http import HttpResponse
-#from rest_framework import viewsets
 from base import viewsets
 from rest_framework.response import Response
 import cv2
@@ -71,6 +70,67 @@ class ParseViewSetGetImagesForUuid(viewsets.ViewSet):
 
         return Response({"images": the_files})
     
+
+class ParseViewSetCopyMovie(viewsets.ViewSet):
+    def create(self, request):
+        request_data = request.data
+        return self.process_create_request(request_data)
+
+    def process_create_request(self, request_data):
+        if not request_data.get("movies"):
+            return self.error("movies is required")
+
+        the_connection_string = ""
+        if settings.REDACT_IMAGE_STORAGE == "azure_blob":
+            the_base_url = settings.REDACT_AZURE_BASE_URL
+            the_connection_string = settings.REDACT_AZURE_BLOB_CONNECTION_STRING
+        else:
+            the_base_url = settings.REDACT_FILE_BASE_URL
+
+        fw = FileWriter(
+            working_dir=settings.REDACT_FILE_STORAGE_DIR,
+            base_url=the_base_url,
+            connection_string=the_connection_string,
+            image_storage=settings.REDACT_IMAGE_STORAGE,
+            image_request_verify_headers=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
+        )
+
+        movie_url = list(request_data['movies'].keys())[0]
+        build_movie = request_data['movies'][movie_url]
+        new_uuid = str(uuid.uuid4())
+        fw.create_unique_directory(new_uuid)
+        
+        new_frames = []
+        for frame_url in build_movie['frames']:
+            new_url = fw.copy_file(frame_url, new_uuid)
+            new_frames.append(new_url)
+        build_movie['frames'] = new_frames
+
+        new_framesets = {}
+        for frameset_hash in build_movie['framesets']:
+            new_images = []
+            frameset = build_movie['framesets'][frameset_hash]
+            new_framesets[frameset_hash] = frameset
+            for image_url in frameset['images']:
+                (x_part, file_part) = os.path.split(image_url)
+                (y_part, uuid_part) = os.path.split(x_part)
+                new_url = '/'.join([the_base_url, new_uuid, file_part])
+                new_images.append(new_url)
+            new_framesets[frameset_hash]['images'] = new_images
+            if 'redacted_image' in frameset:
+                new_url = fw.copy_file(frameset['redacted_image'], new_uuid)
+                new_framesets[frameset_hash]['redacted_image'] = new_url
+            if 'illustrated_image' in frameset:
+                new_url = fw.copy_file(frameset['illustrated_image'], new_uuid)
+                new_framesets[frameset_hash]['illustrated_image'] = new_url
+        build_movie['framesets'] = new_framesets
+        build_movie['nickname'] += ' copy'
+        new_movie_url = fw.copy_file(movie_url, new_uuid)
+        return_movies = {}
+        return_movies[new_movie_url] = build_movie
+
+        return Response({'movies': return_movies})
+
 
 class ParseViewSetSplitMovie(viewsets.ViewSet):
     def get_movie_frame_dimensions(self, frames):

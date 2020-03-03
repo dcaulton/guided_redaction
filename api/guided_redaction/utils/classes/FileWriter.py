@@ -3,6 +3,7 @@ import cv2
 import numpy as np
 import requests
 import os
+import shutil
 
 class FileWriter():
 
@@ -60,6 +61,16 @@ class FileWriter():
 
         return new_url
   
+    def copy_file(self, source_url, new_uuid):
+        (x_part, file_part) = os.path.split(source_url)
+        (y_part, uuid_part) = os.path.split(x_part)
+        old_path = os.path.join(self.working_dir, uuid_part, file_part)
+        new_path = os.path.join(self.working_dir, new_uuid, file_part)
+        new_url = '/'.join([self.base_url, new_uuid, file_part])
+        shutil.copy(old_path, new_path)
+
+        return new_url
+
     def write_video_to_url(self, video_source_file, file_fullpath):
         (x_part, file_part) = os.path.split(file_fullpath)
         (y_part, uuid_part) = os.path.split(x_part)
