@@ -154,6 +154,19 @@ class MoviePanel extends React.Component {
     return job_data
   }
 
+  buildCopyJobData(extra_data) {
+    let job_data = {
+      request_data: {},
+    }
+    job_data['app'] = 'parse'
+    job_data['operation'] = 'copy_movie'
+    job_data['description'] = 'copy movie from MoviePanel: movie ' + this.props.movie_url
+    job_data['request_data'] = {}
+    job_data['request_data']['movies'] = {}
+    job_data['request_data']['movies'][this.props.movie_url] = this.props.movies[this.props.movie_url]
+    return job_data
+  }
+
   submitMovieJob(job_string, extra_data = '') {
     if (job_string === 'split_and_hash_video') {
       const job_data = this.buildSplitAndHashJobData(extra_data)
@@ -181,6 +194,15 @@ class MoviePanel extends React.Component {
         cancel_after_loading: true, 
         after_loaded: () => {this.setMessage('movie hash completed')}, 
         when_failed: () => {this.setMessage('movie hash failed')},
+      })
+    } else if (job_string === 'copy_movie') {
+      const job_data = this.buildCopyJobData(extra_data)
+      this.props.submitJob({
+        job_data:job_data, 
+        after_submit: () => {this.setMessage('movie copy job was submitted')}, 
+        cancel_after_loading: true, 
+        after_loaded: () => {this.setMessage('movie copy completed')}, 
+        when_failed: () => {this.setMessage('movie copy failed')},
       })
     } else if (job_string === 'redact_framesets') {
       const job_data = this.buildRedactFramesetsJobData(extra_data)
@@ -562,6 +584,17 @@ class MoviePanelAdvancedControls extends React.Component {
     )
   }
 
+  buildCopyButton() {
+    return (
+      <button className='btn btn-primary'
+          key='5279'
+          onClick={() => this.props.submitMovieJob('copy_movie')}
+          href='.'>
+        Copy Movie
+      </button>
+    )
+  }
+
   render() {
     if (this.props.movie_url === '') {
       return ''
@@ -576,6 +609,7 @@ class MoviePanelAdvancedControls extends React.Component {
     let templates_string = this.buildTemplatesString()
     const split_button = this.buildSplitButton()
     const hash_button = this.buildHashButton()
+    const copy_button = this.buildCopyButton()
     const redacted_movie_dl_link = this.buildRedactedMovieDownloadLink()
 
     const fd_dropdown = this.buildFramesetDiscriminatorDropdown()
@@ -680,6 +714,9 @@ class MoviePanelAdvancedControls extends React.Component {
                 </div>
                 <div className='d-inline ml-2'>
                   {hash_button}
+                </div>
+                <div className='d-inline ml-2'>
+                  {copy_button}
                 </div>
               </div>
 

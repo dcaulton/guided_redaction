@@ -1116,6 +1116,20 @@ class RedactApplication extends React.Component {
     )
   }
 
+  loadCopyResults(job, when_done=(()=>{})) {
+    const response_data = JSON.parse(job.response_data)
+    let deepCopyMovies = JSON.parse(JSON.stringify(this.state.movies))
+    const movie_url = Object.keys(response_data['movies'])[0]
+    if (!Object.keys(this.state.movies).includes(movie_url)) {
+      deepCopyMovies[movie_url] = response_data['movies'][movie_url]
+    }
+    this.addMovieAndSetActive(
+      movie_url,
+      deepCopyMovies,
+      when_done,
+    )
+  }
+
   async loadRedactResults(job, when_done=(()=>{})) {
     const response_data = JSON.parse(job.response_data)
     const request_data = JSON.parse(job.request_data)
@@ -1402,6 +1416,8 @@ class RedactApplication extends React.Component {
         this.loadSplitResults(job, when_done)
 			} else if (job.app === 'parse' && job.operation === 'hash_movie') {
         this.loadHashResults(job, when_done)
+			} else if (job.app === 'parse' && job.operation === 'copy_movie') {
+        this.loadCopyResults(job, when_done)
 			} else if (job.app === 'redact' && job.operation === 'redact') {
         this.loadRedactResults(job, when_done)
 			} else if (job.app === 'redact' && job.operation === 'redact_single') {
