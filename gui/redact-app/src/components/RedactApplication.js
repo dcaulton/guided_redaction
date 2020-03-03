@@ -1147,7 +1147,7 @@ class RedactApplication extends React.Component {
     let deepCopyMovies = JSON.parse(JSON.stringify(this.state.movies))
     let new_campaign_movies = []
     let something_changed = false
-    const movie_url = ''
+    let movie_url = ''
     for (let i=0; i < Object.keys(response_data['movies']).length; i++) {
       movie_url = Object.keys(response_data['movies'])[i]
       const movie_parts = movie_url.split('/')
