@@ -508,7 +508,6 @@ class ParseViewSetRebaseMovies(viewsets.ViewSet):
                 last_frame_filename
             ])
             if current_uuid and current_uuid != old_uuid:
-                print('FOUND A HIT, OLD DIR {} NEW DIR {}'.format(old_uuid, current_uuid))
                 new_frames = []
                 for frame in movie['frames']:
                     new_frames.append(frame.replace(old_uuid, current_uuid))
