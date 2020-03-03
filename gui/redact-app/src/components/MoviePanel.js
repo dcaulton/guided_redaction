@@ -10,6 +10,7 @@ class MoviePanel extends React.Component {
       zoom_image_url: '',
       message: '.',
       uploadMove: false,
+      movie_resolution_new: '',
     }
     this.getNameFor=this.getNameFor.bind(this)
     this.redactFramesetCallback=this.redactFramesetCallback.bind(this)
@@ -19,6 +20,7 @@ class MoviePanel extends React.Component {
     this.setMessage=this.setMessage.bind(this)
     this.submitMovieJob=this.submitMovieJob.bind(this)
     this.showMovieUploadTarget=this.showMovieUploadTarget.bind(this)
+    this.changeMovieResolutionNew=this.changeMovieResolutionNew.bind(this)
   }
 
   componentDidMount() {
@@ -32,6 +34,12 @@ class MoviePanel extends React.Component {
     const value = !this.state.uploadMovie
     this.setState({
       uploadMovie: value,
+    })
+  }
+
+  changeMovieResolutionNew(value) {
+    this.setState({
+      movie_resolution_new: value,
     })
   }
 
@@ -167,6 +175,20 @@ class MoviePanel extends React.Component {
     return job_data
   }
 
+  buildChangeResolutionJobData(extra_data) {
+    let job_data = {
+      request_data: {},
+    }
+    job_data['app'] = 'parse'
+    job_data['operation'] = 'change_movie_resolution'
+    job_data['description'] = 'change movie resolution from MoviePanel: movie ' + this.props.movie_url
+    job_data['request_data'] = {}
+    job_data['request_data']['movies'] = {}
+    job_data['request_data']['movies'][this.props.movie_url] = this.props.movies[this.props.movie_url]
+    job_data['request_data']['resolution'] = this.state.movie_resolution_new
+    return job_data
+  }
+
   submitMovieJob(job_string, extra_data = '') {
     if (job_string === 'split_and_hash_video') {
       const job_data = this.buildSplitAndHashJobData(extra_data)
@@ -203,6 +225,19 @@ class MoviePanel extends React.Component {
         cancel_after_loading: true, 
         after_loaded: () => {this.setMessage('movie copy completed')}, 
         when_failed: () => {this.setMessage('movie copy failed')},
+      })
+    } else if (job_string === 'change_movie_resolution') {
+      if (!this.state.movie_resolution_new) {
+        this.setMessage('no resolution specified, please specify one first')
+        return
+      }
+      const job_data = this.buildChangeResolutionJobData(extra_data)
+      this.props.submitJob({
+        job_data:job_data, 
+        after_submit: () => {this.setMessage('movie change resolution was submitted')}, 
+        cancel_after_loading: true, 
+        after_loaded: () => {this.setMessage('movie change resolution completed')}, 
+        when_failed: () => {this.setMessage('movie change resolution failed')},
       })
     } else if (job_string === 'redact_framesets') {
       const job_data = this.buildRedactFramesetsJobData(extra_data)
@@ -469,6 +504,8 @@ class MoviePanel extends React.Component {
             submitMovieJob={this.submitMovieJob}
             mask_method={this.props.mask_method}
             frameset_discriminator={this.props.frameset_discriminator}
+            changeMovieResolutionNew={this.changeMovieResolutionNew}
+            movie_resolution_new={this.state.movie_resolution_new}
           />
 
         </div>
@@ -595,6 +632,37 @@ class MoviePanelAdvancedControls extends React.Component {
     )
   }
 
+  buildChangeResolutionButton() {
+    return (
+      <div>
+        <div className='d-inline'>
+          Change Resolution
+        </div>
+
+        <div className='d-inline ml-2'>
+          <select
+              name='movie_resolution'
+              value={this.props.movie_resolution_new}
+              onChange={(event) => this.props.changeMovieResolutionNew(event.target.value)}
+          >
+            <option value=''></option>
+            <option value='1920x1080'>1920x1080</option>
+            <option value='1600x900'>1600x900</option>
+          </select>
+        </div>
+
+        <div className='d-inline ml-2'>
+          <button className='btn btn-primary'
+              key='4294'
+              onClick={() => this.props.submitMovieJob('change_movie_resolution')}
+              href='.'>
+            Go
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   render() {
     if (this.props.movie_url === '') {
       return ''
@@ -610,6 +678,7 @@ class MoviePanelAdvancedControls extends React.Component {
     const split_button = this.buildSplitButton()
     const hash_button = this.buildHashButton()
     const copy_button = this.buildCopyButton()
+    const change_button = this.buildChangeResolutionButton()
     const redacted_movie_dl_link = this.buildRedactedMovieDownloadLink()
 
     const fd_dropdown = this.buildFramesetDiscriminatorDropdown()
@@ -720,6 +789,9 @@ class MoviePanelAdvancedControls extends React.Component {
                 </div>
               </div>
 
+              <div className='mt-2 ml-2'>
+                {change_button}
+              </div>
             </div>
           </div>
         </div>
