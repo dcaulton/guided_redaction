@@ -470,3 +470,66 @@ class ParseViewSetCropImage(viewsets.ViewSet):
             })
         else:
             return self.error('could not read image', status_code=422)
+
+class ParseViewSetRebaseMovies(viewsets.ViewSet):
+    def create(self, request):
+        request_data = request.data
+        return self.process_create_request(request_data)
+
+    def process_create_request(self, request_data):
+        if not request_data.get("movies"):
+            return self.error("movies is required")
+        movies_in = request_data.get('movies')
+        build_movies = {}
+
+        the_connection_string = ""
+        if settings.REDACT_IMAGE_STORAGE == "azure_blob":
+            the_base_url = settings.REDACT_AZURE_BASE_URL
+            the_connection_string = settings.REDACT_AZURE_BLOB_CONNECTION_STRING
+        else:
+            the_base_url = settings.REDACT_FILE_BASE_URL
+        fw = FileWriter(
+            working_dir=settings.REDACT_FILE_STORAGE_DIR,
+            base_url=the_base_url,
+            connection_string=the_connection_string,
+            image_storage=settings.REDACT_IMAGE_STORAGE,
+            image_request_verify_headers=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
+        )
+
+        for movie_url in movies_in:
+            movie = movies_in[movie_url]
+            first_frame_filename = movie['frames'][0].split('/')[-1]
+            last_frame_filename = movie['frames'][-1].split('/')[-1]
+            movie_filename = movie_url.split('/')[-1]
+            old_uuid = movie_url.split('/')[-2]
+            current_uuid = fw.find_dir_with_files([
+                movie_filename,
+                first_frame_filename,
+                last_frame_filename
+            ])
+            if current_uuid and current_uuid != old_uuid:
+                print('FOUND A HIT, OLD DIR {} NEW DIR {}'.format(old_uuid, current_uuid))
+                new_frames = []
+                for frame in movie['frames']:
+                    new_frames.append(frame.replace(old_uuid, current_uuid))
+                movie['frames'] = new_frames
+                new_framesets = {}
+                for frameset_hash in movie['framesets']:
+                    frameset = movie['framesets'][frameset_hash]
+                    new_frameset_images = []
+                    for image in frameset['images']:
+                        new_frameset_images.append(image.replace(old_uuid, current_uuid))
+                    frameset['images'] = new_frameset_images
+                    if 'redacted_image' in frameset:
+                        frameset['redacted_image'] = frameset['redacted_image'].replace(old_uuid, current_uuid)
+                    if 'illustrated_image' in frameset:
+                        frameset['illustrated_image'] = frameset['illustrated_image'].replace(old_uuid, current_uuid)
+                    new_framesets[frameset_hash] = frameset
+                movie['framesets'] = new_framesets
+                new_movie_url = movie_url.replace(old_uuid, current_uuid)
+                build_movies[new_movie_url] = movie
+
+        return Response({
+            "movies": build_movies,
+        })
+

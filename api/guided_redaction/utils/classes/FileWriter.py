@@ -167,3 +167,20 @@ class FileWriter():
             new_url = os.path.join(self.base_url, blob_name)
 
         return output_url
+
+    def find_dir_with_files(self, filenames_in):
+        for (dirpath, dirnames, filenames) in os.walk(self.working_dir):
+            if dirpath == self.working_dir:
+                continue
+            files_found = 0
+            for fn in filenames_in:
+                if fn in filenames:
+                    files_found += 1
+            if files_found == len(filenames_in):
+                the_uuid = os.path.split(dirpath)[-1]
+                return the_uuid
+
+
+
+
+

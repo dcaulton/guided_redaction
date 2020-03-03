@@ -1154,15 +1154,13 @@ class RedactApplication extends React.Component {
       const movie_name = movie_parts[movie_parts.length-1]
       const movie = response_data['movies'][movie_url]
 
-      for (let j=0; j < Object.keys(this.state.campaign_movies).length; j++) {
-        const campaign_movie_url = Object.keys(this.state.campaign_movies)[j]
+      for (let j=0; j < this.state.campaign_movies.length; j++) {
+        const campaign_movie_url = this.state.campaign_movies[j]
         const campaign_parts = campaign_movie_url.split('/')
         const campaign_movie_name = campaign_parts[campaign_parts.length-1]
         if (movie_name === campaign_movie_name) {
           something_changed = true
           new_campaign_movies.push(movie_url)
-        } else {
-          new_campaign_movies.push(campaign_movie_url)
         }
       }
 
