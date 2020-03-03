@@ -294,7 +294,7 @@ class AnalyzeViewSetFilter(viewsets.ViewSet):
                     filtered_image_cv2= cv2.subtract(prev_image_cv2, cur_image_cv2)
                     new_file_name = self.build_result_file_name(cur_image_url)
                     outfilename = os.path.join(workdir, new_file_name)
-                    file_url = fw.write_cv2_image_to_url(filtered_image_cv2, outfilename)
+                    file_url = fw.write_cv2_image_to_filepath(filtered_image_cv2, outfilename)
                     response_movies[movie_url]['framesets'][frameset_hash] = file_url
 
         return Response({'movies': response_movies})

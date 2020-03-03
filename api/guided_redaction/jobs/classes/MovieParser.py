@@ -45,7 +45,7 @@ class MovieParser:
                             # drop frames not needed for output based on FPS
                             print("dropping frame number "+str(read_count)+" due to output_fps") 
                             continue
-                    file_url = self.file_writer.write_cv2_image_to_url(
+                    file_url = self.file_writer.write_cv2_image_to_filepath(
                         image, filename_full
                     )
                     files_created.append(file_url)

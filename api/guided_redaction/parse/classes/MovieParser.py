@@ -66,7 +66,7 @@ class MovieParser:
                 if current_position_msec >= next_time_msec:
                     filename = "frame_{:05d}.png".format(created_count)
                     filename_full = os.path.join(self.unique_working_dir, filename)
-                    file_url = self.file_writer.write_cv2_image_to_url(
+                    file_url = self.file_writer.write_cv2_image_to_filepath(
                         image, filename_full
                     )
                     files_created.append(file_url)

@@ -29,7 +29,7 @@ def save_image_to_disk(cv2_image, image_name, the_uuid):
     )
     workdir = fw.create_unique_directory(the_uuid)
     outfilename = os.path.join(workdir, image_name)
-    file_url = fw.write_cv2_image_to_url(cv2_image, outfilename)
+    file_url = fw.write_cv2_image_to_filepath(cv2_image, outfilename)
     return file_url
 
 class RedactViewSetRedactImage(viewsets.ViewSet):

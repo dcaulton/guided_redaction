@@ -193,6 +193,8 @@ class JobsViewSet(viewsets.ViewSet):
             parse_tasks.hash_frames.delay(job_uuid)
         if job.app == 'parse' and job.operation == 'copy_movie':
             parse_tasks.copy_movie.delay(job_uuid)
+        if job.app == 'parse' and job.operation == 'change_movie_resolution':
+            parse_tasks.change_movie_resolution.delay(job_uuid)
         if job.app == 'redact' and job.operation == 'redact':
             redact_tasks.redact_threaded.delay(job_uuid)
         if job.app == 'redact' and job.operation == 'redact_single':

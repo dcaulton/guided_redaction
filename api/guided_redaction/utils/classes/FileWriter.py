@@ -41,7 +41,19 @@ class FileWriter():
             return blob_names
         return []
 
-    def write_cv2_image_to_url(self, cv2_image, file_fullpath):
+    def write_cv2_image_to_url(self, cv2_image, the_url):
+        image_bytes = cv2.imencode('.png', cv2_image)[1].tostring()
+        (x_part, file_part) = os.path.split(the_url)
+        (y_part, uuid_part) = os.path.split(x_part)
+        file_fullpath = os.path.join(self.working_dir, uuid_part, file_part)
+
+        fh = open(file_fullpath, 'wb')
+        fh.write(image_bytes)
+        fh.close()
+
+        return the_url
+  
+    def write_cv2_image_to_filepath(self, cv2_image, file_fullpath):
         image_bytes = cv2.imencode('.png', cv2_image)[1].tostring()
         (x_part, file_part) = os.path.split(file_fullpath)
         (y_part, uuid_part) = os.path.split(x_part)

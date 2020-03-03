@@ -1134,9 +1134,7 @@ class RedactApplication extends React.Component {
     const response_data = JSON.parse(job.response_data)
     let deepCopyMovies = JSON.parse(JSON.stringify(this.state.movies))
     const movie_url = Object.keys(response_data['movies'])[0]
-    if (!Object.keys(this.state.movies).includes(movie_url)) {
-      deepCopyMovies[movie_url] = response_data['movies'][movie_url]
-    }
+    deepCopyMovies[movie_url] = response_data['movies'][movie_url]
     this.addMovieAndSetActive(
       movie_url,
       deepCopyMovies,

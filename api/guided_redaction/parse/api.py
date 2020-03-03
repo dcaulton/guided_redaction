@@ -47,6 +47,16 @@ def get_movie_frame_dimensions(frames):
       cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
       return (cv2_image.shape[1], cv2_image.shape[0])
 
+def get_url_as_cv2_image(the_url):
+    pic_response = requests.get(
+      the_url,
+      verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
+    )
+    img_binary = pic_response.content
+    if img_binary:
+        nparr = np.fromstring(img_binary, np.uint8)
+        cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        return cv2_image
 
 class ParseViewSetGetImagesForUuid(viewsets.ViewSet):
     def list(self, request):
@@ -70,6 +80,63 @@ class ParseViewSetGetImagesForUuid(viewsets.ViewSet):
 
         return Response({"images": the_files})
     
+
+class ParseViewSetChangeMovieResolution(viewsets.ViewSet):
+    def create(self, request):
+        request_data = request.data
+        return self.process_create_request(request_data)
+
+    def process_create_request(self, request_data):
+        if not request_data.get("movies"):
+            return self.error("movies is required")
+        if not request_data.get("resolution"):
+            return self.error("resolution is required")
+        new_x = int(request_data.get('resolution').split('x')[0])
+        new_y = int(request_data.get('resolution').split('x')[1])
+
+        the_connection_string = ""
+        if settings.REDACT_IMAGE_STORAGE == "azure_blob":
+            the_base_url = settings.REDACT_AZURE_BASE_URL
+            the_connection_string = settings.REDACT_AZURE_BLOB_CONNECTION_STRING
+        else:
+            the_base_url = settings.REDACT_FILE_BASE_URL
+
+        fw = FileWriter(
+            working_dir=settings.REDACT_FILE_STORAGE_DIR,
+            base_url=the_base_url,
+            connection_string=the_connection_string,
+            image_storage=settings.REDACT_IMAGE_STORAGE,
+            image_request_verify_headers=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
+        )
+
+        movie_url = list(request_data['movies'].keys())[0]
+        build_movie = request_data['movies'][movie_url]
+        new_uuid = str(uuid.uuid4())
+        fw.create_unique_directory(new_uuid)
+        
+        new_frames = []
+        for frame_url in build_movie['frames']:
+            cv2_image = get_url_as_cv2_image(frame_url)
+            resized = cv2.resize(cv2_image, (new_x, new_y), interpolation=cv2.INTER_AREA)
+            fw.write_cv2_image_to_url(resized, frame_url)
+        
+        for frameset_hash in build_movie['framesets']:
+            if 'redacted_image' in build_movie['framesets'][frameset_hash]:
+                img_url = build_movie['framesets'][frameset_hash]['redacted_image']
+                cv2_image = get_url_as_cv2_image(img_url)
+                resized = cv2.resize(cv2_image, (new_x, new_y), interpolation=cv2.INTER_AREA)
+                fw.write_cv2_image_to_url(resized, img_url)
+            if 'illustrated_image' in build_movie['framesets'][frameset_hash]:
+                img_url = build_movie['framesets'][frameset_hash]['illustrated_image']
+                cv2_image = get_url_as_cv2_image(img_url)
+                resized = cv2.resize(cv2_image, (new_x, new_y), interpolation=cv2.INTER_AREA)
+                fw.write_cv2_image_to_url(resized, img_url)
+        build_movie['frame_dimensions'] = [new_x, new_y]
+        return_movies = {}
+        return_movies[movie_url] = build_movie
+
+        return Response({'movies': return_movies})
+
 
 class ParseViewSetCopyMovie(viewsets.ViewSet):
     def create(self, request):
