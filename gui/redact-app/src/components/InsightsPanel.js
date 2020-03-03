@@ -435,6 +435,17 @@ class InsightsPanel extends React.Component {
     return job_data
   }
 
+  buildRebaseMoviesJobData(extra_data) {
+    let job_data = {
+      request_data: {},
+    }
+    job_data['app'] = 'parse'
+    job_data['operation'] = 'rebase_movies'
+    job_data['description'] = 'rebase movies'
+    job_data['request_data']['movies'] = this.props.movies
+    return job_data
+  }
+
   buildCalcDiffsData(job_type, extra_data) {
     let job_data = {
       request_data: {},
@@ -538,6 +549,11 @@ class InsightsPanel extends React.Component {
       })
     } else if (job_string === 'load_movie') {
       let job_data = this.buildLoadMovieJobData(extra_data)
+      this.props.submitJob({
+        job_data: job_data
+      })
+    } else if (job_string === 'rebase_movies') {
+      let job_data = this.buildRebaseMoviesJobData(extra_data)
       this.props.submitJob({
         job_data: job_data
       })

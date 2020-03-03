@@ -1142,6 +1142,53 @@ class RedactApplication extends React.Component {
     )
   }
 
+  loadRebaseMoviesResults(job, when_done) {
+    const response_data = JSON.parse(job.response_data)
+    let deepCopyMovies = JSON.parse(JSON.stringify(this.state.movies))
+    let new_campaign_movies = []
+    let something_changed = false
+    const movie_url = ''
+    for (let i=0; i < Object.keys(response_data['movies']).length; i++) {
+      movie_url = Object.keys(response_data['movies'])[i]
+      const movie_parts = movie_url.split('/')
+      const movie_name = movie_parts[movie_parts.length-1]
+      const movie = response_data['movies'][movie_url]
+
+      for (let j=0; j < Object.keys(this.state.campaign_movies).length; j++) {
+        const campaign_movie_url = Object.keys(this.state.campaign_movies)[j]
+        const campaign_parts = campaign_movie_url.split('/')
+        const campaign_movie_name = campaign_parts[campaign_parts.length-1]
+        if (movie_name === campaign_movie_name) {
+          something_changed = true
+          new_campaign_movies.push(movie_url)
+        } else {
+          new_campaign_movies.push(campaign_movie_url)
+        }
+      }
+
+      for (let k=0; k < Object.keys(deepCopyMovies).length; k++) {
+        const old_movie_url = Object.keys(deepCopyMovies)[k]
+        const old_parts = old_movie_url.split('/')
+        const old_movie_name = old_parts[old_parts.length-1]
+        if (old_movie_name === movie_name) {
+          something_changed = true
+          delete deepCopyMovies[old_movie_name]
+          deepCopyMovies[movie_url] = movie
+        }
+      }
+    }
+
+    if (something_changed) {
+      this.setGlobalStateVar('movies', deepCopyMovies)
+      this.setGlobalStateVar('campaign_movies', new_campaign_movies)
+      this.addMovieAndSetActive(
+        movie_url,
+        deepCopyMovies,
+        when_done,
+      )
+    }
+  }
+
   async loadRedactResults(job, when_done=(()=>{})) {
     const response_data = JSON.parse(job.response_data)
     const request_data = JSON.parse(job.request_data)
@@ -1430,6 +1477,8 @@ class RedactApplication extends React.Component {
         this.loadHashResults(job, when_done)
 			} else if (job.app === 'parse' && job.operation === 'copy_movie') {
         this.loadCopyResults(job, when_done)
+			} else if (job.app === 'parse' && job.operation === 'rebase_movies') {
+        this.loadRebaseMoviesResults(job, when_done)
 			} else if (job.app === 'parse' && job.operation === 'change_movie_resolution') {
         this.loadChangeResolutionResults(job, when_done)
 			} else if (job.app === 'redact' && job.operation === 'redact') {

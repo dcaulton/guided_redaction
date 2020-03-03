@@ -168,6 +168,7 @@ class BottomInsightsControls extends React.Component {
           frameset_discriminator={this.props.frameset_discriminator}
           preserveAllJobs={this.props.preserveAllJobs}
           userTone={this.props.userTone}
+          submitInsightsJob={this.props.submitInsightsJob}
         />
 
       </div>

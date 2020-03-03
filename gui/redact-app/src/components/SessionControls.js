@@ -215,6 +215,49 @@ class SessionControls extends React.Component {
     )
   }
 
+  buildPingButton() {
+    return (
+      <div className='d-inline'>
+        <button
+            className='btn btn-primary mt-2 ml-2'
+            onClick={() => this.props.callPing()}
+        >
+          Ping
+        </button>
+      </div>
+    )
+  }
+
+  buildWorkbookSaveButton() {
+    return (
+      <div className='d-inline'>
+        <button
+            className='btn btn-primary mt-2 ml-2'
+            onClick={() => 
+              this.props.saveWorkbook(
+                this.props.displayInsightsMessage('Workbook has been saved')
+              )
+            }
+        >
+          Save Workbook
+        </button>
+      </div>
+    )
+  }
+
+  buildRebaseMoviesButton() {
+    return (
+      <div className='d-inline'>
+        <button
+            className='btn btn-primary mt-2 ml-2'
+            onClick={() => this.props.submitInsightsJob('rebase_movies')}
+        >
+          Rebase Movies
+        </button>
+      </div>
+    )
+  }
+
   render() {
     let campaign_movies_box = this.buildCampaignMoviesBox()
     let update_state_box = this.buildGlobalStateBox()
@@ -272,6 +315,9 @@ class SessionControls extends React.Component {
     }
     let when_done_selector = this.buildWhenDoneSelector()
     let user_tone_selector = this.buildUserToneSelector()
+    let ping_button = this.buildPingButton() 
+    let workbook_save_button = this.buildWorkbookSaveButton()
+    let rebase_movies_button = this.buildRebaseMoviesButton()
 
     return (
         <div className='row bg-light rounded mt-3'>
@@ -303,12 +349,7 @@ class SessionControls extends React.Component {
               <div id='session_main' className='col'>
 
                 <div className='row mt-3 bg-light rounded'>
-                  <button
-                      className='btn btn-primary mt-2 ml-2'
-                      onClick={() => this.props.callPing()}
-                  >
-                    Ping
-                  </button>
+                  {ping_button}
 
                   <div className='d-inline'>
                       {workbook_load_button}
@@ -317,17 +358,8 @@ class SessionControls extends React.Component {
                   <div className='d-inline'>
                       {workbook_delete_button}
                   </div>
-
-                  <button
-                      className='btn btn-primary mt-2 ml-2'
-                      onClick={() => 
-                        this.props.saveWorkbook(
-                          this.props.displayInsightsMessage('Workbook has been saved')
-                        )
-                      }
-                  >
-                    Save Workbook
-                  </button>
+                  {workbook_save_button}
+                  {rebase_movies_button}
 
                 </div>
 
