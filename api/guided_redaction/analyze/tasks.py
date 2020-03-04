@@ -461,7 +461,7 @@ def wrap_up_scan_ocr_movie(parent_job, children):
         if (parent_request_data['match_text'] and parent_request_data['match_percent']):
             areas_to_redact = find_relevant_areas_from_response(
                 parent_request_data['match_text'], 
-                parent_request_data['match_percent'], 
+                int(parent_request_data['match_percent']), 
                 areas_to_redact
             )
             if len(areas_to_redact) == 0:
