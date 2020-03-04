@@ -163,6 +163,69 @@ class JobsViewSet(viewsets.ViewSet):
         job.delete()
         return Response('', status=204)
 
+    def replace_movie_uuids(self, movies_obj, movie_mappings):
+        new_movies = {}
+        for movie_url in movies_obj:
+            movie_filename = movie_url.split('/')[-1]
+            movie_uuid = movie_url.split('/')[-2]
+            if movie_filename in movie_mappings:
+                new_movie = movies_obj[movie_url]
+                new_uuid = movie_mappings[movie_filename]
+                new_movie_url = movie_url.replace(movie_uuid, new_uuid)
+                if 'frames' in movies_obj[movie_url]:
+                    new_frames = []
+                    for frame in movies_obj[movie_url]['frames']:
+                        new_frames.append(frame.replace(movie_uuid, new_uuid))
+                    new_movie['frames'] = new_frames
+                if 'framesets' in movies_obj[movie_url]:
+                    new_framesets = {}
+                    for frameset_hash in movies_obj[movie_url]['framesets']:
+                        frameset = movies_obj[movie_url]['framesets'][frameset_hash]
+                        new_frameset_images = []
+                        if 'images' in frameset:
+                            for fs_image in frameset['images']:
+                                new_frameset_images.append(fs_image.replace(movie_uuid, new_uuid))
+                            frameset['images'] = new_frameset_images
+                        if 'redacted_image' in frameset:
+                            del frameset['redacted_image']
+                        if 'illustrated_image' in frameset:
+                            del frameset['illustrated_image']
+                        new_framesets[frameset_hash] = frameset
+                    new_movie['framesets'] = new_framesets
+                new_movies[new_movie_url] = new_movie
+        return new_movies
+        
+
+    def rebase_jobs(self, pk):
+        main_job = Job.objects.get(pk=pk)
+        request_data = json.loads(main_job.request_data)
+        movie_mappings = {}
+        for movie_url in request_data['movie_urls']:
+            movie_filename = movie_url.split('/')[-1]
+            new_uuid = movie_url.split('/')[-2]
+            movie_mappings[movie_filename] = new_uuid
+        for job_id in request_data['job_ids']:
+            job = Job.objects.get(pk=job_id)
+            if job.id == pk:
+                continue
+            job_request_data = json.loads(job.request_data)
+            job_response_data = json.loads(job.response_data)
+            something_changed = False
+            if 'movies' in job_request_data:
+                something_changed = True
+                job_request_data['movies'] = self.replace_movie_uuids(job_request_data['movies'], movie_mappings)
+            if 'movies' in job_response_data:
+                something_changed = True
+                job_response_data['movies'] = self.replace_movie_uuids(job_response_data['movies'], movie_mappings)
+            if something_changed:
+                print('rebasing job {}'.format(job.id))
+                job.request_data = json.dumps(job_request_data)
+                job.response_data = json.dumps(job_response_data)
+                job.save()
+        main_job.status = 'success'
+        main_job.save()
+            
+
     def schedule_job(self, job):
         job_uuid = job.id
         if job.app == 'analyze' and job.operation == 'scan_template':
@@ -205,4 +268,6 @@ class JobsViewSet(viewsets.ViewSet):
             redact_tasks.illustrate.delay(job_uuid)
         if job.app == 'parse' and job.operation == 'zip_movie':
             parse_tasks.zip_movie.delay(job_uuid)
+        if job.app == 'jobs' and job.operation == 'rebase_jobs':
+            self.rebase_jobs(job_uuid)
 

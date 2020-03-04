@@ -249,10 +249,23 @@ class SessionControls extends React.Component {
     return (
       <div className='d-inline'>
         <button
-            className='btn btn-primary mt-2 ml-2'
+            className='btn btn-primary'
             onClick={() => this.props.submitInsightsJob('rebase_movies')}
         >
           Rebase Movies
+        </button>
+      </div>
+    )
+  }
+
+  buildRebaseJobsButton() {
+    return (
+      <div className='d-inline ml-2'>
+        <button
+            className='btn btn-primary'
+            onClick={() => this.props.submitInsightsJob('rebase_jobs')}
+        >
+          Rebase Jobs
         </button>
       </div>
     )
@@ -318,6 +331,7 @@ class SessionControls extends React.Component {
     let ping_button = this.buildPingButton() 
     let workbook_save_button = this.buildWorkbookSaveButton()
     let rebase_movies_button = this.buildRebaseMoviesButton()
+    let rebase_jobs_button = this.buildRebaseJobsButton()
 
     return (
         <div className='row bg-light rounded mt-3'>
@@ -359,8 +373,12 @@ class SessionControls extends React.Component {
                       {workbook_delete_button}
                   </div>
                   {workbook_save_button}
-                  {rebase_movies_button}
 
+                </div>
+
+                <div className='mt-2'>
+                  {rebase_movies_button}
+                  {rebase_jobs_button}
                 </div>
 
                 {workbook_name}

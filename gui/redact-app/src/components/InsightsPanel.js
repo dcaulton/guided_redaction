@@ -446,6 +446,22 @@ class InsightsPanel extends React.Component {
     return job_data
   }
 
+  buildRebaseJobsJobData(extra_data) {
+    let job_data = {
+      request_data: {},
+    }
+    job_data['app'] = 'jobs'
+    job_data['operation'] = 'rebase_jobs'
+    job_data['description'] = 'rebase_jobs'
+    job_data['request_data']['movie_urls'] = Object.keys(this.props.movies)
+    let job_ids = []
+    for (let i=0; i < this.props.jobs.length; i++) {
+      job_ids.push(this.props.jobs[i]['id'])
+    }
+    job_data['request_data']['job_ids'] = job_ids
+    return job_data
+  }
+
   buildCalcDiffsData(job_type, extra_data) {
     let job_data = {
       request_data: {},
@@ -554,6 +570,11 @@ class InsightsPanel extends React.Component {
       })
     } else if (job_string === 'rebase_movies') {
       let job_data = this.buildRebaseMoviesJobData(extra_data)
+      this.props.submitJob({
+        job_data: job_data
+      })
+    } else if (job_string === 'rebase_jobs') {
+      let job_data = this.buildRebaseJobsJobData(extra_data)
       this.props.submitJob({
         job_data: job_data
       })

@@ -1477,6 +1477,8 @@ class RedactApplication extends React.Component {
         this.loadCopyResults(job, when_done)
 			} else if (job.app === 'parse' && job.operation === 'rebase_movies') {
         this.loadRebaseMoviesResults(job, when_done)
+			} else if (job.app === 'parse' && job.operation === 'rebase_jobs') {
+        this.getJobs() 
 			} else if (job.app === 'parse' && job.operation === 'change_movie_resolution') {
         this.loadChangeResolutionResults(job, when_done)
 			} else if (job.app === 'redact' && job.operation === 'redact') {
