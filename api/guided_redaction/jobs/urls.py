@@ -7,3 +7,6 @@ router = get_router()
 router.register(
     r"v1/jobs", api.JobsViewSet, basename="DarylHammond"
 )
+router.register(
+    r"v1/wrap-up-jobs", api.JobsViewSetWrapUp, basename="MichaelJFox"
+)

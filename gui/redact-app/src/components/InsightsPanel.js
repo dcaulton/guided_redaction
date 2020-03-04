@@ -1234,6 +1234,7 @@ class InsightsPanel extends React.Component {
             workbooks={this.props.workbooks}
             getJobResultData={this.props.getJobResultData}
             setModalData={this.setModalData}
+            wrapUpJob={this.props.wrapUpJob}
           />
         </div>
       </div>

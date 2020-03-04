@@ -69,6 +69,7 @@ class JobCardList extends React.Component {
               index={index}
               getJobResultData={this.props.getJobResultData}
               setModalData={this.props.setModalData}
+              wrapUpJob={this.props.wrapUpJob}
             />
             )
           })}
@@ -356,6 +357,22 @@ class JobCard extends React.Component {
     this.props.getJobResultData(job_id, this.props.setModalData)
   }
 
+  buildWrapUpLink() {
+    if (this.props.job_data['status'] !== 'running') {
+      return ''
+    }
+    return (
+      <div>
+        <button 
+            className='btn btn-link border-none p-0 mt-0'
+            onClick={() => this.props.wrapUpJob(this.props.job_data['id'])}
+        >
+          wrap up?
+        </button>
+      </div>
+    )
+  }
+
   render() {
     let small_style = {
       'fontSize': 'small',
@@ -371,6 +388,7 @@ class JobCard extends React.Component {
     const wall_clock_run_time_data = this.buildWallClockRunTimeData(this.props.job_data)
     const job_percent_done = this.buildPercentDone(this.props.job_data)
     const job_status = this.buildJobStatus()
+    const wrap_up_link = this.buildWrapUpLink()
 
     return (
       <div className='row pl-1 mt-2 card'>
@@ -404,6 +422,7 @@ class JobCard extends React.Component {
               {wall_clock_run_time_data}
               {job_percent_done}
               {job_workbook_block}
+              {wrap_up_link}
             </div>
 
             <div className='row mt-1'>

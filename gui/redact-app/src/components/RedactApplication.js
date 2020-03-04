@@ -37,6 +37,7 @@ class RedactApplication extends React.Component {
       codes_url: api_server_url + 'v1/codes',
       get_images_for_uuid_url: api_server_url + 'v1/parse/get-images-for-uuid',
       jobs_url: api_server_url + 'v1/jobs',
+      wrap_up_job_url: api_server_url + 'v1/wrap-up-jobs',
       workbooks_url: api_server_url + 'v1/workbooks',
       link_url: api_server_url + 'v1/link/learn-dev',
       can_see_url: api_server_url + 'v1/link/can-reach',
@@ -143,6 +144,7 @@ class RedactApplication extends React.Component {
     this.getScanners=this.getScanners.bind(this)
     this.deleteScanner=this.deleteScanner.bind(this)
     this.importScanner=this.importScanner.bind(this)
+    this.wrapUpJob=this.wrapUpJob.bind(this)
   }
 
   setGlobalStateVar(var_name, var_value, when_done=(()=>{})) {
@@ -1524,6 +1526,22 @@ class RedactApplication extends React.Component {
     })
   }
 
+  async wrapUpJob(job_id) {
+    await fetch(this.state.wrap_up_job_url, {
+      method: 'POST',
+      headers: this.buildJsonHeaders(),
+      body: JSON.stringify({
+        job_id: job_id,
+      }),
+    })
+    .then(() => {
+      this.getJobs()
+    })
+    .catch((error) => {
+      console.error(error);
+    })
+  }
+
   async getFiles() {
     let the_url = this.state.files_url
     await fetch(the_url, {
@@ -2119,6 +2137,7 @@ class RedactApplication extends React.Component {
                 getScanners={this.getScanners}
                 deleteScanner={this.deleteScanner}
                 importScanner={this.importScanner}
+                wrapUpJob={this.wrapUpJob}
               />
             </Route>
           </Switch>

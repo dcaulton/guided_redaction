@@ -14,6 +14,58 @@ import pytz
 import math
 
 
+def dispatch_job_wrapper(job, restart_unfinished_children=True):
+    if restart_unfinished_children:
+        children = Job.objects.filter(parent=job)
+        for child in children:
+            if child.status not in ['success', 'failed']:
+                dispatch_job(child)
+    dispatch_job(job)
+
+def dispatch_job(job):
+    job_uuid = job.id
+    if job.app == 'analyze' and job.operation == 'scan_template':
+        analyze_tasks.scan_template.delay(job_uuid)
+    if job.app == 'analyze' and job.operation == 'scan_template_threaded':
+        analyze_tasks.scan_template_threaded.delay(job_uuid)
+    if job.app == 'analyze' and job.operation == 'scan_template_multi':
+        analyze_tasks.scan_template_multi.delay(job_uuid)
+    if job.app == 'analyze' and job.operation == 'filter':
+        analyze_tasks.filter.delay(job_uuid)
+    if job.app == 'analyze' and job.operation == 'scan_ocr_image':
+        analyze_tasks.scan_ocr_image.delay(job_uuid)
+    if job.app == 'analyze' and job.operation == 'scan_ocr_movie':
+        analyze_tasks.scan_ocr_movie.delay(job_uuid)
+    if job.app == 'analyze' and job.operation == 'telemetry_find_matching_frames':
+        analyze_tasks.telemetry_find_matching_frames.delay(job_uuid)
+    if job.app == 'analyze' and job.operation == 'get_timestamp':
+        analyze_tasks.get_timestamp.delay(job_uuid)
+    if job.app == 'analyze' and job.operation == 'get_timestamp_threaded':
+        analyze_tasks.get_timestamp_threaded.delay(job_uuid)
+    if job.app == 'parse' and job.operation == 'split_and_hash_movie':
+        parse_tasks.split_and_hash_movie.delay(job_uuid)
+    if job.app == 'parse' and job.operation == 'split_and_hash_threaded':
+        parse_tasks.split_and_hash_threaded.delay(job_uuid)
+    if job.app == 'parse' and job.operation == 'split_movie':
+        parse_tasks.split_movie.delay(job_uuid)
+    if job.app == 'parse' and job.operation == 'hash_movie':
+        parse_tasks.hash_frames.delay(job_uuid)
+    if job.app == 'parse' and job.operation == 'copy_movie':
+        parse_tasks.copy_movie.delay(job_uuid)
+    if job.app == 'parse' and job.operation == 'change_movie_resolution':
+        parse_tasks.change_movie_resolution.delay(job_uuid)
+    if job.app == 'parse' and job.operation == 'rebase_movies':
+        parse_tasks.rebase_movies.delay(job_uuid)
+    if job.app == 'redact' and job.operation == 'redact':
+        redact_tasks.redact_threaded.delay(job_uuid)
+    if job.app == 'redact' and job.operation == 'redact_single':
+        redact_tasks.redact_single.delay(job_uuid)
+    if job.app == 'redact' and job.operation == 'illustrate':
+        redact_tasks.illustrate.delay(job_uuid)
+    if job.app == 'parse' and job.operation == 'zip_movie':
+        parse_tasks.zip_movie.delay(job_uuid)
+
+
 class JobsViewSet(viewsets.ViewSet):
     def pretty_date(self, time=False):
         """
@@ -58,7 +110,6 @@ class JobsViewSet(viewsets.ViewSet):
         if day_diff < 365:
             return str(day_diff // 30) + " months ago"
         return str(day_diff // 365) + " years ago"
-
 
     def partial_update(self, request, pk=None):
         job = Job.objects.get(pk=pk)
@@ -195,7 +246,6 @@ class JobsViewSet(viewsets.ViewSet):
                 new_movies[new_movie_url] = new_movie
         return new_movies
         
-
     def rebase_jobs(self, pk):
         main_job = Job.objects.get(pk=pk)
         request_data = json.loads(main_job.request_data)
@@ -224,50 +274,26 @@ class JobsViewSet(viewsets.ViewSet):
                 job.save()
         main_job.status = 'success'
         main_job.save()
-            
 
     def schedule_job(self, job):
-        job_uuid = job.id
-        if job.app == 'analyze' and job.operation == 'scan_template':
-            analyze_tasks.scan_template.delay(job_uuid)
-        if job.app == 'analyze' and job.operation == 'scan_template_threaded':
-            analyze_tasks.scan_template_threaded.delay(job_uuid)
-        if job.app == 'analyze' and job.operation == 'scan_template_multi':
-            analyze_tasks.scan_template_multi.delay(job_uuid)
-        if job.app == 'analyze' and job.operation == 'filter':
-            analyze_tasks.filter.delay(job_uuid)
-        if job.app == 'analyze' and job.operation == 'scan_ocr_image':
-            analyze_tasks.scan_ocr_image.delay(job_uuid)
-        if job.app == 'analyze' and job.operation == 'scan_ocr_movie':
-            analyze_tasks.scan_ocr_movie.delay(job_uuid)
-        if job.app == 'analyze' and job.operation == 'telemetry_find_matching_frames':
-            analyze_tasks.telemetry_find_matching_frames.delay(job_uuid)
-        if job.app == 'analyze' and job.operation == 'get_timestamp':
-            analyze_tasks.get_timestamp.delay(job_uuid)
-        if job.app == 'analyze' and job.operation == 'get_timestamp_threaded':
-            analyze_tasks.get_timestamp_threaded.delay(job_uuid)
-        if job.app == 'parse' and job.operation == 'split_and_hash_movie':
-            parse_tasks.split_and_hash_movie.delay(job_uuid)
-        if job.app == 'parse' and job.operation == 'split_and_hash_threaded':
-            parse_tasks.split_and_hash_threaded.delay(job_uuid)
-        if job.app == 'parse' and job.operation == 'split_movie':
-            parse_tasks.split_movie.delay(job_uuid)
-        if job.app == 'parse' and job.operation == 'hash_movie':
-            parse_tasks.hash_frames.delay(job_uuid)
-        if job.app == 'parse' and job.operation == 'copy_movie':
-            parse_tasks.copy_movie.delay(job_uuid)
-        if job.app == 'parse' and job.operation == 'change_movie_resolution':
-            parse_tasks.change_movie_resolution.delay(job_uuid)
-        if job.app == 'parse' and job.operation == 'rebase_movies':
-            parse_tasks.rebase_movies.delay(job_uuid)
-        if job.app == 'redact' and job.operation == 'redact':
-            redact_tasks.redact_threaded.delay(job_uuid)
-        if job.app == 'redact' and job.operation == 'redact_single':
-            redact_tasks.redact_single.delay(job_uuid)
-        if job.app == 'redact' and job.operation == 'illustrate':
-            redact_tasks.illustrate.delay(job_uuid)
-        if job.app == 'parse' and job.operation == 'zip_movie':
-            parse_tasks.zip_movie.delay(job_uuid)
+        dispatch_job(job)
         if job.app == 'jobs' and job.operation == 'rebase_jobs':
-            self.rebase_jobs(job_uuid)
+            self.rebase_jobs(job.id)
 
+
+class JobsViewSetWrapUp(viewsets.ViewSet):
+    def create(self, request):
+        if not request.data.get("job_id"):
+            return self.error("job_id is required")
+        job = Job.objects.get(pk=request.data.get('job_id'))
+        children = Job.objects.filter(parent=job)
+        unfinished_children_exist = False
+        for child in children:
+            if child.status not in ['success', 'failed']:
+                unfinished_children_exist = True
+        if unfinished_children_exist:
+            dispatch_job_wrapper(job, restart_unfinished_children=True)
+        else:
+            dispatch_job(job)
+            
+        return Response()
