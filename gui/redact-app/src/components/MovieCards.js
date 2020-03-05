@@ -346,6 +346,36 @@ class MovieCard extends React.Component {
     }
   }
 
+  setScrubberToNextAreasToRedactHit() {
+    let movie = this.props.movies[this.props.this_cards_movie_url]
+    const movie_frameset_hashes = this.props.getFramesetHashesInOrder(movie['framesets'])
+    let hashes_with_areas_to_redact = []
+    for (let i=0; i < movie_frameset_hashes.length; i++) {
+      const frameset_hash = movie_frameset_hashes[i]
+      if (Object.keys(movie['framesets'][frameset_hash]).includes('areas_to_redact')) {
+        hashes_with_areas_to_redact.push(frameset_hash)
+      }
+    }
+    if (this.props.active_movie_url !== this.props.this_cards_movie_url) {
+      this.props.setCurrentVideo(this.props.this_cards_movie_url) 
+      const index = movie_frameset_hashes.indexOf(hashes_with_areas_to_redact[0])
+      setTimeout((() => {this.props.setScrubberToIndex(index)}), 1000)
+    } else {
+      const cur_hash = this.props.getFramesetHashForImageUrl(this.props.insights_image)
+      const cur_position = movie_frameset_hashes.indexOf(cur_hash)
+      const remaining_hashes = movie_frameset_hashes.slice(cur_position+1)
+      for (let i=0; i < remaining_hashes.length; i++) {
+        if (hashes_with_areas_to_redact.includes(remaining_hashes[i])) {
+          const new_index = cur_position + i + 1
+          setTimeout((() => {this.props.setScrubberToIndex(new_index)}), 1000)
+          return
+        }
+      }
+      const first_index = movie_frameset_hashes.indexOf(hashes_with_areas_to_redact[0])
+      setTimeout((() => {this.props.setScrubberToIndex(first_index)}), 1000)
+    }
+  }
+
   getOcrMatchHashesForMovie(movie_url) {
     let hashes = []
     const this_ocr_rule_matches = this.props.tier_1_matches['ocr'][this.props.current_ocr_rule_id]
@@ -379,6 +409,37 @@ class MovieCard extends React.Component {
         return (
           <div>
             {count} ocr matches
+            {matches_button}
+          </div>
+        )
+      }
+    }
+    return ''
+  }
+
+  getAreasToRedactString() {
+    if (Object.keys(this.props.movies).includes(this.props.this_cards_movie_url)) {
+      const movie = this.props.movies[this.props.this_cards_movie_url]
+      let a2r_framesets_count = 0
+      for (let i=0; i < Object.keys(movie['framesets']).length; i++) {
+        const frameset_hash = Object.keys(movie['framesets'])[i]
+        if (Object.keys(movie['framesets'][frameset_hash]).includes('areas_to_redact')) {
+          a2r_framesets_count += 1
+        }
+      }
+      let matches_button = ''
+      if (a2r_framesets_count > 0) {
+        matches_button = (
+          <button
+            className='border-0 text-primary'
+            onClick={() => this.setScrubberToNextAreasToRedactHit()}
+          >
+            next
+          </button>
+        )
+        return (
+          <div>
+            {a2r_framesets_count} redactions
             {matches_button}
           </div>
         )
@@ -464,6 +525,7 @@ class MovieCard extends React.Component {
     const make_active_button = this.buildMakeActiveButton(this.props.this_cards_movie_url)
     const template_matches_string = this.getTemplateMatchesString()
     const ocr_matches_string = this.getOcrMatchesString()
+    const areas_to_redact_string = this.getAreasToRedactString()
     const diffs_string = this.getMovieDiffsFound()
     const selected_areas_string = this.getSelectedAreasString()
     const dims_string = this.getMovieDimensions(this.props.this_cards_movie_url, this.props.movies)
@@ -539,6 +601,9 @@ class MovieCard extends React.Component {
                   </div>
                   <div className='row'>
                     {has_telemetry_info}
+                  </div>
+                  <div className='row'>
+                    {areas_to_redact_string}
                   </div>
                 </div>
               </div>
