@@ -70,12 +70,28 @@ class InsightsPanel extends React.Component {
     this.addInsightsCallback=this.addInsightsCallback.bind(this)
     this.setModalData=this.setModalData.bind(this)
     this.getCurrentOcrMatches=this.getCurrentOcrMatches.bind(this)
+    this.getCurrentAreasToRedact=this.getCurrentAreasToRedact.bind(this)
     this.setScrubberToIndex=this.setScrubberToIndex.bind(this)
   }
 
   setScrubberToIndex(the_value) {
     document.getElementById('movie_scrubber').value = the_value
     this.scrubberOnChange()
+  }
+
+  getCurrentAreasToRedact() {
+    const frameset_hash = this.props.getFramesetHashForImageUrl(this.state.insights_image)
+    if (!frameset_hash) {
+      return []
+    }
+    if (!this.props.movies || !this.props.movie_url) {
+      return []
+    }
+    const this_frameset = this.props.movies[this.props.movie_url]['framesets'][frameset_hash]
+    if (Object.keys(this_frameset).includes('areas_to_redact')) {
+      return this_frameset['areas_to_redact']
+    }
+    return []
   }
 
   getCurrentOcrMatches() {
@@ -1147,6 +1163,7 @@ class InsightsPanel extends React.Component {
               mode={this.state.mode}
               clicked_coords={this.state.clicked_coords}
               getCurrentOcrMatches={this.getCurrentOcrMatches}
+              getCurrentAreasToRedact={this.getCurrentAreasToRedact}
               movie_url={this.props.movie_url}
             />
           </div>

@@ -11,6 +11,7 @@ class CanvasInsightsOverlay extends React.Component {
     this.selected_area_color = '#F3F'
     this.annotations_color = '#5DE'
     this.ocr_color = '#CC0'
+    this.area_to_redact_color = '#D6D'
     this.red_color = '#F00'
   }
 
@@ -196,8 +197,31 @@ class CanvasInsightsOverlay extends React.Component {
         ctx.strokeRect(start_x_scaled, start_y_scaled, width, height)
       }
     }
-    
   }
+
+  drawAreasToRedact() {
+    if (this.props.getCurrentAreasToRedact()) {
+      const matches = this.props.getCurrentAreasToRedact()
+      const canvas = this.refs.insights_canvas
+      let ctx = canvas.getContext('2d')
+      ctx.strokeStyle = this.area_to_redact_color
+      ctx.lineWidth = 10
+      for (let i=0; i < matches.length; i++) {
+        const match = matches[i]
+        ctx.fillStyle = this.area_to_redact_color
+        ctx.globalAlpha = 0.4
+        const start_x_scaled = match['start'][0] * this.props.insights_image_scale - 5
+        const start_y_scaled = match['start'][1] * this.props.insights_image_scale - 5
+        const width = (match['end'][0] * this.props.insights_image_scale) - start_x_scaled + 5
+        const height= (match['end'][1] * this.props.insights_image_scale) - start_y_scaled + 5
+        ctx.fillRect(start_x_scaled, start_y_scaled, width, height)
+        ctx.strokeStyle = this.red_color
+        ctx.lineWidth = 3
+        ctx.strokeRect(start_x_scaled, start_y_scaled, width, height)
+      }
+    }
+  }
+
   componentDidMount() {
     this.clearCanvasItems()
     this.drawSelectedAreas()
@@ -207,6 +231,7 @@ class CanvasInsightsOverlay extends React.Component {
     this.drawTemplateMatches()
     this.drawAnnotations()
     this.drawOcrMatches()
+    this.drawAreasToRedact()
   }
 
   componentDidUpdate() {
@@ -218,6 +243,7 @@ class CanvasInsightsOverlay extends React.Component {
     this.drawTemplateMatches()
     this.drawAnnotations()
     this.drawOcrMatches()
+    this.drawAreasToRedact()
   }
 
   render() {
