@@ -55,6 +55,7 @@ class BottomInsightsControls extends React.Component {
           getScanners={this.props.getScanners}
           deleteScanner={this.props.deleteScanner}
           importScanner={this.props.importScanner}
+          current_ocr_rule_id={this.props.current_ocr_rule_id}
         />
 
         <SelectedAreaControls

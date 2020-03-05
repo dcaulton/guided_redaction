@@ -333,12 +333,12 @@ class InsightsPanel extends React.Component {
     return job_data
   }
 
-  buildScanTemplateCurTempTier1TempJobData(extra_data) {
+  buildScanTemplateCurTempTier1JobData(scanner_type='template', extra_data) {
     let job_data = {
       request_data: {},
     }
-    const tier_1_template_id = extra_data
-    const tier_1_movie_matches = this.props.tier_1_matches['template'][tier_1_template_id]['movies']
+    const tier_1_scanner_id = extra_data
+    const tier_1_movie_matches = this.props.tier_1_matches[scanner_type][tier_1_scanner_id]['movies']
     let movie_build_obj = {}
     movie_build_obj = {}
     let movie_count = 0
@@ -364,6 +364,7 @@ class InsightsPanel extends React.Component {
     job_data['description'] = 'single template match (template ' + template['name'] + ') '
     job_data['description'] += movie_count.toString() + ' movies '
     job_data['description'] += frameset_count.toString() + ' framesets'
+    job_data['description'] += ' using ' + scanner_type + ' rule ' + extra_data
     job_data['request_data']['templates'] = template_wrap
     job_data['request_data']['template_id'] = this.props.current_template_id
     job_data['request_data']['movies'] = movie_build_obj
@@ -559,7 +560,12 @@ class InsightsPanel extends React.Component {
         job_data: job_data,
       })
     } else if (job_string === 'current_template_tier1_template') {
-      let job_data = this.buildScanTemplateCurTempTier1TempJobData(extra_data)
+      let job_data = this.buildScanTemplateCurTempTier1JobData('template', extra_data)
+      this.props.submitJob({
+        job_data: job_data,
+      })
+    } else if (job_string === 'current_template_tier1_ocr') {
+      let job_data = this.buildScanTemplateCurTempTier1JobData('ocr', extra_data)
       this.props.submitJob({
         job_data: job_data,
       })
@@ -1222,6 +1228,7 @@ class InsightsPanel extends React.Component {
             getScanners={this.props.getScanners}
             deleteScanner={this.props.deleteScanner}
             importScanner={this.props.importScanner}
+            current_ocr_rule_id={this.props.current_ocr_rule_id}
           />
         </div>
 

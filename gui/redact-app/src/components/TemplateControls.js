@@ -506,9 +506,40 @@ class TemplateControls extends React.Component {
     )
   }
 
+  buildTier1OcrRunOptions() {
+    if (this.state.scan_level === 'tier_1') {
+      return ''
+    }
+    const tier_1_match_keys = Object.keys(this.props.tier_1_matches['ocr'])
+    if (tier_1_match_keys.length === 0) {
+      return ''
+    }
+
+    return (
+      <div>
+        {tier_1_match_keys.map((value, index) => {
+          let detail_line = 'Frames matched by ocr rule ' + value
+          if (value === this.props.current_ocr_rule_id) {
+            detail_line = 'Frames matched by current active ocr rule'
+          }
+          return (
+            <button
+                className='dropdown-item'
+                key={index}
+                onClick={() => this.props.submitInsightsJob('current_template_tier1_ocr', value)}
+            >
+              {detail_line}
+            </button>
+          )
+        })}
+      </div>
+    )
+  }
+
   buildTemplateRunButton() {
     let movie_set_keys = Object.keys(this.props.movie_sets)
-    const tier_1_options = this.buildTier1TemplateRunOptions()
+    const tier_1_template_options = this.buildTier1TemplateRunOptions()
+    const tier_1_ocr_options = this.buildTier1OcrRunOptions()
     return (
       <div className='d-inline'>
         <button
@@ -548,7 +579,8 @@ class TemplateControls extends React.Component {
                 </button>
               )
             })}
-          {tier_1_options}
+          {tier_1_template_options}
+          {tier_1_ocr_options}
         </div>
       </div>
     ) 
