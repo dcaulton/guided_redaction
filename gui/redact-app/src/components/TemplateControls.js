@@ -554,6 +554,11 @@ class TemplateControls extends React.Component {
         </button>
         <div className='dropdown-menu' aria-labelledby='scanTemplateDropdownButton'>
           <button className='dropdown-item'
+              onClick={() => this.props.submitInsightsJob('current_template_current_frame')}
+          >
+            Frame
+          </button>
+          <button className='dropdown-item'
               onClick={() => this.props.submitInsightsJob('current_template_current_movie')}
           >
             Movie

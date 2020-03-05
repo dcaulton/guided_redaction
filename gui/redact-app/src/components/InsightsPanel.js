@@ -267,7 +267,7 @@ class InsightsPanel extends React.Component {
     return job_data
   }
 
-  buildScanTemplateCurTempCurMovJobData(extra_data) {
+  buildScanTemplateCurTempCurMovJobData(scope, extra_data) {
     let job_data = {
       request_data: {},
     }
@@ -276,17 +276,30 @@ class InsightsPanel extends React.Component {
     let template = this.props.templates[this.props.current_template_id]
     let template_wrap = {}
     template_wrap[this.props.current_template_id] = template
+    job_data['request_data']['templates'] = template_wrap
+    job_data['request_data']['template_id'] = this.props.current_template_id
+    if (scope === 'movie') {
+      job_data['description'] = 'single template single movie match: '
+      job_data['description'] += 'template ' + template.name
+      job_data['description'] += ', movie ' + this.props.movie_url.split('/').slice(-1)[0]
+      let movies_wrap = {}
+      movies_wrap[this.props.movie_url] = this.props.movies[this.props.movie_url]
+      job_data['request_data']['movies'] = movies_wrap
+    } else if (scope === 'frame') {
+      job_data['description'] = 'single template single frame match: '
+      job_data['description'] += 'template ' + template.name
+      const cur_hash = this.props.getFramesetHashForImageUrl(this.state.insights_image)
+      let movies_wrap = {}
+      movies_wrap[this.props.movie_url] = {}
+      movies_wrap[this.props.movie_url]['framesets'] = {}
+      movies_wrap[this.props.movie_url]['framesets'][cur_hash] = (
+         this.props.movies[this.props.movie_url]['framesets'][cur_hash]
+      )
+      job_data['request_data']['movies'] = movies_wrap
+    }
     if (!template['scale'] === '1_1') {
       job_data['description'] += ' - multi scale (' + template['scale'] + ')'
     }
-    job_data['request_data']['templates'] = template_wrap
-    job_data['request_data']['template_id'] = this.props.current_template_id
-    job_data['description'] = 'single template single movie match: '
-    job_data['description'] += 'template ' + template.name
-    job_data['description'] += ', movie ' + this.props.movie_url.split('/').slice(-1)[0]
-    let movies_wrap = {}
-    movies_wrap[this.props.movie_url] = this.props.movies[this.props.movie_url]
-    job_data['request_data']['movies'] = movies_wrap
     job_data['request_data']['scan_level'] = template['scan_level']
     job_data['request_data']['id'] = this.props.current_template_id
     return job_data
@@ -546,7 +559,12 @@ class InsightsPanel extends React.Component {
       return
     }
     if (job_string === 'current_template_current_movie') {
-      let job_data = this.buildScanTemplateCurTempCurMovJobData(extra_data)
+      let job_data = this.buildScanTemplateCurTempCurMovJobData('movie', extra_data)
+      this.props.submitJob({
+        job_data: job_data,
+      })
+    } else if (job_string === 'current_template_current_frame') {
+      let job_data = this.buildScanTemplateCurTempCurMovJobData('frame', extra_data)
       this.props.submitJob({
         job_data: job_data,
       })

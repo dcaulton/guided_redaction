@@ -10,12 +10,12 @@ class TemplateMatcher:
     def __init__(self, template_data):
         self.template_match_percent = 0.9
         try:
-            mp_in = template_data.get('match_percent')
-            if mp_in.__class__.__name__ == 'string':
-                mp_in = float(mp_in)
+            mp_in = int(template_data.get('match_percent'))
             if mp_in > 1:
                 mp_in /= 100
             self.template_match_percent = mp_in
+            if template_data.get('match_percent').find('.') > -1:
+                self.template_match_percent = float(template_data.get('match_percent'))
         except Exception as e:
             pass
 

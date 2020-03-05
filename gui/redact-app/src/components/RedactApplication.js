@@ -1042,6 +1042,9 @@ class RedactApplication extends React.Component {
       return
     }
 
+    if (!Object.keys(response_data).includes('movies')) {
+      return
+    }
     for (let i=0; i < Object.keys(response_data['movies']).length; i++) {
       movie_url = Object.keys(response_data['movies'])[i]
       for (let j = 0; j < Object.keys(response_data['movies'][movie_url]['framesets']).length; j++) {
