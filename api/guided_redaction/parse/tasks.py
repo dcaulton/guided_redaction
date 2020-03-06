@@ -211,6 +211,9 @@ def make_and_dispatch_hash_tasks(parent_job, split_tasks):
         'frames': frames,
         'frame_dimensions': frame_dimensions,
     }
+    if 'audio_url' in resp_data['movies'][movie_url]:
+        movies_obj['movies'][movie_url]['audio_url'] = resp_data['movies'][movie_url]['audio_url']
+
     parent_job.response_data = json.dumps(movies_obj)
     parent_job.save()
 

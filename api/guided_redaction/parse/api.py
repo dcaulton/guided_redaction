@@ -9,6 +9,7 @@ from base import viewsets
 from rest_framework.response import Response
 import cv2
 import numpy as np
+import ffmpeg
 
 from guided_redaction.parse.classes.MovieParser import MovieParser
 from guided_redaction.utils.classes.FileWriter import FileWriter
@@ -57,6 +58,19 @@ def get_url_as_cv2_image(the_url):
         nparr = np.fromstring(img_binary, np.uint8)
         cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
         return cv2_image
+
+def split_movie_audio(file_writer, movie_url):
+    movie_filepath = file_writer.get_file_path_for_url(movie_url)
+    audio_url = movie_url[0:movie_url.rfind('.')] + '.mp3'
+    audio_filepath = file_writer.get_file_path_for_url(audio_url)
+    (
+    ffmpeg
+        .input(movie_filepath)
+        .output(audio_filepath)
+        .overwrite_output()
+        .run(quiet=True)
+    )
+    return audio_url
 
 class ParseViewSetGetImagesForUuid(viewsets.ViewSet):
     def list(self, request):
@@ -267,6 +281,11 @@ class ParseViewSetSplitMovie(viewsets.ViewSet):
             "frame_dimensions": movie_frame_dims,
             "framesets": {},
         }
+
+        if request_data.get('preserve_movie_audio'):
+            audio_url = split_movie_audio(fw, movie_url)
+            return_data['movies'][movie_url]['audio_url'] = audio_url
+
         return Response(return_data)
 
     def get_movie_url_from_sykes_dev(self, the_uuid, file_writer):
