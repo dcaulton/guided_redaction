@@ -2,6 +2,24 @@ import React from 'react';
 
 class SelectedAreaControls extends React.Component {
 
+  constructor(props) {
+    super(props)
+    this.state = {
+      id: '',
+      name: '',
+      select_type: 'arrow`',
+      attributes: {},
+      origin: [],
+      anchor_entity_type: '',
+      anchor_entity_id: '',
+      anchor_id: '',
+      areas: {},
+      unsaved_changes: false,
+      attribute_search_name: '',
+      attribute_search_value: '',
+    }
+  }
+
   getCurrentTemplateAnchorNames() {
     if (Object.keys(this.props.templates).includes(this.props.current_template_id)) {
       let cur_template = this.props.templates[this.props.current_template_id]
