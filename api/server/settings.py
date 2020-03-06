@@ -91,7 +91,7 @@ WSGI_APPLICATION = 'server.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'step',
+        'NAME': 'guided_redaction',
         'USER': 'root',
         'PASSWORD': 'admin',
         'HOST': '127.0.0.1',
