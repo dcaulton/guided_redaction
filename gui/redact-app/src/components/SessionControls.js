@@ -326,6 +326,10 @@ class SessionControls extends React.Component {
     if (this.props.preserveAllJobs) {
       preserve_all_jobs_checked = 'checked'
     }
+    let preserve_movie_audio_checked = ''
+    if (this.props.preserve_movie_audio) {
+      preserve_movie_audio_checked = 'checked'
+    }
     let when_done_selector = this.buildWhenDoneSelector()
     let user_tone_selector = this.buildUserToneSelector()
     let ping_button = this.buildPingButton() 
@@ -545,6 +549,17 @@ class SessionControls extends React.Component {
                     onChange={() => this.props.toggleGlobalStateVar('preserveAllJobs')}
                   />
                   Preserve All Jobs (typically for troubleshooting)
+                </div>
+
+                <div className='row mt-3 bg-light rounded'>
+                  <input
+                    className='ml-2 mr-2 mt-1'
+                    id='toggle_preserve_movie_audio'
+                    checked={preserve_movie_audio_checked}
+                    type='checkbox'
+                    onChange={(event) => this.props.toggleGlobalStateVar('preserve_movie_audio')}
+                  />
+                  Preserve Movie Audio
                 </div>
 
                 <div className='row mt-4'>

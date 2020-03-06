@@ -1264,6 +1264,7 @@ class InsightsPanel extends React.Component {
             deleteScanner={this.props.deleteScanner}
             importScanner={this.props.importScanner}
             current_ocr_rule_id={this.props.current_ocr_rule_id}
+            preserve_movie_audio={this.props.preserve_movie_audio}
           />
         </div>
 

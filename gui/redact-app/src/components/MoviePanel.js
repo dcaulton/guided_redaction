@@ -501,11 +501,13 @@ class MoviePanel extends React.Component {
             setMessage={this.setMessage}
             getRedactedMovieUrl={this.props.getRedactedMovieUrl}
             setGlobalStateVar={this.props.setGlobalStateVar}
+            toggleGlobalStateVar={this.props.toggleGlobalStateVar}
             submitMovieJob={this.submitMovieJob}
             mask_method={this.props.mask_method}
             frameset_discriminator={this.props.frameset_discriminator}
             changeMovieResolutionNew={this.changeMovieResolutionNew}
             movie_resolution_new={this.state.movie_resolution_new}
+            preserve_movie_audio={this.props.preserve_movie_audio}
           />
 
         </div>
@@ -663,6 +665,25 @@ class MoviePanelAdvancedControls extends React.Component {
     )
   }
 
+  buildPreserveMovieAudioCheckbox() {
+    let checked_state = ''
+    if (this.props.preserve_movie_audio) {
+      checked_state = 'checked'
+    }
+    return (
+      <div className='row mt-3 bg-light rounded'>
+        <input
+          className='ml-2 mr-2 mt-1'
+          id='toggle_preserve_movie_audio'
+          checked={checked_state}
+          type='checkbox'
+          onChange={(event) => this.props.toggleGlobalStateVar('preserve_movie_audio')}
+        />
+        Preserve Movie Audio
+      </div>
+    )
+  }
+
   render() {
     if (this.props.movie_url === '') {
       return ''
@@ -680,6 +701,7 @@ class MoviePanelAdvancedControls extends React.Component {
     const copy_button = this.buildCopyButton()
     const change_button = this.buildChangeResolutionButton()
     const redacted_movie_dl_link = this.buildRedactedMovieDownloadLink()
+    const preserve_movie_audio_checkbox = this.buildPreserveMovieAudioCheckbox() 
 
     const fd_dropdown = this.buildFramesetDiscriminatorDropdown()
     if (this.props.movie_url && Object.keys(this.props.movies).includes(this.props.movie_url)) {
@@ -791,6 +813,9 @@ class MoviePanelAdvancedControls extends React.Component {
 
               <div className='mt-2 ml-2'>
                 {change_button}
+              </div>
+              <div className='mt-2 ml-2'>
+                {preserve_movie_audio_checkbox}
               </div>
             </div>
           </div>

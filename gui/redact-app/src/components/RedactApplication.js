@@ -84,6 +84,7 @@ class RedactApplication extends React.Component {
         movie_mappings: [],
       },
       userTone: 'lfo',
+      preserve_movie_audio: false,
     }
 
     this.getNextImageHash=this.getNextImageHash.bind(this)
@@ -2019,6 +2020,7 @@ class RedactApplication extends React.Component {
             <Route path='/redact/movie'>
               <MoviePanel 
                 setGlobalStateVar={this.setGlobalStateVar}
+                toggleGlobalStateVar={this.toggleGlobalStateVar}
                 movie_url = {this.state.movie_url}
                 getCurrentFramesets={this.getCurrentFramesets}
                 mask_method = {this.state.mask_method}
@@ -2042,6 +2044,7 @@ class RedactApplication extends React.Component {
                 postMakeUrlCall={this.postMakeUrlCall}
                 establishNewMovie={this.establishNewMovie}
                 checkAndUpdateApiUris={this.checkAndUpdateApiUris}
+                preserve_movie_audio={this.state.preserve_movie_audio}
               />
             </Route>
             <Route path='/redact/image'>
@@ -2141,6 +2144,7 @@ class RedactApplication extends React.Component {
                 deleteScanner={this.deleteScanner}
                 importScanner={this.importScanner}
                 wrapUpJob={this.wrapUpJob}
+                preserve_movie_audio={this.state.preserve_movie_audio}
               />
             </Route>
           </Switch>
