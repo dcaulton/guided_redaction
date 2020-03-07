@@ -300,7 +300,7 @@ class ParseViewSetSplitMovie(viewsets.ViewSet):
                 request_data.get('start_seconds_offset'), 
                 request_data.get('num_frames')
             )
-            movie_frame_dims = 'whatever'
+            movie_frame_dims = get_movie_frame_dimensions(frames)
         else:
             parser = MovieParser(
                 {

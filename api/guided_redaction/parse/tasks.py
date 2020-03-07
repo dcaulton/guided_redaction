@@ -206,12 +206,14 @@ def evaluate_split_and_hash_threaded_children(children):
 def make_and_dispatch_hash_tasks(parent_job, split_tasks):
     frames = []
     audio_url = ''
+    frame_dimensions = []
     for i, split_task in enumerate(split_tasks):
         resp_data = json.loads(split_task.response_data)
         req_data = json.loads(split_task.request_data)
         movie_url = req_data['movie_url']
         frames += resp_data['movies'][movie_url]['frames']
-        frame_dimensions = resp_data['movies'][movie_url]['frame_dimensions']
+        if 'frame_dimensions' in resp_data['movies'][movie_url]:
+            frame_dimensions = resp_data['movies'][movie_url]['frame_dimensions']
         if 'audio_url' in resp_data['movies'][movie_url]:
             audio_url = resp_data['movies'][movie_url]['audio_url']
     frames.sort()
@@ -318,7 +320,7 @@ def build_and_dispatch_split_tasks_multithreaded(parent_job, movie_url, movie_le
         if i % 5 == 0:
             if parent_job.operation == 'split_and_hash_threaded': 
                 split_and_hash_threaded.delay(parent_job.id)
-    if 'preserve_movie_audio' in request_data:
+    if 'preserve_movie_audio' in request_data and request_data['preserve_movie_audio']:
         build_request_data = {}
         build_request_data['movie_url'] = movie_url
         build_request_data['preserve_movie_audio'] = request_data['preserve_movie_audio']
