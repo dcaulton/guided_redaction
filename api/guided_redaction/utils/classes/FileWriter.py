@@ -59,6 +59,18 @@ class FileWriter():
         file_fullpath = os.path.join(self.working_dir, uuid_part, file_part)
         return file_fullpath
 
+    def get_url_for_file_path(self, the_filepath):
+        (x_part, file_part) = os.path.split(the_filepath)
+        (y_part, uuid_part) = os.path.split(x_part)
+        new_url = '/'.join([self.base_url, uuid_part, file_part])
+        return new_url
+
+    def get_file_pattern_fullpath_for_movie_split(self, movie_url, file_pattern):
+        (x_part, file_part) = os.path.split(movie_url)
+        (y_part, uuid_part) = os.path.split(x_part)
+        file_pattern_fullpath = os.path.join(self.working_dir, uuid_part, file_pattern)
+        return file_pattern_fullpath
+
     def write_cv2_image_to_filepath(self, cv2_image, file_fullpath):
         image_bytes = cv2.imencode('.png', cv2_image)[1].tostring()
         (x_part, file_part) = os.path.split(file_fullpath)

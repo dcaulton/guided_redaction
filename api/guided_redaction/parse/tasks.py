@@ -3,6 +3,7 @@ import pprint
 import math
 import os
 import json                                                                     
+import ffmpeg
 from guided_redaction.jobs.models import Job                                    
 from guided_redaction.parse.api import (
         ParseViewSetZipMovie,
@@ -15,6 +16,8 @@ from guided_redaction.parse.api import (
 
 
 hash_frames_batch_size = 50
+split_frames_multithreaded_threshold = 200
+split_frames_chunk_size = 100
 
 @shared_task
 def zip_movie(job_uuid):
@@ -192,6 +195,9 @@ def evaluate_split_and_hash_threaded_children(children):
     elif hash_frames_children > 0:
         complete_percent = .5 + .5*(hash_frames_completed_children/hash_frames_children)
         return ('update_complete_percent', complete_percent)
+    elif split_movie_children > split_movie_completed_children and hash_frames_children == 0:
+        complete_percent = .5*(split_movie_completed_children/split_movie_children)
+        return ('update_complete_percent', complete_percent)
     elif split_movie_children == split_movie_completed_children and hash_frames_children == 0:
         return ('make_and_dispatch_hash_tasks', .5)
     elif split_movie_failed_children > 0:
@@ -199,20 +205,24 @@ def evaluate_split_and_hash_threaded_children(children):
 
 def make_and_dispatch_hash_tasks(parent_job, split_tasks):
     frames = []
+    audio_url = ''
     for i, split_task in enumerate(split_tasks):
         resp_data = json.loads(split_task.response_data)
         req_data = json.loads(split_task.request_data)
         movie_url = req_data['movie_url']
         frames += resp_data['movies'][movie_url]['frames']
         frame_dimensions = resp_data['movies'][movie_url]['frame_dimensions']
+        if 'audio_url' in resp_data['movies'][movie_url]:
+            audio_url = resp_data['movies'][movie_url]['audio_url']
+    frames.sort()
     movies_obj = {}
     movies_obj['movies'] = {}
     movies_obj['movies'][movie_url] = {
         'frames': frames,
         'frame_dimensions': frame_dimensions,
     }
-    if 'audio_url' in resp_data['movies'][movie_url]:
-        movies_obj['movies'][movie_url]['audio_url'] = resp_data['movies'][movie_url]['audio_url']
+    if audio_url:
+        movies_obj['movies'][movie_url]['audio_url'] = audio_url
 
     parent_job.response_data = json.dumps(movies_obj)
     parent_job.save()
@@ -242,28 +252,93 @@ def make_and_dispatch_hash_tasks(parent_job, split_tasks):
             parent=parent_job,
         )
         job.save()
-        print('make and dispatch hash tasks, dispatching job '+str(job.id))
+        print('make and dispatch hash tasks, dispatching job {}'.format(job.id))
         hash_frames.delay(job.id)
         if i % 3 == 0:
             split_and_hash_threaded.delay(parent_job.id)
     return
 
+def get_movie_length_in_seconds(movie_url):
+    worker = ParseViewSetSplitMovie()
+    duration = worker.get_movie_length_in_seconds(movie_url)
+    return duration
+    
 def make_and_dispatch_split_tasks(parent_job):
+    request_data = json.loads(parent_job.request_data)
+    movie_url = request_data['movie_url']
+    movie_length_seconds = get_movie_length_in_seconds(movie_url)
+    if movie_length_seconds < split_frames_multithreaded_threshold:
+        parent_job.status = 'running'
+        parent_job.save()
+        job = Job(
+            request_data=parent_job.request_data,
+            status='created',
+            description='split_movie',
+            app='parse',
+            operation='split_movie',
+            sequence=0,
+            elapsed_time=0.0,
+            parent=parent_job,
+        )
+        job.save()
+        print('make and dispatch split tasks, dispatching job {}'.format(job.id))
+        split_movie.delay(job.id)
+    else: 
+        build_and_dispatch_split_tasks_multithreaded(parent_job, movie_url, movie_length_seconds)
+
+def build_and_dispatch_split_tasks_multithreaded(parent_job, movie_url, movie_length_seconds):
     parent_job.status = 'running'
     parent_job.save()
-    job = Job(
-        request_data=parent_job.request_data,
-        status='created',
-        description='split_movie',
-        app='parse',
-        operation='split_movie',
-        sequence=0,
-        elapsed_time=0.0,
-        parent=parent_job,
-    )
-    job.save()
-    print('make and dispatch split tasks, dispatching job '+str(job.id))
-    split_movie.delay(job.id)
+    request_data = json.loads(parent_job.request_data)
+    movie_url = request_data['movie_url']
+    preserve_movie_audio = False
+    num_jobs = math.ceil(movie_length_seconds/split_frames_chunk_size)
+    for i in range(num_jobs):
+        build_request_data = {}
+        build_request_data['movie_url'] = movie_url
+        start_offset = i * split_frames_chunk_size
+        build_request_data['start_seconds_offset'] = start_offset
+        if i < num_jobs - 1:
+            build_request_data['num_frames'] = split_frames_chunk_size
+        else:
+            build_request_data['num_frames'] = movie_length_seconds % split_frames_chunk_size
+        job = Job(
+            request_data=json.dumps(build_request_data),
+            status='created',
+            description='split_movie threaded',
+            app='parse',
+            operation='split_movie',
+            sequence=0,
+            elapsed_time=0.0,
+            parent=parent_job,
+        )
+        job.save()
+        print('build and dispatch split tasks multithreaded, dispatching job {}'.format(job.id))
+        split_movie.delay(job.id)
+        if i % 5 == 0:
+            if parent_job.operation == 'split_and_hash_threaded': 
+                split_and_hash_threaded.delay(parent_job.id)
+    if 'preserve_movie_audio' in request_data:
+        build_request_data = {}
+        build_request_data['movie_url'] = movie_url
+        build_request_data['preserve_movie_audio'] = request_data['preserve_movie_audio']
+        build_request_data['start_seconds_offset'] = 0
+        build_request_data['num_frames'] = 0
+        job = Job(
+            request_data=json.dumps(build_request_data),
+            status='created',
+            description='split_movie threaded',
+            app='parse',
+            operation='split_movie',
+            sequence=0,
+            elapsed_time=0.0,
+            parent=parent_job,
+        )
+        job.save()
+        print('build and dispatch split tasks multithreaded, dispatching job {} for audio'.format(job.id))
+        split_movie.delay(job.id)
+    if parent_job.operation == 'split_and_hash_threaded': 
+        split_and_hash_threaded.delay(parent_job.id)
 
 @shared_task
 def copy_movie(job_uuid):

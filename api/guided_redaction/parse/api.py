@@ -88,6 +88,25 @@ def add_movie_audio(file_writer, movie_url, audio_url):
     )
     return new_movie_url
 
+def split_movie_partial(file_writer, movie_url, start_seconds_offset, num_frames):
+    movie_filepath = file_writer.get_file_path_for_url(movie_url)
+    file_pattern_fullpath = file_writer.get_file_pattern_fullpath_for_movie_split(movie_url, 'frame_%05d.png')
+    (
+        ffmpeg
+        .input(movie_filepath, ss=start_seconds_offset)
+        .filter('fps', fps=1)
+        .output(file_pattern_fullpath, start_number=start_seconds_offset, frames=num_frames)
+        .overwrite_output()
+        .run(quiet=True)
+    )
+    files_created = []
+    for i in range(start_seconds_offset,start_seconds_offset+num_frames):
+        index_as_string = '{:05d}'.format(i)
+        filename = file_pattern_fullpath.replace('%05d', index_as_string)
+        file_url = file_writer.get_url_for_file_path(filename)
+        files_created.append(file_url)
+    return files_created
+
 class ParseViewSetGetImagesForUuid(viewsets.ViewSet):
     def list(self, request):
         the_uuid = request.GET['uuid']
@@ -234,6 +253,20 @@ class ParseViewSetSplitMovie(viewsets.ViewSet):
         request_data = request.data
         return self.process_create_request(request_data)
 
+    def get_movie_length_in_seconds(self, movie_url):
+        file_writer = FileWriter(
+            working_dir=settings.REDACT_FILE_STORAGE_DIR,
+            base_url=settings.REDACT_FILE_BASE_URL,
+            connection_string='',
+            image_storage=settings.REDACT_IMAGE_STORAGE,
+            image_request_verify_headers=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
+        )
+        movie_fullpath = file_writer.get_file_path_for_url(movie_url)
+        probe = ffmpeg.probe(movie_fullpath)
+        video_stream = next((stream for stream in probe['streams'] if stream['codec_type'] == 'video'), None)
+        duration = int(float(video_stream['duration']))
+        return duration
+
     def process_create_request(self, request_data):
         if not request_data.get("movie_url") and not request_data.get('sykes_dev_azure_movie_uuid'):
             return self.error("movie_url or sykes_dev_azure_movie_uuid is required")
@@ -260,21 +293,29 @@ class ParseViewSetSplitMovie(viewsets.ViewSet):
             image_request_verify_headers=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
         )
 
-        parser = MovieParser(
-            {
-                "debug": settings.DEBUG,
-                "ifps": 1,
-                "ofps": 1,
-                "scan_method": "unzip",
-                "movie_url": movie_url,
-                "file_writer": fw,
-                "use_same_directory": True,
-                "image_request_verify_headers": settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
-            }
-        )
-        
-        frames = parser.split_movie()
-        movie_frame_dims = get_movie_frame_dimensions(frames)
+        if 'start_seconds_offset' in request_data and 'num_frames' in request_data:
+            frames = split_movie_partial(
+                fw, 
+                movie_url, 
+                request_data.get('start_seconds_offset'), 
+                request_data.get('num_frames')
+            )
+            movie_frame_dims = 'whatever'
+        else:
+            parser = MovieParser(
+                {
+                    "debug": settings.DEBUG,
+                    "ifps": 1,
+                    "ofps": 1,
+                    "scan_method": "unzip",
+                    "movie_url": movie_url,
+                    "file_writer": fw,
+                    "use_same_directory": True,
+                    "image_request_verify_headers": settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
+                }
+            )
+            frames = parser.split_movie()
+            movie_frame_dims = get_movie_frame_dimensions(frames)
 
         return_data = {}
         return_data['movies'] = {}
