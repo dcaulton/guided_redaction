@@ -33,7 +33,6 @@ def collate_image_urls(frames, unique_frames):
 
     return (new_frames, new_unique_frames)
 
-# TODO use this one instead of the one embedded in the classes
 def get_movie_frame_dimensions(frames):
   if not frames:
       return []
@@ -71,6 +70,23 @@ def split_movie_audio(file_writer, movie_url):
         .run(quiet=True)
     )
     return audio_url
+
+def add_movie_audio(file_writer, movie_url, audio_url):
+    movie_filepath = file_writer.get_file_path_for_url(movie_url)
+    new_movie_url = movie_url[0:movie_url.rfind('.')] + '_audio_added' + movie_url[movie_url.rfind('.'):]
+    new_movie_filepath = file_writer.get_file_path_for_url(new_movie_url)
+    audio_filepath = file_writer.get_file_path_for_url(audio_url)
+
+    audio_input = ffmpeg.input(audio_filepath)
+    video_input = ffmpeg.input(movie_filepath)
+    (
+        ffmpeg
+        .filter((audio_input, audio_input), 'join', inputs=2, channel_layout='stereo')
+        .output(video_input.video, new_movie_filepath, vcodec='copy')
+        .overwrite_output()
+        .run(quiet=True)
+    )
+    return new_movie_url
 
 class ParseViewSetGetImagesForUuid(viewsets.ViewSet):
     def list(self, request):
@@ -214,20 +230,6 @@ class ParseViewSetCopyMovie(viewsets.ViewSet):
 
 
 class ParseViewSetSplitMovie(viewsets.ViewSet):
-    def get_movie_frame_dimensions(self, frames):
-      if not frames:
-          return []
-      input_url = frames[0]
-      pic_response = requests.get(
-        input_url,
-        verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
-      )
-      img_binary = pic_response.content
-      if img_binary:
-          nparr = np.fromstring(img_binary, np.uint8)
-          cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-          return (cv2_image.shape[1], cv2_image.shape[0])
-
     def create(self, request):
         request_data = request.data
         return self.process_create_request(request_data)
@@ -272,7 +274,7 @@ class ParseViewSetSplitMovie(viewsets.ViewSet):
         )
         
         frames = parser.split_movie()
-        movie_frame_dims = self.get_movie_frame_dimensions(frames)
+        movie_frame_dims = get_movie_frame_dimensions(frames)
 
         return_data = {}
         return_data['movies'] = {}
@@ -401,7 +403,7 @@ class ParseViewSetMakeUrl(viewsets.ViewSet):
 class ParseViewSetZipMovie(viewsets.ViewSet):
     def create(self, request):
         resp_data = self.process_create_request(request.data)
-        movie_frame_dims = self.get_movie_frame_dimensions(resp_data['response_data']['frames'])
+        movie_frame_dims = get_movie_frame_dimensions(resp_data['response_data']['frames'])
         if resp_data['errors_400']:
             return self.error(resp_data['errors_400'], status_code=400)
         if resp_data['errors_422']:
@@ -432,7 +434,7 @@ class ParseViewSetZipMovie(viewsets.ViewSet):
             the_connection_string = settings.REDACT_AZURE_BLOB_CONNECTION_STRING
         else:
             the_base_url = settings.REDACT_FILE_BASE_URL
-        fw = FileWriter(
+        file_writer = FileWriter(
             working_dir=settings.REDACT_FILE_STORAGE_DIR,
             base_url=the_base_url,
             connection_string=the_connection_string,
@@ -444,12 +446,15 @@ class ParseViewSetZipMovie(viewsets.ViewSet):
                 "debug": settings.DEBUG,
                 "ifps": 1,
                 "ofps": 1,
-                "file_writer": fw,
+                "file_writer": file_writer,
                 "image_request_verify_headers": settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
             }
         )
 
         output_url = parser.zip_movie(image_urls, movie_name)
+
+        if request_data.get('audio_url'):
+            output_url = add_movie_audio(file_writer, output_url, request_data.get('audio_url'))
 
         return_data['response_data'] = {
             "movie_url": output_url,
