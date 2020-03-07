@@ -144,7 +144,7 @@ class MoviePanel extends React.Component {
       request_data: {},
     }
     job_data['app'] = 'parse'
-    job_data['operation'] = 'split_movie'
+    job_data['operation'] = 'split_threaded'
     job_data['description'] = 'split movie from MoviePanel: movie ' + this.props.movie_url
     job_data['request_data'] = {
       movie_url: this.props.movie_url,
@@ -895,7 +895,7 @@ class MoviePanelHeader extends React.Component {
           className='btn btn-primary' 
           onClick={() => this.props.submitMovieJob('split_and_hash_video', this.props.movie_url)}
       >
-        Split Video
+        Split and Hash
       </button>
     )
   }

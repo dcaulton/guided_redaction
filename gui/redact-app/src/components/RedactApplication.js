@@ -1475,7 +1475,7 @@ class RedactApplication extends React.Component {
 			} else if ((job.app === 'parse' && job.operation === 'split_and_hash_movie') 
 	        || (job.app === 'parse' && job.operation === 'split_and_hash_threaded')) {
         this.loadSplitAndHashResults(job, when_done)
-			} else if (job.app === 'parse' && job.operation === 'split_movie') {
+			} else if (job.app === 'parse' && job.operation === 'split_threaded') {
         this.loadSplitResults(job, when_done)
 			} else if (job.app === 'parse' && job.operation === 'hash_movie') {
         this.loadHashResults(job, when_done)

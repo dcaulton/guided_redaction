@@ -43,6 +43,10 @@ def zip_movie(job_uuid):
     job.save()
 
 @shared_task
+def split_threaded(job_uuid):
+    split_movie(job_uuid)
+
+@shared_task
 def split_movie(job_uuid):
     if not Job.objects.filter(pk=job_uuid).exists():
         print('calling split_movie on nonexistent job: '+ job_uuid) 
