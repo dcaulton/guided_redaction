@@ -136,7 +136,7 @@ class RedactApplication extends React.Component {
     const host = window.location.hostname
     if (host === 'localhost' || host === '127.0.0.1') {
       api_server_url = 'http://localhost:8000/api/'
-    } else if (host.match('/sykes.com$/')) {
+    } else if (host.match('sykes.com$')) {
       api_server_url = 'https://'+host+'/api/'
     }
     if (this.state.api_server_url) {
