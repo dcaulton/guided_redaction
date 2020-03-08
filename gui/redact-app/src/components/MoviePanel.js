@@ -44,7 +44,6 @@ class MoviePanel extends React.Component {
   }
 
   componentDidMount() {
-    this.props.checkAndUpdateApiUris()
     if (!this.props.movie_url) {
       this.showMovieUploadTarget()
     }

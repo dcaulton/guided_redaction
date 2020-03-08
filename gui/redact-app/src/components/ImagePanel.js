@@ -22,11 +22,6 @@ class ImagePanel extends React.Component {
     this.newImage=this.newImage.bind(this)
   }
 
-
-  componentDidMount() {
-    this.props.checkAndUpdateApiUris()
-  }
-
   newImage() {
     this.props.setFramesetHash('')
     this.setMode()

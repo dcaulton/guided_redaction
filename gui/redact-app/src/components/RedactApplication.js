@@ -16,7 +16,7 @@ let helpDoc = ''
 class RedactApplication extends React.Component {
   constructor(props) {
     super(props);
-    const api_server_url = 'http://localhost:8000/api/'
+    const api_server_url = ''
     const api_key = 'davespassword123'
     this.state = {
       api_server_url: api_server_url,
@@ -28,22 +28,6 @@ class RedactApplication extends React.Component {
       image_width: 0,
       image_height: 0,
       image_scale: 1,
-      ping_url: api_server_url + 'v1/parse/ping',
-      flood_fill_url: api_server_url + 'v1/analyze/flood-fill',
-      arrow_fill_url: api_server_url + 'v1/analyze/arrow-fill',
-      scan_template_url: api_server_url + 'v1/analyze/scan-template',
-      crop_url: api_server_url + 'v1/parse/crop-image',
-      parse_movie_url: api_server_url + 'v1/parse/split-and-hash-movie',
-      codes_url: api_server_url + 'v1/codes',
-      get_images_for_uuid_url: api_server_url + 'v1/parse/get-images-for-uuid',
-      jobs_url: api_server_url + 'v1/jobs',
-      wrap_up_job_url: api_server_url + 'v1/wrap-up-jobs',
-      workbooks_url: api_server_url + 'v1/workbooks',
-      link_url: api_server_url + 'v1/link/learn-dev',
-      can_see_url: api_server_url + 'v1/link/can-reach',
-      make_url_url: api_server_url + 'v1/parse/make-url',
-      scanners_url: api_server_url + 'v1/scanners',
-      files_url: api_server_url + 'v1/files',
       current_workbook_name: 'workbook 1',
       playSound: true,
       current_workbook_id: '',
@@ -133,7 +117,6 @@ class RedactApplication extends React.Component {
     this.establishNewEmptyMovie=this.establishNewEmptyMovie.bind(this)
     this.setCampaignMovies=this.setCampaignMovies.bind(this)
     this.addImageToMovie=this.addImageToMovie.bind(this)
-    this.checkAndUpdateApiUris=this.checkAndUpdateApiUris.bind(this)
     this.setIllustrateParameters=this.setIllustrateParameters.bind(this)
     this.getImageUrl=this.getImageUrl.bind(this)
     this.setFramesetHash=this.setFramesetHash.bind(this)
@@ -146,6 +129,47 @@ class RedactApplication extends React.Component {
     this.deleteScanner=this.deleteScanner.bind(this)
     this.importScanner=this.importScanner.bind(this)
     this.wrapUpJob=this.wrapUpJob.bind(this)
+  }
+
+  getUrl(url_name) {
+    let api_server_url = ''
+    const host = window.location.hostname
+    if (host === 'localhost' || host === '127.0.0.1') {
+      api_server_url = 'http://localhost:8000/api/'
+    } else if (host.match('/sykes.com$/')) {
+      api_server_url = 'https://'+host+'/api/'
+    }
+    if (this.state.api_server_url) {
+      api_server_url = this.state.api_server_url
+    }
+
+    if (url_name === 'ping_url') {
+      return api_server_url + 'v1/parse/ping'
+    } else if (url_name === 'flood_fill_url') {
+      return api_server_url + 'v1/analyze/flood-fill'
+    } else if (url_name === 'arrow_fill_url') {
+      return api_server_url + 'v1/analyze/arrow-fill'
+    } else if (url_name === 'crop_url') {
+      return api_server_url + 'v1/parse/crop-image'
+    } else if (url_name === 'get_images_for_uuid_url') {
+      return api_server_url + 'v1/parse/get-images-for-uuid'
+    } else if (url_name === 'jobs_url') {
+      return api_server_url + 'v1/jobs'
+    } else if (url_name === 'wrap_up_job_url') {
+      return api_server_url + 'v1/wrap-up-jobs'
+    } else if (url_name === 'workbooks_url') {
+      return api_server_url + 'v1/workbooks'
+    } else if (url_name === 'link_url') {
+      return api_server_url + 'v1/link/learn-dev'
+    } else if (url_name === 'can_see_url') {
+      return api_server_url + 'v1/link/can-reach'
+    } else if (url_name === 'make_url_url') {
+      return api_server_url + 'v1/parse/make-url'
+    } else if (url_name === 'scanners_url') {
+      return api_server_url + 'v1/scanners'
+    } else if (url_name === 'files_url') {
+      return api_server_url + 'v1/files'
+    }
   }
 
   setGlobalStateVar(var_name, var_value, when_done=(()=>{})) {
@@ -297,7 +321,7 @@ class RedactApplication extends React.Component {
   }
 
   async checkIfApiCanSeeUrl(the_url, when_done=(()=>{})) {
-    let response = await fetch(this.state.can_see_url, {
+    let response = await fetch(this.getUrl('can_see_url'), {
       method: 'POST',
       headers: this.buildJsonHeaders(),
       body: JSON.stringify({
@@ -357,7 +381,7 @@ class RedactApplication extends React.Component {
   }
 
   async getScanners() {
-    let the_url = this.state.scanners_url
+    let the_url = this.getUrl('scanners_url')
     await fetch(the_url, {
       method: 'GET',
       headers: this.buildJsonHeaders(),
@@ -372,7 +396,7 @@ class RedactApplication extends React.Component {
   }
 
   async importScanner(the_uuid, when_done=(()=>{})) {
-    let the_url = this.state.scanners_url + '/' + the_uuid
+    let the_url = this.getUrl('scanners_url') + '/' + the_uuid
     await fetch(the_url, {
       method: 'GET',
       headers: this.buildJsonHeaders(),
@@ -397,7 +421,7 @@ class RedactApplication extends React.Component {
   }
 
   async deleteScanner(the_uuid, when_done=(()=>{})) {
-    let the_url = this.state.scanners_url + '/' + the_uuid
+    let the_url = this.getUrl('scanners_url') + '/' + the_uuid
     await fetch(the_url, {
       method: 'DELETE',
       headers: this.buildJsonHeaders(),
@@ -417,7 +441,7 @@ class RedactApplication extends React.Component {
     if (Object.keys(template_data).includes('description')) {
       description_string = template_data['description']
     }
-    let response = await fetch(this.state.scanners_url, {
+    let response = await fetch(this.getUrl('scanners_url'), {
       method: 'POST',
       headers: this.buildJsonHeaders(),
       body: JSON.stringify({
@@ -442,7 +466,7 @@ class RedactApplication extends React.Component {
     let image_name = hash_in.hasOwnProperty('filename')? hash_in['filename'] : 'no filename'
     let when_done = hash_in.hasOwnProperty('when_done')? hash_in['when_done'] : (()=>{})
     let when_failed = hash_in.hasOwnProperty('when_failed')? hash_in['when_failed'] : (()=>{})
-    let response = await fetch(this.state.make_url_url, {
+    let response = await fetch(this.getUrl('make_url_url'), {
       method: 'POST',
       headers: this.buildJsonHeaders(),
       body: JSON.stringify({
@@ -541,7 +565,7 @@ class RedactApplication extends React.Component {
   }
 
   async gotoWhenDoneTarget(when_done=(()=>{})) {
-    const the_url = this.state.link_url
+    const the_url = this.getUrl('link_url')
     let image_urls = []
     let framesets = this.getCurrentFramesets()
     for (let i=0; i < Object.keys(framesets).length; i++) {
@@ -669,7 +693,7 @@ class RedactApplication extends React.Component {
   }
 
   async getImagesForUuid(the_uuid, the_offsets, when_done) {
-    const the_url = this.state.get_images_for_uuid_url + '?uuid=' + the_uuid
+    const the_url = this.getUrl('get_images_for_uuid_url') + '?uuid=' + the_uuid
     let response = await fetch(the_url, {
       method: 'GET',
       headers: this.buildJsonHeaders(),
@@ -685,7 +709,7 @@ class RedactApplication extends React.Component {
   }
 
   async cropImage(image_url, start, end, anchor_id, when_done=(()=>{})) {
-    const the_url = this.state.crop_url
+    const the_url = this.getUrl('crop_url')
     let response = await fetch(the_url, {
       method: 'POST',
       headers: this.buildJsonHeaders(),
@@ -767,41 +791,7 @@ class RedactApplication extends React.Component {
     }
   }
 
-  updateApiUrls(api_server_url) {
-    this.setState({
-      ping_url: api_server_url + 'v1/parse/ping',
-      flood_fill_url: api_server_url + 'v1/analyze/flood-fill',
-      arrow_fill_url: api_server_url + 'v1/analyze/arrow-fill',
-      scan_template_url: api_server_url + 'v1/analyze/scan-template',
-      crop_url: api_server_url + 'v1/parse/crop-image',
-      parse_movie_url: api_server_url + 'v1/parse/split-and-hash-movie',
-      codes_url: api_server_url + 'v1/codes',
-      get_images_for_uuid_url: api_server_url + 'v1/parse/get-images-for-uuid',
-      jobs_url: api_server_url + 'v1/jobs',
-      workbooks_url: api_server_url + 'v1/workbooks',
-      link_url: api_server_url + 'v1/link/learn-dev',
-      can_see_url: api_server_url + 'v1/link/can-reach',
-      make_url_url: api_server_url + 'v1/parse/make-url',
-      files_url: api_server_url + 'v1/files',
-    })
-  }
-
-  checkAndUpdateApiUris() {
-    if ((window.location.hostname !== 'localhost') 
-        && (window.location.hostname !== '127.0.0.1')) {
-      const root_url = 'https://' + window.location.hostname + '/api/'
-      this.updateApiUrls(root_url)
-    }
-    this.checkForInboundGetParameters()
-  }
   componentDidMount() {
-    this.checkAndUpdateApiUris() 
-//    if ((window.location.hostname !== 'localhost') 
-//        && (window.location.hostname !== '127.0.0.1')) {
-//      const root_url = 'https://' + window.location.hostname + '/api/'
-//      this.updateApiUrls(root_url)
-//    }
-//    this.checkForInboundGetParameters()
     if (!this.state.showMovieParserLink) {
       document.getElementById('movie_panel_link').style.display = 'none'
     }
@@ -809,6 +799,7 @@ class RedactApplication extends React.Component {
       document.getElementById('insights_link').style.display = 'none'
     }
     this.checkForJobs()
+    this.checkForInboundGetParameters()
   }
 
   setActiveMovie(the_url, theCallback=(()=>{})) {
@@ -864,7 +855,7 @@ class RedactApplication extends React.Component {
   }
 
   async doFloodFill(x_scaled, y_scaled, insights_image, selected_areas, cur_hash, selected_area_meta_id) {
-    await fetch(this.state.flood_fill_url, {                                      
+    await fetch(this.getUrl('flood_fill_url'), {                                      
       method: 'POST',                                                           
       headers: this.buildJsonHeaders(),
       body: JSON.stringify({                                                    
@@ -891,7 +882,7 @@ class RedactApplication extends React.Component {
   } 
 
   async doArrowFill(x_scaled, y_scaled, insights_image, selected_areas, cur_hash, selected_area_meta_id, when_done) {
-    await fetch(this.state.arrow_fill_url, {
+    await fetch(this.getUrl('arrow_fill_url'), {
       method: 'POST',
       headers: this.buildJsonHeaders(),
       body: JSON.stringify({
@@ -921,7 +912,7 @@ class RedactApplication extends React.Component {
   }
 
   async doPing(when_done_success, when_done_failure) {                                                              
-    await fetch(this.state.ping_url, {                                          
+    await fetch(this.getUrl('ping_url'), {                                          
       method: 'GET',                                                            
       headers: this.buildJsonHeaders(),
     })                                                                          
@@ -1235,7 +1226,7 @@ class RedactApplication extends React.Component {
   }
 
   async loadIllustrateResults(job, when_done=(()=>{})) {
-    let job_url = this.state.jobs_url + '/' + job.id
+    let job_url = this.getUrl('jobs_url') + '/' + job.id
     await fetch(job_url, {
       method: 'GET',
       headers: this.buildJsonHeaders(),
@@ -1421,7 +1412,7 @@ class RedactApplication extends React.Component {
   }
 
   async getJobResultData(job_id, when_done=(()=>{})) {
-    let job_url = this.state.jobs_url + '/' + job_id
+    let job_url = this.getUrl('jobs_url') + '/' + job_id
     await fetch(job_url, {
       method: 'GET',
       headers: this.buildJsonHeaders(),
@@ -1450,7 +1441,7 @@ class RedactApplication extends React.Component {
   }
 
   async loadJobResults(job_id, when_done=(()=>{})) {
-    let job_url = this.state.jobs_url + '/' + job_id
+    let job_url = this.getUrl('jobs_url') + '/' + job_id
     await fetch(job_url, {
       method: 'GET',
       headers: this.buildJsonHeaders(),
@@ -1513,7 +1504,7 @@ class RedactApplication extends React.Component {
   }
 
   async getJobs() {
-    let the_url = this.state.jobs_url
+    let the_url = this.getUrl('jobs_url')
     if (this.state.current_workbook_id) {
         the_url += '?workbook_id=' + this.state.current_workbook_id
     } 
@@ -1531,7 +1522,7 @@ class RedactApplication extends React.Component {
   }
 
   async wrapUpJob(job_id) {
-    await fetch(this.state.wrap_up_job_url, {
+    await fetch(this.getUrl('wrap_up_job_url'), {
       method: 'POST',
       headers: this.buildJsonHeaders(),
       body: JSON.stringify({
@@ -1547,7 +1538,7 @@ class RedactApplication extends React.Component {
   }
 
   async getFiles() {
-    let the_url = this.state.files_url
+    let the_url = this.getUrl('files_url')
     await fetch(the_url, {
       method: 'GET',
       headers: this.buildJsonHeaders(),
@@ -1562,7 +1553,7 @@ class RedactApplication extends React.Component {
   }
 
   async deleteFile(the_uuid, when_done=(()=>{})) {
-    let the_url = this.state.files_url + '/' + the_uuid
+    let the_url = this.getUrl('files_url') + '/' + the_uuid
     await fetch(the_url, {
       method: 'DELETE',
       headers: this.buildJsonHeaders(),
@@ -1583,7 +1574,7 @@ class RedactApplication extends React.Component {
     let when_fetched = hash_in.hasOwnProperty('after_loaded')? hash_in['after_loaded'] : (()=>{})
     let when_failed = hash_in.hasOwnProperty('when_failed')? hash_in['when_failed'] : (()=>{})
     let current_user = this.getCurrentUser()
-    await fetch(this.state.jobs_url, {
+    await fetch(this.getUrl('jobs_url'), {
       method: 'POST',
       headers: this.buildJsonHeaders(),
       body: JSON.stringify({
@@ -1614,7 +1605,7 @@ class RedactApplication extends React.Component {
   }
 
   async cancelJob(job_id) {
-    let the_url = this.state.jobs_url + '/' + job_id
+    let the_url = this.getUrl('jobs_url') + '/' + job_id
     await fetch(the_url, {
       method: 'DELETE',
       headers: this.buildJsonHeaders(),
@@ -1628,7 +1619,7 @@ class RedactApplication extends React.Component {
   }
 
   async getWorkbooks() {
-    await fetch(this.state.workbooks_url, {
+    await fetch(this.getUrl('workbooks_url'), {
       method: 'GET',
       headers: this.buildJsonHeaders(),
     })
@@ -1656,7 +1647,7 @@ class RedactApplication extends React.Component {
 
   async saveWorkbook(when_done=(()=>{})) {
     const current_user = this.getCurrentUser()
-    await fetch(this.state.workbooks_url, {
+    await fetch(this.getUrl('workbooks_url'), {
       method: 'POST',
       headers: this.buildJsonHeaders(),
       body: JSON.stringify({
@@ -1691,7 +1682,7 @@ class RedactApplication extends React.Component {
       when_done()
       return
     }
-    let wb_url = this.state.workbooks_url + '/' + workbook_id
+    let wb_url = this.getUrl('workbooks_url') + '/' + workbook_id
     await fetch(wb_url, {
       method: 'GET',
       headers: this.buildJsonHeaders(),
@@ -1725,7 +1716,7 @@ class RedactApplication extends React.Component {
   }
 
   async deleteWorkbook(workbook_id, when_done=(()=>{})) {
-    let the_url = this.state.workbooks_url+ '/' + workbook_id
+    let the_url = this.getUrl('workbooks_url')+ '/' + workbook_id
     await fetch(the_url, {
       method: 'DELETE',
       headers: this.buildJsonHeaders(),
@@ -2043,7 +2034,6 @@ class RedactApplication extends React.Component {
                 watchForJob={this.watchForJob}
                 postMakeUrlCall={this.postMakeUrlCall}
                 establishNewMovie={this.establishNewMovie}
-                checkAndUpdateApiUris={this.checkAndUpdateApiUris}
                 preserve_movie_audio={this.state.preserve_movie_audio}
               />
             </Route>
@@ -2075,7 +2065,6 @@ class RedactApplication extends React.Component {
                 establishNewOneImageMovie={this.establishNewOneImageMovie}
                 establishNewEmptyMovie={this.establishNewEmptyMovie}
                 addImageToMovie={this.addImageToMovie}
-                checkAndUpdateApiUris={this.checkAndUpdateApiUris}
                 illustrateParameters={this.state.illustrateParameters}
                 setIllustrateParameters={this.setIllustrateParameters}
               />
@@ -2128,7 +2117,6 @@ class RedactApplication extends React.Component {
                 files={this.state.files}
                 getFiles={this.getFiles}
                 deleteFile={this.deleteFile}
-                checkAndUpdateApiUris={this.checkAndUpdateApiUris}
                 preserveAllJobs={this.state.preserveAllJobs}
                 telemetry_rules={this.state.telemetry_rules}
                 tier_1_matches={this.state.tier_1_matches}

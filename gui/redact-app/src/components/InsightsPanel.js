@@ -208,7 +208,6 @@ class InsightsPanel extends React.Component {
   }
 
   componentDidMount() {
-    this.props.checkAndUpdateApiUris()
     this.scrubberOnChange()
     if (Object.keys(this.props.getCurrentFramesets()).length > 0) {
       this.movieSplitDone(this.props.getCurrentFramesets())
