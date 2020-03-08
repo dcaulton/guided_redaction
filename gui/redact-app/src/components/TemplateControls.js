@@ -23,6 +23,16 @@ class TemplateControls extends React.Component {
     this.addAnchorCallback=this.addAnchorCallback.bind(this)
     this.addMaskZoneCallback=this.addMaskZoneCallback.bind(this)
     this.setLocalVarsFromTemplate=this.setLocalVarsFromTemplate.bind(this)
+    this.getCurrentAnchors=this.getCurrentAnchors.bind(this)
+    this.getCurrentMaskZones=this.getCurrentMaskZones.bind(this)
+  }
+
+  getCurrentAnchors() {
+    return this.state.anchors
+  }
+
+  getCurrentMaskZones() {
+    return this.state.mask_zones
   }
 
   setLocalVarsFromTemplate(template) {
@@ -45,6 +55,10 @@ class TemplateControls extends React.Component {
       let template = this.props.templates[this.props.current_template_id]
       this.setLocalVarsFromTemplate(template)
     }
+    this.props.addInsightsCallback('getCurrentTemplateAnchors', this.getCurrentAnchors)
+    this.props.addInsightsCallback('getCurrentTemplateMaskZones', this.getCurrentMaskZones)
+    this.props.addInsightsCallback('add_template_anchor_2', this.addAnchorCallback)
+    this.props.addInsightsCallback('add_template_mask_zone_2', this.addMaskZoneCallback)
   }
 
   importTemplate(files) {
@@ -320,7 +334,6 @@ class TemplateControls extends React.Component {
   }
 
   addTemplateAnchor() {
-    this.props.addInsightsCallback('add_template_anchor_2', this.addAnchorCallback)
     this.setState({
       unsaved_changes: true,
     })
@@ -343,11 +356,10 @@ class TemplateControls extends React.Component {
       anchors: deepCopyAnchors,
       unsaved_changes: true,
     })
-    this.props.handleSetMode('add_template_anchor_3')
+    this.props.handleSetMode('add_template_anchor_1')
   }
 
   addTemplateMaskZone() {
-    this.props.addInsightsCallback('add_template_mask_zone_2', this.addMaskZoneCallback)
     this.setState({
       unsaved_changes: true,
     })
@@ -370,7 +382,7 @@ class TemplateControls extends React.Component {
       mask_zones: deepCopyMaskZones,
       unsaved_changes: true,
     })
-    this.props.handleSetMode('add_template_mask_zone_3')
+    this.props.handleSetMode('add_template_mask_zone_1')
   } 
 
   async doSave(when_done=(()=>{})) {

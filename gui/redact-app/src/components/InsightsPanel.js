@@ -72,11 +72,29 @@ class InsightsPanel extends React.Component {
     this.getCurrentOcrMatches=this.getCurrentOcrMatches.bind(this)
     this.getCurrentAreasToRedact=this.getCurrentAreasToRedact.bind(this)
     this.setScrubberToIndex=this.setScrubberToIndex.bind(this)
+    this.getCurrentTemplateAnchors=this.getCurrentTemplateAnchors.bind(this)
+    this.getCurrentTemplateMaskZones=this.getCurrentTemplateMaskZones.bind(this)
   }
 
   setScrubberToIndex(the_value) {
     document.getElementById('movie_scrubber').value = the_value
     this.scrubberOnChange()
+  }
+
+  getCurrentTemplateAnchors() {
+    if (Object.keys(this.state.callbacks).includes('getCurrentTemplateAnchors')) {
+      return this.state.callbacks['getCurrentTemplateAnchors']()
+    }
+    console.log('oops - get current template anchors function not registered')
+    return []
+  }
+
+  getCurrentTemplateMaskZones() {
+    if (Object.keys(this.state.callbacks).includes('getCurrentTemplateMaskZones')) {
+      return this.state.callbacks['getCurrentTemplateMaskZones']()
+    }
+    console.log('oops - get current template mask zones function not registered')
+    return []
   }
 
   getCurrentAreasToRedact() {
@@ -119,11 +137,7 @@ class InsightsPanel extends React.Component {
   }
 
   addInsightsCallback(the_key, the_callback) {
-    let deepCopyCallbacks = JSON.parse(JSON.stringify(this.state.callbacks))
-    deepCopyCallbacks[the_key] = the_callback
-    this.setState({
-      callbacks: deepCopyCallbacks,
-    })
+    this.state.callbacks[the_key] = the_callback
   }
 
   setImageTypeToDisplay(the_type) {
@@ -1173,8 +1187,6 @@ class InsightsPanel extends React.Component {
               height={this.state.image_height}
               clickCallback={this.handleImageClick}
               currentImageIsTemplateAnchorImage={this.currentImageIsTemplateAnchorImage}
-              templates={this.props.templates}
-              current_template_id={this.props.current_template_id}
               insights_image_scale={this.state.insights_image_scale}
               getTier1TemplateMatches={this.getTier1TemplateMatches}
               getSelectedAreas={this.getSelectedAreas}
@@ -1184,6 +1196,8 @@ class InsightsPanel extends React.Component {
               getCurrentOcrMatches={this.getCurrentOcrMatches}
               getCurrentAreasToRedact={this.getCurrentAreasToRedact}
               movie_url={this.props.movie_url}
+              getCurrentTemplateAnchors={this.getCurrentTemplateAnchors}
+              getCurrentTemplateMaskZones={this.getCurrentTemplateMaskZones}
             />
           </div>
 

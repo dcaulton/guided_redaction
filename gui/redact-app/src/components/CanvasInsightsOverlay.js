@@ -22,14 +22,14 @@ class CanvasInsightsOverlay extends React.Component {
   }
 
   drawTemplateAnchors() {
-    if (this.props.currentImageIsTemplateAnchorImage()) {
+    if (this.props.getCurrentTemplateAnchors()) {
       const canvas = this.refs.insights_canvas
       let ctx = canvas.getContext('2d')
       ctx.strokeStyle = this.anchor_color
       ctx.lineWidth = 3
       ctx.globalAlpha = 1
       
-      const template_anchors = this.props.templates[this.props.current_template_id]['anchors']
+      const template_anchors = this.props.getCurrentTemplateAnchors()
       for (let i=0; i < template_anchors.length; i++) {
         let the_anchor = template_anchors[i]
         if (Object.keys(the_anchor).includes('start')) {
@@ -46,14 +46,14 @@ class CanvasInsightsOverlay extends React.Component {
   }
 
   drawTemplateMaskZones() {
-    if (this.props.currentImageIsTemplateAnchorImage()) {
+    if (this.props.getCurrentTemplateMaskZones()) {
       const canvas = this.refs.insights_canvas
       let ctx = canvas.getContext('2d')
       ctx.strokeStyle = this.mask_zone_color
       ctx.lineWidth = 3
       ctx.globalAlpha = 1
       
-      const template_mask_zones = this.props.templates[this.props.current_template_id]['mask_zones']
+      const template_mask_zones = this.props.getCurrentTemplateMaskZones()
       for (let i=0; i < template_mask_zones.length; i++) {
         let the_mask_zone= template_mask_zones[i]
         if (Object.keys(the_mask_zone).includes('start')) {
