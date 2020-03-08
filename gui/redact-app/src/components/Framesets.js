@@ -19,11 +19,15 @@ class FramesetCard extends React.Component {
 
   render() {
     const hash_span = this.buildFramesetHashData(this.props.frame_hash)
+    let top_div_classname = 'col-md-3 frameCard m-3 p-3 bg-light'
+    if (this.props.frame_hash === this.props.highlighted_frameset_hash) {
+      top_div_classname = 'col-md-3 frameCard m-3 p-3 bg-light active_card'
+    }
     let display_image = this.props.getImageFromFrameset(this.props.frame_hash)
     return (
       <div 
           id={this.props.frame_hash}
-          className='col-md-3 frameCard m-3 p-3 bg-light' 
+          className={top_div_classname}
           draggable='true'
           onDragStart={() => this.props.setDraggedId(this.props.frame_hash)}
           onDragOver={(event) => event.preventDefault()}
@@ -114,6 +118,7 @@ class FramesetCardList extends React.Component {
         setZoomImageUrl={this.props.setZoomImageUrl}
         getImageFromFrameset={this.props.getImageFromFrameset}
         getRedactedImageFromFrameset={this.props.getRedactedImageFromFrameset}
+        highlighted_frameset_hash={this.props.highlighted_frameset_hash}
       />
     );
     return items

@@ -531,7 +531,7 @@ class MovieCard extends React.Component {
     const dims_string = this.getMovieDimensions(this.props.this_cards_movie_url, this.props.movies)
     let top_div_classname = "row mt-2 card"
     if (this.props.this_cards_movie_url === this.props.active_movie_url) {
-      top_div_classname = "row mt-2 card active_movie_card"
+      top_div_classname = "row mt-2 card active_card"
     }
     const movie_body_id = 'movie_body_' + this.props.index
     const movie = this.props.movies[this.props.this_cards_movie_url]

@@ -11,6 +11,9 @@ class MoviePanel extends React.Component {
       message: '.',
       uploadMove: false,
       movie_resolution_new: '',
+      frameset_offset_seconds: '0',
+      frameset_offset_minutes: '0',
+      highlighted_frameset_hash: '',
     }
     this.getNameFor=this.getNameFor.bind(this)
     this.redactFramesetCallback=this.redactFramesetCallback.bind(this)
@@ -21,6 +24,23 @@ class MoviePanel extends React.Component {
     this.submitMovieJob=this.submitMovieJob.bind(this)
     this.showMovieUploadTarget=this.showMovieUploadTarget.bind(this)
     this.changeMovieResolutionNew=this.changeMovieResolutionNew.bind(this)
+    this.changeFramesetOffsetSeconds=this.changeFramesetOffsetSeconds.bind(this)
+    this.changeFramesetOffsetMinutes=this.changeFramesetOffsetMinutes.bind(this)
+    this.findFramesetAtOffset=this.findFramesetAtOffset.bind(this)
+  }
+
+  findFramesetAtOffset(offset) {
+    const cur_movie_frames = this.props.movies[this.props.movie_url]['frames']
+    let frame = ''
+    if (offset > cur_movie_frames.length) {
+      frame = cur_movie_frames[cur_movie_frames.length-1]
+    } else {
+      frame = cur_movie_frames[offset]
+    }
+    const frameset_hash = this.props.getFramesetHashForImageUrl(frame)
+    this.setState({
+      highlighted_frameset_hash: frameset_hash,
+    })
   }
 
   componentDidMount() {
@@ -40,6 +60,18 @@ class MoviePanel extends React.Component {
   changeMovieResolutionNew(value) {
     this.setState({
       movie_resolution_new: value,
+    })
+  }
+
+  changeFramesetOffsetSeconds(seconds) {
+    this.setState({
+      frameset_offset_seconds: seconds,
+    })
+  }
+
+  changeFramesetOffsetMinutes(minutes) {
+    this.setState({
+      frameset_offset_minutes: minutes,
     })
   }
 
@@ -513,6 +545,11 @@ class MoviePanel extends React.Component {
             changeMovieResolutionNew={this.changeMovieResolutionNew}
             movie_resolution_new={this.state.movie_resolution_new}
             preserve_movie_audio={this.props.preserve_movie_audio}
+            frameset_offset_seconds={this.state.frameset_offset_seconds}
+            frameset_offset_minutes={this.state.frameset_offset_minutes}
+            changeFramesetOffsetSeconds={this.changeFramesetOffsetSeconds}
+            changeFramesetOffsetMinutes={this.changeFramesetOffsetMinutes}
+            findFramesetAtOffset={this.findFramesetAtOffset}
           />
 
         </div>
@@ -532,6 +569,7 @@ class MoviePanel extends React.Component {
                 getFramesetHashesInOrder={this.props.getFramesetHashesInOrder}
                 getImageFromFrameset={this.props.getImageFromFrameset}
                 getRedactedImageFromFrameset={this.props.getRedactedImageFromFrameset}
+                highlighted_frameset_hash={this.state.highlighted_frameset_hash}
               />
             </div>
           </div>
@@ -689,6 +727,93 @@ class MoviePanelAdvancedControls extends React.Component {
     )
   }
 
+  buildFindFramesetAtOffsetButton() {
+    let sixty_element_array = []
+    for (let i = 0; i < 61; i++) {
+      sixty_element_array.push(i)
+    }
+    let prev_offset = 0
+    const cur_offset_sec = parseInt(this.props.frameset_offset_seconds)
+    const cur_offset_min = parseInt(this.props.frameset_offset_minutes) * 60
+    const cur_offset = cur_offset_sec + cur_offset_min
+    if (cur_offset > 0) {
+      prev_offset = cur_offset - 1
+    }
+    const next_offset = cur_offset + 1
+    return (
+      <div>
+        <div className='d-inline'>
+          Highlight Frameset at Offset
+        </div>
+
+        <div className='d-inline ml-2'>
+          <select
+              name='frameset_offset_minutes'
+              value={this.props.frameset_offset_minutes}
+              onChange={(event) => this.props.changeFramesetOffsetMinutes(event.target.value)}
+          >
+            {sixty_element_array.map((value, index) => {
+              const key = 'frameset_offst_minutes_' + index.toString()
+              return (
+                <option key={key} value={value}>{value}</option>
+              )
+            })}
+          </select>
+        </div>
+        <div className='d-inline ml-1'>
+          min
+        </div>
+
+        <div className='d-inline ml-2'>
+          <select
+              name='frameset_offset_seconds'
+              value={this.props.frameset_offset_seconds}
+              onChange={(event) => this.props.changeFramesetOffsetSeconds(event.target.value)}
+          >
+            {sixty_element_array.map((value, index) => {
+              const key = 'frameset_offst_seconds_' + index.toString()
+              return (
+                <option key={key} value={value}>{value}</option>
+              )
+            })}
+          </select>
+        </div>
+        <div className='d-inline ml-1'>
+          sec
+        </div>
+
+        <div className='d-inline ml-2'>
+          <button className='btn btn-primary'
+              key='find_frameset_at_offset_go_button'
+              onClick={() => this.props.findFramesetAtOffset(cur_offset)}
+              href='.'>
+            Go
+          </button>
+          <button className='btn btn-primary ml-2'
+              key='find_frameset_at_offset_prev_button'
+              onClick={() => this.gotoOffsetAndSet(prev_offset)}
+              href='.'>
+            Prev
+          </button>
+          <button className='btn btn-primary ml-2'
+              key='find_frameset_at_offset_next_button'
+              onClick={() => this.gotoOffsetAndSet(next_offset)}
+              href='.'>
+            Next
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  gotoOffsetAndSet(the_offset) {
+    this.props.findFramesetAtOffset(the_offset)
+    const offset_sec = the_offset % 60
+    const offset_min = Math.floor(the_offset / 60)
+    this.props.changeFramesetOffsetSeconds(offset_sec)
+    this.props.changeFramesetOffsetMinutes(offset_min)
+  }
+
   render() {
     if (this.props.movie_url === '') {
       return ''
@@ -707,6 +832,7 @@ class MoviePanelAdvancedControls extends React.Component {
     const change_button = this.buildChangeResolutionButton()
     const redacted_movie_dl_link = this.buildRedactedMovieDownloadLink()
     const preserve_movie_audio_checkbox = this.buildPreserveMovieAudioCheckbox() 
+    const find_frameset_at_offset_button = this.buildFindFramesetAtOffsetButton()
 
     const fd_dropdown = this.buildFramesetDiscriminatorDropdown()
     if (this.props.movie_url && Object.keys(this.props.movies).includes(this.props.movie_url)) {
@@ -818,6 +944,9 @@ class MoviePanelAdvancedControls extends React.Component {
 
               <div className='mt-2 ml-2'>
                 {change_button}
+              </div>
+              <div className='mt-2 ml-2'>
+                {find_frameset_at_offset_button}
               </div>
               <div className='mt-2 ml-2'>
                 {preserve_movie_audio_checkbox}

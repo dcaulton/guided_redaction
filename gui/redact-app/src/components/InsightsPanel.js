@@ -85,7 +85,6 @@ class InsightsPanel extends React.Component {
     if (Object.keys(this.state.callbacks).includes('getCurrentTemplateAnchors')) {
       return this.state.callbacks['getCurrentTemplateAnchors']()
     }
-    console.log('oops - get current template anchors function not registered')
     return []
   }
 
@@ -93,7 +92,6 @@ class InsightsPanel extends React.Component {
     if (Object.keys(this.state.callbacks).includes('getCurrentTemplateMaskZones')) {
       return this.state.callbacks['getCurrentTemplateMaskZones']()
     }
-    console.log('oops - get current template mask zones function not registered')
     return []
   }
 
@@ -137,7 +135,11 @@ class InsightsPanel extends React.Component {
   }
 
   addInsightsCallback(the_key, the_callback) {
-    this.state.callbacks[the_key] = the_callback
+    let new_callbacks = this.state.callbacks
+    new_callbacks[the_key] = the_callback
+    this.setState({
+      callbacks: new_callbacks,
+    })
   }
 
   setImageTypeToDisplay(the_type) {
