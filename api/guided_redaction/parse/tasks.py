@@ -19,6 +19,32 @@ hash_frames_batch_size = 50
 split_frames_multithreaded_threshold = 200
 split_frames_chunk_size = 100
 
+# TODO this is a cut and past from analyze/tasks.py.  Find a better way to share it soon
+# also, get it working for split_and_hash_threaded
+def evaluate_children(operation, child_operation, children):
+    all_children = 0
+    completed_children = 0
+    failed_children = 0
+    for child in children:
+        if child.operation == child_operation:
+            all_children += 1
+            if child.status == 'success':
+                completed_children += 1
+            elif child.status == 'failed':
+                failed_children += 1
+    print('CHILDREN FOR {}: {} COMPLETE: {} FAILED: {}'.format(
+        operation, all_children, completed_children, failed_children
+    ))
+    if all_children == 0:
+        return ('build_child_tasks', 0)
+    elif all_children == completed_children:
+        return ('wrap_up', 1)
+    elif all_children > 0:
+        complete_percent = completed_children/all_children
+        return ('update_percent_complete', complete_percent)
+    elif failed_children > 0:
+        return ('abort', 0)
+
 @shared_task
 def zip_movie(job_uuid):
     if not Job.objects.filter(pk=job_uuid).exists():
@@ -44,7 +70,31 @@ def zip_movie(job_uuid):
 
 @shared_task
 def split_threaded(job_uuid):
-    split_movie(job_uuid)
+    if Job.objects.filter(pk=job_uuid).exists():
+        job = Job.objects.get(pk=job_uuid)
+        if job.status in ['success', 'failed']:
+            return
+        children = Job.objects.filter(parent=job)
+        (next_step, percent_done) = evaluate_children('SPLIT THREADED', 'split_movie', children)
+        print('next step is {}, percent done {}'.format(next_step, percent_done))
+        request_data = json.loads(job.request_data)
+        movie_url = request_data['movie_url']
+        if next_step == 'build_child_tasks':
+            movie_length_seconds = get_movie_length_in_seconds(movie_url)
+            build_and_dispatch_split_tasks_multithreaded(job, movie_url, movie_length_seconds)
+        elif next_step == 'update_percent_complete':
+            job.elapsed_time = percent_done
+            job.save()
+        elif next_step == 'wrap_up':
+            movies_obj = gather_split_threaded_data(children)
+            movies_obj['movies'][movie_url]['framesets'] = {}
+            frames = movies_obj['movies'][movie_url]
+            job.response_data = json.dumps(movies_obj)
+            job.status = 'success'
+            job.save()
+        elif next_step == 'abort':
+            job.status = 'failed'
+            job.save()
 
 @shared_task
 def split_movie(job_uuid):
@@ -69,6 +119,8 @@ def split_movie(job_uuid):
             parent_job = Job.objects.get(pk=job.parent_id)
             if parent_job.app == 'parse' and parent_job.operation == 'split_and_hash_threaded':
                 split_and_hash_threaded.delay(parent_job.id)
+            elif parent_job.app == 'parse' and parent_job.operation == 'split_threaded':
+                split_threaded.delay(parent_job.id)
 
 @shared_task
 def hash_frames(job_uuid):
@@ -207,7 +259,7 @@ def evaluate_split_and_hash_threaded_children(children):
     elif split_movie_failed_children > 0:
         return ('abort', 0)
 
-def make_and_dispatch_hash_tasks(parent_job, split_tasks):
+def gather_split_threaded_data(split_tasks):
     frames = []
     audio_url = ''
     frame_dimensions = []
@@ -230,10 +282,17 @@ def make_and_dispatch_hash_tasks(parent_job, split_tasks):
     if audio_url:
         movies_obj['movies'][movie_url]['audio_url'] = audio_url
 
+    return movies_obj
+
+def make_and_dispatch_hash_tasks(parent_job, split_tasks):
+    movies_obj = gather_split_threaded_data(split_tasks)
+    request_data = json.loads(parent_job.request_data)
+    movie_url = request_data['movie_url']
+    frameset_discriminator = request_data['frameset_discriminator']
+    frames = movies_obj['movies'][movie_url]['frames']
     parent_job.response_data = json.dumps(movies_obj)
     parent_job.save()
 
-    frameset_discriminator = json.loads(parent_job.request_data)['frameset_discriminator']
     num_jobs = math.ceil(len(frames) / hash_frames_batch_size)
     for i in range(num_jobs):
         start_point = i * hash_frames_batch_size
@@ -324,6 +383,8 @@ def build_and_dispatch_split_tasks_multithreaded(parent_job, movie_url, movie_le
         if i % 5 == 0:
             if parent_job.operation == 'split_and_hash_threaded': 
                 split_and_hash_threaded.delay(parent_job.id)
+            if parent_job.operation == 'split_threaded': 
+                split_threaded.delay(parent_job.id)
     if 'preserve_movie_audio' in request_data and request_data['preserve_movie_audio']:
         build_request_data = {}
         build_request_data['movie_url'] = movie_url
@@ -345,6 +406,8 @@ def build_and_dispatch_split_tasks_multithreaded(parent_job, movie_url, movie_le
         split_movie.delay(job.id)
     if parent_job.operation == 'split_and_hash_threaded': 
         split_and_hash_threaded.delay(parent_job.id)
+    elif parent_job.operation == 'split_threaded': 
+        split_threaded.delay(parent_job.id)
 
 @shared_task
 def copy_movie(job_uuid):

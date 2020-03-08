@@ -296,4 +296,4 @@ class JobsViewSetWrapUp(viewsets.ViewSet):
         else:
             dispatch_job(job)
             
-        return Response()
+        return Response({'job_id': job.id})
