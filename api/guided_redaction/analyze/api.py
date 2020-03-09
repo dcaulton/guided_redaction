@@ -227,22 +227,6 @@ class AnalyzeViewSetArrowFill(viewsets.ViewSet):
         return Response({"arrow_fill_regions": regions})
 
 class AnalyzeViewSetFilter(viewsets.ViewSet):
-    def create_file_writer(self):
-        the_connection_string = ""
-        if settings.REDACT_IMAGE_STORAGE == "azure_blob":
-            the_base_url = settings.REDACT_AZURE_BASE_URL
-            the_connection_string = settings.REDACT_AZURE_BLOB_CONNECTION_STRING
-        else:
-            the_base_url = settings.REDACT_FILE_BASE_URL
-        fw = FileWriter(
-            working_dir=settings.REDACT_FILE_STORAGE_DIR,
-            base_url=the_base_url,
-            connection_string=the_connection_string,
-            image_storage=settings.REDACT_IMAGE_STORAGE,
-            image_request_verify_headers=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
-        )
-        return fw
-
     def build_result_file_name(self, image_url):
         inbound_filename = (urlsplit(image_url)[2]).split("/")[-1]
         (file_basename, file_extension) = os.path.splitext(inbound_filename)
@@ -260,7 +244,11 @@ class AnalyzeViewSetFilter(viewsets.ViewSet):
         if not request_data.get("filter_parameters"):
             return self.error("filter_parameters is required")
 
-        fw = self.create_file_writer()
+        fw = FileWriter(
+            working_dir=settings.REDACT_FILE_STORAGE_DIR,
+            base_url=settings.REDACT_FILE_BASE_URL,
+            image_request_verify_headers=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
+        )
         for movie_url in request_data.get("movies"):
             response_movies[movie_url] = {
                 'framesets': {},

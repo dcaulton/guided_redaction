@@ -14,17 +14,9 @@ import uuid
 
 
 def save_image_to_disk(cv2_image, image_name, the_uuid):
-    the_connection_string = ""
-    if settings.REDACT_IMAGE_STORAGE == "azure_blob":
-        the_base_url = settings.REDACT_AZURE_BASE_URL
-        the_connection_string = settings.REDACT_AZURE_BLOB_CONNECTION_STRING
-    else:
-        the_base_url = settings.REDACT_FILE_BASE_URL
     fw = FileWriter(
         working_dir=settings.REDACT_FILE_STORAGE_DIR,
-        base_url=the_base_url,
-        connection_string=the_connection_string,
-        image_storage=settings.REDACT_IMAGE_STORAGE,
+        base_url=settings.REDACT_FILE_BASE_URL,
         image_request_verify_headers=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
     )
     workdir = fw.create_unique_directory(the_uuid)

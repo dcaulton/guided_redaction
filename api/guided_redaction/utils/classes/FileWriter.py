@@ -9,37 +9,20 @@ class FileWriter():
 
     working_dir = ''
 
-    def __init__(self, working_dir, base_url, connection_string, image_storage, image_request_verify_headers):
+    def __init__(self, working_dir, base_url, image_request_verify_headers):
         self.working_dir = working_dir
         self.base_url = base_url
-        self.connection_string = connection_string
-        self.image_storage = image_storage
         self.image_request_verify_headers = image_request_verify_headers
 
     def get_images_from_uuid(self, the_uuid):
-        if self.image_storage == 'file':
-            the_path = os.path.join(self.working_dir, the_uuid)
-            the_files = sorted(os.listdir(the_path))
-            the_urls = []
-            for filename in the_files:
-                (file_basename, file_extension) = os.path.splitext(filename)
-                if file_extension == '.png':
-                   the_urls.append(os.path.join(self.base_url, the_uuid, filename))
+        the_path = os.path.join(self.working_dir, the_uuid)
+        the_files = sorted(os.listdir(the_path))
+        the_urls = []
+        for filename in the_files:
+            (file_basename, file_extension) = os.path.splitext(filename)
+            if file_extension == '.png':
+               the_urls.append(os.path.join(self.base_url, the_uuid, filename))
             return the_urls
-        elif self.image_storage == 'azure_blob':
-            blob_names = []
-            container = ContainerClient.from_connection_string(
-                conn_str=self.connection_string,
-                container_name='mycontainer',
-            )
-            blob_list = container.list_blobs()
-            for blob in blob_list:
-                (x_part, file_part) = os.path.split(blob.name)
-                (y_part, uuid_part) = os.path.split(x_part)
-                if uuid_part == the_uuid:
-                    blob_names.append(os.path.join(self.base_url, blob.name))
-            return blob_names
-        return []
 
     def write_cv2_image_to_url(self, cv2_image, the_url):
         image_bytes = cv2.imencode('.png', cv2_image)[1].tostring()
@@ -77,17 +60,9 @@ class FileWriter():
         (y_part, uuid_part) = os.path.split(x_part)
         new_url = '/'.join([self.base_url, uuid_part, file_part])
 
-        if self.image_storage == 'azure_blob':
-            blob_name = os.path.join(uuid_part, file_part)
-            blob = BlobClient.from_connection_string(
-                conn_str=self.connection_string, container_name="mycontainer", blob_name=blob_name)
-            blob.upload_blob(image_bytes)
-            blob.set_http_headers(content_settings=ContentSettings(content_type='image/png'))
-            new_url = os.path.join(self.base_url, blob_name)
-        else:
-            fh = open(file_fullpath, 'wb')
-            fh.write(image_bytes)
-            fh.close()
+        fh = open(file_fullpath, 'wb')
+        fh.write(image_bytes)
+        fh.close()
 
         return new_url
   
@@ -101,7 +76,7 @@ class FileWriter():
 
         return new_url
 
-    def write_video_to_url(self, video_source_file, file_fullpath):
+    def write_file_to_url(self, video_source_file, file_fullpath):
         (x_part, file_part) = os.path.split(file_fullpath)
         (y_part, uuid_part) = os.path.split(x_part)
         new_url = '/'.join([self.base_url, uuid_part, file_part])
@@ -110,17 +85,9 @@ class FileWriter():
         video_bytes = in_fh.read()
         in_fh.close()
 
-        if self.image_storage == 'azure_blob':
-            blob_name = os.path.join(uuid_part, file_part)
-            blob = BlobClient.from_connection_string(
-                conn_str=self.connection_string, container_name="mycontainer", blob_name=blob_name)
-            blob.upload_blob(video_bytes)
-            blob.set_http_headers(content_settings=ContentSettings(content_type='image/png'))
-            new_url = os.path.join(self.base_url, blob_name)
-        else:
-            fh = open(file_fullpath, 'wb')
-            fh.write(video_bytes)
-            fh.close()
+        fh = open(file_fullpath, 'wb')
+        fh.write(video_bytes)
+        fh.close()
 
         return new_url
   
@@ -147,12 +114,7 @@ class FileWriter():
         fps = 1
         fourcc = cv2.VideoWriter_fourcc('a', 'v', 'c', '1')
 
-        if self.image_storage == 'azure_blob':
-            output_tempdir = os.path.join('/tmp', uuid_part)
-            self.create_unique_directory(output_tempdir)
-            output_fullpath = os.path.join(output_tempdir, output_file_name)
-        else:
-            output_fullpath = os.path.join(self.working_dir, uuid_part, output_file_name)
+        output_fullpath = os.path.join(self.working_dir, uuid_part, output_file_name)
         writer = cv2.VideoWriter(output_fullpath, fourcc, fps, cap_size, True)
         num_frames = len(image_url_list)
         for count, output_frame_url in enumerate(image_url_list):
@@ -168,21 +130,10 @@ class FileWriter():
                 success = writer.write(frame)
         writer.release()
         print('writer done at '+ output_fullpath)
-      
 
         (x_part, file_part) = os.path.split(output_fullpath)
         (y_part, uuid_part) = os.path.split(x_part)
         output_url = '/'.join([self.base_url, uuid_part, file_part])
-
-        if self.image_storage == 'azure_blob':
-            fh = open(output_fullpath, 'rb')
-            image_bytes = fh.read()
-            blob_name = os.path.join(uuid_part, file_part)
-            blob = BlobClient.from_connection_string(
-                conn_str=self.connection_string, container_name="mycontainer", blob_name=blob_name)
-            blob.upload_blob(image_bytes)
-            blob.set_http_headers(content_settings=ContentSettings(content_type='video/mp4'))
-            new_url = os.path.join(self.base_url, blob_name)
 
         return output_url
 

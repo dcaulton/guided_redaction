@@ -164,7 +164,7 @@ class RedactApplication extends React.Component {
     } else if (url_name === 'can_see_url') {
       return api_server_url + 'v1/link/can-reach'
     } else if (url_name === 'make_url_url') {
-      return api_server_url + 'v1/parse/make-url'
+      return api_server_url + 'v1/files/make-url'
     } else if (url_name === 'scanners_url') {
       return api_server_url + 'v1/scanners'
     } else if (url_name === 'files_url') {

@@ -20,9 +20,6 @@ router.register(
     basename="WierdAl",
 )
 router.register(
-    r"v1/parse/make-url", api.ParseViewSetMakeUrl, basename="DustinDiamond"
-)
-router.register(
     r"v1/parse/zip-movie", api.ParseViewSetZipMovie, basename="MachoManRandySavage"
 )
 router.register(r"v1/parse/ping", api.ParseViewSetPing, basename="MarlinPerkins")

@@ -110,18 +110,10 @@ def split_movie_partial(file_writer, movie_url, start_seconds_offset, num_frames
 class ParseViewSetGetImagesForUuid(viewsets.ViewSet):
     def list(self, request):
         the_uuid = request.GET['uuid']
-        the_connection_string = ""
-        if settings.REDACT_IMAGE_STORAGE == "azure_blob":
-            the_base_url = settings.REDACT_AZURE_BASE_URL
-            the_connection_string = settings.REDACT_AZURE_BLOB_CONNECTION_STRING
-        else:
-            the_base_url = settings.REDACT_FILE_BASE_URL
 
         fw = FileWriter(
             working_dir=settings.REDACT_FILE_STORAGE_DIR,
-            base_url=the_base_url,
-            connection_string=the_connection_string,
-            image_storage=settings.REDACT_IMAGE_STORAGE,
+            base_url=settings.REDACT_FILE_BASE_URL,
             image_request_verify_headers=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
         )
 
@@ -143,18 +135,9 @@ class ParseViewSetChangeMovieResolution(viewsets.ViewSet):
         new_x = int(request_data.get('resolution').split('x')[0])
         new_y = int(request_data.get('resolution').split('x')[1])
 
-        the_connection_string = ""
-        if settings.REDACT_IMAGE_STORAGE == "azure_blob":
-            the_base_url = settings.REDACT_AZURE_BASE_URL
-            the_connection_string = settings.REDACT_AZURE_BLOB_CONNECTION_STRING
-        else:
-            the_base_url = settings.REDACT_FILE_BASE_URL
-
         fw = FileWriter(
             working_dir=settings.REDACT_FILE_STORAGE_DIR,
-            base_url=the_base_url,
-            connection_string=the_connection_string,
-            image_storage=settings.REDACT_IMAGE_STORAGE,
+            base_url=settings.REDACT_FILE_BASE_URL,
             image_request_verify_headers=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
         )
 
@@ -196,18 +179,9 @@ class ParseViewSetCopyMovie(viewsets.ViewSet):
         if not request_data.get("movies"):
             return self.error("movies is required")
 
-        the_connection_string = ""
-        if settings.REDACT_IMAGE_STORAGE == "azure_blob":
-            the_base_url = settings.REDACT_AZURE_BASE_URL
-            the_connection_string = settings.REDACT_AZURE_BLOB_CONNECTION_STRING
-        else:
-            the_base_url = settings.REDACT_FILE_BASE_URL
-
         fw = FileWriter(
             working_dir=settings.REDACT_FILE_STORAGE_DIR,
-            base_url=the_base_url,
-            connection_string=the_connection_string,
-            image_storage=settings.REDACT_IMAGE_STORAGE,
+            base_url=settings.REDACT_FILE_BASE_URL,
             image_request_verify_headers=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
         )
 
@@ -257,8 +231,6 @@ class ParseViewSetSplitMovie(viewsets.ViewSet):
         file_writer = FileWriter(
             working_dir=settings.REDACT_FILE_STORAGE_DIR,
             base_url=settings.REDACT_FILE_BASE_URL,
-            connection_string='',
-            image_storage=settings.REDACT_IMAGE_STORAGE,
             image_request_verify_headers=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
         )
         movie_fullpath = file_writer.get_file_path_for_url(movie_url)
@@ -268,28 +240,16 @@ class ParseViewSetSplitMovie(viewsets.ViewSet):
         return duration
 
     def process_create_request(self, request_data):
-        if not request_data.get("movie_url") and not request_data.get('sykes_dev_azure_movie_uuid'):
-            return self.error("movie_url or sykes_dev_azure_movie_uuid is required")
+        if not request_data.get("movie_url"):
+            return self.error("movie_url is required")
         if request_data.get('movie_url'):
             movie_url = request_data.get("movie_url")
-        elif request_data.get('sykes_dev_azure_movie_uuid'):
-            the_uuid = request_data.get('sykes_dev_azure_movie_uuid')
-            movie_url = self.get_movie_url_from_sykes_dev(the_uuid, fw)
         if not movie_url:
             return self.error("couldn't read movie data")
 
-        the_connection_string = ""
-        if settings.REDACT_IMAGE_STORAGE == "azure_blob":
-            the_base_url = settings.REDACT_AZURE_BASE_URL
-            the_connection_string = settings.REDACT_AZURE_BLOB_CONNECTION_STRING
-        else:
-            the_base_url = settings.REDACT_FILE_BASE_URL
-
         fw = FileWriter(
             working_dir=settings.REDACT_FILE_STORAGE_DIR,
-            base_url=the_base_url,
-            connection_string=the_connection_string,
-            image_storage=settings.REDACT_IMAGE_STORAGE,
+            base_url=settings.REDACT_FILE_BASE_URL,
             image_request_verify_headers=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
         )
 
@@ -331,33 +291,6 @@ class ParseViewSetSplitMovie(viewsets.ViewSet):
 
         return Response(return_data)
 
-    def get_movie_url_from_sykes_dev(self, the_uuid, file_writer):
-        blob_name = ''
-        container = ContainerClient.from_connection_string(
-            conn_str=settings.REDACT_SYKES_DEV_AZURE_BLOB_CONNECTION_STRING,
-            container_name=settings.REDACT_SYKES_DEV_AZURE_BLOB_CONTAINER_NAME
-        )
-        blob_list = container.list_blobs()
-        for blob in blob_list:
-            (x_part, file_part) = os.path.split(blob.name)
-            (y_part, uuid_part) = os.path.split(x_part)
-            if uuid_part == the_uuid:
-                blob_name = blob.name    # this is in uuid_directory/filename format
-        if blob_name: 
-            blob = BlobClient.from_connection_string(
-                conn_str=settings.REDACT_SYKES_DEV_AZURE_BLOB_CONNECTION_STRING,
-                container_name=settings.REDACT_SYKES_DEV_AZURE_BLOB_CONTAINER_NAME,
-                blob_name=blob_name,
-            )
-            temp_video_filename = '/tmp/'+file_part
-            with open(temp_video_filename, 'wb') as my_blob:
-                blob_data = blob.download_blob()
-                blob_data.readinto(my_blob)
-                print('creating unique directory for '+ the_uuid)
-                workdir = file_writer.create_unique_directory(the_uuid)
-                outfilename = os.path.join(workdir, file_part)
-                file_url = file_writer.write_video_to_url(temp_video_filename, outfilename)
-                return file_url
 
 
 class ParseViewSetHashFrames(viewsets.ViewSet):
@@ -393,54 +326,6 @@ class ParseViewSetHashFrames(viewsets.ViewSet):
         })
 
 
-class ParseViewSetMakeUrl(viewsets.ViewSet):
-    # TODO convert this over to use FileWriter
-    def create(self, request):
-        file_base_url = settings.REDACT_FILE_BASE_URL
-        if request.method == "POST" and "file" in request.FILES:
-            try:
-                file_obj = request.FILES["file"]
-                file_basename = request.FILES.get("file").name
-                if file_obj:
-                    the_uuid = str(uuid.uuid4())
-                    workdir = os.path.join(settings.REDACT_FILE_STORAGE_DIR, the_uuid)
-                    os.mkdir(workdir)
-                    outfilename = os.path.join(workdir, file_basename)
-                    fh = open(outfilename, "wb")
-                    for chunk in file_obj.chunks():
-                        fh.write(chunk)
-                    fh.close()
-                    (x_part, file_part) = os.path.split(outfilename)
-                    (y_part, uuid_part) = os.path.split(x_part)
-                    file_url = "/".join([file_base_url, uuid_part, file_part])
-
-                    return Response({"url": file_url})
-            except Exception as e:
-                return self.error([e], status_code=400)
-        elif request.method == "POST" and request.data.get("data_uri") and request.data.get('filename'):
-            filename = request.data.get("filename")
-            data_uri = request.data.get('data_uri')
-            header, image_data= data_uri.split(",", 1)
-            image_binary = base64.b64decode(image_data)
-
-            the_uuid = str(uuid.uuid4())
-            workdir = os.path.join(settings.REDACT_FILE_STORAGE_DIR, the_uuid)
-            os.mkdir(workdir)
-            outfilename = os.path.join(workdir, filename)
-            fh = open(outfilename, "wb")
-            fh.write(image_binary)
-            fh.close()
-            (x_part, file_part) = os.path.split(outfilename)
-            (y_part, uuid_part) = os.path.split(x_part)
-            file_url = "/".join([file_base_url, uuid_part, file_part])
-            return Response({"url": file_url})
-        else:
-            return self.error(
-                ['no file (keyname file) supplied and no data_uri+filename parameters supplied'], 
-                status_code=400
-            )
-
-
 class ParseViewSetZipMovie(viewsets.ViewSet):
     def create(self, request):
         resp_data = self.process_create_request(request.data)
@@ -469,17 +354,9 @@ class ParseViewSetZipMovie(viewsets.ViewSet):
         image_urls = request_data["image_urls"]
         movie_name = request_data["movie_name"]
 
-        the_connection_string = ""
-        if settings.REDACT_IMAGE_STORAGE == "azure_blob":
-            the_base_url = settings.REDACT_AZURE_BASE_URL
-            the_connection_string = settings.REDACT_AZURE_BLOB_CONNECTION_STRING
-        else:
-            the_base_url = settings.REDACT_FILE_BASE_URL
         file_writer = FileWriter(
             working_dir=settings.REDACT_FILE_STORAGE_DIR,
-            base_url=the_base_url,
-            connection_string=the_connection_string,
-            image_storage=settings.REDACT_IMAGE_STORAGE,
+            base_url=settings.REDACT_FILE_BASE_URL,
             image_request_verify_headers=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
         )
         parser = MovieParser(
@@ -506,6 +383,7 @@ class ParseViewSetZipMovie(viewsets.ViewSet):
 class ParseViewSetPing(viewsets.ViewSet):
     def list(self, request):
         return Response({"response": "pong"})
+
 
 class ParseViewSetCropImage(viewsets.ViewSet):
     def create(self, request):
@@ -536,6 +414,7 @@ class ParseViewSetCropImage(viewsets.ViewSet):
         else:
             return self.error('could not read image', status_code=422)
 
+
 class ParseViewSetRebaseMovies(viewsets.ViewSet):
     def create(self, request):
         request_data = request.data
@@ -547,17 +426,9 @@ class ParseViewSetRebaseMovies(viewsets.ViewSet):
         movies_in = request_data.get('movies')
         build_movies = {}
 
-        the_connection_string = ""
-        if settings.REDACT_IMAGE_STORAGE == "azure_blob":
-            the_base_url = settings.REDACT_AZURE_BASE_URL
-            the_connection_string = settings.REDACT_AZURE_BLOB_CONNECTION_STRING
-        else:
-            the_base_url = settings.REDACT_FILE_BASE_URL
         fw = FileWriter(
             working_dir=settings.REDACT_FILE_STORAGE_DIR,
-            base_url=the_base_url,
-            connection_string=the_connection_string,
-            image_storage=settings.REDACT_IMAGE_STORAGE,
+            base_url=settings.REDACT_FILE_BASE_URL,
             image_request_verify_headers=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
         )
 
