@@ -569,7 +569,24 @@ class InsightsPanel extends React.Component {
     return job_data
   }
 
+  buildGetSecureFileData(extra_data) {
+    let job_data = {
+      request_data: {},
+    }
+    job_data['app'] = 'files'
+    job_data['operation'] = 'get_secure_file'
+    job_data['description'] = 'get secure file: ' + extra_data
+    job_data['request_data']['recording_id'] = extra_data
+    return job_data
+  }
+
   submitInsightsJob(job_string, extra_data) {
+    if (job_string === 'get_secure_file') {
+      let job_data = this.buildGetSecureFileData(extra_data)
+      this.props.submitJob({
+        job_data: job_data,
+      })
+    }
     if (!this.props.movie_url) {
       this.displayInsightsMessage('no movie loaded, cannot submit a job')
       return

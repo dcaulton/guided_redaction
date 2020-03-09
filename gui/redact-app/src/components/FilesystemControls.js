@@ -6,6 +6,7 @@ class FilesystemControls extends React.Component {
     super(props)
     this.state = {
       showBriefListing: true,
+      secure_file_recording_id: '',
     }
   }
 
@@ -146,6 +147,41 @@ class FilesystemControls extends React.Component {
     )
   }
 
+  setSecureFileRecordingId(value) {
+    this.setState({
+      secure_file_recording_id: value,
+    })
+  }
+
+  buildImportSecureFileButton() {
+    return (
+      <div>
+        <div className='font-weight-bold'>
+          Import From Secure Files
+        </div>
+        <div className='d-inline ml-2'>
+          Recording Id:
+        </div>
+        <div className='d-inline ml-3'>
+          <input
+              id='import_secure_file_recording_id'
+              size='50'
+              onChange={(event) => this.setSecureFileRecordingId(event.target.value)}
+              title='recording id'
+          />
+        </div>
+        <div className='d-inline ml-3'>
+          <button
+            className='btn btn-primary p-1'
+            onClick={() => this.props.submitInsightsJob('get_secure_file', this.state.secure_file_recording_id)}
+          >
+            Go
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   render() {
     if (!this.props.visibilityFlags['filesystem']) {
       return([])
@@ -155,6 +191,7 @@ class FilesystemControls extends React.Component {
     if (this.state.showBriefListing) {
       show_brief_checked = 'checked'
     }
+    const secure_file_button = this.buildImportSecureFileButton()
 
     return (
         <div className='row bg-light rounded mt-3'>
@@ -194,9 +231,15 @@ class FilesystemControls extends React.Component {
             >
               <div id='filesystem_main' className='col'>
                 <div className='row ml-2 mt-3'>
+                  {secure_file_button}
+                </div>
+                <div className='row ml-2 mt-3 border-top'>
                   <div
                       className='d-inline'
                   >
+                    <div className='font-weight-bold'>
+                      Browse Filesystem
+                    </div>
                     <button
                         className='btn btn-primary ml-2 mt-2'
                         onClick={() => this.props.getFiles() }

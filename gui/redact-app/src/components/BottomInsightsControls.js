@@ -145,6 +145,7 @@ class BottomInsightsControls extends React.Component {
           getFiles={this.props.getFiles}
           deleteFile={this.props.deleteFile}
           displayInsightsMessage={this.props.displayInsightsMessage}
+          submitInsightsJob={this.props.submitInsightsJob}
         />
 
         <SessionControls

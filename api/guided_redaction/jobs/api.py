@@ -9,6 +9,7 @@ from guided_redaction.jobs.models import Job
 from guided_redaction.analyze import tasks as analyze_tasks
 from guided_redaction.parse import tasks as parse_tasks
 from guided_redaction.redact import tasks as redact_tasks
+from guided_redaction.files import tasks as files_tasks
 import json
 import pytz
 import math
@@ -64,6 +65,8 @@ def dispatch_job(job):
         redact_tasks.illustrate.delay(job_uuid)
     if job.app == 'parse' and job.operation == 'zip_movie':
         parse_tasks.zip_movie.delay(job_uuid)
+    if job.app == 'files' and job.operation == 'get_secure_file':
+        files_tasks.get_secure_file.delay(job_uuid)
 
 
 class JobsViewSet(viewsets.ViewSet):

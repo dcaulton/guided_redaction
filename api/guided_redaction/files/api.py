@@ -1,9 +1,11 @@
 import os
+import json
 import uuid
 import base64
 import shutil
 from django.conf import settings
 import time
+import requests
 from rest_framework.response import Response
 from base import viewsets
 from guided_redaction.utils.classes.FileWriter import FileWriter
@@ -51,13 +53,28 @@ class FilesViewSet(viewsets.ViewSet):
             
 class FilesViewSetDownloadSecureFile(viewsets.ViewSet):
     def create(self, request):
-        if not request.data.get("recording_id"):
+        request_data = request.data
+        return self.process_create_request(request_data)
+
+    def process_create_request(self, request_data):
+        if not request_data.get("recording_id"):
             return self.error("recording_id is required")
 
         try:
-            from secure_files.controller import get_file
-            data = get_file(request.data.get('recording_id'))
-            # the goods are in data['content'], also content_type and content_length
+            from requests.auth import HTTPDigestAuth
+            from requests.auth import HTTPBasicAuth
+            secure_files_url = 'http://localhost:8002/api/v1/secure-files/' + request_data.get('recording_id')
+            response = requests.get(
+              secure_files_url,
+              auth=HTTPBasicAuth('dcaulton', 'davespassword123'),
+              verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
+            )
+            print(response.status_code)
+            print(response.headers)
+#            data = response.json
+#            data = response.raw
+            data = response.text
+            print('just got a file with {} bytes'.format(len(data)))
         except Exception as e:
             return self.error(e, status_code=400)
 
