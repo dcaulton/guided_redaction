@@ -1,4 +1,6 @@
 import React from 'react';
+import ScannerSearchControls from './ScannerSearchControls'
+
 
 class SelectedAreaControls extends React.Component {
 
@@ -596,16 +598,22 @@ class SelectedAreaControls extends React.Component {
                   {origin_entity_id_dropdown}
                 </div>
 
-
-
-
-
-
-
                 <div className='row mt-1 mr-1 ml-1 border-top'>
                   {attributes_list}
                 </div>
 
+                <div className='row mt-3 ml-1 mr-1 border-top'>
+                  <ScannerSearchControls
+                    search_attribute_name_id='selected_area_database_search_attribute_name'
+                    search_attribute_value_id='selected_area_database_search_attribute_value'
+                    getScanners={this.props.getScanners}
+                    importScanner={this.props.importScanner}
+                    deleteScanner={this.props.deleteScanner}
+                    scanners={this.props.scanners}
+                    displayInsightsMessage={this.props.displayInsightsMessage}
+                    search_type='selected_area_meta'
+                  />
+                </div>
 
               </div>
             </div>

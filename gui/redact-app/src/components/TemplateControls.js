@@ -1,4 +1,5 @@
 import React from 'react';
+import ScannerSearchControls from './ScannerSearchControls'
 
 class TemplateControls extends React.Component {
 
@@ -1057,207 +1058,6 @@ class TemplateControls extends React.Component {
     }
   }
 
-  doGetScanners() {
-    const attr_search_name = document.getElementById('template_database_search_attribute_name').value
-    const attr_search_value = document.getElementById('template_database_search_attribute_value').value
-    this.setState({
-      attribute_search_name: attr_search_name,
-      attribute_search_value: attr_search_value,
-    })
-    this.props.getScanners()
-  }
-
-  importAllScanners() {
-    const matches = this.getMatchingScanners() 
-    for (let i=0; i < matches.length; i++) {
-      const match = matches[i]
-      this.props.importScanner(match['id'])
-    }
-    this.props.displayInsightsMessage('All templates have been imported')
-  }
-
-  getMatchingScanners() {
-    let matches = []
-    for (let i=0; i < this.props.scanners.length; i++) {
-      const scanner = this.props.scanners[i]
-      if (scanner['type'] === 'template') {
-        if (this.state.attribute_search_name || this.state.attribute_search_value) {
-          for (let j=0; j < Object.keys(scanner['attributes']).length; j++) {
-            const attr_name = Object.keys(scanner['attributes'])[j]
-            const attr_value = scanner['attributes'][attr_name]
-            if ((attr_name === this.state.attribute_search_name) && 
-                (attr_value === this.state.attribute_search_value)) {
-              matches.push(scanner)
-            }
-          }
-        } else {
-          matches.push(scanner)
-        }
-      }
-    }
-    return matches
-  }
-
-  getDatabaseTemplatesList() {
-    const matches = this.getMatchingScanners() 
-    if (matches.length === 0) {
-      return ''
-    }
-    let style = {
-      'fontSize': '10px',
-    }
-    return (
-      <div>
-        <div className='font-weight-bold ml-3 mt-3'>
-          Search Results
-        </div>
-        <table 
-          className='table-striped'
-          style={style}
-        >
-          <thead>
-            <tr>
-              <th scope='col'>
-                <button
-                  className='btn btn-primary'
-                  style={style}
-                  onClick={() => this.importAllScanners()}
-                >
-                  Import All
-                </button>
-              </th>
-              <th scope='col' className='p-1 text-center'>name</th>
-              <th scope='col' className='p-1 text-center'>created</th>
-              <th scope='col' className='p-1 text-center'>attributes</th>
-              <th scope='col' className='p-1 text-center'>metadata</th>
-              <th scope='col'></th>
-            </tr>
-          </thead>
-          <tbody>
-          {matches.map((match, index) => {
-            let attributes = []
-            for (let i=0; i < Object.keys(match['attributes']).length; i++) {
-              const attrib_name = Object.keys(match['attributes'])[i]
-              const attrib_value = match['attributes'][attrib_name]
-              const key_val='attrib_'+i.toString()
-              attributes.push(
-                <div key={key_val}>
-                  <div className='d-inline'>
-                    {attrib_name} :
-                  </div>
-                  <div className='d-inline ml-2'>
-                    {attrib_value}
-                  </div>
-                </div>
-              )
-            }
-            let meta = []
-            for (let i=0; i < Object.keys(match['content_metadata']).length; i++) {
-              const meta_name = Object.keys(match['content_metadata'])[i]
-              const meta_value = match['content_metadata'][meta_name]
-              const key_val='meta_'+i.toString()
-              meta.push(
-                <div key={key_val}>
-                  <div className='d-inline'>
-                    {meta_name} :
-                  </div>
-                  <div className='d-inline ml-1'>
-                    {meta_value}
-                  </div>
-                </div>
-              )
-            }
-            return (
-              <tr key={index}>
-                <td className='p-1'>
-                  <button
-                    className='btn btn-primary'
-                    style={style}
-                    onClick={() => this.props.importScanner(
-                      match['id'],
-                      (()=> {this.props.displayInsightsMessage('Template has been imported')})
-                    )}
-                  >
-                    Import
-                  </button>
-                </td>
-                <td className='p-1'>
-                  {match['name']}
-                </td>
-                <td className='p-1 border-left'>
-                  {match['created_on'].substring(0, 16)}
-                </td>
-                <td className='p-1 border-left'>
-                  {attributes}
-                </td>
-                <td className='p-1 border-left'>
-                  {meta}
-                </td>
-                <td className='p-1'>
-                  <button
-                    className='btn btn-primary'
-                    style={style}
-                    onClick={() => this.props.deleteScanner(match['id'])}
-                  >
-                    Delete
-                  </button>
-                </td>
-              </tr>
-            )
-          })}
-          </tbody>
-        </table>
-      </div>
-    )
-  }
-
-  buildDatabaseSection() {
-    const database_templates_list = this.getDatabaseTemplatesList()
-    return (
-      <div>
-        <div className='font-weight-bold'>
-          Database
-        </div>
-        <div>
-          <div className='d-inline'>
-            Search by Attribute:
-          </div>
-          <div className='d-inline ml-2'>
-            Name:
-          </div>
-          <div className='d-inline ml-2'>
-            <input 
-                id='template_database_search_attribute_name'
-                size='20'
-                title='template attribute name'
-            />
-          </div>
-          <div className='d-inline ml-2'>
-            Value:
-          </div>
-          <div className='d-inline ml-3'>
-            <input 
-                id='template_database_search_attribute_value'
-                size='20'
-                title='template attribute value'
-            />
-          </div>
-          <div className='d-inline ml-3'>
-            <button
-              className='btn btn-primary p-1'
-              onClick={() => this.doGetScanners()}
-            >
-              Go
-            </button>
-          </div>
-        </div>
-        <div>
-          {database_templates_list}
-        </div>
-      </div>
-    )
-  }
-
   render() {
     if (!this.props.visibilityFlags['templates']) {                                             
       return([])                                                                
@@ -1285,7 +1085,6 @@ class TemplateControls extends React.Component {
     const add_mask_zone_button = this.buildAddMaskZoneButton()
     const clear_mask_zones_button = this.buildClearMaskZonesButton()
     const template_source_movie_image_info = this.buildSourceMovieImageInfo()
-    const database_section = this.buildDatabaseSection()
 
     return (
         <div className='row bg-light rounded'>
@@ -1404,7 +1203,16 @@ class TemplateControls extends React.Component {
                 </div>
 
                 <div className='row mt-3 ml-1 mr-1 border-top'>
-                  {database_section}
+                  <ScannerSearchControls
+                    search_attribute_name_id='template_database_search_attribute_name'
+                    search_attribute_value_id='template_database_search_attribute_value'
+                    getScanners={this.props.getScanners}
+                    importScanner={this.props.importScanner}
+                    deleteScanner={this.props.deleteScanner}
+                    scanners={this.props.scanners}
+                    displayInsightsMessage={this.props.displayInsightsMessage}
+                    search_type='template'
+                  />
                 </div>
 
               </div>

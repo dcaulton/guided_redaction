@@ -75,6 +75,10 @@ class BottomInsightsControls extends React.Component {
           addInsightsCallback={this.props.addInsightsCallback}
           selected_area_metas={this.props.selected_area_metas}
           setSelectedAreaMetas={this.props.setSelectedAreaMetas}
+          scanners={this.props.scanners}
+          getScanners={this.props.getScanners}
+          deleteScanner={this.props.deleteScanner}
+          importScanner={this.props.importScanner}
 //          saveCurrentSelectedAreaMetaToDatabase={this.props.saveCurrentSelectedAreaMetaToDatabase}
         />
 
