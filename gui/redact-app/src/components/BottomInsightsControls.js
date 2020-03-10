@@ -60,13 +60,18 @@ class BottomInsightsControls extends React.Component {
 
         <SelectedAreaControls
           handleSetMode={this.props.handleSetMode}
+          tier_1_matches={this.props.tier_1_matches}
           templates={this.props.templates}
+          insights_image={this.props.insights_image}
+          movie_url={this.props.movie_url}
           current_template_id={this.props.current_template_id}
           clearMovieSelectedAreas={this.props.clearMovieSelectedAreas}
           setSelectedAreaTemplateAnchor={this.props.setSelectedAreaTemplateAnchor}
           getCurrentSelectedAreaMeta={this.props.getCurrentSelectedAreaMeta}
           visibilityFlags={this.props.visibilityFlags}
           toggleShowVisibility={this.props.toggleShowVisibility}
+          displayInsightsMessage={this.props.displayInsightsMessage}
+          addInsightsCallback={this.props.addInsightsCallback}
         />
 
         <AnnotationControls

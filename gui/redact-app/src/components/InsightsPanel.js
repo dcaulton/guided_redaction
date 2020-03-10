@@ -73,12 +73,20 @@ class InsightsPanel extends React.Component {
     this.getCurrentAreasToRedact=this.getCurrentAreasToRedact.bind(this)
     this.setScrubberToIndex=this.setScrubberToIndex.bind(this)
     this.getCurrentTemplateAnchors=this.getCurrentTemplateAnchors.bind(this)
+    this.getCurrentSelectedAreaCenters=this.getCurrentSelectedAreaCenters.bind(this)
     this.getCurrentTemplateMaskZones=this.getCurrentTemplateMaskZones.bind(this)
   }
 
   setScrubberToIndex(the_value) {
     document.getElementById('movie_scrubber').value = the_value
     this.scrubberOnChange()
+  }
+
+  getCurrentSelectedAreaCenters() {
+    if (Object.keys(this.state.callbacks).includes('getCurrentSelectedAreaCenters')) {
+      return this.state.callbacks['getCurrentSelectedAreaCenters']()
+    }
+    return []
   }
 
   getCurrentTemplateAnchors() {
@@ -820,6 +828,8 @@ class InsightsPanel extends React.Component {
         let callback = this.state.callbacks['add_template_anchor_2']
         callback([x_scaled, y_scaled])
       }
+    } else if (this.state.mode === 'selected_area_area_coords_1') {
+        this.state.callbacks['selected_area_area_coords_1']([x_scaled, y_scaled])
     } else if (this.state.mode === 'flood_fill_1') {
       this.setState({
         insights_image_scale: scale,
@@ -1216,6 +1226,7 @@ class InsightsPanel extends React.Component {
               movie_url={this.props.movie_url}
               getCurrentTemplateAnchors={this.getCurrentTemplateAnchors}
               getCurrentTemplateMaskZones={this.getCurrentTemplateMaskZones}
+              getCurrentSelectedAreaCenters={this.getCurrentSelectedAreaCenters}
             />
           </div>
 

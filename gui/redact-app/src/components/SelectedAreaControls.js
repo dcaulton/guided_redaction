@@ -8,53 +8,392 @@ class SelectedAreaControls extends React.Component {
       id: '',
       name: '',
       select_type: 'arrow`',
+      scale: '1:1',
+      interior_or_exterior: 'interior',
       attributes: {},
-      origin: [],
-      anchor_entity_type: '',
+      origin_entity_type: 'adhoc',
       anchor_entity_id: '',
-      anchor_id: '',
-      areas: {},
+      areas: [],
       unsaved_changes: false,
       attribute_search_name: '',
       attribute_search_value: '',
     }
+    this.addAreaCoordsCallback=this.addAreaCoordsCallback.bind(this)
+    this.getCurrentSelectedAreaCenters=this.getCurrentSelectedAreaCenters.bind(this)
   }
 
-  getCurrentTemplateAnchorNames() {
-    if (Object.keys(this.props.templates).includes(this.props.current_template_id)) {
-      let cur_template = this.props.templates[this.props.current_template_id]
-      let return_arr = []
-      for (let i=0; i < Object.keys(cur_template['anchors']).length; i++) {
-        const anchor = cur_template['anchors'][i]
-        return_arr.push(anchor['id'])
-      }
-      return return_arr
-    } else {
-      return []
+  getCurrentSelectedAreaCenters() {
+    return this.state.areas
+  }
+
+  componentDidMount() {
+    this.props.addInsightsCallback('selected_area_area_coords_1', this.addAreaCoordsCallback)
+    this.props.addInsightsCallback('getCurrentSelectedAreaCenters', this.getCurrentSelectedAreaCenters)
+  }
+
+  addAreaCoordsCallback(the_coords) {
+    const area_id = 'selected_area_subarea_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
+    const the_area = {
+        'id': area_id,
+        'center': the_coords,
+        'image': this.props.insights_image,
+        'movie': this.props.movie_url,
+    }
+    let deepCopyAreas = JSON.parse(JSON.stringify(this.state.areas))
+    deepCopyAreas.push(the_area)
+    this.setState({
+      areas: deepCopyAreas,
+      unsaved_changes: true,
+    })
+    this.props.displayInsightsMessage('selected area center was added, add another if you wish')
+  }
+  
+  setLocalStateVar(var_name, var_value, when_done=(()=>{})) {
+    this.setState({
+      [var_name]: var_value,
+    },
+    when_done())
+  }
+
+  buildScaleDropdown() {
+    return (
+      <div>
+        <div className='d-inline ml-2'>
+          Scale
+        </div>
+        <div className='d-inline ml-2'>
+          <select
+              name='selected_area_scale'
+              value={this.state.scale}
+              onChange={(event) => this.setLocalStateVar('scale', event.target.value)}
+          >
+            <option value='1:1'>actual image scale only</option>
+            <option value='match_trigger'>match_trigger</option>
+          </select>
+        </div>
+      </div>
+    )
+  }
+
+  buildSelectTypeDropdown() {
+    return (
+      <div>
+        <div className='d-inline ml-2'>
+          Select Type
+        </div>
+        <div className='d-inline ml-2'>
+          <select
+              name='selected_area_select_type'
+              value={this.state.select_type}
+              onChange={(event) => this.setLocalStateVar('select_type', event.target.value)}
+          >
+            <option value='flood_simple'>flood simple</option>
+            <option value='flood'>true flood</option>
+            <option value='arrow_simple'>arrow simple</option>
+            <option value='arrow_chain'>arrow chain</option>
+          </select>
+        </div>
+      </div>
+    )
+  }
+
+  buildNameField() {
+    return (
+      <div>
+        <div className='d-inline ml-2'>
+          Name:
+        </div>
+        <div
+            className='d-inline ml-2'
+        >
+            <input
+                id='selected_area_name'
+                key='selected_area_name_1'
+                title='name'
+                size='25'
+                value={this.state.name}
+                onChange={(event) => this.setLocalStateVar('name', event.target.value)}
+            />
+        </div>
+      </div>
+    )
+  }
+
+  buildInteriorOrExteriorDropdown() {
+    return (
+      <div>
+        <div className='d-inline ml-2'>
+          Interior or Exterior
+        </div>
+        <div className='d-inline ml-2'>
+          <select
+              name='selected_area_interior_or_exterior'
+              value={this.state.interior_or_exterior}
+              onChange={(event) => this.setLocalStateVar('interior_or_exterior', event.target.value)}
+          >
+            <option value='interior'>interior</option>
+            <option value='exterior'>exterior</option>
+          </select>
+        </div>
+      </div>
+    )
+  }
+
+  buildOriginEntityTypeDropdown() {
+    return (
+      <div>
+        <div className='d-inline ml-2'>
+          Origin Entity Type
+        </div>
+        <div className='d-inline ml-2'>
+          <select
+              name='selected_area_origin_entity_type'
+              value={this.state.origin_entity_type}
+              onChange={(event) => this.setLocalStateVar('origin_entity_type', event.target.value)}
+          >
+            <option value='adhoc'>ad hoc</option>
+            <option value='template'>template</option>
+            <option value='ocr'>ocr</option>
+            <option value='telemetry'>telemetry</option>
+          </select>
+        </div>
+      </div>
+    )
+  }
+
+  buildOriginEntityIdDropdown() {
+    let t1_temp_ids = []
+    let t2_temp_ids = []
+    let t1_ocr_ids = []
+    let t1_tel_ids = []
+    let adhoc_option = (<option value='adhoc'>ad hoc</option>)
+    if (this.state.origin_entity_type === 'template') {
+      t1_temp_ids = Object.keys(this.props.tier_1_matches['template'])
+      t2_temp_ids = Object.keys(this.props.templates)
+      adhoc_option = ''
+    }
+    if (this.state.origin_entity_type === 'ocr') {
+      t1_ocr_ids = Object.keys(this.props.tier_1_matches['ocr'])
+      adhoc_option = ''
+    }
+    if (this.state.origin_entity_type === 'telemetry') {
+      t1_tel_ids = Object.keys(this.props.tier_1_matches['telemetry'])
+      adhoc_option = ''
+    }
+
+    return (
+      <div>
+        <div className='d-inline ml-2'>
+          Origin Entity Id
+        </div>
+        <div className='d-inline ml-2'>
+          <select
+              name='selected_area_origin_entity_id'
+              value={this.state.origin_entity_type}
+              onChange={(event) => this.setLocalStateVar('origin_entity_id', event.target.value)}
+          >
+            {adhoc_option}
+            {t1_temp_ids.map((value, index) => {
+              const the_key = 'sa_origin_entity_template_' + index.toString()
+              return (
+                <option value={value} key={the_key}>tier 1 template: {value}</option>
+              )
+            })}
+            {t2_temp_ids.map((value, index) => {
+              const the_key = 'sa_origin_entity_t2_template_' + index.toString()
+              return (
+                <option value={value} key={the_key}>tier 2 template: {value}</option>
+              )
+            })}
+            {t1_ocr_ids.map((value, index) => {
+              const the_key = 'sa_origin_entity_ocr_' + index.toString()
+              return (
+                <option value={value} key={the_key}>tier 1 ocr: {value}</option>
+              )
+            })}
+            {t1_tel_ids.map((value, index) => {
+              const the_key = 'sa_origin_entity_telemetry_' + index.toString()
+              return (
+                <option value={value} key={the_key}>tier 1 telemetry: {value}</option>
+              )
+            })}
+          </select>
+        </div>
+      </div>
+    )
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  setAttribute(name, value) {
+    let deepCopyAttributes = JSON.parse(JSON.stringify(this.state.attributes))
+    deepCopyAttributes[name] = value
+    this.setState({
+      attributes: deepCopyAttributes,
+      unsaved_changes: true,
+    })
+    this.props.displayInsightsMessage('Attribute was added')
+  }
+
+  doAddAttribute() {
+    const value_ele = document.getElementById('selected_area_attribute_value')
+    const name_ele = document.getElementById('selected_area_attribute_name')
+    if (value_ele.value && name_ele.value) {
+      this.setAttribute(name_ele.value, value_ele.value)
+      name_ele.value = ''
+      value_ele.value = ''
     }
   }
+
+  deleteAttribute(name) {
+    let deepCopyAttributes = JSON.parse(JSON.stringify(this.state.attributes))
+    if (!Object.keys(this.state.attributes).includes(name)) {
+      return
+    }
+    delete deepCopyAttributes[name]
+    this.setState({
+      attributes: deepCopyAttributes,
+      unsaved_changes: true,
+    })
+    this.props.displayInsightsMessage('Attribute was deleted')
+  }
+
+  buildAttributesList() {
+    return (
+        <div>
+        <div className='font-weight-bold'>
+          Attributes
+        </div>
+        <div>
+          <div className='d-inline ml-2'>
+            Name:
+          </div>
+          <div className='d-inline ml-2'>
+            <input
+                id='selected_area_attribute_name'
+                key='selected_area_attribute_name_1'
+                title='attribute name'
+                size='25'
+            />
+          </div>
+          <div className='d-inline ml-2'>
+            Value:
+          </div>
+          <div className='d-inline ml-2'>
+            <input
+                id='selected_area_attribute_value'
+                key='selected_area_attribute_value_1'
+                title='attribute value'
+                size='25'
+            />
+          </div>
+          <div className='d-inline ml-2'>
+            <button
+                className='btn btn-primary p-1'
+                key={889922}
+                onClick={() => this.doAddAttribute()}
+            >
+              Add
+            </button>
+          </div>
+        </div>
+        <div>
+          {Object.keys(this.state.attributes).map((name, index) => {
+            return (
+              <div key={index} className='mt-2'>
+                <div className='d-inline'>
+                  Name:
+                </div>
+                <div className='d-inline ml-2'>
+                  {name}
+                </div>
+                <div className='d-inline ml-4'>
+                  Value:
+                </div>
+                <div className='d-inline'>
+                  {this.state.attributes[name]}
+                </div>
+                <div className='d-inline ml-2'>
+                  <button
+                      className='btn btn-primary'
+                      key={index}
+                      onClick={() => this.deleteAttribute(name)}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    )
+  }
+
+  startAddSelectedAreas() {
+    this.props.handleSetMode('selected_area_area_coords_1')
+    this.props.displayInsightsMessage('specify the center of the selected area')
+  }
+
+  buildAddAreaCoordsButton() {
+    return (
+      <div className='d-inline ml-2'>
+        <button
+            className='btn btn-primary p-1'
+            key={884122}
+            onClick={() => this.startAddSelectedAreas()}
+        >
+          Add Area Center
+        </button>
+      </div>
+    )
+  }
+
+
+
 
   render() {
     if (!this.props.visibilityFlags['selectedArea']) {
       return([])
     }
-    const anchor_names = this.getCurrentTemplateAnchorNames()
-
-    const sam = this.props.getCurrentSelectedAreaMeta()
-    const or_template_id = sam['origin_template_id']
-    let anchor_options = []
-    for (const [index, value] of anchor_names.entries()) {
-        anchor_options.push(
-            <option key={index} value={value} >{value}</option>
-        )
-    }
-    anchor_options.push(
-        <option key='9898' value=''>---Template Anchor---</option>
-    )
-    let offset_string = 'Offset (0, 0)'
-    if (Object.keys(sam).includes('offset')) {
-      offset_string = 'Offset (' + sam['offset'].toString() + ')'
-    }
+    const name_field = this.buildNameField()
+    const scale_dropdown = this.buildScaleDropdown()
+    const select_type_dropdown = this.buildSelectTypeDropdown()
+    const interior_or_exterior_dropdown = this.buildInteriorOrExteriorDropdown()
+    const attributes_list = this.buildAttributesList()
+    const origin_entity_type_dropdown = this.buildOriginEntityTypeDropdown()
+    const origin_entity_id_dropdown = this.buildOriginEntityIdDropdown()
+    const add_area_coords_button = this.buildAddAreaCoordsButton()
 
     return (
         <div className='row bg-light rounded mt-3'>
@@ -91,179 +430,48 @@ class SelectedAreaControls extends React.Component {
 
             <div 
                 id='selected_area_body' 
-                className='row collapse'
+                className='row collapse bg-light'
             >
               <div id='selected_area_main' className='col'>
 
-                <div className='row mt-3 bg-light'>
-                  <button
-                      className='btn btn-primary ml-2 mt-2'
-                      onClick={() => this.props.handleSetMode('flood_fill_1')}
-                  >
-                    Flood Fill
-                  </button>
-
-                  <div className='d-inline'>
-                    <button
-                        className='btn btn-primary ml-2 mt-2 dropdown-toggle'
-                        type='button'
-                        id='arrowFillDropdownButton'
-                        data-toggle='dropdown'
-                        area-haspopup='true'
-                        area-expanded='false'
-                    >
-                      Arrow Fill
-                    </button>
-                    <div className='dropdown-menu' aria-labelledby='arrowFillDropdownButton'>
-                      <button className='dropdown-item'
-                          onClick={() => this.props.handleSetMode('arrow_fill_1')}
-                      >
-                        Simple
-                      </button>
-                      <button className='dropdown-item'
-                          onClick={() => alert('arrow fill chain')}
-                      >
-                        Chain
-                      </button>
-                    </div>
-                  </div>
-                  
-                  <div className='d-inline'>
-                    <button
-                        className='btn btn-primary ml-2 mt-2 dropdown-toggle'
-                        type='button'
-                        id='selectedAreaMaskDropdownButton'
-                        data-toggle='dropdown'
-                        area-haspopup='true'
-                        area-expanded='false'
-                    >
-                      Mask
-                    </button>
-                    <div className='dropdown-menu' aria-labelledby='selectedAreaMaskDropdownButton'>
-                      <button className='dropdown-item'
-                          onClick={() => alert('no mask (default)')}
-                      >
-                        None
-                      </button>
-                      <button className='dropdown-item'
-                          onClick={() => alert('mask everything outside the selected area')}
-                      >
-                        Exterior
-                      </button>
-                      <button className='dropdown-item'
-                          onClick={() => alert('mask everything inside the selected area')}
-                      >
-                        Interior
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className='d-inline'>
-                    <button
-                        className='btn btn-primary ml-2 mt-2 dropdown-toggle'
-                        type='button'
-                        id='scanSelectedAreaDropdownButton'
-                        data-toggle='dropdown'
-                        area-haspopup='true'
-                        area-expanded='false'
-                    >
-                      Run
-                    </button>
-                    <div className='dropdown-menu' aria-labelledby='scanSelectedAreaDropdownButton'>
-                      <button className='dropdown-item'
-                          onClick={() => alert('scan just this image')}
-                      >
-                        Image
-                      </button>
-                      <button className='dropdown-item'
-                          onClick={() => alert('scan this movie')}
-                      >
-                        Movie
-                      </button>
-                      <button className='dropdown-item'
-                          onClick={() => alert('scan all movies')}
-                      >
-                        All Movies
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className='d-inline'>
-                    <button
-                        className='btn btn-primary ml-2 mt-2 dropdown-toggle'
-                        type='button'
-                        id='deleteSelectedAreaDropdownButton'
-                        data-toggle='dropdown'
-                        area-haspopup='true'
-                        area-expanded='false'
-                    >
-                      Clear
-                    </button>
-                    <div className='dropdown-menu' aria-labelledby='deleteSelectedAreaDropdownButton'>
-                      <button className='dropdown-item'
-                          onClick={() => alert('clear selectd areas for just this image')}
-                      >
-                        Image
-                      </button>
-                      <button className='dropdown-item'
-                          onClick={() => alert('clear selected areas for this movie')}
-                      >
-                        Movie
-                      </button>
-                      <button className='dropdown-item'
-                          onClick={() => this.props.clearMovieSelectedAreas()}
-                      >
-                        All Movies
-                      </button>
-                    </div>
-                  </div>
-
-                  <div
-                      className='d-inline ml-2 mt-2'
-                  >   
-                      <input 
-                          id='selected_area_tolerance'
-                          size='10'
-                          value='Tolerance %'
-                          onChange={() => console.log('selected area tolerance')}
-                      />
-                  </div>
-
-                  <div
-                      className='d-inline ml-2 mt-2'
-                  >   
-                      <input 
-                          id='selected_area_offset'
-                          size='15'
-                          value={offset_string}
-                          onChange={() => console.log('selected area offset')}
-                      />
-                  </div>
-
-                  <div className='d-inline ml-2 mt-2'>
-                    <select
-                        name='selected_area_mask_method'
-                        onChange={(event) => alert(event.target.value)}
-                    >
-                      <option value='blur_7x7'>--Mask Method--</option>
-                      <option value='blur_7x7'>Gaussian Blur 7x7</option>
-                      <option value='blur_21x21'>Gaussian Blur 21x21</option>
-                      <option value='blur_median'>Median Blur</option>
-                      <option value='black_rectangle'>Black Rectangle</option>
-                    </select>
-                  </div>
-
-                  <div className='d-inline ml-2 mt-2'>
-                    <select
-                        name='selected_area_origin_template_anchor'
-                        onChange={(event) => this.props.setSelectedAreaTemplateAnchor(event.target.value)}
-                        value={or_template_id} 
-                    >
-                      {anchor_options}
-                    </select>
-                  </div>
-
+                <div className='row mt-3'>
+                  {add_area_coords_button}
                 </div>
+
+                <div className='row mt-2'>
+                  {name_field}
+                </div>
+
+                <div className='row mt-2'>
+                  {scale_dropdown}
+                </div>
+
+                <div className='row mt-2'>
+                  {select_type_dropdown}
+                </div>
+
+                <div className='row mt-2'>
+                  {interior_or_exterior_dropdown}
+                </div>
+
+                <div className='row mt-2'>
+                  {origin_entity_type_dropdown}
+                </div>
+
+                <div className='row mt-2'>
+                  {origin_entity_id_dropdown}
+                </div>
+
+
+
+
+
+
+
+                <div className='row mt-1 mr-1 ml-1 border-top'>
+                  {attributes_list}
+                </div>
+
 
               </div>
             </div>
