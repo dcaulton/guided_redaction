@@ -59,6 +59,7 @@ class BottomInsightsControls extends React.Component {
         />
 
         <SelectedAreaControls
+          setGlobalStateVar={this.props.setGlobalStateVar}
           handleSetMode={this.props.handleSetMode}
           tier_1_matches={this.props.tier_1_matches}
           templates={this.props.templates}
@@ -72,6 +73,9 @@ class BottomInsightsControls extends React.Component {
           toggleShowVisibility={this.props.toggleShowVisibility}
           displayInsightsMessage={this.props.displayInsightsMessage}
           addInsightsCallback={this.props.addInsightsCallback}
+          selected_area_metas={this.props.selected_area_metas}
+          setSelectedAreaMetas={this.props.setSelectedAreaMetas}
+//          saveCurrentSelectedAreaMetaToDatabase={this.props.saveCurrentSelectedAreaMetaToDatabase}
         />
 
         <AnnotationControls

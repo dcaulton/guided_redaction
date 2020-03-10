@@ -1309,6 +1309,8 @@ class InsightsPanel extends React.Component {
             importScanner={this.props.importScanner}
             current_ocr_rule_id={this.props.current_ocr_rule_id}
             preserve_movie_audio={this.props.preserve_movie_audio}
+            selected_area_metas={this.props.selected_area_metas}
+            setSelectedAreaMetas={this.props.setSelectedAreaMetas}
           />
         </div>
 

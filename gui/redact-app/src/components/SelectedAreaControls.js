@@ -12,7 +12,7 @@ class SelectedAreaControls extends React.Component {
       interior_or_exterior: 'interior',
       attributes: {},
       origin_entity_type: 'adhoc',
-      anchor_entity_id: '',
+      origin_entity_id: '',
       areas: [],
       unsaved_changes: false,
       attribute_search_name: '',
@@ -53,6 +53,121 @@ class SelectedAreaControls extends React.Component {
       [var_name]: var_value,
     },
     when_done())
+  }
+
+  buildLoadButton() {                                                           
+    const selected_area_meta_keys= Object.keys(this.props.selected_area_metas)
+    return (
+      <div key='x34' className='d-inline'>
+        <button
+            key='temp_names_button'
+            className='btn btn-primary ml-2 dropdown-toggle'
+            type='button'
+            id='loadSelectedAreaDropdownButton'
+            data-toggle='dropdown'
+            area-haspopup='true'
+            area-expanded='false'
+        >
+          Load
+        </button>
+        <div className='dropdown-menu' aria-labelledby='loadSelectedAreaDropdownButton'>
+          {selected_area_meta_keys.map((value, index) => {
+            return (
+              <button
+                  className='dropdown-item'
+                  key={index}
+                  onClick={() => this.loadSelectedAreaMeta(value)}
+              >
+                {this.props.selected_area_metas[value]['name']}
+              </button>
+            )
+          })}
+          <button
+              className='dropdown-item'
+              key='000'
+              onClick={() => this.loadNewSelectedAreaMeta()}
+          >
+            new
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  loadSelectedAreaMeta(selected_area_meta_id) {
+    if (!selected_area_meta_id) {
+      this.loadNewSelectedAreaMeta()
+    } else {
+      const sam = this.props.selected_area_metas[selected_area_meta_id]
+      this.setState({
+        id: sam['id'],
+        name: sam['name'],
+        select_type: sam['select_type'],
+        scale: sam['scale'],
+        interior_or_exterior: sam['interior_or_exterior'],
+        attributes: sam['attributes'],
+        origin_entity_type: sam['origin_entity_type'],
+        origin_entity_id: sam['origin_entity_id'],
+        areas: sam['areas'],
+        unsaved_changes: false,
+      })
+    }
+    this.props.setGlobalStateVar('selected_area_meta_id', selected_area_meta_id)
+    this.props.displayInsightsMessage('Selected area meta has been loaded')
+  }
+
+  loadNewSelectedAreaMeta() {
+    this.props.setGlobalStateVar('current_selected_area_meta_id', '')
+    this.setState({
+      id: '',
+      name: '',
+      select_type: 'arrow`',
+      scale: '1:1',
+      interior_or_exterior: 'interior',
+      attributes: {},
+      origin_entity_type: 'adhoc',
+      origin_entity_id: '',
+      areas: [],
+      unsaved_changes: false,
+    })
+  }
+
+  async doSave() {
+    if (!this.state.name) {
+      this.props.displayInsightsMessage('Save aborted: Name is required for a selected area meta')
+      return
+    }
+    let sam_id = 'selected_area_meta_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
+    if (this.state.id) {
+      sam_id = this.state.id
+    }
+    let selected_area_meta = {                                                          
+      id: sam_id,
+      name: this.state.name,
+      select_type: this.state.select_type,
+      scale: this.state.scale,
+      interior_or_exterior: this.state.interior_or_exterior,
+      attributes: this.state.attributes,
+      origin_entity_type: this.state.origin_entity_type,
+      origin_entity_id: this.state.origin_entity_id,
+      areas: this.state.areas,
+    }
+    let deepCopySelectedAreaMetas= JSON.parse(JSON.stringify(this.props.selected_area_metas)) 
+    deepCopySelectedAreaMetas[sam_id] = selected_area_meta
+    this.props.setGlobalStateVar('selected_area_metas', deepCopySelectedAreaMetas)
+    this.props.setGlobalStateVar('current_selected_area_meta_id', sam_id)
+    this.setState({
+      id: sam_id,
+      unsaved_changes: false,
+    })
+    this.props.displayInsightsMessage('Selected Area Meta has been saved')              
+    return selected_area_meta
+  } 
+
+  async doSaveToDatabase() {
+    this.doSave()
+//    this.props.saveCurrentSelectedAreaMetaToDatabase()
+    this.props.displayInsightsMessage('Selected Area Meta has been saved to database')
   }
 
   buildScaleDropdown() {
@@ -369,11 +484,26 @@ class SelectedAreaControls extends React.Component {
     return (
       <div className='d-inline ml-2'>
         <button
-            className='btn btn-primary p-1'
+            className='btn btn-primary'
             key={884122}
             onClick={() => this.startAddSelectedAreas()}
         >
           Add Area Center
+        </button>
+      </div>
+    )
+  }
+
+  buildSaveButton() {
+    return (
+      <div
+          className='d-inline'
+      >
+        <button
+            className='btn btn-primary ml-2'
+            onClick={() => this.doSave()}
+        >
+          Save
         </button>
       </div>
     )
@@ -386,6 +516,7 @@ class SelectedAreaControls extends React.Component {
     if (!this.props.visibilityFlags['selectedArea']) {
       return([])
     }
+    const load_button = this.buildLoadButton()
     const name_field = this.buildNameField()
     const scale_dropdown = this.buildScaleDropdown()
     const select_type_dropdown = this.buildSelectTypeDropdown()
@@ -394,6 +525,7 @@ class SelectedAreaControls extends React.Component {
     const origin_entity_type_dropdown = this.buildOriginEntityTypeDropdown()
     const origin_entity_id_dropdown = this.buildOriginEntityIdDropdown()
     const add_area_coords_button = this.buildAddAreaCoordsButton()
+    const save_button = this.buildSaveButton()
 
     return (
         <div className='row bg-light rounded mt-3'>
@@ -434,7 +566,9 @@ class SelectedAreaControls extends React.Component {
             >
               <div id='selected_area_main' className='col'>
 
-                <div className='row mt-3'>
+                <div className='row'>
+                  {load_button}
+                  {save_button}
                   {add_area_coords_button}
                 </div>
 
