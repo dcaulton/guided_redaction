@@ -60,6 +60,7 @@ class BottomInsightsControls extends React.Component {
 
         <SelectedAreaControls
           setGlobalStateVar={this.props.setGlobalStateVar}
+          movie_sets={this.props.movie_sets}
           handleSetMode={this.props.handleSetMode}
           tier_1_matches={this.props.tier_1_matches}
           templates={this.props.templates}
@@ -79,6 +80,7 @@ class BottomInsightsControls extends React.Component {
           getScanners={this.props.getScanners}
           deleteScanner={this.props.deleteScanner}
           importScanner={this.props.importScanner}
+          saveScannerToDatabase={this.props.saveScannerToDatabase}
         />
 
         <AnnotationControls

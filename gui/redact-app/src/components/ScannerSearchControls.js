@@ -128,7 +128,7 @@ class ScannerSearchControls extends React.Component {
                     style={style}
                     onClick={() => this.props.importScanner(
                       match['id'],
-                      (()=> {this.props.displayInsightsMessage('Template has been imported')})
+                      (()=> {this.props.displayInsightsMessage(this.props.search_type + ' has been imported')})
                     )}
                   >
                     Import

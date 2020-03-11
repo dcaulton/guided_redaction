@@ -25,6 +25,13 @@ class ScannersViewSet(viewsets.ViewSet):
                 scanner_metadata['match_percent'] = content['match_percent']
                 scanner_metadata['num_anchors'] = len(content['anchors'])
                 scanner_metadata['num_mask_zones'] = len(content['mask_zones'])
+            if scanner.type == 'selected_area_meta':
+                scanner_metadata['select_type'] = content['select_type']
+                scanner_metadata['scale'] = content['scale']
+                scanner_metadata['interior_or_exterior'] = content['interior_or_exterior']
+                scanner_metadata['origin_entity_type'] = content['origin_entity_type']
+                scanner_metadata['origin_entity_id'] = content['origin_entity_id']
+                scanner_metadata['num_areas'] = len(content['areas'])
             scanners_list.append(
                 {
                     'id': scanner.id,

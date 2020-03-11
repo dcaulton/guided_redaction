@@ -409,6 +409,12 @@ class RedactApplication extends React.Component {
         template['attributes'] = responseJson['scanner']['attributes']
         deepCopyTemplates[template['id']] = template
         this.setGlobalStateVar('templates', deepCopyTemplates)
+      } else if (responseJson['scanner']['type'] === 'selected_area_meta') {
+        const sam = JSON.parse(responseJson['scanner']['content'])
+        let deepCopySelectedAreaMetas = JSON.parse(JSON.stringify(this.state.selected_area_metas))
+        sam['attributes'] = responseJson['scanner']['attributes']
+        deepCopySelectedAreaMetas[sam['id']] = sam
+        this.setGlobalStateVar('selected_area_metas', deepCopySelectedAreaMetas)
       }
       return responseJson
     })

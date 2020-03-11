@@ -53,6 +53,7 @@ class SelectedAreaControls extends React.Component {
   setLocalStateVar(var_name, var_value, when_done=(()=>{})) {
     this.setState({
       [var_name]: var_value,
+      unsaved_changes: true,
     },
     when_done())
   }
@@ -134,17 +135,9 @@ class SelectedAreaControls extends React.Component {
     })
   }
 
-  async doSave() {
-    if (!this.state.name) {
-      this.props.displayInsightsMessage('Save aborted: Name is required for a selected area meta')
-      return
-    }
-    let sam_id = 'selected_area_meta_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
-    if (this.state.id) {
-      sam_id = this.state.id
-    }
-    let selected_area_meta = {                                                          
-      id: sam_id,
+  getSelectedAreaMetaFromState() {
+    const selected_area_meta = {                                                          
+      id: this.state.id,
       name: this.state.name,
       select_type: this.state.select_type,
       scale: this.state.scale,
@@ -154,8 +147,22 @@ class SelectedAreaControls extends React.Component {
       origin_entity_id: this.state.origin_entity_id,
       areas: this.state.areas,
     }
+    return selected_area_meta
+  }
+
+  doSave(when_done=(()=>{})) {
+    if (!this.state.name) {
+      this.props.displayInsightsMessage('Save aborted: Name is required for a selected area meta')
+      return
+    }
+    let sam_id = 'selected_area_meta_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
+    let selected_area_meta = this.getSelectedAreaMetaFromState()
+
+    if (!selected_area_meta['id']) {
+      selected_area_meta['id'] = sam_id
+    }
     let deepCopySelectedAreaMetas= JSON.parse(JSON.stringify(this.props.selected_area_metas)) 
-    deepCopySelectedAreaMetas[sam_id] = selected_area_meta
+    deepCopySelectedAreaMetas[selected_area_meta['id']] = selected_area_meta
     this.props.setGlobalStateVar('selected_area_metas', deepCopySelectedAreaMetas)
     this.props.setGlobalStateVar('current_selected_area_meta_id', sam_id)
     this.setState({
@@ -163,13 +170,18 @@ class SelectedAreaControls extends React.Component {
       unsaved_changes: false,
     })
     this.props.displayInsightsMessage('Selected Area Meta has been saved')              
-    return selected_area_meta
+    when_done(selected_area_meta)
   } 
 
   async doSaveToDatabase() {
-    this.doSave()
-//    this.props.saveCurrentSelectedAreaMetaToDatabase()
-    this.props.displayInsightsMessage('Selected Area Meta has been saved to database')
+    this.doSave(((selected_area_meta) => {
+      if (selected_area_meta)
+      this.props.saveScannerToDatabase(
+        'selected_area_meta',
+        selected_area_meta,
+        (()=>{this.props.displayInsightsMessage('Selected Area Meta has been saved to database')})
+      )
+    }))
   }
 
   buildScaleDropdown() {
@@ -511,14 +523,231 @@ class SelectedAreaControls extends React.Component {
     )
   }
 
+  buildSaveToDatabaseButton() {
+    return (
+      <div
+          className='d-inline'
+      >
+        <button
+            className='btn btn-primary ml-2'
+            onClick={() => this.doSaveToDatabase()}
+        >
+          Save to DB
+        </button>
+      </div>
+    )
+  }
+  buildTier1TemplateRunOptions() {
+    if (this.state.scan_level === 'tier_1') {
+      return ''
+    }
+    const tier_1_match_keys = Object.keys(this.props.tier_1_matches['template'])
+    if (tier_1_match_keys.length === 0) {
+      return ''
+    }
 
+    return (
+      <div>
+        {tier_1_match_keys.map((value, index) => {
+          const detail_line = 'Frames matched by template ' + this.props.templates[value]['name']
+          return (
+            <button
+                className='dropdown-item'
+                key={index}
+                onClick={() => this.props.submitInsightsJob('current_selected_area_meta_tier1_template', value)}
+            >
+              {detail_line}
+            </button>
+          )
+        })}
+      </div>
+    )
+  }
 
+  buildTier1OcrRunOptions() {
+    if (this.state.scan_level === 'tier_1') {
+      return ''
+    }
+    const tier_1_match_keys = Object.keys(this.props.tier_1_matches['ocr'])
+    if (tier_1_match_keys.length === 0) {
+      return ''
+    }
+    
+    return (
+      <div>
+        {tier_1_match_keys.map((value, index) => {
+          let detail_line = 'Frames matched by ocr rule ' + value
+          if (value === this.props.current_ocr_rule_id) {
+            detail_line = 'Frames matched by current active ocr rule'
+          }
+          return (
+            <button
+                className='dropdown-item'
+                key={index}
+                onClick={() => this.props.submitInsightsJob('current_selected_area_meta_tier1_ocr', value)}
+            >
+              {detail_line}
+            </button>
+          )
+        })}
+      </div>
+    )
+  }
+
+  buildRunButton() {
+    let movie_set_keys = Object.keys(this.props.movie_sets)
+    const tier_1_template_options = this.buildTier1TemplateRunOptions()
+    const tier_1_ocr_options = this.buildTier1OcrRunOptions()
+    return (
+      <div className='d-inline'>
+        <button
+            className='btn btn-primary ml-2 dropdown-toggle'
+            type='button'
+            id='scanSelectedAreaDropdownButton'
+            data-toggle='dropdown'
+            area-haspopup='true'
+            area-expanded='false'
+        >
+          Run
+        </button>
+        <div className='dropdown-menu' aria-labelledby='scanSelectedAreaDropdownButton'>
+          <button className='dropdown-item'
+              onClick={() => this.props.submitInsightsJob('current_selected_are_meta_current_frame')}
+          >
+            Frame
+          </button>
+          <button className='dropdown-item'
+              onClick={() => this.props.submitInsightsJob('current_selected_area_meta_current_movie')}
+          >
+            Movie
+          </button>
+          <button className='dropdown-item'
+              onClick={() => this.props.submitInsightsJob('current_selected_area_meta_all_movies')}
+          >
+            All Movies
+          </button>
+            {movie_set_keys.map((value, index) => {
+              return (
+                <button
+                    className='dropdown-item'
+                    key={index}
+                    onClick={() => this.props.submitInsightsJob('current_selected_area_meta_movie_set', value)}
+                >
+                  MovieSet '{this.props.movie_sets[value]['name']}' as Job
+                </button>
+              )
+            })}
+          {tier_1_template_options}
+          {tier_1_ocr_options}
+        </div>
+      </div>
+    )
+  }
+
+  buildDeleteButton() {
+    let return_array = []
+    const sam_keys = Object.keys(this.props.selected_area_metas)
+    return_array.push(
+      <div key='ls225' className='d-inline'>
+      <button
+          key='temp_delete_button'
+          className='btn btn-primary ml-2 dropdown-toggle'
+          type='button'
+          id='deleteSelectedAreaDropdownButton'
+          data-toggle='dropdown'
+          area-haspopup='true'
+          area-expanded='false'
+      >
+        Delete
+      </button>
+      <div className='dropdown-menu' aria-labelledby='deleteSelectedAreaDropdownButton'>
+        {sam_keys.map((value, index) => {
+          return (
+            <button
+                className='dropdown-item'
+                key={index}
+                onClick={() => this.deleteSelectedAreaMeta(value)}
+            >
+              {this.props.selected_area_metas[value]['name']}
+            </button>
+          )
+        })}
+      </div>
+      </div>
+    )
+    return return_array
+  }
+
+  deleteSelectedAreaMeta(sam_id) {
+    let deepCopySelectedAreaMetas = JSON.parse(JSON.stringify(this.props.selected_area_metas))
+    delete deepCopySelectedAreaMetas[sam_id]
+    this.props.setGlobalStateVar('selected_area_metas', deepCopySelectedAreaMetas)
+    if (sam_id === this.props.current_selected_area_meta_id) {
+      this.props.setGlobalStateVar('current_selected_area_meta_id', '')
+    }
+    this.props.displayInsightsMessage('Selected Area Meta was deleted')
+  }
+
+  addTemplateAnchor() {
+    this.setState({
+      unsaved_changes: true,
+    })
+    this.props.handleSetMode('add_template_anchor_1')
+  }
+
+  buildClearAreasButton() {
+    return (
+      <button
+          className='btn btn-primary ml-2'
+          onClick={() => this.clearAreas()}
+      >
+        Clear Area Centers
+      </button>
+    )
+  }
+
+  clearAnchors() {
+    this.setState({
+      areas: [],
+      unsaved_changes: true,
+    })
+    this.props.displayInsightsMessage('Area centers have been cleared')
+  }
+
+  buildIdString() {
+    if (!this.state.id) {
+      return (
+        <div className='d-inline ml-2 font-weight-bold text-danger font-italic h5'>
+          this selected area meta has not been saved and has no id yet
+        </div>
+      )
+    }
+    let unsaved_changes_string = ''
+    if (this.state.unsaved_changes) {
+      unsaved_changes_string = (
+        <div className='font-weight-bold text-danger ml-2 h5'>
+         there are unsaved changes - don't forget to press save
+        </div>
+      )
+    }
+    return (
+      <div>
+        <div className='d-inline ml-2'>
+          Selected Area Meta id: {this.state.id}
+        </div>
+        <div className='d-inline ml-2 font-italic'>
+          {unsaved_changes_string}
+        </div>
+      </div>
+    )
+  }
 
   render() {
     if (!this.props.visibilityFlags['selectedArea']) {
       return([])
     }
     const load_button = this.buildLoadButton()
+    const id_string = this.buildIdString()
     const name_field = this.buildNameField()
     const scale_dropdown = this.buildScaleDropdown()
     const select_type_dropdown = this.buildSelectTypeDropdown()
@@ -527,7 +756,11 @@ class SelectedAreaControls extends React.Component {
     const origin_entity_type_dropdown = this.buildOriginEntityTypeDropdown()
     const origin_entity_id_dropdown = this.buildOriginEntityIdDropdown()
     const add_area_coords_button = this.buildAddAreaCoordsButton()
+    const clear_area_coords_button = this.buildClearAreasButton()
     const save_button = this.buildSaveButton()
+    const run_button = this.buildRunButton()
+    const delete_button = this.buildDeleteButton()
+    const save_to_db_button = this.buildSaveToDatabaseButton()
 
     return (
         <div className='row bg-light rounded mt-3'>
@@ -570,8 +803,19 @@ class SelectedAreaControls extends React.Component {
 
                 <div className='row'>
                   {load_button}
-                  {save_button}
                   {add_area_coords_button}
+                  {clear_area_coords_button}
+                  {run_button}
+                </div>
+
+                <div className='row mt-2'>
+                  {delete_button}
+                  {save_button}
+                  {save_to_db_button}
+                </div>
+
+                <div className='row mt-2'>
+                  {id_string}
                 </div>
 
                 <div className='row mt-2'>
