@@ -50,7 +50,7 @@ class BottomInsightsControls extends React.Component {
           getFramesetHashesInOrder={this.props.getFramesetHashesInOrder}
           movies={this.props.movies}
           setCurrentVideo={this.props.setCurrentVideo}
-          saveCurrentTemplateToDatabase={this.props.saveCurrentTemplateToDatabase}
+          saveScannerToDatabase={this.props.saveScannerToDatabase}
           scanners={this.props.scanners}
           getScanners={this.props.getScanners}
           deleteScanner={this.props.deleteScanner}
@@ -79,7 +79,6 @@ class BottomInsightsControls extends React.Component {
           getScanners={this.props.getScanners}
           deleteScanner={this.props.deleteScanner}
           importScanner={this.props.importScanner}
-//          saveCurrentSelectedAreaMetaToDatabase={this.props.saveCurrentSelectedAreaMetaToDatabase}
         />
 
         <AnnotationControls

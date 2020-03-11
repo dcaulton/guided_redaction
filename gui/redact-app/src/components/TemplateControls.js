@@ -426,9 +426,12 @@ class TemplateControls extends React.Component {
   }
 
   async doSaveToDatabase() {
-    this.doSave(((response)=>{
-      this.props.saveCurrentTemplateToDatabase()
-      this.props.displayInsightsMessage('Template has been saved to database')
+    this.doSave(((template)=>{
+      this.props.saveScannerToDatabase(
+        'template', 
+        template,
+        (()=>{this.props.displayInsightsMessage('Template has been saved to database')})
+      )
     }))
   }
 

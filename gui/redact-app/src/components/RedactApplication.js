@@ -124,7 +124,7 @@ class RedactApplication extends React.Component {
     this.getJobResultData=this.getJobResultData.bind(this)
     this.setGlobalStateVar=this.setGlobalStateVar.bind(this)
     this.toggleGlobalStateVar=this.toggleGlobalStateVar.bind(this)
-    this.saveCurrentTemplateToDatabase=this.saveCurrentTemplateToDatabase.bind(this)
+    this.saveScannerToDatabase=this.saveScannerToDatabase.bind(this)
     this.getScanners=this.getScanners.bind(this)
     this.deleteScanner=this.deleteScanner.bind(this)
     this.importScanner=this.importScanner.bind(this)
@@ -435,20 +435,19 @@ class RedactApplication extends React.Component {
     })
   }
 
-  async saveCurrentTemplateToDatabase(when_done=(()=>{})) {
-    let template_data = this.state.templates[this.state.current_template_id]
+  async saveScannerToDatabase(scanner_type, scanner_obj, when_done=(()=>{})) {
     let description_string = ''
-    if (Object.keys(template_data).includes('description')) {
-      description_string = template_data['description']
+    if (Object.keys(scanner_obj).includes('description')) {
+      description_string = scanner_obj['description']
     }
     let response = await fetch(this.getUrl('scanners_url'), {
       method: 'POST',
       headers: this.buildJsonHeaders(),
       body: JSON.stringify({
-        type: 'template',
-        name: template_data['name'],
+        type: scanner_type,
+        name: scanner_obj['name'],
         description: description_string,
-        content: template_data,
+        content: scanner_obj,
       }),
     })
     .then((response) => response.json())
@@ -2126,7 +2125,7 @@ class RedactApplication extends React.Component {
                 setTelemetryData={this.setTelemetryData}
                 getJobResultData={this.getJobResultData}
                 userTone={this.state.userTone}
-                saveCurrentTemplateToDatabase={this.saveCurrentTemplateToDatabase}
+                saveScannerToDatabase={this.saveScannerToDatabase}
                 scanners={this.state.scanners}
                 getScanners={this.getScanners}
                 deleteScanner={this.deleteScanner}

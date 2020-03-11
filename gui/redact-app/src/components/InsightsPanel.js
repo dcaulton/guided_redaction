@@ -1302,7 +1302,7 @@ class InsightsPanel extends React.Component {
             getFramesetHashesInOrder={this.props.getFramesetHashesInOrder}
             movies={this.props.movies}
             setCurrentVideo={this.setCurrentVideo}
-            saveCurrentTemplateToDatabase={this.props.saveCurrentTemplateToDatabase}
+            saveScannerToDatabase={this.props.saveScannerToDatabase}
             scanners={this.props.scanners}
             getScanners={this.props.getScanners}
             deleteScanner={this.props.deleteScanner}
