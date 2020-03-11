@@ -311,14 +311,7 @@ class InsightsPanel extends React.Component {
     } else if (scope === 'frame') {
       job_data['description'] = 'single template single frame match: '
       job_data['description'] += 'template ' + template.name
-      const cur_hash = this.props.getFramesetHashForImageUrl(this.state.insights_image)
-      let movies_wrap = {}
-      movies_wrap[this.props.movie_url] = {}
-      movies_wrap[this.props.movie_url]['framesets'] = {}
-      movies_wrap[this.props.movie_url]['framesets'][cur_hash] = (
-         this.props.movies[this.props.movie_url]['framesets'][cur_hash]
-      )
-      job_data['request_data']['movies'] = movies_wrap
+      job_data['request_data']['movies'] = this.buildOneFrameMovieForCurrentInsightsImage()
     }
     if (!template['scale'] === '1_1') {
       job_data['description'] += ' - multi scale (' + template['scale'] + ')'
@@ -326,6 +319,17 @@ class InsightsPanel extends React.Component {
     job_data['request_data']['scan_level'] = template['scan_level']
     job_data['request_data']['id'] = this.props.current_template_id
     return job_data
+  }
+
+  buildOneFrameMovieForCurrentInsightsImage() {
+    const cur_hash = this.props.getFramesetHashForImageUrl(this.state.insights_image)
+    let movies_wrap = {}
+    movies_wrap[this.props.movie_url] = {}
+    movies_wrap[this.props.movie_url]['framesets'] = {}
+    movies_wrap[this.props.movie_url]['framesets'][cur_hash] = (
+       this.props.movies[this.props.movie_url]['framesets'][cur_hash]
+    )
+    return movies_wrap
   }
 
   buildScanTemplateCurTempAllMovJobData(extra_data) {
@@ -390,32 +394,17 @@ class InsightsPanel extends React.Component {
       request_data: {},
     }
     const tier_1_scanner_id = extra_data
-    const tier_1_movie_matches = this.props.tier_1_matches[scanner_type][tier_1_scanner_id]['movies']
-    let movie_build_obj = {}
-    movie_build_obj = {}
-    let movie_count = 0
-    let frameset_count = 0
-    for (let i=0; i < Object.keys(tier_1_movie_matches).length; i++) {
-      movie_count += 1
-      const movie_url = Object.keys(tier_1_movie_matches)[i]
-      movie_build_obj[movie_url] = {}
-      movie_build_obj[movie_url]['framesets'] = {}
-      const frameset_hashes = Object.keys(tier_1_movie_matches[movie_url]['framesets'])
-      for (let j=0; j < frameset_hashes.length; j++) {
-        frameset_count += 1
-        const frameset_hash = frameset_hashes[j]
-        const movie_frameset = this.props.movies[movie_url]['framesets'][frameset_hash]
-        movie_build_obj[movie_url]['framesets'][frameset_hash] = movie_frameset
-      }
-    }
+    const movie_build_obj = this.buildTierOneMatchesMovieObject(scanner_type, tier_1_scanner_id)
+    const counts = this.getCountsFromMovieBuildObj(movie_build_obj)
+
     job_data['app'] = 'analyze'
     job_data['operation'] = 'scan_template_threaded'
     let template = this.props.templates[this.props.current_template_id]
     let template_wrap = {}
     template_wrap[this.props.current_template_id] = template
     job_data['description'] = 'single template match (template ' + template['name'] + ') '
-    job_data['description'] += movie_count.toString() + ' movies '
-    job_data['description'] += frameset_count.toString() + ' framesets'
+    job_data['description'] += counts['movie'].toString() + ' movies '
+    job_data['description'] += counts['frameset'].toString() + ' framesets'
     job_data['description'] += ' using ' + scanner_type + ' rule ' + extra_data
     job_data['request_data']['templates'] = template_wrap
     job_data['request_data']['template_id'] = this.props.current_template_id
@@ -423,6 +412,38 @@ class InsightsPanel extends React.Component {
     job_data['request_data']['scan_level'] = template['scan_level']
     job_data['request_data']['id'] = this.props.current_template_id
     return job_data
+  }
+
+  getCountsFromMovieBuildObj(movie_build_obj) {
+    let counts = {}
+    counts['movie'] = 0
+    counts['frameset'] = 0
+    for (let i=0; i < Object.keys(movie_build_obj).length; i++) {
+      counts['movie'] += 1
+      const movie_url = Object.keys(movie_build_obj)[i]
+      const movie = movie_build_obj[movie_url]
+      for (let j=0; j < Object.keys(movie['framesets']).length; j++) {
+        counts['frameset'] += 1
+      }
+    }
+    return counts
+  }
+
+  buildTierOneMatchesMovieObject(scanner_type, tier_1_scanner_id) {
+    const tier_1_movie_matches = this.props.tier_1_matches[scanner_type][tier_1_scanner_id]['movies']
+    let movie_build_obj = {}
+    movie_build_obj = {}
+    for (let i=0; i < Object.keys(tier_1_movie_matches).length; i++) {
+      const movie_url = Object.keys(tier_1_movie_matches)[i]
+      movie_build_obj[movie_url] = {}
+      movie_build_obj[movie_url]['framesets'] = {}
+      const frameset_hashes = Object.keys(tier_1_movie_matches[movie_url]['framesets'])
+      for (let j=0; j < frameset_hashes.length; j++) {
+        const frameset_hash = frameset_hashes[j]
+        const movie_frameset = this.props.movies[movie_url]['framesets'][frameset_hash]
+        movie_build_obj[movie_url]['framesets'][frameset_hash] = movie_frameset
+      }
+    }
   }
 
   buildScanTemplateCurTempTelemetryMatchesJobData(extra_data) {
@@ -588,6 +609,52 @@ class InsightsPanel extends React.Component {
     return job_data
   }
 
+  buildSelectedAreaData(scope, extra_data) {
+    let job_data = {
+      request_data: {},
+    }
+    job_data['app'] = 'analyze'
+    job_data['operation'] = 'selected_area'
+    const cur_selected_area = this.props.selected_area_metas[this.props.current_selected_area_meta_id]
+    job_data['request_data']['selected_area_metas'] = {}
+    job_data['request_data']['selected_area_metas'][this.props.current_selected_area_meta_id] = cur_selected_area
+    job_data['request_data']['id'] = this.props.current_selected_area_meta_id
+    job_data['request_data']['scan_level'] = 'tier_2'
+    if (scope === 'cur_frame') {
+      job_data['description'] = 'get selected area for current frame'
+      job_data['request_data']['movies'] = this.buildOneFrameMovieForCurrentInsightsImage()
+    } else if (scope === 'cur_movie') {
+      job_data['description'] = 'get selected area for current movie'
+      job_data['request_data']['movies'] = {}
+      job_data['request_data']['movies'][this.props.movie_url] = this.props.movies[this.props.movie_url]
+    } else if (scope === 'all_movies') {
+      job_data['description'] = 'get selected area for all movies'
+      job_data['request_data']['movies'] = this.props.movies
+    } else if (scope === 't1_template') {
+      const tier_1_scanner_id = extra_data
+      const movie_build_obj = this.buildTierOneMatchesMovieObject('template', tier_1_scanner_id)
+      const counts = this.getCountsFromMovieBuildObj(movie_build_obj)
+      job_data['request_data']['movies'] = movie_build_obj
+      job_data['description'] = 'selected area match (' + cur_selected_area['name'] + ') '
+      job_data['description'] += counts['movie'].toString() + ' movies '
+      job_data['description'] += counts['frameset'].toString() + ' framesets'
+      job_data['description'] += ' using template id ' + tier_1_scanner_id
+    } else if (scope === 't1_ocr') {
+      const tier_1_scanner_id = extra_data
+      const movie_build_obj = this.buildTierOneMatchesMovieObject('ocr', tier_1_scanner_id)
+      const counts = this.getCountsFromMovieBuildObj(movie_build_obj)
+      job_data['request_data']['movies'] = movie_build_obj
+      job_data['description'] = 'selected area match (' + cur_selected_area['name'] + ') '
+      job_data['description'] += counts['movie'].toString() + ' movies '
+      job_data['description'] += counts['frameset'].toString() + ' framesets'
+      job_data['description'] += ' using ocr id ' + tier_1_scanner_id
+    } else if (scope === 'movie_set') {
+    // TODO deal with this if people are going to use it
+    }
+    return job_data
+  }
+
+
   submitInsightsJob(job_string, extra_data) {
     if (job_string === 'get_secure_file') {
       let job_data = this.buildGetSecureFileData(extra_data)
@@ -686,6 +753,36 @@ class InsightsPanel extends React.Component {
       })
     } else if (job_string === 'diffs_all_movies') {
       let job_data = this.buildCalcDiffsData('all_movies', extra_data)
+      this.props.submitJob({
+        job_data: job_data,
+      })
+    } else if (job_string === 'current_selected_area_meta_tier1_template') {
+      let job_data = this.buildSelectedAreaData('t1_template', extra_data)
+      this.props.submitJob({
+        job_data: job_data,
+      })
+    } else if (job_string === 'current_selected_area_meta_tier1_ocr') {
+      let job_data = this.buildSelectedAreaData('t1_ocr', extra_data)
+      this.props.submitJob({
+        job_data: job_data,
+      })
+    } else if (job_string === 'current_selected_are_meta_current_frame') {
+      let job_data = this.buildSelectedAreaData('cur_frame', extra_data)
+      this.props.submitJob({
+        job_data: job_data,
+      })
+    } else if (job_string === 'current_selected_area_meta_current_movie') {
+      let job_data = this.buildSelectedAreaData('cur_movie', extra_data)
+      this.props.submitJob({
+        job_data: job_data,
+      })
+    } else if (job_string === 'current_selected_area_meta_all_movies') {
+      let job_data = this.buildSelectedAreaData('all_movies', extra_data)
+      this.props.submitJob({
+        job_data: job_data,
+      })
+    } else if (job_string === 'current_selected_area_meta_movie_set') {
+      let job_data = this.buildSelectedAreaData('movie_set', extra_data)
       this.props.submitJob({
         job_data: job_data,
       })

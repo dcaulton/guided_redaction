@@ -115,7 +115,7 @@ class SelectedAreaControls extends React.Component {
         unsaved_changes: false,
       })
     }
-    this.props.setGlobalStateVar('selected_area_meta_id', selected_area_meta_id)
+    this.props.setGlobalStateVar('current_selected_area_meta_id', selected_area_meta_id)
     this.props.displayInsightsMessage('Selected area meta has been loaded')
   }
 

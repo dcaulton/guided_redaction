@@ -81,6 +81,7 @@ class BottomInsightsControls extends React.Component {
           deleteScanner={this.props.deleteScanner}
           importScanner={this.props.importScanner}
           saveScannerToDatabase={this.props.saveScannerToDatabase}
+          submitInsightsJob={this.props.submitInsightsJob}
         />
 
         <AnnotationControls
