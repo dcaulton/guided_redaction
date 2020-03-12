@@ -9,7 +9,7 @@ class SelectedAreaControls extends React.Component {
     this.state = {
       id: '',
       name: '',
-      select_type: 'arrow`',
+      select_type: 'arrow',
       scale: '1:1',
       interior_or_exterior: 'interior',
       attributes: {},
@@ -324,14 +324,16 @@ class SelectedAreaControls extends React.Component {
             {adhoc_option}
             {t1_temp_ids.map((value, index) => {
               const the_key = 'sa_origin_entity_template_' + index.toString()
+              const the_name = this.props.templates[value]
               return (
-                <option value={value} key={the_key}>tier 1 template: {value}</option>
+                <option value={value} key={the_key}>tier 1 template: {the_name}</option>
               )
             })}
             {t2_temp_ids.map((value, index) => {
               const the_key = 'sa_origin_entity_t2_template_' + index.toString()
+              const the_name = this.props.templates[value]
               return (
-                <option value={value} key={the_key}>tier 2 template: {value}</option>
+                <option value={value} key={the_key}>tier 2 template: {the_name}</option>
               )
             })}
             {t1_ocr_ids.map((value, index) => {
@@ -351,38 +353,6 @@ class SelectedAreaControls extends React.Component {
       </div>
     )
   }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
   setAttribute(name, value) {
     let deepCopyAttributes = JSON.parse(JSON.stringify(this.state.attributes))
@@ -549,7 +519,10 @@ class SelectedAreaControls extends React.Component {
     return (
       <div>
         {tier_1_match_keys.map((value, index) => {
-          const detail_line = 'Frames matched by template ' + this.props.templates[value]['name']
+          let detail_line = 'Frames matched by template id ' + value
+          if (Object.keys(this.props.templates).includes(value)) {
+            detail_line = 'Frames matched by template ' + this.props.templates[value]['name']
+          }
           return (
             <button
                 className='dropdown-item'
@@ -595,6 +568,9 @@ class SelectedAreaControls extends React.Component {
   }
 
   buildRunButton() {
+    if (!this.state.id) {
+      return ''
+    }
     let movie_set_keys = Object.keys(this.props.movie_sets)
     const tier_1_template_options = this.buildTier1TemplateRunOptions()
     const tier_1_ocr_options = this.buildTier1OcrRunOptions()

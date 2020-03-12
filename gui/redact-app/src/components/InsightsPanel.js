@@ -444,6 +444,7 @@ class InsightsPanel extends React.Component {
         movie_build_obj[movie_url]['framesets'][frameset_hash] = movie_frameset
       }
     }
+    return movie_build_obj
   }
 
   buildScanTemplateCurTempTelemetryMatchesJobData(extra_data) {

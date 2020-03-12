@@ -507,7 +507,10 @@ class TemplateControls extends React.Component {
     return (
       <div>
         {tier_1_match_keys.map((value, index) => {
-          const detail_line = 'Frames matched by template ' + this.props.templates[value]['name']
+          let detail_line = 'Frames matched by template id ' + value
+          if (Object.keys(this.props.templates).includes(value)) {
+            detail_line = 'Frames matched by template ' + this.props.templates[value]['name']
+          } 
           return (
             <button
                 className='dropdown-item'
