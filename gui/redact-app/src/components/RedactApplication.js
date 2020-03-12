@@ -77,8 +77,6 @@ class RedactApplication extends React.Component {
     this.setSelectedArea=this.setSelectedArea.bind(this)
     this.clearMovieSelectedAreas=this.clearMovieSelectedAreas.bind(this)
     this.setImageScale=this.setImageScale.bind(this)
-    this.doFloodFill=this.doFloodFill.bind(this)
-    this.doArrowFill=this.doArrowFill.bind(this)
     this.doPing=this.doPing.bind(this)
     this.cancelJob=this.cancelJob.bind(this)
     this.submitJob=this.submitJob.bind(this)
@@ -145,10 +143,6 @@ class RedactApplication extends React.Component {
 
     if (url_name === 'ping_url') {
       return api_server_url + 'v1/parse/ping'
-    } else if (url_name === 'flood_fill_url') {
-      return api_server_url + 'v1/analyze/flood-fill'
-    } else if (url_name === 'arrow_fill_url') {
-      return api_server_url + 'v1/analyze/arrow-fill'
     } else if (url_name === 'crop_url') {
       return api_server_url + 'v1/parse/crop-image'
     } else if (url_name === 'get_images_for_uuid_url') {
@@ -857,63 +851,6 @@ class RedactApplication extends React.Component {
     let name_parts = url_parts[url_parts.length-1].split('.')
     let file_name_before_dot = name_parts[name_parts.length-2]
     return file_name_before_dot
-  }
-
-  async doFloodFill(x_scaled, y_scaled, insights_image, selected_areas, cur_hash, selected_area_meta_id) {
-    await fetch(this.getUrl('flood_fill_url'), {                                      
-      method: 'POST',                                                           
-      headers: this.buildJsonHeaders(),
-      body: JSON.stringify({                                                    
-        source_image_url: insights_image,                            
-        tolerance: 5,                                                           
-        selected_point : [x_scaled, y_scaled],                                  
-      }),                                                                       
-    })                                                                          
-    .then((response) => response.json())                                        
-    .then((responseJson) => {                                                   
-      const sa_id = Math.floor(Math.random(1000000, 9999999)*1000000000)        
-      const new_sa = {                                                          
-          'id': sa_id,                                                          
-          'start': responseJson['flood_fill_regions'][0],                       
-          'end': responseJson['flood_fill_regions'][1],                         
-      }
-      let deepCopySelectedAreas= JSON.parse(JSON.stringify(selected_areas))
-      deepCopySelectedAreas.push(new_sa)
-      this.setSelectedArea(deepCopySelectedAreas, insights_image, this.state.movie_url, cur_hash)
-    })
-    .catch((error) => { 
-      console.error(error);
-    })
-  } 
-
-  async doArrowFill(x_scaled, y_scaled, insights_image, selected_areas, cur_hash, selected_area_meta_id, when_done) {
-    await fetch(this.getUrl('arrow_fill_url'), {
-      method: 'POST',
-      headers: this.buildJsonHeaders(),
-      body: JSON.stringify({
-        source_image_url: insights_image,
-        tolerance: 5,
-        selected_point : [x_scaled, y_scaled],
-      }),
-    })
-    .then((response) => response.json())
-    .then((responseJson) => {
-      const sa_id = Math.floor(Math.random(1000000, 9999999)*1000000000)
-      const new_sa = {
-          'id': sa_id,
-          'start': responseJson['arrow_fill_regions'][0],
-          'end': responseJson['arrow_fill_regions'][1],
-      }
-      let deepCopySelectedAreas= JSON.parse(JSON.stringify(selected_areas))
-      deepCopySelectedAreas.push(new_sa)
-      this.setSelectedArea(deepCopySelectedAreas, insights_image, this.state.movie_url, cur_hash)
-    })
-    .then(() => {
-      when_done()
-    })
-    .catch((error) => {
-      console.error(error);
-    })
   }
 
   async doPing(when_done_success, when_done_failure) {                                                              
@@ -2139,8 +2076,6 @@ class RedactApplication extends React.Component {
                 clearMovieSelectedAreas={this.clearMovieSelectedAreas}
                 selected_areas={this.state.selected_areas}
                 doPing={this.doPing}
-                doFloodFill={this.doFloodFill}
-                doArrowFill={this.doArrowFill}
                 cancelJob={this.cancelJob}
                 submitJob={this.submitJob}
                 getJobs={this.getJobs}

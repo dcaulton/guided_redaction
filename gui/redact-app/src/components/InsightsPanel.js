@@ -48,7 +48,6 @@ class InsightsPanel extends React.Component {
     this.getTier1TemplateMatches=this.getTier1TemplateMatches.bind(this)
     this.clearSelectedAreas=this.clearSelectedAreas.bind(this)
     this.currentImageIsTemplateAnchorImage=this.currentImageIsTemplateAnchorImage.bind(this)
-    this.afterArrowFill=this.afterArrowFill.bind(this)
     this.afterPingSuccess=this.afterPingSuccess.bind(this)
     this.afterPingFailure=this.afterPingFailure.bind(this)
     this.callPing=this.callPing.bind(this)
@@ -838,10 +837,6 @@ class InsightsPanel extends React.Component {
       the_message = "Anchor was successfully added"
     } else if (the_mode === 'add_template_mask_zone_3') {
       the_message = "Mask zone was successfully added"
-    } else if (the_mode === 'flood_fill_1') {
-      the_message = 'Select the area to flood fill'
-    } else if (the_mode === 'arrow_fill_1') {
-      the_message = 'Select the area to arrow fill'
     } else if (the_mode === 'add_template_mask_zone_1') {
       the_message = 'Select the first corner of the mask zone'
     } else if (the_mode === 'add_annotations_interactive') {
@@ -928,37 +923,6 @@ class InsightsPanel extends React.Component {
       }
     } else if (this.state.mode === 'selected_area_area_coords_1') {
         this.state.callbacks['selected_area_area_coords_1']([x_scaled, y_scaled])
-    } else if (this.state.mode === 'flood_fill_1') {
-      this.setState({
-        insights_image_scale: scale,
-        clicked_coords: [x_scaled, y_scaled],
-        insights_message: 'Calling flood fill api',
-      })
-      const sam_id = this.getSelectAreaMetaId('flood', x_scaled, y_scaled)
-      this.props.doFloodFill(
-        x_scaled, 
-        y_scaled, 
-        this.state.insights_image, 
-        selected_areas, 
-        scrubber_frameset_hash, 
-        sam_id
-      )
-    } else if (this.state.mode === 'arrow_fill_1') {
-      this.setState({
-        insights_image_scale: scale,
-        clicked_coords: [x_scaled, y_scaled],
-        insights_message: 'Calling arrow fill api',
-      })
-      const sam_id = this.getSelectAreaMetaId('arrow', x_scaled, y_scaled)
-      this.props.doArrowFill(
-        x_scaled, 
-        y_scaled, 
-        this.state.insights_image, 
-        selected_areas, 
-        scrubber_frameset_hash, 
-        sam_id, 
-        this.afterArrowFill
-      )
     } else if (this.state.mode === 'add_template_mask_zone_1') {
       this.doAddTemplateMaskZoneClickOne(scale, x_scaled, y_scaled)
     } else if (this.state.mode === 'add_template_mask_zone_2') {
@@ -982,10 +946,6 @@ class InsightsPanel extends React.Component {
     } else if (this.state.mode === 'add_annotations_ocr_end') {
       this.doAddAnnotationsOcrStartClickOne(scale, x_scaled, y_scaled)
     }
-  }
-
-  afterArrowFill() {
-    this.displayInsightsMessage('Fill area added, click to add another.')
   }
 
   doAddTemplateAnchorClickOne(scale, x_scaled, y_scaled) {
