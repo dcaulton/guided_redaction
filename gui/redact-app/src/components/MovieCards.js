@@ -69,6 +69,8 @@ class MovieCardList extends React.Component {
               getFramesetHashesInOrder={this.props.getFramesetHashesInOrder}
               setScrubberToIndex={this.props.setScrubberToIndex}
               insights_image={this.props.insights_image}
+              setGlobalStateVar={this.props.setGlobalStateVar}
+              displayInsightsMessage={this.props.displayInsightsMessage}
           />
           )
         })}
@@ -417,6 +419,20 @@ class MovieCard extends React.Component {
     return ''
   }
 
+  clearAreasToRedact() {
+    let deepCopyMovies = JSON.parse(JSON.stringify(this.props.movies))
+    let movie = JSON.parse(JSON.stringify(this.props.movies[this.props.this_cards_movie_url]))
+    for (let i=0; i < Object.keys(movie['framesets']).length; i++) {
+      const frameset_hash = Object.keys(movie['framesets'])[i]
+      if (Object.keys(movie['framesets'][frameset_hash]).includes('areas_to_redact')) {
+        delete movie['framesets'][frameset_hash]['areas_to_redact']
+      }
+    }
+    deepCopyMovies[this.props.this_cards_movie_url] = movie
+    this.props.setGlobalStateVar('movies', deepCopyMovies)
+    this.props.displayInsightsMessage('redaction areas have been removed')
+  }
+
   getAreasToRedactString() {
     if (Object.keys(this.props.movies).includes(this.props.this_cards_movie_url)) {
       const movie = this.props.movies[this.props.this_cards_movie_url]
@@ -428,7 +444,16 @@ class MovieCard extends React.Component {
         }
       }
       let matches_button = ''
+      let clear_button = ''
       if (a2r_framesets_count > 0) {
+        clear_button = (
+          <button
+            className='border-0 text-primary'
+            onClick={() => this.clearAreasToRedact()}
+          >
+            clear
+          </button>
+        )
         matches_button = (
           <button
             className='border-0 text-primary'
@@ -441,6 +466,7 @@ class MovieCard extends React.Component {
           <div>
             {a2r_framesets_count} redactions
             {matches_button}
+            {clear_button}
           </div>
         )
       }
