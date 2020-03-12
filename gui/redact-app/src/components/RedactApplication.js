@@ -1000,6 +1000,53 @@ class RedactApplication extends React.Component {
     }
   }
 
+  loadSelectedAreaResults(job, when_done) {
+    const response_data = JSON.parse(job.response_data)
+    const request_data = JSON.parse(job.request_data)
+    let something_changed = false
+    let deepCopyMovies= JSON.parse(JSON.stringify(this.state.movies))
+    let deepCopySelectedAreaMetas = JSON.parse(JSON.stringify(this.state.selected_area_metas))
+    for (let i=0; i < Object.keys(request_data['movies']).length; i++) {
+      const movie_url = Object.keys(request_data['movies'])[i]
+      if (!Object.keys(deepCopyMovies).includes(movie_url)) {
+        deepCopyMovies[movie_url] = request_data['movies'][movie_url]
+        this.addToCampaignMovies(movie_url)
+        something_changed = true
+      }
+    }
+    for (let i=0; i < Object.keys(request_data['selected_area_metas']).length; i++) {
+      const sam_id = Object.keys(request_data['selected_area_metas'])[i]
+      if (!Object.keys(this.state.selected_area_metas).includes(sam_id)) {
+        deepCopySelectedAreaMetas[sam_id] = request_data['selected_area_metas'][sam_id]
+        something_changed = true
+      }
+    }
+    for (let i=0; i < Object.keys(response_data['movies']).length; i++) {
+      const movie_url = Object.keys(response_data['movies'])[i]
+      for (let j = 0; j < Object.keys(response_data['movies'][movie_url]['framesets']).length; j++) {
+        const frameset_hash = Object.keys(response_data['movies'][movie_url]['framesets'])[j]
+        const selected_areas = response_data['movies'][movie_url]['framesets'][frameset_hash]
+        for (let k=0; k < selected_areas.length; k++) {
+          const selected_area = selected_areas[k]
+          const build_a2r = {
+            start: selected_area[0],
+            end: selected_area[1],
+            source: 'selected area: ' + request_data['id'],
+          }
+          if (!Object.keys(deepCopyMovies[movie_url]['framesets'][frameset_hash]).includes('areas_to_redact')) {
+            deepCopyMovies[movie_url]['framesets'][frameset_hash]['areas_to_redact'] = []
+          }
+          deepCopyMovies[movie_url]['framesets'][frameset_hash]['areas_to_redact'].push(build_a2r)
+          something_changed = true
+        }
+      }
+    }
+    if (something_changed) {
+      this.setGlobalStateVar('movies', deepCopyMovies)
+      this.setGlobalStateVar('selected_area_metas', deepCopySelectedAreaMetas)
+    }
+  }
+
   loadScanTemplateResults(job, when_done=(()=>{})) {
     const response_data = JSON.parse(job.response_data)
     const request_data = JSON.parse(job.request_data)
@@ -1468,6 +1515,8 @@ class RedactApplication extends React.Component {
         this.loadScanOcrMovieResults(job, when_done)
 			} else if (job.app === 'analyze' && job.operation === 'telemetry_find_matching_frames') {
         this.loadTelemetryResults(job, when_done)
+			} else if (job.app === 'analyze' && job.operation === 'selected_area_threaded') {
+        this.loadSelectedAreaResults(job, when_done)
 			} else if ((job.app === 'parse' && job.operation === 'split_and_hash_movie') 
 	        || (job.app === 'parse' && job.operation === 'split_and_hash_threaded')) {
         this.loadSplitAndHashResults(job, when_done)

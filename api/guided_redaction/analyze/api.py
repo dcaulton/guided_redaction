@@ -600,7 +600,6 @@ class AnalyzeViewSetTimestamp(viewsets.ViewSet):
         for rta in recognized_text_areas:
             text = rta['text']
             text = self.cast_probably_numbers(text)
-            print(text)
             match = time_regex.search(text)
             if match:
                 the_hour = match.group(1)

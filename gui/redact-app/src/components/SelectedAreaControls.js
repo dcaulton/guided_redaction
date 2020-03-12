@@ -124,7 +124,7 @@ class SelectedAreaControls extends React.Component {
     this.setState({
       id: '',
       name: '',
-      select_type: 'arrow`',
+      select_type: 'arrow',
       scale: '1:1',
       interior_or_exterior: 'interior',
       attributes: {},
@@ -216,9 +216,9 @@ class SelectedAreaControls extends React.Component {
               value={this.state.select_type}
               onChange={(event) => this.setLocalStateVar('select_type', event.target.value)}
           >
-            <option value='flood_simple'>flood simple</option>
-            <option value='flood'>true flood</option>
-            <option value='arrow_simple'>arrow simple</option>
+            <option value='flood'>flood simple</option>
+            <option value='flood_true'>true flood</option>
+            <option value='arrow'>arrow simple</option>
             <option value='arrow_chain'>arrow chain</option>
           </select>
         </div>
