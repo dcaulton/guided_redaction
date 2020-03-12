@@ -175,6 +175,55 @@ class AnalyzeViewSetScanTemplate(viewsets.ViewSet):
         return Response(matches)
 
 
+class AnalyzeViewSetSelectedArea(viewsets.ViewSet):
+    def create(self, request):
+        request_data = request.data
+        return self.process_create_request(request_data)
+
+    def process_create_request(self, request_data):
+        response_movies = {}
+        if not request_data.get("movies"):
+            return self.error("movies is required")
+        if not request_data.get("selected_area_meta"):
+            return self.error("selected_area_meta is required")
+
+        movie_url = list(request_data.get("movies").keys())[0]
+        movie = request_data.get("movies")[movie_url]
+
+        selected_area_meta= request_data["selected_area_meta"]
+        finder = ExtentsFinder()
+        response_movies[movie_url] = {}
+        response_movies[movie_url]['framesets'] = {}
+        tolerance = 5 # todo let this come in with the selected area spec
+        for frameset_hash in movie['framesets']:
+            regions_for_image = []
+            frameset = movie['framesets'][frameset_hash]
+            image_url = frameset['images'][0]
+            image = requests.get(
+              image_url,
+              verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
+            ).content
+            if not image:
+                return self.error("couldnt read image data", status_code=422)
+            nparr = np.fromstring(image, np.uint8)
+            cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+            for area in selected_area_meta['areas']:
+                selected_point = area['center']
+                if selected_area_meta['select_type'] == 'arrow':
+                    regions = finder.determine_arrow_fill_area(
+                        cv2_image, selected_point, tolerance
+                    )
+                    regions_for_image.append(regions)
+                if selected_area_meta['select_type'] == 'flood':
+                    regions = finder.determine_flood_fill_area(
+                        cv2_image, selected_point, tolerance
+                    )
+                    regions_for_image.append(regions)
+            if regions_for_image:
+                response_movies[movie_url]['framesets'][frameset_hash] = regions_for_image
+        return Response({"movies": response_movies})
+
+
 class AnalyzeViewSetFloodFill(viewsets.ViewSet):
     def create(self, request):
         regions = (
@@ -506,16 +555,7 @@ class AnalyzeViewSetTimestamp(viewsets.ViewSet):
             text = rta['text']
             text_codes = [ord(x) for x in text]
             print('text in **{}** {}'.format(text, text_codes))
-            text = text.replace('l', '1')
-            text = text.replace('I', '1')
-            text = text.replace('[', '1')
-            text = text.replace(']', '1')
-            text = text.replace('i', '1')
-            text = text.replace('|', '1')
-            text = text.replace('{', '1')
-            text = text.replace('}', '1')
-            text = text.replace('O', '0')
-            text = text.replace('.', ':')
+            text = self.cast_probably_numbers(text)
             text_codes = [ord(x) for x in text]
             print('--transformed to **{}** {}'.format(text, text_codes))
             match = re.search('(\w*)(:?)(\d\d)(\s*)(\S)M', text)
@@ -523,3 +563,75 @@ class AnalyzeViewSetTimestamp(viewsets.ViewSet):
                 the_minute = int(match.group(3))
                 return the_minute
 
+    def cast_probably_numbers(self, text):
+        text = text.replace('l', '1')
+        text = text.replace('I', '1')
+        text = text.replace('[', '1')
+        text = text.replace(']', '1')
+        text = text.replace('i', '1')
+        text = text.replace('|', '1')
+        text = text.replace('{', '1')
+        text = text.replace('}', '1')
+        text = text.replace('O', '0')
+        text = text.replace('.', ':')
+        return text
+
+    def get_timestamp_from_blue_screen_png_bytes(self, image):
+        # a stand alone method to help Scott with something
+        # let Scott know if it's moving locations
+        analyzer = EastPlusTessGuidedAnalyzer(debug=False)
+        nparr = np.fromstring(image, np.uint8)
+        cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        time_region_image = cv2_image[169:208, 91:465]
+        gray = cv2.cvtColor(time_region_image, cv2.COLOR_BGR2GRAY)
+        bg_color = gray[1,1]
+        if bg_color < 100:  # its light text on dark bg, invert
+            gray = cv2.bitwise_not(gray)
+        recognized_text_areas = analyzer.analyze_text(
+            gray,
+            '',
+            processing_mode='tess_only'
+        )
+        time_result = {}
+        date_result = {}
+        found_datetime = None
+        time_regex = re.compile('(\d+):(\d+):(\d+) ([A|P])M')
+        date_regex = re.compile('(\d+)/(\d+)/(\d+)\s* ')
+        for rta in recognized_text_areas:
+            text = rta['text']
+            text = self.cast_probably_numbers(text)
+            print(text)
+            match = time_regex.search(text)
+            if match:
+                the_hour = match.group(1)
+                the_minute = match.group(2)
+                the_second = match.group(3)
+                the_am_pm = match.group(4)
+                time_result = {
+                    'hour': int(the_hour),
+                    'minute': int(the_minute),
+                    'second': int(the_second),
+                    'am_pm': the_am_pm + 'M',
+                }
+            match = date_regex.search(text)
+            if match:
+                the_month = match.group(1)
+                the_day = match.group(2)
+                the_year = match.group(3)
+                date_result = {
+                    'day': int(the_day),
+                    'month': int(the_month),
+                    'year': int(the_year),
+                }
+        if date_result and time_result:
+            if time_result['am_pm'] == 'PM':
+                time_result['hour'] += 12
+            found_datetime = datetime.datetime(
+                date_result['year'],
+                date_result['month'],
+                date_result['day'],
+                time_result['hour'],
+                time_result['minute'],
+                time_result['second']
+            )
+        return found_datetime

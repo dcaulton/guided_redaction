@@ -8,6 +8,7 @@ from guided_redaction.analyze.api import (
     AnalyzeViewSetScanTemplate,
     AnalyzeViewSetTelemetry,
     AnalyzeViewSetTimestamp,
+    AnalyzeViewSetSelectedArea,
     AnalyzeViewSetEastTess
 )
 
@@ -496,3 +497,90 @@ def find_relevant_areas_from_response(match_strings, match_percent, areas_to_red
                     relevant_areas.append(area)
                     continue
     return relevant_areas
+
+@shared_task
+def selected_area(job_uuid):
+    if not Job.objects.filter(pk=job_uuid).exists():
+        print('calling selected_area on nonexistent job: {}'.format(job_uuid))
+    job = Job.objects.get(pk=job_uuid)
+    job.status = 'running'
+    job.save()
+    print('running selected_area for job {}'.format(job_uuid))
+    worker = AnalyzeViewSetSelectedArea()
+    response = worker.process_create_request(json.loads(job.request_data))
+    if not Job.objects.filter(pk=job_uuid).exists():
+        return
+    job = Job.objects.get(pk=job_uuid)
+    job.response_data = json.dumps(response.data)
+    job.status = 'success'
+    job.save()
+
+    if job.parent_id:
+        parent_job = Job.objects.get(pk=job.parent_id)
+        if parent_job.app == 'analyze' and parent_job.operation == 'selected_area_threaded':
+            selected_area_threaded.delay(parent_job.id)
+
+@shared_task
+def selected_area_threaded(job_uuid):
+    if Job.objects.filter(pk=job_uuid).exists():
+        job = Job.objects.get(pk=job_uuid)
+        if job.status in ['success', 'failed']:
+            return
+        children = Job.objects.filter(parent=job)
+        (next_step, percent_done) = evaluate_children('SELECTED AREA THREADED', 'selected_area', children)
+        print('next step is {}, percent done {}'.format(next_step, percent_done))
+        if next_step == 'build_child_tasks':
+          build_and_dispatch_selected_area_threaded_children(job)
+        elif next_step == 'update_percent_complete':
+          job.elapsed_time = percent_done
+          job.save()
+        elif next_step == 'wrap_up':
+          wrap_up_selected_area_threaded(job, children)
+        elif next_step == 'abort':
+          job.status = 'failed'
+          job.save()
+
+def build_and_dispatch_selected_area_threaded_children(parent_job):
+    parent_job.status = 'running'
+    parent_job.save()
+    request_data = json.loads(parent_job.request_data)
+    selected_area_metas = request_data['selected_area_metas']
+    movies = request_data['movies']
+    for selected_area_meta_id in selected_area_metas:
+        selected_area_meta = selected_area_metas[selected_area_meta_id]
+        for index, movie_url in enumerate(movies.keys()):
+            movie = movies[movie_url]
+            build_movies = {}
+            build_movies[movie_url] = movie
+            build_request_data = json.dumps({
+                'movies': build_movies,
+                'selected_area_meta': selected_area_meta,
+            })
+            job = Job(
+                request_data=build_request_data,
+                status='created',
+                description='get selected area for movie {}'.format(movie_url),
+                app='analyze',
+                operation='selected_area',
+                sequence=0,
+                elapsed_time=0.0,
+                parent=parent_job,
+            )
+            job.save()
+            print('build_and_dispatch_selected_area_threaded_children: dispatching job for movie {}'.format(movie_url))
+            selected_area.delay(job.id)
+
+def wrap_up_selected_area_threaded(job, children):
+    aggregate_response_data = {}
+    for child in children:
+        child_response_data = json.loads(child.response_data)
+        if len(child_response_data.keys()) > 0:
+            movie_url = list(child_response_data.keys())[0]
+            aggregate_response_data[movie_url] = child_response_data[movie_url]
+
+    print('wrap_up_selected_area_threaded: wrapping up parent job')
+    job.status = 'success'
+    job.response_data = json.dumps(aggregate_response_data)
+    job.elapsed_time = 1
+    job.save()
+

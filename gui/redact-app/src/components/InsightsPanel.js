@@ -614,7 +614,7 @@ class InsightsPanel extends React.Component {
       request_data: {},
     }
     job_data['app'] = 'analyze'
-    job_data['operation'] = 'selected_area'
+    job_data['operation'] = 'selected_area_threaded'
     const cur_selected_area = this.props.selected_area_metas[this.props.current_selected_area_meta_id]
     job_data['request_data']['selected_area_metas'] = {}
     job_data['request_data']['selected_area_metas'][this.props.current_selected_area_meta_id] = cur_selected_area

@@ -43,6 +43,8 @@ def dispatch_job(job):
         analyze_tasks.get_timestamp.delay(job_uuid)
     if job.app == 'analyze' and job.operation == 'get_timestamp_threaded':
         analyze_tasks.get_timestamp_threaded.delay(job_uuid)
+    if job.app == 'analyze' and job.operation == 'selected_area_threaded':
+        analyze_tasks.selected_area_threaded.delay(job_uuid)
     if job.app == 'parse' and job.operation == 'split_and_hash_movie':
         parse_tasks.split_and_hash_movie.delay(job_uuid)
     if job.app == 'parse' and job.operation == 'split_and_hash_threaded':
