@@ -9,6 +9,7 @@ class ComposePanel extends React.Component {
       image_width: 1000,
       image_height: 1000,
       compose_image_scale: 1,
+      movie_offset_string: 'position 0:00',
     }
     this.scrubberOnChange=this.scrubberOnChange.bind(this)
   }
@@ -20,6 +21,16 @@ class ComposePanel extends React.Component {
     }
   }
 
+  updateMovieOffset(offset_in_seconds) {
+    const mins_offset = Math.floor(parseInt(offset_in_seconds) / 60)
+    const secs_offset = parseInt(offset_in_seconds) % 60
+    const secs_string = secs_offset.toString()
+    const build_string = 'position ' + mins_offset.toString() + ':' + secs_string.padStart(2, '0')
+    this.setState({
+      movie_offset_string: build_string,
+    })
+  }
+
   scrubberOnChange() {
     const frames = this.props.getCurrentFrames()
     const value = document.getElementById('compose_scrubber').value
@@ -28,6 +39,7 @@ class ComposePanel extends React.Component {
       compose_image: the_url,
       compose_image_title: the_url,
     }, this.setImageSize(the_url))
+    this.updateMovieOffset(value)
   }
 
   setImageSize(the_image) {
@@ -114,9 +126,13 @@ class ComposePanel extends React.Component {
       <div id='compose_panel_container'>
         <div id='compose_panel'>
 
-          <div id='compose_header' className='row position-relative'>
+          <div id='compose_header' className='row position-relative' >
             <div className='col'>
-            header
+              <div
+                  className='d-inline'
+              >
+                {this.state.movie_offset_string}
+              </div>
             </div>
           </div>
 
