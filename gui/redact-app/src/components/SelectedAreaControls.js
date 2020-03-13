@@ -281,9 +281,7 @@ class SelectedAreaControls extends React.Component {
               onChange={(event) => this.setLocalStateVar('origin_entity_type', event.target.value)}
           >
             <option value='adhoc'>ad hoc</option>
-            <option value='template'>template</option>
-            <option value='ocr'>ocr</option>
-            <option value='telemetry'>telemetry</option>
+            <option value='template_anchor'>template</option>
           </select>
         </div>
       </div>
@@ -291,25 +289,45 @@ class SelectedAreaControls extends React.Component {
   }
 
   buildOriginEntityIdDropdown() {
+    if (this.state.origin_entity_type === 'adhoc') {
+      return ''
+    }
     let t1_temp_ids = []
     let t2_temp_ids = []
-    let t1_ocr_ids = []
-    let t1_tel_ids = []
-    let adhoc_option = (<option value='adhoc'>ad hoc</option>)
-    if (this.state.origin_entity_type === 'template') {
-      t1_temp_ids = Object.keys(this.props.tier_1_matches['template'])
-      t2_temp_ids = Object.keys(this.props.templates)
-      adhoc_option = ''
-    }
-    if (this.state.origin_entity_type === 'ocr') {
-      t1_ocr_ids = Object.keys(this.props.tier_1_matches['ocr'])
-      adhoc_option = ''
-    }
-    if (this.state.origin_entity_type === 'telemetry') {
-      t1_tel_ids = Object.keys(this.props.tier_1_matches['telemetry'])
+    let adhoc_option = (<option value=''></option>)
+    if (this.state.origin_entity_type === 'template_anchor') {
+      for (let i=0; i < Object.keys(this.props.templates).length; i++) {
+        const template_id = Object.keys(this.props.templates)[i]
+        const template = this.props.templates[template_id]
+        if (template['scan_level'] === 'tier_1') {
+          t1_temp_ids.push(template_id)
+        }
+        if (template['scan_level'] === 'tier_2') {
+          t2_temp_ids.push(template_id)
+        }
+      }
       adhoc_option = ''
     }
 
+    let anchor_descs = {}
+    let anchor_keys = []
+    for (let i=0; i < Object.keys(this.props.templates).length; i++) {
+      const template_id = Object.keys(this.props.templates)[i]
+      const template = this.props.templates[template_id]
+      let temp_type = 'unknown template'
+      if (t1_temp_ids.includes(template_id)) {
+        temp_type = 'Tier 1 template'
+      } 
+      if (t2_temp_ids.includes(template_id)) {
+        temp_type = 'Tier 2 template'
+      }
+      for (let j=0; j < template['anchors'].length; j++) {
+        const anchor = template['anchors'][j]
+        const desc_string = temp_type + ':' + template['name'] + ', ' + anchor['id']
+        anchor_keys.push(anchor['id'])
+        anchor_descs[anchor['id']] = desc_string
+      }
+    }
     return (
       <div>
         <div className='d-inline ml-2'>
@@ -322,30 +340,11 @@ class SelectedAreaControls extends React.Component {
               onChange={(event) => this.setLocalStateVar('origin_entity_id', event.target.value)}
           >
             {adhoc_option}
-            {t1_temp_ids.map((value, index) => {
-              const the_key = 'sa_origin_entity_template_' + index.toString()
-              const the_name = this.props.templates[value]
+            {anchor_keys.map((anchor_id, index) => {
+              const anchor_desc = anchor_descs[anchor_id]
+              const the_key = 'sa_origin_anchor_id_' + index.toString()
               return (
-                <option value={value} key={the_key}>tier 1 template: {the_name}</option>
-              )
-            })}
-            {t2_temp_ids.map((value, index) => {
-              const the_key = 'sa_origin_entity_t2_template_' + index.toString()
-              const the_name = this.props.templates[value]
-              return (
-                <option value={value} key={the_key}>tier 2 template: {the_name}</option>
-              )
-            })}
-            {t1_ocr_ids.map((value, index) => {
-              const the_key = 'sa_origin_entity_ocr_' + index.toString()
-              return (
-                <option value={value} key={the_key}>tier 1 ocr: {value}</option>
-              )
-            })}
-            {t1_tel_ids.map((value, index) => {
-              const the_key = 'sa_origin_entity_telemetry_' + index.toString()
-              return (
-                <option value={value} key={the_key}>tier 1 telemetry: {value}</option>
+                <option value={anchor_id} key={the_key}>{anchor_desc}</option>
               )
             })}
           </select>

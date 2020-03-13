@@ -296,21 +296,31 @@ class MovieCard extends React.Component {
     const cur_movies_matches = cur_templates_matches['movies'][this.props.this_cards_movie_url]
     let count = Object.keys(cur_movies_matches['framesets']).length
     let matches_button = ''
+    let clear_button = ''
     if (count > 0) {
+      clear_button = (
+        <button
+          className='border-0 text-primary'
+          onClick={() => this.clearTemplateMatches()}
+        >
+          clr
+        </button>
+      )
       matches_button = (
         <button
           className='border-0 text-primary'
           onClick={() => this.setScrubberToNextTemplateHit()}
         >
-          next
+          nxt
         </button>
       )
     }
 
     return (
       <div>
-        {count.toString()} template matches
+        {count.toString()} temp matches
         {matches_button}
+        {clear_button}
       </div>
     )
   }
@@ -397,13 +407,22 @@ class MovieCard extends React.Component {
       if (Object.keys(this_ocr_rule_matches['movies']).includes(this.props.this_cards_movie_url)) {
         let count = this.getOcrMatchHashesForMovie(this.props.this_cards_movie_url).length
         let matches_button = ''
+        let clear_button = ''
         if (count > 0) {
+          clear_button = (
+            <button
+              className='border-0 text-primary'
+              onClick={() => this.clearOcrMatches()}
+            >
+              clr
+            </button>
+          )
           matches_button = (
             <button
               className='border-0 text-primary'
               onClick={() => this.setScrubberToNextOcrHit()}
             >
-              next
+              nxt
             </button>
           )
         }
@@ -412,11 +431,26 @@ class MovieCard extends React.Component {
           <div>
             {count} ocr matches
             {matches_button}
+            {clear_button}
           </div>
         )
       }
     }
     return ''
+  }
+
+  clearOcrMatches() {
+    let deepCopyTier1Matches= JSON.parse(JSON.stringify(this.props.tier_1_matches))
+    delete deepCopyTier1Matches['ocr'][this.props.current_ocr_rule_id]
+    this.props.setGlobalStateVar('tier_1_matches', deepCopyTier1Matches)
+    this.props.displayInsightsMessage('ocr matches have been removed')
+  }
+
+  clearTemplateMatches() {
+    let deepCopyTier1Matches= JSON.parse(JSON.stringify(this.props.tier_1_matches))
+    delete deepCopyTier1Matches['template'][this.props.current_template_id]
+    this.props.setGlobalStateVar('tier_1_matches', deepCopyTier1Matches)
+    this.props.displayInsightsMessage('template matches have been removed')
   }
 
   clearAreasToRedact() {
@@ -451,7 +485,7 @@ class MovieCard extends React.Component {
             className='border-0 text-primary'
             onClick={() => this.clearAreasToRedact()}
           >
-            clear
+            clr
           </button>
         )
         matches_button = (
@@ -459,7 +493,7 @@ class MovieCard extends React.Component {
             className='border-0 text-primary'
             onClick={() => this.setScrubberToNextAreasToRedactHit()}
           >
-            next
+            nxt
           </button>
         )
         return (

@@ -124,7 +124,10 @@ class JobCard extends React.Component {
         job_data['id'].substring(jn_length-2)
     }
     let short_job_name = (
-      <div className='col-md-7'>
+      <div 
+        className='col-md-7'
+        title={job_data['id']}
+      >
       {sjn}
       </div>
     )

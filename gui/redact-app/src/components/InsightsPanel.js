@@ -632,13 +632,14 @@ class InsightsPanel extends React.Component {
       job_data['request_data']['movies'] = this.props.movies
     } else if (scope === 't1_template') {
       const tier_1_scanner_id = extra_data
+      const template = this.props.templates[tier_1_scanner_id]
       const movie_build_obj = this.buildTierOneMatchesMovieObject('template', tier_1_scanner_id)
       const counts = this.getCountsFromMovieBuildObj(movie_build_obj)
       job_data['request_data']['movies'] = movie_build_obj
       job_data['description'] = 'selected area match (' + cur_selected_area['name'] + ') '
       job_data['description'] += counts['movie'].toString() + ' movies '
       job_data['description'] += counts['frameset'].toString() + ' framesets'
-      job_data['description'] += ' using template id ' + tier_1_scanner_id
+      job_data['description'] += ' using template ' + template['name']
     } else if (scope === 't1_ocr') {
       const tier_1_scanner_id = extra_data
       const movie_build_obj = this.buildTierOneMatchesMovieObject('ocr', tier_1_scanner_id)
@@ -911,9 +912,6 @@ class InsightsPanel extends React.Component {
     if (x_scaled > this.state.image_width || y_scaled > this.state.image_height) {
         return
     }
-
-    const scrubber_frameset_hash = this.getScrubberFramesetHash()
-    const selected_areas = this.getSelectedAreas()
     if (this.state.mode === 'add_template_anchor_1') {
       this.doAddTemplateAnchorClickOne(scale, x_scaled, y_scaled)
     } else if (this.state.mode === 'add_template_anchor_2') {

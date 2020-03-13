@@ -556,6 +556,9 @@ class TemplateControls extends React.Component {
   }
 
   buildTemplateRunButton() {
+    if (!this.props.current_template_id) {
+      return ''
+    }
     let movie_set_keys = Object.keys(this.props.movie_sets)
     const tier_1_template_options = this.buildTier1TemplateRunOptions()
     const tier_1_ocr_options = this.buildTier1OcrRunOptions()
