@@ -97,6 +97,7 @@ class RedactApplication extends React.Component {
     this.setMovieNickname=this.setMovieNickname.bind(this)
     this.setMovieRedactedUrl=this.setMovieRedactedUrl.bind(this)
     this.getCurrentFramesets=this.getCurrentFramesets.bind(this)
+    this.getCurrentFrames=this.getCurrentFrames.bind(this)
     this.setActiveMovie=this.setActiveMovie.bind(this)
     this.getRedactedMovieUrl=this.getRedactedMovieUrl.bind(this)
     this.clearCurrentFramesetChanges=this.clearCurrentFramesetChanges.bind(this)
@@ -269,7 +270,10 @@ class RedactApplication extends React.Component {
     let image_url = data_in['url']
     let deepCopyMovies= JSON.parse(JSON.stringify(this.state.movies))
     let movie_url = 'whatever'
-    let deepCopyMovie= JSON.parse(JSON.stringify(deepCopyMovies[movie_url]))
+    if (Object.keys(data_in).includes('movie_url')) {
+      movie_url = data_in['movie_url']
+    }
+    let deepCopyMovie = JSON.parse(JSON.stringify(deepCopyMovies[movie_url]))
     let new_hash = (Object.keys(deepCopyMovie['framesets']).length + 1).toString()
     deepCopyMovie['frames'].push(image_url)
     deepCopyMovie['framesets'][new_hash] = {
@@ -280,7 +284,7 @@ class RedactApplication extends React.Component {
     this.setFramesetHash(new_hash)
   }
 
-  establishNewEmptyMovie(data_in, new_movie_url='whatever') {
+  establishNewEmptyMovie(new_movie_url='whatever', make_active=true) {
     this.setGlobalStateVar('movies', {})
     let new_movie = {
       frames: [],
@@ -290,8 +294,12 @@ class RedactApplication extends React.Component {
     deepCopyMovies[new_movie_url] = new_movie
     this.setState({
       movies: deepCopyMovies,
-      movie_url: new_movie_url,
     })
+    if (make_active) {
+      this.setState({
+        movie_url: new_movie_url,
+      })
+    }
     this.addToCampaignMovies(new_movie_url)
   }
 
@@ -677,6 +685,15 @@ class RedactApplication extends React.Component {
     if (this.state.movie_url) {
       if (Object.keys(this.state.movies).includes(this.state.movie_url)) {
         return this.state.movies[this.state.movie_url]['framesets']
+      }
+    }
+    return []
+  }
+
+  getCurrentFrames() {
+    if (this.state.movie_url) {
+      if (Object.keys(this.state.movies).includes(this.state.movie_url)) {
+        return this.state.movies[this.state.movie_url]['frames']
       }
     }
     return []
@@ -2074,8 +2091,7 @@ class RedactApplication extends React.Component {
                 establishNewEmptyMovie={this.establishNewEmptyMovie}
                 addImageToMovie={this.addImageToMovie}
                 movie_url = {this.state.movie_url}
-                getCurrentFramesets={this.getCurrentFramesets}
-                getFramesetHashesInOrder={this.getFramesetHashesInOrder}
+                getCurrentFrames={this.getCurrentFrames}
               />
             </Route>
             <Route path='/redact/insights'>

@@ -15,21 +15,19 @@ class ComposePanel extends React.Component {
 
   componentDidMount() {
     this.scrubberOnChange()
+    if (!Object.keys(this.props.movies).includes('sequence')) {
+      this.props.establishNewEmptyMovie('sequence', false)
+    }
   }
 
   scrubberOnChange() {
-    const framesets = this.props.getCurrentFramesets()
+    const frames = this.props.getCurrentFrames()
     const value = document.getElementById('compose_scrubber').value
-    const keys = this.props.getFramesetHashesInOrder()
-    const new_frameset_hash = keys[value]
-    if (Object.keys(framesets).includes(new_frameset_hash) &&
-        Object.keys(framesets[new_frameset_hash]).includes('images')) {
-      const the_url = framesets[new_frameset_hash]['images'][0]
-      this.setState({
-        compose_image: the_url,
-        compose_image_title: the_url,
-      }, this.setImageSize(the_url))
-    }
+    const the_url = frames[value]
+    this.setState({
+      compose_image: the_url,
+      compose_image_title: the_url,
+    }, this.setImageSize(the_url))
   }
 
   setImageSize(the_image) {
@@ -63,7 +61,42 @@ class ComposePanel extends React.Component {
     return bottom_y
   }
 
+  getMaxRange() {
+    if (!this.props.movies || !this.props.movie_url) {
+      return 1
+    }
+    const movie = this.props.movies[this.props.movie_url]
+    const max_len = movie['frames'].length - 1
+    return max_len
+  }
+
+  getSequence() {
+    if (Object.keys(this.props.movies).includes('sequence')) {
+      return this.props.movies['sequence']
+    }
+  }
+
+  captureFrame() {
+    this.props.addImageToMovie({
+      url: this.state.compose_image,
+      movie_url: 'sequence',
+    })
+  }
+
+  buildCaptureButton() {
+    return (
+      <button
+          className='btn btn-primary'
+          onClick={() => this.captureFrame()}
+      >
+        Capture
+      </button>
+    )
+  }
+
   render() {
+    const capture_button = this.buildCaptureButton()
+    const max_range = this.getMaxRange()
     let imageDivStyle= {
       width: this.props.image_width,
       height: this.props.image_height,
@@ -110,6 +143,7 @@ class ComposePanel extends React.Component {
                 <input
                     id='compose_scrubber'
                     type='range'
+                    max={max_range}
                     defaultValue='0'
                     onChange={this.scrubberOnChange}
                 />
@@ -119,11 +153,11 @@ class ComposePanel extends React.Component {
 
           <div 
               id='compose_movie_footer' 
-              className='row position-relative'
+              className='row position-relative mt-2'
               style={image_offset_style}
           >
-            <div className='col'>
-            movie footer
+            <div className='col' >
+              {capture_button}
             </div>
           </div>
 
@@ -132,12 +166,50 @@ class ComposePanel extends React.Component {
               className='row position-relative'
               style={image_offset_style}
           >
-          sequence
+            <SequencePanel
+              sequence_movie={this.getSequence()}
+            />
           </div>
          
         </div>
       </div>
     );
+  }
+}
+
+class SequencePanel extends React.Component {
+  render() {
+    if (!this.props.sequence_movie) {
+      return ''
+    }
+    const sequence_movie_frames = this.props.sequence_movie['frames']
+    return (
+      <div className='border-top mt-2'>
+        <div className='h5'>
+          sequence
+        </div>
+        <div id='sequence_card_wrapper'>
+          {sequence_movie_frames.map((frame_url, index) => {
+            return (
+            <SequenceCard
+              frame_url={frame_url}
+              sequence_movie={this.props.sequence_movie}
+            />
+            )
+          })}
+        </div>
+      </div>
+    )
+  }
+}
+
+class SequenceCard extends React.Component {
+  render() {
+    return (
+    <div>
+      <div>{this.props.frame_url}</div>
+    </div>
+    )
   }
 }
 
