@@ -2,6 +2,7 @@ import React from 'react';
 import ImagePanel from './ImagePanel';
 import MoviePanel from './MoviePanel';
 import InsightsPanel from './InsightsPanel';
+import ComposePanel from './ComposePanel';
 import {getUrlVars} from './redact_utils.js'
 import CompositeTone from './Tones.js'
 import './styles/guided_redaction.css';
@@ -50,6 +51,7 @@ class RedactApplication extends React.Component {
       current_selected_area_meta_id: '',
       showMovieParserLink: true,
       showInsightsLink: true,
+      showComposeLink: true,
       showAdvancedPanels: false,
       whenJobLoaded: {},
       whenDoneTarget: '',
@@ -796,6 +798,9 @@ class RedactApplication extends React.Component {
     }
     if (!this.state.showInsightsLink) {
       document.getElementById('insights_link').style.display = 'none'
+    }
+    if (!this.state.showComposeLink) {
+      document.getElementById('compose_link').style.display = 'none'
     }
     this.checkForJobs()
     this.checkForInboundGetParameters()
@@ -1988,6 +1993,9 @@ class RedactApplication extends React.Component {
             <Link className='nav-link' id='movie_panel_link' to='/redact/movie'>Movie</Link>
           </li>
           <li className="nav-item">
+            <Link className='nav-link' id='compose_link' to='/redact/compose'>Compose</Link>
+          </li>
+          <li className="nav-item">
             <Link className='nav-link' id='insights_link' to='/redact/insights'>Insights</Link>
           </li>
         </ul>
@@ -2058,6 +2066,11 @@ class RedactApplication extends React.Component {
                 addImageToMovie={this.addImageToMovie}
                 illustrateParameters={this.state.illustrateParameters}
                 setIllustrateParameters={this.setIllustrateParameters}
+              />
+            </Route>
+            <Route path='/redact/compose'>
+              <ComposePanel 
+                setGlobalStateVar={this.setGlobalStateVar}
               />
             </Route>
             <Route path='/redact/insights'>
