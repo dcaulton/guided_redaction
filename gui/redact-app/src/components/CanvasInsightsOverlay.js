@@ -220,10 +220,10 @@ class CanvasInsightsOverlay extends React.Component {
         const match = matches[i]
         ctx.fillStyle = this.ocr_color
         ctx.globalAlpha = 0.4
-        const start_x_scaled = match['start'][0] * this.props.insights_image_scale - 5
-        const start_y_scaled = match['start'][1] * this.props.insights_image_scale - 5
-        const width = (match['end'][0] * this.props.insights_image_scale) - start_x_scaled + 5
-        const height= (match['end'][1] * this.props.insights_image_scale) - start_y_scaled + 5
+        const start_x_scaled = match['start'][0] * this.props.insights_image_scale
+        const start_y_scaled = match['start'][1] * this.props.insights_image_scale
+        const width = (match['end'][0] * this.props.insights_image_scale) - start_x_scaled
+        const height= (match['end'][1] * this.props.insights_image_scale) - start_y_scaled
         ctx.fillRect(start_x_scaled, start_y_scaled, width, height)
         ctx.strokeStyle = this.red_color
         ctx.lineWidth = 3
@@ -243,13 +243,13 @@ class CanvasInsightsOverlay extends React.Component {
         const match = matches[i]
         ctx.fillStyle = this.area_to_redact_color
         ctx.globalAlpha = 0.4
-        const start_x_scaled = match['start'][0] * this.props.insights_image_scale - 5
-        const start_y_scaled = match['start'][1] * this.props.insights_image_scale - 5
-        const width = (match['end'][0] * this.props.insights_image_scale) - start_x_scaled + 5
-        const height= (match['end'][1] * this.props.insights_image_scale) - start_y_scaled + 5
+        const start_x_scaled = match['start'][0] * this.props.insights_image_scale
+        const start_y_scaled = match['start'][1] * this.props.insights_image_scale
+        const width = (match['end'][0] * this.props.insights_image_scale) - start_x_scaled
+        const height= (match['end'][1] * this.props.insights_image_scale) - start_y_scaled
         ctx.fillRect(start_x_scaled, start_y_scaled, width, height)
         ctx.strokeStyle = this.red_color
-        ctx.lineWidth = 3
+        ctx.lineWidth = 2
         ctx.strokeRect(start_x_scaled, start_y_scaled, width, height)
       }
     }

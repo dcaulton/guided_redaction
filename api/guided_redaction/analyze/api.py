@@ -220,8 +220,31 @@ class AnalyzeViewSetSelectedArea(viewsets.ViewSet):
                     )
                     regions_for_image.append(regions)
             if regions_for_image:
+                if selected_area_meta['interior_or_exterior'] == 'exterior':
+                    regions_for_image = self.transform_interior_selection_to_exterior(regions_for_image, cv2_image)
                 response_movies[movie_url]['framesets'][frameset_hash] = regions_for_image
         return Response({"movies": response_movies})
+
+    def transform_interior_selection_to_exterior(self, regions_for_image, cv2_image):
+        print(regions_for_image)
+        if len(regions_for_image) == 1:
+            start_x = min(regions_for_image[0][0][0], regions_for_image[0][1][0])
+            end_x = max(regions_for_image[0][0][0], regions_for_image[0][1][0])
+            start_y = min(regions_for_image[0][0][1], regions_for_image[0][1][1])
+            end_y = max(regions_for_image[0][0][1], regions_for_image[0][1][1])
+            new_regions = []
+            height = cv2_image.shape[0]
+            width = cv2_image.shape[1]
+            r1 = [[0,0], [width,start_y]]
+            r2 = [[0,start_y], [start_x,end_y]]
+            r3 = [[end_x,start_y], [width,end_y]]
+            r4 = [[0,end_y], [width,height]]
+            new_regions.append(r1)
+            new_regions.append(r2)
+            new_regions.append(r3)
+            new_regions.append(r4)
+            return new_regions
+        return regions_for_image
 
 
 class AnalyzeViewSetFloodFill(viewsets.ViewSet):
