@@ -88,6 +88,13 @@ div#insights_scrubber_div {
   width: 100%;
 }
 
+input#compose_scrubber {
+  width: 100%;
+}
+div#compose_scrubber_div {
+  width: 100%;
+}
+
 div#bottom_insights_controls {
   position: absolute;
   width: 100%;

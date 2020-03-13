@@ -863,7 +863,7 @@ class InsightsPanel extends React.Component {
       this.setState({
         insights_image: the_url,
         insights_title: the_url,
-      }, this.setImageSize)
+      }, this.setImageSize(the_url))
     }
   }
   

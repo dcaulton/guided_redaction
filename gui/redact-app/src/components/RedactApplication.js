@@ -280,9 +280,8 @@ class RedactApplication extends React.Component {
     this.setFramesetHash(new_hash)
   }
 
-  establishNewEmptyMovie(data_in) {
+  establishNewEmptyMovie(data_in, new_movie_url='whatever') {
     this.setGlobalStateVar('movies', {})
-    let new_movie_url = 'whatever'
     let new_movie = {
       frames: [],
       framesets: {},
@@ -2071,6 +2070,12 @@ class RedactApplication extends React.Component {
             <Route path='/redact/compose'>
               <ComposePanel 
                 setGlobalStateVar={this.setGlobalStateVar}
+                movies={this.state.movies}
+                establishNewEmptyMovie={this.establishNewEmptyMovie}
+                addImageToMovie={this.addImageToMovie}
+                movie_url = {this.state.movie_url}
+                getCurrentFramesets={this.getCurrentFramesets}
+                getFramesetHashesInOrder={this.getFramesetHashesInOrder}
               />
             </Route>
             <Route path='/redact/insights'>
