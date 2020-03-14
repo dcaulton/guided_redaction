@@ -1746,8 +1746,9 @@ class RedactApplication extends React.Component {
     })
   }
 
-  getImageUrl() {
-    return this.getImageFromFrameset(this.state.frameset_hash)
+  getImageUrl(frameset_hash='') {
+    frameset_hash = frameset_hash || this.state.frameset_hash
+    return this.getImageFromFrameset(frameset_hash)
   }
 
   getRedactedImageUrl() {
@@ -2095,6 +2096,8 @@ class RedactApplication extends React.Component {
                 whenDoneTarget={this.state.whenDoneTarget}
                 gotoWhenDoneTarget={this.gotoWhenDoneTarget}
                 setFramesetHash={this.setFramesetHash}
+                getFramesetHashForImageUrl={this.getFramesetHashForImageUrl}
+                getImageUrl={this.getImageUrl}
               />
             </Route>
             <Route path='/redact/insights'>

@@ -107,8 +107,8 @@ class MovieCard extends React.Component {
       let nickname = movies[movie_url]['nickname']
       return_arr.push(
         <input
-            className='nickname'
-            key='1122'
+            className='movie_card_nickname'
+            key='1922'
             value={nickname}
             size='24'
             onChange={(event) => this.props.setMovieNickname(movie_url, event.target.value)}

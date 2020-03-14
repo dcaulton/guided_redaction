@@ -5,7 +5,7 @@ class ComposePanel extends React.Component {
     super(props);
     this.state = {
       compose_image: '',
-      compose_image_title: '',
+      compose_display_image: '',
       image_width: 1000,
       image_height: 1000,
       compose_image_scale: 1,
@@ -76,13 +76,19 @@ class ComposePanel extends React.Component {
   scrubberOnChange() {
     const frames = this.props.getCurrentFrames()
     if (!frames) {
-      this.setState({compose_image: ''})
+      this.setState({
+        compose_image: '',
+        compose_display_image: '',
+      })
+      return
     }
     const value = document.getElementById('compose_scrubber').value
     const the_url = frames[value]
+    const frameset_hash = this.props.getFramesetHashForImageUrl(the_url)
+    const the_display_url = this.props.getImageUrl(frameset_hash)
     this.setState({
       compose_image: the_url,
-      compose_image_title: the_url,
+      compose_display_image: the_display_url,
     }, this.setImageSize(the_url))
     this.updateMovieOffset(value)
   }
@@ -341,8 +347,8 @@ class ComposePanel extends React.Component {
                 <img
                     id='compose_image'
                     className='p-0 m-0 mw-100 mh-100'
-                    src={this.state.compose_image}
-                    alt={this.state.compose_image}
+                    src={this.state.compose_display_image}
+                    alt={this.state.compose_display_image}
                 />
               </div>
               <div
@@ -452,14 +458,19 @@ class SequenceCard extends React.Component {
     )
   }
 
+  buildFrameName() {
+    return this.props.frame_url.split('/').slice(-1)[0]
+  }
+
   render() {
+    const frame_name = this.buildFrameName()
     const is_current_indicator = this.getIsCurrentImageIndicator() 
     const remove_link = this.buildRemoveLink()
     const goto_link = this.buildGotoLink()
     return (
     <div>
       <div className='d-inline'>
-        {this.props.frame_url}
+        {frame_name}
       </div>
       <div className='d-inline ml-2'>
         {remove_link}
