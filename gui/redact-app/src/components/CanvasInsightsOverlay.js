@@ -23,6 +23,9 @@ class CanvasInsightsOverlay extends React.Component {
   }
 
   drawTemplateAnchors() {
+    if (!this.props.currentImageIsTemplateAnchorImage()) {
+      return
+    }
     if (this.props.getCurrentTemplateAnchors()) {
       const canvas = this.refs.insights_canvas
       let ctx = canvas.getContext('2d')
@@ -47,6 +50,9 @@ class CanvasInsightsOverlay extends React.Component {
   }
 
   drawTemplateMaskZones() {
+    if (!this.props.currentImageIsTemplateAnchorImage()) {
+      return
+    }
     if (this.props.getCurrentTemplateMaskZones()) {
       const canvas = this.refs.insights_canvas
       let ctx = canvas.getContext('2d')

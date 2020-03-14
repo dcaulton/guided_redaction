@@ -240,22 +240,6 @@ class ComposePanel extends React.Component {
     }
   }
 
-  buildViewingString() {
-    if (!this.props.movie_url) {
-      return ''
-    }
-    let movie_string = ''
-    if (this.props.movie_url === 'sequence') {
-      movie_string = 'viewing caputured image sequence'
-    }
-    movie_string =  ' viewing movie ' + this.props.movie_url.split('/').slice(-1)[0]
-    return (
-      <div className='d-inline ml-2'>
-        {movie_string}
-      </div>
-    )
-  }
-
   setMovie(movie_url) {
     this.props.setGlobalStateVar('movie_url', movie_url)
     const num_frames = this.props.movies[movie_url]['frames'].length
@@ -275,8 +259,8 @@ class ComposePanel extends React.Component {
       }
     }
     return (
-      <div>
-        <div className='d-inline ml-2'>
+      <div className='d-inline'>
+        <div className='d-inline ml-4'>
           View
         </div>
         <div className='d-inline ml-2'>
@@ -304,7 +288,6 @@ class ComposePanel extends React.Component {
     const goto_redaction_button = this.buildGotoRedactionButton()
     const when_done_link = this.buildWhenDoneLink()
     const max_range = this.getMaxRange()
-    const viewing_string = this.buildViewingString()
     const view_dropdown = this.buildViewDropdown()
     let imageDivStyle= {
       width: this.props.image_width,
@@ -322,15 +305,11 @@ class ComposePanel extends React.Component {
     return (
       <div id='compose_panel_container'>
         <div id='compose_panel'>
-
-          <div id='compose_header' className='row position-relative' >
+          <div id='compose_header' className='row position-relative mt-2 mb-2' >
             <div className='col'>
               {not_loaded_message}
-              <div
-                  className='d-inline'
-              >
+              <div className='row' >
                 {this.state.movie_offset_string}
-                {viewing_string}
                 {view_dropdown}
               </div>
             </div>
