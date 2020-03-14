@@ -95,6 +95,13 @@ class ComposePanel extends React.Component {
     })
   }
 
+  gotoRedaction() {
+    this.props.setGlobalStateVar('movie_url', 'sequence')
+    const sequence = this.getSequence()
+    this.props.setFramesetHash('1', sequence['framesets'])
+    document.getElementById('image_panel_link').click()
+  }
+
   buildCaptureButton() {
     return (
       <button
@@ -106,8 +113,41 @@ class ComposePanel extends React.Component {
     )
   }
 
+  buildGotoRedactionButton() {
+    const sequence_movie = this.getSequence()
+    if (!sequence_movie || !sequence_movie['frames'].length) {
+      return ''
+    }
+    return (
+      <button
+          className='btn btn-primary ml-2'
+          onClick={() => this.gotoRedaction()}
+      >
+        Goto Redaction
+      </button>
+    )
+  }
+
+  buildWhenDoneLink() {
+    if (this.state.compose_image === '') {
+      return ''
+    }
+    if (this.props.whenDoneTarget) {
+      return (
+        <button
+            className='btn btn-primary ml-2'
+            onClick={() => this.props.gotoWhenDoneTarget()}
+        >
+          Goto Precision Learning
+        </button>
+      )
+    }
+  }
+
   render() {
     const capture_button = this.buildCaptureButton()
+    const goto_redaction_button = this.buildGotoRedactionButton()
+    const when_done_link = this.buildWhenDoneLink()
     const max_range = this.getMaxRange()
     let imageDivStyle= {
       width: this.props.image_width,
@@ -174,6 +214,8 @@ class ComposePanel extends React.Component {
           >
             <div className='col' >
               {capture_button}
+              {goto_redaction_button}
+              {when_done_link}
             </div>
           </div>
 
@@ -209,6 +251,7 @@ class SequencePanel extends React.Component {
             return (
             <SequenceCard
               frame_url={frame_url}
+              key={index}
               sequence_movie={this.props.sequence_movie}
             />
             )

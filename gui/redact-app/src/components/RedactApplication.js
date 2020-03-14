@@ -220,8 +220,8 @@ class RedactApplication extends React.Component {
     this.setGlobalStateVar('illustrateParameters', deepCopyIllustrateParameters)
   }
 
-  setFramesetHash(frameset_hash) {
-    const the_url = this.getImageFromFrameset(frameset_hash)
+  setFramesetHash(frameset_hash, framesets='') {
+    const the_url = this.getImageFromFrameset(frameset_hash, framesets)
     if (the_url === '') {
       this.setGlobalStateVar('frameset_hash', '')
       return
@@ -1948,24 +1948,24 @@ class RedactApplication extends React.Component {
     }
   }
 
-  getImageFromFrameset(frameset_hash='')  {
+  getImageFromFrameset(frameset_hash, framesets)  {
     frameset_hash = frameset_hash || this.state.frameset_hash
-    const framesets = this.getCurrentFramesets()
+    framesets = framesets || this.getCurrentFramesets()
     let the_image_url = ''
     if (Object.keys(framesets).includes(frameset_hash)) {
       the_image_url = framesets[frameset_hash]['images'][0]
     }
-    if (this.getRedactedImageFromFrameset(frameset_hash)) {
-      the_image_url = this.getRedactedImageFromFrameset(frameset_hash)
+    if (this.getRedactedImageFromFrameset(frameset_hash, framesets)) {
+      the_image_url = this.getRedactedImageFromFrameset(frameset_hash, framesets)
     }
-    if (this.getIllustratedImageFromFrameset(frameset_hash)) {
-      the_image_url = this.getIllustratedImageFromFrameset(frameset_hash)
+    if (this.getIllustratedImageFromFrameset(frameset_hash, framesets)) {
+      the_image_url = this.getIllustratedImageFromFrameset(frameset_hash, framesets)
     }
     return the_image_url
   }
 
-  getRedactedImageFromFrameset = (frameset_hash) => {
-    const framesets = this.getCurrentFramesets()
+  getRedactedImageFromFrameset = (frameset_hash, framesets) => {
+    framesets = framesets || this.getCurrentFramesets()
     let the_hash = frameset_hash || this.state.frameset_hash
     let frameset = framesets[the_hash]
     if (frameset) {
@@ -1979,8 +1979,8 @@ class RedactApplication extends React.Component {
     }
   }
 
-  getIllustratedImageFromFrameset = (frameset_hash) => {
-    const framesets = this.getCurrentFramesets()
+  getIllustratedImageFromFrameset = (frameset_hash, framesets) => {
+    framesets = framesets || this.getCurrentFramesets()
     let the_hash = frameset_hash || this.state.frameset_hash
     let frameset = framesets[the_hash]
     if (frameset) {
@@ -2092,6 +2092,9 @@ class RedactApplication extends React.Component {
                 addImageToMovie={this.addImageToMovie}
                 movie_url = {this.state.movie_url}
                 getCurrentFrames={this.getCurrentFrames}
+                whenDoneTarget={this.state.whenDoneTarget}
+                gotoWhenDoneTarget={this.gotoWhenDoneTarget}
+                setFramesetHash={this.setFramesetHash}
               />
             </Route>
             <Route path='/redact/insights'>
