@@ -13,6 +13,7 @@ class ComposePanel extends React.Component {
     }
     this.scrubberOnChange=this.scrubberOnChange.bind(this)
     this.removeSequenceFrame=this.removeSequenceFrame.bind(this)
+    this.gotoSequenceFrame=this.gotoSequenceFrame.bind(this)
   }
 
   componentDidMount() {
@@ -24,6 +25,15 @@ class ComposePanel extends React.Component {
 
   setScrubberMax(the_number) {
     document.getElementById('compose_scrubber').max = the_number
+  }
+
+  gotoSequenceFrame(frame_url_to_goto) {
+    const movie = this.props.movies[this.props.movie_url]
+    if (movie['frames'].includes(frame_url_to_goto)) {
+      const index = movie['frames'].indexOf(frame_url_to_goto)
+      document.getElementById('compose_scrubber').value = index
+      this.scrubberOnChange()
+    }
   }
 
   removeSequenceFrame(frame_url_to_delete) {
@@ -371,6 +381,8 @@ class ComposePanel extends React.Component {
             <SequencePanel
               sequence_movie={this.getSequence()}
               removeSequenceFrame={this.removeSequenceFrame}
+              gotoSequenceFrame={this.gotoSequenceFrame}
+              compose_image={this.state.compose_image}
             />
           </div>
          
@@ -399,6 +411,8 @@ class SequencePanel extends React.Component {
               key={index}
               sequence_movie={this.props.sequence_movie}
               removeSequenceFrame={this.props.removeSequenceFrame}
+              gotoSequenceFrame={this.props.gotoSequenceFrame}
+              compose_image={this.props.compose_image}
             />
             )
           })}
@@ -409,20 +423,52 @@ class SequencePanel extends React.Component {
 }
 
 class SequenceCard extends React.Component {
+  getIsCurrentImageIndicator() {
+    if (this.props.frame_url === this.props.compose_image) {
+      return '*'
+    }
+    return ''
+  }
+
+  buildRemoveLink() {
+    return (
+      <button
+        className='border-0 text-primary'
+        onClick={() => this.props.removeSequenceFrame(this.props.frame_url)}
+      >
+        remove
+      </button>
+    )
+  }
+
+  buildGotoLink() {
+    return (
+      <button
+        className='border-0 text-primary'
+        onClick={() => this.props.gotoSequenceFrame(this.props.frame_url)}
+      >
+        goto
+      </button>
+    )
+  }
+
   render() {
-    
+    const is_current_indicator = this.getIsCurrentImageIndicator() 
+    const remove_link = this.buildRemoveLink()
+    const goto_link = this.buildGotoLink()
     return (
     <div>
       <div className='d-inline'>
         {this.props.frame_url}
       </div>
-      <div className='d-inline'>
-        <button
-          className='border-0 text-primary'
-          onClick={() => this.props.removeSequenceFrame(this.props.frame_url)}
-        >
-          remove
-        </button>
+      <div className='d-inline ml-2'>
+        {remove_link}
+      </div>
+      <div className='d-inline ml-2'>
+        {goto_link}
+      </div>
+      <div className='d-inline ml-2'>
+        {is_current_indicator}
       </div>
     </div>
     )
