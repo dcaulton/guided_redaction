@@ -9,9 +9,10 @@ class ComposePanel extends React.Component {
       image_width: 1000,
       image_height: 1000,
       compose_image_scale: 1,
-      movie_offset_string: 'position 0:00',
+      movie_offset_string: '',
     }
     this.scrubberOnChange=this.scrubberOnChange.bind(this)
+    this.removeSequenceFrame=this.removeSequenceFrame.bind(this)
   }
 
   componentDidMount() {
@@ -21,7 +22,38 @@ class ComposePanel extends React.Component {
     }
   }
 
+  setScrubberMax(the_number) {
+    document.getElementById('compose_scrubber').max = the_number
+  }
+
+  removeSequenceFrame(frame_url_to_delete) {
+    let deepCopyMovies = JSON.parse(JSON.stringify(this.props.movies))
+    let movie = JSON.parse(JSON.stringify(deepCopyMovies['sequence']))
+    let build_frames = []
+    let build_framesets = {}
+    for (let i=0; i < movie['frames'].length; i++) {
+      const frame_url = movie['frames'][i]
+      if (frame_url !== frame_url_to_delete) {
+        build_frames.push(frame_url)
+        build_framesets[build_frames.length-1] = movie['framesets'][i]
+      }
+    }
+    movie['frames'] = build_frames
+    movie['framesets'] = build_framesets
+    deepCopyMovies['sequence'] = movie
+    this.props.setGlobalStateVar('movies', deepCopyMovies)
+    const num_frames = movie['frames'].length
+    this.setScrubberMax(num_frames)
+    if (this.props.movie_url === 'sequence') { // set scrubber to 0 to be sure we're in range
+      document.getElementById('compose_scrubber').value = 0
+      this.scrubberOnChange()
+    }
+  }
+
   updateMovieOffset(offset_in_seconds) {
+    if (!this.props.movie_url) {
+      return
+    }
     const mins_offset = Math.floor(parseInt(offset_in_seconds) / 60)
     const secs_offset = parseInt(offset_in_seconds) % 60
     const secs_string = secs_offset.toString()
@@ -33,6 +65,9 @@ class ComposePanel extends React.Component {
 
   scrubberOnChange() {
     const frames = this.props.getCurrentFrames()
+    if (!frames) {
+      this.setState({compose_image: ''})
+    }
     const value = document.getElementById('compose_scrubber').value
     const the_url = frames[value]
     this.setState({
@@ -144,11 +179,117 @@ class ComposePanel extends React.Component {
     }
   }
 
+  buildNotLoadedMessage() {
+    if (!this.props.movie_url) {
+      return (
+        <div>
+          <div className='col-lg-9'>
+            <div className='h1 mt-5 text-center'>
+              movie not loaded
+            </div>
+            <div className='ml-5 mr-5'>
+               <div className='h4'>
+                 Your movie may still be unzipping or there may have been a problem
+                 retrieving it.  To fetch a movie from secure files on your own: 
+               </div>
+               <ul>
+                 <li>
+                   Go to the Insights tab on the top of this page
+                 </li>
+                 <li>
+                   If you see a new card in the Videos column on the left with the name of your movie, 
+                   and you see a card in the Jobs column on the right which says 'split and hash threaded', 
+                   and the job card has has a big label that says 'running', then your movie is still being split, 
+                   if you go back to the Compose tab and wait, the movie will appear when it is ready
+                 </li>
+                 <li>
+                   If you don't see the Movie and Job cards, then expand the file system section towards the bottom
+                   of the page
+                 </li>
+                 <li>
+                   In the 'Import from secure files' section, specify your recording Id and press Go
+                 </li>
+                 <li>
+                   You will soon see a new card in the Videos column on the left.  Press the 'split' link on 
+                   that card.  It may take a minute or two to split
+                 </li>
+                 <li>
+                   Then return to this page by pressing the Compose tab on top
+                 </li>
+               </ul>
+            </div>
+          </div>
+        </div>
+      )
+    }
+  }
+
+  buildViewingString() {
+    if (!this.props.movie_url) {
+      return ''
+    }
+    let movie_string = ''
+    if (this.props.movie_url === 'sequence') {
+      movie_string = 'viewing caputured image sequence'
+    }
+    movie_string =  ' viewing movie ' + this.props.movie_url.split('/').slice(-1)[0]
+    return (
+      <div className='d-inline ml-2'>
+        {movie_string}
+      </div>
+    )
+  }
+
+  setMovie(movie_url) {
+    this.props.setGlobalStateVar('movie_url', movie_url)
+    const num_frames = this.props.movies[movie_url]['frames'].length
+    this.setScrubberMax(num_frames)
+    this.scrubberOnChange(this.props.movies[movie_url]['frames'])
+  }
+
+  buildViewDropdown() {
+    if (!this.props.movie_url) {
+      return ''
+    }
+    const movie_urls = []
+    for (let i=0; i < Object.keys(this.props.movies).length; i++) {
+      const movie_url = Object.keys(this.props.movies)[i]
+      if (movie_url !== 'sequence') {
+        movie_urls.push(movie_url)
+      }
+    }
+    return (
+      <div>
+        <div className='d-inline ml-2'>
+          View
+        </div>
+        <div className='d-inline ml-2'>
+          <select
+              name='selected_area_interior_or_exterior'
+              value={this.props.movie_url}
+              onChange={(event) => this.setMovie(event.target.value)}
+          >
+            <option value='sequence'>Sequence</option>
+            {movie_urls.map((movie_url, index) => {                            
+              const short_name = 'Movie ' + movie_url.split('/').slice(-1)[0]
+              return (
+                <option key={index} value={movie_url}>{short_name}</option>
+              )
+            })}
+          </select>
+        </div>
+      </div>
+    )
+  }
+
   render() {
+    const not_loaded_message = this.buildNotLoadedMessage()
     const capture_button = this.buildCaptureButton()
     const goto_redaction_button = this.buildGotoRedactionButton()
     const when_done_link = this.buildWhenDoneLink()
     const max_range = this.getMaxRange()
+    const viewing_string = this.buildViewingString()
+    const view_dropdown = this.buildViewDropdown()
     let imageDivStyle= {
       width: this.props.image_width,
       height: this.props.image_height,
@@ -168,10 +309,13 @@ class ComposePanel extends React.Component {
 
           <div id='compose_header' className='row position-relative' >
             <div className='col'>
+              {not_loaded_message}
               <div
                   className='d-inline'
               >
                 {this.state.movie_offset_string}
+                {viewing_string}
+                {view_dropdown}
               </div>
             </div>
           </div>
@@ -226,6 +370,7 @@ class ComposePanel extends React.Component {
           >
             <SequencePanel
               sequence_movie={this.getSequence()}
+              removeSequenceFrame={this.removeSequenceFrame}
             />
           </div>
          
@@ -253,6 +398,7 @@ class SequencePanel extends React.Component {
               frame_url={frame_url}
               key={index}
               sequence_movie={this.props.sequence_movie}
+              removeSequenceFrame={this.props.removeSequenceFrame}
             />
             )
           })}
@@ -264,9 +410,20 @@ class SequencePanel extends React.Component {
 
 class SequenceCard extends React.Component {
   render() {
+    
     return (
     <div>
-      <div>{this.props.frame_url}</div>
+      <div className='d-inline'>
+        {this.props.frame_url}
+      </div>
+      <div className='d-inline'>
+        <button
+          className='border-0 text-primary'
+          onClick={() => this.props.removeSequenceFrame(this.props.frame_url)}
+        >
+          remove
+        </button>
+      </div>
     </div>
     )
   }
