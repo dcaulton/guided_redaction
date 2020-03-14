@@ -6,6 +6,7 @@ import ComposePanel from './ComposePanel';
 import {getUrlVars} from './redact_utils.js'
 import CompositeTone from './Tones.js'
 import './styles/guided_redaction.css';
+import { fetch } from '../../utils'; 
 import {
   BrowserRouter as Router,
   Switch,
@@ -134,15 +135,7 @@ class RedactApplication extends React.Component {
 
   getUrl(url_name) {
     let api_server_url = ''
-    const host = window.location.hostname
-    if (host === 'localhost' || host === '127.0.0.1') {
-      api_server_url = 'http://localhost:8000/api/'
-    } else if (host.match('sykes.com$')) {
-      api_server_url = 'https://'+host+'/api/'
-    }
-    if (this.state.api_server_url) {
-      api_server_url = this.state.api_server_url
-    }
+    api_server_url = this.props.getBaseUrl()
 
     if (url_name === 'ping_url') {
       return api_server_url + 'v1/parse/ping'
