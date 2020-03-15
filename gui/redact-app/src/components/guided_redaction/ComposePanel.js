@@ -11,15 +11,80 @@ class ComposePanel extends React.Component {
       compose_image_scale: 1,
       movie_offset_string: '',
       subsequences: {},
+      dragged_type: '',
+      dragged_id: '',
     }
     this.scrubberOnChange=this.scrubberOnChange.bind(this)
     this.removeSequenceFrame=this.removeSequenceFrame.bind(this)
     this.gotoSequenceFrame=this.gotoSequenceFrame.bind(this)
     this.setSubsequences=this.setSubsequences.bind(this)
+    this.setDraggedItem=this.setDraggedItem.bind(this)
+    this.handleDroppedOntoSubsequence=this.handleDroppedOntoSubsequence.bind(this)
+    this.handleDroppedOntoSequence=this.handleDroppedOntoSequence.bind(this)
+    this.moveSequenceFrameUp=this.moveSequenceFrameUp.bind(this)
+    this.moveSequenceFrameDown=this.moveSequenceFrameDown.bind(this)
   }
 
   componentDidMount() {
     this.scrubberOnChange()
+  }
+
+  setDraggedItem(the_type, the_id) {
+    this.setState({
+      dragged_type: the_type,
+      dragged_id: the_id,
+    })
+  }
+
+  moveSequenceFrameUp(image_url) {
+    let deepCopyMovies = JSON.parse(JSON.stringify(this.props.movies))
+    let movie = JSON.parse(JSON.stringify(deepCopyMovies['sequence']))
+    let build_frames = movie['frames']
+    let build_framesets = movie['framesets']
+    if (movie['frames'].indexOf(image_url) === 0) {
+      return
+    }
+    let cur_index = movie['frames'].indexOf(image_url)
+    let cur_frame = JSON.parse(JSON.stringify(movie['frames'][cur_index]))
+    let cur_frameset = JSON.parse(JSON.stringify(movie['framesets'][cur_index]))
+    movie['frames'][cur_index] = movie['frames'][cur_index-1]
+    movie['framesets'][cur_index] = movie['framesets'][cur_index-1]
+    movie['frames'][cur_index-1] = cur_frame
+    movie['framesets'][cur_index-1] = cur_frameset
+    deepCopyMovies['sequence'] = movie
+    this.props.setGlobalStateVar('movies', deepCopyMovies)
+  }
+
+  moveSequenceFrameDown(image_url) {
+    let deepCopyMovies = JSON.parse(JSON.stringify(this.props.movies))
+    let movie = JSON.parse(JSON.stringify(deepCopyMovies['sequence']))
+    let build_frames = movie['frames']
+    let build_framesets = movie['framesets']
+    if (movie['frames'].indexOf(image_url) === movie['frames'].length - 1) {
+      return
+    }
+    let cur_index = movie['frames'].indexOf(image_url)
+    let cur_frame = JSON.parse(JSON.stringify(movie['frames'][cur_index]))
+    let cur_frameset = JSON.parse(JSON.stringify(movie['framesets'][cur_index]))
+    movie['frames'][cur_index] = movie['frames'][cur_index+1]
+    movie['framesets'][cur_index] = movie['framesets'][cur_index+1]
+    movie['frames'][cur_index+1] = cur_frame
+    movie['framesets'][cur_index+1] = cur_frameset
+    deepCopyMovies['sequence'] = movie
+    this.props.setGlobalStateVar('movies', deepCopyMovies)
+  }
+
+  handleDroppedOntoSubsequence(subsequence_id) {
+    if (this.state.dragged_type === 'sequence') {
+      let deepCopySubsequences = JSON.parse(JSON.stringify(this.state.subsequences))
+      deepCopySubsequences[subsequence_id]['images'].push(this.state.dragged_id)
+      this.setSubsequences(deepCopySubsequences)
+      setTimeout(this.removeSequenceFrame(this.state.dragged_id), 500)
+    }
+  }
+
+  handleDroppedOntoSequence() {
+    console.log('someone just dropped on to the main sequence')
   }
 
   setSubsequences(the_subsequences) {
@@ -377,13 +442,18 @@ class ComposePanel extends React.Component {
               className='row position-relative'
               style={image_offset_style}
           >
-            <SequencePanel
+            <SequenceAndSubsequencePanel
               sequence_movie={this.getSequence()}
               removeSequenceFrame={this.removeSequenceFrame}
               gotoSequenceFrame={this.gotoSequenceFrame}
               compose_image={this.state.compose_image}
               subsequences={this.state.subsequences}
               setSubsequences={this.setSubsequences}
+              setDraggedItem={this.setDraggedItem}
+              handleDroppedOntoSubsequence={this.handleDroppedOntoSubsequence}
+              handleDroppedOntoSequence={this.handleDroppedOntoSequence}
+              moveSequenceFrameUp={this.moveSequenceFrameUp}
+              moveSequenceFrameDown={this.moveSequenceFrameDown}
             />
           </div>
          
@@ -393,7 +463,7 @@ class ComposePanel extends React.Component {
   }
 }
 
-class SequencePanel extends React.Component {
+class SequenceAndSubsequencePanel extends React.Component {
   createSubsequence() {
     let deepCopySubsequences = JSON.parse(JSON.stringify(this.props.subsequences))
     const subsequence_id = 'subsequence_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
@@ -437,6 +507,8 @@ class SequencePanel extends React.Component {
               key={index}
               subsequences={this.props.subsequences}
               setSubsequences={this.props.setSubsequences}
+              setDraggedItem={this.props.setDraggedItem}
+              handleDroppedOntoSubsequence={this.props.handleDroppedOntoSubsequence}
             />
             )
           })}
@@ -475,6 +547,10 @@ class SequencePanel extends React.Component {
                   removeSequenceFrame={this.props.removeSequenceFrame}
                   gotoSequenceFrame={this.props.gotoSequenceFrame}
                   compose_image={this.props.compose_image}
+                  setDraggedItem={this.props.setDraggedItem}
+                  handleDroppedOntoSequence={this.props.handleDroppedOntoSequence}
+                  moveSequenceFrameUp={this.props.moveSequenceFrameUp}
+                  moveSequenceFrameDown={this.props.moveSequenceFrameDown}
                 />
                 )
               })}
@@ -519,6 +595,28 @@ class SequenceCard extends React.Component {
     )
   }
 
+  buildUpLink() {
+    return (
+      <button
+        className='border-0 text-primary'
+        onClick={() => this.props.moveSequenceFrameUp(this.props.frame_url)}
+      >
+        up
+      </button>
+    )
+  }
+
+  buildDownLink() {
+    return (
+      <button
+        className='border-0 text-primary'
+        onClick={() => this.props.moveSequenceFrameDown(this.props.frame_url)}
+      >
+        down
+      </button>
+    )
+  }
+
   buildFrameName() {
     return this.props.frame_url.split('/').slice(-1)[0]
   }
@@ -528,8 +626,16 @@ class SequenceCard extends React.Component {
     const is_current_indicator = this.getIsCurrentImageIndicator() 
     const remove_link = this.buildRemoveLink()
     const goto_link = this.buildGotoLink()
+    const up_link = this.buildUpLink()
+    const down_link = this.buildDownLink()
     return (
-    <div className='sequence-card'>
+    <div 
+        className='sequence-card'
+        draggable='true'
+        onDragStart={() => this.props.setDraggedItem('sequence', this.props.frame_url)}
+        onDragOver={(event) => event.preventDefault()}
+        onDrop={() => this.props.handleDroppedOntoSequence()}
+    >
       <div className='d-inline'>
         {frame_name}
       </div>
@@ -538,6 +644,12 @@ class SequenceCard extends React.Component {
       </div>
       <div className='d-inline ml-2'>
         {goto_link}
+      </div>
+      <div className='d-inline ml-2'>
+        {up_link}
+      </div>
+      <div className='d-inline ml-2'>
+        {down_link}
       </div>
       <div className='d-inline ml-2'>
         {is_current_indicator}
@@ -642,7 +754,13 @@ class SubsequenceCard extends React.Component {
     const name_field = this.buildNameField()
     const interval_field = this.buildIntervalField()
     return (
-      <div className='row mt-2 card'>
+      <div 
+          className='row mt-2 card'
+          draggable='true'
+          onDragStart={() => this.props.setDraggedItem('subsequence', this.props.subsequence['id'])}
+          onDragOver={(event) => event.preventDefault()}
+          onDrop={() => this.props.handleDroppedOntoSubsequence(this.props.subsequence['id'])}
+      >
         <div className='col p-1 ml-3'>
           <div className='row '>
             {this.props.subsequence['id']}
@@ -664,9 +782,10 @@ class SubsequenceCard extends React.Component {
                 frames:
               </div>
                 {this.props.subsequence['images'].map((image_url, index) => {
+                  const short_name = image_url.split('/').slice(-1)[0]
                   return (
                     <div key={index} className='row'>
-                      {image_url}
+                      {short_name}
                     </div>
                   )
                 })}
