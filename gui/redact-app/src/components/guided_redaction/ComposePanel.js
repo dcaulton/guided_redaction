@@ -10,9 +10,9 @@ class ComposePanel extends React.Component {
       image_height: 1000,
       compose_image_scale: 1,
       movie_offset_string: '',
-      subsequences: {},
       dragged_type: '',
       dragged_id: '',
+      message: '',
     }
     this.scrubberOnChange=this.scrubberOnChange.bind(this)
     this.removeSequenceFrame=this.removeSequenceFrame.bind(this)
@@ -23,10 +23,45 @@ class ComposePanel extends React.Component {
     this.handleDroppedOntoSequence=this.handleDroppedOntoSequence.bind(this)
     this.moveSequenceFrameUp=this.moveSequenceFrameUp.bind(this)
     this.moveSequenceFrameDown=this.moveSequenceFrameDown.bind(this)
+    this.deleteSubsequence=this.deleteSubsequence.bind(this)
   }
 
   componentDidMount() {
     this.scrubberOnChange()
+  }
+
+  setMessage(the_message) {
+    this.setState({
+      message: the_message,
+    })
+  }
+
+  buildRenderSubsequenceJobData(extra_data) {
+    let job_data = {
+      request_data: {},
+    }
+    const subsequence_id = extra_data
+    const subsq_name = this.props.subsequences[subsequence_id]['name']
+    job_data['app'] = 'parse'
+    job_data['operation'] = 'render_subsequence'
+    job_data['description'] = 'render subsequence from ComposePanel: subsequence ' + subsq_name
+    job_data['request_data'] = {
+      subsequence: this.props.subsequences[subsequence_id],
+    }
+    return job_data
+  }
+
+  submitComposeJob(job_string, extra_data = '') {
+    if (job_string === 'render_subsequence') {
+      const job_data = this.buildRenderSubsequenceJobData(extra_data)
+      this.props.submitJob({
+        job_data:job_data,
+        after_submit: () => {this.setMessage('render subsequence job was submitted')},
+        cancel_after_loading: true,
+        after_loaded: () => {this.setMessage('render subsequence completed')},
+        when_failed: () => {this.setMessage('render subsequence failed')},
+      })
+    }
   }
 
   setDraggedItem(the_type, the_id) {
@@ -36,11 +71,17 @@ class ComposePanel extends React.Component {
     })
   }
 
+  deleteSubsequence(subsequence_id) {
+    let deepCopySubsequences = JSON.parse(JSON.stringify(this.props.subsequences))
+    delete deepCopySubsequences[subsequence_id]
+    this.setState({
+      subsequences: deepCopySubsequences,
+    })
+  }
+
   moveSequenceFrameUp(image_url) {
     let deepCopyMovies = JSON.parse(JSON.stringify(this.props.movies))
     let movie = JSON.parse(JSON.stringify(deepCopyMovies['sequence']))
-    let build_frames = movie['frames']
-    let build_framesets = movie['framesets']
     if (movie['frames'].indexOf(image_url) === 0) {
       return
     }
@@ -53,13 +94,12 @@ class ComposePanel extends React.Component {
     movie['framesets'][cur_index-1] = cur_frameset
     deepCopyMovies['sequence'] = movie
     this.props.setGlobalStateVar('movies', deepCopyMovies)
+    this.scrubberOnChange()
   }
 
   moveSequenceFrameDown(image_url) {
     let deepCopyMovies = JSON.parse(JSON.stringify(this.props.movies))
     let movie = JSON.parse(JSON.stringify(deepCopyMovies['sequence']))
-    let build_frames = movie['frames']
-    let build_framesets = movie['framesets']
     if (movie['frames'].indexOf(image_url) === movie['frames'].length - 1) {
       return
     }
@@ -72,14 +112,18 @@ class ComposePanel extends React.Component {
     movie['framesets'][cur_index+1] = cur_frameset
     deepCopyMovies['sequence'] = movie
     this.props.setGlobalStateVar('movies', deepCopyMovies)
+    this.scrubberOnChange()
   }
 
   handleDroppedOntoSubsequence(subsequence_id) {
     if (this.state.dragged_type === 'sequence') {
-      let deepCopySubsequences = JSON.parse(JSON.stringify(this.state.subsequences))
+      let deepCopySubsequences = JSON.parse(JSON.stringify(this.props.subsequences))
       deepCopySubsequences[subsequence_id]['images'].push(this.state.dragged_id)
+      const new_num_sequence_frames = this.getSequence()['frames'].length - 1
       this.setSubsequences(deepCopySubsequences)
       setTimeout(this.removeSequenceFrame(this.state.dragged_id), 500)
+      this.setScrubberMax(new_num_sequence_frames) 
+      this.scrubberOnChange()
     }
   }
 
@@ -88,9 +132,7 @@ class ComposePanel extends React.Component {
   }
 
   setSubsequences(the_subsequences) {
-    this.setState({
-      subsequences: the_subsequences,
-    })
+    this.props.setGlobalStateVar('subsequences', the_subsequences)
   }
 
   setScrubberMax(the_number) {
@@ -361,6 +403,16 @@ class ComposePanel extends React.Component {
     )
   }
 
+  buildComposeMessage() {
+    if (!this.props.movie_url) {
+      return ''
+    }
+    if (!this.state.message) {
+      return '.'
+    }
+    return this.state.message
+  }
+
   render() {
     const not_loaded_message = this.buildNotLoadedMessage()
     const capture_button = this.buildCaptureButton()
@@ -368,6 +420,7 @@ class ComposePanel extends React.Component {
     const when_done_link = this.buildWhenDoneLink()
     const max_range = this.getMaxRange()
     const view_dropdown = this.buildViewDropdown()
+    const compose_message = this.buildComposeMessage()
     let imageDivStyle= {
       width: this.props.image_width,
       height: this.props.image_height,
@@ -390,6 +443,9 @@ class ComposePanel extends React.Component {
               <div className='row' >
                 {this.state.movie_offset_string}
                 {view_dropdown}
+              </div>
+              <div className='row' >
+                {compose_message}
               </div>
             </div>
           </div>
@@ -447,13 +503,14 @@ class ComposePanel extends React.Component {
               removeSequenceFrame={this.removeSequenceFrame}
               gotoSequenceFrame={this.gotoSequenceFrame}
               compose_image={this.state.compose_image}
-              subsequences={this.state.subsequences}
+              subsequences={this.props.subsequences}
               setSubsequences={this.setSubsequences}
               setDraggedItem={this.setDraggedItem}
               handleDroppedOntoSubsequence={this.handleDroppedOntoSubsequence}
               handleDroppedOntoSequence={this.handleDroppedOntoSequence}
               moveSequenceFrameUp={this.moveSequenceFrameUp}
               moveSequenceFrameDown={this.moveSequenceFrameDown}
+              deleteSubsequence={this.deleteSubsequence}
             />
           </div>
          
@@ -509,6 +566,7 @@ class SequenceAndSubsequencePanel extends React.Component {
               setSubsequences={this.props.setSubsequences}
               setDraggedItem={this.props.setDraggedItem}
               handleDroppedOntoSubsequence={this.props.handleDroppedOntoSubsequence}
+              deleteSubsequence={this.props.deleteSubsequence}
             />
             )
           })}

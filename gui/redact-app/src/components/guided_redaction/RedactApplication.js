@@ -50,6 +50,7 @@ class RedactApplication extends React.Component {
       selected_areas: {},
       selected_area_metas: {},
       current_selected_area_meta_id: '',
+      subsequences: {},
       showMovieParserLink: true,
       showInsightsLink: true,
       showComposeLink: true,
@@ -2091,6 +2092,7 @@ class RedactApplication extends React.Component {
                 setFramesetHash={this.setFramesetHash}
                 getFramesetHashForImageUrl={this.getFramesetHashForImageUrl}
                 getImageUrl={this.getImageUrl}
+                subsequences={this.state.subsequences}
               />
             </Route>
             <Route path='/redact/insights'>
