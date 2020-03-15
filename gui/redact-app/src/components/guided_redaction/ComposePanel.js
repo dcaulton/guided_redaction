@@ -88,9 +88,7 @@ class ComposePanel extends React.Component {
   deleteSubsequence(subsequence_id) {
     let deepCopySubsequences = JSON.parse(JSON.stringify(this.props.subsequences))
     delete deepCopySubsequences[subsequence_id]
-    this.setState({
-      subsequences: deepCopySubsequences,
-    })
+    this.setSubsequences(deepCopySubsequences)
   }
 
   moveSequenceFrameUp(image_url) {
@@ -142,7 +140,25 @@ class ComposePanel extends React.Component {
   }
 
   handleDroppedOntoSequence() {
-    console.log('someone just dropped on to the main sequence')
+    if (this.state.dragged_type === 'subsequence') {
+      let deepCopyMovies = JSON.parse(JSON.stringify(this.props.movies))
+      let deepCopySequence = JSON.parse(JSON.stringify(deepCopyMovies['sequence']))
+      const subsequence = this.props.subsequences[this.state.dragged_id]
+      if (deepCopySequence['frames'].includes(subsequence['rendered_image'])) {
+        return
+      }
+      const new_hash = Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
+      const frameset = {
+        images: [subsequence['rendered_image']]
+      }
+      deepCopySequence['frames'].push(subsequence['rendered_image'])
+      deepCopySequence['framesets'][new_hash] = frameset
+      deepCopyMovies['sequence'] = deepCopySequence
+      this.props.setGlobalStateVar('movies', deepCopyMovies)
+      if (this.props.movie_url === 'sequence') {
+        this.setScrubberMax(deepCopySequence['frames'].length) 
+      }
+    }
   }
 
   setSubsequences(the_subsequences) {
@@ -153,11 +169,15 @@ class ComposePanel extends React.Component {
     document.getElementById('compose_scrubber').max = the_number
   }
 
+  setScrubberValue(the_number) {
+    document.getElementById('compose_scrubber').value = the_number
+  }
+
   gotoSequenceFrame(frame_url_to_goto) {
     const movie = this.props.movies[this.props.movie_url]
     if (movie['frames'].includes(frame_url_to_goto)) {
       const index = movie['frames'].indexOf(frame_url_to_goto)
-      document.getElementById('compose_scrubber').value = index
+      this.setScrubberValue(index)
       this.scrubberOnChange()
     }
   }
@@ -184,7 +204,7 @@ class ComposePanel extends React.Component {
     const num_frames = movie['frames'].length
     this.setScrubberMax(num_frames)
     if (this.props.movie_url === 'sequence') { // set scrubber to 0 to be sure we're in range
-      document.getElementById('compose_scrubber').value = 0
+      this.setScrubberValue(0)
       this.scrubberOnChange()
     }
   }
@@ -387,7 +407,7 @@ class ComposePanel extends React.Component {
     const movie = this.props.movies[movie_url]
     const num_frames = movie['frames'].length
     this.setScrubberMax(num_frames)
-    document.getElementById('compose_scrubber').value = 0
+    this.setScrubberValue(0)
     this.scrubberOnChange()
   }
 
@@ -715,28 +735,20 @@ class SequenceCard extends React.Component {
     const down_link = this.buildDownLink()
     return (
     <div 
-        className='sequence-card'
+        className='sequence-card row'
         draggable='true'
         onDragStart={() => this.props.setDraggedItem('sequence', this.props.frame_url)}
         onDragOver={(event) => event.preventDefault()}
         onDrop={() => this.props.handleDroppedOntoSequence()}
     >
-      <div className='d-inline'>
+      <div className='d-inline col-lg-6'>
         {frame_name}
       </div>
-      <div className='d-inline ml-2'>
+      <div className='d-inline col-lg-6'>
         {remove_link}
-      </div>
-      <div className='d-inline ml-2'>
         {goto_link}
-      </div>
-      <div className='d-inline ml-2'>
         {up_link}
-      </div>
-      <div className='d-inline ml-2'>
         {down_link}
-      </div>
-      <div className='d-inline ml-2'>
         {is_current_indicator}
       </div>
     </div>
