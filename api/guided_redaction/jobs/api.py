@@ -59,6 +59,8 @@ def dispatch_job(job):
         parse_tasks.change_movie_resolution.delay(job_uuid)
     if job.app == 'parse' and job.operation == 'rebase_movies':
         parse_tasks.rebase_movies.delay(job_uuid)
+    if job.app == 'parse' and job.operation == 'render_subsequence':
+        parse_tasks.render_subsequence.delay(job_uuid)
     if job.app == 'redact' and job.operation == 'redact':
         redact_tasks.redact_threaded.delay(job_uuid)
     if job.app == 'redact' and job.operation == 'redact_single':

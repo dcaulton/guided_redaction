@@ -287,7 +287,11 @@ class ComposePanel extends React.Component {
   gotoRedaction() {
     this.props.setGlobalStateVar('movie_url', 'sequence')
     const sequence = this.getSequence()
-    this.props.setFramesetHash('1', sequence['framesets'])
+    if (sequence['frames']) {
+      const first_image = sequence['frames'][0]
+      const first_frameset_hash = this.props.getFramesetHashForImageUrl(first_image, sequence['framesets'])
+      this.props.setFramesetHash(first_frameset_hash, sequence['framesets'])
+    }
     document.getElementById('image_panel_link').click()
   }
 
