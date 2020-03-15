@@ -10,17 +10,22 @@ class ComposePanel extends React.Component {
       image_height: 1000,
       compose_image_scale: 1,
       movie_offset_string: '',
+      subsequences: {},
     }
     this.scrubberOnChange=this.scrubberOnChange.bind(this)
     this.removeSequenceFrame=this.removeSequenceFrame.bind(this)
     this.gotoSequenceFrame=this.gotoSequenceFrame.bind(this)
+    this.setSubsequences=this.setSubsequences.bind(this)
   }
 
   componentDidMount() {
     this.scrubberOnChange()
-    if (!Object.keys(this.props.movies).includes('sequence')) {
-      this.props.establishNewEmptyMovie('sequence', false)
-    }
+  }
+
+  setSubsequences(the_subsequences) {
+    this.setState({
+      subsequences: the_subsequences,
+    })
   }
 
   setScrubberMax(the_number) {
@@ -140,10 +145,19 @@ class ComposePanel extends React.Component {
   }
 
   captureFrame() {
-    this.props.addImageToMovie({
-      url: this.state.compose_image,
-      movie_url: 'sequence',
-    })
+    if (!Object.keys(this.props.movies).includes('sequence')) {
+      this.props.establishNewEmptyMovie('sequence', false)
+      setTimeout(
+        (()=>{this.props.addImageToMovie({
+          url: this.state.compose_image,
+          movie_url: 'sequence',
+        })}), 1000)
+    } else {
+      this.props.addImageToMovie({
+        url: this.state.compose_image,
+        movie_url: 'sequence',
+      })
+    }
   }
 
   gotoRedaction() {
@@ -368,6 +382,8 @@ class ComposePanel extends React.Component {
               removeSequenceFrame={this.removeSequenceFrame}
               gotoSequenceFrame={this.gotoSequenceFrame}
               compose_image={this.state.compose_image}
+              subsequences={this.state.subsequences}
+              setSubsequences={this.setSubsequences}
             />
           </div>
          
@@ -378,29 +394,95 @@ class ComposePanel extends React.Component {
 }
 
 class SequencePanel extends React.Component {
+  createSubsequence() {
+    let deepCopySubsequences = JSON.parse(JSON.stringify(this.props.subsequences))
+    const subsequence_id = 'subsequence_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
+    const new_subsequence = {
+      id: subsequence_id,
+      images: [],
+      delay: 1000,
+    }
+    deepCopySubsequences[subsequence_id] = new_subsequence
+    this.props.setSubsequences(deepCopySubsequences)
+  }
+
+  createSubsequenceLink() {
+    return (
+      <button
+        className='border-0 text-primary'
+        onClick={() => this.createSubsequence(this.props.frame_url)}
+      >
+        create subsequence
+      </button>
+
+    )
+  }
+
+  createSubsequencePanel() {
+    const subsequence_movie_ids = Object.keys(this.props.subsequences)
+    if (!subsequence_movie_ids.length) {
+      return ''
+    }
+    return (
+      <div className='col-lg-4'>
+        <div className='h4'>
+          subsequences:
+        </div>
+        <div id='subsequence_card_wrapper'>
+          {subsequence_movie_ids.map((subsequence_id, index) => {
+            const subsequence = this.props.subsequences[subsequence_id]
+            return (
+            <SubsequenceCard
+              subsequence={subsequence}
+              key={index}
+              subsequences={this.props.subsequences}
+              setSubsequences={this.props.setSubsequences}
+            />
+            )
+          })}
+       </div>
+      </div>
+    )
+  }
+
   render() {
     if (!this.props.sequence_movie) {
       return ''
     }
     const sequence_movie_frames = this.props.sequence_movie['frames']
+    const create_subsequence_link = this.createSubsequenceLink()
+    const subsequence_panel = this.createSubsequencePanel()
     return (
-      <div className='border-top mt-2'>
-        <div className='h5'>
-          sequence
+      <div className='col border-top mt-2'>
+        <div className='row'>
+          <div className='col-lg-10 h3'>
+            main sequence
+          </div>
+          <div className='col-lg-2'>
+            {create_subsequence_link}
+          </div>
         </div>
-        <div id='sequence_card_wrapper'>
-          {sequence_movie_frames.map((frame_url, index) => {
-            return (
-            <SequenceCard
-              frame_url={frame_url}
-              key={index}
-              sequence_movie={this.props.sequence_movie}
-              removeSequenceFrame={this.props.removeSequenceFrame}
-              gotoSequenceFrame={this.props.gotoSequenceFrame}
-              compose_image={this.props.compose_image}
-            />
-            )
-          })}
+
+        <div className='row'>
+          <div className='col-lg-8'>
+            <div id='sequence_card_wrapper'>
+              {sequence_movie_frames.map((frame_url, index) => {
+                return (
+                <SequenceCard
+                  frame_url={frame_url}
+                  key={index}
+                  sequence_movie={this.props.sequence_movie}
+                  removeSequenceFrame={this.props.removeSequenceFrame}
+                  gotoSequenceFrame={this.props.gotoSequenceFrame}
+                  compose_image={this.props.compose_image}
+                />
+                )
+              })}
+            </div>
+          </div>
+
+          {subsequence_panel}
+
         </div>
       </div>
     )
@@ -447,7 +529,7 @@ class SequenceCard extends React.Component {
     const remove_link = this.buildRemoveLink()
     const goto_link = this.buildGotoLink()
     return (
-    <div>
+    <div className='sequence-card'>
       <div className='d-inline'>
         {frame_name}
       </div>
@@ -461,6 +543,137 @@ class SequenceCard extends React.Component {
         {is_current_indicator}
       </div>
     </div>
+    )
+  }
+}
+
+class SubsequenceCard extends React.Component {
+  buildGenerateLink() {
+    return (
+      <button
+        className='border-0 text-primary'
+        onClick={() => this.props.generateSubsequence(this.props.subsequence['id'])}
+      >
+        generate
+      </button>
+    )
+  }
+
+  buildDeleteLink() {
+    return (
+      <button
+        className='border-0 text-primary'
+        onClick={() => this.props.deleteSubsequence(this.props.subsequence['id'])}
+      >
+        delete
+      </button>
+    )
+  }
+
+  buildPreviewLink() {
+    return (
+      <button
+        className='border-0 text-primary'
+        onClick={() => this.props.previewSubsequence(this.props.subsequence['id'])}
+      >
+        preview
+      </button>
+    )
+  }
+
+  setSubsequenceValue(the_id, the_field_name, the_value) {
+    let deepCopySubsequences = JSON.parse(JSON.stringify(this.props.subsequences))
+    deepCopySubsequences[the_id][the_field_name] = the_value
+    this.props.setSubsequences(deepCopySubsequences)
+  }
+
+  buildIntervalField() {
+    const key_name = 'interval_' + this.props.subsequence['id']
+    return (
+      <div>
+        <div className='d-inline'>
+          interval (ms):
+        </div>
+        <div className='d-inline'>
+        <input
+            className='ml-2'
+            key={key_name}
+            value={this.props.subsequence['interval']}
+            size='10'
+            onChange={(event) => this.setSubsequenceValue(
+                this.props.subsequence['id'], 
+                'interval', 
+                event.target.value
+            )}
+        />
+        </div>
+      </div>
+    )
+  }
+
+  buildNameField() {
+    const key_name = 'name_' + this.props.subsequence['id']
+    return (
+      <div>
+        <div className='d-inline'>
+          name:
+        </div>
+        <div className='d-inline'>
+        <input
+            className='ml-2'
+            key={key_name}
+            value={this.props.subsequence['name']}
+            size='30'
+            onChange={(event) => this.setSubsequenceValue(
+                this.props.subsequence['id'], 
+                'name', 
+                event.target.value
+            )}
+        />
+        </div>
+      </div>
+    )
+  }
+
+  render() {
+    const generate_link = this.buildGenerateLink()
+    const delete_link = this.buildDeleteLink()
+    const preview_link = this.buildPreviewLink()
+    const name_field = this.buildNameField()
+    const interval_field = this.buildIntervalField()
+    return (
+      <div className='row mt-2 card'>
+        <div className='col p-1 ml-3'>
+          <div className='row '>
+            {this.props.subsequence['id']}
+          </div>
+          <div className='row'>
+            <div className='col'>
+              <div className='row mt-1'>
+                {name_field}
+              </div>
+              <div className='row mt-1'>
+                {interval_field}
+              </div>
+              <div className='row mt-1'>
+                {generate_link}
+                {delete_link}
+                {preview_link}
+              </div>
+              <div className='row mt-1'>
+                frames:
+              </div>
+                {this.props.subsequence['images'].map((image_url, index) => {
+                  return (
+                    <div key={index} className='row'>
+                      {image_url}
+                    </div>
+                  )
+                })}
+            </div>
+          </div>
+        </div>
+      </div>
     )
   }
 }
