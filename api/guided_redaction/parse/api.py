@@ -468,3 +468,49 @@ class ParseViewSetRebaseMovies(viewsets.ViewSet):
             "movies": build_movies,
         })
 
+
+class ParseViewSetRenderSubsequence(viewsets.ViewSet):
+    def create(self, request):
+        request_data = request.data
+        return self.process_create_request(request_data)
+
+    def process_create_request(self, request_data):
+        if not request_data.get("subsequence"):
+            return self.error("subsequence is required")
+        subsequence = request_data['subsequence']
+
+        fw = FileWriter(
+            working_dir=settings.REDACT_FILE_STORAGE_DIR,
+            base_url=settings.REDACT_FILE_BASE_URL,
+            image_request_verify_headers=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
+        )
+
+        #build a working directory
+        new_uuid = str(uuid.uuid4())
+        fw.create_unique_directory(new_uuid)
+        #put the images in the working directory
+        new_frames = []
+        for frame_url in subsequence['images']:
+            new_url = fw.copy_file(frame_url, new_uuid)
+            new_frames.append(new_url)
+        # build a wildcard for the source files             
+        input_files_wildcard = fw.build_file_fullpath_for_uuid_and_filename(new_uuid, '*.png')
+        print('input files wildcard')
+        print(input_files_wildcard)
+        #build the rendered image name - 'subimage name' + .gif
+        output_file_fullpath = fw.build_file_fullpath_for_uuid_and_filename(new_uuid, subsequence['id']+'.gif')
+        print('output fullpath')
+        print(output_file_fullpath)
+        #load the delay, convert it into floating point framerate
+        delay = int(subsequence['delay'])
+        output_framerate = float(1000/delay)
+        #render the gif
+        (
+            ffmpeg
+            .input(input_files_wildcard, pattern_type='glob', framerate=output_framerate)
+            .output(output_file_fullpath)
+            .run(quiet=True)
+        )
+        #add the rendered image name to output['rendered_image']
+        subsequence['rendered_image'] = fw.get_url_for_file_path(output_file_fullpath)
+        return Response({'subsequence': subsequence})

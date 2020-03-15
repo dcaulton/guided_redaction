@@ -3,7 +3,6 @@ import pprint
 import math
 import os
 import json                                                                     
-import ffmpeg
 from guided_redaction.jobs.models import Job                                    
 from guided_redaction.parse.api import (
         ParseViewSetZipMovie,
@@ -11,6 +10,7 @@ from guided_redaction.parse.api import (
         ParseViewSetCopyMovie,
         ParseViewSetChangeMovieResolution,
         ParseViewSetRebaseMovies,
+        ParseViewSetRenderSubsequence,
         ParseViewSetHashFrames
 )
 
@@ -458,6 +458,25 @@ def rebase_movies(job_uuid):
         job.save()
         request_data = json.loads(job.request_data)
         worker = ParseViewSetRebaseMovies()
+        response = worker.process_create_request(request_data)
+        if not Job.objects.filter(pk=job_uuid).exists():
+            return
+        job = Job.objects.get(pk=job_uuid)
+        job.response_data = json.dumps(response.data)
+        job.status = 'success'
+        job.save()
+
+@shared_task
+def render_subsequence(job_uuid):
+    if not Job.objects.filter(pk=job_uuid).exists():
+        print('calling render_subsequence on nonexistent job: '+ job_uuid) 
+        return
+    job = Job.objects.get(pk=job_uuid)
+    if job:
+        job.status = 'running'
+        job.save()
+        request_data = json.loads(job.request_data)
+        worker = ParseViewSetRenderSubsequence()
         response = worker.process_create_request(request_data)
         if not Job.objects.filter(pk=job_uuid).exists():
             return

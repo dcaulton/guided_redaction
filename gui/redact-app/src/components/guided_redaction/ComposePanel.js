@@ -24,6 +24,8 @@ class ComposePanel extends React.Component {
     this.moveSequenceFrameUp=this.moveSequenceFrameUp.bind(this)
     this.moveSequenceFrameDown=this.moveSequenceFrameDown.bind(this)
     this.deleteSubsequence=this.deleteSubsequence.bind(this)
+    this.generateSubsequence=this.generateSubsequence.bind(this)
+    this.previewSubsequence=this.previewSubsequence.bind(this)
   }
 
   componentDidMount() {
@@ -34,6 +36,18 @@ class ComposePanel extends React.Component {
     this.setState({
       message: the_message,
     })
+  }
+
+  previewSubsequence(subsequence_id) {
+    const subsequence = this.props.subsequences[subsequence_id]
+    this.setState({
+      compose_image: subsequence['name'],
+      compose_display_image: subsequence['rendered_image'],
+    })
+  }
+
+  generateSubsequence(subsequence_id) {
+    this.submitComposeJob('render_subsequence', subsequence_id)
   }
 
   buildRenderSubsequenceJobData(extra_data) {
@@ -155,9 +169,12 @@ class ComposePanel extends React.Component {
     let build_framesets = {}
     for (let i=0; i < movie['frames'].length; i++) {
       const frame_url = movie['frames'][i]
+      const frameset_hash = this.props.getFramesetHashForImageUrl(frame_url, movie['framesets'])
+      const old_frameset = JSON.parse(JSON.stringify(movie['framesets'][frameset_hash]))
+      const new_hash = Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
       if (frame_url !== frame_url_to_delete) {
         build_frames.push(frame_url)
-        build_framesets[build_frames.length-1] = movie['framesets'][i]
+        build_framesets[new_hash] = old_frameset
       }
     }
     movie['frames'] = build_frames
@@ -363,9 +380,11 @@ class ComposePanel extends React.Component {
 
   setMovie(movie_url) {
     this.props.setGlobalStateVar('movie_url', movie_url)
-    const num_frames = this.props.movies[movie_url]['frames'].length
+    const movie = this.props.movies[movie_url]
+    const num_frames = movie['frames'].length
     this.setScrubberMax(num_frames)
-    this.scrubberOnChange(this.props.movies[movie_url]['frames'])
+    document.getElementById('compose_scrubber').value = 0
+    this.scrubberOnChange()
   }
 
   buildViewDropdown() {
@@ -386,7 +405,7 @@ class ComposePanel extends React.Component {
         </div>
         <div className='d-inline ml-2'>
           <select
-              name='selected_area_interior_or_exterior'
+              name='compose_panel_movie_to_view'
               value={this.props.movie_url}
               onChange={(event) => this.setMovie(event.target.value)}
           >
@@ -511,6 +530,8 @@ class ComposePanel extends React.Component {
               moveSequenceFrameUp={this.moveSequenceFrameUp}
               moveSequenceFrameDown={this.moveSequenceFrameDown}
               deleteSubsequence={this.deleteSubsequence}
+              generateSubsequence={this.generateSubsequence}
+              previewSubsequence={this.previewSubsequence}
             />
           </div>
          
@@ -567,6 +588,8 @@ class SequenceAndSubsequencePanel extends React.Component {
               setDraggedItem={this.props.setDraggedItem}
               handleDroppedOntoSubsequence={this.props.handleDroppedOntoSubsequence}
               deleteSubsequence={this.props.deleteSubsequence}
+              generateSubsequence={this.props.generateSubsequence}
+              previewSubsequence={this.props.previewSubsequence}
             />
             )
           })}
@@ -741,6 +764,9 @@ class SubsequenceCard extends React.Component {
   }
 
   buildPreviewLink() {
+    if (!Object.keys(this.props.subsequence).includes('rendered_image')) {
+      return ''
+    }
     return (
       <button
         className='border-0 text-primary'
@@ -758,24 +784,31 @@ class SubsequenceCard extends React.Component {
   }
 
   buildIntervalField() {
-    const key_name = 'interval_' + this.props.subsequence['id']
     return (
       <div>
         <div className='d-inline'>
           interval (ms):
         </div>
-        <div className='d-inline'>
-        <input
-            className='ml-2'
-            key={key_name}
-            value={this.props.subsequence['interval']}
-            size='10'
-            onChange={(event) => this.setSubsequenceValue(
-                this.props.subsequence['id'], 
-                'interval', 
-                event.target.value
-            )}
-        />
+        <div className='d-inline ml-2'>
+          <select
+              name='subsequence_interval'
+              value={this.props.subsequence['interval']}
+              onChange={(event) => this.setSubsequenceValue(
+                  this.props.subsequence['id'], 
+                  'interval', 
+                  event.target.value
+              )}
+          >
+            <option value='100'>100</option>
+            <option value='200'>200</option>
+            <option value='300'>300</option>
+            <option value='500'>500</option>
+            <option value='700'>700</option>
+            <option value='1000'>1000</option>
+            <option value='2000'>2000</option>
+            <option value='3000'>3000</option>
+            <option value='4000'>4000</option>
+          </select>
         </div>
       </div>
     )
@@ -783,6 +816,7 @@ class SubsequenceCard extends React.Component {
 
   buildNameField() {
     const key_name = 'name_' + this.props.subsequence['id']
+    const subseq_value=this.props.subsequence['name']
     return (
       <div>
         <div className='d-inline'>
@@ -792,7 +826,7 @@ class SubsequenceCard extends React.Component {
         <input
             className='ml-2'
             key={key_name}
-            value={this.props.subsequence['name']}
+            value={subseq_value}
             size='30'
             onChange={(event) => this.setSubsequenceValue(
                 this.props.subsequence['id'], 

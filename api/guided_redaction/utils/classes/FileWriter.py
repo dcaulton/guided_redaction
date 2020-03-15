@@ -48,6 +48,9 @@ class FileWriter():
         new_url = '/'.join([self.base_url, uuid_part, file_part])
         return new_url
 
+    def build_file_fullpath_for_uuid_and_filename(self, the_uuid, the_file_name):
+        return os.path.join(self.working_dir, the_uuid, the_file_name)
+
     def get_file_pattern_fullpath_for_movie_split(self, movie_url, file_pattern):
         (x_part, file_part) = os.path.split(movie_url)
         (y_part, uuid_part) = os.path.split(x_part)

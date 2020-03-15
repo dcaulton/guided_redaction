@@ -1143,6 +1143,14 @@ class RedactApplication extends React.Component {
     )
   }
 
+  loadRenderSubsequenceResults(job, when_done=(()=>{})) {
+    const response_data = JSON.parse(job.response_data)
+    let deepCopySubsequences = JSON.parse(JSON.stringify(this.state.subsequences))
+    const subsequence_id = response_data['subsequence']['id']
+    deepCopySubsequences[subsequence_id] = response_data['subsequence']
+    this.setGlobalStateVar('subsequences', deepCopySubsequences)
+  }
+
   loadRebaseMoviesResults(job, when_done) {
     const response_data = JSON.parse(job.response_data)
     let deepCopyMovies = JSON.parse(JSON.stringify(this.state.movies))
@@ -1484,6 +1492,8 @@ class RedactApplication extends React.Component {
         this.getJobs() 
 			} else if (job.app === 'parse' && job.operation === 'change_movie_resolution') {
         this.loadChangeResolutionResults(job, when_done)
+			} else if (job.app === 'parse' && job.operation === 'render_subsequence') {
+        this.loadRenderSubsequenceResults(job, when_done)
 			} else if (job.app === 'redact' && job.operation === 'redact') {
         this.loadRedactResults(job, when_done)
 			} else if (job.app === 'redact' && job.operation === 'redact_single') {
@@ -2093,6 +2103,7 @@ class RedactApplication extends React.Component {
                 getFramesetHashForImageUrl={this.getFramesetHashForImageUrl}
                 getImageUrl={this.getImageUrl}
                 subsequences={this.state.subsequences}
+                submitJob={this.submitJob}
               />
             </Route>
             <Route path='/redact/insights'>
