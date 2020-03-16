@@ -89,28 +89,30 @@ class MovieCard extends React.Component {
   getShortMovieData(this_cards_movie_url) {
     const mn_length = this.get_filename(this_cards_movie_url).length
     let short_movie_name = this.get_filename(this_cards_movie_url)
+    if (!short_movie_name) {
+      short_movie_name = this_cards_movie_url
+    }
     if (short_movie_name.length > 12) {
       short_movie_name = this.get_filename(this_cards_movie_url).substring(0, 4) + '...' + 
         this.get_filename(this_cards_movie_url).substring(mn_length-7)
     }
-    let short_movie_data = (
-      <span title={this.get_filename(this_cards_movie_url)}>
-        {short_movie_name}
-      </span>
-    )
-    return short_movie_data
+    return short_movie_name
   }
 
   buildNicknameBlock(movie_url, movies) {
     let return_arr = []
     if (Object.keys(movies).includes(movie_url)) {
       let nickname = movies[movie_url]['nickname']
+      if (!nickname) {
+        nickname = this.getShortMovieData(movie_url)
+      }
       return_arr.push(
         <input
             className='movie_card_nickname'
             key='1922'
             value={nickname}
             size='24'
+            title={movie_url}
             onChange={(event) => this.props.setMovieNickname(movie_url, event.target.value)}
         /> 
       )
@@ -577,10 +579,7 @@ class MovieCard extends React.Component {
     }
 
     let queue_job_button = this.buildQueueJobLink()
-    let nickname_block = this.buildNicknameBlock(this.props.this_cards_movie_url, this.props.movies)
-    if (!nickname_block.length) {
-      nickname_block = this.getShortMovieData(this.props.this_cards_movie_url)
-    }
+    const nickname_block = this.buildNicknameBlock(this.props.this_cards_movie_url, this.props.movies)
     const framesets_count_message = this.getFramesetsCountMessage(this.props.this_cards_movie_url)
     const make_active_button = this.buildMakeActiveButton(this.props.this_cards_movie_url)
     const template_matches_string = this.getTemplateMatchesString()

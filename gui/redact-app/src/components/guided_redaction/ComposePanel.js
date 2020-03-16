@@ -98,12 +98,9 @@ class ComposePanel extends React.Component {
       return
     }
     let cur_index = movie['frames'].indexOf(image_url)
-    let cur_frame = JSON.parse(JSON.stringify(movie['frames'][cur_index]))
-    let cur_frameset = JSON.parse(JSON.stringify(movie['framesets'][cur_index]))
+    let cur_frame = movie['frames'][cur_index]
     movie['frames'][cur_index] = movie['frames'][cur_index-1]
-    movie['framesets'][cur_index] = movie['framesets'][cur_index-1]
     movie['frames'][cur_index-1] = cur_frame
-    movie['framesets'][cur_index-1] = cur_frameset
     deepCopyMovies['sequence'] = movie
     this.props.setGlobalStateVar('movies', deepCopyMovies)
     this.scrubberOnChange()
@@ -116,12 +113,9 @@ class ComposePanel extends React.Component {
       return
     }
     let cur_index = movie['frames'].indexOf(image_url)
-    let cur_frame = JSON.parse(JSON.stringify(movie['frames'][cur_index]))
-    let cur_frameset = JSON.parse(JSON.stringify(movie['framesets'][cur_index]))
+    let cur_frame = movie['frames'][cur_index]
     movie['frames'][cur_index] = movie['frames'][cur_index+1]
-    movie['framesets'][cur_index] = movie['framesets'][cur_index+1]
     movie['frames'][cur_index+1] = cur_frame
-    movie['framesets'][cur_index+1] = cur_frameset
     deepCopyMovies['sequence'] = movie
     this.props.setGlobalStateVar('movies', deepCopyMovies)
     this.scrubberOnChange()
@@ -741,15 +735,21 @@ class SequenceCard extends React.Component {
         onDragOver={(event) => event.preventDefault()}
         onDrop={() => this.props.handleDroppedOntoSequence()}
     >
-      <div className='d-inline col-lg-6'>
+      <div className='border-bottom pt-1 pb-1 col-lg-6'>
         {frame_name}
       </div>
-      <div className='d-inline col-lg-6'>
+      <div className='border-bottom pt-1 pb-1 col-lg-4 mr-0'>
+        <div className='float-right'>
         {remove_link}
         {goto_link}
         {up_link}
         {down_link}
+        </div>
+      </div>
+      <div className='pt-1 pb-1 ml-0 col-lg-1'>
         {is_current_indicator}
+      </div>
+      <div className='col-lg-1'>
       </div>
     </div>
     )
