@@ -59,8 +59,19 @@ class ComposePanel extends React.Component {
     job_data['app'] = 'parse'
     job_data['operation'] = 'render_subsequence'
     job_data['description'] = 'render subsequence from ComposePanel: subsequence ' + subsq_name
+    
+    let subsequence = this.props.subsequences[subsequence_id]
+    let build_images = []
+    for (let i=0; i < subsequence['images'].length; i++) {
+      const source_image = subsequence['images'][i]
+      const frameset_hash = this.props.getFramesetHashForImageUrl(source_image, subsequence['framesets'])
+      const image_to_add = this.props.getImageFromFrameset(frameset_hash, subsequence['framesets'])
+      build_images.push(image_to_add)
+    }
+    subsequence['images'] = build_images
+
     job_data['request_data'] = {
-      subsequence: this.props.subsequences[subsequence_id],
+      subsequence: subsequence,
     }
     return job_data
   }
@@ -125,6 +136,12 @@ class ComposePanel extends React.Component {
     if (this.state.dragged_type === 'sequence') {
       let deepCopySubsequences = JSON.parse(JSON.stringify(this.props.subsequences))
       deepCopySubsequences[subsequence_id]['images'].push(this.state.dragged_id)
+
+      const sequence = this.getSequence()
+      const frameset_hash = this.props.getFramesetHashForImageUrl(this.state.dragged_id, sequence['framesets'])
+      const frameset = sequence['framesets'][frameset_hash] 
+      deepCopySubsequences[subsequence_id]['framesets'][frameset_hash] = frameset
+
       const new_num_sequence_frames = this.getSequence()['frames'].length - 1
       this.setSubsequences(deepCopySubsequences)
       setTimeout(this.removeSequenceFrame(this.state.dragged_id), 500)
@@ -566,6 +583,7 @@ class SequenceAndSubsequencePanel extends React.Component {
     const new_subsequence = {
       id: subsequence_id,
       images: [],
+      framesets: {},
       delay: 1000,
     }
     deepCopySubsequences[subsequence_id] = new_subsequence
