@@ -495,12 +495,8 @@ class ParseViewSetRenderSubsequence(viewsets.ViewSet):
             new_frames.append(new_url)
         # build a wildcard for the source files             
         input_files_wildcard = fw.build_file_fullpath_for_uuid_and_filename(new_uuid, '*.png')
-        print('input files wildcard')
-        print(input_files_wildcard)
         #build the rendered image name - 'subimage name' + .gif
         output_file_fullpath = fw.build_file_fullpath_for_uuid_and_filename(new_uuid, subsequence['id']+'.gif')
-        print('output fullpath')
-        print(output_file_fullpath)
         #load the delay, convert it into floating point framerate
         delay = int(subsequence['delay'])
         output_framerate = float(1000/delay)
