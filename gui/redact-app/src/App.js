@@ -15,7 +15,7 @@ class App extends React.Component {
     } else if (host.match('sykes.com$')) {
       api_server_url = 'https://'+host+'/api/'
     }
-
+   
     return api_server_url
   }
 
