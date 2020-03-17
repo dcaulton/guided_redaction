@@ -539,6 +539,7 @@ console.log('going to offset '+the_offset.toString())
     }
     const datetime_regex = /\d\d\d\d-\d\d-\d\dT(\d\d):(\d\d):(\d\d)/
     const first_telemetry = this.getFirstTelemetryMinSec()
+    const movie_length_seconds = this.props.movies[this.props.movie_url]['frames'].length
     let movie_timestamp_seconds = 0
     let movie_delay = 0
     if (Object.keys(this.props.movies[this.props.movie_url]).includes('start_timestamp')) {
@@ -590,26 +591,34 @@ console.log('going to offset '+the_offset.toString())
                 this_frames_offset = this_frames_offset_timestamp['second'] +  60 * this_frames_offset_timestamp['minute']
               }
               const offset_message= 'offset seconds: ' + this_frames_offset.toString()
-              return (
-                <div 
-                    className='row border-bottom pb-2'
-                    key={index}
-                    title={text}
-                >
-                  <div>
-                    {line1}
-                  </div>
-                  <div className='ml-2'>
-                    {offset_message}
-                  </div>
-                  <button
-                    className='border-0 text-primary'
-                    onClick={() => this.gotoScrubberOffset(this_frames_offset)}
+              if (this_frames_offset > movie_length_seconds) {
+                return ''
+              } else {
+                return (
+                  <div 
+                      className='row border-bottom pb-2'
+                      key={index}
+                      title={text}
                   >
-                    {text}
-                  </button>
-                </div>
-              )
+                    <div className='col'>
+                      <div className='row'>
+                        {line1}
+                      </div>
+                      <div className='row'>
+                        {offset_message}
+                      </div>
+                      <div className='row'>
+                        <button
+                          className='border-0 text-primary'
+                          onClick={() => this.gotoScrubberOffset(this_frames_offset)}
+                        >
+                          {text}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )
+              }
             })}
           </div>
         </div>
