@@ -132,6 +132,7 @@ class RedactApplication extends React.Component {
     this.deleteScanner=this.deleteScanner.bind(this)
     this.importScanner=this.importScanner.bind(this)
     this.wrapUpJob=this.wrapUpJob.bind(this)
+    this.readTelemetryRawData=this.readTelemetryRawData.bind(this)
   }
 
   getUrl(url_name) {
@@ -158,6 +159,8 @@ class RedactApplication extends React.Component {
       return api_server_url + 'v1/files/make-url'
     } else if (url_name === 'scanners_url') {
       return api_server_url + 'v1/scanners'
+    } else if (url_name === 'get_telemetry_rows') {
+      return api_server_url + 'v1/link/get-telemetry-rows'
     } else if (url_name === 'files_url') {
       return api_server_url + 'v1/files'
     }
@@ -168,6 +171,28 @@ class RedactApplication extends React.Component {
       [var_name]: var_value,
     },
     when_done())
+  }
+
+  async readTelemetryRawData(transaction_id, when_done=(()=>{})) {
+    if (!this.state.telemetry_data || !Object.keys(this.state.telemetry_data).includes('raw_data_url')) {
+      when_done([])
+    }
+    let response = await fetch(this.getUrl('get_telemetry_rows'), {
+      method: 'POST',
+      headers: this.buildJsonHeaders(),
+      body: JSON.stringify({
+        raw_data_url: this.state.telemetry_data['raw_data_url'],
+        transaction_id: transaction_id,
+      }),
+    })
+    .then((response) => response.json())
+    .then((responseJson) => {
+      when_done(responseJson['lines'])
+    })
+    .catch((error) => {
+      console.error(error)
+    })
+    await response
   }
 
   toggleGlobalStateVar(var_name) {
@@ -2105,6 +2130,8 @@ class RedactApplication extends React.Component {
                 getImageUrl={this.getImageUrl}
                 subsequences={this.state.subsequences}
                 submitJob={this.submitJob}
+                telemetry_data={this.state.telemetry_data}
+                readTelemetryRawData={this.readTelemetryRawData}
               />
             </Route>
             <Route path='/redact/insights'>

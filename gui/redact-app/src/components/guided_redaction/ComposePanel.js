@@ -13,6 +13,8 @@ class ComposePanel extends React.Component {
       dragged_type: '',
       dragged_id: '',
       message: '',
+      telemetry_section_is_built: false,
+      telemetry_lines: '',
     }
     this.scrubberOnChange=this.scrubberOnChange.bind(this)
     this.removeSequenceFrame=this.removeSequenceFrame.bind(this)
@@ -30,6 +32,14 @@ class ComposePanel extends React.Component {
 
   componentDidMount() {
     this.scrubberOnChange()
+    const transaction_id = this.getTransactionId()
+    if (transaction_id) {
+      this.props.readTelemetryRawData(transaction_id, ((telemetry_lines)=> {
+        this.setState({
+          telemetry_lines: telemetry_lines,
+        })
+      }))
+    }
   }
 
   setMessage(the_message) {
@@ -420,6 +430,14 @@ class ComposePanel extends React.Component {
     this.setScrubberMax(num_frames)
     this.setScrubberValue(0)
     this.scrubberOnChange()
+    const transaction_id = this.getTransactionId(movie_url)
+    if (transaction_id) {
+      this.props.readTelemetryRawData(transaction_id, ((telemetry_lines)=> {
+        this.setState({
+          telemetry_lines: telemetry_lines,
+        })
+      }))
+    }
   }
 
   buildViewDropdown() {
@@ -467,6 +485,139 @@ class ComposePanel extends React.Component {
     return this.state.message
   }
 
+  gotoScrubberOffset(the_offset) {
+console.log('going to offset '+the_offset.toString())
+    this.setScrubberValue(the_offset)
+    this.scrubberOnChange()
+  }
+
+  getTransactionId(movie_url) {
+    movie_url = movie_url || this.props.movie_url
+    if (!this.props.telemetry_data || !Object.keys(this.props.telemetry_data).includes('movie_mappings')) {
+      return
+    }
+    let recording_id = movie_url.split('/').slice(-1)[0]
+    recording_id = recording_id.split('.')[0]
+    let transaction_id = ''
+    if (Object.keys(this.props.telemetry_data['movie_mappings']).includes(recording_id)) {
+      transaction_id = this.props.telemetry_data['movie_mappings'][recording_id]
+      return transaction_id
+    } else {
+      return
+    }
+  }
+
+  getFirstTelemetryMinSec() {
+    if (!this.state.telemetry_lines.length) {
+      return 0
+    }
+    const datetime_regex = /\d\d\d\d-\d\d-\d\dT(\d\d):(\d\d):(\d\d)/
+    const text = this.state.telemetry_lines[0]
+    if (text) {
+      if (text.match(datetime_regex)) {
+        let mo = text.match(datetime_regex)
+        return {
+          minute: parseInt(mo[2]),
+          second: parseInt(mo[3]),
+        }
+      }
+    }
+    return 0
+  }
+
+  buildTelemetryPicker() {
+    if (!this.props.movie_url) {
+      return ''
+    }
+    if (!this.state.telemetry_lines.length) {
+      return ''
+    }
+
+    const telemetry_line_style = {
+      'fontSize': 'small',
+      'height': '500px',
+    }
+    const datetime_regex = /\d\d\d\d-\d\d-\d\dT(\d\d):(\d\d):(\d\d)/
+    const first_telemetry = this.getFirstTelemetryMinSec()
+    let movie_timestamp_seconds = 0
+    let movie_delay = 0
+    if (Object.keys(this.props.movies[this.props.movie_url]).includes('start_timestamp')) {
+      const movie_timestamp = this.props.movies[this.props.movie_url]['start_timestamp']
+      let mins_diff = parseInt(movie_timestamp['minute']) - first_telemetry['minute']
+      if (mins_diff < 0) { 
+        mins_diff += 60
+      }
+      let secs_diff = parseInt(movie_timestamp['second']) - first_telemetry['second']
+      if (secs_diff < 0) { 
+        secs_diff += 60
+        mins_diff -= 1
+      }
+    }
+    return (
+      <div 
+          id='telemetry_picker'
+          className='col'
+      >
+        <div className='row h5'>
+          telemetry data
+        </div>
+        <div 
+            className='row overflow-auto'
+            style={telemetry_line_style}
+        >
+          <div className='col'>
+            {this.state.telemetry_lines.map((text, index) => {
+              const eventtype_regex = /([a-f0-9-]*),([a-f0-9-]*),([a-f0-9-]*),([^,]*)/
+              let line1 = ''
+              if (text.match(eventtype_regex)) {
+                line1 = text.match(eventtype_regex)[4]
+              }
+              let this_frames_offset = 0
+              if (text.match(datetime_regex)) {
+                let mo = text.match(datetime_regex)
+                const this_frame_timestamp = {
+                  minute: parseInt(mo[2]),
+                  second: parseInt(mo[3]),
+                }
+                const this_frames_offset_timestamp = {
+                  minute: this_frame_timestamp['minute'] - first_telemetry['minute'],
+                  second: this_frame_timestamp['second'] - first_telemetry['second'],
+                }
+                if (this_frames_offset_timestamp['second'] < 0) {
+                  this_frames_offset_timestamp['second'] += 60
+                  this_frames_offset_timestamp['minute'] -= 1
+                }
+                this_frames_offset = this_frames_offset_timestamp['second'] +  60 * this_frames_offset_timestamp['minute']
+              }
+              const offset_message= 'offset seconds: ' + this_frames_offset.toString()
+              return (
+                <div 
+                    className='row border-bottom pb-2'
+                    key={index}
+                    title={text}
+                >
+                  <div>
+                    {line1}
+                  </div>
+                  <div className='ml-2'>
+                    {offset_message}
+                  </div>
+                  <button
+                    className='border-0 text-primary'
+                    onClick={() => this.gotoScrubberOffset(this_frames_offset)}
+                  >
+                    {text}
+                  </button>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+      </div>
+    )
+  }
+
   render() {
     const not_loaded_message = this.buildNotLoadedMessage()
     const capture_button = this.buildCaptureButton()
@@ -475,6 +626,7 @@ class ComposePanel extends React.Component {
     const max_range = this.getMaxRange()
     const view_dropdown = this.buildViewDropdown()
     const compose_message = this.buildComposeMessage()
+    const telemetry_picker = this.buildTelemetryPicker() 
     let imageDivStyle= {
       width: this.props.image_width,
       height: this.props.image_height,
@@ -487,6 +639,9 @@ class ComposePanel extends React.Component {
     const image_offset_style = {
       display: the_display,
       top: image_bottom_y,
+    }
+    const image_offset_display_style = {
+      display: the_display,
     }
     return (
       <div id='compose_panel_container'>
@@ -533,12 +688,17 @@ class ComposePanel extends React.Component {
                 />
               </div>
             </div>
+            <div className='col-lg-3 mh-100'>
+              <div className='row ml-2'>
+                {telemetry_picker}
+              </div>
+            </div>
           </div>
 
           <div 
               id='compose_movie_footer' 
               className='row position-relative mt-2'
-              style={image_offset_style}
+              style={image_offset_display_style}
           >
             <div className='col' >
               {capture_button}
@@ -550,7 +710,7 @@ class ComposePanel extends React.Component {
           <div 
               id='sequence_area' 
               className='row position-relative'
-              style={image_offset_style}
+              style={image_offset_display_style}
           >
             <SequenceAndSubsequencePanel
               sequence_movie={this.getSequence()}
@@ -592,12 +752,14 @@ class SequenceAndSubsequencePanel extends React.Component {
 
   createSubsequenceLink() {
     return (
-      <button
-        className='border-0 text-primary'
-        onClick={() => this.createSubsequence(this.props.frame_url)}
-      >
-        create subsequence
-      </button>
+      <div className='pt-1'>
+        <button
+          className='border-0 text-primary'
+          onClick={() => this.createSubsequence(this.props.frame_url)}
+        >
+          create subsequence
+        </button>
+      </div>
 
     )
   }
