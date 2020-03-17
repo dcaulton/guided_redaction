@@ -21,7 +21,7 @@ const X = observer(class X extends React.Component {
 
   render() {
     return (
-      <div className="redact_application_wrapper">
+      <div id="redact_application_wrapper">
         <RedactApplication 
           getBaseUrl={this.getBaseUrl}
         />
