@@ -13,7 +13,7 @@ const X = observer(class X extends React.Component {
   }
 
   getBaseUrl(url_name) {
-    return ''
+    return 'api/'
   }
 
   render() {

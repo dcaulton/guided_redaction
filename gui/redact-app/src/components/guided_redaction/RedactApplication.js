@@ -19,7 +19,7 @@ class RedactApplication extends React.Component {
   constructor(props) {
     super(props);
     const api_server_url = ''
-    const api_key = 'davespassword123'
+    const api_key = ''
     this.state = {
       api_server_url: api_server_url,
       api_key: api_key,
