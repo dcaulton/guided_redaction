@@ -494,7 +494,6 @@ class ComposePanel extends React.Component {
   }
 
   gotoScrubberOffset(the_offset) {
-console.log('going to offset '+the_offset.toString())
     this.setScrubberValue(the_offset)
     this.scrubberOnChange()
   }
@@ -567,7 +566,7 @@ console.log('going to offset '+the_offset.toString())
           id='telemetry_picker'
           className='col'
       >
-        <div className='row h5'>
+        <div className='row h4'>
           telemetry data
         </div>
         <div 
@@ -844,8 +843,8 @@ class SequenceAndSubsequencePanel extends React.Component {
     return (
       <div className='col border-top mt-2'>
         <div className='row'>
-          <div className='col-lg-80 h3'>
-            main sequence
+          <div className='col-lg-8 h3'>
+              main sequence
           </div>
           <div className='col-lg-2'>
             {sequence_display_mode_picker}
@@ -1137,7 +1136,7 @@ class SubsequenceCard extends React.Component {
             className='ml-2'
             key={key_name}
             value={subseq_value}
-            size='30'
+            size='25'
             onChange={(event) => this.setSubsequenceValue(
                 this.props.subsequence['id'], 
                 'name', 
