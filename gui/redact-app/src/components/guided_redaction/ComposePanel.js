@@ -15,6 +15,7 @@ class ComposePanel extends React.Component {
       message: '',
       telemetry_section_is_built: false,
       telemetry_lines: '',
+      sequence_display_mode: 'large_card',
     }
     this.scrubberOnChange=this.scrubberOnChange.bind(this)
     this.removeSequenceFrame=this.removeSequenceFrame.bind(this)
@@ -28,6 +29,7 @@ class ComposePanel extends React.Component {
     this.deleteSubsequence=this.deleteSubsequence.bind(this)
     this.generateSubsequence=this.generateSubsequence.bind(this)
     this.previewSubsequence=this.previewSubsequence.bind(this)
+    this.setSequenceDisplayMode=this.setSequenceDisplayMode.bind(this)
   }
 
   componentDidMount() {
@@ -45,6 +47,12 @@ class ComposePanel extends React.Component {
   setMessage(the_message) {
     this.setState({
       message: the_message,
+    })
+  }
+
+  setSequenceDisplayMode(the_mode) {
+    this.setState({
+      sequence_display_mode: the_mode,
     })
   }
 
@@ -736,6 +744,10 @@ console.log('going to offset '+the_offset.toString())
               deleteSubsequence={this.deleteSubsequence}
               generateSubsequence={this.generateSubsequence}
               previewSubsequence={this.previewSubsequence}
+              sequence_display_mode={this.state.sequence_display_mode}
+              setSequenceDisplayMode={this.setSequenceDisplayMode}
+              movies={this.props.movies}
+              movie_url={this.props.movie_url}
             />
           </div>
          
@@ -779,7 +791,7 @@ class SequenceAndSubsequencePanel extends React.Component {
       return ''
     }
     return (
-      <div className='col-lg-4'>
+      <div>
         <div className='h4'>
           subsequences:
         </div>
@@ -801,6 +813,22 @@ class SequenceAndSubsequencePanel extends React.Component {
             )
           })}
        </div>
+     </div>
+    )
+  }
+
+  buildSequenceDisplayModePicker() {
+    return (
+      <div className='mt-1'>
+        <select
+            name='compose_panel_sequence_display_mode'
+            value={this.props.sequence_display_mode}
+            onChange={(event) => this.props.setSequenceDisplayMode(event.target.value)}
+        >
+          <option value='list'>display as list</option>
+          <option value='large_card'>display as large cards</option>
+          <option value='small_card'>display as small cards</option>
+        </select>
       </div>
     )
   }
@@ -812,11 +840,15 @@ class SequenceAndSubsequencePanel extends React.Component {
     const sequence_movie_frames = this.props.sequence_movie['frames']
     const create_subsequence_link = this.createSubsequenceLink()
     const subsequence_panel = this.createSubsequencePanel()
+    const sequence_display_mode_picker = this.buildSequenceDisplayModePicker()
     return (
       <div className='col border-top mt-2'>
         <div className='row'>
-          <div className='col-lg-10 h3'>
+          <div className='col-lg-80 h3'>
             main sequence
+          </div>
+          <div className='col-lg-2'>
+            {sequence_display_mode_picker}
           </div>
           <div className='col-lg-2'>
             {create_subsequence_link}
@@ -824,7 +856,7 @@ class SequenceAndSubsequencePanel extends React.Component {
         </div>
 
         <div className='row'>
-          <div className='col-lg-8'>
+          <div className='col-lg-9'>
             <div id='sequence_card_wrapper'>
               {sequence_movie_frames.map((frame_url, index) => {
                 return (
@@ -839,13 +871,18 @@ class SequenceAndSubsequencePanel extends React.Component {
                   handleDroppedOntoSequence={this.props.handleDroppedOntoSequence}
                   moveSequenceFrameUp={this.props.moveSequenceFrameUp}
                   moveSequenceFrameDown={this.props.moveSequenceFrameDown}
+                  sequence_display_mode={this.props.sequence_display_mode}
+                  movies={this.props.movies}
+                  movie_url={this.props.movie_url}
                 />
                 )
               })}
             </div>
           </div>
 
-          {subsequence_panel}
+          <div className='col-lg-3'>
+            {subsequence_panel}
+          </div>
 
         </div>
       </div>
@@ -873,6 +910,10 @@ class SequenceCard extends React.Component {
   }
 
   buildGotoLink() {
+    const movie = this.props.movies[this.props.movie_url]
+    if (!movie['frames'].includes(this.props.frame_url)) {
+      return ''
+    }
     return (
       <button
         className='border-0 text-primary'
@@ -909,38 +950,102 @@ class SequenceCard extends React.Component {
     return this.props.frame_url.split('/').slice(-1)[0]
   }
 
-  render() {
-    const frame_name = this.buildFrameName()
-    const is_current_indicator = this.getIsCurrentImageIndicator() 
+  buildLinks() {
     const remove_link = this.buildRemoveLink()
     const goto_link = this.buildGotoLink()
     const up_link = this.buildUpLink()
     const down_link = this.buildDownLink()
+    if (this.props.sequence_display_mode === 'small_card')  {
+      return (
+        <div className='bg-white'>
+          <div>
+            {remove_link}
+            {goto_link}
+          </div>
+          <div>
+            {up_link}
+            {down_link}
+          </div>
+        </div>
+      )
+    } 
     return (
-    <div 
-        className='sequence-card row'
-        draggable='true'
-        onDragStart={() => this.props.setDraggedItem('sequence', this.props.frame_url)}
-        onDragOver={(event) => event.preventDefault()}
-        onDrop={() => this.props.handleDroppedOntoSequence()}
-    >
-      <div className='border-bottom pt-1 pb-1 col-lg-6'>
-        {frame_name}
-      </div>
-      <div className='border-bottom pt-1 pb-1 col-lg-4 mr-0'>
-        <div className='float-right'>
-        {remove_link}
-        {goto_link}
-        {up_link}
-        {down_link}
+      <div className='bg-white'>
+        <div>
+          {remove_link}
+          {goto_link}
+          {up_link}
+          {down_link}
         </div>
       </div>
-      <div className='pt-1 pb-1 ml-0 col-lg-1'>
-        {is_current_indicator}
+    )
+  }
+
+  render() {
+    const links_div = this.buildLinks()
+    const frame_name = this.buildFrameName()
+    const is_current_indicator = this.getIsCurrentImageIndicator() 
+    if (this.props.sequence_display_mode === 'list')  {
+    return (
+      <div 
+          className='sequence-card row'
+          draggable='true'
+          onDragStart={() => this.props.setDraggedItem('sequence', this.props.frame_url)}
+          onDragOver={(event) => event.preventDefault()}
+          onDrop={() => this.props.handleDroppedOntoSequence()}
+      >
+        <div className='border-bottom pt-1 pb-1 col-lg-6'>
+          {frame_name}
+        </div>
+        <div className='border-bottom pt-1 pb-1 col-lg-4 mr-0'>
+          <div className='float-right'>
+            {links_div}
+          </div>
+        </div>
+        <div className='pt-1 pb-1 ml-0 col-lg-1'>
+          {is_current_indicator}
+        </div>
+        <div className='col-lg-1'>
+        </div>
       </div>
-      <div className='col-lg-1'>
+      )
+    }
+    // its a card view, default to small card
+    let top_div_classname = 'd-inline-block frameCard w-25'
+    if (this.props.sequence_display_mode === 'large_card')  {
+      top_div_classname = 'd-inline-block frameCard w-50'
+      if (is_current_indicator) {
+        top_div_classname = 'd-inline-block frameCard active_card w-50'
+      }
+    } else if (this.props.sequence_display_mode === 'small_card')  {
+      top_div_classname = 'd-inline-block frameCard w-25'
+      if (is_current_indicator) {
+        top_div_classname = 'd-inline-block frameCard active_card w-25'
+      }
+    }
+    return (
+      <div
+          className={top_div_classname}
+          draggable='true'
+          onDragStart={() => this.props.setDraggedItem('sequence', this.props.frame_url)}
+          onDragOver={(event) => event.preventDefault()}
+          onDrop={() => this.props.handleDroppedOntoSequence()}
+      >
+        <div
+            className='p-2 bg-light m-1'
+        >
+          <div className='frameset_hash'>
+            {frame_name}
+          </div>
+          <img
+              className='zoomable-image'
+              src={this.props.frame_url}
+              alt={this.props.frame_url}
+          />
+          {links_div}
+
+        </div>
       </div>
-    </div>
     )
   }
 }
