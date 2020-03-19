@@ -434,17 +434,22 @@ class ComposePanel extends React.Component {
   setMovie(movie_url) {
     this.props.setGlobalStateVar('movie_url', movie_url)
     const movie = this.props.movies[movie_url]
-    const num_frames = movie['frames'].length
-    this.setScrubberMax(num_frames)
-    this.setScrubberValue(0)
-    this.scrubberOnChange()
-    const transaction_id = this.getTransactionId(movie_url)
-    if (transaction_id) {
-      this.props.readTelemetryRawData(transaction_id, ((telemetry_lines)=> {
-        this.setState({
-          telemetry_lines: telemetry_lines,
-        })
-      }))
+    if (Object.keys(movie).includes('frames')) {
+      const num_frames = movie['frames'].length
+      this.setScrubberMax(num_frames)
+      this.setScrubberValue(0)
+      this.scrubberOnChange()
+      const transaction_id = this.getTransactionId(movie_url)
+      if (transaction_id) {
+        this.props.readTelemetryRawData(transaction_id, ((telemetry_lines)=> {
+          this.setState({
+            telemetry_lines: telemetry_lines,
+          })
+        }))
+      }
+    } else {
+      this.setScrubberValue(0)
+      this.scrubberOnChange()
     }
   }
 
@@ -459,6 +464,13 @@ class ComposePanel extends React.Component {
         movie_urls.push(movie_url)
       }
     }
+    const sequence = this.getSequence()
+    let sequence_option = ''
+    if (sequence && Object.keys(sequence).includes('frames')) {
+      sequence_option = ( 
+        <option value='sequence'>Sequence</option>
+      )
+    }
     return (
       <div className='d-inline'>
         <div className='d-inline ml-4'>
@@ -470,7 +482,7 @@ class ComposePanel extends React.Component {
               value={this.props.movie_url}
               onChange={(event) => this.setMovie(event.target.value)}
           >
-            <option value='sequence'>Sequence</option>
+            {sequence_option}
             {movie_urls.map((movie_url, index) => {                            
               const short_name = 'Movie ' + movie_url.split('/').slice(-1)[0]
               return (
@@ -537,7 +549,24 @@ class ComposePanel extends React.Component {
       return ''
     }
     if (!this.state.telemetry_lines.length) {
-      return ''
+      let telemetry_line_style = {
+        height: "500px",
+      }
+      return (
+      <div 
+          id='telemetry_picker'
+          className='col'
+      >
+        <div className='row h4'>
+          telemetry data
+        </div>
+        <div 
+            className='row overflow-auto'
+            style={telemetry_line_style}
+        >
+        </div> 
+      </div> 
+      )
     }
 
     const telemetry_line_style = {
