@@ -113,6 +113,38 @@ class FilesViewSetMakeUrl(viewsets.ViewSet):
                 status_code=400
             )
 
+
+class FilesViewSetMovieMetadata(viewsets.ViewSet):
+    def create(self, request):
+        request_data = request.data
+        return self.process_create_request(request_data)
+
+    def process_create_request(self, request_data):
+        if not request_data.get("movies"):
+            return self.error("movies is required")
+        movies = request_data.get('movies')
+        if not movies:
+            return
+        movie_url = list(movies.keys())[0]
+        print(movie_url)
+        (x_part, file_part) = os.path.split(movie_url)
+        (y_part, uuid_part) = os.path.split(x_part)
+        file_writer = FileWriter(
+            working_dir=settings.REDACT_FILE_STORAGE_DIR,
+            base_url=settings.REDACT_FILE_BASE_URL,
+            image_request_verify_headers=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
+        )
+        recording_id = file_part.split('.')[-2]
+        new_filename = recording_id + '.json'
+        file_fullpath = file_writer.build_file_fullpath_for_uuid_and_filename(uuid_part, new_filename)
+        file_writer.write_text_data_to_filepath(
+            json.dumps(request_data),
+            file_fullpath
+        )
+        new_url = file_writer.get_url_for_file_path(file_fullpath)
+        return Response({'url': new_url})
+
+
 def make_url_from_file(filename, file_binary_data, the_uuid=''):
     file_writer = FileWriter(
         working_dir=settings.REDACT_FILE_STORAGE_DIR,

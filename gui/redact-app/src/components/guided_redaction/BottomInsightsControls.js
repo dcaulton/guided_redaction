@@ -13,6 +13,25 @@ import SessionControls from './SessionControls'
 
 class BottomInsightsControls extends React.Component {
 
+  constructor(props) {
+    super(props)
+    this.buildMovieMetadata=this.buildMovieMetadata.bind(this)
+  }
+
+  buildMovieMetadata(movie_url='') {
+    if (!movie_url) {
+      movie_url = this.props.movie_url
+    }
+    let build_movies = {}
+    build_movies[movie_url] = this.props.movies[movie_url]
+    return {
+      movies: build_movies,
+      tier_1_matches: this.props.tier_1_matches,
+      templates: this.props.templates,
+      selected_area_metas: this.props.selected_area_metas,
+    }
+  }
+
   render() {
     let bottom_y = 110
     const ele = document.getElementById('insights_image_div')
@@ -161,6 +180,7 @@ class BottomInsightsControls extends React.Component {
           deleteFile={this.props.deleteFile}
           displayInsightsMessage={this.props.displayInsightsMessage}
           submitInsightsJob={this.props.submitInsightsJob}
+          buildMovieMetadata={this.buildMovieMetadata}
         />
 
         <SessionControls

@@ -182,6 +182,20 @@ class FilesystemControls extends React.Component {
     )
   }
 
+  buildMovieMetadataLink() {
+    return (
+      <div>
+        <button
+            className='btn btn-link'
+            type='button'
+            onClick={() => this.props.submitInsightsJob('save_movie_metadata', this.props.buildMovieMetadata())}
+        >
+          save active movie metadata
+        </button>
+      </div>
+    )
+  }
+
   render() {
     if (!this.props.visibilityFlags['filesystem']) {
       return([])
@@ -192,6 +206,7 @@ class FilesystemControls extends React.Component {
       show_brief_checked = 'checked'
     }
     const secure_file_button = this.buildImportSecureFileButton()
+    const build_movie_metadata_link = this.buildMovieMetadataLink()
 
     return (
         <div className='row bg-light rounded mt-3'>
@@ -230,6 +245,9 @@ class FilesystemControls extends React.Component {
                 className='row collapse'
             >
               <div id='filesystem_main' className='col'>
+                <div className='row ml-2 mt-3'>
+                  {build_movie_metadata_link}
+                </div>
                 <div className='row ml-2 mt-3'>
                   {secure_file_button}
                 </div>

@@ -75,6 +75,12 @@ class FileWriter():
         fh.close()
         return 0
 
+    def write_text_data_to_filepath(self, text_data, file_fullpath):
+        fh = open(file_fullpath, 'w')
+        fh.write(text_data)
+        fh.close()
+        return 0
+
     def copy_file(self, source_url, new_uuid):
         (x_part, file_part) = os.path.split(source_url)
         (y_part, uuid_part) = os.path.split(x_part)

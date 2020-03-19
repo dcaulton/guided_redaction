@@ -574,6 +574,20 @@ class InsightsPanel extends React.Component {
     return job_data
   }
 
+  buildSaveMovieMetadataJobData(extra_data) {
+    let job_data = {
+      request_data: {},
+    }
+console.log('save movie metadata data is ')
+console.log(extra_data)
+    const movie_url = Object.keys(extra_data['movies'])[0]
+    job_data['app'] = 'files'
+    job_data['operation'] = 'save_movie_metadata'
+    job_data['description'] = 'save_movie_metadata for movie ' + movie_url
+    job_data['request_data'] = extra_data
+    return job_data
+  }
+
   buildScanTelemetryData(job_type, extra_data) {
     let job_data = {
       request_data: {},
@@ -734,6 +748,16 @@ class InsightsPanel extends React.Component {
       })
     } else if (job_string === 'get_timestamp_all_movies') {
       let job_data = this.buildGetTimestampJobData('all_movies', extra_data)
+      this.props.submitJob({
+        job_data: job_data
+      })
+    } else if (job_string === 'save_movie_url') {
+      let job_data = this.buildSaveMovieUrlJobData(extra_data)
+      this.props.submitJob({
+        job_data: job_data
+      })
+    } else if (job_string === 'save_movie_metadata') {
+      let job_data = this.buildSaveMovieMetadataJobData(extra_data)
       this.props.submitJob({
         job_data: job_data
       })
