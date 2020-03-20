@@ -1396,6 +1396,73 @@ class RedactApplication extends React.Component {
     this.setFramesetHash(last_hash)
   }
 
+  loadLoadMovieMetadataResults(job, when_done=(()=>{})) {
+    const responseJson = JSON.parse(job.response_data)
+    let deepCopyMovies = JSON.parse(JSON.stringify(this.state.movies))
+    let deepCopyTemplates = JSON.parse(JSON.stringify(this.state.templates))
+    let deepCopyTier1Matches= JSON.parse(JSON.stringify(this.state.tier_1_matches))
+    let deepCopySelectedAreaMetas = JSON.parse(JSON.stringify(this.state.selected_area_metas))
+    let movie_url = ''
+    if (Object.keys(responseJson).includes('movies')) {
+      for (let i=0; i < Object.keys(responseJson['movies']).length; i++) {
+        movie_url = Object.keys(responseJson['movies'])[i]
+        const movie = responseJson['movies'][movie_url]
+        deepCopyMovies[movie_url] = movie
+        this.addToCampaignMovies(movie_url)
+      }
+      this.setState({
+        movies: deepCopyMovies,
+        movie_url: movie_url,
+      })
+    }
+    if (Object.keys(responseJson).includes('templates') && Object.keys(responseJson['templates']).length > 0) {
+      let something_changed = false
+      for (let i=0; i < Object.keys(responseJson['templates']).length; i++) {
+        const template_id = Object.keys(responseJson['templates'])[i]
+        if (!Object.keys(this.state.templates).includes(template_id)) {
+          deepCopyTemplates[template_id] = responseJson['templates'][template_id]
+          something_changed = true
+        }
+      }
+      if (something_changed) {
+        this.setGlobalStateVar('templates', deepCopyTemplates)
+      }
+    }
+    if (Object.keys(responseJson).includes('tier_1_matches') && Object.keys(responseJson['tier_1_matches']).length > 0) {
+      let something_changed = false
+      for (let i=0; i < Object.keys(responseJson['tier_1_matches']['template']).length; i++) {
+        const template_id = Object.keys(responseJson['tier_1_matches']['template'])[i]
+        if (!Object.keys(this.state.tier_1_matches['template']).includes(template_id)) {
+          deepCopyTier1Matches['template'][template_id] = responseJson['tier_1_matches']['template'][template_id]
+          something_changed = true
+        }
+      }
+      for (let i=0; i < Object.keys(responseJson['tier_1_matches']['ocr']).length; i++) {
+        const ocr_id = Object.keys(responseJson['tier_1_matches']['ocr'])[i]
+        if (!Object.keys(this.state.tier_1_matches['ocr']).includes(ocr_id)) {
+          deepCopyTier1Matches['ocr'][ocr_id] = responseJson['tier_1_matches']['ocr'][ocr_id]
+          something_changed = true
+        }
+      }
+      if (something_changed) {
+        this.setGlobalStateVar('tier_1_matches', deepCopyTier1Matches)
+      }
+    }
+    if (Object.keys(responseJson).includes('selected_area_metas') && Object.keys(responseJson['selected_area_metas']).length > 0) {
+      let something_changed = false
+      for (let i=0; i < Object.keys(responseJson['selected_area_metas']).length; i++) {
+        const sam_id = Object.keys(responseJson['selected_area_metas'])[i]
+        if (!Object.keys(this.state.selected_area_metas).includes(sam_id)) {
+          deepCopySelectedAreaMetas[sam_id] = responseJson['selected_area_metas'][sam_id]
+          something_changed = true
+        }
+      }
+      if (something_changed) {
+        this.setGlobalStateVar('selected_area_metas', deepCopySelectedAreaMetas)
+      }
+    }
+  }
+
   async loadTelemetryResults(job, when_done=(()=>{})) {
     const responseJson = JSON.parse(job.response_data)
     const req_data = JSON.parse(job.request_data)
@@ -1527,6 +1594,8 @@ class RedactApplication extends React.Component {
         this.loadZipMovieResults(job, when_done)
 			} else if (job.app === 'redact' && job.operation === 'illustrate') {
         this.loadIllustrateResults(job, when_done)
+			} else if (job.app === 'files' && job.operation === 'load_movie_metadata') {
+        this.loadLoadMovieMetadataResults(job, when_done)
       }
       this.playTone()
     })

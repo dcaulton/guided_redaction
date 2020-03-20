@@ -135,7 +135,7 @@ class FilesViewSetMovieMetadata(viewsets.ViewSet):
             image_request_verify_headers=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
         )
         recording_id = file_part.split('.')[-2]
-        new_filename = recording_id + '.json'
+        new_filename = recording_id + '_movie_metadata.json'
         file_fullpath = file_writer.build_file_fullpath_for_uuid_and_filename(uuid_part, new_filename)
         file_writer.write_text_data_to_filepath(
             json.dumps(request_data),
@@ -144,6 +144,21 @@ class FilesViewSetMovieMetadata(viewsets.ViewSet):
         new_url = file_writer.get_url_for_file_path(file_fullpath)
         return Response({'url': new_url})
 
+    def process_retrieve_request(self, request_data):
+        if not request_data.get("uuid_part"):
+            return self.error("uuid_part is required")
+        if not request_data.get("file_part"):
+            return self.error("file_part is required")
+        uuid_part = request_data.get("uuid_part")
+        file_part = request_data.get("file_part")
+        file_writer = FileWriter(
+            working_dir=settings.REDACT_FILE_STORAGE_DIR,
+            base_url=settings.REDACT_FILE_BASE_URL,
+            image_request_verify_headers=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
+        )
+        file_fullpath = file_writer.build_file_fullpath_for_uuid_and_filename(uuid_part, file_part)
+        metadata = file_writer.get_text_data_from_filepath(file_fullpath)
+        return Response(json.loads(metadata))
 
 def make_url_from_file(filename, file_binary_data, the_uuid=''):
     file_writer = FileWriter(

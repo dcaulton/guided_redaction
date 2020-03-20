@@ -578,13 +578,21 @@ class InsightsPanel extends React.Component {
     let job_data = {
       request_data: {},
     }
-console.log('save movie metadata data is ')
-console.log(extra_data)
     const movie_url = Object.keys(extra_data['movies'])[0]
     job_data['app'] = 'files'
     job_data['operation'] = 'save_movie_metadata'
-    job_data['description'] = 'save_movie_metadata for movie ' + movie_url
+    job_data['description'] = 'save_movie_metadata: ' + movie_url
     job_data['request_data'] = extra_data
+    return job_data
+  }
+
+  buildLoadMovieMetadataJobData(extra_data) {
+    let job_data = {
+      request_data: extra_data,
+    }
+    job_data['app'] = 'files'
+    job_data['operation'] = 'load_movie_metadata'
+    job_data['description'] = 'load_movie_metadata: ' + extra_data
     return job_data
   }
 
@@ -675,6 +683,11 @@ console.log(extra_data)
       let job_data = this.buildGetSecureFileData(extra_data)
       this.props.submitJob({
         job_data: job_data,
+      })
+    } else if (job_string === 'load_movie_metadata') {
+      let job_data = this.buildLoadMovieMetadataJobData(extra_data)
+      this.props.submitJob({
+        job_data: job_data
       })
     }
     if (!this.props.movie_url) {

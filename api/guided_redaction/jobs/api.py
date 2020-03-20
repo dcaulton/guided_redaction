@@ -73,6 +73,8 @@ def dispatch_job(job):
         files_tasks.get_secure_file.delay(job_uuid)
     if job.app == 'files' and job.operation == 'save_movie_metadata':
         files_tasks.save_movie_metadata.delay(job_uuid)
+    if job.app == 'files' and job.operation == 'load_movie_metadata':
+        files_tasks.load_movie_metadata.delay(job_uuid)
 
 
 class JobsViewSet(viewsets.ViewSet):

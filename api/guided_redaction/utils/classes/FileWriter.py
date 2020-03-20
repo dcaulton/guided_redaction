@@ -81,6 +81,12 @@ class FileWriter():
         fh.close()
         return 0
 
+    def get_text_data_from_filepath(self, file_fullpath):
+        fh = open(file_fullpath, 'r')
+        text_data = fh.read()
+        fh.close()
+        return text_data
+
     def copy_file(self, source_url, new_uuid):
         (x_part, file_part) = os.path.split(source_url)
         (y_part, uuid_part) = os.path.split(x_part)

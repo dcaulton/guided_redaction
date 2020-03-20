@@ -23,8 +23,11 @@ class FilesystemControls extends React.Component {
         <div className='col-lg-4'>
           directory name
         </div>
-        <div className='col-lg-4'>
+        <div className='col-lg-3'>
           files
+        </div>
+        <div className='col-lg-1'>
+          load
         </div>
         <div className='col-lg-2'>
           space used
@@ -40,6 +43,37 @@ class FilesystemControls extends React.Component {
       <div className='mb-2'>total space used: {this.props.files['overall_space_used']}</div>
     )
   }
+
+  buildLoadMovieLink(dir_name) {
+    let uuid_part = ''
+    let file_part = ''
+    const metadata_regex = /file:\s*(.*movie_metadata.json)\s*size:/
+    for (let i=0; i < this.props.files['files'][dir_name]['files'].length; i++) {
+      const filename = this.props.files['files'][dir_name]['files'][i]
+      if (filename.match(metadata_regex)) {
+        const mo = filename.match(metadata_regex)
+        const parts = dir_name.split('/')
+        uuid_part = parts[parts.length-1]
+        file_part = mo[1]
+      }
+    }
+    if (uuid_part) {
+      return (
+        <button
+            className='btn btn-link p-1'
+            onClick={() => this.props.submitInsightsJob(
+              'load_movie_metadata', 
+              {uuid_part: uuid_part, file_part: file_part}
+            )}
+        >
+          load
+        </button>
+      )
+    } else {
+      return ''
+    }
+  }
+
   buildFilesListBrief() {
     const file_keys = Object.keys(this.props.files['files'])
     const the_style = {
@@ -53,6 +87,7 @@ class FilesystemControls extends React.Component {
         {total_used}
         {headers}
         {file_keys.map((value, index) => {
+          const load_link = this.buildLoadMovieLink(value) 
           const parts = value.split('/')
           const file_uuid = parts[parts.length-1]
           let files_count= this.props.files['files'][value]['files'].length
@@ -63,8 +98,11 @@ class FilesystemControls extends React.Component {
               <div className='col-lg-4'>
                 {file_uuid}
               </div>
-              <div className='col-lg-4'>
+              <div className='col-lg-3'>
                 {files_count_message}
+              </div>
+              <div className='col-lg-3'>
+                {load_link}
               </div>
               <div className='col-lg-2'>
                 {this.props.files['files'][value]['total_space_used']}
