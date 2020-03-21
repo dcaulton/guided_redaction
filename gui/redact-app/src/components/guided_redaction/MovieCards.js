@@ -195,7 +195,6 @@ class MovieCard extends React.Component {
         </button>
       </div>
     )
-
   }
 
   buildQueueJobLink() {
@@ -240,31 +239,40 @@ class MovieCard extends React.Component {
     return ''
   }
 
-  getTemplateMatchHashesForMovie(movie_url) {
+  getTier1MatchHashesForMovie(scanner_type, movie_url) {
     let hashes = []
-    const this_template_rule_matches = this.props.tier_1_matches['template'][this.props.current_template_id]
-    const template_matches_for_movie = this_template_rule_matches['movies'][movie_url]
-    const frameset_hashes = Object.keys(template_matches_for_movie['framesets'])
+    let current_rule_id = ''
+    if (scanner_type === 'template') {
+      current_rule_id = this.props.current_template_id
+    } else if (scanner_type === 'ocr') {
+      current_rule_id = this.props.current_ocr_rule_id
+    }
+    if (!Object.keys(this.props.tier_1_matches[scanner_type]).includes(current_rule_id)) {
+      return []
+    }
+    const this_rule_matches = this.props.tier_1_matches[scanner_type][current_rule_id]
+    const scanner_matches_for_movie = this_rule_matches['movies'][movie_url]
+    const frameset_hashes = Object.keys(scanner_matches_for_movie['framesets'])
     for (let i=0; i < frameset_hashes.length; i++) {
-      if (Object.keys(template_matches_for_movie['framesets'][frameset_hashes[i]]).length > 0) {
+      if (Object.keys(scanner_matches_for_movie['framesets'][frameset_hashes[i]]).length > 0) {
         hashes.push(frameset_hashes[i])
       }
     }
     return hashes
   }
 
-  setScrubberToNextTemplateHit() {
-    const template_frameset_hashes = this.getTemplateMatchHashesForMovie(this.props.this_cards_movie_url)
+  setScrubberToNextTier1Hit(scanner_type) {
+    const scanner_frameset_hashes = this.getTier1MatchHashesForMovie(scanner_type, this.props.this_cards_movie_url)
     let movie = this.props.movies[this.props.this_cards_movie_url]
     const movie_frameset_hashes = this.props.getFramesetHashesInOrder(movie['framesets'])
     if (this.props.active_movie_url !== this.props.this_cards_movie_url) {
       this.props.setCurrentVideo(this.props.this_cards_movie_url) 
       let lowest_position = 99999
-      let template_hash = ''
+      let scanner_hash = ''
       let index = 99999
-      for (let i=0; i < template_frameset_hashes.length; i++) {
-        template_hash = template_frameset_hashes[i]
-        index = movie_frameset_hashes.indexOf(template_hash)
+      for (let i=0; i < scanner_frameset_hashes.length; i++) {
+        scanner_hash = scanner_frameset_hashes[i]
+        index = movie_frameset_hashes.indexOf(scanner_hash)
         if (index < lowest_position) {
           lowest_position = index
         } 
@@ -275,48 +283,46 @@ class MovieCard extends React.Component {
       const cur_position = movie_frameset_hashes.indexOf(cur_hash)
       const remaining_hashes = movie_frameset_hashes.slice(cur_position+1)
       for (let i=0; i < remaining_hashes.length; i++) {
-        if (template_frameset_hashes.includes(remaining_hashes[i])) {
+        if (scanner_frameset_hashes.includes(remaining_hashes[i])) {
           const new_index = cur_position + i + 1
           setTimeout((() => {this.props.setScrubberToIndex(new_index)}), 1000)
           return
         }
       }
-      const first_index = movie_frameset_hashes.indexOf(template_frameset_hashes[0])
+      const first_index = movie_frameset_hashes.indexOf(scanner_frameset_hashes[0])
       setTimeout((() => {this.props.setScrubberToIndex(first_index)}), 1000)
     }
   }
 
-  clearTier1Matches(match_type) {
+  clearTier1Matches(scanner_type) {
     let deepCopyTier1Matches= JSON.parse(JSON.stringify(this.props.tier_1_matches))
     let current_scanner_id = ''
-    if (match_type === 'template') {
+    if (scanner_type === 'template') {
       current_scanner_id = this.props.current_template_id
-    } else if (match_type === 'ocr') {
+    } else if (scanner_type === 'ocr') {
       current_scanner_id = this.props.current_ocr_rule_id
     }
-    delete deepCopyTier1Matches[match_type][current_scanner_id]
+    delete deepCopyTier1Matches[scanner_type][current_scanner_id]
     this.props.setGlobalStateVar('tier_1_matches', deepCopyTier1Matches)
-    this.props.displayInsightsMessage(match_type+' matches have been removed')
+    this.props.displayInsightsMessage(scanner_type+' matches have been removed')
   }
 
-  getTemplateMatchesString() {
-    const template_matches = this.props.tier_1_matches['template']
-    if (!Object.keys(template_matches).includes(this.props.current_template_id)) {
-      return ''
+  getTier1MatchesString(scanner_type) {
+    let count = this.getTier1MatchHashesForMovie(scanner_type, this.props.this_cards_movie_url).length
+    if (!count) {
+      return
     }
-    const cur_templates_matches = template_matches[this.props.current_template_id]
-    if (!Object.keys(cur_templates_matches['movies']).includes(this.props.this_cards_movie_url)) {
-      return ''
+    let scanner_type_short = scanner_type
+    if (scanner_type === 'template') {
+      scanner_type_short = 'temp'
     }
-    const cur_movies_matches = cur_templates_matches['movies'][this.props.this_cards_movie_url]
-    let count = Object.keys(cur_movies_matches['framesets']).length
     let matches_button = ''
     let clear_button = ''
     if (count > 0) {
       clear_button = (
         <button
           className='border-0 text-primary'
-          onClick={() => this.clearTier1Matches('template')}
+          onClick={() => this.clearTier1Matches(scanner_type)}
         >
           clr
         </button>
@@ -324,7 +330,7 @@ class MovieCard extends React.Component {
       matches_button = (
         <button
           className='border-0 text-primary'
-          onClick={() => this.setScrubberToNextTemplateHit()}
+          onClick={() => this.setScrubberToNextTier1Hit(scanner_type)}
         >
           nxt
         </button>
@@ -333,44 +339,11 @@ class MovieCard extends React.Component {
 
     return (
       <div>
-        {count.toString()} temp matches
+        {count.toString()} {scanner_type_short} matches
         {matches_button}
         {clear_button}
       </div>
     )
-  }
-
-  setScrubberToNextOcrHit() {
-    const ocr_frameset_hashes = this.getOcrMatchHashesForMovie(this.props.this_cards_movie_url)
-    let movie = this.props.movies[this.props.this_cards_movie_url]
-    const movie_frameset_hashes = this.props.getFramesetHashesInOrder(movie['framesets'])
-    if (this.props.active_movie_url !== this.props.this_cards_movie_url) {
-      this.props.setCurrentVideo(this.props.this_cards_movie_url) 
-      let lowest_position = 99999
-      let ocr_hash = ''
-      let index = 99999
-      for (let i=0; i < ocr_frameset_hashes.length; i++) {
-        ocr_hash = ocr_frameset_hashes[i]
-        index = movie_frameset_hashes.indexOf(ocr_hash)
-        if (index < lowest_position) {
-          lowest_position = index
-        } 
-      }
-      setTimeout((() => {this.props.setScrubberToIndex(lowest_position)}), 1000)
-    } else {
-      const cur_hash = this.props.getFramesetHashForImageUrl(this.props.insights_image)
-      const cur_position = movie_frameset_hashes.indexOf(cur_hash)
-      const remaining_hashes = movie_frameset_hashes.slice(cur_position+1)
-      for (let i=0; i < remaining_hashes.length; i++) {
-        if (ocr_frameset_hashes.includes(remaining_hashes[i])) {
-          const new_index = cur_position + i + 1
-          setTimeout((() => {this.props.setScrubberToIndex(new_index)}), 1000)
-          return
-        }
-      }
-      const first_index = movie_frameset_hashes.indexOf(ocr_frameset_hashes[0])
-      setTimeout((() => {this.props.setScrubberToIndex(first_index)}), 1000)
-    }
   }
 
   setScrubberToNextAreasToRedactHit() {
@@ -401,57 +374,6 @@ class MovieCard extends React.Component {
       const first_index = movie_frameset_hashes.indexOf(hashes_with_areas_to_redact[0])
       setTimeout((() => {this.props.setScrubberToIndex(first_index)}), 1000)
     }
-  }
-
-  getOcrMatchHashesForMovie(movie_url) {
-    let hashes = []
-    const this_ocr_rule_matches = this.props.tier_1_matches['ocr'][this.props.current_ocr_rule_id]
-    const ocr_matches_for_movie = this_ocr_rule_matches['movies'][movie_url]
-    const frameset_hashes = Object.keys(ocr_matches_for_movie['framesets'])
-    for (let i=0; i < frameset_hashes.length; i++) {
-      if (ocr_matches_for_movie['framesets'][frameset_hashes[i]]['recognized_text_areas'].length > 0) {
-        hashes.push(frameset_hashes[i])
-      }
-    }
-    return hashes
-  }
-
-  getOcrMatchesString() {
-    if (Object.keys(this.props.tier_1_matches['ocr']).includes(this.props.current_ocr_rule_id)) {
-      const this_ocr_rule_matches = this.props.tier_1_matches['ocr'][this.props.current_ocr_rule_id]
-      if (Object.keys(this_ocr_rule_matches['movies']).includes(this.props.this_cards_movie_url)) {
-        let count = this.getOcrMatchHashesForMovie(this.props.this_cards_movie_url).length
-        let matches_button = ''
-        let clear_button = ''
-        if (count > 0) {
-          clear_button = (
-            <button
-              className='border-0 text-primary'
-              onClick={() => this.clearTier1Matches('ocr')}
-            >
-              clr
-            </button>
-          )
-          matches_button = (
-            <button
-              className='border-0 text-primary'
-              onClick={() => this.setScrubberToNextOcrHit()}
-            >
-              nxt
-            </button>
-          )
-        }
-
-        return (
-          <div>
-            {count} ocr matches
-            {matches_button}
-            {clear_button}
-          </div>
-        )
-      }
-    }
-    return ''
   }
 
   clearAreasToRedact() {
@@ -581,8 +503,8 @@ class MovieCard extends React.Component {
     const nickname_block = this.buildNicknameBlock(this.props.this_cards_movie_url, this.props.movies)
     const framesets_count_message = this.getFramesetsCountMessage(this.props.this_cards_movie_url)
     const make_active_button = this.buildMakeActiveButton(this.props.this_cards_movie_url)
-    const template_matches_string = this.getTemplateMatchesString()
-    const ocr_matches_string = this.getOcrMatchesString()
+    const template_matches_string = this.getTier1MatchesString('template')
+    const ocr_matches_string = this.getTier1MatchesString('ocr')
     const areas_to_redact_string = this.getAreasToRedactString()
     const diffs_string = this.getMovieDiffsFound()
     const selected_areas_string = this.getSelectedAreasString()
