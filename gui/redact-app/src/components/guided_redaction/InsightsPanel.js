@@ -1349,6 +1349,8 @@ class InsightsPanel extends React.Component {
             selected_area_metas={this.props.selected_area_metas}
             current_selected_area_meta_id={this.props.current_selected_area_meta_id}
             setSelectedAreaMetas={this.props.setSelectedAreaMetas}
+            ocr_rules={this.props.ocr_rules}
+            current_ocr_rule_id={this.props.current_ocr_rule_id}
           />
         </div>
 

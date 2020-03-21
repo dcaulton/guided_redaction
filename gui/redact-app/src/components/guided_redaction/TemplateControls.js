@@ -559,9 +559,12 @@ class TemplateControls extends React.Component {
     if (!this.props.current_template_id) {
       return ''
     }
-    let movie_set_keys = Object.keys(this.props.movie_sets)
-    const tier_1_template_options = this.buildTier1TemplateRunOptions()
-    const tier_1_ocr_options = this.buildTier1OcrRunOptions()
+    const tier_1_template_run_options = this.props.buildTier1RunOptions('template', 'current_template_tier1_template')
+    const tier_1_selected_area_run_options = this.props.buildTier1RunOptions('selected_area', 'current_template_tier1_selected_area')
+    const tier_1_ocr_run_options = this.props.buildTier1RunOptions('ocr', 'current_template_tier1_ocr')
+    const tier_1_telemetry_run_options = this.props.buildTier1RunOptions('telemetry', 'current_template_tier1_telemetry')
+    const movie_set_run_options = this.props.buildMovieSetOptions('current_template_movie_set')
+
     return (
       <div className='d-inline'>
         <button
@@ -590,24 +593,11 @@ class TemplateControls extends React.Component {
           >
             All Movies
           </button>
-          <button className='dropdown-item'
-              onClick={() => this.props.submitInsightsJob('current_template_telemetry_matches')}
-          >
-            Telemetry Matches
-          </button>
-            {movie_set_keys.map((value, index) => {
-              return (
-                <button
-                    className='dropdown-item'
-                    key={index}
-                    onClick={() => this.props.submitInsightsJob('current_template_movie_set', value)}
-                >
-                  MovieSet '{this.props.movie_sets[value]['name']}' as Job
-                </button>
-              )
-            })}
-          {tier_1_template_options}
-          {tier_1_ocr_options}
+          {movie_set_run_options} 
+          {tier_1_template_run_options}
+          {tier_1_selected_area_run_options}
+          {tier_1_ocr_run_options}
+          {tier_1_telemetry_run_options}
         </div>
       </div>
     ) 

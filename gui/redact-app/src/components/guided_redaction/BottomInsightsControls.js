@@ -16,6 +16,8 @@ class BottomInsightsControls extends React.Component {
   constructor(props) {
     super(props)
     this.buildMovieMetadata=this.buildMovieMetadata.bind(this)
+    this.buildTier1RunOptions=this.buildTier1RunOptions.bind(this)
+    this.buildMovieSetOptions=this.buildMovieSetOptions.bind(this)
   }
 
   buildMovieMetadata(movie_url='') {
@@ -30,6 +32,63 @@ class BottomInsightsControls extends React.Component {
       templates: this.props.templates,
       selected_area_metas: this.props.selected_area_metas,
     }
+  }
+
+  buildMovieSetOptions(insights_job_name) {
+    const movie_set_keys = Object.keys(this.props.movie_sets)
+    if (!movie_set_keys) {
+      return ''
+    }
+    return (
+      <div>
+        {movie_set_keys.map((value, index) => {
+          return (
+            <button
+                className='dropdown-item'
+                key={index}
+                onClick={() => this.packageAndCallSubmitJob(insights_job_name, value)}
+            >
+              MovieSet '{this.props.movie_sets[value]['name']}' as Job
+            </button>
+          )
+        })}
+      </div>
+    )
+  }
+
+  buildTier1RunOptions(scanner_type, insights_job_name) {
+    const tier_1_match_keys = Object.keys(this.props.tier_1_matches[scanner_type])
+    if (tier_1_match_keys.length === 0) {
+      return ''
+    }
+
+    let scanner_inventory = {}
+    if (scanner_type === 'template') {
+      scanner_inventory = this.props.templates
+    } else if (scanner_type === 'selected_area') {
+      scanner_inventory = this.props.selected_area_metas
+    } else if (scanner_type === 'telemetry') {
+      scanner_inventory = this.props.telemetry_rules
+    } else if (scanner_type === 'ocr') {
+      scanner_inventory = this.props.ocr_rules
+    }
+    
+    return (
+      <div>
+        {tier_1_match_keys.map((value, index) => {
+          let detail_line = 'Frames matched by ' + scanner_type + ' id ' + value
+          return (
+            <button
+                className='dropdown-item'
+                key={index}
+                onClick={() => this.props.submitInsightsJob(insights_job_name, value)}
+            >
+              {detail_line}
+            </button>
+          )
+        })}
+      </div>
+    )
   }
 
   render() {
@@ -57,7 +116,8 @@ class BottomInsightsControls extends React.Component {
           current_template_id={this.props.current_template_id}
           displayInsightsMessage={this.props.displayInsightsMessage}
           cropImage={this.props.cropImage}
-          movie_sets={this.props.movie_sets}
+          buildMovieSetOptions={this.buildMovieSetOptions}
+          buildTier1RunOptions={this.buildTier1RunOptions}
           visibilityFlags={this.props.visibilityFlags}
           toggleShowVisibility={this.props.toggleShowVisibility}
           addInsightsCallback={this.props.addInsightsCallback}
@@ -79,7 +139,8 @@ class BottomInsightsControls extends React.Component {
 
         <SelectedAreaControls
           setGlobalStateVar={this.props.setGlobalStateVar}
-          movie_sets={this.props.movie_sets}
+          buildMovieSetOptions={this.buildMovieSetOptions}
+          buildTier1RunOptions={this.buildTier1RunOptions}
           handleSetMode={this.props.handleSetMode}
           tier_1_matches={this.props.tier_1_matches}
           templates={this.props.templates}
@@ -149,6 +210,10 @@ class BottomInsightsControls extends React.Component {
           handleSetMode={this.props.handleSetMode}
           movie_sets={this.props.movie_sets}
           clicked_coords={this.props.clicked_coords}
+          buildTier1RunOptions={this.buildTier1RunOptions}
+          buildMovieSetOptions={this.buildMovieSetOptions}
+          ocr_rules={this.props.ocr_rules}
+          current_ocr_rule_id={this.props.current_ocr_rule_id}
         />
 
         <MovieSetsControls

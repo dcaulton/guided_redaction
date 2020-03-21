@@ -531,9 +531,6 @@ class SelectedAreaControls extends React.Component {
     )
   }
   buildTier1TemplateRunOptions() {
-    if (this.state.scan_level === 'tier_1') {
-      return ''
-    }
     const tier_1_match_keys = Object.keys(this.props.tier_1_matches['template'])
     if (tier_1_match_keys.length === 0) {
       return ''
@@ -561,9 +558,6 @@ class SelectedAreaControls extends React.Component {
   }
 
   buildTier1OcrRunOptions() {
-    if (this.state.scan_level === 'tier_1') {
-      return ''
-    }
     const tier_1_match_keys = Object.keys(this.props.tier_1_matches['ocr'])
     if (tier_1_match_keys.length === 0) {
       return ''
@@ -594,9 +588,14 @@ class SelectedAreaControls extends React.Component {
     if (!this.state.id) {
       return ''
     }
-    let movie_set_keys = Object.keys(this.props.movie_sets)
-    const tier_1_template_options = this.buildTier1TemplateRunOptions()
-    const tier_1_ocr_options = this.buildTier1OcrRunOptions()
+    const tier_1_template_run_options = this.props.buildTier1RunOptions('template', 'current_selected_area_meta_tier1_template')
+    const tier_1_selected_area_run_options = this.props.buildTier1RunOptions('selected_area', 'current_selected_area_meta_tier1_selected_area')
+    const tier_1_ocr_run_options = this.props.buildTier1RunOptions('ocr', 'current_selected_area_meta_tier1_ocr')
+    const tier_1_telemetry_run_options = this.props.buildTier1RunOptions('telemetry', 'current_selected_area_meta_tier1_telemetry')
+
+
+    const movie_set_run_options = this.props.buildMovieSetOptions('current_selected_area_meta_movie_set')
+
     return (
       <div className='d-inline'>
         <button
@@ -625,19 +624,11 @@ class SelectedAreaControls extends React.Component {
           >
             All Movies
           </button>
-            {movie_set_keys.map((value, index) => {
-              return (
-                <button
-                    className='dropdown-item'
-                    key={index}
-                    onClick={() => this.props.submitInsightsJob('current_selected_area_meta_movie_set', value)}
-                >
-                  MovieSet '{this.props.movie_sets[value]['name']}' as Job
-                </button>
-              )
-            })}
-          {tier_1_template_options}
-          {tier_1_ocr_options}
+          {movie_set_run_options}
+          {tier_1_template_run_options}
+          {tier_1_selected_area_run_options}
+          {tier_1_ocr_run_options}
+          {tier_1_telemetry_run_options}
         </div>
       </div>
     )

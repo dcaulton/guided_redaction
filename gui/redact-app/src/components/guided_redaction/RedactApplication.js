@@ -49,6 +49,8 @@ class RedactApplication extends React.Component {
       scanners: [],
       files: {},
       selected_area_metas: {},
+      ocr_rules: {},
+      current_ocr_rule_id: '',
       current_selected_area_meta_id: '',
       subsequences: {},
       showMovieParserLink: true,
@@ -2262,6 +2264,8 @@ class RedactApplication extends React.Component {
                 importScanner={this.importScanner}
                 wrapUpJob={this.wrapUpJob}
                 preserve_movie_audio={this.state.preserve_movie_audio}
+                ocr_rules={this.state.ocr_rules}
+                current_ocr_rule_id={this.state.current_ocr_rule_id}
               />
             </Route>
           </Switch>
