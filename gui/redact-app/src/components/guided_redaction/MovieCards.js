@@ -286,6 +286,19 @@ class MovieCard extends React.Component {
     }
   }
 
+  clearTier1Matches(match_type) {
+    let deepCopyTier1Matches= JSON.parse(JSON.stringify(this.props.tier_1_matches))
+    let current_scanner_id = ''
+    if (match_type === 'template') {
+      current_scanner_id = this.props.current_template_id
+    } else if (match_type === 'ocr') {
+      current_scanner_id = this.props.current_ocr_rule_id
+    }
+    delete deepCopyTier1Matches[match_type][current_scanner_id]
+    this.props.setGlobalStateVar('tier_1_matches', deepCopyTier1Matches)
+    this.props.displayInsightsMessage(match_type+' matches have been removed')
+  }
+
   getTemplateMatchesString() {
     const template_matches = this.props.tier_1_matches['template']
     if (!Object.keys(template_matches).includes(this.props.current_template_id)) {
@@ -303,7 +316,7 @@ class MovieCard extends React.Component {
       clear_button = (
         <button
           className='border-0 text-primary'
-          onClick={() => this.clearTemplateMatches()}
+          onClick={() => this.clearTier1Matches('template')}
         >
           clr
         </button>
@@ -414,7 +427,7 @@ class MovieCard extends React.Component {
           clear_button = (
             <button
               className='border-0 text-primary'
-              onClick={() => this.clearOcrMatches()}
+              onClick={() => this.clearTier1Matches('ocr')}
             >
               clr
             </button>
@@ -439,20 +452,6 @@ class MovieCard extends React.Component {
       }
     }
     return ''
-  }
-
-  clearOcrMatches() {
-    let deepCopyTier1Matches= JSON.parse(JSON.stringify(this.props.tier_1_matches))
-    delete deepCopyTier1Matches['ocr'][this.props.current_ocr_rule_id]
-    this.props.setGlobalStateVar('tier_1_matches', deepCopyTier1Matches)
-    this.props.displayInsightsMessage('ocr matches have been removed')
-  }
-
-  clearTemplateMatches() {
-    let deepCopyTier1Matches= JSON.parse(JSON.stringify(this.props.tier_1_matches))
-    delete deepCopyTier1Matches['template'][this.props.current_template_id]
-    this.props.setGlobalStateVar('tier_1_matches', deepCopyTier1Matches)
-    this.props.displayInsightsMessage('template matches have been removed')
   }
 
   clearAreasToRedact() {
