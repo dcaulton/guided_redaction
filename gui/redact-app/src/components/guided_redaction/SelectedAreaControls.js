@@ -15,6 +15,7 @@ class SelectedAreaControls extends React.Component {
       attributes: {},
       origin_entity_type: 'adhoc',
       origin_entity_id: '',
+      scan_level: 'tier_2',
       areas: [],
       unsaved_changes: false,
       attribute_search_name: '',
@@ -111,6 +112,7 @@ class SelectedAreaControls extends React.Component {
         attributes: sam['attributes'],
         origin_entity_type: sam['origin_entity_type'],
         origin_entity_id: sam['origin_entity_id'],
+        scan_level: sam['scan_level'],
         areas: sam['areas'],
         unsaved_changes: false,
       })
@@ -130,6 +132,7 @@ class SelectedAreaControls extends React.Component {
       attributes: {},
       origin_entity_type: 'adhoc',
       origin_entity_id: '',
+      scan_level: 'tier_2',
       areas: [],
       unsaved_changes: false,
     })
@@ -145,6 +148,7 @@ class SelectedAreaControls extends React.Component {
       attributes: this.state.attributes,
       origin_entity_type: this.state.origin_entity_type,
       origin_entity_id: this.state.origin_entity_id,
+      scan_level: this.state.scan_level,
       areas: this.state.areas,
     }
     return selected_area_meta
@@ -262,6 +266,26 @@ class SelectedAreaControls extends React.Component {
           >
             <option value='interior'>interior</option>
             <option value='exterior'>exterior</option>
+          </select>
+        </div>
+      </div>
+    )
+  }
+
+  buildScanLevelDropdown() {
+    return (
+      <div>
+        <div className='d-inline ml-2'>
+          Scan Level
+        </div>
+        <div className='d-inline ml-2'>
+          <select
+              name='selected_area_scan_level'
+              value={this.state.scan_level}
+              onChange={(event) => this.setLocalStateVar('scan_level', event.target.value)}
+          >
+            <option value='tier_1'>Tier 1 (select only)</option>
+            <option value='tier_2'>Tier 2 (select and redact)</option>
           </select>
         </div>
       </div>
@@ -674,7 +698,7 @@ class SelectedAreaControls extends React.Component {
     return (
       <button
           className='btn btn-primary ml-2'
-          onClick={() => this.clearAreas()}
+          onClick={() => this.clearAnchors()}
       >
         Clear Area Centers
       </button>
@@ -728,6 +752,7 @@ class SelectedAreaControls extends React.Component {
     const select_type_dropdown = this.buildSelectTypeDropdown()
     const interior_or_exterior_dropdown = this.buildInteriorOrExteriorDropdown()
     const attributes_list = this.buildAttributesList()
+    const scan_level_dropdown = this.buildScanLevelDropdown()
     const origin_entity_type_dropdown = this.buildOriginEntityTypeDropdown()
     const origin_entity_id_dropdown = this.buildOriginEntityIdDropdown()
     const add_area_coords_button = this.buildAddAreaCoordsButton()
@@ -807,6 +832,10 @@ class SelectedAreaControls extends React.Component {
 
                 <div className='row mt-2'>
                   {interior_or_exterior_dropdown}
+                </div>
+
+                <div className='row mt-2'>
+                  {scan_level_dropdown}
                 </div>
 
                 <div className='row mt-2'>

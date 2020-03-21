@@ -42,6 +42,7 @@ class RedactApplication extends React.Component {
         'ocr': {},
         'template': {},
         'telemetry': {},
+        'selected_area': {},
       },
       annotations: {},
       jobs: [],
@@ -983,21 +984,38 @@ class RedactApplication extends React.Component {
     let something_changed = false
     let deepCopyMovies= JSON.parse(JSON.stringify(this.state.movies))
     let deepCopySelectedAreaMetas = JSON.parse(JSON.stringify(this.state.selected_area_metas))
+    let movie_url = ''
     for (let i=0; i < Object.keys(request_data['movies']).length; i++) {
-      const movie_url = Object.keys(request_data['movies'])[i]
+      movie_url = Object.keys(request_data['movies'])[i]
       if (!Object.keys(deepCopyMovies).includes(movie_url)) {
         deepCopyMovies[movie_url] = request_data['movies'][movie_url]
         this.addToCampaignMovies(movie_url)
         something_changed = true
       }
     }
+    let sam_id = ''
     for (let i=0; i < Object.keys(request_data['selected_area_metas']).length; i++) {
-      const sam_id = Object.keys(request_data['selected_area_metas'])[i]
+      sam_id = Object.keys(request_data['selected_area_metas'])[i]
       if (!Object.keys(this.state.selected_area_metas).includes(sam_id)) {
         deepCopySelectedAreaMetas[sam_id] = request_data['selected_area_metas'][sam_id]
         something_changed = true
       }
     }
+    if (request_data['scan_level'] === 'tier_1') {
+      let deepCopyTier1Matches = JSON.parse(JSON.stringify(this.state.tier_1_matches))
+      let deepCopySelectedAreaMatches = deepCopyTier1Matches['selected_area']
+      deepCopySelectedAreaMatches[request_data['id']] = response_data
+      deepCopyTier1Matches['selected_area'] = deepCopySelectedAreaMatches // todo: can we remove this?
+      this.setGlobalStateVar('tier_1_matches', deepCopyTier1Matches)
+      if (something_changed) {
+        this.setGlobalStateVar('selected_area_metas', deepCopySelectedAreaMetas)
+        this.setGlobalStateVar('current_selected_area_meta_id', sam_id)
+        this.setGlobalStateVar('movies', deepCopyMovies)
+        this.setGlobalStateVar('movie_url', movie_url)
+      }
+      return
+    }
+
     for (let i=0; i < Object.keys(response_data['movies']).length; i++) {
       const movie_url = Object.keys(response_data['movies'])[i]
       for (let j = 0; j < Object.keys(response_data['movies'][movie_url]['framesets']).length; j++) {
@@ -1027,6 +1045,7 @@ class RedactApplication extends React.Component {
   loadScanTemplateResults(job, when_done=(()=>{})) {
     const response_data = JSON.parse(job.response_data)
     const request_data = JSON.parse(job.request_data)
+    // TODO break tier1 + movie + scanner load into a shared module
     let deepCopyMovies= JSON.parse(JSON.stringify(this.state.movies))
     let deepCopyTemplates= JSON.parse(JSON.stringify(this.state.templates))
     let something_changed = false

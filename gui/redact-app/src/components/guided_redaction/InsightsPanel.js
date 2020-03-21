@@ -641,7 +641,7 @@ class InsightsPanel extends React.Component {
     job_data['request_data']['selected_area_metas'] = {}
     job_data['request_data']['selected_area_metas'][this.props.current_selected_area_meta_id] = cur_selected_area
     job_data['request_data']['id'] = this.props.current_selected_area_meta_id
-    job_data['request_data']['scan_level'] = 'tier_2'
+    job_data['request_data']['scan_level'] = cur_selected_area['scan_level']
     if (scope === 'cur_frame') {
       job_data['description'] = 'get selected area for current frame'
       job_data['request_data']['movies'] = this.buildOneFrameMovieForCurrentInsightsImage()
