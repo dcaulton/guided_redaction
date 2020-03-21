@@ -68,7 +68,6 @@ class RedactApplication extends React.Component {
       preserveAllJobs: false,
       telemetry_rules: {},
       current_telemetry_rule_id: '',
-      current_ocr_rule_id: '',
       telemetry_data: {
         raw_data_url: '',
         movie_mappings: [],
@@ -2265,7 +2264,6 @@ class RedactApplication extends React.Component {
                 wrapUpJob={this.wrapUpJob}
                 preserve_movie_audio={this.state.preserve_movie_audio}
                 ocr_rules={this.state.ocr_rules}
-                current_ocr_rule_id={this.state.current_ocr_rule_id}
               />
             </Route>
           </Switch>

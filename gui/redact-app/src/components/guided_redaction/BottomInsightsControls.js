@@ -72,11 +72,16 @@ class BottomInsightsControls extends React.Component {
     } else if (scanner_type === 'ocr') {
       scanner_inventory = this.props.ocr_rules
     }
-    
     return (
       <div>
         {tier_1_match_keys.map((value, index) => {
           let detail_line = 'Frames matched by ' + scanner_type + ' id ' + value
+          if (Object.keys(scanner_inventory).includes(value)) {
+            let record =  scanner_inventory[value]
+            if (Object.keys(record).includes('name')) {
+              detail_line = 'Frames matched by ' + scanner_type + ' ' + record['name']
+            }
+          }
           return (
             <button
                 className='dropdown-item'
