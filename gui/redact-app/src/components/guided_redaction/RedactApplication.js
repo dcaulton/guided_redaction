@@ -1018,8 +1018,9 @@ class RedactApplication extends React.Component {
       for (let j = 0; j < Object.keys(response_data['movies'][movie_url]['framesets']).length; j++) {
         const frameset_hash = Object.keys(response_data['movies'][movie_url]['framesets'])[j]
         const selected_areas = response_data['movies'][movie_url]['framesets'][frameset_hash]
-        for (let k=0; k < selected_areas.length; k++) {
-          const selected_area = selected_areas[k]
+        for (let k=0; k < Object.keys(selected_areas).length; k++) {
+          const key = Object.keys(selected_areas)[k]
+          const selected_area = selected_areas[key]
           const end_point = [
             selected_area['location'][0]+selected_area['size'][0],
             selected_area['location'][1]+selected_area['size'][1]
