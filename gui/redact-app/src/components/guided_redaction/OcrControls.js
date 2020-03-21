@@ -206,7 +206,7 @@ class OcrControls extends React.Component {
           <select
               name='ocr_scan_level'
               value={this.state.scan_level}
-              onChange={(event) => this.setScanLevel(event.target.value)}
+              onChange={(event) => this.updateScanLevel(event.target.value)}
           >
             <option value='tier_1'>Tier 1</option>
             <option value='tier_2'>Tier 2</option>

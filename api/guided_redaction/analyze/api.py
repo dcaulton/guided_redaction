@@ -69,22 +69,22 @@ class AnalyzeViewSetEastTess(viewsets.ViewSet):
                 [roi_start, roi_end],
                 processing_mode='tess_only'
             )
-            recognized_text_areas = []
-            for raw_rta in raw_recognized_text_areas:
-                the_id = 'rta_' + str(random.randint(100000000, 999000000))
-                recognized_text_areas.append({
-                    'id': the_id,
-                    'source': raw_rta['source'],
-                    'start': roi_start,
-                    'end': roi_end,
-                    'text': raw_rta['text']
-                })
         else:
-            recognized_text_areas = analyzer.analyze_text(
+            raw_recognized_text_areas = analyzer.analyze_text(
                 cv2_image, [roi_start, roi_end]
             )
 
-        return Response({'recognized_text_areas': recognized_text_areas})
+        recognized_text_areas = {}
+        for raw_rta in raw_recognized_text_areas:
+            the_id = 'rta_' + str(random.randint(100000000, 999000000))
+            recognized_text_areas[the_id] = {
+                'source': raw_rta['source'],
+                'start': roi_start,
+                'end': roi_end,
+                'text': raw_rta['text']
+            }
+
+        return Response(recognized_text_areas)
 
 
 class AnalyzeViewSetScanTemplate(viewsets.ViewSet):
