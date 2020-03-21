@@ -1023,9 +1023,13 @@ class RedactApplication extends React.Component {
         const selected_areas = response_data['movies'][movie_url]['framesets'][frameset_hash]
         for (let k=0; k < selected_areas.length; k++) {
           const selected_area = selected_areas[k]
+          const end_point = [
+            selected_area['location'][0]+selected_area['size'][0],
+            selected_area['location'][1]+selected_area['size'][1]
+          ]
           const build_a2r = {
-            start: selected_area[0],
-            end: selected_area[1],
+            start: selected_area['location'],
+            end: end_point,
             source: 'selected area: ' + request_data['id'],
           }
           if (!Object.keys(deepCopyMovies[movie_url]['framesets'][frameset_hash]).includes('areas_to_redact')) {

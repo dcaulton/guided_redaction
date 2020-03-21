@@ -222,7 +222,16 @@ class AnalyzeViewSetSelectedArea(viewsets.ViewSet):
             if regions_for_image:
                 if selected_area_meta['interior_or_exterior'] == 'exterior':
                     regions_for_image = self.transform_interior_selection_to_exterior(regions_for_image, cv2_image)
-                response_movies[movie_url]['framesets'][frameset_hash] = regions_for_image
+                regions_as_hashes = []
+                for region in regions_for_image:
+                    size = [region[1][0] - region[0][0], region[1][1] - region[0][1]]
+                    region_hash = {
+                        'location': region[0],
+                        'scale': 1,
+                        'size': size,
+                    }
+                    regions_as_hashes.append(region_hash)
+                response_movies[movie_url]['framesets'][frameset_hash] = regions_as_hashes
         return Response({"movies": response_movies})
 
     def transform_interior_selection_to_exterior(self, regions_for_image, cv2_image):
