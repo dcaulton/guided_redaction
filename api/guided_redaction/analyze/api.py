@@ -77,10 +77,16 @@ class AnalyzeViewSetEastTess(viewsets.ViewSet):
         recognized_text_areas = {}
         for raw_rta in raw_recognized_text_areas:
             the_id = 'rta_' + str(random.randint(100000000, 999000000))
+            size = [
+                raw_rta['end'][0]-raw_rta['start'][0], 
+                raw_rta['end'][1]-raw_rta['start'][1] 
+            ]
+
             recognized_text_areas[the_id] = {
                 'source': raw_rta['source'],
-                'start': roi_start,
-                'end': roi_end,
+                'location': raw_rta['start'],
+                'size': size,
+                'scale': 1,
                 'text': raw_rta['text']
             }
 

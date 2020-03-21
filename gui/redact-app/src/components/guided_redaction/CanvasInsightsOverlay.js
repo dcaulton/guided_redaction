@@ -141,12 +141,14 @@ class CanvasInsightsOverlay extends React.Component {
     }
   }
 
-  drawTemplateMatches() {
+  drawTier1Matches(scanner_type, fill_color, edge_color) {
+    let matches = this.props.getTier1ScannerMatches(scanner_type)
+    fill_color = fill_color || this.template_match_color
+    edge_color = edge_color || this.red_color
     const canvas = this.refs.insights_canvas
     let ctx = canvas.getContext('2d')
-    ctx.strokeStyle = this.template_match_color
+    ctx.strokeStyle = fill_color
     ctx.lineWidth = 2
-    let matches = this.props.getTier1ScannerMatches('template')
     if (!matches) {
       return
     }
@@ -159,44 +161,25 @@ class CanvasInsightsOverlay extends React.Component {
       const start_y_scaled = start[1] * this.props.insights_image_scale
       const width_scaled = match['size'][0] * this.props.insights_image_scale / template_scale
       const height_scaled = match['size'][1] * this.props.insights_image_scale / template_scale
-      ctx.fillStyle = this.template_match_color
+      ctx.fillStyle = fill_color
       ctx.globalAlpha = 0.4
       ctx.fillRect(start_x_scaled, start_y_scaled, width_scaled, height_scaled)
-      ctx.strokeStyle = this.red_color
+      ctx.strokeStyle = edge_color
       ctx.lineWidth = 3
       ctx.strokeRect(start_x_scaled, start_y_scaled, width_scaled, height_scaled)
     }
   }
 
+  drawTemplateMatches() {
+    this.drawTier1Matches('template', this.template_match_color, this.red_color) 
+  }
+
   drawSelectedAreas() {
-    // This needs to run high in the stack, because it's a destructive rendering process
-    const selected_areas = this.props.getTier1ScannerMatches('selected_area')
-    if (!selected_areas) {
-      return
-    }
-    const canvas = this.refs.insights_canvas
-    let ctx = canvas.getContext('2d')
-    ctx.strokeStyle = this.selected_area_color
-    ctx.lineWidth = 3
-    ctx.globalAlpha = 1
-    let start_x_scaled = 0
-    let start_y_scaled = 0
-    let width_scaled = 0
-    let height_scaled = 0
-    for (let i=0; i < Object.keys(selected_areas).length; i++) {
-      const key = Object.keys(selected_areas)[i]
-      let selected_area = selected_areas[key]
-      start_x_scaled = selected_area['location'][0] * this.props.insights_image_scale
-      start_y_scaled = selected_area['location'][1] * this.props.insights_image_scale
-      width_scaled = selected_area['size'][0] * this.props.insights_image_scale / 1
-      height_scaled = selected_area['size'][1] * this.props.insights_image_scale / 1
-      ctx.fillStyle = this.selected_area_color
-      ctx.globalAlpha = 0.4
-      ctx.fillRect(start_x_scaled, start_y_scaled, width_scaled, height_scaled)
-      ctx.strokeStyle = this.red_color
-      ctx.lineWidth = 3
-      ctx.strokeRect(start_x_scaled, start_y_scaled, width_scaled, height_scaled)
-    }
+    this.drawTier1Matches('selected_area', this.selected_area_color, this.red_color) 
+  }
+
+  drawOcrMatches() {
+    this.drawTier1Matches('ocr', this.ocr_color, this.red_color) 
   }
 
   drawAnnotations() {
@@ -216,29 +199,6 @@ class CanvasInsightsOverlay extends React.Component {
         ctx.fillText('Template Annotated ', x+50, y+50)
         ctx.globalAlpha = 0.2
         ctx.fillRect(x, y, x, y)
-      }
-    }
-  }
-
-  drawOcrMatches() {
-    if (this.props.getCurrentOcrMatches()) {
-      const matches = this.props.getCurrentOcrMatches()
-      const canvas = this.refs.insights_canvas
-      let ctx = canvas.getContext('2d')
-      ctx.strokeStyle = this.ocr_color
-      ctx.lineWidth = 10
-      for (let i=0; i < matches.length; i++) {
-        const match = matches[i]
-        ctx.fillStyle = this.ocr_color
-        ctx.globalAlpha = 0.4
-        const start_x_scaled = match['start'][0] * this.props.insights_image_scale
-        const start_y_scaled = match['start'][1] * this.props.insights_image_scale
-        const width = (match['end'][0] * this.props.insights_image_scale) - start_x_scaled
-        const height= (match['end'][1] * this.props.insights_image_scale) - start_y_scaled
-        ctx.fillRect(start_x_scaled, start_y_scaled, width, height)
-        ctx.strokeStyle = this.red_color
-        ctx.lineWidth = 3
-        ctx.strokeRect(start_x_scaled, start_y_scaled, width, height)
       }
     }
   }
