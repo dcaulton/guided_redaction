@@ -62,9 +62,9 @@ class MovieCardList extends React.Component {
               index={index}
               tier_1_matches={this.props.tier_1_matches}
               current_template_id={this.props.current_template_id}
-              selected_areas={this.props.selected_areas}
               current_telemetry_rule_id={this.props.current_telemetry_rule_id}
               current_ocr_rule_id={this.props.current_ocr_rule_id}
+              current_selected_area_meta_id={this.props.current_selected_area_meta_id}
               getFramesetHashForImageUrl={this.props.getFramesetHashForImageUrl}
               getFramesetHashesInOrder={this.props.getFramesetHashesInOrder}
               setScrubberToIndex={this.props.setScrubberToIndex}
@@ -208,19 +208,6 @@ class MovieCard extends React.Component {
     )
   }
 
-  getSelectedAreasString() {
-    if (Object.keys(this.props.selected_areas).includes(this.props.this_cards_movie_url)) {
-      const  sa_count = Object.keys(this.props.selected_areas[this.props.this_cards_movie_url]).length
-      const ret_str = sa_count.toString() + ' selected areas'
-      return (
-        <div>
-          {ret_str}
-        </div>
-      )
-    }
-    return ''
-  } 
-
   getMovieDiffsFound() {
     if (Object.keys(this.props.movies).includes(this.props.this_cards_movie_url)) {
       for (let i=0; i < Object.keys(this.props.movies[this.props.this_cards_movie_url]['framesets']).length; i++) {
@@ -246,6 +233,8 @@ class MovieCard extends React.Component {
       current_rule_id = this.props.current_template_id
     } else if (scanner_type === 'ocr') {
       current_rule_id = this.props.current_ocr_rule_id
+    } else if (scanner_type === 'selected_area') {
+      current_rule_id = this.props.current_selected_area_meta_id
     }
     if (!Object.keys(this.props.tier_1_matches[scanner_type]).includes(current_rule_id)) {
       return []
@@ -301,6 +290,8 @@ class MovieCard extends React.Component {
       current_scanner_id = this.props.current_template_id
     } else if (scanner_type === 'ocr') {
       current_scanner_id = this.props.current_ocr_rule_id
+    } else if (scanner_type === 'selected_area') {
+      current_scanner_id = this.props.current_selected_area_meta_id
     }
     delete deepCopyTier1Matches[scanner_type][current_scanner_id]
     this.props.setGlobalStateVar('tier_1_matches', deepCopyTier1Matches)
@@ -315,6 +306,8 @@ class MovieCard extends React.Component {
     let scanner_type_short = scanner_type
     if (scanner_type === 'template') {
       scanner_type_short = 'temp'
+    } else if (scanner_type === 'selected_area') {
+      scanner_type_short = 'sel ar'
     }
     let matches_button = ''
     let clear_button = ''
@@ -505,9 +498,9 @@ class MovieCard extends React.Component {
     const make_active_button = this.buildMakeActiveButton(this.props.this_cards_movie_url)
     const template_matches_string = this.getTier1MatchesString('template')
     const ocr_matches_string = this.getTier1MatchesString('ocr')
+    const selected_areas_string = this.getTier1MatchesString('selected_area')
     const areas_to_redact_string = this.getAreasToRedactString()
     const diffs_string = this.getMovieDiffsFound()
-    const selected_areas_string = this.getSelectedAreasString()
     const dims_string = this.getMovieDimensions(this.props.this_cards_movie_url, this.props.movies)
     let top_div_classname = "row mt-2 card"
     if (this.props.this_cards_movie_url === this.props.active_movie_url) {

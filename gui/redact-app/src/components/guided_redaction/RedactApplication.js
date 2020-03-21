@@ -48,7 +48,6 @@ class RedactApplication extends React.Component {
       jobs: [],
       scanners: [],
       files: {},
-      selected_areas: {},
       selected_area_metas: {},
       current_selected_area_meta_id: '',
       subsequences: {},
@@ -79,8 +78,6 @@ class RedactApplication extends React.Component {
     this.getNextImageHash=this.getNextImageHash.bind(this)
     this.getPrevImageHash=this.getPrevImageHash.bind(this)
     this.handleMergeFramesets=this.handleMergeFramesets.bind(this)
-    this.setSelectedArea=this.setSelectedArea.bind(this)
-    this.clearMovieSelectedAreas=this.clearMovieSelectedAreas.bind(this)
     this.setImageScale=this.setImageScale.bind(this)
     this.doPing=this.doPing.bind(this)
     this.cancelJob=this.cancelJob.bind(this)
@@ -1998,30 +1995,6 @@ class RedactApplication extends React.Component {
     this.setGlobalStateVar('movies', deepCopyMovies)
   }
 
-  // TODO fix this.  If we know the frameset, we don't need the image url
-  //   it wouldn't even make sense for the same framesets to have two images with diff stuff
-  setSelectedArea = (the_areas, the_image, the_movie, the_frameset_hash) => {
-    let deepCopySelectedAreas= JSON.parse(JSON.stringify(this.state.selected_areas))
-    let movie_obj = {}
-    if (Object.keys(deepCopySelectedAreas).includes(the_movie)) {
-      movie_obj = deepCopySelectedAreas[the_movie]
-    }
-    let frameset_obj = {}
-    if (Object.keys(movie_obj).includes(the_frameset_hash)) {
-      frameset_obj = movie_obj[the_frameset_hash]
-    }
-    frameset_obj[the_image] = the_areas
-    movie_obj[the_frameset_hash] = frameset_obj
-    deepCopySelectedAreas[the_movie] = movie_obj
-    this.setGlobalStateVar('selected_areas', deepCopySelectedAreas)
-  }
-
-  clearMovieSelectedAreas = (the_movie) => {
-    let deepCopySelectedAreas= JSON.parse(JSON.stringify(this.state.selected_areas))
-    delete deepCopySelectedAreas[this.state.movie_url]
-    this.setGlobalStateVar('selected_areas', deepCopySelectedAreas)
-  }
-
   handleMergeFramesets = (target_hash, source_hash) => {
     let deepCopyFramesets = JSON.parse(JSON.stringify(this.getCurrentFramesets()))
     const source_frameset = deepCopyFramesets[source_hash]
@@ -2241,9 +2214,6 @@ class RedactApplication extends React.Component {
                 getCurrentFramesets={this.getCurrentFramesets}
                 current_template_id={this.state.current_template_id}
                 templates={this.state.templates}
-                setSelectedArea={this.setSelectedArea}
-                clearMovieSelectedAreas={this.clearMovieSelectedAreas}
-                selected_areas={this.state.selected_areas}
                 doPing={this.doPing}
                 cancelJob={this.cancelJob}
                 submitJob={this.submitJob}

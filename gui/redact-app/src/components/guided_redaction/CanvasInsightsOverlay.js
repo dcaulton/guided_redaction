@@ -8,7 +8,7 @@ class CanvasInsightsOverlay extends React.Component {
     this.mask_zone_color = '#B6B'
     this.crosshairs_color = '#F33'
     this.template_match_color = '#3F3'
-    this.selected_area_color = '#F3F'
+    this.selected_area_color = '#2B9'
     this.selected_area_center_color = '#9F3'
     this.annotations_color = '#5DE'
     this.ocr_color = '#CC0'
@@ -146,7 +146,7 @@ class CanvasInsightsOverlay extends React.Component {
     let ctx = canvas.getContext('2d')
     ctx.strokeStyle = this.template_match_color
     ctx.lineWidth = 2
-    let matches = this.props.getTier1TemplateMatches()
+    let matches = this.props.getTier1ScannerMatches('template')
     if (!matches) {
       return
     }
@@ -170,27 +170,32 @@ class CanvasInsightsOverlay extends React.Component {
 
   drawSelectedAreas() {
     // This needs to run high in the stack, because it's a destructive rendering process
-    const selected_areas = this.props.getSelectedAreas()
+    const selected_areas = this.props.getTier1ScannerMatches('selected_area')
+    if (!selected_areas) {
+      return
+    }
     const canvas = this.refs.insights_canvas
     let ctx = canvas.getContext('2d')
     ctx.strokeStyle = this.selected_area_color
     ctx.lineWidth = 3
     ctx.globalAlpha = 1
-    for (let i=0; i < selected_areas.length; i++) {
-      const selected_area = selected_areas[i]
-      const start_x_scaled = selected_area['start'][0] * this.props.insights_image_scale
-      const start_y_scaled = selected_area['start'][1] * this.props.insights_image_scale
-      const width = (selected_area['end'][0] * this.props.insights_image_scale) - start_x_scaled
-      const height= (selected_area['end'][1] * this.props.insights_image_scale) - start_y_scaled
-      ctx.strokeRect(start_x_scaled, start_y_scaled, width, height)
-    }
-    for (let i=0; i < selected_areas.length; i++) {
-      const selected_area = selected_areas[i]
-      const start_x_scaled = selected_area['start'][0] * this.props.insights_image_scale
-      const start_y_scaled = selected_area['start'][1] * this.props.insights_image_scale
-      const width = (selected_area['end'][0] * this.props.insights_image_scale) - start_x_scaled
-      const height= (selected_area['end'][1] * this.props.insights_image_scale) - start_y_scaled
-      ctx.clearRect(start_x_scaled, start_y_scaled, width, height)
+    let start_x_scaled = 0
+    let start_y_scaled = 0
+    let width_scaled = 0
+    let height_scaled = 0
+    for (let i=0; i < Object.keys(selected_areas).length; i++) {
+      const key = Object.keys(selected_areas)[i]
+      let selected_area = selected_areas[key]
+      start_x_scaled = selected_area['location'][0] * this.props.insights_image_scale
+      start_y_scaled = selected_area['location'][1] * this.props.insights_image_scale
+      width_scaled = selected_area['size'][0] * this.props.insights_image_scale / 1
+      height_scaled = selected_area['size'][1] * this.props.insights_image_scale / 1
+      ctx.fillStyle = this.selected_area_color
+      ctx.globalAlpha = 0.4
+      ctx.fillRect(start_x_scaled, start_y_scaled, width_scaled, height_scaled)
+      ctx.strokeStyle = this.red_color
+      ctx.lineWidth = 3
+      ctx.strokeRect(start_x_scaled, start_y_scaled, width_scaled, height_scaled)
     }
   }
 

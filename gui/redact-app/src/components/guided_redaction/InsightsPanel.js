@@ -39,14 +39,12 @@ class InsightsPanel extends React.Component {
       callbacks: {},
       modal_data: '',
     }
-    this.getSelectedAreas=this.getSelectedAreas.bind(this)
     this.getAnnotations=this.getAnnotations.bind(this)
     this.setCurrentVideo=this.setCurrentVideo.bind(this)
     this.movieSplitDone=this.movieSplitDone.bind(this)
     this.scrubberOnChange=this.scrubberOnChange.bind(this)
     this.handleSetMode=this.handleSetMode.bind(this)
-    this.getTier1TemplateMatches=this.getTier1TemplateMatches.bind(this)
-    this.clearSelectedAreas=this.clearSelectedAreas.bind(this)
+    this.getTier1ScannerMatches=this.getTier1ScannerMatches.bind(this)
     this.currentImageIsTemplateAnchorImage=this.currentImageIsTemplateAnchorImage.bind(this)
     this.afterPingSuccess=this.afterPingSuccess.bind(this)
     this.afterPingFailure=this.afterPingFailure.bind(this)
@@ -915,19 +913,6 @@ class InsightsPanel extends React.Component {
     })
   }
 
-  clearSelectedAreas() {
-    const cur_hash = this.getScrubberFramesetHash() 
-    this.props.setSelectedArea(
-      [], 
-      this.state.insights_image, 
-      this.props.movie_url, cur_hash
-    )
-    this.setState({
-      mode: 'view',
-      insights_message: 'Selected Areas have been cleared',
-    })
-  }
-
   movieSplitDone(new_framesets) {
     const len = Object.keys(new_framesets).length
     document.getElementById('movie_scrubber').max = len-1
@@ -1013,45 +998,6 @@ class InsightsPanel extends React.Component {
       insights_message: 'pick the second corner of the text area',
       mode: 'add_annotations_ocr_end',
     })
-  }
-
-  getSelectAreaMetaId(fill_type='', offset_x=0, offset_y=0) {
-    if (!this.props.current_selected_area_meta_id) {
-      let deepCopySams = JSON.parse(JSON.stringify(this.props.selected_area_metas))
-      let the_sam = this.createSelectedAreaMetaSkeleton(fill_type)
-      // TODO Fill it in with values from the selected area controls 
-      if (fill_type) {
-        the_sam['fill_type'] = fill_type
-      }
-      if (this.state.selected_area_template_anchor) {
-        the_sam['origin_template_id'] = this.props.current_template_id
-        the_sam['origin_template_anchor_id'] = this.state.selected_area_template_anchor
-      }
-      if (offset_x || offset_y) {
-        the_sam['offset'] = [offset_x, offset_y]
-      }
-      deepCopySams[the_sam['id']] = the_sam
-      this.props.setSelectedAreaMetas(deepCopySams, the_sam['id'])
-      return the_sam['id']
-    } 
-    return this.props.current_selected_area_meta_id
-  }
-
-  createSelectedAreaMetaSkeleton() {
-    const sam_id = 'selected_area_meta_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
-    let the_sam = {
-      'id': sam_id,
-      'name': sam_id,
-      'offset': (0, 0),
-      'box_size': 0,
-      'origin_template_id': '',
-      'origin_template_anchor_id': '',
-      'fill_type': '',
-      'tolerance': '',
-      'mask_interior_exterior': '',
-      'mask_method': '',
-    }
-    return the_sam
   }
 
   saveAnnotation(annotation_data, when_done=(()=>{})) {
@@ -1149,36 +1095,30 @@ class InsightsPanel extends React.Component {
 
   }
 
-  getTier1TemplateMatches() {
-    const template_matches = this.props.tier_1_matches['template']
-    if (!Object.keys(template_matches).includes(this.props.current_template_id)) {
+  getTier1ScannerMatches(scanner_type) {
+    let current_scanner_id = ''
+    if (scanner_type === 'template') {
+      current_scanner_id = this.props.current_template_id
+    } else if (scanner_type === 'ocr') {
+      current_scanner_id = this.props.current_ocr_rule_id
+    } else if (scanner_type === 'selected_area') {
+      current_scanner_id = this.props.current_selected_area_meta_id
+    }
+    const scanner_matches = this.props.tier_1_matches[scanner_type]
+    if (!Object.keys(scanner_matches).includes(current_scanner_id)) {
       return
     }
-    const cur_templates_matches = template_matches[this.props.current_template_id]
-    if (!Object.keys(cur_templates_matches['movies']).includes(this.props.movie_url)) {
+    const cur_scanners_matches = scanner_matches[current_scanner_id]
+    if (!Object.keys(cur_scanners_matches['movies']).includes(this.props.movie_url)) {
       return
     }
-    const cur_movies_matches = cur_templates_matches['movies'][this.props.movie_url]
+    const cur_movies_matches = cur_scanners_matches['movies'][this.props.movie_url]
     // TODO this looks redundant, can we use getScrubberFramesetHash and eliminate this method?
     const insight_image_hash = this.props.getFramesetHashForImageUrl(this.state.insights_image)
     if (!Object.keys(cur_movies_matches['framesets']).includes(insight_image_hash)) {
       return
     }
     return cur_movies_matches['framesets'][insight_image_hash]
-  }
-
-  getSelectedAreas() {
-    if (Object.keys(this.props.selected_areas).includes(this.props.movie_url)) {
-      const movie_obj = this.props.selected_areas[this.props.movie_url]
-      const frameset_hash = this.getScrubberFramesetHash() 
-      if (Object.keys(movie_obj).includes(frameset_hash)) {
-        const frameset_obj  = movie_obj[frameset_hash]
-        if (Object.keys(frameset_obj).includes(this.state.insights_image)) {
-          return frameset_obj[this.state.insights_image]
-        }
-      }
-    }
-    return []
   }
 
   getAnnotations() {
@@ -1268,11 +1208,11 @@ class InsightsPanel extends React.Component {
             submitInsightsJob={this.submitInsightsJob}
             setMovieNickname={this.props.setMovieNickname}
             setDraggedId={this.setDraggedId}
-            current_template_id={this.props.current_template_id}
             tier_1_matches={this.props.tier_1_matches}
-            selected_areas={this.props.selected_areas}
+            current_template_id={this.props.current_template_id}
             current_telemetry_rule_id={this.props.current_telemetry_rule_id}
             current_ocr_rule_id={this.props.current_ocr_rule_id}
+            current_selected_area_meta_id={this.props.current_selected_area_meta_id}
             getFramesetHashForImageUrl={this.props.getFramesetHashForImageUrl}
             getFramesetHashesInOrder={this.props.getFramesetHashesInOrder}
             setScrubberToIndex={this.setScrubberToIndex}
@@ -1316,8 +1256,7 @@ class InsightsPanel extends React.Component {
               clickCallback={this.handleImageClick}
               currentImageIsTemplateAnchorImage={this.currentImageIsTemplateAnchorImage}
               insights_image_scale={this.state.insights_image_scale}
-              getTier1TemplateMatches={this.getTier1TemplateMatches}
-              getSelectedAreas={this.getSelectedAreas}
+              getTier1ScannerMatches={this.getTier1ScannerMatches}
               getAnnotations={this.getAnnotations}
               mode={this.state.mode}
               clicked_coords={this.state.clicked_coords}
@@ -1348,8 +1287,6 @@ class InsightsPanel extends React.Component {
             toggleGlobalStateVar={this.props.toggleGlobalStateVar}
             handleSetMode={this.handleSetMode}
             tier_1_matches={this.props.tier_1_matches}
-            clearSelectedAreas={this.clearSelectedAreas}
-            clearMovieSelectedAreas={this.props.clearMovieSelectedAreas}
             insights_image={this.state.insights_image}
             movie_url={this.props.movie_url}
             callPing={this.callPing}
@@ -1410,6 +1347,7 @@ class InsightsPanel extends React.Component {
             current_ocr_rule_id={this.props.current_ocr_rule_id}
             preserve_movie_audio={this.props.preserve_movie_audio}
             selected_area_metas={this.props.selected_area_metas}
+            current_selected_area_meta_id={this.props.current_selected_area_meta_id}
             setSelectedAreaMetas={this.props.setSelectedAreaMetas}
           />
         </div>
