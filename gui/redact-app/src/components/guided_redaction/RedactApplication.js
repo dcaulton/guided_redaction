@@ -985,6 +985,9 @@ class RedactApplication extends React.Component {
     let movie_url = ''
     for (let i=0; i < Object.keys(request_data['movies']).length; i++) {
       movie_url = Object.keys(request_data['movies'])[i]
+      if (movie_url === 'source') {
+        continue
+      }
       if (!Object.keys(deepCopyMovies).includes(movie_url)) {
         deepCopyMovies[movie_url] = request_data['movies'][movie_url]
         this.addToCampaignMovies(movie_url)
@@ -1890,6 +1893,9 @@ class RedactApplication extends React.Component {
   getFramesetHashForImageUrl = (image_url, framesets=null) => {
     if (framesets === null) {
       framesets = this.getCurrentFramesets()
+    }
+    if (!framesets) {
+      return
     }
 
     const hashes = Object.keys(framesets)
