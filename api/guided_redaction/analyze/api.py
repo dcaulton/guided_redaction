@@ -193,7 +193,12 @@ class AnalyzeViewSetSelectedArea(viewsets.ViewSet):
         if not request_data.get("selected_area_meta"):
             return self.error("selected_area_meta is required")
 
+        source_movies = {}
+        if 'source' in request_data.get('movies'):
+          source_movies = request_data.get("movies")['source']
         movie_url = list(request_data.get("movies").keys())[0]
+        if movie_url == 'source':
+          movie_url = list(request_data.get("movies").keys())[1]
         movie = request_data.get("movies")[movie_url]
 
         selected_area_meta= request_data["selected_area_meta"]
@@ -204,7 +209,11 @@ class AnalyzeViewSetSelectedArea(viewsets.ViewSet):
         for frameset_hash in movie['framesets']:
             regions_for_image = []
             frameset = movie['framesets'][frameset_hash]
-            image_url = frameset['images'][0]
+            if 'images' in frameset:
+                image_url = frameset['images'][0]
+            else:
+                movie = source_movies[movie_url]
+                image_url = source_movies[movie_url]['framesets'][frameset_hash]['images'][0]
             image = requests.get(
               image_url,
               verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,

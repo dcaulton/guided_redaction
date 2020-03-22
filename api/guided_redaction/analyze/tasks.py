@@ -545,12 +545,18 @@ def build_and_dispatch_selected_area_threaded_children(parent_job):
     request_data = json.loads(parent_job.request_data)
     selected_area_metas = request_data['selected_area_metas']
     movies = request_data['movies']
+    source_movies = {}
+    if 'source' in movies:
+        source_movies = movies['source']
+    del movies['source']
     for selected_area_meta_id in selected_area_metas:
         selected_area_meta = selected_area_metas[selected_area_meta_id]
         for index, movie_url in enumerate(movies.keys()):
             movie = movies[movie_url]
             build_movies = {}
             build_movies[movie_url] = movie
+            if source_movies:
+                build_movies['source'] = source_movies
             build_request_data = json.dumps({
                 'movies': build_movies,
                 'selected_area_meta': selected_area_meta,

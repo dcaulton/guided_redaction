@@ -655,31 +655,55 @@ class InsightsPanel extends React.Component {
     } else if (scope === 'all_movies') {
       job_data['description'] = 'get selected area for all movies'
       job_data['request_data']['movies'] = this.props.movies
-    } else if (scope === 't1_template') {
+    } else if (scope === 'tier1') {
       const tier_1_scanner_id = extra_data
-      const template = this.props.templates[tier_1_scanner_id]
-      const movie_build_obj = this.buildTierOneMatchesMovieObject('template', tier_1_scanner_id)
-      const counts = this.getCountsFromMovieBuildObj(movie_build_obj)
-      job_data['request_data']['movies'] = movie_build_obj
+      const scanner_type = this.getType1ScannerType(tier_1_scanner_id)
+      job_data['request_data']['movies'] = this.props.tier_1_matches[scanner_type][tier_1_scanner_id]['movies']
+      let build_source_movies = {}
+      for (let i=0; i < Object.keys(job_data['request_data']['movies']).length; i++) {
+        const movie_url = Object.keys(job_data['request_data']['movies'])[i]
+        build_source_movies[movie_url] = this.props.movies[movie_url]
+      }
+      job_data['request_data']['movies']['source'] = build_source_movies
       job_data['description'] = 'selected area match (' + cur_selected_area['name'] + ') '
-      job_data['description'] += counts['movie'].toString() + ' movies '
-      job_data['description'] += counts['frameset'].toString() + ' framesets'
-      job_data['description'] += ' using template ' + template['name']
-    } else if (scope === 't1_ocr') {
-      const tier_1_scanner_id = extra_data
-      const movie_build_obj = this.buildTierOneMatchesMovieObject('ocr', tier_1_scanner_id)
-      const counts = this.getCountsFromMovieBuildObj(movie_build_obj)
-      job_data['request_data']['movies'] = movie_build_obj
-      job_data['description'] = 'selected area match (' + cur_selected_area['name'] + ') '
-      job_data['description'] += counts['movie'].toString() + ' movies '
-      job_data['description'] += counts['frameset'].toString() + ' framesets'
-      job_data['description'] += ' using ocr id ' + tier_1_scanner_id
+      job_data['description'] += 'tier 1 ' + scanner_type + '  ' + tier_1_scanner_id
+//    } else if (scope === 't1_template') {
+//      const tier_1_scanner_id = extra_data
+//      const template = this.props.templates[tier_1_scanner_id]
+//      const movie_build_obj = this.buildTierOneMatchesMovieObject('template', tier_1_scanner_id)
+//      const counts = this.getCountsFromMovieBuildObj(movie_build_obj)
+//      job_data['request_data']['movies'] = movie_build_obj
+//      job_data['description'] = 'selected area match (' + cur_selected_area['name'] + ') '
+//      job_data['description'] += counts['movie'].toString() + ' movies '
+//      job_data['description'] += counts['frameset'].toString() + ' framesets'
+//      job_data['description'] += ' using template ' + template['name']
+//    } else if (scope === 't1_ocr') {
+//      const tier_1_scanner_id = extra_data
+//      const movie_build_obj = this.buildTierOneMatchesMovieObject('ocr', tier_1_scanner_id)
+//      const counts = this.getCountsFromMovieBuildObj(movie_build_obj)
+//      job_data['request_data']['movies'] = movie_build_obj
+//      job_data['description'] = 'selected area match (' + cur_selected_area['name'] + ') '
+//      job_data['description'] += counts['movie'].toString() + ' movies '
+//      job_data['description'] += counts['frameset'].toString() + ' framesets'
+//      job_data['description'] += ' using ocr id ' + tier_1_scanner_id
     } else if (scope === 'movie_set') {
     // TODO deal with this if people are going to use it
     }
     return job_data
   }
 
+
+  getType1ScannerType(tier_1_scanner_id) {
+    for (let i=0; i < Object.keys(this.props.tier_1_matches).length; i++) {
+      const scanner_type = Object.keys(this.props.tier_1_matches)[i]
+      for (let j=0; j < Object.keys(this.props.tier_1_matches[scanner_type]).length; j++) {
+        const scanner_id = Object.keys(this.props.tier_1_matches[scanner_type])[j]
+        if (tier_1_scanner_id === scanner_id) {
+          return scanner_type
+        }
+      }
+    }
+  }
 
   submitInsightsJob(job_string, extra_data) {
     if (job_string === 'get_secure_file') {
@@ -824,6 +848,11 @@ class InsightsPanel extends React.Component {
       })
     } else if (job_string === 'current_selected_area_meta_movie_set') {
       let job_data = this.buildSelectedAreaData('movie_set', extra_data)
+      this.props.submitJob({
+        job_data: job_data,
+      })
+    } else if (job_string === 'current_selected_area_meta_tier1') {
+      let job_data = this.buildSelectedAreaData('tier1', extra_data)
       this.props.submitJob({
         job_data: job_data,
       })

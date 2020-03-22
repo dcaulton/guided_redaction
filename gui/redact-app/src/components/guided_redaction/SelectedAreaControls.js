@@ -588,10 +588,10 @@ class SelectedAreaControls extends React.Component {
     if (!this.state.id) {
       return ''
     }
-    const tier_1_template_run_options = this.props.buildTier1RunOptions('template', 'current_selected_area_meta_tier1_template')
-    const tier_1_selected_area_run_options = this.props.buildTier1RunOptions('selected_area', 'current_selected_area_meta_tier1_selected_area')
-    const tier_1_ocr_run_options = this.props.buildTier1RunOptions('ocr', 'current_selected_area_meta_tier1_ocr')
-    const tier_1_telemetry_run_options = this.props.buildTier1RunOptions('telemetry', 'current_selected_area_meta_tier1_telemetry')
+    const tier_1_template_run_options = this.props.buildTier1RunOptions('template', 'current_selected_area_meta_tier1')
+    const tier_1_selected_area_run_options = this.props.buildTier1RunOptions('selected_area', 'current_selected_area_meta_tier1')
+    const tier_1_ocr_run_options = this.props.buildTier1RunOptions('ocr', 'current_selected_area_meta_tier1')
+    const tier_1_telemetry_run_options = this.props.buildTier1RunOptions('telemetry', 'current_selected_area_meta_tier1')
 
 
     const movie_set_run_options = this.props.buildMovieSetOptions('current_selected_area_meta_movie_set')

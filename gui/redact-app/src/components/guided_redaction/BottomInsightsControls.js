@@ -168,6 +168,21 @@ class BottomInsightsControls extends React.Component {
           submitInsightsJob={this.props.submitInsightsJob}
         />
 
+        <OcrControls
+          displayInsightsMessage={this.props.displayInsightsMessage}
+          addInsightsCallback={this.props.addInsightsCallback}
+          visibilityFlags={this.props.visibilityFlags}
+          toggleShowVisibility={this.props.toggleShowVisibility}
+          submitInsightsJob={this.props.submitInsightsJob}
+          handleSetMode={this.props.handleSetMode}
+          movie_sets={this.props.movie_sets}
+          clicked_coords={this.props.clicked_coords}
+          buildTier1RunOptions={this.buildTier1RunOptions}
+          buildMovieSetOptions={this.buildMovieSetOptions}
+          ocr_rules={this.props.ocr_rules}
+          current_ocr_rule_id={this.props.current_ocr_rule_id}
+        />
+
         <AnnotationControls
           templates={this.props.templates}
           current_template_id={this.props.current_template_id}
@@ -204,21 +219,6 @@ class BottomInsightsControls extends React.Component {
           blinkDiff={this.props.blinkDiff}
           setImageTypeToDisplay={this.props.setImageTypeToDisplay}
           imageTypeToDisplay={this.props.imageTypeToDisplay}
-        />
-
-        <OcrControls
-          displayInsightsMessage={this.props.displayInsightsMessage}
-          addInsightsCallback={this.props.addInsightsCallback}
-          visibilityFlags={this.props.visibilityFlags}
-          toggleShowVisibility={this.props.toggleShowVisibility}
-          submitInsightsJob={this.props.submitInsightsJob}
-          handleSetMode={this.props.handleSetMode}
-          movie_sets={this.props.movie_sets}
-          clicked_coords={this.props.clicked_coords}
-          buildTier1RunOptions={this.buildTier1RunOptions}
-          buildMovieSetOptions={this.buildMovieSetOptions}
-          ocr_rules={this.props.ocr_rules}
-          current_ocr_rule_id={this.props.current_ocr_rule_id}
         />
 
         <MovieSetsControls

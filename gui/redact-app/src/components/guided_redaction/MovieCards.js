@@ -149,6 +149,9 @@ class MovieCard extends React.Component {
     let framesets_count_message = 'no framesets'
     if (Object.keys(this.props.movies).includes(this_cards_movie_url)) {
       let the_framesets = this.props.movies[this_cards_movie_url]['framesets']
+      if (!the_framesets) {
+        return ''
+      }
       framesets_count_message = Object.keys(the_framesets).length.toString() + ' framesets'
     }
     return (
@@ -210,17 +213,20 @@ class MovieCard extends React.Component {
 
   getMovieDiffsFound() {
     if (Object.keys(this.props.movies).includes(this.props.this_cards_movie_url)) {
+      if (!Object.keys(this.props.movies[this.props.this_cards_movie_url]).includes('framesets')) {
+        return ''
+      }
       for (let i=0; i < Object.keys(this.props.movies[this.props.this_cards_movie_url]['framesets']).length; i++) {
         const frameset_hash = Object.keys(this.props.movies[this.props.this_cards_movie_url]['framesets'])[i]
-          const frameset = this.props.movies[this.props.this_cards_movie_url]['framesets'][frameset_hash]
-          if (Object.keys(frameset).includes('filtered_image_url') &&
-              frameset['filtered_image_url']) {
-            return (
-              <div>
-                diff images exist
-              </div>
-            )
-          }
+        const frameset = this.props.movies[this.props.this_cards_movie_url]['framesets'][frameset_hash]
+        if (Object.keys(frameset).includes('filtered_image_url') &&
+            frameset['filtered_image_url']) {
+          return (
+            <div>
+              diff images exist
+            </div>
+          )
+        }
       }
     }
     return ''
@@ -241,6 +247,9 @@ class MovieCard extends React.Component {
     }
     const this_rule_matches = this.props.tier_1_matches[scanner_type][current_rule_id]
     const scanner_matches_for_movie = this_rule_matches['movies'][movie_url]
+    if (!scanner_matches_for_movie) {
+      return []
+    }
     const frameset_hashes = Object.keys(scanner_matches_for_movie['framesets'])
     for (let i=0; i < frameset_hashes.length; i++) {
       if (Object.keys(scanner_matches_for_movie['framesets'][frameset_hashes[i]]).length > 0) {
@@ -387,6 +396,9 @@ class MovieCard extends React.Component {
     if (Object.keys(this.props.movies).includes(this.props.this_cards_movie_url)) {
       const movie = this.props.movies[this.props.this_cards_movie_url]
       let a2r_framesets_count = 0
+      if (!Object.keys(movie).includes('framesets')) {
+        return ''
+      }
       for (let i=0; i < Object.keys(movie['framesets']).length; i++) {
         const frameset_hash = Object.keys(movie['framesets'])[i]
         if (Object.keys(movie['framesets'][frameset_hash]).includes('areas_to_redact')) {
