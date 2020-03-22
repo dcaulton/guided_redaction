@@ -246,10 +246,12 @@ class MovieCard extends React.Component {
       return []
     }
     const this_rule_matches = this.props.tier_1_matches[scanner_type][current_rule_id]
-    const scanner_matches_for_movie = this_rule_matches['movies'][movie_url]
-    if (!scanner_matches_for_movie) {
+    if (!Object.keys(this_rule_matches).includes('movies') || 
+        !Object.keys(this_rule_matches['movies']).includes(movie_url) ||
+        !this_rule_matches['movies'][movie_url]) {
       return []
     }
+    const scanner_matches_for_movie = this_rule_matches['movies'][movie_url]
     const frameset_hashes = Object.keys(scanner_matches_for_movie['framesets'])
     for (let i=0; i < frameset_hashes.length; i++) {
       if (Object.keys(scanner_matches_for_movie['framesets'][frameset_hashes[i]]).length > 0) {

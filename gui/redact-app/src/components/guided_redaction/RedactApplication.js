@@ -1050,6 +1050,9 @@ class RedactApplication extends React.Component {
 
   loadScanTemplateResults(job, when_done=(()=>{})) {
     const response_data = JSON.parse(job.response_data)
+    if (!response_data) {
+      return
+    }
     const request_data = JSON.parse(job.request_data)
     // TODO break tier1 + movie + scanner load into a shared module
     let deepCopyMovies= JSON.parse(JSON.stringify(this.state.movies))
@@ -1058,6 +1061,9 @@ class RedactApplication extends React.Component {
     let movie_url = ''
     for (let i=0; i < Object.keys(request_data['movies']).length; i++) {
       movie_url = Object.keys(request_data['movies'])[i]
+      if (movie_url === 'source') {
+        continue
+      }
       if (!Object.keys(deepCopyMovies).includes(movie_url)) {
         deepCopyMovies[movie_url] = request_data['movies'][movie_url]
         this.addToCampaignMovies(movie_url)
@@ -1069,7 +1075,6 @@ class RedactApplication extends React.Component {
       template_id = Object.keys(request_data['templates'])[i]
       if (!Object.keys(this.state.templates).includes(template_id)) {
         deepCopyTemplates[template_id] = request_data['templates'][template_id]
-        something_changed = true
       }
     }
 
@@ -1078,12 +1083,16 @@ class RedactApplication extends React.Component {
       let deepCopyTemplateMatches = deepCopyTier1Matches['template']
       deepCopyTemplateMatches[request_data['id']] = response_data
       deepCopyTier1Matches['template'] = deepCopyTemplateMatches // todo: can we remove this?
-      this.setGlobalStateVar('tier_1_matches', deepCopyTier1Matches)
+      this.setState({
+        templates: deepCopyTemplates,
+        current_template_id: template_id,
+        tier_1_matches: deepCopyTier1Matches
+      })
       if (something_changed) {
-        this.setGlobalStateVar('templates', deepCopyTemplates)
-        this.setGlobalStateVar('current_template_id', template_id)
-        this.setGlobalStateVar('movies', deepCopyMovies)
-        this.setGlobalStateVar('movie_url', movie_url)
+        this.setState({
+          movies: deepCopyMovies,
+          movie_url: movie_url,
+        })
       }
       return
     }
@@ -1117,8 +1126,12 @@ class RedactApplication extends React.Component {
     }
 
     if (something_changed) {
-      this.setGlobalStateVar('movies', deepCopyMovies)
-      this.setGlobalStateVar('movie_url', movie_url)
+      this.setState({
+        movies: deepCopyMovies,
+        movie_url: movie_url,
+        current_template_id: template_id,
+        templates: deepCopyTemplates,
+      })
     }
   }
 

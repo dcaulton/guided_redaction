@@ -753,7 +753,9 @@ class TemplateControls extends React.Component {
             <option value='+/-20/5'>+/- 20%, 5% increments</option>
             <option value='+/-25/1'>+/- 25%, 1% increments</option>
             <option value='+/-25/5'>+/- 25%, 5% increments</option>
+            <option value='+/-40/1'>+/- 40%, 1% increments</option>
             <option value='+/-40/5'>+/- 40%, 5% increments</option>
+            <option value='+/-50/1'>+/- 50%, 1% increments</option>
             <option value='+/-50/5'>+/- 50%, 5% increments</option>
           </select>
         </div>

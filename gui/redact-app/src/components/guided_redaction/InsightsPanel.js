@@ -667,25 +667,6 @@ class InsightsPanel extends React.Component {
       job_data['request_data']['movies']['source'] = build_source_movies
       job_data['description'] = 'selected area match (' + cur_selected_area['name'] + ') '
       job_data['description'] += 'tier 1 ' + scanner_type + '  ' + tier_1_scanner_id
-//    } else if (scope === 't1_template') {
-//      const tier_1_scanner_id = extra_data
-//      const template = this.props.templates[tier_1_scanner_id]
-//      const movie_build_obj = this.buildTierOneMatchesMovieObject('template', tier_1_scanner_id)
-//      const counts = this.getCountsFromMovieBuildObj(movie_build_obj)
-//      job_data['request_data']['movies'] = movie_build_obj
-//      job_data['description'] = 'selected area match (' + cur_selected_area['name'] + ') '
-//      job_data['description'] += counts['movie'].toString() + ' movies '
-//      job_data['description'] += counts['frameset'].toString() + ' framesets'
-//      job_data['description'] += ' using template ' + template['name']
-//    } else if (scope === 't1_ocr') {
-//      const tier_1_scanner_id = extra_data
-//      const movie_build_obj = this.buildTierOneMatchesMovieObject('ocr', tier_1_scanner_id)
-//      const counts = this.getCountsFromMovieBuildObj(movie_build_obj)
-//      job_data['request_data']['movies'] = movie_build_obj
-//      job_data['description'] = 'selected area match (' + cur_selected_area['name'] + ') '
-//      job_data['description'] += counts['movie'].toString() + ' movies '
-//      job_data['description'] += counts['frameset'].toString() + ' framesets'
-//      job_data['description'] += ' using ocr id ' + tier_1_scanner_id
     } else if (scope === 'movie_set') {
     // TODO deal with this if people are going to use it
     }
@@ -1138,7 +1119,8 @@ class InsightsPanel extends React.Component {
       return
     }
     const cur_scanners_matches = scanner_matches[current_scanner_id]
-    if (!Object.keys(cur_scanners_matches['movies']).includes(this.props.movie_url)) {
+    if (!Object.keys(cur_scanners_matches).includes('movies') || 
+        !Object.keys(cur_scanners_matches['movies']).includes(this.props.movie_url)) {
       return
     }
     const cur_movies_matches = cur_scanners_matches['movies'][this.props.movie_url]
