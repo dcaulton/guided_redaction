@@ -87,6 +87,7 @@ class AnalyzeViewSetEastTess(viewsets.ViewSet):
                 'location': raw_rta['start'],
                 'size': size,
                 'scale': 1,
+                'scanner_type': 'ocr',
                 'text': raw_rta['text']
             }
 
@@ -178,6 +179,9 @@ class AnalyzeViewSetScanTemplate(viewsets.ViewSet):
                             matches['movies'][movie_name]['framesets'][frameset_hash][anchor_id][
                                 "scale"
                             ] = temp_scale
+                            matches['movies'][movie_name]['framesets'][frameset_hash][anchor_id][
+                                "scanner_type"
+                            ] = "template"
         return Response(matches)
 
 
@@ -244,6 +248,7 @@ class AnalyzeViewSetSelectedArea(viewsets.ViewSet):
                         'location': region[0],
                         'scale': 1,
                         'size': size,
+                        "scanner_type": "selected_area",
                     }
                     regions_as_hashes[str(uuid.uuid4())] = region_hash
                 response_movies[movie_url]['framesets'][frameset_hash] = regions_as_hashes
