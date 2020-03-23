@@ -3,7 +3,10 @@ import ScannerSearchControls from './ScannerSearchControls'
 import {
   buildAttributesAddRow, buildLabelAndTextInput, buildLabelAndDropdown,
   buildInlinePrimaryButton, 
+  buildTier1LoadButton, 
+  buildTier1DeleteButton,
   makeHeaderRow,
+  buildAttributesAsRows,
   } from './SharedControls'
 
 
@@ -66,41 +69,10 @@ class SelectedAreaControls extends React.Component {
   }
 
   buildLoadButton() {                                                           
-    const selected_area_meta_keys= Object.keys(this.props.selected_area_metas)
-    return (
-      <div key='x34' className='d-inline'>
-        <button
-            key='temp_names_button'
-            className='btn btn-primary ml-2 dropdown-toggle'
-            type='button'
-            id='loadSelectedAreaDropdownButton'
-            data-toggle='dropdown'
-            area-haspopup='true'
-            area-expanded='false'
-        >
-          Load
-        </button>
-        <div className='dropdown-menu' aria-labelledby='loadSelectedAreaDropdownButton'>
-          {selected_area_meta_keys.map((value, index) => {
-            return (
-              <button
-                  className='dropdown-item'
-                  key={index}
-                  onClick={() => this.loadSelectedAreaMeta(value)}
-              >
-                {this.props.selected_area_metas[value]['name']}
-              </button>
-            )
-          })}
-          <button
-              className='dropdown-item'
-              key='000'
-              onClick={() => this.loadNewSelectedAreaMeta()}
-          >
-            new
-          </button>
-        </div>
-      </div>
+    return buildTier1LoadButton(
+      'selected_area',
+      this.props.selected_area_metas,
+      ((value)=>{this.loadSelectedAreaMeta(value)})
     )
   }
 
@@ -422,39 +394,14 @@ class SelectedAreaControls extends React.Component {
       'selected_area_attribute_value',
       (()=>{this.doAddAttribute()})
     )
+    const attribs_list = buildAttributesAsRows(
+      this.state.attributes,
+      ((value)=>{this.deleteAttribute(value)})
+    )
     return (
       <div>
         {add_attr_row}
-
-        <div>
-          {Object.keys(this.state.attributes).map((name, index) => {
-            return (
-              <div key={index} className='mt-2'>
-                <div className='d-inline'>
-                  Name:
-                </div>
-                <div className='d-inline ml-2'>
-                  {name}
-                </div>
-                <div className='d-inline ml-4'>
-                  Value:
-                </div>
-                <div className='d-inline'>
-                  {this.state.attributes[name]}
-                </div>
-                <div className='d-inline ml-2'>
-                  <button
-                      className='btn btn-primary'
-                      key={index}
-                      onClick={() => this.deleteAttribute(name)}
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            )
-          })}
-        </div>
+        {attribs_list}
       </div>
     )
   }
@@ -536,37 +483,11 @@ class SelectedAreaControls extends React.Component {
   }
 
   buildDeleteButton() {
-    let return_array = []
-    const sam_keys = Object.keys(this.props.selected_area_metas)
-    return_array.push(
-      <div key='ls225' className='d-inline'>
-      <button
-          key='temp_delete_button'
-          className='btn btn-primary ml-2 dropdown-toggle'
-          type='button'
-          id='deleteSelectedAreaDropdownButton'
-          data-toggle='dropdown'
-          area-haspopup='true'
-          area-expanded='false'
-      >
-        Delete
-      </button>
-      <div className='dropdown-menu' aria-labelledby='deleteSelectedAreaDropdownButton'>
-        {sam_keys.map((value, index) => {
-          return (
-            <button
-                className='dropdown-item'
-                key={index}
-                onClick={() => this.deleteSelectedAreaMeta(value)}
-            >
-              {this.props.selected_area_metas[value]['name']}
-            </button>
-          )
-        })}
-      </div>
-      </div>
+    return buildTier1DeleteButton(
+      'selected_area',
+      this.props.selected_area_metas,
+      ((value)=>{this.deleteSelectedAreaMeta(value)})
     )
-    return return_array
   }
 
   deleteSelectedAreaMeta(sam_id) {
