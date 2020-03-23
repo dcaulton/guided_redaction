@@ -1,4 +1,7 @@
 import React from 'react';
+import {
+  makeHeaderRow,
+} from './SharedControls'
 
 class TelemetryControls extends React.Component {
 
@@ -530,38 +533,17 @@ class TelemetryControls extends React.Component {
     const save_button = this.buildSaveButton() 
     const run_button = this.buildRunButton() 
     const scan_for_timestamp_button = this.buildScanForTimestampButton() 
+    const header_row = makeHeaderRow(
+      'telemetry',
+      'telemetry_body',
+      (()=>{this.props.toggleShowVisibility('telemetry')})
+    )
 
     return (
         <div className='row bg-light rounded mt-3'>
           <div className='col'>
-            <div className='row'>
-              <div 
-                className='col-lg-10 h3'
-              > 
-                telemetry
-              </div>
-              <div className='col-lg-1 float-right'>
-                <button
-                    className='btn btn-link'
-                    aria-expanded='false'
-                    data-target='#telemetry_body'
-                    aria-controls='telemetry_body'
-                    data-toggle='collapse'
-                    type='button'
-                >
-                  +/-
-                </button>
-              </div>
-              <div className='col-lg-1'>
-                <div>
-                  <input
-                    className='mr-2 mt-3'
-                    type='checkbox'
-                    onChange={() => this.props.toggleShowVisibility('telemetry')}
-                  />
-                </div>
-              </div>
-            </div>
+
+            {header_row}
 
             <div 
                 id='telemetry_body' 

@@ -1,4 +1,7 @@
 import React from 'react';
+import {
+  makeHeaderRow,
+} from './SharedControls'
 
 class MovieSetsControls extends React.Component {
   constructor(props) {
@@ -146,38 +149,17 @@ class MovieSetsControls extends React.Component {
     if (!this.props.visibilityFlags['movieSets']) {
       return([])
     }
+    const header_row = makeHeaderRow(
+      'movie sets',
+      'movie_sets_body',
+      (()=>{this.props.toggleShowVisibility('movieSets')})
+    )
 
     return (
         <div className='row bg-light rounded mt-3'>
           <div className='col'>
-            <div className='row'>
-              <div 
-                className='col-lg-10 h3'
-              > 
-                movie sets
-              </div>
-              <div className='col-lg-1 float-right'>
-                <button
-                    className='btn btn-link'
-                    aria-expanded='false'
-                    data-target='#movie_sets_body'
-                    aria-controls='movie_sets_body'
-                    data-toggle='collapse'
-                    type='button'
-                >
-                  +/-
-                </button>
-              </div>
-              <div className='col-lg-1'>
-                <div>
-                  <input
-                    className='mr-2 mt-3'
-                    type='checkbox'
-                    onChange={() => this.props.toggleShowVisibility('movieSets')}
-                  />
-                </div>
-              </div>
-            </div>
+
+            {header_row}
 
             <div 
                 id='movie_sets_body' 

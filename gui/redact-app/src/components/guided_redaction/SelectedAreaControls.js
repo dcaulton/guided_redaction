@@ -1,5 +1,10 @@
 import React from 'react';
 import ScannerSearchControls from './ScannerSearchControls'
+import {
+  buildAttributesAddRow, buildLabelAndTextInput, buildLabelAndDropdown,
+  buildInlinePrimaryButton, 
+  makeHeaderRow,
+  } from './SharedControls'
 
 
 class SelectedAreaControls extends React.Component {
@@ -229,126 +234,86 @@ class SelectedAreaControls extends React.Component {
   }
 
   buildScaleDropdown() {
-    return (
-      <div>
-        <div className='d-inline ml-2'>
-          Scale
-        </div>
-        <div className='d-inline ml-2'>
-          <select
-              name='selected_area_scale'
-              value={this.state.scale}
-              onChange={(event) => this.setLocalStateVar('scale', event.target.value)}
-          >
-            <option value='1:1'>actual image scale only</option>
-            <option value='match_trigger'>match_trigger</option>
-          </select>
-        </div>
-      </div>
+    const values = [
+      {'1:1': 'actual image scale only'},
+      {'match_trigger': 'match trigger'}
+    ]
+    return buildLabelAndDropdown(
+      values,
+      'Scale',
+      this.state.scale,
+      'selected_area_scale',
+      ((value)=>{this.setLocalStateVar('scale', value)})
     )
   }
 
   buildSelectTypeDropdown() {
-    return (
-      <div>
-        <div className='d-inline ml-2'>
-          Select Type
-        </div>
-        <div className='d-inline ml-2'>
-          <select
-              name='selected_area_select_type'
-              value={this.state.select_type}
-              onChange={(event) => this.setLocalStateVar('select_type', event.target.value)}
-          >
-            <option value='flood'>flood simple</option>
-            <option value='flood_true'>true flood</option>
-            <option value='arrow'>arrow simple</option>
-            <option value='arrow_chain'>arrow chain</option>
-          </select>
-        </div>
-      </div>
+    const values = [
+      {'flood': 'flood simple'},
+      {'flood_true': 'flood'},
+      {'arrow': 'arrow simple'},
+      {'arrow_chain': 'arrow chain'},
+    ]
+    return buildLabelAndDropdown(
+      values,
+      'Select Type',
+      this.state.select_type,
+      'selected_area_select_type',
+      ((value)=>{this.setLocalStateVar('select_type', value)})
     )
   }
 
   buildNameField() {
-    return (
-      <div>
-        <div className='d-inline ml-2'>
-          Name:
-        </div>
-        <div
-            className='d-inline ml-2'
-        >
-            <input
-                id='selected_area_name'
-                key='selected_area_name_1'
-                title='name'
-                size='25'
-                value={this.state.name}
-                onChange={(event) => this.setLocalStateVar('name', event.target.value)}
-            />
-        </div>
-      </div>
+    return buildLabelAndTextInput(
+      this.state.name,
+      'Name',
+      'selected_area_name',
+      'name',
+      25,
+      ((value)=>{this.setLocalStateVar('name', value)})
     )
   }
 
   buildInteriorOrExteriorDropdown() {
-    return (
-      <div>
-        <div className='d-inline ml-2'>
-          Interior or Exterior
-        </div>
-        <div className='d-inline ml-2'>
-          <select
-              name='selected_area_interior_or_exterior'
-              value={this.state.interior_or_exterior}
-              onChange={(event) => this.setLocalStateVar('interior_or_exterior', event.target.value)}
-          >
-            <option value='interior'>interior</option>
-            <option value='exterior'>exterior</option>
-          </select>
-        </div>
-      </div>
+    const values = [
+      {'interior': 'interior'},
+      {'exterior': 'exterior'}
+    ]
+    return buildLabelAndDropdown(
+      values,
+      'Interior or Exterior',
+      this.state.interior_or_exterior,
+      'selected_area_interior_or_exterior',
+      ((value)=>{this.setLocalStateVar('interior_or_exterior', value)})
     )
   }
 
-  buildScanLevelDropdown() {
-    return (
-      <div>
-        <div className='d-inline ml-2'>
-          Scan Level
-        </div>
-        <div className='d-inline ml-2'>
-          <select
-              name='selected_area_scan_level'
-              value={this.state.scan_level}
-              onChange={(event) => this.setLocalStateVar('scan_level', event.target.value)}
-          >
-            <option value='tier_1'>Tier 1 (select only)</option>
-            <option value='tier_2'>Tier 2 (select and redact)</option>
-          </select>
-        </div>
-      </div>
+  buildScanLevelDropdown2() {
+    const scan_level_dropdown = [
+      {'tier_1': 'Tier 1 (select only)'},
+      {'tier_2': 'Tier 2 (select and redact)'}
+    ]
+
+    return buildLabelAndDropdown(
+      scan_level_dropdown,
+      'Scan Level',
+      this.state.scan_level,
+      'selected_area_scan_level',
+      ((value)=>{this.setLocalStateVar('scan_level', value)})
     )
   }
 
   buildOriginEntityTypeDropdown() {
-    return (
-      <div>
-        <div className='d-inline ml-2'>
-          Origin Entity Type
-        </div>
-        <div className='d-inline ml-2'>
-          <select
-              name='selected_area_origin_entity_type'
-              value={this.state.origin_entity_type}
-              onChange={(event) => this.setLocalStateVar('origin_entity_type', event.target.value)}
-          >
-            <option value='adhoc'>ad hoc</option>
-            <option value='template_anchor'>template</option>
-          </select>
-        </div>
-      </div>
+    const values = [
+      {'adhoc': 'ad hoc'},
+      {'template_anchor': 'template anchor'}
+    ]
+    return buildLabelAndDropdown(
+      values,
+      'Origin Entity Type',
+      this.state.origin_entity_type,
+      'selected_area_origin_entity_type',
+      ((value)=>{this.setLocalStateVar('origin_entity_type', value)})
     )
   }
 
@@ -452,44 +417,15 @@ class SelectedAreaControls extends React.Component {
   }
 
   buildAttributesList() {
+    const add_attr_row = buildAttributesAddRow(
+      'selected_area_attribute_name',
+      'selected_area_attribute_value',
+      (()=>{this.doAddAttribute()})
+    )
     return (
-        <div>
-        <div className='font-weight-bold'>
-          Attributes
-        </div>
-        <div>
-          <div className='d-inline ml-2'>
-            Name:
-          </div>
-          <div className='d-inline ml-2'>
-            <input
-                id='selected_area_attribute_name'
-                key='selected_area_attribute_name_1'
-                title='attribute name'
-                size='25'
-            />
-          </div>
-          <div className='d-inline ml-2'>
-            Value:
-          </div>
-          <div className='d-inline ml-2'>
-            <input
-                id='selected_area_attribute_value'
-                key='selected_area_attribute_value_1'
-                title='attribute value'
-                size='25'
-            />
-          </div>
-          <div className='d-inline ml-2'>
-            <button
-                className='btn btn-primary p-1'
-                key={889922}
-                onClick={() => this.doAddAttribute()}
-            >
-              Add
-            </button>
-          </div>
-        </div>
+      <div>
+        {add_attr_row}
+
         <div>
           {Object.keys(this.state.attributes).map((name, index) => {
             return (
@@ -529,99 +465,23 @@ class SelectedAreaControls extends React.Component {
   }
 
   buildAddAreaCoordsButton() {
-    return (
-      <div className='d-inline ml-2'>
-        <button
-            className='btn btn-primary'
-            key={884122}
-            onClick={() => this.startAddSelectedAreas()}
-        >
-          Add Area Center
-        </button>
-      </div>
+    return buildInlinePrimaryButton(
+      'Add Area Center',
+      (()=>{this.startAddSelectedAreas()})
     )
   }
 
   buildSaveButton() {
-    return (
-      <div
-          className='d-inline'
-      >
-        <button
-            className='btn btn-primary ml-2'
-            onClick={() => this.doSave()}
-        >
-          Save
-        </button>
-      </div>
+    return buildInlinePrimaryButton(
+      'Save',
+      (()=>{this.doSave()})
     )
   }
 
   buildSaveToDatabaseButton() {
-    return (
-      <div
-          className='d-inline'
-      >
-        <button
-            className='btn btn-primary ml-2'
-            onClick={() => this.doSaveToDatabase()}
-        >
-          Save to DB
-        </button>
-      </div>
-    )
-  }
-  buildTier1TemplateRunOptions() {
-    const tier_1_match_keys = Object.keys(this.props.tier_1_matches['template'])
-    if (tier_1_match_keys.length === 0) {
-      return ''
-    }
-
-    return (
-      <div>
-        {tier_1_match_keys.map((value, index) => {
-          let detail_line = 'Frames matched by template id ' + value
-          if (Object.keys(this.props.templates).includes(value)) {
-            detail_line = 'Frames matched by template ' + this.props.templates[value]['name']
-          }
-          return (
-            <button
-                className='dropdown-item'
-                key={index}
-                onClick={() => this.props.submitInsightsJob('current_selected_area_meta_tier1_template', value)}
-            >
-              {detail_line}
-            </button>
-          )
-        })}
-      </div>
-    )
-  }
-
-  buildTier1OcrRunOptions() {
-    const tier_1_match_keys = Object.keys(this.props.tier_1_matches['ocr'])
-    if (tier_1_match_keys.length === 0) {
-      return ''
-    }
-    
-    return (
-      <div>
-        {tier_1_match_keys.map((value, index) => {
-          let detail_line = 'Frames matched by ocr rule ' + value
-          if (value === this.props.current_ocr_rule_id) {
-            detail_line = 'Frames matched by current active ocr rule'
-          }
-          return (
-            <button
-                className='dropdown-item'
-                key={index}
-                onClick={() => this.props.submitInsightsJob('current_selected_area_meta_tier1_ocr', value)}
-            >
-              {detail_line}
-            </button>
-          )
-        })}
-      </div>
+    return buildInlinePrimaryButton(
+      'Save to DB',
+      (()=>{this.doSaveToDatabase()})
     )
   }
 
@@ -727,13 +587,9 @@ class SelectedAreaControls extends React.Component {
   }
 
   buildClearAreasButton() {
-    return (
-      <button
-          className='btn btn-primary ml-2'
-          onClick={() => this.clearAnchors()}
-      >
-        Clear Area Centers
-      </button>
+    return buildInlinePrimaryButton(
+      'Clear Area Centers',
+      (()=>{this.clearAnchors()})
     )
   }
 
@@ -784,7 +640,7 @@ class SelectedAreaControls extends React.Component {
     const select_type_dropdown = this.buildSelectTypeDropdown()
     const interior_or_exterior_dropdown = this.buildInteriorOrExteriorDropdown()
     const attributes_list = this.buildAttributesList()
-    const scan_level_dropdown = this.buildScanLevelDropdown()
+    const scan_level_dropdown = this.buildScanLevelDropdown2()
     const origin_entity_type_dropdown = this.buildOriginEntityTypeDropdown()
     const origin_entity_id_dropdown = this.buildOriginEntityIdDropdown()
     const add_area_coords_button = this.buildAddAreaCoordsButton()
@@ -793,39 +649,17 @@ class SelectedAreaControls extends React.Component {
     const run_button = this.buildRunButton()
     const delete_button = this.buildDeleteButton()
     const save_to_db_button = this.buildSaveToDatabaseButton()
+    const header_row = makeHeaderRow(
+      'selected area',
+      'selected_area_body',
+      (()=>{this.props.toggleShowVisibility('selectedArea')})
+    )
 
     return (
         <div className='row bg-light rounded mt-3'>
           <div className='col'>
-            <div className='row'>
-              <div 
-                className='col-lg-10 h3'
-              > 
-                selected area
-              </div>
-              <div className='col-lg-1 float-right'>
-                <button
-                    className='btn btn-link'
-                    aria-expanded='false'
-                    data-target='#selected_area_body'
-                    aria-controls='selected_area_body'
-                    data-toggle='collapse'
-                    type='button'
-                >
-                  +/-
-                </button>
-              </div>
-              <div className='col-lg-1'>
-                <div>
-                  <input
-                    className='mr-2 mt-3'
-                    type='checkbox'
-                    onChange={() => this.props.toggleShowVisibility('selectedArea')}
-                  />
-                </div>
-              </div>
 
-            </div>
+            {header_row}
 
             <div 
                 id='selected_area_body' 

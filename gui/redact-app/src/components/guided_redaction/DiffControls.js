@@ -1,4 +1,7 @@
 import React from 'react';
+import {
+  makeHeaderRow,
+} from './SharedControls'
 
 class DiffControls extends React.Component {
 
@@ -74,38 +77,17 @@ class DiffControls extends React.Component {
     }
     const run_button = this.buildDiffRunButton()
     const itd_checkbox = this.buildToggleImageTypeToDisplayCheckbox()
+    const header_row = makeHeaderRow(
+      'diffs',
+      'diff_body',
+      (()=>{this.props.toggleShowVisibility('diffs')})
+    )
 
     return (
         <div className='row bg-light rounded mt-3'>
           <div className='col'>
-            <div className='row'>
-              <div 
-                className='col-lg-10 h3'
-              > 
-                diffs
-              </div>
-              <div className='col-lg-1 float-right'>
-                <button
-                    className='btn btn-link'
-                    aria-expanded='false'
-                    data-target='#diff_body'
-                    aria-controls='diff_body'
-                    data-toggle='collapse'
-                    type='button'
-                >
-                  +/-
-                </button>
-              </div>
-              <div className='col-lg-1'>
-                <div>
-                  <input
-                    className='mr-2 mt-3'
-                    type='checkbox'
-                    onChange={() => this.props.toggleShowVisibility('diffs')}
-                  />
-                </div>
-              </div>
-            </div>
+
+            {header_row}
 
             <div 
                 id='diff_body' 

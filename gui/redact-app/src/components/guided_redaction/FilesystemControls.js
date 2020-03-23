@@ -1,4 +1,7 @@
 import React from 'react';
+import {
+  makeHeaderRow,
+} from './SharedControls'
 
 class FilesystemControls extends React.Component {
 
@@ -245,38 +248,17 @@ class FilesystemControls extends React.Component {
     }
     const secure_file_button = this.buildImportSecureFileButton()
     const build_movie_metadata_link = this.buildMovieMetadataLink()
+    const header_row = makeHeaderRow(
+      'file system',
+      'filesystem_body',
+      (()=>{this.props.toggleShowVisibility('filesystem')})
+    )
 
     return (
         <div className='row bg-light rounded mt-3'>
           <div className='col'>
-            <div className='row'>
-              <div 
-                className='col-lg-10 h3'
-              > 
-                file system
-              </div>
-              <div className='col-lg-1 float-right'>
-                <button
-                    className='btn btn-link'
-                    aria-expanded='false'
-                    data-target='#filesystem_body'
-                    aria-controls='filesystem_body'
-                    data-toggle='collapse'
-                    type='button'
-                >
-                  +/-
-                </button>
-              </div>
-              <div className='col-lg-1'>
-                <div>
-                  <input
-                    className='mr-2 mt-3'
-                    type='checkbox'
-                    onChange={() => this.props.toggleShowVisibility('filesystem')}
-                  />
-                </div>
-              </div>
-            </div>
+
+            {header_row}
 
             <div 
                 id='filesystem_body' 

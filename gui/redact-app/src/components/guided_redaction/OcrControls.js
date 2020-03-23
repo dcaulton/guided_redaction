@@ -1,4 +1,8 @@
 import React from 'react';
+import {
+  makeHeaderRow,
+  buildLabelAndDropdown
+  } from './SharedControls'
 
 class OcrControls extends React.Component {
 
@@ -13,6 +17,14 @@ class OcrControls extends React.Component {
       end_coords: [],
     }
     this.addOcrZoneCallback=this.addOcrZoneCallback.bind(this)
+  }
+
+  setLocalStateVar(var_name, var_value, when_done=(()=>{})) {
+    this.setState({
+      [var_name]: var_value,
+      unsaved_changes: true,
+    },
+    when_done())
   }
 
   addOcrZoneCallback(end_coords) {
@@ -189,33 +201,18 @@ class OcrControls extends React.Component {
     )
   }
 
-  updateScanLevel(scan_level) {
-    this.setState({
-      scan_level: scan_level,
-    })
-  }
-
   buildScanLevel() {
-    const help_text = "Tier 1 means 'search for areas that match your critieria, then just return a yes if they exist', Tier 2 means 'search for matches, then turn all areas that match your criteria into areas to redact'"
-    return (
-      <div
-        className='d-inline ml-2 mt-2'
-        title={help_text}
-      >   
-        <div className='d-inline'>
-          Scan Level:
-        </div>
-        <div className='d-inline ml-2'>
-          <select
-              name='ocr_scan_level'
-              value={this.state.scan_level}
-              onChange={(event) => this.updateScanLevel(event.target.value)}
-          >
-            <option value='tier_1'>Tier 1</option>
-            <option value='tier_2'>Tier 2</option>
-          </select>
-        </div>
-      </div>
+      const scan_level_dropdown = [
+      {'tier_1': 'Tier 1 (find only)'},
+      {'tier_2': 'Tier 2 (find and redact)'}
+    ]
+
+    return buildLabelAndDropdown(
+      scan_level_dropdown,
+      'Scan Level',
+      this.state.scan_level,
+      'ocr_scan_level',
+      ((value)=>{this.setLocalStateVar('scan_level', value)})
     )
   }
 
@@ -257,38 +254,17 @@ class OcrControls extends React.Component {
     const skip_east = this.buildSkipEast()
     const scan_level = this.buildScanLevel()
     const start_end_coords = this.buildStartEndCoords()
+    const header_row = makeHeaderRow(
+      'ocr',
+      'ocr_body',
+      (()=>{this.props.toggleShowVisibility('ocr')})
+    )
 
     return (
         <div className='row bg-light rounded mt-3'>
           <div className='col'>
-            <div className='row'>
-              <div 
-                className='col-lg-10 h3'
-              > 
-                ocr
-              </div>
-              <div className='col-lg-1 float-right'>
-                <button
-                    className='btn btn-link'
-                    aria-expanded='false'
-                    data-target='#ocr_body'
-                    aria-controls='ocr_body'
-                    data-toggle='collapse'
-                    type='button'
-                >
-                  +/-
-                </button>
-              </div>
-              <div className='col-lg-1'>
-                <div>
-                  <input
-                    className='mr-2 mt-3'
-                    type='checkbox'
-                    onChange={() => this.props.toggleShowVisibility('ocr')}
-                  />
-                </div>
-              </div>
-            </div>
+
+            {header_row}
 
             <div 
                 id='ocr_body' 

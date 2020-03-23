@@ -1,4 +1,7 @@
 import React from 'react';
+import {
+  makeHeaderRow,
+} from './SharedControls'
 
 class ResultsControls extends React.Component {
   constructor(props) {
@@ -18,40 +21,17 @@ class ResultsControls extends React.Component {
     if (!this.props.visibilityFlags['results']) {
       return([])
     }
+    const header_row = makeHeaderRow(
+      'results',
+      'results_body',
+      (()=>{this.props.toggleShowVisibility('results')})
+    )
 
     return (
         <div className='row bg-light rounded mt-3'>
           <div className='col'>
-            <div className='row'>
-              <div 
-                className='col-lg-10 h3'
-              > 
-                results
-              </div>
-              <div className='col-lg-1 float-right'>
-                <button
-                    className='btn btn-link'
-                    aria-expanded='false'
-                    data-target='#results_body'
-                    aria-controls='results_body'
-                    data-toggle='collapse'
-                    type='button'
-                >
-                  +/-
-                </button>
-              </div>
 
-              <div className='col-lg-1'>
-                <div>
-                  <input
-                    className='mr-2 mt-3'
-                    type='checkbox'
-                    onChange={() => this.props.toggleShowVisibility('results')}
-                  />
-                </div>
-              </div>
-
-            </div>
+            {header_row}
 
             <div 
                 id='results_body' 

@@ -1,4 +1,7 @@
 import React from 'react';
+import {
+  makeHeaderRow,
+  } from './SharedControls'
 
 class AnnotationControls extends React.Component {
 
@@ -187,37 +190,16 @@ class AnnotationControls extends React.Component {
       )
     }
 
+    const header_row = makeHeaderRow(
+      'annotate',
+      'annotations_body',
+      (()=>{this.props.toggleShowVisibility('annotate')})
+    )
     return (
         <div className='row bg-light rounded mt-3'>
           <div className='col'>
-            <div className='row'>
-              <div 
-                className='col-lg-10 h3'
-              > 
-                annotate
-              </div>
-              <div className='col-lg-1 float-right'>
-                <button
-                    className='btn btn-link'
-                    aria-expanded='false'
-                    data-target='#annotations_body'
-                    aria-controls='annotations_body'
-                    data-toggle='collapse'
-                    type='button'
-                >
-                  +/-
-                </button>
-              </div>
-              <div className='col-lg-1'>
-                <div>
-                  <input
-                    className='mr-2 mt-3'
-                    type='checkbox'
-                    onChange={() => this.props.toggleShowVisibility('annotate')}
-                  />
-                </div>
-              </div>
-            </div>
+
+            {header_row}
 
             <div 
                 id='annotations_body' 

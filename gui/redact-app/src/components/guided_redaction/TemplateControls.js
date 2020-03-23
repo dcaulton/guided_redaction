@@ -1,5 +1,11 @@
 import React from 'react';
 import ScannerSearchControls from './ScannerSearchControls'
+import {
+  buildAttributesAddRow, buildLabelAndTextInput, buildLabelAndDropdown,
+  buildInlinePrimaryButton,
+  makeHeaderRow,
+} from './SharedControls'
+
 
 class TemplateControls extends React.Component {
 
@@ -26,6 +32,14 @@ class TemplateControls extends React.Component {
     this.setLocalVarsFromTemplate=this.setLocalVarsFromTemplate.bind(this)
     this.getCurrentAnchors=this.getCurrentAnchors.bind(this)
     this.getCurrentMaskZones=this.getCurrentMaskZones.bind(this)
+  }
+
+  setLocalStateVar(var_name, var_value, when_done=(()=>{})) {
+    this.setState({
+      [var_name]: var_value,
+      unsaved_changes: true,
+    },
+    when_done())
   }
 
   getCurrentAnchors() {
@@ -222,13 +236,6 @@ class TemplateControls extends React.Component {
     }
   }
 
-  setName(the_name) {
-    this.setState({
-      name: the_name,
-      unsaved_changes: true,
-    })
-  }
-
   setAttribute(name, value) {
     let deepCopyAttributes = JSON.parse(JSON.stringify(this.state.attributes))
     deepCopyAttributes[name] = value
@@ -260,34 +267,6 @@ class TemplateControls extends React.Component {
       unsaved_changes: true,
     })
     this.props.displayInsightsMessage('Attribute was deleted')
-  }
-
-  setScale(value) {
-    this.setState({
-      scale: value,
-      unsaved_changes: true,
-    })
-  }
-
-  setMatchPercent(value) {
-    this.setState({
-      match_percent: value,
-      unsaved_changes: true,
-    })
-  }
-
-  setMatchMethod(value) {
-    this.setState({
-      match_method: value,
-      unsaved_changes: true,
-    })
-  }
-
-  setScanLevel(value) {
-    this.setState({
-      scan_level: value,
-      unsaved_changes: true,
-    })
   }
 
   buildDeleteButton() {
@@ -495,66 +474,6 @@ class TemplateControls extends React.Component {
     return return_arr
   }
 
-  buildTier1TemplateRunOptions() {
-    if (this.state.scan_level === 'tier_1') {
-      return ''
-    }
-    const tier_1_match_keys = Object.keys(this.props.tier_1_matches['template'])
-    if (tier_1_match_keys.length === 0) {
-      return ''
-    }
-
-    return (
-      <div>
-        {tier_1_match_keys.map((value, index) => {
-          let detail_line = 'Frames matched by template id ' + value
-          if (Object.keys(this.props.templates).includes(value)) {
-            detail_line = 'Frames matched by template ' + this.props.templates[value]['name']
-          } 
-          return (
-            <button
-                className='dropdown-item'
-                key={index}
-                onClick={() => this.props.submitInsightsJob('current_template_tier1_template', value)}
-            >
-              {detail_line}
-            </button>
-          )
-        })}
-      </div>
-    )
-  }
-
-  buildTier1OcrRunOptions() {
-    if (this.state.scan_level === 'tier_1') {
-      return ''
-    }
-    const tier_1_match_keys = Object.keys(this.props.tier_1_matches['ocr'])
-    if (tier_1_match_keys.length === 0) {
-      return ''
-    }
-
-    return (
-      <div>
-        {tier_1_match_keys.map((value, index) => {
-          let detail_line = 'Frames matched by ocr rule ' + value
-          if (value === this.props.current_ocr_rule_id) {
-            detail_line = 'Frames matched by current active ocr rule'
-          }
-          return (
-            <button
-                className='dropdown-item'
-                key={index}
-                onClick={() => this.props.submitInsightsJob('current_template_tier1_ocr', value)}
-            >
-              {detail_line}
-            </button>
-          )
-        })}
-      </div>
-    )
-  }
-
   buildTemplateRunButton() {
     if (!this.props.current_template_id) {
       return ''
@@ -641,67 +560,17 @@ class TemplateControls extends React.Component {
     }
   }
 
-  buildNameField() {
+  buildAttributesList() {
+    const add_attr_row = buildAttributesAddRow(
+      'template_attribute_name',
+      'template_attribute_value',
+      (()=>{this.doAddAttribute()})
+
+    )
     return (
       <div>
-        <div className='d-inline ml-2'>
-          Template name:
-        </div>
-        <div
-            className='d-inline ml-2'
-        >
-            <input
-                id='template_name'
-                key='template_name_1'
-                title='name'
-                size='25'
-                value={this.state.name}
-                onChange={(event) => this.setName(event.target.value)}
-            />
-        </div>
-      </div>
-    )
-  }
+        {add_attr_row}
 
-  buildAttributesList() {
-    return (
-        <div>
-        <div className='font-weight-bold'>
-          Attributes
-        </div>
-        <div>
-          <div className='d-inline ml-2'>
-            Name:
-          </div>
-          <div className='d-inline ml-2'>
-            <input
-                id='template_attribute_name'
-                key='template_attribute_name_1'
-                title='attribute name'
-                size='25'
-            />
-          </div>
-          <div className='d-inline ml-2'>
-            Value:
-          </div>
-          <div className='d-inline ml-2'>
-            <input
-                id='template_attribute_value'
-                key='template_attribute_value_1'
-                title='attribute value'
-                size='25'
-            />
-          </div>
-          <div className='d-inline ml-2'>
-            <button
-                className='btn btn-primary p-1'
-                key={889922}
-                onClick={() => this.doAddAttribute()}
-            >
-              Add
-            </button>
-          </div>
-        </div>
         <div>
           {Object.keys(this.state.attributes).map((name, index) => {
             return (
@@ -736,94 +605,66 @@ class TemplateControls extends React.Component {
   }
 
   buildScaleDropdown() {
-    return (
-      <div>
-        <div className='d-inline ml-2'>
-          Scale
-        </div>
-        <div className='d-inline ml-2'>
-          <select
-              name='template_scale'
-              value={this.state.scale}
-              onChange={(event) => this.setScale(event.target.value)}
-          >
-            <option value='1:1'>actual image scale only</option>
-            <option value='+/-10/1'>+/- 10%, 1% increments</option>
-            <option value='+/-20/1'>+/- 20%, 1% increments</option>
-            <option value='+/-20/5'>+/- 20%, 5% increments</option>
-            <option value='+/-25/1'>+/- 25%, 1% increments</option>
-            <option value='+/-25/5'>+/- 25%, 5% increments</option>
-            <option value='+/-40/1'>+/- 40%, 1% increments</option>
-            <option value='+/-40/5'>+/- 40%, 5% increments</option>
-            <option value='+/-50/1'>+/- 50%, 1% increments</option>
-            <option value='+/-50/5'>+/- 50%, 5% increments</option>
-          </select>
-        </div>
-      </div>
+    const scale_values = [
+      {'1:1': 'actual image scale only'},
+      {'+/-10/1': '+/- 10%, 1% increments'},
+      {'+/-20/1': '+/- 20%, 1% increments'},
+      {'+/-20/5': '+/- 20%, 5% increments'},
+      {'+/-25/1': '+/- 25%, 1% increments'},
+      {'+/-25/5': '+/- 25%, 5% increments'},
+      {'+/-40/1': '+/- 40%, 1% increments'},
+      {'+/-40/5': '+/- 40%, 5% increments'},
+      {'+/-50/1': '+/- 50%, 1% increments'},
+      {'+/-50/5': '+/- 50%, 5% increments'}
+    ]
+    return buildLabelAndDropdown(
+      scale_values,
+      'Scale',
+      this.state.scale,
+      'template_scale',
+      ((value)=>{this.setLocalStateVar('scale', value)})
     )
   }
 
   buildMatchPercent() {
-    return (
-      <div>
-        <div className='d-inline ml-2'>
-          Match Percent
-        </div>
-        <div
-            className='d-inline ml-2'
-        >   
-            <input 
-                id='template_match_percent'
-                size='4'
-                title='template match percent'
-                value={this.state.match_percent}
-                onChange={(event) => this.setMatchPercent(event.target.value)}
-            />
-        </div>
-      </div>
+    return buildLabelAndTextInput(
+      this.state.match_percent,
+      'Match Percent',
+      'template_match_percent',
+      'match percent',
+      4,
+      ((value)=>{this.setLocalStateVar('match_percent', value)})
     )
   }
 
   buildMatchMethod() {
-    return (
-      <div>
-        <div className='d-inline ml-2'>
-          Match Method
-        </div>
-        <div className='d-inline ml-2'>
-          <select
-              name='template_match_method'
-              value={this.state.match_method}
-              onChange={(event) => this.setMatchMethod(event.target.value)}
-          >
-            <option value='all'>Match All Anchors</option>
-            <option value='any'>Match Any Anchor</option>
-          </select>
-        </div>
-      </div>
+    return buildLabelAndDropdown(
+      [{'all': 'Match All Anchors'}, {'any': 'Match Any Anchors'}],
+      'Match Method',
+      this.state.match_method,
+      'template_match_method',
+      ((value)=>{this.setLocalStateVar('match_method', value)})
     )
   }
 
   buildScanLevel() {
-    const help_text = "Tier 1 means 'search for areas that match your critieria, then just return a yes if they exist', Tier 2 means 'search for matches, then use the mask zones from the anchors you have matched on to make areas to redact'"
-    return (
-      <div
-          title={help_text}
-      >
-        <div className='d-inline ml-2'>
-          Scan Level
-        </div>
-        <div className='d-inline ml-2'>
-          <select
-              name='template_scan_level'
-              value={this.state.scan_level}
-              onChange={(event) => this.setScanLevel(event.target.value)}
-          >
-            <option value='tier_1'>Tier 1 (match only)</option>
-            <option value='tier_2'>Tier 2 (match and mask)</option>
-          </select>
-        </div>
-      </div>
+    return buildLabelAndDropdown(
+      [{'tier_1': 'Tier 1 (select only)'}, {'tier_2': 'Tier 2 (select and redact)'}],
+      'Scan Level',
+      this.state.scan_level,
+      'template_scan_level',
+      ((value)=>{this.setLocalStateVar('scan_level', value)})
+    )
+  }
+
+  buildNameField() {
+    return buildLabelAndTextInput(
+      this.state.name,
+      'Template name',
+      'template_name',
+      'name',
+      25,
+      ((value)=>{this.setLocalStateVar('name', value)})
     )
   }
 
@@ -897,76 +738,44 @@ class TemplateControls extends React.Component {
   }
 
   buildSaveButton() {
-    return (
-      <div 
-          className='d-inline'
-      >
-        <button
-            className='btn btn-primary ml-2 mt-2'
-            onClick={() => this.doSave()}
-        >
-          Save
-        </button>
-      </div>
+    return buildInlinePrimaryButton(
+      'Save',
+      (()=>{this.doSave()})
     )
   }
 
   buildSaveToDatabaseButton() {
-    return (
-      <div 
-          className='d-inline'
-      >
-        <button
-            className='btn btn-primary ml-2 mt-2'
-            onClick={() => this.doSaveToDatabase()}
-        >
-          Save to DB
-        </button>
-      </div>
+    return buildInlinePrimaryButton(
+      'Save to DB',
+      (()=>{this.doSaveToDatabase()})
     )
   }
 
   buildAddAnchorButton() {
-    return (
-      <button
-          className='btn btn-primary ml-2 mt-2'
-          onClick={() => this.addTemplateAnchor()}
-      >
-        Add Anchor
-      </button>
+    return buildInlinePrimaryButton(
+      'Add Anchor',
+      (()=>{this.addTemplateAnchor()})
     )
   }
 
   buildClearAnchorsButton() {
-    return (
-      <button
-          className='btn btn-primary ml-2 mt-2'
-          onClick={() => this.clearAnchors()}
-      >
-        Clear Anchors
-      </button>
+    return buildInlinePrimaryButton(
+      'Clear Anchors',
+      (()=>{this.clearAnchors()})
     )
   }
 
   buildAddMaskZoneButton() {
-    return (
-      <button
-          className='btn btn-primary ml-2 mt-2'
-          onClick={() => this.addTemplateMaskZone()}
-      >
-        Add Mask Zone
-      </button>
+    return buildInlinePrimaryButton(
+      'Add Mask Zone',
+      (()=>{this.addTemplateMaskZone()})
     )
   }
 
   buildClearMaskZonesButton() {
-    return (
-      <button
-          className='btn btn-primary ml-2 mt-2'
-          onClick={() => this.clearMaskZones()}
-      >
-        Clear Zones
-      </button>
+    return buildInlinePrimaryButton(
+      'Clear Zones',
+      (()=>{this.clearMaskZones()})
     )
   }
 
@@ -1086,39 +895,17 @@ class TemplateControls extends React.Component {
     const add_mask_zone_button = this.buildAddMaskZoneButton()
     const clear_mask_zones_button = this.buildClearMaskZonesButton()
     const template_source_movie_image_info = this.buildSourceMovieImageInfo()
+    const header_row = makeHeaderRow(
+      'templates',
+      'template_controls_body',
+      (()=>{this.props.toggleShowVisibility('templates')})
+    )
 
     return (
         <div className='row bg-light rounded'>
           <div className='col'>
-            <div className='row'>
-              <div 
-                className='col-lg-10 h3'
-              > 
-                templates
-              </div>
-              <div className='col-lg-1 float-right'>
-                <button
-                    className='btn btn-link'
-                    aria-expanded='false'
-                    data-target='#template_controls_body'
-                    aria-controls='template_controls_body'
-                    data-toggle='collapse'
-                    type='button'
-                >
-                  +/-
-                </button>
-              </div>
 
-              <div className='col-lg-1'>
-                <div>
-                  <input
-                    className='mr-2 mt-3'
-                    type='checkbox'
-                    onChange={() => this.props.toggleShowVisibility('templates')}
-                  />
-                </div>
-              </div>
-            </div>
+            {header_row}
 
             <div 
                 id='template_controls_body' 
