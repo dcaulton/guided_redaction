@@ -276,6 +276,9 @@ class InsightsPanel extends React.Component {
     } else if (scope === 'all_movies') {
       job_data['description'] = 'scan ocr for all movies'
       job_data['request_data']['movies'] = this.props.movies
+    } else if (scope === 'current_frame') {
+      job_data['description'] = 'scan ocr for one frame: ' + this.state.insights_image
+      job_data['request_data']['movies'] = this.buildOneFrameMovieForCurrentInsightsImage()
     }
     let start_coords = extra_data['start_coords']
     let end_coords = extra_data['end_coords']
@@ -722,6 +725,11 @@ class InsightsPanel extends React.Component {
       this.props.submitJob({
         job_data: job_data,
       })
+    } else if (job_string === 'ocr_current_frame') {
+      let job_data = this.buildScanOcrMovieJobData('current_frame', extra_data)
+      this.props.submitJob({
+        job_data: job_data,
+      })
     } else if (job_string === 'ocr_current_movie') {
       let job_data = this.buildScanOcrMovieJobData('current_movie', extra_data)
       this.props.submitJob({
@@ -744,6 +752,11 @@ class InsightsPanel extends React.Component {
       })
     } else if (job_string === 'current_template_tier1_ocr') {
       let job_data = this.buildScanTemplateCurTempTier1JobData('ocr', extra_data)
+      this.props.submitJob({
+        job_data: job_data,
+      })
+    } else if (job_string === 'current_template_tier1_selected_area') {
+      let job_data = this.buildScanTemplateCurTempTier1JobData('selected_area', extra_data)
       this.props.submitJob({
         job_data: job_data,
       })

@@ -150,6 +150,7 @@ class BottomInsightsControls extends React.Component {
           tier_1_matches={this.props.tier_1_matches}
           templates={this.props.templates}
           insights_image={this.props.insights_image}
+          getFramesetHashForImageUrl={this.props.getFramesetHashForImageUrl}
           movie_url={this.props.movie_url}
           current_template_id={this.props.current_template_id}
           setSelectedAreaTemplateAnchor={this.props.setSelectedAreaTemplateAnchor}

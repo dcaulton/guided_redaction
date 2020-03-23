@@ -478,8 +478,9 @@ def wrap_up_scan_ocr_movie(parent_job, children):
     parent_job.save()
 
 def find_relevant_areas_from_response(match_strings, match_percent, areas_to_redact):
-    relevant_areas = []
-    for area in areas_to_redact:
+    relevant_areas = {}
+    for a2r_key in areas_to_redact:
+        area = areas_to_redact[a2r_key]
         subject_string = area['text']
         for pattern in match_strings:
             pattern_length = len(pattern)
@@ -493,7 +494,7 @@ def find_relevant_areas_from_response(match_strings, match_percent, areas_to_red
             for i in range(num_compares):
                 ratio = fuzz.ratio(pattern, subject_string[i:i+pattern_length])
                 if ratio >= match_percent:
-                    relevant_areas.append(area)
+                    relevant_areas[a2r_key] = area
                     continue
     return relevant_areas
 
@@ -576,12 +577,14 @@ def build_and_dispatch_selected_area_threaded_children(parent_job):
             selected_area.delay(job.id)
 
 def wrap_up_selected_area_threaded(job, children):
-    aggregate_response_data = {}
+    aggregate_response_data = {
+      'movies': {}
+    }
     for child in children:
-        child_response_data = json.loads(child.response_data)
-        if len(child_response_data.keys()) > 0:
-            movie_url = list(child_response_data.keys())[0]
-            aggregate_response_data[movie_url] = child_response_data[movie_url]
+        child_response_movies = json.loads(child.response_data)['movies']
+        if len(child_response_movies.keys()) > 0:
+            movie_url = list(child_response_movies.keys())[0]
+            aggregate_response_data['movies'][movie_url] = child_response_movies[movie_url]
 
     print('wrap_up_selected_area_threaded: wrapping up parent job')
     job.status = 'success'

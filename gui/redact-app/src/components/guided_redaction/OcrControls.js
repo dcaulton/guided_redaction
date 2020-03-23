@@ -81,6 +81,11 @@ class OcrControls extends React.Component {
         </button>
         <div className='dropdown-menu' aria-labelledby='RunTelemetryDropdownButton'>
           <button className='dropdown-item'
+              onClick={() => this.packageAndCallSubmitJob('ocr_current_frame')}
+          >
+            Frame
+          </button>
+          <button className='dropdown-item'
               onClick={() => this.packageAndCallSubmitJob('ocr_current_movie')}
           >
             Movie

@@ -2196,7 +2196,6 @@ class RedactApplication extends React.Component {
                 submitJob={this.submitJob}
                 playTone={this.playTone}
                 postMakeUrlCall={this.postMakeUrlCall}
-                establishNewOneImageMovie={this.establishNewOneImageMovie}
                 establishNewEmptyMovie={this.establishNewEmptyMovie}
                 addImageToMovie={this.addImageToMovie}
                 illustrateParameters={this.state.illustrateParameters}

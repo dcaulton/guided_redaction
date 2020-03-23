@@ -15,6 +15,7 @@ class SelectedAreaControls extends React.Component {
       attributes: {},
       origin_entity_type: 'adhoc',
       origin_entity_id: '',
+      origin_entity_location: [],
       scan_level: 'tier_2',
       areas: [],
       unsaved_changes: false,
@@ -154,6 +155,42 @@ class SelectedAreaControls extends React.Component {
     return selected_area_meta
   }
 
+  getOriginEntityLocation() {
+    // below requires it's a t1 template and we're on a page with a match
+    if (this.state.origin_entity_type === 'template_anchor') {
+      for (let i=0; i < Object.keys(this.props.templates).length; i++) {
+        const template_id = Object.keys(this.props.templates)[i]
+        if (Object.keys(this.props.tier_1_matches['template']).includes(template_id)) {
+          const temp_matches = this.props.tier_1_matches['template'][template_id] 
+          if (Object.keys(temp_matches['movies']).includes(this.props.movie_url)) {
+            const movie_matches = temp_matches['movies'][this.props.movie_url]
+            const frameset_hash = this.props.getFramesetHashForImageUrl(this.props.insights_image)
+            const frameset_matches = movie_matches['framesets'][frameset_hash]
+            if (Object.keys(frameset_matches).includes(this.state.origin_entity_id)) {
+              const anchor_loc = frameset_matches[this.state.origin_entity_id]['location']
+              return anchor_loc
+            }
+          }
+        }
+      }
+    }
+    // below requires it's a t2 template, we trust you'll use the anchor source frame here
+    if (this.state.origin_entity_type === 'template_anchor') {
+      for (let i=0; i < Object.keys(this.props.templates).length; i++) {
+        const template_id = Object.keys(this.props.templates)[i]
+        const template = this.props.templates[template_id]
+        for (let j=0; j < template['anchors'].length; j++) {
+          const anchor = template['anchors'][j]
+          if (anchor['id'] === this.state.origin_entity_id) {
+            const anchor_loc = anchor['start']
+            return anchor_loc
+          }
+        }
+      }
+    }
+    return []
+  }
+
   doSave(when_done=(()=>{})) {
     if (!this.state.name) {
       this.props.displayInsightsMessage('Save aborted: Name is required for a selected area meta')
@@ -161,6 +198,8 @@ class SelectedAreaControls extends React.Component {
     }
     let sam_id = 'selected_area_meta_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
     let selected_area_meta = this.getSelectedAreaMetaFromState()
+    let origin_entity_location = this.getOriginEntityLocation()
+    selected_area_meta['origin_entity_location'] = origin_entity_location
 
     if (!selected_area_meta['id']) {
       selected_area_meta['id'] = sam_id
@@ -172,6 +211,7 @@ class SelectedAreaControls extends React.Component {
     this.setState({
       id: sam_id,
       unsaved_changes: false,
+      origin_entity_location: origin_entity_location,
     })
     this.props.displayInsightsMessage('Selected Area Meta has been saved')              
     when_done(selected_area_meta)
@@ -360,9 +400,10 @@ class SelectedAreaControls extends React.Component {
         <div className='d-inline ml-2'>
           <select
               name='selected_area_origin_entity_id'
-              value={this.state.origin_entity_type}
+              value={this.state.origin_entity_id}
               onChange={(event) => this.setLocalStateVar('origin_entity_id', event.target.value)}
           >
+            <option value=''></option>
             {adhoc_option}
             {anchor_keys.map((anchor_id, index) => {
               const anchor_desc = anchor_descs[anchor_id]
