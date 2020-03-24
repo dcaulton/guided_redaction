@@ -109,6 +109,7 @@ class SelectedAreaControls extends React.Component {
         attributes: sam['attributes'],
         origin_entity_type: sam['origin_entity_type'],
         origin_entity_id: sam['origin_entity_id'],
+        origin_entity_location: sam['origin_entity_location'],
         scan_level: sam['scan_level'],
         areas: sam['areas'],
         unsaved_changes: false,
@@ -129,6 +130,7 @@ class SelectedAreaControls extends React.Component {
       attributes: {},
       origin_entity_type: 'adhoc',
       origin_entity_id: '',
+      origin_entity_location: [],
       scan_level: 'tier_2',
       areas: [],
       unsaved_changes: false,
@@ -145,6 +147,7 @@ class SelectedAreaControls extends React.Component {
       attributes: this.state.attributes,
       origin_entity_type: this.state.origin_entity_type,
       origin_entity_id: this.state.origin_entity_id,
+      origin_entity_location: this.state.origin_entity_location,
       scan_level: this.state.scan_level,
       areas: this.state.areas,
     }
