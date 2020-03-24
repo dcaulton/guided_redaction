@@ -71,6 +71,7 @@ class InsightsPanel extends React.Component {
     this.setScrubberToIndex=this.setScrubberToIndex.bind(this)
     this.getCurrentTemplateAnchors=this.getCurrentTemplateAnchors.bind(this)
     this.getCurrentSelectedAreaCenters=this.getCurrentSelectedAreaCenters.bind(this)
+    this.getCurrentSelectedAreaOriginLocation=this.getCurrentSelectedAreaOriginLocation.bind(this)
     this.getCurrentTemplateMaskZones=this.getCurrentTemplateMaskZones.bind(this)
   }
 
@@ -82,6 +83,13 @@ class InsightsPanel extends React.Component {
   getCurrentSelectedAreaCenters() {
     if (Object.keys(this.state.callbacks).includes('getCurrentSelectedAreaCenters')) {
       return this.state.callbacks['getCurrentSelectedAreaCenters']()
+    }
+    return []
+  }
+
+  getCurrentSelectedAreaOriginLocation() {
+    if (Object.keys(this.state.callbacks).includes('getCurrentSelectedAreaOriginLocation')) {
+      return this.state.callbacks['getCurrentSelectedAreaOriginLocation']()
     }
     return []
   }
@@ -894,7 +902,7 @@ class InsightsPanel extends React.Component {
   }
 
   handleSetMode(the_mode) {
-    let the_message = ''
+    let the_message = '.'
     if (the_mode === 'add_template_anchor_1') {
       the_message = 'Select the first corner of the Region of Interest'
     } else if (the_mode === 'add_template_anchor_3') {
@@ -907,6 +915,8 @@ class InsightsPanel extends React.Component {
       the_message = 'press space to annotate/deannotate, left/right to advance through framesets'
     } else if (the_mode === 'add_annotations_ocr_start') {
       the_message = 'Select the first corner of the region the text area'
+    } else if (the_mode === 'add_sa_origin_location_1') {
+      the_message = 'Select the origin location'
     }
     this.setState({
       mode: the_mode,
@@ -965,19 +975,13 @@ class InsightsPanel extends React.Component {
     if (this.state.mode === 'add_template_anchor_1') {
       this.doAddTemplateAnchorClickOne(scale, x_scaled, y_scaled)
     } else if (this.state.mode === 'add_template_anchor_2') {
-      if (Object.keys(this.state.callbacks).includes('add_template_anchor_2')) {
-        let callback = this.state.callbacks['add_template_anchor_2']
-        callback([x_scaled, y_scaled])
-      }
+      this.state.callbacks['add_template_anchor_2']([x_scaled, y_scaled])
     } else if (this.state.mode === 'selected_area_area_coords_1') {
-        this.state.callbacks['selected_area_area_coords_1']([x_scaled, y_scaled])
+      this.state.callbacks['selected_area_area_coords_1']([x_scaled, y_scaled])
     } else if (this.state.mode === 'add_template_mask_zone_1') {
       this.doAddTemplateMaskZoneClickOne(scale, x_scaled, y_scaled)
     } else if (this.state.mode === 'add_template_mask_zone_2') {
-      if (Object.keys(this.state.callbacks).includes('add_template_mask_zone_2')) {
-        let callback = this.state.callbacks['add_template_mask_zone_2']
-        callback([x_scaled, y_scaled])
-      }
+      this.state.callbacks['add_template_mask_zone_2']([x_scaled, y_scaled])
     } else if (this.state.mode === 'scan_ocr_1') {
       this.setState({
         mode: 'scan_ocr_2',
@@ -985,14 +989,13 @@ class InsightsPanel extends React.Component {
         insights_message: 'click second corner',
       })
     } else if (this.state.mode === 'scan_ocr_2') {
-      if (Object.keys(this.state.callbacks).includes('scan_ocr_2')) {
-        let callback = this.state.callbacks['scan_ocr_2']
-        callback([x_scaled, y_scaled])
-      }
+      this.state.callbacks['scan_ocr_2']([x_scaled, y_scaled])
     } else if (this.state.mode === 'add_annotations_ocr_start') {
       this.doAddAnnotationsOcrStartClickOne(scale, x_scaled, y_scaled)
     } else if (this.state.mode === 'add_annotations_ocr_end') {
       this.doAddAnnotationsOcrStartClickOne(scale, x_scaled, y_scaled)
+    } else if (this.state.mode === 'add_sa_origin_location_1') {
+      this.state.callbacks['add_sa_origin_location_1']([x_scaled, y_scaled])
     }
   }
 
@@ -1290,6 +1293,7 @@ class InsightsPanel extends React.Component {
               getCurrentTemplateAnchors={this.getCurrentTemplateAnchors}
               getCurrentTemplateMaskZones={this.getCurrentTemplateMaskZones}
               getCurrentSelectedAreaCenters={this.getCurrentSelectedAreaCenters}
+              getCurrentSelectedAreaOriginLocation={this.getCurrentSelectedAreaOriginLocation}
             />
           </div>
 

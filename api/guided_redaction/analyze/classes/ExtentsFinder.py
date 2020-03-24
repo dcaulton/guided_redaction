@@ -38,19 +38,31 @@ class ExtentsFinder:
         # find x to the right
         row = gray[y, x:img_width]
         mask = abs(target_color - row) > tolerance
-        plus_x = np.where(mask)[0][0]
+        if not np.where(mask)[0].any():
+            plus_x = 0
+        else:
+           plus_x = np.where(mask)[0][0]
         # find x to the left
         row = gray[y, 0:x]
         mask = abs(target_color - row) > tolerance
-        minus_x = np.where(mask)[0][-1]
+        if not np.where(mask)[0].any():
+            minus_x = plus_x
+        else:
+           minus_x = np.where(mask)[0][-1]
         # find y down
         row = gray[y:img_height, x]
         mask = abs(target_color - row) > tolerance
-        plus_y = np.where(mask)[0][0]
+        if not np.where(mask)[0].any():
+            plus_y = 0
+        else:
+           plus_y = np.where(mask)[0][0]
         # find y up
         row = gray[0:y, x]
         mask = abs(target_color - row) > tolerance
-        minus_y = np.where(mask)[0][-1]
+        if not np.where(mask)[0].any():
+            minus_y = plus_y
+        else:
+           minus_y = np.where(mask)[0][-1]
 
         xd = x - (x - minus_x)
         yd = y - (y - minus_y)

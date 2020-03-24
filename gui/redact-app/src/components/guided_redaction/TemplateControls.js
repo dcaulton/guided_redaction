@@ -778,6 +778,9 @@ class TemplateControls extends React.Component {
                   {clear_anchors_button}
                   {add_mask_zone_button}
                   {clear_mask_zones_button}
+                </div>
+
+                <div className='row mt-2'>
                   {delete_button}
                   {save_button}
                   {save_to_database_button}
