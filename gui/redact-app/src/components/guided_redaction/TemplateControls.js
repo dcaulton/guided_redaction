@@ -7,6 +7,9 @@ import {
   buildTier1LoadButton,
   buildTier1DeleteButton,
   buildAttributesAsRows,
+  buildIdString,
+  clearTier1Matches,
+  buildClearMatchesButton,
 } from './SharedControls'
 
 
@@ -485,25 +488,15 @@ class TemplateControls extends React.Component {
   }
 
   clearTemplateMatches(scope) {
-    let deepCopyTier1Matches = JSON.parse(JSON.stringify(this.props.tier_1_matches))
-    let deepCopyTemplateMatches = deepCopyTier1Matches['template']
-    if (scope === 'all_templates') {
-      deepCopyTier1Matches['template'] = {}
-      this.props.setGlobalStateVar('tier_1_matches', deepCopyTier1Matches)
-      this.props.displayInsightsMessage('All template matches have been cleared')
-    } else if (scope === 'all_movies') {
-      delete deepCopyTemplateMatches[this.props.current_template_id]
-      deepCopyTier1Matches['template'] = deepCopyTemplateMatches
-      this.props.setGlobalStateVar('tier_1_matches', deepCopyTier1Matches)
-      this.props.displayInsightsMessage('Template matches for this template + all movies have been cleared')
-    } else if (scope === 'movie') {
-      if (Object.keys(deepCopyTemplateMatches[this.props.current_template_id]).includes(this.props.movie_url)) {
-        delete deepCopyTemplateMatches[this.props.current_template_id][this.props.movie_url]
-        deepCopyTier1Matches['template'] = deepCopyTemplateMatches
-        this.props.setGlobalStateVar('tier_1_matches', deepCopyTier1Matches)
-        this.props.displayInsightsMessage('Template matches for this template + this movie have been cleared')
-      }
-    }
+    return clearTier1Matches(
+      'template',
+      this.props.tier_1_matches,
+      this.props.current_template_id,
+      this.props.movie_url,
+      ((a,b)=>{this.props.setGlobalStateVar(a,b)}),
+      ((a)=>{this.props.displayInsightsMessage(a)}),
+      scope
+    )
   }
 
   buildAttributesList() {
@@ -624,37 +617,10 @@ class TemplateControls extends React.Component {
     )
   }
 
-  buildClearMatchesButton() {
-    return (
-      <div className='d-inline'>
-        <button
-            className='btn btn-primary ml-2 mt-2 dropdown-toggle'
-            type='button'
-            id='deleteTemplateMatchDropdownButton'
-            data-toggle='dropdown'
-            area-haspopup='true'
-            area-expanded='false'
-        >
-          Clear Matches
-        </button>
-        <div className='dropdown-menu' aria-labelledby='deleteTemplateMatchDropdownButton'>
-          <button className='dropdown-item'
-              onClick={() => this.clearTemplateMatches('movie')}
-          >
-            Movie
-          </button>
-          <button className='dropdown-item'
-              onClick={() => this.clearTemplateMatches('all_movies')}
-          >
-            All Movies
-          </button>
-          <button className='dropdown-item'
-              onClick={() => this.clearTemplateMatches('all_templates')}
-          >
-            All Templates
-          </button>
-        </div>
-      </div>
+  buildClearMatchesButton2() {
+    return buildClearMatchesButton(
+      'template',
+      ((a)=>{this.clearTemplateMatches(a)})
     )
   }
 
@@ -697,34 +663,6 @@ class TemplateControls extends React.Component {
     return buildInlinePrimaryButton(
       'Clear Zones',
       (()=>{this.clearMaskZones()})
-    )
-  }
-
-  buildIdString() {
-    if (!this.props.current_template_id) {
-      return (
-        <div className='d-inline ml-2 font-weight-bold text-danger font-italic h5'>
-          this template has not been saved and has no id yet
-        </div>
-      )
-    }
-    let unsaved_changes_string = ''
-    if (this.state.unsaved_changes) {
-      unsaved_changes_string = (
-        <div className='font-weight-bold text-danger ml-2 h5'>
-         there are unsaved changes - don't forget to press save
-        </div>
-      )
-    }
-    return (
-      <div>
-        <div className='d-inline ml-2'>
-          Template id: {this.state.id}
-        </div>
-        <div className='d-inline ml-2 font-italic'>
-          {unsaved_changes_string}
-        </div>
-      </div>
     )
   }
 
@@ -794,7 +732,7 @@ class TemplateControls extends React.Component {
       return([])                                                                
     }
 
-    const id_string = this.buildIdString()
+    const id_string = buildIdString(this.state.id, 'template', this.state.unsaved_changes)
     const load_button = this.buildLoadButton()
     const delete_button = this.buildDeleteButton()
     const download_button = this.buildDownloadButton()
@@ -808,7 +746,7 @@ class TemplateControls extends React.Component {
     const scan_level = this.buildScanLevel()
     const import_button = this.buildImportButton()
     const export_button = this.buildExportButton()
-    const clear_matches_button = this.buildClearMatchesButton()
+    const clear_matches_button = this.buildClearMatchesButton2()
     const save_button = this.buildSaveButton()
     const save_to_database_button = this.buildSaveToDatabaseButton()
     const add_anchor_button = this.buildAddAnchorButton()

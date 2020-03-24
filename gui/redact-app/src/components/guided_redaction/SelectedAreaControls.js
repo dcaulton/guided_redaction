@@ -7,6 +7,9 @@ import {
   buildTier1DeleteButton,
   makeHeaderRow,
   buildAttributesAsRows,
+  buildIdString,
+  clearTier1Matches,
+  buildClearMatchesButton,
   } from './SharedControls'
 
 
@@ -522,31 +525,22 @@ class SelectedAreaControls extends React.Component {
     this.props.displayInsightsMessage('Area centers have been cleared')
   }
 
-  buildIdString() {
-    if (!this.state.id) {
-      return (
-        <div className='d-inline ml-2 font-weight-bold text-danger font-italic h5'>
-          this selected area meta has not been saved and has no id yet
-        </div>
-      )
-    }
-    let unsaved_changes_string = ''
-    if (this.state.unsaved_changes) {
-      unsaved_changes_string = (
-        <div className='font-weight-bold text-danger ml-2 h5'>
-         there are unsaved changes - don't forget to press save
-        </div>
-      )
-    }
-    return (
-      <div>
-        <div className='d-inline ml-2'>
-          Selected Area Meta id: {this.state.id}
-        </div>
-        <div className='d-inline ml-2 font-italic'>
-          {unsaved_changes_string}
-        </div>
-      </div>
+  clearSelectedAreaMatches(scope) {
+    return clearTier1Matches(
+      'selected_area',
+      this.props.tier_1_matches,
+      this.state.id,
+      this.props.movie_url,
+      ((a,b)=>{this.props.setGlobalStateVar(a,b)}),
+      ((a)=>{this.props.displayInsightsMessage(a)}),
+      scope
+    )
+  }
+
+  buildClearMatchesButton2() {
+    return buildClearMatchesButton(
+      'selected_area',
+      ((a)=>{this.clearSelectedAreaMatches(a)})
     )
   }
 
@@ -555,7 +549,7 @@ class SelectedAreaControls extends React.Component {
       return([])
     }
     const load_button = this.buildLoadButton()
-    const id_string = this.buildIdString()
+    const id_string = buildIdString(this.state.id, 'selected area meta', this.state.unsaved_changes)
     const name_field = this.buildNameField()
     const scale_dropdown = this.buildScaleDropdown()
     const select_type_dropdown = this.buildSelectTypeDropdown()
@@ -570,6 +564,7 @@ class SelectedAreaControls extends React.Component {
     const run_button = this.buildRunButton()
     const delete_button = this.buildDeleteButton()
     const save_to_db_button = this.buildSaveToDatabaseButton()
+    const clear_matches_button = this.buildClearMatchesButton2()
     const header_row = makeHeaderRow(
       'selected area',
       'selected_area_body',
@@ -599,6 +594,7 @@ class SelectedAreaControls extends React.Component {
                   {delete_button}
                   {save_button}
                   {save_to_db_button}
+                  {clear_matches_button}
                 </div>
 
                 <div className='row mt-2'>

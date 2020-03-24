@@ -240,3 +240,95 @@ export function buildTier1DeleteButton(scanner_type, hash_of_scanners, delete_sc
     </div>
   )
 }
+
+export function buildIdString(id_value, scanner_type, unsaved_changes_flag) {
+  const s1 = 'this ' + scanner_type + ' has not been saved and has no id yet'
+  const s2 = scanner_type + ' id: ' + id_value.toString()
+  if (!id_value) {
+    return (
+      <div className='d-inline font-weight-bold text-danger font-italic h5'>
+        {s1}
+      </div>
+    )
+  }
+  let unsaved_changes_string = ''
+  if (unsaved_changes_flag) {
+    unsaved_changes_string = (
+      <div className='font-weight-bold text-danger ml-2 h5'>
+       there are unsaved changes - don't forget to press save
+      </div>
+    )
+  }
+  return (
+    <div>
+      <div className='d-inline ml-2'>
+        {s2}
+      </div>
+      <div className='d-inline ml-2 font-italic'>
+        {unsaved_changes_string}
+      </div>
+    </div>
+  )
+}
+
+export function clearTier1Matches(scanner_type, 
+      tier_1_matches, 
+      scanner_id, 
+      movie_url, 
+      global_setter_function, 
+      display_message_function, 
+      scope
+  ) {
+  let deepCopyTier1Matches = JSON.parse(JSON.stringify(tier_1_matches))
+  if (scope === 'all_scanners_of_this_type') {
+    deepCopyTier1Matches[scanner_type] = {}
+    global_setter_function('tier_1_matches', deepCopyTier1Matches)
+    display_message_function('All ' + scanner_type + ' matches have been cleared')
+  } else if (scope === 'all_movies') {
+    delete deepCopyTier1Matches[scanner_type][scanner_id]
+    global_setter_function('tier_1_matches', deepCopyTier1Matches)
+    display_message_function('matches for this ' + scanner_type + ' + all movies have been cleared')
+  } else if (scope === 'movie') {
+    if (Object.keys(deepCopyTier1Matches[scanner_type][scanner_id]['movies']).includes(movie_url)) {
+      delete deepCopyTier1Matches[scanner_type][scanner_id]['movies'][movie_url]
+      global_setter_function('tier_1_matches', deepCopyTier1Matches)
+      display_message_function('matches for this ' + scanner_type + ' + this movie have been cleared')
+    }
+  }
+} 
+
+export function buildClearMatchesButton(scanner_type, clear_matches_function) {
+  const button_id = 'delete_' + scanner_type + '_matches_dropdown'
+  const scanner_plural_label = 'all ' + scanner_type + 's'
+  return (
+    <div className='d-inline'>
+      <button
+          className='btn btn-primary ml-2 dropdown-toggle'
+          type='button'
+          id={button_id}
+          data-toggle='dropdown'
+          area-haspopup='true'
+          area-expanded='false'
+      >
+        Clear Matches
+      </button>
+      <div className='dropdown-menu' aria-labelledby={button_id}>
+        <button className='dropdown-item'
+            onClick={() => clear_matches_function('movie')}
+        >
+          movie
+        </button>
+        <button className='dropdown-item'
+            onClick={() => clear_matches_function('all_movies')}
+        >
+          all movies
+        </button>
+        <button className='dropdown-item'
+            onClick={() => clear_matches_function('all_scanners_of_this_type')}
+        >
+          {scanner_plural_label}
+        </button>
+      </div>
+    </div>
+  )
+}
