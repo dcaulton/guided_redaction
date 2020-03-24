@@ -77,38 +77,50 @@ class CanvasInsightsOverlay extends React.Component {
     }
   }
 
-  drawCrosshairs() {
-    if ((this.props.mode === 'add_template_anchor_2') 
-        || (this.props.mode === 'add_template_mask_zone_2')
-        || (this.props.mode === 'scan_ocr_2')) {
-      const crosshair_length = 2000
-      let start_x = this.props.clicked_coords[0] - crosshair_length/2
-      start_x = start_x * this.props.insights_image_scale
-      let end_x = this.props.clicked_coords[0] + crosshair_length/2
-      end_x = end_x * this.props.insights_image_scale
-      let start_y = this.props.clicked_coords[1] - crosshair_length/2
-      start_y = start_y * this.props.insights_image_scale
-      let end_y = this.props.clicked_coords[1] + crosshair_length/2
-      end_y = end_y * this.props.insights_image_scale
-      const canvas = this.refs.insights_canvas
-      let ctx = canvas.getContext("2d")
-      ctx.strokeStyle = this.crosshairs_color
-      ctx.lineWidth = 1
-      ctx.globalAlpha = 1
-
-      ctx.beginPath()
-      ctx.moveTo(start_x, this.props.clicked_coords[1]*this.props.insights_image_scale)
-      ctx.lineTo(end_x, this.props.clicked_coords[1]*this.props.insights_image_scale)
-      ctx.stroke()
-
-      ctx.beginPath()
-      ctx.moveTo(this.props.clicked_coords[0]*this.props.insights_image_scale, start_y)
-      ctx.lineTo(this.props.clicked_coords[0]*this.props.insights_image_scale, end_y)
-      ctx.stroke()
+  drawCrosshairs(crosshair_mode, coords) {
+    const canvas = this.refs.insights_canvas
+    let ctx = canvas.getContext("2d")
+    ctx.strokeStyle = this.crosshairs_color
+    ctx.lineWidth = 1
+    ctx.globalAlpha = 1
+    let crosshair_length = 0
+    if (crosshair_mode === 'add_stuff') {
+      if ((this.props.mode === 'add_template_anchor_2') 
+          || (this.props.mode === 'add_template_mask_zone_2')
+          || (this.props.mode === 'scan_ocr_2')) {
+        crosshair_length = 2000
+      } 
+    } 
+    if (crosshair_mode === 'selected_area_center')  {
+      crosshair_length = 200
     }
+    if (!crosshair_length) {
+      return
+    }
+    let start_x = coords[0] - crosshair_length/2
+    start_x = start_x * this.props.insights_image_scale
+    let end_x = coords[0] + crosshair_length/2
+    end_x = end_x * this.props.insights_image_scale
+    let start_y = coords[1] - crosshair_length/2
+    start_y = start_y * this.props.insights_image_scale
+    let end_y = coords[1] + crosshair_length/2
+    end_y = end_y * this.props.insights_image_scale
+
+    ctx.beginPath()
+    ctx.moveTo(start_x, coords[1]*this.props.insights_image_scale)
+    ctx.lineTo(end_x, coords[1]*this.props.insights_image_scale)
+    ctx.stroke()
+
+    ctx.beginPath()
+    ctx.moveTo(coords[0]*this.props.insights_image_scale, start_y)
+    ctx.lineTo(coords[0]*this.props.insights_image_scale, end_y)
+    ctx.stroke()
   }
 
   drawSelectedAreaCenters() {
+    if (!this.props.currentImageIsSelectedAreaAnchorImage()) {
+      return
+    }
     if (this.props.getCurrentSelectedAreaCenters() && this.props.getCurrentSelectedAreaCenters().length > 0) {
       const crosshair_length = 200
       const canvas = this.refs.insights_canvas
@@ -143,6 +155,9 @@ class CanvasInsightsOverlay extends React.Component {
   }
 
   drawSelectedAreaOriginLocation() {
+    if (!this.props.currentImageIsSelectedAreaAnchorImage()) {
+      return
+    }
     if (this.props.getCurrentSelectedAreaOriginLocation() && this.props.getCurrentSelectedAreaOriginLocation().length > 0) {
       const crosshair_length = 200
       const canvas = this.refs.insights_canvas
@@ -201,6 +216,20 @@ class CanvasInsightsOverlay extends React.Component {
       ctx.strokeStyle = edge_color
       ctx.lineWidth = 3
       ctx.strokeRect(start_x_scaled, start_y_scaled, width_scaled, height_scaled)
+    }
+  }
+
+  drawScannerOrigins() {
+    let matches = this.props.getTier1ScannerMatches('selected_area')
+    if (!matches) {
+      return
+    }
+    for (let i=0; i < Object.keys(matches).length; i++) {
+      let anchor_id = Object.keys(matches)[i]
+      let match = matches[anchor_id]
+      if (Object.keys(match).includes('origin')) {
+        this.drawCrosshairs('selected_area_center', match['origin'])
+      }
     }
   }
 
@@ -263,12 +292,13 @@ class CanvasInsightsOverlay extends React.Component {
   componentDidMount() {
     this.clearCanvasItems()
     this.drawSelectedAreas()
-    this.drawCrosshairs()
+    this.drawCrosshairs('add_stuff', this.props.clicked_coords)
     this.drawSelectedAreaCenters()
     this.drawSelectedAreaOriginLocation()
     this.drawTemplateAnchors()
     this.drawTemplateMaskZones()
     this.drawTemplateMatches()
+    this.drawScannerOrigins()
     this.drawAnnotations()
     this.drawOcrMatches()
     this.drawAreasToRedact()
@@ -277,12 +307,13 @@ class CanvasInsightsOverlay extends React.Component {
   componentDidUpdate() {
     this.clearCanvasItems()
     this.drawSelectedAreas()
-    this.drawCrosshairs()
+    this.drawCrosshairs('add_stuff', this.props.clicked_coords)
     this.drawSelectedAreaCenters()
     this.drawSelectedAreaOriginLocation()
     this.drawTemplateAnchors()
     this.drawTemplateMaskZones()
     this.drawTemplateMatches()
+    this.drawScannerOrigins()
     this.drawAnnotations()
     this.drawOcrMatches()
     this.drawAreasToRedact()

@@ -232,20 +232,30 @@ class AnalyzeViewSetSelectedArea(viewsets.ViewSet):
                     regions = finder.determine_arrow_fill_area(
                         cv2_image, selected_point, tolerance
                     )
-                    regions_for_image.append(regions)
+                    regions_for_image.append({
+                        'regions': regions, 
+                        'origin': selected_point,
+                    })
                 if selected_area_meta['select_type'] == 'flood':
                     regions = finder.determine_flood_fill_area(
                         cv2_image, selected_point, tolerance
                     )
-                    regions_for_image.append(regions)
+                    regions_for_image.append({
+                        'regions': regions, 
+                        'origin': selected_point,
+                    })
             if regions_for_image:
                 if selected_area_meta['interior_or_exterior'] == 'exterior':
                     regions_for_image = self.transform_interior_selection_to_exterior(regions_for_image, cv2_image)
                 regions_as_hashes = {}
                 for region in regions_for_image:
-                    size = [region[1][0] - region[0][0], region[1][1] - region[0][1]]
+                    size = [
+                        region['regions'][1][0] - region['regions'][0][0], 
+                        region['regions'][1][1] - region['regions'][0][1]
+                    ]
                     region_hash = {
-                        'location': region[0],
+                        'location': region['regions'][0],
+                        'origin': region['origin'],
                         'scale': 1,
                         'size': size,
                         "scanner_type": "selected_area",
@@ -257,21 +267,24 @@ class AnalyzeViewSetSelectedArea(viewsets.ViewSet):
     def transform_interior_selection_to_exterior(self, regions_for_image, cv2_image):
         print(regions_for_image)
         if len(regions_for_image) == 1:
-            start_x = min(regions_for_image[0][0][0], regions_for_image[0][1][0])
-            end_x = max(regions_for_image[0][0][0], regions_for_image[0][1][0])
-            start_y = min(regions_for_image[0][0][1], regions_for_image[0][1][1])
-            end_y = max(regions_for_image[0][0][1], regions_for_image[0][1][1])
-            new_regions = []
+            start_x = min(regions_for_image['regions'][0][0][0], regions_for_image['regions'][0][1][0])
+            end_x = max(regions_for_image['regions'][0][0][0], regions_for_image['regions'][0][1][0])
+            start_y = min(regions_for_image['regions'][0][0][1], regions_for_image['regions'][0][1][1])
+            end_y = max(regions_for_image['regions'][0][0][1], regions_for_image['regions'][0][1][1])
+            new_regions = {
+              'regions': [],
+              'origin': regions_for_image['origin'],
+            }
             height = cv2_image.shape[0]
             width = cv2_image.shape[1]
             r1 = [[0,0], [width,start_y]]
             r2 = [[0,start_y], [start_x,end_y]]
             r3 = [[end_x,start_y], [width,end_y]]
             r4 = [[0,end_y], [width,height]]
-            new_regions.append(r1)
-            new_regions.append(r2)
-            new_regions.append(r3)
-            new_regions.append(r4)
+            new_regions['regions'].append(r1)
+            new_regions['regions'].append(r2)
+            new_regions['regions'].append(r3)
+            new_regions['regions'].append(r4)
             return new_regions
         return regions_for_image
 

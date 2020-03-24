@@ -46,6 +46,7 @@ class InsightsPanel extends React.Component {
     this.handleSetMode=this.handleSetMode.bind(this)
     this.getTier1ScannerMatches=this.getTier1ScannerMatches.bind(this)
     this.currentImageIsTemplateAnchorImage=this.currentImageIsTemplateAnchorImage.bind(this)
+    this.currentImageIsSelectedAreaAnchorImage=this.currentImageIsSelectedAreaAnchorImage.bind(this)
     this.afterPingSuccess=this.afterPingSuccess.bind(this)
     this.afterPingFailure=this.afterPingFailure.bind(this)
     this.callPing=this.callPing.bind(this)
@@ -880,6 +881,25 @@ class InsightsPanel extends React.Component {
     return false
   }
 
+  currentImageIsSelectedAreaAnchorImage() {
+    if (this.props.current_selected_area_meta_id) {
+      let key = this.props.current_selected_area_meta_id
+      if (!Object.keys(this.props.selected_area_metas).includes(key)) {
+        return false
+      }
+      let sam = this.props.selected_area_metas[key]
+      if (!Object.keys(sam).includes('areas')) {
+        return false
+      }
+      if (!sam['areas'].length) {
+        return false
+      }
+      let cur_sam_anchor_image_name = sam['areas'][0]['image']
+      return (cur_sam_anchor_image_name === this.state.insights_image)
+    }
+    return false
+  }
+
   callPing() {
     this.props.doPing(this.afterPingSuccess, this.afterPingFailure)
   }
@@ -1282,6 +1302,7 @@ class InsightsPanel extends React.Component {
               height={this.state.image_height}
               clickCallback={this.handleImageClick}
               currentImageIsTemplateAnchorImage={this.currentImageIsTemplateAnchorImage}
+              currentImageIsSelectedAreaAnchorImage={this.currentImageIsSelectedAreaAnchorImage}
               insights_image_scale={this.state.insights_image_scale}
               getTier1ScannerMatches={this.getTier1ScannerMatches}
               getAnnotations={this.getAnnotations}

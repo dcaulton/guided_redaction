@@ -505,9 +505,24 @@ class SelectedAreaControls extends React.Component {
 
   buildAddOriginLocationButton() {
     return buildInlinePrimaryButton(
-      'Add Origin Location',
+      'Set Origin Location',
       (()=>{this.startAddOriginLocation()})
     )
+  }
+
+  buildClearOriginLocationButton() {
+    return buildInlinePrimaryButton(
+      'Clear Origin Location',
+      (()=>{this.clearOriginLocation()})
+    )
+  }
+
+  clearOriginLocation() {
+    this.setState({
+      origin_entity_location: [],
+      unsaved_changes: true,
+    })
+    this.props.displayInsightsMessage('Origin location has been cleared')
   }
 
   clearAnchors() {
@@ -554,6 +569,7 @@ class SelectedAreaControls extends React.Component {
     const add_area_coords_button = this.buildAddAreaCoordsButton()
     const clear_area_coords_button = this.buildClearAreasButton()
     const add_origin_location_button = this.buildAddOriginLocationButton()
+    const clear_origin_location_button = this.buildClearOriginLocationButton()
     const save_button = this.buildSaveButton()
     const run_button = this.buildRunButton()
     const delete_button = this.buildDeleteButton()
@@ -582,13 +598,17 @@ class SelectedAreaControls extends React.Component {
                   {add_area_coords_button}
                   {clear_area_coords_button}
                   {add_origin_location_button}
-                  {run_button}
                 </div>
 
                 <div className='row mt-2'>
-                  {delete_button}
+                  {clear_origin_location_button}
                   {save_button}
                   {save_to_db_button}
+                  {run_button}
+                  {delete_button}
+                </div>
+
+                <div className='row mt-2'>
                   {clear_matches_button}
                 </div>
 
