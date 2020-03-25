@@ -885,6 +885,8 @@ class InsightsPanel extends React.Component {
       }
       let cur_template_anchor_image_name = template['anchors'][0]['image']
       return (cur_template_anchor_image_name === this.state.insights_image)
+    } else {
+      return true
     }
     return false
   }
@@ -904,6 +906,8 @@ class InsightsPanel extends React.Component {
       }
       let cur_sam_anchor_image_name = sam['areas'][0]['image']
       return (cur_sam_anchor_image_name === this.state.insights_image)
+    } else {
+      return true
     }
     return false
   }
