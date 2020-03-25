@@ -423,7 +423,7 @@ class TemplateControls extends React.Component {
     return return_arr
   }
 
-  buildTemplateRunButton() {
+  buildRunButton() {
     if (!this.props.current_template_id) {
       return ''
     }
@@ -436,7 +436,7 @@ class TemplateControls extends React.Component {
     return (
       <div className='d-inline'>
         <button
-            className='btn btn-primary ml-2 mt-2 dropdown-toggle'
+            className='btn btn-primary ml-2 dropdown-toggle'
             type='button'
             id='scanTemplateDropdownButton'
             data-toggle='dropdown'
@@ -737,7 +737,7 @@ class TemplateControls extends React.Component {
     const delete_button = this.buildDeleteButton()
     const download_button = this.buildDownloadButton()
     const anchor_pics = this.buildAnchorPics()
-    const run_button = this.buildTemplateRunButton()
+    const run_button = this.buildRunButton()
     const template_name = this.buildNameField()
     const attributes_list = this.buildAttributesList()
     const scale_dropdown = this.buildScaleDropdown() 
@@ -774,18 +774,18 @@ class TemplateControls extends React.Component {
 
                 <div className='row'>
                   {load_button}
+                  {delete_button}
+                  {save_button}
+                  {save_to_database_button}
+                  {clear_matches_button}
+                  {run_button}
+                </div>
+
+                <div className='row mt-2'>
                   {add_anchor_button}
                   {clear_anchors_button}
                   {add_mask_zone_button}
                   {clear_mask_zones_button}
-                </div>
-
-                <div className='row mt-2'>
-                  {delete_button}
-                  {save_button}
-                  {save_to_database_button}
-                  {run_button}
-                  {clear_matches_button}
                 </div>
 
                 <div className='row mt-2'>

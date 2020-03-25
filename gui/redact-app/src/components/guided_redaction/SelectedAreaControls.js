@@ -29,6 +29,7 @@ class SelectedAreaControls extends React.Component {
       origin_entity_location: [],
       scan_level: 'tier_2',
       areas: [],
+      minimum_zones: [],
       unsaved_changes: false,
       attribute_search_name: '',
       attribute_search_value: '',
@@ -112,6 +113,7 @@ class SelectedAreaControls extends React.Component {
         origin_entity_location: sam['origin_entity_location'],
         scan_level: sam['scan_level'],
         areas: sam['areas'],
+        minimum_zones : sam['areas'],
         unsaved_changes: false,
       })
     }
@@ -133,6 +135,7 @@ class SelectedAreaControls extends React.Component {
       origin_entity_location: [],
       scan_level: 'tier_2',
       areas: [],
+      minimum_zones: [],
       unsaved_changes: false,
     })
   }
@@ -150,6 +153,7 @@ class SelectedAreaControls extends React.Component {
       origin_entity_location: this.state.origin_entity_location,
       scan_level: this.state.scan_level,
       areas: this.state.areas,
+      minimum_zones: this.state.minimum_zones,
     }
     return selected_area_meta
   }
@@ -393,10 +397,22 @@ class SelectedAreaControls extends React.Component {
     this.props.displayInsightsMessage('specify the center of the selected area')
   }
 
+  startAddMinimumZones() {
+    this.props.handleSetMode('selected_area_minimum_zones_1')
+    this.props.displayInsightsMessage('specify the upper left corner of the minimum zone')
+  }
+
   buildAddAreaCoordsButton() {
     return buildInlinePrimaryButton(
       'Add Area Center',
       (()=>{this.startAddSelectedAreas()})
+    )
+  }
+
+  buildAddMinimumZonesButton() {
+    return buildInlinePrimaryButton(
+      'Add Minimum Zones',
+      (()=>{this.startAddMinimumZones()})
     )
   }
 
@@ -496,6 +512,13 @@ class SelectedAreaControls extends React.Component {
     )
   }
   
+  buildClearMinimumZonesButton() {
+    return buildInlinePrimaryButton(
+      'Clear Minimum Zones',
+      (()=>{this.clearMinimumZones()})
+    )
+  }
+  
   startAddOriginLocation() {
     this.setState({
       unsaved_changes: true,
@@ -533,6 +556,14 @@ class SelectedAreaControls extends React.Component {
     this.props.displayInsightsMessage('Area centers have been cleared')
   }
 
+  clearMinimumZones() {
+    this.setState({
+      minimum_zones: [],
+      unsaved_changes: true,
+    })
+    this.props.displayInsightsMessage('Minimum zones have been cleared')
+  }
+
   clearSelectedAreaMatches(scope) {
     return clearTier1Matches(
       'selected_area',
@@ -568,6 +599,8 @@ class SelectedAreaControls extends React.Component {
     const origin_entity_id_dropdown = this.buildOriginEntityIdDropdown()
     const add_area_coords_button = this.buildAddAreaCoordsButton()
     const clear_area_coords_button = this.buildClearAreasButton()
+    const add_minimum_zones_button = this.buildAddMinimumZonesButton()
+    const clear_minimum_zones_button = this.buildClearMinimumZonesButton()
     const add_origin_location_button = this.buildAddOriginLocationButton()
     const clear_origin_location_button = this.buildClearOriginLocationButton()
     const save_button = this.buildSaveButton()
@@ -595,21 +628,23 @@ class SelectedAreaControls extends React.Component {
 
                 <div className='row'>
                   {load_button}
+                  {delete_button}
+                  {save_button}
+                  {save_to_db_button}
+                  {clear_matches_button}
+                  {run_button}
+                </div>
+
+                <div className='row mt-2'>
                   {add_area_coords_button}
                   {clear_area_coords_button}
                   {add_origin_location_button}
-                </div>
-
-                <div className='row mt-2'>
                   {clear_origin_location_button}
-                  {save_button}
-                  {save_to_db_button}
-                  {run_button}
-                  {delete_button}
                 </div>
 
                 <div className='row mt-2'>
-                  {clear_matches_button}
+                  {add_minimum_zones_button}
+                  {clear_minimum_zones_button}
                 </div>
 
                 <div className='row mt-2'>
