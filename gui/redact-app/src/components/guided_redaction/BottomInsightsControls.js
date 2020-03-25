@@ -182,6 +182,10 @@ class BottomInsightsControls extends React.Component {
           buildMovieSetOptions={this.buildMovieSetOptions}
           ocr_rules={this.props.ocr_rules}
           current_ocr_rule_id={this.props.current_ocr_rule_id}
+          setGlobalStateVar={this.props.setGlobalStateVar}
+          saveScannerToDatabase={this.props.saveScannerToDatabase}
+          movie_url={this.props.movie_url}
+          tier_1_matches={this.props.tier_1_matches}
         />
 
         <AnnotationControls

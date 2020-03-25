@@ -1,14 +1,24 @@
 import React from 'react';
 import {
   makeHeaderRow,
-  buildLabelAndDropdown
-  } from './SharedControls'
+  buildLabelAndDropdown,
+  buildLabelAndTextInput,
+  buildInlinePrimaryButton,
+  doTier1Save,
+  buildTier1LoadButton,
+  buildIdString,
+  buildTier1DeleteButton,
+  buildClearMatchesButton,
+  clearTier1Matches,
+} from './SharedControls'
 
 class OcrControls extends React.Component {
 
   constructor(props) {
     super(props)
     this.state = {
+      id: '',
+      name: '',
       match_text: [],
       match_percent: 90,
       skip_east: false,
@@ -17,6 +27,8 @@ class OcrControls extends React.Component {
       end_coords: [],
     }
     this.addOcrZoneCallback=this.addOcrZoneCallback.bind(this)
+    this.getOcrMetaFromState=this.getOcrMetaFromState.bind(this)
+    this.setLocalStateVar=this.setLocalStateVar.bind(this)
   }
 
   setLocalStateVar(var_name, var_value, when_done=(()=>{})) {
@@ -55,14 +67,45 @@ class OcrControls extends React.Component {
     this.props.displayInsightsMessage('Select the first corner of the area to scan')
   }
 
-  packageAndCallSubmitJob(scope) {
-    if (this.state.start_coords.length === 0) {
-      this.props.displayInsightsMessage('Please pick start and end coords before running this job')
-      return
+  loadOcrRule(ocr_rule_id) {
+    if (!ocr_rule_id) {
+      this.loadNewOcrRule()
+    } else {
+      const ocr_rule = this.props.ocr_rules[ocr_rule_id]
+      this.setState({
+        id: ocr_rule['id'],
+        name: ocr_rule['name'],
+        match_text: ocr_rule['match_text'],
+        match_percent: ocr_rule['match_percent'],
+        skip_east: ocr_rule['skip_east'],
+        scan_level: ocr_rule['scan_level'],
+        start_coords: ocr_rule['start_coords'],
+        end_coords: ocr_rule['end_coords'],
+        unsaved_changes: false,
+      })
     }
-    const ocr_request_id = 'ocr_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
-    const extra_data = {
-      id: ocr_request_id,
+    this.props.setGlobalStateVar('current_ocr_rule_id', ocr_rule_id)
+    this.props.displayInsightsMessage('Ocr rule has been loaded')
+  }
+
+  loadNewOcrRule() {                                                   
+    this.props.setGlobalStateVar('current_ocr_rule_id', '')
+    this.setState({
+      id: '',
+      name: '',
+      match_text: [],
+      match_percent: 90,
+      skip_east: false,
+      scan_level: 'tier_1',
+      start_coords: [],
+      end_coords: [],
+    })                                                                          
+  } 
+
+  getOcrMetaFromState() {
+    const ocr_rule = {
+      id: this.state.id,
+      name: this.state.name,
       start_coords: this.state.start_coords,
       end_coords: this.state.end_coords,
       match_text: this.state.match_text,
@@ -70,7 +113,18 @@ class OcrControls extends React.Component {
       skip_east: this.state.skip_east,
       scan_level: this.state.scan_level,
     }
-    this.props.submitInsightsJob(scope, extra_data)
+    return ocr_rule
+  }
+
+  packageAndCallSubmitJob(scope) {
+    if (this.state.start_coords.length === 0) {
+      this.props.displayInsightsMessage('Please pick start and end coords before running this job')
+      return
+    }
+    const ocr_request_id = 'ocr_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
+    let ocr_meta = this.getOcrMetaFromState()
+    ocr_meta['id'] = ocr_request_id
+    this.props.submitInsightsJob(scope, ocr_meta)
   }
 
   buildRunButton() {
@@ -243,12 +297,113 @@ class OcrControls extends React.Component {
     )
   }
 
+  buildNameField() {
+    return buildLabelAndTextInput(
+      this.state.name,
+      'Name',
+      'ocr_name',
+      'name',
+      25,
+      ((value)=>{this.setLocalStateVar('name', value)})
+    )
+  }
+
+  buildSaveButton() {
+    return buildInlinePrimaryButton(
+      'Save',
+      (()=>{this.doSave()})
+    )
+  }
+
+  buildSaveToDatabaseButton() {
+    return buildInlinePrimaryButton(
+      'Save to DB',
+      (()=>{this.doSaveToDatabase()})
+    )
+  }
+
+  doSave(when_done=(()=>{})) {
+    doTier1Save(
+      'ocr_rule',
+      this.state.name,
+      this.getOcrMetaFromState,
+      this.props.displayInsightsMessage,
+      this.props.ocr_rules,
+      'ocr_rules',
+      'current_ocr_rule_id',
+      this.setLocalStateVar,
+      this.props.setGlobalStateVar,
+      when_done
+    )
+  }
+
+  async doSaveToDatabase() {
+    this.doSave(((ocr_rule) => {
+      this.props.saveScannerToDatabase(
+        'ocr_rule',
+        ocr_rule,
+        (()=>{this.props.displayInsightsMessage('Ocr Rule has been saved to database')})
+      )
+    }))
+  }
+
+  buildLoadButton() {
+    return buildTier1LoadButton(
+      'ocr_rule',
+      this.props.ocr_rules,
+      ((value)=>{this.loadOcrRule(value)})
+    )
+  }
+
+  buildDeleteButton() {
+    return buildTier1DeleteButton(
+      'ocr_rule',
+      this.props.ocr_rules,
+      ((value)=>{this.deleteOcrRule(value)})
+    )
+  }
+
+  deleteOcrRule(ocr_rule_id) {
+    let deepCopyOcrRules= JSON.parse(JSON.stringify(this.props.ocr_rules))
+    delete deepCopyOcrRules[ocr_rule_id]
+    this.props.setGlobalStateVar('ocr_rules', deepCopyOcrRules)
+    if (ocr_rule_id === this.props.current_ocr_rule_id) {
+      this.props.setGlobalStateVar('current_ocr_rule_id', '')
+    }
+    this.props.displayInsightsMessage('Ocr rule was deleted')
+  }
+
+  buildClearMatchesButton2() {                                                  
+    return buildClearMatchesButton(                                             
+      'ocr',                                                          
+      ((a)=>{this.clearOcrRuleMatches(a)})                                 
+    )                                                                           
+  }                                                                             
+      
+  clearOcrRuleMatches(scope) {
+    return clearTier1Matches(
+      'ocr',
+      this.props.tier_1_matches,
+      this.props.current_ocr_rule_id,
+      this.props.movie_url,
+      ((a,b)=>{this.props.setGlobalStateVar(a,b)}),
+      ((a)=>{this.props.displayInsightsMessage(a)}),
+      scope
+    )
+  }
+
   render() {
     if (!this.props.visibilityFlags['ocr']) {
       return([])
     }
     const pick_button = this.buildPickCornersButton()
+    const id_string = buildIdString(this.state.id, 'ocr rule', this.state.unsaved_changes)
     const run_button = this.buildRunButton()
+    const load_button = this.buildLoadButton()
+    const save_button = this.buildSaveButton()
+    const delete_button = this.buildDeleteButton()
+    const save_to_database_button = this.buildSaveToDatabaseButton()
+    const clear_matches_button = this.buildClearMatchesButton2()
     const match_text = this.buildMatchText()
     const match_percent = this.buildMatchPercent()
     const skip_east = this.buildSkipEast()
@@ -259,6 +414,7 @@ class OcrControls extends React.Component {
       'ocr_body',
       (()=>{this.props.toggleShowVisibility('ocr')})
     )
+    const name_field = this.buildNameField()
 
     return (
         <div className='row bg-light rounded mt-3'>
@@ -272,9 +428,25 @@ class OcrControls extends React.Component {
             >
               <div id='ocr_main' className='col'>
 
-                <div className='row mt-3 ml-2 bg-light'>
-                  {pick_button}
+                <div className='row bg-light'>
+                  {load_button}
+                  {delete_button}
+                  {save_button}
+                  {save_to_database_button}
                   {run_button}
+                  {clear_matches_button}
+                </div>
+
+                <div className='row mt-2 ml-0 bg-light'>
+                  {pick_button}
+                </div>
+
+                <div className='row bg-light'>
+                  {id_string}
+                </div>
+
+                <div className='row bg-light'>
+                  {name_field}
                 </div>
 
                 <div className='row bg-light'>

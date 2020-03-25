@@ -605,7 +605,7 @@ class SelectedAreaControls extends React.Component {
     return clearTier1Matches(
       'selected_area',
       this.props.tier_1_matches,
-      this.state.id,
+      this.props.current_selected_area_meta_id,
       this.props.movie_url,
       ((a,b)=>{this.props.setGlobalStateVar(a,b)}),
       ((a)=>{this.props.displayInsightsMessage(a)}),
