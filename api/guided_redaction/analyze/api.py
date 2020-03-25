@@ -205,7 +205,7 @@ class AnalyzeViewSetSelectedArea(viewsets.ViewSet):
         movie_url = list(movies.keys())[0]
         movie = movies[movie_url]
 
-        selected_area_meta= request_data["selected_area_meta"]
+        selected_area_meta = request_data["selected_area_meta"]
         finder = ExtentsFinder()
         response_movies[movie_url] = {}
         response_movies[movie_url]['framesets'] = {}
@@ -267,7 +267,6 @@ class AnalyzeViewSetSelectedArea(viewsets.ViewSet):
                   found_location[0] - configured_location[0],
                   found_location[1] - configured_location[1]
                 ]
-                print('location offset is {}'.format(location_offset))
             for area in selected_area_meta['areas']:
                 selected_point = area['center']
                 selected_point = self.adjust_selected_point_for_t1(selected_point, selected_area_meta, frameset)
