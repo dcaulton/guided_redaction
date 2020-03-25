@@ -10,6 +10,7 @@ import {
   buildIdString,
   clearTier1Matches,
   buildClearMatchesButton,
+  doTier1Save,
 } from './SharedControls'
 
 
@@ -38,6 +39,8 @@ class TemplateControls extends React.Component {
     this.setLocalVarsFromTemplate=this.setLocalVarsFromTemplate.bind(this)
     this.getCurrentAnchors=this.getCurrentAnchors.bind(this)
     this.getCurrentMaskZones=this.getCurrentMaskZones.bind(this)
+    this.getTemplateFromState=this.getTemplateFromState.bind(this)
+    this.setLocalStateVar=this.setLocalStateVar.bind(this)
   }
 
   setLocalStateVar(var_name, var_value, when_done=(()=>{})) {
@@ -314,37 +317,35 @@ class TemplateControls extends React.Component {
     this.props.handleSetMode('add_template_mask_zone_1')
   } 
 
-  async doSave(when_done=(()=>{})) {
-    if (!this.state.name) {
-      this.props.displayInsightsMessage('Save aborted: Name is required for a template')
-      return
+  getTemplateFromState() {
+    const template = {
+      id: this.state.id,
+      name: this.state.name,
+      attributes: this.state.attributes,
+      scale: this.state.scale,
+      match_percent: this.state.match_percent,
+      match_method: this.state.match_method,
+      scan_level: this.state.scan_level,
+      anchors: this.state.anchors,
+      mask_zones: this.state.mask_zones,
     }
+    return template
+  }
+
+  async doSave(when_done=(()=>{})) {
     let eca_response = this.exportCurrentAnchors()
     .then(() => {
-      let template_id = 'template_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
-      if (this.state.id) {
-        template_id = this.state.id
-      }
-      let template = {
-        id: template_id,
-        name: this.state.name,
-        attributes: this.state.attributes,
-        scale: this.state.scale,
-        match_percent: this.state.match_percent,
-        match_method: this.state.match_method,
-        scan_level: this.state.scan_level,
-        anchors: this.state.anchors,
-        mask_zones: this.state.mask_zones,
-      }
-      let deepCopyTemplates = JSON.parse(JSON.stringify(this.props.templates))
-      deepCopyTemplates[template_id] = template
-      this.props.setGlobalStateVar('templates', deepCopyTemplates)
-      this.props.setGlobalStateVar('current_template_id', template_id)
-      this.setState({
-        id: template_id,
-        unsaved_changes: false,
-      })
-      this.props.displayInsightsMessage('Template has been saved')
+      const template = doTier1Save(
+        'template',
+        this.state.name,
+        this.getTemplateFromState,
+        this.props.displayInsightsMessage,
+        this.props.templates,
+        'templates',
+        'current_template_id',
+        this.setLocalStateVar,
+        this.props.setGlobalStateVar,
+      )
       return template
     })
     .then((template) => {

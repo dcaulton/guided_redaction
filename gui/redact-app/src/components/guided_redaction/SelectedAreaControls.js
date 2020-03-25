@@ -10,6 +10,7 @@ import {
   buildIdString,
   clearTier1Matches,
   buildClearMatchesButton,
+  doTier1Save,
   } from './SharedControls'
 
 
@@ -43,6 +44,8 @@ class SelectedAreaControls extends React.Component {
     this.addOriginLocation=this.addOriginLocation.bind(this)
     this.addMinimumZonesCallback1=this.addMinimumZonesCallback1.bind(this)
     this.addMinimumZonesCallback2=this.addMinimumZonesCallback2.bind(this)
+    this.getSelectedAreaMetaFromState=this.getSelectedAreaMetaFromState.bind(this)
+    this.setLocalStateVar=this.setLocalStateVar.bind(this)
   }
 
   addMinimumZonesCallback1(click_coords) {
@@ -197,30 +200,22 @@ class SelectedAreaControls extends React.Component {
   }
 
   doSave(when_done=(()=>{})) {
-    if (!this.state.name) {
-      this.props.displayInsightsMessage('Save aborted: Name is required for a selected area meta')
-      return
-    }
-    let sam_id = 'selected_area_meta_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
-    let selected_area_meta = this.getSelectedAreaMetaFromState()
-    if (!selected_area_meta['id']) {
-      selected_area_meta['id'] = sam_id
-    }
-    let deepCopySelectedAreaMetas= JSON.parse(JSON.stringify(this.props.selected_area_metas)) 
-    deepCopySelectedAreaMetas[selected_area_meta['id']] = selected_area_meta
-    this.props.setGlobalStateVar('selected_area_metas', deepCopySelectedAreaMetas)
-    this.props.setGlobalStateVar('current_selected_area_meta_id', selected_area_meta['id'])
-    this.setState({
-      id: selected_area_meta['id'],
-      unsaved_changes: false,
-    })
-    this.props.displayInsightsMessage('Selected Area Meta has been saved')              
-    when_done(selected_area_meta)
-  } 
+    doTier1Save(
+      'selected_area_meta',
+      this.state.name,
+      this.getSelectedAreaMetaFromState,
+      this.props.displayInsightsMessage,
+      this.props.selected_area_metas,
+      'selected_area_metas',
+      'current_selected_area_meta_id',
+      this.setLocalStateVar,
+      this.props.setGlobalStateVar,
+      when_done
+    )
+  }
 
   async doSaveToDatabase() {
     this.doSave(((selected_area_meta) => {
-      if (selected_area_meta)
       this.props.saveScannerToDatabase(
         'selected_area_meta',
         selected_area_meta,

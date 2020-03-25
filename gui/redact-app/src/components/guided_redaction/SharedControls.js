@@ -332,3 +332,40 @@ export function buildClearMatchesButton(scanner_type, clear_matches_function) {
     </div>
   )
 }
+
+export function doTier1Save(
+    scanner_type, 
+    scanner_name,
+    getScannerFromStateFunction, 
+    displayMessageFunction, 
+    globalScannersDict, 
+    globalScannerGroupName, 
+    globalCurrentScannerIdName, 
+    localSetState,
+    globalSetStateVar,
+    when_done=(()=>{})
+) {
+  const pretty_scanner_name = scanner_type.replace('_', ' ')
+  let updates_are_needed = false
+  if (!scanner_name) {
+    displayMessageFunction('Save aborted: Name is required for a ' + pretty_scanner_name)
+    return
+  }
+  let scanner_id = scanner_type + '_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
+  let scanner = getScannerFromStateFunction()
+  if (!scanner['id']) {
+    scanner['id'] = scanner_id
+    updates_are_needed = true
+  }
+  let deepCopyScanners = JSON.parse(JSON.stringify(globalScannersDict))
+  deepCopyScanners[scanner['id']] = scanner
+  globalSetStateVar(globalScannerGroupName, deepCopyScanners)
+  if (updates_are_needed) {
+    globalSetStateVar(globalCurrentScannerIdName, scanner['id'])
+    localSetState('id', scanner['id'])
+  }
+  localSetState('unsaved_changes', false)
+  displayMessageFunction(scanner_type + ' has been saved')
+  when_done(scanner)
+  return scanner
+}
