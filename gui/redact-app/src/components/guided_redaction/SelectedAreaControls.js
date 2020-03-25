@@ -148,7 +148,7 @@ class SelectedAreaControls extends React.Component {
         origin_entity_location: sam['origin_entity_location'],
         scan_level: sam['scan_level'],
         areas: sam['areas'],
-        minimum_zones : sam['areas'],
+        minimum_zones : sam['minimum_zones'],
         tolerance: sam['tolerance'],
         unsaved_changes: false,
       })
@@ -209,9 +209,9 @@ class SelectedAreaControls extends React.Component {
     let deepCopySelectedAreaMetas= JSON.parse(JSON.stringify(this.props.selected_area_metas)) 
     deepCopySelectedAreaMetas[selected_area_meta['id']] = selected_area_meta
     this.props.setGlobalStateVar('selected_area_metas', deepCopySelectedAreaMetas)
-    this.props.setGlobalStateVar('current_selected_area_meta_id', sam_id)
+    this.props.setGlobalStateVar('current_selected_area_meta_id', selected_area_meta['id'])
     this.setState({
-      id: sam_id,
+      id: selected_area_meta['id'],
       unsaved_changes: false,
     })
     this.props.displayInsightsMessage('Selected Area Meta has been saved')              
