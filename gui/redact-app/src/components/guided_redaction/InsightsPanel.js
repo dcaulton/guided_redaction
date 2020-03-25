@@ -888,7 +888,6 @@ class InsightsPanel extends React.Component {
     } else {
       return true
     }
-    return false
   }
 
   currentImageIsSelectedAreaAnchorImage() {
@@ -909,7 +908,6 @@ class InsightsPanel extends React.Component {
     } else {
       return true
     }
-    return false
   }
 
   callPing() {
@@ -953,6 +951,14 @@ class InsightsPanel extends React.Component {
       the_message = 'Select the upper left corner of the zone'
     } else if (the_mode === 'selected_area_minimum_zones_2') {
       the_message = 'Select the bottom right corner of the zone'
+    } else if (the_mode === 'add_template_anchor_2') {
+      the_message = 'pick the second corner of the anchor'
+    } else if (the_mode === 'add_template_mask_zone_2') {
+      the_message = 'pick the second corner of the mask zone'
+    } else if (the_mode === 'add_annotations_ocr_end') {
+      the_message = 'pick the second corner of the text area'
+    } else if (the_mode === 'scan_ocr_2') {
+      the_message = 'click second corner'
     }
     this.setState({
       mode: the_mode,
@@ -1008,28 +1014,28 @@ class InsightsPanel extends React.Component {
     if (x_scaled > this.state.image_width || y_scaled > this.state.image_height) {
         return
     }
+    this.setState({
+      clicked_coords: [x_scaled, y_scaled],
+      insights_image_scale: scale,
+    })
     if (this.state.mode === 'add_template_anchor_1') {
-      this.doAddTemplateAnchorClickOne(scale, x_scaled, y_scaled)
+      this.handleSetMode('add_template_anchor_2') 
     } else if (this.state.mode === 'add_template_anchor_2') {
       this.state.callbacks['add_template_anchor_2']([x_scaled, y_scaled])
     } else if (this.state.mode === 'selected_area_area_coords_1') {
       this.state.callbacks['selected_area_area_coords_1']([x_scaled, y_scaled])
     } else if (this.state.mode === 'add_template_mask_zone_1') {
-      this.doAddTemplateMaskZoneClickOne(scale, x_scaled, y_scaled)
+      this.handleSetMode('add_template_mask_zone_2') 
     } else if (this.state.mode === 'add_template_mask_zone_2') {
       this.state.callbacks['add_template_mask_zone_2']([x_scaled, y_scaled])
     } else if (this.state.mode === 'scan_ocr_1') {
-      this.setState({
-        mode: 'scan_ocr_2',
-        clicked_coords: [x_scaled, y_scaled],
-        insights_message: 'click second corner',
-      })
+      this.handleSetMode('scan_ocr_2') 
     } else if (this.state.mode === 'scan_ocr_2') {
       this.state.callbacks['scan_ocr_2']([x_scaled, y_scaled])
     } else if (this.state.mode === 'add_annotations_ocr_start') {
-      this.doAddAnnotationsOcrStartClickOne(scale, x_scaled, y_scaled)
+      this.handleSetMode('add_annotations_ocr_end') 
     } else if (this.state.mode === 'add_annotations_ocr_end') {
-      this.doAddAnnotationsOcrStartClickOne(scale, x_scaled, y_scaled)
+      this.handleSetMode('add_annotations_ocr_end') 
     } else if (this.state.mode === 'add_sa_origin_location_1') {
       this.state.callbacks['add_sa_origin_location_1']([x_scaled, y_scaled])
     } else if (this.state.mode === 'selected_area_minimum_zones_1') {
@@ -1037,33 +1043,6 @@ class InsightsPanel extends React.Component {
     } else if (this.state.mode === 'selected_area_minimum_zones_2') {
       this.state.callbacks['selected_area_minimum_zones_2']([x_scaled, y_scaled])
     }
-  }
-
-  doAddTemplateAnchorClickOne(scale, x_scaled, y_scaled) {
-    this.setState({
-      insights_image_scale: scale,
-      clicked_coords: [x_scaled, y_scaled],
-      insights_message: 'pick the second corner of the anchor',
-      mode: 'add_template_anchor_2',
-    })
-  }
-
-  doAddTemplateMaskZoneClickOne(scale, x_scaled, y_scaled) {
-    this.setState({
-      insights_image_scale: scale,
-      clicked_coords: [x_scaled, y_scaled],
-      insights_message: 'pick the second corner of the mask zone',
-      mode: 'add_template_mask_zone_2',
-    })
-  }
-
-  doAddAnnotationsOcrStartClickOne(scale, x_scaled, y_scaled) {
-    this.setState({
-      insights_image_scale: scale,
-      clicked_coords: [x_scaled, y_scaled],
-      insights_message: 'pick the second corner of the text area',
-      mode: 'add_annotations_ocr_end',
-    })
   }
 
   saveAnnotation(annotation_data, when_done=(()=>{})) {
