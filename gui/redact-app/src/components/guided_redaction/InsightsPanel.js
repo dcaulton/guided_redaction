@@ -72,6 +72,7 @@ class InsightsPanel extends React.Component {
     this.setScrubberToIndex=this.setScrubberToIndex.bind(this)
     this.getCurrentTemplateAnchors=this.getCurrentTemplateAnchors.bind(this)
     this.getCurrentSelectedAreaCenters=this.getCurrentSelectedAreaCenters.bind(this)
+    this.getCurrentSelectedAreaMinimumZones=this.getCurrentSelectedAreaMinimumZones.bind(this)
     this.getCurrentSelectedAreaOriginLocation=this.getCurrentSelectedAreaOriginLocation.bind(this)
     this.getCurrentTemplateMaskZones=this.getCurrentTemplateMaskZones.bind(this)
   }
@@ -84,6 +85,13 @@ class InsightsPanel extends React.Component {
   getCurrentSelectedAreaCenters() {
     if (Object.keys(this.state.callbacks).includes('getCurrentSelectedAreaCenters')) {
       return this.state.callbacks['getCurrentSelectedAreaCenters']()
+    }
+    return []
+  }
+
+  getCurrentSelectedAreaMinimumZones() {
+    if (Object.keys(this.state.callbacks).includes('getCurrentSelectedAreaMinimumZones')) {
+      return this.state.callbacks['getCurrentSelectedAreaMinimumZones']()
     }
     return []
   }
@@ -937,6 +945,10 @@ class InsightsPanel extends React.Component {
       the_message = 'Select the first corner of the region the text area'
     } else if (the_mode === 'add_sa_origin_location_1') {
       the_message = 'Select the origin location'
+    } else if (the_mode === 'selected_area_minimum_zones_1') {
+      the_message = 'Select the upper left corner of the zone'
+    } else if (the_mode === 'selected_area_minimum_zones_2') {
+      the_message = 'Select the bottom right corner of the zone'
     }
     this.setState({
       mode: the_mode,
@@ -1016,6 +1028,10 @@ class InsightsPanel extends React.Component {
       this.doAddAnnotationsOcrStartClickOne(scale, x_scaled, y_scaled)
     } else if (this.state.mode === 'add_sa_origin_location_1') {
       this.state.callbacks['add_sa_origin_location_1']([x_scaled, y_scaled])
+    } else if (this.state.mode === 'selected_area_minimum_zones_1') {
+      this.state.callbacks['selected_area_minimum_zones_1']([x_scaled, y_scaled])
+    } else if (this.state.mode === 'selected_area_minimum_zones_2') {
+      this.state.callbacks['selected_area_minimum_zones_2']([x_scaled, y_scaled])
     }
   }
 
@@ -1314,6 +1330,7 @@ class InsightsPanel extends React.Component {
               getCurrentTemplateAnchors={this.getCurrentTemplateAnchors}
               getCurrentTemplateMaskZones={this.getCurrentTemplateMaskZones}
               getCurrentSelectedAreaCenters={this.getCurrentSelectedAreaCenters}
+              getCurrentSelectedAreaMinimumZones={this.getCurrentSelectedAreaMinimumZones}
               getCurrentSelectedAreaOriginLocation={this.getCurrentSelectedAreaOriginLocation}
             />
           </div>

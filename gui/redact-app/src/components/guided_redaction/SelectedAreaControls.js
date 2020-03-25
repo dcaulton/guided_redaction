@@ -30,14 +30,42 @@ class SelectedAreaControls extends React.Component {
       scan_level: 'tier_2',
       areas: [],
       minimum_zones: [],
+      tolerance: 5,
       unsaved_changes: false,
       attribute_search_name: '',
       attribute_search_value: '',
+      first_click_coords: [],
     }
     this.addAreaCoordsCallback=this.addAreaCoordsCallback.bind(this)
     this.getCurrentSelectedAreaCenters=this.getCurrentSelectedAreaCenters.bind(this)
+    this.getCurrentSelectedAreaMinimumZones=this.getCurrentSelectedAreaMinimumZones.bind(this)
     this.getCurrentSelectedAreaOriginLocation=this.getCurrentSelectedAreaOriginLocation.bind(this)
     this.addOriginLocation=this.addOriginLocation.bind(this)
+    this.addMinimumZonesCallback1=this.addMinimumZonesCallback1.bind(this)
+    this.addMinimumZonesCallback2=this.addMinimumZonesCallback2.bind(this)
+  }
+
+  addMinimumZonesCallback1(click_coords) {
+    this.setState({
+      first_click_coords: click_coords,
+    })
+    this.props.handleSetMode('selected_area_minimum_zones_2')
+  }
+
+  addMinimumZonesCallback2(click_coords) {
+    const zone_id = 'selected_area_minimum_zone_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
+    const the_zone = {
+        'id': zone_id,
+        'start': this.state.first_click_coords,
+        'end': click_coords,
+    }
+    let deepCopyMinimumZones = JSON.parse(JSON.stringify(this.state.minimum_zones))
+    deepCopyMinimumZones.push(the_zone)
+    this.setState({
+      minimum_zones: deepCopyMinimumZones,
+      unsaved_changes: true,
+    })
+    this.props.handleSetMode('selected_area_minimum_zones_1')
   }
 
   addOriginLocation(origin_coords) {
@@ -52,13 +80,20 @@ class SelectedAreaControls extends React.Component {
     return this.state.areas
   }
 
+  getCurrentSelectedAreaMinimumZones() {
+    return this.state.minimum_zones
+  }
+
   getCurrentSelectedAreaOriginLocation() {
     return this.state.origin_entity_location
   }
 
   componentDidMount() {
     this.props.addInsightsCallback('selected_area_area_coords_1', this.addAreaCoordsCallback)
+    this.props.addInsightsCallback('selected_area_minimum_zones_1', this.addMinimumZonesCallback1)
+    this.props.addInsightsCallback('selected_area_minimum_zones_2', this.addMinimumZonesCallback2)
     this.props.addInsightsCallback('getCurrentSelectedAreaCenters', this.getCurrentSelectedAreaCenters)
+    this.props.addInsightsCallback('getCurrentSelectedAreaMinimumZones', this.getCurrentSelectedAreaMinimumZones)
     this.props.addInsightsCallback('getCurrentSelectedAreaOriginLocation', this.getCurrentSelectedAreaOriginLocation)
     this.props.addInsightsCallback('add_sa_origin_location_1', this.addOriginLocation)
   }
@@ -114,6 +149,7 @@ class SelectedAreaControls extends React.Component {
         scan_level: sam['scan_level'],
         areas: sam['areas'],
         minimum_zones : sam['areas'],
+        tolerance: sam['tolerance'],
         unsaved_changes: false,
       })
     }
@@ -136,6 +172,7 @@ class SelectedAreaControls extends React.Component {
       scan_level: 'tier_2',
       areas: [],
       minimum_zones: [],
+      tolerance: 5,
       unsaved_changes: false,
     })
   }
@@ -154,6 +191,7 @@ class SelectedAreaControls extends React.Component {
       scan_level: this.state.scan_level,
       areas: this.state.areas,
       minimum_zones: this.state.minimum_zones,
+      tolerance: this.state.tolerance,
     }
     return selected_area_meta
   }
@@ -229,6 +267,17 @@ class SelectedAreaControls extends React.Component {
       'name',
       25,
       ((value)=>{this.setLocalStateVar('name', value)})
+    )
+  }
+
+  buildToleranceField() {
+    return buildLabelAndTextInput(
+      this.state.tolerance,
+      'Tolerance',
+      'selected_area_tolerance',
+      'tolerance',
+      4,
+      ((value)=>{this.setLocalStateVar('tolerance', value)})
     )
   }
 
@@ -498,13 +547,6 @@ class SelectedAreaControls extends React.Component {
     this.props.displayInsightsMessage('Selected Area Meta was deleted')
   }
 
-  addTemplateAnchor() {
-    this.setState({
-      unsaved_changes: true,
-    })
-    this.props.handleSetMode('add_template_anchor_1')
-  }
-
   buildClearAreasButton() {
     return buildInlinePrimaryButton(
       'Clear Area Centers',
@@ -590,6 +632,7 @@ class SelectedAreaControls extends React.Component {
     const load_button = this.buildLoadButton()
     const id_string = buildIdString(this.state.id, 'selected area meta', this.state.unsaved_changes)
     const name_field = this.buildNameField()
+    const tolerance_field = this.buildToleranceField()
     const scale_dropdown = this.buildScaleDropdown()
     const select_type_dropdown = this.buildSelectTypeDropdown()
     const interior_or_exterior_dropdown = this.buildInteriorOrExteriorDropdown()
@@ -665,6 +708,10 @@ class SelectedAreaControls extends React.Component {
 
                 <div className='row mt-2'>
                   {interior_or_exterior_dropdown}
+                </div>
+
+                <div className='row mt-2'>
+                  {tolerance_field}
                 </div>
 
                 <div className='row mt-2'>
