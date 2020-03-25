@@ -252,7 +252,9 @@ class AnalyzeViewSetSelectedArea(viewsets.ViewSet):
     def process_t1_results(self, frameset, cv2_image, selected_area_meta, finder, tolerance):
         regions_for_image = []
         for scanner_matcher_id in frameset:
+            location_offset = [0,0]
             match_data = {}
+            regions_for_image = []
             if selected_area_meta['origin_entity_type'] == 'template_anchor':
                 if selected_area_meta['origin_entity_id'] == scanner_matcher_id:
                     match_data = frameset[scanner_matcher_id]
@@ -265,7 +267,29 @@ class AnalyzeViewSetSelectedArea(viewsets.ViewSet):
                   found_location[0] - configured_location[0],
                   found_location[1] - configured_location[1]
                 ]
-
+                print('location offset is {}'.format(location_offset))
+            for area in selected_area_meta['areas']:
+                selected_point = area['center']
+                selected_point = self.adjust_selected_point_for_t1(selected_point, selected_area_meta, frameset)
+                if selected_area_meta['select_type'] == 'arrow':
+                    regions = finder.determine_arrow_fill_area(
+                        cv2_image, selected_point, tolerance
+                    )
+                    regions_for_image.append({
+                        'regions': regions, 
+                        'origin': selected_point,
+                        'sam_area_id': area['id'],
+                    })
+                if selected_area_meta['select_type'] == 'flood':
+                    regions = finder.determine_flood_fill_area(
+                        cv2_image, selected_point, tolerance
+                    )
+                    regions_for_image.append(regions)
+                    regions_for_image.append({
+                        'regions': regions, 
+                        'origin': selected_point,
+                        'sam_area_id': area['id'],
+                    })
         return regions_for_image
 
     def process_virgin_image(self, frameset, cv2_image, selected_area_meta, finder, tolerance):
@@ -301,21 +325,13 @@ class AnalyzeViewSetSelectedArea(viewsets.ViewSet):
 
     def adjust_selected_point_for_t1(self, selected_point, selected_area_meta, frameset):
         if 'origin_entity_location' in selected_area_meta:
-            if 'location' in frameset:
-                print('ding a ling {}'.format(selected_point))
-                disp_x = frameset['location'][0] - selected_area_meta['origin_entity_location'][0]
-                disp_y = frameset['location'][1] - selected_area_meta['origin_entity_location'][1]
-                if abs(disp_x) or abs(disp_y):
-                    selected_point = [selected_point[0] + disp_x, selected_point[1] + disp_y]
-                    print('=========================================================')
-                    print('=========================================================')
-                    print('=========================================================')
-                    print('=========================================================')
-                    print('============ping a ling {}'.format(selected_point))
-                    print('=========================================================')
-                    print('=========================================================')
-                    print('=========================================================')
-                    print('=========================================================')
+            for anchor_id in frameset:
+                anchor = frameset[anchor_id]
+                if 'location' in anchor:
+                    disp_x = anchor['location'][0] - selected_area_meta['origin_entity_location'][0]
+                    disp_y = anchor['location'][1] - selected_area_meta['origin_entity_location'][1]
+                    if abs(disp_x) or abs(disp_y):
+                        selected_point = [selected_point[0] + disp_x, selected_point[1] + disp_y]
         return selected_point
 
     def transform_interior_selection_to_exterior(self, regions_for_image, cv2_image):
