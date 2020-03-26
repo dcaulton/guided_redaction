@@ -10,6 +10,8 @@ import {
   buildTier1DeleteButton,
   buildClearMatchesButton,
   clearTier1Matches,
+  buildAttributesAsRows,
+  buildAttributesAddRow,
 } from './SharedControls'
 
 class OcrControls extends React.Component {
@@ -25,6 +27,9 @@ class OcrControls extends React.Component {
       scan_level: 'tier_1',
       start_coords: [],
       end_coords: [],
+      attributes: {},
+      attribute_search_value: '',
+      first_click_coords: [],
     }
     this.addOcrZoneCallback=this.addOcrZoneCallback.bind(this)
     this.getOcrMetaFromState=this.getOcrMetaFromState.bind(this)
@@ -37,6 +42,57 @@ class OcrControls extends React.Component {
       unsaved_changes: true,
     },
     when_done())
+  }
+
+  setAttribute(name, value) {
+    let deepCopyAttributes = JSON.parse(JSON.stringify(this.state.attributes))
+    deepCopyAttributes[name] = value
+    this.setState({
+      attributes: deepCopyAttributes,
+      unsaved_changes: true,
+    })
+    this.props.displayInsightsMessage('Attribute was added')
+  }
+
+  doAddAttribute() {
+    const value_ele = document.getElementById('ocr_attribute_value')
+    const name_ele = document.getElementById('ocr_attribute_name')
+    if (value_ele.value && name_ele.value) {
+      this.setAttribute(name_ele.value, value_ele.value)
+      name_ele.value = ''
+      value_ele.value = ''
+    }
+  }
+
+  deleteAttribute(name) {
+    let deepCopyAttributes = JSON.parse(JSON.stringify(this.state.attributes))
+    if (!Object.keys(this.state.attributes).includes(name)) {
+      return
+    }
+    delete deepCopyAttributes[name]
+    this.setState({
+      attributes: deepCopyAttributes,
+      unsaved_changes: true,
+    })
+    this.props.displayInsightsMessage('Attribute was deleted')
+  }
+
+  buildAttributesList() {
+    const add_attr_row = buildAttributesAddRow(
+      'ocr_attribute_name',
+      'ocr_attribute_value',
+      (()=>{this.doAddAttribute()})
+    )
+    const attribs_list = buildAttributesAsRows(
+      this.state.attributes,
+      ((value)=>{this.deleteAttribute(value)})
+    )
+    return (
+      <div>
+        {add_attr_row}
+        {attribs_list}
+      </div>
+    )
   }
 
   addOcrZoneCallback(end_coords) {
@@ -99,6 +155,7 @@ class OcrControls extends React.Component {
       scan_level: 'tier_1',
       start_coords: [],
       end_coords: [],
+      attributes: {},
     })                                                                          
   } 
 
@@ -112,6 +169,7 @@ class OcrControls extends React.Component {
       match_percent: this.state.match_percent,
       skip_east: this.state.skip_east,
       scan_level: this.state.scan_level,
+      attributes: this.state.attributes,
     }
     return ocr_rule
   }
@@ -409,6 +467,7 @@ class OcrControls extends React.Component {
     const skip_east = this.buildSkipEast()
     const scan_level = this.buildScanLevel()
     const start_end_coords = this.buildStartEndCoords()
+    const attributes_list = this.buildAttributesList()
     const header_row = makeHeaderRow(
       'ocr',
       'ocr_body',
@@ -468,6 +527,10 @@ class OcrControls extends React.Component {
                 <div className='row bg-light'>
                   {start_end_coords}
                 </div>
+
+                <div className='row mt-1 mr-1 ml-1 border-top'>                 
+                  {attributes_list}                                             
+                </div>      
 
               </div>
             </div>
