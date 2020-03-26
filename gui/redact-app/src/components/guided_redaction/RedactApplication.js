@@ -1042,6 +1042,49 @@ class RedactApplication extends React.Component {
     }
   }
 
+  async loadOcrResults(job, when_done=(()=>{})) {
+    const response_data = JSON.parse(job.response_data)
+    const request_data = JSON.parse(job.request_data)
+    if (request_data['scan_level'] === 'tier_1') {
+      let deepCopyTier1Matches = JSON.parse(JSON.stringify(this.state.tier_1_matches))
+      let deepCopyOcrMatches = deepCopyTier1Matches['ocr']
+      deepCopyOcrMatches[request_data['id']] = response_data
+      deepCopyTier1Matches['ocr'] = deepCopyOcrMatches  // is this needed?
+      this.setGlobalStateVar('tier_1_matches', deepCopyTier1Matches)
+      this.setGlobalStateVar('current_ocr_rule_id', request_data['id'])
+      return
+    }
+    let deepCopyMovies = JSON.parse(JSON.stringify(this.state.movies))
+    let last_movie_url = ''
+    let last_hash = ''
+
+    for (let i=0; i < Object.keys(response_data['movies']).length; i++) {
+      const movie_url = Object.keys(response_data['movies'])[i]
+      last_movie_url = movie_url
+      if (!Object.keys(deepCopyMovies).includes(movie_url)) {
+        deepCopyMovies[movie_url] = request_data['movies'][movie_url]
+      }
+      for (let j=0; j < Object.keys(response_data['movies'][movie_url]['framesets']).length; j++) {
+        const frameset_hash = Object.keys(response_data['movies'][movie_url]['framesets'])[j]
+        last_hash = frameset_hash
+        const response_for_frameset = response_data['movies'][movie_url]['framesets'][frameset_hash]
+        for (let k=0; k < Object.keys(response_for_frameset).length; k++) {
+          const area_key = Object.keys(response_for_frameset)[k]
+          const new_area_to_redact = response_for_frameset[area_key]
+          if (!Object.keys(deepCopyMovies[movie_url]['framesets'][frameset_hash]).includes('areas_to_redact')) {
+            deepCopyMovies[movie_url]['framesets'][frameset_hash]['areas_to_redact'] = []
+          }
+          deepCopyMovies[movie_url]['framesets'][frameset_hash]['areas_to_redact'].push(new_area_to_redact)
+        }
+      }
+    }
+    this.setState({
+      movies: deepCopyMovies,
+      movie_url: last_movie_url,
+    })
+    this.setFramesetHash(last_hash)
+  }
+
   loadTemplateResults(job, when_done=(()=>{})) {
     const response_data = JSON.parse(job.response_data)
     if (!response_data) {
@@ -1053,7 +1096,7 @@ class RedactApplication extends React.Component {
     const request_data = JSON.parse(job.request_data)
     this.loadTier1ScannersFromTier1Request('templates', request_data)
     let resp_obj = this.loadMoviesFromTier1Request(request_data)
-    const movie_url = resp_obj['movie_url']
+    let movie_url = resp_obj['movie_url']
     let deepCopyMovies = resp_obj['deepCopyMovies']
     if (request_data['scan_level'] === 'tier_1') {
       let deepCopyTier1Matches = JSON.parse(JSON.stringify(this.state.tier_1_matches))
@@ -1505,49 +1548,8 @@ class RedactApplication extends React.Component {
     this.setGlobalStateVar('current_telemetry_rule_id', rule_id)
   }
 
-  async loadScanOcrMovieResults(job, when_done=(()=>{})) {
-    const response_data = JSON.parse(job.response_data)
-    const request_data = JSON.parse(job.request_data)
-    if (request_data['scan_level'] === 'tier_1') {
-      let deepCopyTier1Matches = JSON.parse(JSON.stringify(this.state.tier_1_matches))
-      let deepCopyOcrMatches = deepCopyTier1Matches['ocr']
-      deepCopyOcrMatches[request_data['id']] = response_data
-      deepCopyTier1Matches['ocr'] = deepCopyOcrMatches  // is this needed?
-      this.setGlobalStateVar('tier_1_matches', deepCopyTier1Matches)
-      this.setGlobalStateVar('current_ocr_rule_id', request_data['id'])
-      return
-    }
-    let deepCopyMovies = JSON.parse(JSON.stringify(this.state.movies))
-    let last_movie_url = ''
-    let last_hash = ''
-
-    for (let i=0; i < Object.keys(response_data['movies']).length; i++) {
-      const movie_url = Object.keys(response_data['movies'])[i]
-      last_movie_url = movie_url
-      if (!Object.keys(deepCopyMovies).includes(movie_url)) {
-        deepCopyMovies[movie_url] = request_data['movies'][movie_url]
-      }
-      for (let j=0; j < Object.keys(response_data['movies'][movie_url]['framesets']).length; j++) {
-        const frameset_hash = Object.keys(response_data['movies'][movie_url]['framesets'])[j]
-        last_hash = frameset_hash
-        const response_for_frameset = response_data['movies'][movie_url]['framesets'][frameset_hash]
-        for (let k=0; k < Object.keys(response_for_frameset).length; k++) {
-          const area_key = Object.keys(response_for_frameset)[k]
-          const new_area_to_redact = response_for_frameset[area_key]
-          if (!Object.keys(deepCopyMovies[movie_url]['framesets'][frameset_hash]).includes('areas_to_redact')) {
-            deepCopyMovies[movie_url]['framesets'][frameset_hash]['areas_to_redact'] = []
-          }
-          deepCopyMovies[movie_url]['framesets'][frameset_hash]['areas_to_redact'].push(new_area_to_redact)
-        }
-      }
-    }
-    this.setState({
-      movies: deepCopyMovies,
-      movie_url: last_movie_url,
-    })
-    this.setFramesetHash(last_hash)
-  }
-
+// TODO refactor imagePanel to use the movie format for this job, remove loadScanOcrImageResults
+//    and the code that builds its job
   async loadScanOcrImageResults(job, when_done=(()=>{})) {
     const responseJson = JSON.parse(job.response_data)
 
@@ -1628,7 +1630,7 @@ class RedactApplication extends React.Component {
 			} else if (job.app === 'analyze' && job.operation === 'scan_ocr_image') {
         this.loadScanOcrImageResults(job, when_done)
 			} else if (job.app === 'analyze' && job.operation === 'scan_ocr_movie') {
-        this.loadScanOcrMovieResults(job, when_done)
+        this.loadOcrResults(job, when_done)
 			} else if (job.app === 'analyze' && job.operation === 'telemetry_find_matching_frames') {
         this.loadTelemetryResults(job, when_done)
 			} else if (job.app === 'analyze' && job.operation === 'selected_area_threaded') {

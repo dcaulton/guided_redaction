@@ -280,6 +280,73 @@ class InsightsPanel extends React.Component {
     })
   }
 
+  makeSourceForPassedT1Output(tier_1_output) {
+    let movies_obj = {}
+    for (let i=0; i < Object.keys(tier_1_output).length; i++) {
+      const movie_url = Object.keys(tier_1_output)[i]
+      movies_obj[movie_url] = tier_1_output[movie_url]
+    }
+    return movies_obj
+  }
+
+//DADA
+  buildOcrJobData(scope, extra_data) {
+    if (!this.props.current_ocr_rule_id) {
+      this.displayInsightsMessage('no ocr rule selected, cannot submit a job')
+      return
+    }
+    const ocr_rule = this.props.ocr_rules[this.props.current_ocr_rule_id]
+    let job_data = {
+      request_data: {},
+    }
+    job_data['request_data']['movies'] = {}
+    job_data['request_data']['ocr_rules'] = {}
+    job_data['request_data']['ocr_rules'][ocr_rule['id']] = ocr_rule
+    job_data['app'] = 'analyze'
+    job_data['operation'] = 'scan_ocr'
+    job_data['scan_level'] = ocr_rule['scan_level']
+    job_data['id'] = ocr_rule['id']
+    job_data['description'] = 'scan ocr (rule ' + ocr_rule['name'] + ') '
+    if (scope === 'ocr_current_frame') {
+      job_data['description'] += 'for frame '
+      job_data['request_data']['movies'] = this.buildOneFrameMovieForCurrentInsightsImage()
+    } else if (scope === 'ocr_current_movie') {
+      job_data['description'] += 'for movie: ' + this.props.movie_url
+      job_data['request_data']['movies'][this.props.movie_url] = this.props.movies[this.props.movie_url]
+    } else if (scope === 'ocr_all_movies') {
+      job_data['description'] += 'for all movies'
+      job_data['request_data']['movies'] = this.props.movies
+    } else if (scope === 'ocr_t1_template') {
+      const template_id = extra_data
+      const template = this.props.templates[template_id]
+      const tier_1_output = this.props.tier_1_matches['template'][template_id]['movies']
+      job_data['description'] += 'on t1 template results (template ' + template['name'] + ')'
+      job_data['request_data']['movies']['source'] = this.makeSourceForPassedT1Output(tier_1_output)
+    } else if (scope === 'ocr_t1_selected_area') {
+      const selected_area_id = extra_data
+      const selected_area_meta = this.props.selected_area_metas[selected_area_id]['movies']
+      const tier_1_output = this.props.tier_1_matches['selected_area'][selected_area_id]
+      job_data['description'] += 'on t1 selected area results (sa ' + selected_area_meta['name'] + ')'
+      job_data['request_data']['movies']['source'] = this.makeSourceForPassedT1Output(tier_1_output)
+    } else if (scope === 'ocr_t1_ocr') {
+      const ocr_id = extra_data
+      const ocr_rule = this.props.ocr_rules[ocr_id]
+      const tier_1_output = this.props.tier_1_matches['ocr'][ocr_id]['movies']
+      job_data['description'] += 'on t1 ocr results (ocr ' + ocr_rule['name'] + ')'
+      job_data['request_data']['movies']['source'] = this.makeSourceForPassedT1Output(tier_1_output)
+    } else if (scope === 'ocr_t1_telemetry') {
+      const telemetry_id = extra_data
+      const telemetry_rule = this.props.telemetry_rules[telemetry_id]
+      const tier_1_output = this.props.tier_1_matches['telemetry'][telemetry_id]['movies']
+      job_data['description'] += 'on t1 telemetry results (telemetry ' + telemetry_rule['name'] + ')'
+      job_data['request_data']['movies']['source'] = this.makeSourceForPassedT1Output(tier_1_output)
+    }
+    return job_data
+  }
+
+
+
+
   buildScanOcrMovieJobData(scope, extra_data) {
     let job_data = {
       request_data: {},
@@ -311,6 +378,18 @@ class InsightsPanel extends React.Component {
     job_data['request_data']['id'] = extra_data['id']
     return job_data
   }
+
+
+
+
+
+
+
+
+
+
+
+
 
   buildScanTemplateCurTempCurMovJobData(scope, extra_data) {
     let job_data = {
@@ -739,6 +818,19 @@ class InsightsPanel extends React.Component {
       })
     } else if (job_string === 'current_template_telemetry_matches') {
       let job_data = this.buildScanTemplateCurTempTelemetryMatchesJobData(extra_data)
+      this.props.submitJob({
+        job_data: job_data,
+      })
+    } else if (
+        job_string === 'ocr_current_frame' || 
+        job_string === 'ocr_t1_template' || 
+        job_string === 'ocr_t1_selected_area' || 
+        job_string === 'ocr_t1_ocr' || 
+        job_string === 'ocr_t1_telemetry' || 
+        job_string === 'ocr_current_movie' || 
+        job_string === 'ocr_all_movies'
+    ) {
+      let job_data = this.buildOcrJobData(job_string, extra_data)
       this.props.submitJob({
         job_data: job_data,
       })

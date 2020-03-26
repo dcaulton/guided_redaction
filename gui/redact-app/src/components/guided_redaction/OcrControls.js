@@ -174,23 +174,17 @@ class OcrControls extends React.Component {
     return ocr_rule
   }
 
-  packageAndCallSubmitJob(scope) {
-    if (this.state.start_coords.length === 0) {
-      this.props.displayInsightsMessage('Please pick start and end coords before running this job')
-      return
-    }
-    const ocr_request_id = 'ocr_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
-    let ocr_meta = this.getOcrMetaFromState()
-    ocr_meta['id'] = ocr_request_id
-    this.props.submitInsightsJob(scope, ocr_meta)
-  }
-
   buildRunButton() {
-    const tier_1_template_run_options = this.props.buildTier1RunOptions('template', 'ocr_t1_template')
-    const tier_1_selected_area_run_options = this.props.buildTier1RunOptions('selected_area', 'ocr_t1_selected_area')
-    const tier_1_ocr_run_options = this.props.buildTier1RunOptions('ocr', 'ocr_t1_ocr')
-    const tier_1_telemetry_run_options = this.props.buildTier1RunOptions('telemetry', 'ocr_t1_telemetry')
-    const movie_set_run_options = this.props.buildMovieSetOptions('ocr_movie_set')
+//    const tier_1_template_run_options = this.props.buildTier1RunOptions('template', 'ocr_t1_template')
+//    const tier_1_selected_area_run_options = this.props.buildTier1RunOptions('selected_area', 'ocr_t1_selected_area')
+//    const tier_1_ocr_run_options = this.props.buildTier1RunOptions('ocr', 'ocr_t1_ocr')
+//    const tier_1_telemetry_run_options = this.props.buildTier1RunOptions('telemetry', 'ocr_t1_telemetry')
+//    const movie_set_run_options = this.props.buildMovieSetOptions('ocr_movie_set')
+    const tier_1_template_run_options = ''
+    const tier_1_selected_area_run_options = ''
+    const tier_1_ocr_run_options = ''
+    const tier_1_telemetry_run_options = ''
+    const movie_set_run_options = ''
     return (
       <div className='d-inline ml-2'>
         <button
@@ -205,17 +199,17 @@ class OcrControls extends React.Component {
         </button>
         <div className='dropdown-menu' aria-labelledby='RunTelemetryDropdownButton'>
           <button className='dropdown-item'
-              onClick={() => this.packageAndCallSubmitJob('ocr_current_frame')}
+              onClick={() => this.props.submitInsightsJob('ocr_current_frame')}
           >
             Frame
           </button>
           <button className='dropdown-item'
-              onClick={() => this.packageAndCallSubmitJob('ocr_current_movie')}
+              onClick={() => this.props.submitInsightsJob('ocr_current_movie')}
           >
             Movie
           </button>
           <button className='dropdown-item'
-              onClick={() => this.packageAndCallSubmitJob('ocr_all_movies')}
+              onClick={() => this.props.submitInsightsJob('ocr_all_movies')}
           >
             All Movies
           </button>
