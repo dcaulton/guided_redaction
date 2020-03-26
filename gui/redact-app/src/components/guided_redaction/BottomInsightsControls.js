@@ -183,6 +183,9 @@ class BottomInsightsControls extends React.Component {
           ocr_rules={this.props.ocr_rules}
           current_ocr_rule_id={this.props.current_ocr_rule_id}
           setGlobalStateVar={this.props.setGlobalStateVar}
+          scanners={this.props.scanners}
+          getScanners={this.props.getScanners}
+          deleteScanner={this.props.deleteScanner}
           saveScannerToDatabase={this.props.saveScannerToDatabase}
           movie_url={this.props.movie_url}
           tier_1_matches={this.props.tier_1_matches}
