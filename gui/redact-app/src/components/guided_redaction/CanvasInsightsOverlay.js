@@ -256,21 +256,34 @@ class CanvasInsightsOverlay extends React.Component {
   drawAreasToRedact() {
     if (this.props.getCurrentAreasToRedact()) {
       const matches = this.props.getCurrentAreasToRedact()
+      let start = 0
+      let end = 0
       const canvas = this.refs.insights_canvas
       let ctx = canvas.getContext('2d')
       ctx.strokeStyle = this.area_to_redact_color
       ctx.lineWidth = 10
       for (let i=0; i < matches.length; i++) {
         const match = matches[i]
-        if (!Object.keys(match).includes('start')) {
-          continue
+        let start=0
+        let end=0
+        if (Object.keys(match).includes('start') && 
+            Object.keys(match).includes('end')) {
+          start = match['start']
+          end = match['end']
+        } else if (Object.keys(match).includes('location') && 
+            Object.keys(match).includes('size')) {
+          start = match['location']
+          end = [
+            start[0] + match['size'][0],
+            start[1] + match['size'][1]
+          ]
         }
         ctx.fillStyle = this.area_to_redact_color
         ctx.globalAlpha = 0.4
-        const start_x_scaled = match['start'][0] * this.props.insights_image_scale
-        const start_y_scaled = match['start'][1] * this.props.insights_image_scale
-        const width = (match['end'][0] * this.props.insights_image_scale) - start_x_scaled
-        const height= (match['end'][1] * this.props.insights_image_scale) - start_y_scaled
+        const start_x_scaled = start[0] * this.props.insights_image_scale
+        const start_y_scaled = start[1] * this.props.insights_image_scale
+        const width = (end[0] * this.props.insights_image_scale) - start_x_scaled
+        const height= (end[1] * this.props.insights_image_scale) - start_y_scaled
         ctx.fillRect(start_x_scaled, start_y_scaled, width, height)
         ctx.strokeStyle = this.red_color
         ctx.lineWidth = 2

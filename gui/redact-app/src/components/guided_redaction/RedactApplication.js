@@ -1067,15 +1067,18 @@ class RedactApplication extends React.Component {
         deepCopyMovies[movie_url] = request_data['movies'][movie_url]
       }
       for (let j=0; j < Object.keys(response_data['movies'][movie_url]['framesets']).length; j++) {
+  console.log('badda')
         const frameset_hash = Object.keys(response_data['movies'][movie_url]['framesets'])[j]
         const frameset = response_data['movies'][movie_url]['framesets'][frameset_hash]
         for (let k=0; k < Object.keys(frameset).length; k++) {
+  console.log('bing ')
           const area_key = Object.keys(frameset)[k]
           const new_area_to_redact = frameset[area_key]
           if (!Object.keys(deepCopyMovies[movie_url]['framesets'][frameset_hash]).includes('areas_to_redact')) {
             deepCopyMovies[movie_url]['framesets'][frameset_hash]['areas_to_redact'] = []
           }
           deepCopyMovies[movie_url]['framesets'][frameset_hash]['areas_to_redact'].push(new_area_to_redact)
+  console.log('bazinga')
           something_changed = true
         }
       }
