@@ -262,6 +262,9 @@ class CanvasInsightsOverlay extends React.Component {
       ctx.lineWidth = 10
       for (let i=0; i < matches.length; i++) {
         const match = matches[i]
+        if (!Object.keys(match).includes('start')) {
+          continue
+        }
         ctx.fillStyle = this.area_to_redact_color
         ctx.globalAlpha = 0.4
         const start_x_scaled = match['start'][0] * this.props.insights_image_scale
