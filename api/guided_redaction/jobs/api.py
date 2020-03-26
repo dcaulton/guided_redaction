@@ -37,6 +37,8 @@ def dispatch_job(job):
         analyze_tasks.scan_ocr_image.delay(job_uuid)
     if job.app == 'analyze' and job.operation == 'scan_ocr_movie':
         analyze_tasks.scan_ocr_movie.delay(job_uuid)
+    if job.app == 'analyze' and job.operation == 'scan_ocr':
+        analyze_tasks.scan_ocr_movie.delay(job_uuid)
     if job.app == 'analyze' and job.operation == 'telemetry_find_matching_frames':
         analyze_tasks.telemetry_find_matching_frames.delay(job_uuid)
     if job.app == 'analyze' and job.operation == 'get_timestamp':

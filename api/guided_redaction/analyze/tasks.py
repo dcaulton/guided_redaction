@@ -362,6 +362,8 @@ def scan_ocr_image(job_uuid):
             parent_job = Job.objects.get(pk=job.parent_id)
             if parent_job.app == 'analyze' and parent_job.operation == 'scan_ocr_movie':
                 scan_ocr_movie.delay(parent_job.id)
+            if parent_job.app == 'analyze' and parent_job.operation == 'scan_ocr':
+                scan_ocr_movie.delay(parent_job.id)
 
 @shared_task
 def telemetry_find_matching_frames(job_uuid):
@@ -398,32 +400,47 @@ def scan_ocr_movie(job_uuid):
           job.status = 'failed'
           job.save()
 
+def get_ocr_roi(ocr_rule, frameset):
+  roi = {}
+  roi['start'] = [ocr_rule['start_coords'][0], ocr_rule['start_coords'][1]]
+  roi['end'] = [ocr_rule['end_coords'][0], ocr_rule['end_coords'][1]]
+  if 'location' in frameset and 'size' in frameset:
+    roi['start'] = [frameset['location'][0], frameset['location'][1]]
+    roi['end'] = [
+        roi['start'][0] + frameset['size'][0], 
+        roi['start'][1] + frameset['size'][1]
+    ]
+  return roi
+
 def build_and_dispatch_scan_ocr_movie_children(parent_job):
     parent_job.status = 'running'
     parent_job.save()
     request_data = json.loads(parent_job.request_data)
-    for movie_url in request_data['movies']:
-        movie = request_data['movies'][movie_url]
-        scan_area = request_data['scan_area']
-        roi_start_x = scan_area['start'][0]
-        roi_start_y = scan_area['start'][1]
-        roi_end_x = scan_area['end'][0]
-        roi_end_y = scan_area['end'][1]
-        skip_east = False
-        if 'skip_east' in request_data:
-            skip_east = request_data['skip_east']
+    ocr_rule_id = list(request_data['ocr_rules'].keys())[0]
+    ocr_rule = request_data['ocr_rules'][ocr_rule_id]
+    movies = request_data['movies']
+    source_movies = {}
+    if 'source' in movies:
+        source_movies = movies['source']
+        del movies['source']
+    for movie_url in movies:
+        movie = movies[movie_url]
         for index, frameset_hash in enumerate(movie['framesets'].keys()):
             frameset = movie['framesets'][frameset_hash]
-            first_image_url = frameset['images'][0]
+            roi = get_ocr_roi(ocr_rule, frameset)
+            if 'images' in frameset:
+                first_image_url = frameset['images'][0]
+            else:
+                first_image_url = source_movies[movie_url]['framesets'][frameset_hash]['images'][0]
             child_job_request_data = json.dumps({
                 'movie_url': movie_url,
                 'image_url': first_image_url,
                 'frameset_hash': frameset_hash,
-                'roi_start_x': roi_start_x,
-                'roi_start_y': roi_start_y,
-                'roi_end_x': roi_end_x,
-                'roi_end_y': roi_end_y,
-                'skip_east': skip_east,
+                'roi_start_x': roi['start'][0],
+                'roi_start_y': roi['start'][1],
+                'roi_end_x': roi['end'][0],
+                'roi_end_y': roi['end'][1],
+                'skip_east': ocr_rule['skip_east'],
             })
             job = Job(
                 request_data=child_job_request_data,
@@ -446,6 +463,8 @@ def build_and_dispatch_scan_ocr_movie_children(parent_job):
 
 def wrap_up_scan_ocr_movie(parent_job, children):
     parent_request_data = json.loads(parent_job.request_data)
+    ocr_rule_id = list(parent_request_data['ocr_rules'].keys())[0]
+    ocr_rule = parent_request_data['ocr_rules'][ocr_rule_id]
     aggregate_response_data = {}
     print('========================== WRAPPING UP OCR')
     for child in children:
@@ -459,10 +478,10 @@ def wrap_up_scan_ocr_movie(parent_job, children):
         if ('movies' not in aggregate_response_data):
             aggregate_response_data['movies'] = {}
         areas_to_redact = child_response_data
-        if (parent_request_data['match_text'] and parent_request_data['match_percent']):
+        if (ocr_rule['match_text'] and ocr_rule['match_percent']):
             areas_to_redact = find_relevant_areas_from_response(
-                parent_request_data['match_text'], 
-                int(parent_request_data['match_percent']), 
+                ocr_rule['match_text'], 
+                int(ocr_rule['match_percent']), 
                 areas_to_redact
             )
             if len(areas_to_redact) == 0:

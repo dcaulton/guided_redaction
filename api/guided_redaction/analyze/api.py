@@ -11,7 +11,6 @@ from guided_redaction.analyze.classes.EastPlusTessGuidedAnalyzer import (
 from guided_redaction.analyze.classes.TelemetryAnalyzer import TelemetryAnalyzer
 from guided_redaction.analyze.classes.TemplateMatcher import TemplateMatcher
 from guided_redaction.analyze.classes.ExtentsFinder import ExtentsFinder
-from django.http import HttpResponse, JsonResponse
 import json
 import base64
 import numpy as np
@@ -31,15 +30,15 @@ class AnalyzeViewSetEastTess(viewsets.ViewSet):
 
     def process_create_request(self, request_data):
         if not request_data.get("image_url"):
-            return HttpResponse("image_url is required", status=400)
+            return self.error("image_url is required", status_code=400)
         if not request_data.get("roi_start_x"):
-            return HttpResponse("roi_start_x is required", status=400)
+            return self.error("roi_start_x is required", status_code=400)
         if not request_data.get("roi_start_y"):
-            return HttpResponse("roi_start_y is required", status=400)
+            return self.error("roi_start_y is required", status_code=400)
         if not request_data.get("roi_end_x"):
-            return HttpResponse("roi_end_x is required", status=400)
+            return self.error("roi_end_x is required", status_code=400)
         if not request_data.get("roi_end_y"):
-            return HttpResponse("roi_end_y is required", status=400)
+            return self.error("roi_end_y is required", status_code=400)
         skip_east = request_data.get("skip_east", False)
         pic_response = requests.get(
           request_data["image_url"],
