@@ -976,13 +976,49 @@ class RedactApplication extends React.Component {
     }
   }
 
-  loadSelectedAreaResults(job, when_done) {
-    const response_data = JSON.parse(job.response_data)
-    const request_data = JSON.parse(job.request_data)
+
+
+
+
+  loadTier1ScannersFromTier1Request(scanner_type, request_data) {
+    let scanner_id = ''
     let something_changed = false
-    let deepCopyMovies= JSON.parse(JSON.stringify(this.state.movies))
-    let deepCopySelectedAreaMetas = JSON.parse(JSON.stringify(this.state.selected_area_metas))
+    let scanner_hash = {}
+    let scanner_hash_varname = ''
+    let scanner_hash_current_id_name = ''
+    if (scanner_type === 'templates') {
+      scanner_hash = this.state.templates
+      scanner_hash_varname = 'templates'
+      scanner_hash_current_id_name = 'current_template_id'
+    } else if (scanner_type === 'selected_area_metas') {
+      scanner_hash = this.state.selected_area_metas
+      scanner_hash_varname = 'selected_area_metas'
+      scanner_hash_current_id_name = 'current_selected_area_meta_id'
+    } else if (scanner_type === 'ocr_rules') {
+      scanner_hash = this.state.ocr_rules
+      scanner_hash_varname = 'ocr_rules'
+      scanner_hash_current_id_name = 'current_ocr_rule_id'
+    }
+    let deepCopyScanners = JSON.parse(JSON.stringify(scanner_hash))
+    for (let i=0; i < Object.keys(request_data[scanner_type]).length; i++) {
+      scanner_id = Object.keys(request_data[scanner_type])[i]
+      if (!Object.keys(scanner_hash).includes(scanner_id)) {
+        deepCopyScanners[scanner_id] = request_data[scanner_type][scanner_id]
+        something_changed = true
+      }
+    }
+    if (something_changed) {
+      this.setState({
+        [scanner_hash_varname]: deepCopyScanners,
+        [scanner_hash_current_id_name]: scanner_id,
+      })
+    }
+  }
+
+  loadMoviesFromTier1Request(request_data) {
     let movie_url = ''
+    let deepCopyMovies= JSON.parse(JSON.stringify(this.state.movies))
+    let something_changed = false
     for (let i=0; i < Object.keys(request_data['movies']).length; i++) {
       movie_url = Object.keys(request_data['movies'])[i]
       if (movie_url === 'source') {
@@ -994,29 +1030,100 @@ class RedactApplication extends React.Component {
         something_changed = true
       }
     }
-    let sam_id = ''
-    for (let i=0; i < Object.keys(request_data['selected_area_metas']).length; i++) {
-      sam_id = Object.keys(request_data['selected_area_metas'])[i]
-      if (!Object.keys(this.state.selected_area_metas).includes(sam_id)) {
-        deepCopySelectedAreaMetas[sam_id] = request_data['selected_area_metas'][sam_id]
-        something_changed = true
+    if (something_changed && request_data['scan_level'] === 'tier_1') {
+      this.setState({
+        movies: deepCopyMovies,
+        movie_url: movie_url,
+      })
+    }
+    return {
+      movie_url: movie_url,
+      deepCopyMovies: deepCopyMovies
+    }
+  }
+
+  loadTemplateResults(job, when_done=(()=>{})) {
+    const response_data = JSON.parse(job.response_data)
+    if (!response_data) {
+      return
+    }
+    if (!Object.keys(response_data).includes('movies')) {
+      return
+    }
+    const request_data = JSON.parse(job.request_data)
+    this.loadTier1ScannersFromTier1Request('templates', request_data)
+    let resp_obj = this.loadMoviesFromTier1Request(request_data)
+    const movie_url = resp_obj['movie_url']
+    let deepCopyMovies = resp_obj['deepCopyMovies']
+    if (request_data['scan_level'] === 'tier_1') {
+      let deepCopyTier1Matches = JSON.parse(JSON.stringify(this.state.tier_1_matches))
+      let deepCopyTemplateMatches = deepCopyTier1Matches['template']
+      deepCopyTemplateMatches[request_data['id']] = response_data
+      deepCopyTier1Matches['template'] = deepCopyTemplateMatches // todo: can we remove this?
+      this.setGlobalStateVar('tier_1_matches', deepCopyTier1Matches)
+      return
+    }
+
+    let something_changed = false
+    for (let i=0; i < Object.keys(response_data['movies']).length; i++) {
+      movie_url = Object.keys(response_data['movies'])[i]
+      for (let j = 0; j < Object.keys(response_data['movies'][movie_url]['framesets']).length; j++) {
+        const frameset_hash = Object.keys(response_data['movies'][movie_url]['framesets'])[j]
+        const frameset = response_data['movies'][movie_url]['framesets'][frameset_hash]
+        for (let k = 0; k < Object.keys(frameset).length; k++) {
+          const anchor_id = Object.keys(frameset)[k]
+          const anchor_found_coords = frameset[anchor_id]['location']
+          const anchor_found_scale = frameset[anchor_id]['scale']
+          const template = this.getTemplateForAnchor(request_data['templates'], anchor_id) 
+          const mask_zones = this.getMaskZonesForAnchor(template, anchor_id)
+          for (let m=0; m < mask_zones.length; m++) {
+            const mask_zone = mask_zones[m]
+            const area_to_redact = this.getAreaToRedactFromTemplateMatch(
+                mask_zone, anchor_id, template, anchor_found_coords, anchor_found_scale
+            ) 
+            let deepCopyFrameset = deepCopyMovies[movie_url]['framesets'][frameset_hash]
+            if (!Object.keys(deepCopyFrameset).includes('areas_to_redact')) {
+              deepCopyFrameset['areas_to_redact'] = []
+            }
+            deepCopyFrameset['areas_to_redact'].push(area_to_redact)
+            something_changed = true
+          }
+        }
       }
     }
+
+    if (something_changed) {
+      this.setState({
+        movies: deepCopyMovies,
+        movie_url: movie_url,
+      })
+    }
+  }
+
+  loadSelectedAreaResults(job, when_done) {
+    const response_data = JSON.parse(job.response_data)
+    if (!response_data) {
+      return
+    }
+    if (!Object.keys(response_data).includes('movies')) {
+      return
+    }
+    const request_data = JSON.parse(job.request_data)
+    this.loadTier1ScannersFromTier1Request('selected_area_metas', request_data)
+    let resp_obj = this.loadMoviesFromTier1Request(request_data)
+    const movie_url = resp_obj['movie_url']
+    let deepCopyMovies = resp_obj['deepCopyMovies']
+
     if (request_data['scan_level'] === 'tier_1') {
       let deepCopyTier1Matches = JSON.parse(JSON.stringify(this.state.tier_1_matches))
       let deepCopySelectedAreaMatches = deepCopyTier1Matches['selected_area']
       deepCopySelectedAreaMatches[request_data['id']] = response_data
       deepCopyTier1Matches['selected_area'] = deepCopySelectedAreaMatches // todo: can we remove this?
       this.setGlobalStateVar('tier_1_matches', deepCopyTier1Matches)
-      if (something_changed) {
-        this.setGlobalStateVar('selected_area_metas', deepCopySelectedAreaMetas)
-        this.setGlobalStateVar('current_selected_area_meta_id', sam_id)
-        this.setGlobalStateVar('movies', deepCopyMovies)
-        this.setGlobalStateVar('movie_url', movie_url)
-      }
       return
     }
 
+    let something_changed = false
     for (let i=0; i < Object.keys(response_data['movies']).length; i++) {
       const movie_url = Object.keys(response_data['movies'])[i]
       for (let j = 0; j < Object.keys(response_data['movies'][movie_url]['framesets']).length; j++) {
@@ -1042,95 +1149,11 @@ class RedactApplication extends React.Component {
         }
       }
     }
-    if (something_changed) {
-      this.setGlobalStateVar('movies', deepCopyMovies)
-      this.setGlobalStateVar('selected_area_metas', deepCopySelectedAreaMetas)
-    }
-  }
-
-  loadScanTemplateResults(job, when_done=(()=>{})) {
-    const response_data = JSON.parse(job.response_data)
-    if (!response_data) {
-      return
-    }
-    const request_data = JSON.parse(job.request_data)
-    // TODO break tier1 + movie + scanner load into a shared module
-    let deepCopyMovies= JSON.parse(JSON.stringify(this.state.movies))
-    let deepCopyTemplates= JSON.parse(JSON.stringify(this.state.templates))
-    let something_changed = false
-    let movie_url = ''
-    for (let i=0; i < Object.keys(request_data['movies']).length; i++) {
-      movie_url = Object.keys(request_data['movies'])[i]
-      if (movie_url === 'source') {
-        continue
-      }
-      if (!Object.keys(deepCopyMovies).includes(movie_url)) {
-        deepCopyMovies[movie_url] = request_data['movies'][movie_url]
-        this.addToCampaignMovies(movie_url)
-        something_changed = true
-      }
-    }
-    let template_id = ''
-    for (let i=0; i < Object.keys(request_data['templates']).length; i++) {
-      template_id = Object.keys(request_data['templates'])[i]
-      if (!Object.keys(this.state.templates).includes(template_id)) {
-        deepCopyTemplates[template_id] = request_data['templates'][template_id]
-      }
-    }
-
-    if (request_data['scan_level'] === 'tier_1') {
-      let deepCopyTier1Matches = JSON.parse(JSON.stringify(this.state.tier_1_matches))
-      let deepCopyTemplateMatches = deepCopyTier1Matches['template']
-      deepCopyTemplateMatches[request_data['id']] = response_data
-      deepCopyTier1Matches['template'] = deepCopyTemplateMatches // todo: can we remove this?
-      this.setState({
-        templates: deepCopyTemplates,
-        current_template_id: template_id,
-        tier_1_matches: deepCopyTier1Matches
-      })
-      if (something_changed) {
-        this.setState({
-          movies: deepCopyMovies,
-          movie_url: movie_url,
-        })
-      }
-      return
-    }
-
-    if (!Object.keys(response_data).includes('movies')) {
-      return
-    }
-    for (let i=0; i < Object.keys(response_data['movies']).length; i++) {
-      movie_url = Object.keys(response_data['movies'])[i]
-      for (let j = 0; j < Object.keys(response_data['movies'][movie_url]['framesets']).length; j++) {
-        const frameset_hash = Object.keys(response_data['movies'][movie_url]['framesets'])[j]
-        for (let k = 0; k < Object.keys(response_data['movies'][movie_url]['framesets'][frameset_hash]).length; k++) {
-          const anchor_id = Object.keys(response_data['movies'][movie_url]['framesets'][frameset_hash])[k]
-          const anchor_found_coords = response_data['movies'][movie_url]['framesets'][frameset_hash][anchor_id]['location']
-          const anchor_found_scale = response_data['movies'][movie_url]['framesets'][frameset_hash][anchor_id]['scale']
-          const template = this.getTemplateForAnchor(request_data['templates'], anchor_id) 
-          const mask_zones = this.getMaskZonesForAnchor(template, anchor_id)
-          for (let m=0; m < mask_zones.length; m++) {
-            const mask_zone = mask_zones[m]
-            const area_to_redact = this.getAreaToRedactFromTemplateMatch(
-                mask_zone, anchor_id, template, anchor_found_coords, anchor_found_scale
-            ) 
-            if (!Object.keys(deepCopyMovies[movie_url]['framesets'][frameset_hash]).includes('areas_to_redact')) {
-              deepCopyMovies[movie_url]['framesets'][frameset_hash]['areas_to_redact'] = []
-            }
-            deepCopyMovies[movie_url]['framesets'][frameset_hash]['areas_to_redact'].push(area_to_redact)
-            something_changed = true
-          }
-        }
-      }
-    }
 
     if (something_changed) {
       this.setState({
         movies: deepCopyMovies,
         movie_url: movie_url,
-        current_template_id: template_id,
-        templates: deepCopyTemplates,
       })
     }
   }
@@ -1597,7 +1620,7 @@ class RedactApplication extends React.Component {
 			if ((job.app === 'analyze' && job.operation === 'scan_template')
 			   || (job.app === 'analyze' && job.operation === 'scan_template_multi')
 			   || (job.app === 'analyze' && job.operation === 'scan_template_threaded')) {
-        this.loadScanTemplateResults(job, when_done)
+        this.loadTemplateResults(job, when_done)
 			} else if (job.app === 'analyze' && job.operation === 'filter') {
         this.loadFilterResults(job, when_done)
 			} else if (job.app === 'analyze' && job.operation === 'get_timestamp_threaded') {
