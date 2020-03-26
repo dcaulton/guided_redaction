@@ -75,11 +75,19 @@ class InsightsPanel extends React.Component {
     this.getCurrentSelectedAreaMinimumZones=this.getCurrentSelectedAreaMinimumZones.bind(this)
     this.getCurrentSelectedAreaOriginLocation=this.getCurrentSelectedAreaOriginLocation.bind(this)
     this.getCurrentTemplateMaskZones=this.getCurrentTemplateMaskZones.bind(this)
+    this.getCurrentOcrWindow=this.getCurrentOcrWindow.bind(this)
   }
 
   setScrubberToIndex(the_value) {
     document.getElementById('movie_scrubber').value = the_value
     this.scrubberOnChange()
+  }
+
+  getCurrentOcrWindow() {
+    if (Object.keys(this.state.callbacks).includes('getOcrWindow')) {
+      return this.state.callbacks['getOcrWindow']()
+    }
+    return []
   }
 
   getCurrentSelectedAreaCenters() {
@@ -1341,6 +1349,7 @@ class InsightsPanel extends React.Component {
               movie_url={this.props.movie_url}
               getCurrentTemplateAnchors={this.getCurrentTemplateAnchors}
               getCurrentTemplateMaskZones={this.getCurrentTemplateMaskZones}
+              getCurrentOcrWindow={this.getCurrentOcrWindow}
               getCurrentSelectedAreaCenters={this.getCurrentSelectedAreaCenters}
               getCurrentSelectedAreaMinimumZones={this.getCurrentSelectedAreaMinimumZones}
               getCurrentSelectedAreaOriginLocation={this.getCurrentSelectedAreaOriginLocation}

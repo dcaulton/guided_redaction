@@ -35,6 +35,19 @@ class OcrControls extends React.Component {
     this.addOcrZoneCallback=this.addOcrZoneCallback.bind(this)
     this.getOcrMetaFromState=this.getOcrMetaFromState.bind(this)
     this.setLocalStateVar=this.setLocalStateVar.bind(this)
+    this.getOcrWindow=this.getOcrWindow.bind(this)
+  }
+
+  getOcrWindow() {
+    return {
+      start: this.state.start_coords,
+      end: this.state.end_coords,
+    }
+  }
+
+  componentDidMount() {
+    this.props.addInsightsCallback('scan_ocr_2', this.addOcrZoneCallback)
+    this.props.addInsightsCallback('getOcrWindow', this.getOcrWindow)
   }
 
   setLocalStateVar(var_name, var_value, when_done=(()=>{})) {
@@ -120,7 +133,6 @@ class OcrControls extends React.Component {
 
   startOcrRegionAdd() {
     this.props.handleSetMode('scan_ocr_1')
-    this.props.addInsightsCallback('scan_ocr_2', this.addOcrZoneCallback)
     this.props.displayInsightsMessage('Select the first corner of the area to scan')
   }
 

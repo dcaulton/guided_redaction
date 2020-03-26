@@ -15,6 +15,7 @@ class CanvasInsightsOverlay extends React.Component {
     this.annotations_color = '#5DE'
     this.ocr_color = '#CC0'
     this.area_to_redact_color = '#D6D'
+    this.ocr_window_color = '#DA9'
     this.red_color = '#F00'
   }
 
@@ -68,6 +69,16 @@ class CanvasInsightsOverlay extends React.Component {
         const height = (end[1] - start[1]) * this.props.insights_image_scale
         ctx.strokeRect(start_x_scaled, start_y_scaled, width, height)
       }
+    }
+  }
+
+  drawOcrWindow() {
+    const window = this.props.getCurrentOcrWindow()
+    if (window) {
+      this.drawBoxesAroundStartEndRecords(
+        [window],
+        this.ocr_window_color
+      )
     }
   }
 
@@ -303,6 +314,7 @@ class CanvasInsightsOverlay extends React.Component {
     this.drawScannerOrigins()
     this.drawAnnotations()
     this.drawOcrMatches()
+    this.drawOcrWindow()
     this.drawAreasToRedact()
   }
 
@@ -319,6 +331,7 @@ class CanvasInsightsOverlay extends React.Component {
     this.drawScannerOrigins()
     this.drawAnnotations()
     this.drawOcrMatches()
+    this.drawOcrWindow()
     this.drawAreasToRedact()
   }
 
