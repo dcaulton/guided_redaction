@@ -223,15 +223,31 @@ class AnalyzeViewSetSelectedArea(viewsets.ViewSet):
                 return self.error("couldnt read image data", status_code=422)
             nparr = np.fromstring(image, np.uint8)
             cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+            regions_for_image = {'regions': [], 'origin': [0,0]}
             if self.frameset_is_t1_output(frameset):
-                regions_for_image = {'regions': [], 'origin': [0,0]}
-                regions_for_image = self.process_t1_results(frameset, cv2_image, selected_area_meta, finder, tolerance)
+                regions_for_image = self.process_t1_results(
+                    frameset, 
+                    cv2_image, 
+                    selected_area_meta, 
+                    finder, 
+                    tolerance
+                )
             else:
-                regions_for_image = self.process_virgin_image(frameset, cv2_image, selected_area_meta, finder, tolerance)
+                regions_for_image = self.process_virgin_image(
+                    frameset, 
+                    cv2_image, 
+                    selected_area_meta, 
+                    finder, 
+                    tolerance
+                )
+            regions_as_hashes = {}
             if regions_for_image and regions_for_image[0]['regions']:
                 if selected_area_meta['interior_or_exterior'] == 'exterior':
-                    regions_for_image = self.transform_interior_selection_to_exterior(regions_for_image, cv2_image)
-                regions_as_hashes = {}
+                    regions_for_image = \
+                        self.transform_interior_selection_to_exterior(
+                            regions_for_image, 
+                            cv2_image
+                        )
                 for region in regions_for_image:
                     size = [
                         region['regions'][1][0] - region['regions'][0][0], 
@@ -245,8 +261,27 @@ class AnalyzeViewSetSelectedArea(viewsets.ViewSet):
                         "scanner_type": "selected_area",
                     }
                     regions_as_hashes[region['sam_area_id']] = region_hash
+            if 'minimum_zones' in selected_area_meta and selected_area_meta['minimum_zones']:
+                regions_as_hashes = self.append_min_zones(selected_area_meta, regions_as_hashes)
+            if regions_as_hashes:
                 response_movies[movie_url]['framesets'][frameset_hash] = regions_as_hashes
         return Response({"movies": response_movies})
+
+    def append_min_zones(self, selected_area_meta, regions_as_hashes):
+        for minimum_zone in selected_area_meta['minimum_zones']:
+            size_arr =[
+                minimum_zone['end'][0] - minimum_zone['start'][0],
+                minimum_zone['end'][1] - minimum_zone['start'][1],
+            ]
+            region_hash = {
+                'location': minimum_zone['start'],
+                'scale': 1,
+                'size': size_arr,
+                "scanner_type": "selected_area",
+            }
+            regions_as_hashes[minimum_zone['id']] = region_hash
+        return regions_as_hashes
+            
 
     def process_t1_results(self, frameset, cv2_image, selected_area_meta, finder, tolerance):
         regions_for_image = []

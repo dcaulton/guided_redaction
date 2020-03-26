@@ -256,8 +256,6 @@ class CanvasInsightsOverlay extends React.Component {
   drawAreasToRedact() {
     if (this.props.getCurrentAreasToRedact()) {
       const matches = this.props.getCurrentAreasToRedact()
-      let start = 0
-      let end = 0
       const canvas = this.refs.insights_canvas
       let ctx = canvas.getContext('2d')
       ctx.strokeStyle = this.area_to_redact_color
