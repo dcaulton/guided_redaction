@@ -575,7 +575,7 @@ class TemplateControls extends React.Component {
   buildNameField() {
     return buildLabelAndTextInput(
       this.state.name,
-      'Template name',
+      'Name',
       'template_name',
       'name',
       25,
@@ -793,6 +793,10 @@ class TemplateControls extends React.Component {
                   {id_string}
                 </div>
 
+                <div className='row mt-1'>
+                  {template_name}
+                </div>
+
                 <div className='row mt-2'>
                   {scale_dropdown}
                 </div>
@@ -807,10 +811,6 @@ class TemplateControls extends React.Component {
 
                 <div className='row mt-2'>
                   {scan_level}
-                </div>
-
-                <div className='row mt-1'>
-                  {template_name}
                 </div>
 
                 <div className='row mt-1 ml-1 mr-1 border-top'>

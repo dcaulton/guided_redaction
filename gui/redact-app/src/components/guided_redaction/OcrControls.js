@@ -433,8 +433,8 @@ class OcrControls extends React.Component {
                   {delete_button}
                   {save_button}
                   {save_to_database_button}
-                  {run_button}
                   {clear_matches_button}
+                  {run_button}
                 </div>
 
                 <div className='row mt-2 ml-0 bg-light'>
