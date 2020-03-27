@@ -31,6 +31,7 @@ class OcrControls extends React.Component {
       attributes: {},
       attribute_search_value: '',
       first_click_coords: [],
+      unsaved_changes: false,
     }
     this.addOcrZoneCallback=this.addOcrZoneCallback.bind(this)
     this.getOcrMetaFromState=this.getOcrMetaFromState.bind(this)
@@ -169,6 +170,7 @@ class OcrControls extends React.Component {
       start_coords: [],
       end_coords: [],
       attributes: {},
+      unsaved_changes: false,
     })                                                                          
   } 
 
@@ -330,33 +332,6 @@ class OcrControls extends React.Component {
     )
   }
 
-  buildStartEndCoords() {
-    if (this.state.start_coords.length === 0 && this.state.end_coords.length === 0) {
-      return ''
-    }
-
-    return (
-      <div className='ml-2'>
-        <div>
-          <div className='d-inline'>
-            start coords:
-          </div>
-          <div className='d-inline ml-2'>
-            [{this.state.start_coords[0]}, {this.state.start_coords[1]}]
-          </div>
-        </div>
-        <div>
-          <div className='d-inline'>
-            end coords:
-          </div>
-          <div className='d-inline ml-2'>
-            [{this.state.end_coords[0]}, {this.state.end_coords[1]}]
-          </div>
-        </div>
-      </div>
-    )
-  }
-
   buildNameField() {
     return buildLabelAndTextInput(
       this.state.name,
@@ -457,7 +432,7 @@ class OcrControls extends React.Component {
       return([])
     }
     const pick_button = this.buildPickCornersButton()
-    const id_string = buildIdString(this.state.id, 'ocr rule', this.state.unsaved_changes)
+    const id_string = buildIdString(this.state.id, 'ocr_rule', this.state.unsaved_changes)
     const run_button = this.buildRunButton()
     const load_button = this.buildLoadButton()
     const save_button = this.buildSaveButton()
@@ -468,7 +443,6 @@ class OcrControls extends React.Component {
     const match_percent = this.buildMatchPercent()
     const skip_east = this.buildSkipEast()
     const scan_level = this.buildScanLevel()
-    const start_end_coords = this.buildStartEndCoords()
     const attributes_list = this.buildAttributesList()
     const header_row = makeHeaderRow(
       'ocr',
@@ -524,10 +498,6 @@ class OcrControls extends React.Component {
 
                 <div className='row bg-light'>
                   {scan_level}
-                </div>
-
-                <div className='row bg-light'>
-                  {start_end_coords}
                 </div>
 
                 <div className='row mt-1 mr-1 ml-1 border-top'>                 
