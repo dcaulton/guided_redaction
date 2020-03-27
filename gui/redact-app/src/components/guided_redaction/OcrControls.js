@@ -26,8 +26,8 @@ class OcrControls extends React.Component {
       match_percent: 90,
       skip_east: false,
       scan_level: 'tier_1',
-      start_coords: [],
-      end_coords: [],
+      start: [],
+      end: [],
       image: '',
       movie: '',
       attributes: {},
@@ -68,8 +68,8 @@ class OcrControls extends React.Component {
 
   getOcrWindow() {
     return {
-      start: this.state.start_coords,
-      end: this.state.end_coords,
+      start: this.state.start,
+      end: this.state.end,
     }
   }
 
@@ -139,11 +139,11 @@ class OcrControls extends React.Component {
     )
   }
 
-  addOcrZoneCallback(end_coords) {
-    const start_coords = this.props.clicked_coords
+  addOcrZoneCallback(end) {
+    const start= this.props.clicked_coords
     this.setState({
-      start_coords: start_coords,
-      end_coords: end_coords,
+      start: start,
+      end: end,
       image: this.props.insights_image,
       movie: this.props.movie_url,
     })
@@ -180,8 +180,8 @@ class OcrControls extends React.Component {
         match_percent: ocr_rule['match_percent'],
         skip_east: ocr_rule['skip_east'],
         scan_level: ocr_rule['scan_level'],
-        start_coords: ocr_rule['start_coords'],
-        end_coords: ocr_rule['end_coords'],
+        start: ocr_rule['start'],
+        end: ocr_rule['end'],
         image: ocr_rule['image'],
         movie: ocr_rule['movie'],
         origin_entity_location: ocr_rule['origin_entity_location'],
@@ -201,8 +201,8 @@ class OcrControls extends React.Component {
       match_percent: 90,
       skip_east: false,
       scan_level: 'tier_1',
-      start_coords: [],
-      end_coords: [],
+      start: [],
+      end: [],
       image: '',
       movie: '',
       attributes: {},
@@ -215,8 +215,8 @@ class OcrControls extends React.Component {
     const ocr_rule = {
       id: this.state.id,
       name: this.state.name,
-      start_coords: this.state.start_coords,
-      end_coords: this.state.end_coords,
+      start: this.state.start,
+      end: this.state.end,
       image: this.state.image,
       movie: this.state.movie,
       match_text: this.state.match_text,

@@ -31,15 +31,8 @@ class AnalyzeViewSetEastTess(viewsets.ViewSet):
     def process_create_request(self, request_data):
         if not request_data.get("image_url"):
             return self.error("image_url is required", status_code=400)
-        if not request_data.get("roi_start_x"):
-            return self.error("roi_start_x is required", status_code=400)
-        if not request_data.get("roi_start_y"):
-            return self.error("roi_start_y is required", status_code=400)
-        if not request_data.get("roi_end_x"):
-            return self.error("roi_end_x is required", status_code=400)
-        if not request_data.get("roi_end_y"):
-            return self.error("roi_end_y is required", status_code=400)
-        skip_east = request_data.get("skip_east", False)
+        if not request_data.get("ocr_rule"):
+            return self.error("ocr_rule is required", status_code=400)
         pic_response = requests.get(
           request_data["image_url"],
           verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
@@ -47,30 +40,32 @@ class AnalyzeViewSetEastTess(viewsets.ViewSet):
         image = pic_response.content
         if not image:
             return self.error("couldnt read image data", status_code=422)
-        roi_start_x = int(request_data["roi_start_x"])
-        roi_start_y = int(request_data["roi_start_y"])
-        roi_end_x = int(request_data["roi_end_x"])
-        roi_end_y = int(request_data["roi_end_y"])
-        roi_start = (roi_start_x, roi_start_y)
-        roi_end = (roi_end_x, roi_end_y)
+        ocr_rule = request_data['ocr_rule']
 
         analyzer = EastPlusTessGuidedAnalyzer()
         nparr = np.fromstring(image, np.uint8)
         cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-        if skip_east:
-            tight_image = cv2_image[roi_start_y:roi_end_y, roi_start_x:roi_end_x]
+        adjusted_coords = self.adjust_envelope_for_t1(ocr_rule, request_data.get('tier_1_data'))
+        start = adjusted_coords['start']
+        end = adjusted_coords['end']
+        origin = adjusted_coords['origin']
+        if ocr_rule['skip_east']:
+            tight_image = cv2_image[
+                start[1]:end[1], 
+                start[0]:end[0]
+            ]
             gray = cv2.cvtColor(tight_image, cv2.COLOR_BGR2GRAY)
             bg_color = gray[1,1]
             if bg_color < 100:  # its light text on dark bg, invert
                 gray = cv2.bitwise_not(gray)
             raw_recognized_text_areas = analyzer.analyze_text(
                 gray, 
-                [roi_start, roi_end],
+                [start, end],
                 processing_mode='tess_only'
             )
         else:
             raw_recognized_text_areas = analyzer.analyze_text(
-                cv2_image, [roi_start, roi_end]
+                cv2_image, [start, end]
             )
 
         recognized_text_areas = {}
@@ -85,12 +80,41 @@ class AnalyzeViewSetEastTess(viewsets.ViewSet):
                 'source': raw_rta['source'],
                 'location': raw_rta['start'],
                 'size': size,
+                'origin': adjusted_coords['origin'],
                 'scale': 1,
                 'scanner_type': 'ocr',
                 'text': raw_rta['text']
             }
 
         return Response(recognized_text_areas)
+
+    def adjust_envelope_for_t1(self, ocr_rule, tier_1_frameset):
+        adjusted_coords = {}
+        adjusted_coords['start'] = ocr_rule['start']
+        adjusted_coords['end'] = ocr_rule['end']
+        adjusted_coords['origin'] = ocr_rule['origin_entity_location']
+        if 'images' in tier_1_frameset: # its just a virgin frameset, not t1 output
+            return adjusted_coords
+        for subscanner_key in tier_1_frameset:
+            subscanner = tier_1_frameset[subscanner_key]
+            if 'location' in subscanner:
+                disp_x = subscanner['location'][0] - ocr_rule['origin_entity_location'][0]
+                disp_y = subscanner['location'][1] - ocr_rule['origin_entity_location'][1]
+                if abs(disp_x) or abs(disp_y):
+                    print('adjusting ocr coords by {}, {}'.format(disp_x, disp_y))
+                    adjusted_coords['start'] = [
+                        adjusted_coords['start'][0] + disp_x,
+                        adjusted_coords['start'][1] + disp_y
+                    ]
+                    adjusted_coords['end'] = [
+                        adjusted_coords['end'][0] + disp_x,
+                        adjusted_coords['end'][1] + disp_y
+                    ]
+                    adjusted_coords['origin'] = [
+                        adjusted_coords['origin'][0] + disp_x,
+                        adjusted_coords['origin'][1] + disp_y 
+                    ]
+        return adjusted_coords
 
 
 class AnalyzeViewSetScanTemplate(viewsets.ViewSet):
@@ -286,7 +310,6 @@ class AnalyzeViewSetSelectedArea(viewsets.ViewSet):
     def process_t1_results(self, frameset, cv2_image, selected_area_meta, finder, tolerance):
         regions_for_image = []
         for scanner_matcher_id in frameset:
-            location_offset = [0,0]
             match_data = {}
             regions_for_image = []
             if selected_area_meta['origin_entity_type'] == 'template_anchor':
@@ -296,11 +319,6 @@ class AnalyzeViewSetSelectedArea(viewsets.ViewSet):
                 match_data = frameset[scanner_matcher_id]
             if 'location' in match_data:
                 found_location = match_data['location']
-                configured_location = selected_area_meta['origin_entity_location']
-                location_offset = [
-                  found_location[0] - configured_location[0],
-                  found_location[1] - configured_location[1]
-                ]
             for area in selected_area_meta['areas']:
                 selected_point = area['center']
                 selected_point = self.adjust_selected_point_for_t1(selected_point, selected_area_meta, frameset)

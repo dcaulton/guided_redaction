@@ -400,18 +400,6 @@ def scan_ocr_movie(job_uuid):
           job.status = 'failed'
           job.save()
 
-def get_ocr_roi(ocr_rule, frameset):
-  roi = {}
-  roi['start'] = [ocr_rule['start_coords'][0], ocr_rule['start_coords'][1]]
-  roi['end'] = [ocr_rule['end_coords'][0], ocr_rule['end_coords'][1]]
-  if 'location' in frameset and 'size' in frameset:
-    roi['start'] = [frameset['location'][0], frameset['location'][1]]
-    roi['end'] = [
-        roi['start'][0] + frameset['size'][0], 
-        roi['start'][1] + frameset['size'][1]
-    ]
-  return roi
-
 def build_and_dispatch_scan_ocr_movie_children(parent_job):
     parent_job.status = 'running'
     parent_job.save()
@@ -427,7 +415,6 @@ def build_and_dispatch_scan_ocr_movie_children(parent_job):
         movie = movies[movie_url]
         for index, frameset_hash in enumerate(movie['framesets'].keys()):
             frameset = movie['framesets'][frameset_hash]
-            roi = get_ocr_roi(ocr_rule, frameset)
             if 'images' in frameset:
                 first_image_url = frameset['images'][0]
             else:
@@ -436,11 +423,8 @@ def build_and_dispatch_scan_ocr_movie_children(parent_job):
                 'movie_url': movie_url,
                 'image_url': first_image_url,
                 'frameset_hash': frameset_hash,
-                'roi_start_x': roi['start'][0],
-                'roi_start_y': roi['start'][1],
-                'roi_end_x': roi['end'][0],
-                'roi_end_y': roi['end'][1],
-                'skip_east': ocr_rule['skip_east'],
+                'ocr_rule': ocr_rule,
+                'tier_1_data': frameset,
             })
             job = Job(
                 request_data=child_job_request_data,
