@@ -97,11 +97,19 @@ class AnalyzeViewSetEastTess(viewsets.ViewSet):
             return adjusted_coords
         for subscanner_key in tier_1_frameset:
             subscanner = tier_1_frameset[subscanner_key]
+            if subscanner['scanner_type'] == 'selected_area':
+                print('adjusting ocr coords by sa location')
+                adjusted_coords['start'] = subscanner['location']
+                adjusted_coords['end'] = [
+                    subscanner['location'][0] + subscanner['size'][0],
+                    subscanner['location'][1] + subscanner['size'][1]
+                ]
+                return adjusted_coords
             if 'location' in subscanner:
                 disp_x = subscanner['location'][0] - ocr_rule['origin_entity_location'][0]
                 disp_y = subscanner['location'][1] - ocr_rule['origin_entity_location'][1]
                 if abs(disp_x) or abs(disp_y):
-                    print('adjusting ocr coords by {}, {}'.format(disp_x, disp_y))
+                    print('adjusting ocr coords by non sa location {}, {}'.format(disp_x, disp_y))
                     adjusted_coords['start'] = [
                         adjusted_coords['start'][0] + disp_x,
                         adjusted_coords['start'][1] + disp_y
@@ -114,6 +122,11 @@ class AnalyzeViewSetEastTess(viewsets.ViewSet):
                         adjusted_coords['origin'][0] + disp_x,
                         adjusted_coords['origin'][1] + disp_y 
                     ]
+                return adjusted_coords
+            if 'start' in subscanner and 'end' in subscanner:
+                adjusted_coords['start'] = subscanner['start']
+                adjusted_coords['end'] = subscanner['end']
+                return adjusted_coords
         return adjusted_coords
 
 

@@ -358,8 +358,8 @@ class InsightsPanel extends React.Component {
       job_data['request_data']['movies']['source'] = this.makeSourceForPassedT1Output(tier_1_output)
     } else if (scope === 'ocr_t1_selected_area') {
       const selected_area_id = extra_data
-      const selected_area_meta = this.props.selected_area_metas[selected_area_id]['movies']
-      const tier_1_output = this.props.tier_1_matches['selected_area'][selected_area_id]
+      const selected_area_meta = this.props.selected_area_metas[selected_area_id]
+      const tier_1_output = this.props.tier_1_matches['selected_area'][selected_area_id]['movies']
       job_data['description'] += 'on t1 selected area results (sa ' + selected_area_meta['name'] + ')'
       job_data['request_data']['movies'] = tier_1_output
       job_data['request_data']['movies']['source'] = this.makeSourceForPassedT1Output(tier_1_output)

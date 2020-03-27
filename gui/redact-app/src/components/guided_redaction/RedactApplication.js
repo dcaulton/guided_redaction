@@ -1016,10 +1016,10 @@ class RedactApplication extends React.Component {
     let deepCopyMovies= JSON.parse(JSON.stringify(this.state.movies))
     let something_changed = false
     for (let i=0; i < Object.keys(request_data['movies']).length; i++) {
-      movie_url = Object.keys(request_data['movies'])[i]
-      if (movie_url === 'source') {
+      if (Object.keys(request_data['movies'])[i] === 'source') {
         continue
       }
+      movie_url = Object.keys(request_data['movies'])[i]
       if (!Object.keys(deepCopyMovies).includes(movie_url)) {
         deepCopyMovies[movie_url] = request_data['movies'][movie_url]
         this.addToCampaignMovies(movie_url)
