@@ -458,8 +458,6 @@ def build_and_dispatch_scan_ocr_movie_children(parent_job):
             # intersperse these evenly in the job stack so we get regular updates
             if index % 5 == 0:
                 scan_ocr_movie.delay(parent_job.id)
-        scan_ocr_movie.delay(parent_job.id)
-    scan_ocr_movie.delay(parent_job.id)
 
 def wrap_up_scan_ocr_movie(parent_job, children):
     parent_request_data = json.loads(parent_job.request_data)

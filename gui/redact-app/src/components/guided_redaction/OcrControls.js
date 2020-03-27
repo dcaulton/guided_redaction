@@ -28,7 +28,10 @@ class OcrControls extends React.Component {
       scan_level: 'tier_1',
       start_coords: [],
       end_coords: [],
+      image: '',
+      movie: '',
       attributes: {},
+      origin_entity_location: [],
       attribute_search_value: '',
       first_click_coords: [],
       unsaved_changes: false,
@@ -37,6 +40,30 @@ class OcrControls extends React.Component {
     this.getOcrMetaFromState=this.getOcrMetaFromState.bind(this)
     this.setLocalStateVar=this.setLocalStateVar.bind(this)
     this.getOcrWindow=this.getOcrWindow.bind(this)
+    this.addOriginLocation=this.addOriginLocation.bind(this)
+    this.getCurrentOcrOriginLocation=this.getCurrentOcrOriginLocation.bind(this)
+  }
+
+  getCurrentOcrOriginLocation() {
+    return this.state.origin_entity_location
+  }
+
+  addOriginLocation(origin_coords) {
+    this.setState({
+      origin_entity_location: origin_coords,
+      image: this.props.insights_image,
+      movie: this.props.movie_url,
+    })
+    this.props.displayInsightsMessage('ocr origin location was added,')
+    this.props.handleSetMode('')
+  }
+
+  clearOriginLocation() {
+    this.setState({
+      origin_entity_location: [],
+      unsaved_changes: true,
+    })
+    this.props.displayInsightsMessage('Origin location has been cleared')
   }
 
   getOcrWindow() {
@@ -49,6 +76,8 @@ class OcrControls extends React.Component {
   componentDidMount() {
     this.props.addInsightsCallback('scan_ocr_2', this.addOcrZoneCallback)
     this.props.addInsightsCallback('getOcrWindow', this.getOcrWindow)
+    this.props.addInsightsCallback('add_ocr_origin_location_1', this.addOriginLocation)
+    this.props.addInsightsCallback('getCurrentOcrOriginLocation', this.getCurrentOcrOriginLocation)
   }
 
   setLocalStateVar(var_name, var_value, when_done=(()=>{})) {
@@ -115,6 +144,8 @@ class OcrControls extends React.Component {
     this.setState({
       start_coords: start_coords,
       end_coords: end_coords,
+      image: this.props.insights_image,
+      movie: this.props.movie_url,
     })
     this.props.handleSetMode('')
     this.props.displayInsightsMessage('zone was successfully selected')
@@ -151,6 +182,9 @@ class OcrControls extends React.Component {
         scan_level: ocr_rule['scan_level'],
         start_coords: ocr_rule['start_coords'],
         end_coords: ocr_rule['end_coords'],
+        image: ocr_rule['image'],
+        movie: ocr_rule['movie'],
+        origin_entity_location: ocr_rule['origin_entity_location'],
         unsaved_changes: false,
       })
     }
@@ -169,7 +203,10 @@ class OcrControls extends React.Component {
       scan_level: 'tier_1',
       start_coords: [],
       end_coords: [],
+      image: '',
+      movie: '',
       attributes: {},
+      origin_entity_location: [],
       unsaved_changes: false,
     })                                                                          
   } 
@@ -180,11 +217,14 @@ class OcrControls extends React.Component {
       name: this.state.name,
       start_coords: this.state.start_coords,
       end_coords: this.state.end_coords,
+      image: this.state.image,
+      movie: this.state.movie,
       match_text: this.state.match_text,
       match_percent: this.state.match_percent,
       skip_east: this.state.skip_east,
       scan_level: this.state.scan_level,
       attributes: this.state.attributes,
+      origin_entity_location: this.state.origin_entity_location,
     }
     return ocr_rule
   }
@@ -427,6 +467,27 @@ class OcrControls extends React.Component {
     )
   }
 
+  buildAddOriginLocationButton() {
+    return buildInlinePrimaryButton(
+      'Set Origin Location',
+      (()=>{this.startAddOriginLocation()})
+    )
+  }
+
+  buildClearOriginLocationButton() {
+    return buildInlinePrimaryButton(
+      'Clear Origin Location',
+      (()=>{this.clearOriginLocation()})
+    )
+  }
+
+  startAddOriginLocation() {
+    this.setState({
+      unsaved_changes: true,
+    })
+    this.props.handleSetMode('add_ocr_origin_location_1')
+  }
+
   render() {
     if (!this.props.visibilityFlags['ocr']) {
       return([])
@@ -444,6 +505,8 @@ class OcrControls extends React.Component {
     const skip_east = this.buildSkipEast()
     const scan_level = this.buildScanLevel()
     const attributes_list = this.buildAttributesList()
+    const add_origin_location_button = this.buildAddOriginLocationButton()
+    const clear_origin_location_button = this.buildClearOriginLocationButton()
     const header_row = makeHeaderRow(
       'ocr',
       'ocr_body',
@@ -474,6 +537,8 @@ class OcrControls extends React.Component {
 
                 <div className='row mt-2 ml-0 bg-light'>
                   {pick_button}
+                  {add_origin_location_button}
+                  {clear_origin_location_button}
                 </div>
 
                 <div className='row bg-light'>

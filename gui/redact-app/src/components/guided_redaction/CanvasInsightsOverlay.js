@@ -12,6 +12,7 @@ class CanvasInsightsOverlay extends React.Component {
     this.selected_area_color = '#2B9'
     this.selected_area_center_color = '#9F3'
     this.selected_area_origin_location_color = '#40D'
+    this.ocr_origin_location_color = '#51B'
     this.annotations_color = '#5DE'
     this.ocr_color = '#CC0'
     this.area_to_redact_color = '#D6D'
@@ -73,6 +74,9 @@ class CanvasInsightsOverlay extends React.Component {
   }
 
   drawOcrWindow() {
+    if (!this.props.currentImageIsOcrAnchorImage()) {
+      return
+    }
     const window = this.props.getCurrentOcrWindow()
     if (window) {
       this.drawBoxesAroundStartEndRecords(
@@ -185,6 +189,16 @@ class CanvasInsightsOverlay extends React.Component {
     if (this.props.getCurrentSelectedAreaOriginLocation() && this.props.getCurrentSelectedAreaOriginLocation().length > 0) {
       const origin = this.props.getCurrentSelectedAreaOriginLocation()
       this.drawCrosshairsGeneric(origin, this.selected_area_origin_location_color)
+    }
+  }
+
+  drawOcrOriginLocation() {
+    if (!this.props.currentImageIsOcrAnchorImage()) {
+      return
+    }
+    if (this.props.getCurrentOcrOriginLocation() && this.props.getCurrentOcrOriginLocation().length > 0) {
+      const origin = this.props.getCurrentOcrOriginLocation()
+      this.drawCrosshairsGeneric(origin, this.ocr_origin_location_color)
     }
   }
 
@@ -308,6 +322,7 @@ class CanvasInsightsOverlay extends React.Component {
     this.drawSelectedAreaCenters()
     this.drawSelectedAreaMinimumZones()
     this.drawSelectedAreaOriginLocation()
+    this.drawOcrOriginLocation()
     this.drawTemplateAnchors()
     this.drawTemplateMaskZones()
     this.drawTemplateMatches()
@@ -325,6 +340,7 @@ class CanvasInsightsOverlay extends React.Component {
     this.drawSelectedAreaCenters()
     this.drawSelectedAreaMinimumZones()
     this.drawSelectedAreaOriginLocation()
+    this.drawOcrOriginLocation()
     this.drawTemplateAnchors()
     this.drawTemplateMaskZones()
     this.drawTemplateMatches()

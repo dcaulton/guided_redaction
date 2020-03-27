@@ -187,6 +187,7 @@ class BottomInsightsControls extends React.Component {
           getScanners={this.props.getScanners}
           deleteScanner={this.props.deleteScanner}
           saveScannerToDatabase={this.props.saveScannerToDatabase}
+          insights_image={this.props.insights_image}
           movie_url={this.props.movie_url}
           tier_1_matches={this.props.tier_1_matches}
         />

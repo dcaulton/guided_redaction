@@ -47,6 +47,7 @@ class InsightsPanel extends React.Component {
     this.getTier1ScannerMatches=this.getTier1ScannerMatches.bind(this)
     this.currentImageIsTemplateAnchorImage=this.currentImageIsTemplateAnchorImage.bind(this)
     this.currentImageIsSelectedAreaAnchorImage=this.currentImageIsSelectedAreaAnchorImage.bind(this)
+    this.currentImageIsOcrAnchorImage=this.currentImageIsOcrAnchorImage.bind(this)
     this.afterPingSuccess=this.afterPingSuccess.bind(this)
     this.afterPingFailure=this.afterPingFailure.bind(this)
     this.callPing=this.callPing.bind(this)
@@ -74,8 +75,26 @@ class InsightsPanel extends React.Component {
     this.getCurrentSelectedAreaCenters=this.getCurrentSelectedAreaCenters.bind(this)
     this.getCurrentSelectedAreaMinimumZones=this.getCurrentSelectedAreaMinimumZones.bind(this)
     this.getCurrentSelectedAreaOriginLocation=this.getCurrentSelectedAreaOriginLocation.bind(this)
+    this.getCurrentOcrOriginLocation=this.getCurrentOcrOriginLocation.bind(this)
     this.getCurrentTemplateMaskZones=this.getCurrentTemplateMaskZones.bind(this)
     this.getCurrentOcrWindow=this.getCurrentOcrWindow.bind(this)
+  }
+
+  currentImageIsOcrAnchorImage() {
+    if (this.props.current_ocr_rule_id) {
+      let key = this.props.current_ocr_rule_id
+      if (!Object.keys(this.props.ocr_rules).includes(key)) {
+        return false
+      }
+      let ocr_rule = this.props.ocr_rules[key]
+      if (!Object.keys(ocr_rule).includes('image')) {
+        return false
+      }
+      let cur_ocr_rule_anchor_image_name = ocr_rule['image']
+      return (cur_ocr_rule_anchor_image_name === this.state.insights_image)
+    } else {
+      return true
+    }
   }
 
   setScrubberToIndex(the_value) {
@@ -107,6 +126,13 @@ class InsightsPanel extends React.Component {
   getCurrentSelectedAreaOriginLocation() {
     if (Object.keys(this.state.callbacks).includes('getCurrentSelectedAreaOriginLocation')) {
       return this.state.callbacks['getCurrentSelectedAreaOriginLocation']()
+    }
+    return []
+  }
+
+  getCurrentOcrOriginLocation() {
+    if (Object.keys(this.state.callbacks).includes('getCurrentOcrOriginLocation')) {
+      return this.state.callbacks['getCurrentOcrOriginLocation']()
     }
     return []
   }
@@ -988,6 +1014,8 @@ class InsightsPanel extends React.Component {
       the_message = 'Select the first corner of the region the text area'
     } else if (the_mode === 'add_sa_origin_location_1') {
       the_message = 'Select the origin location'
+    } else if (the_mode === 'add_ocr_origin_location_1') {
+      the_message = 'Select the origin location'
     } else if (the_mode === 'selected_area_minimum_zones_1') {
       the_message = 'Select the upper left corner of the zone'
     } else if (the_mode === 'selected_area_minimum_zones_2') {
@@ -1079,6 +1107,8 @@ class InsightsPanel extends React.Component {
       this.handleSetMode('add_annotations_ocr_end') 
     } else if (this.state.mode === 'add_sa_origin_location_1') {
       this.state.callbacks['add_sa_origin_location_1']([x_scaled, y_scaled])
+    } else if (this.state.mode === 'add_ocr_origin_location_1') {
+      this.state.callbacks['add_ocr_origin_location_1']([x_scaled, y_scaled])
     } else if (this.state.mode === 'selected_area_minimum_zones_1') {
       this.state.callbacks['selected_area_minimum_zones_1']([x_scaled, y_scaled])
     } else if (this.state.mode === 'selected_area_minimum_zones_2') {
@@ -1343,6 +1373,7 @@ class InsightsPanel extends React.Component {
               clickCallback={this.handleImageClick}
               currentImageIsTemplateAnchorImage={this.currentImageIsTemplateAnchorImage}
               currentImageIsSelectedAreaAnchorImage={this.currentImageIsSelectedAreaAnchorImage}
+              currentImageIsOcrAnchorImage={this.currentImageIsOcrAnchorImage}
               insights_image_scale={this.state.insights_image_scale}
               getTier1ScannerMatches={this.getTier1ScannerMatches}
               getAnnotations={this.getAnnotations}
@@ -1357,6 +1388,7 @@ class InsightsPanel extends React.Component {
               getCurrentSelectedAreaCenters={this.getCurrentSelectedAreaCenters}
               getCurrentSelectedAreaMinimumZones={this.getCurrentSelectedAreaMinimumZones}
               getCurrentSelectedAreaOriginLocation={this.getCurrentSelectedAreaOriginLocation}
+              getCurrentOcrOriginLocation={this.getCurrentOcrOriginLocation}
             />
           </div>
 
