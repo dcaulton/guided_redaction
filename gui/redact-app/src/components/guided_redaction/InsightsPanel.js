@@ -284,7 +284,7 @@ class InsightsPanel extends React.Component {
     let movies_obj = {}
     for (let i=0; i < Object.keys(tier_1_output).length; i++) {
       const movie_url = Object.keys(tier_1_output)[i]
-      movies_obj[movie_url] = tier_1_output[movie_url]
+      movies_obj[movie_url] = this.props.movies[movie_url]
     }
     return movies_obj
   }
@@ -320,24 +320,28 @@ class InsightsPanel extends React.Component {
       const template = this.props.templates[template_id]
       const tier_1_output = this.props.tier_1_matches['template'][template_id]['movies']
       job_data['description'] += 'on t1 template results (template ' + template['name'] + ')'
+      job_data['request_data']['movies'] = tier_1_output
       job_data['request_data']['movies']['source'] = this.makeSourceForPassedT1Output(tier_1_output)
     } else if (scope === 'ocr_t1_selected_area') {
       const selected_area_id = extra_data
       const selected_area_meta = this.props.selected_area_metas[selected_area_id]['movies']
       const tier_1_output = this.props.tier_1_matches['selected_area'][selected_area_id]
       job_data['description'] += 'on t1 selected area results (sa ' + selected_area_meta['name'] + ')'
+      job_data['request_data']['movies'] = tier_1_output
       job_data['request_data']['movies']['source'] = this.makeSourceForPassedT1Output(tier_1_output)
     } else if (scope === 'ocr_t1_ocr') {
       const ocr_id = extra_data
       const ocr_rule = this.props.ocr_rules[ocr_id]
       const tier_1_output = this.props.tier_1_matches['ocr'][ocr_id]['movies']
       job_data['description'] += 'on t1 ocr results (ocr ' + ocr_rule['name'] + ')'
+      job_data['request_data']['movies'] = tier_1_output
       job_data['request_data']['movies']['source'] = this.makeSourceForPassedT1Output(tier_1_output)
     } else if (scope === 'ocr_t1_telemetry') {
       const telemetry_id = extra_data
       const telemetry_rule = this.props.telemetry_rules[telemetry_id]
       const tier_1_output = this.props.tier_1_matches['telemetry'][telemetry_id]['movies']
       job_data['description'] += 'on t1 telemetry results (telemetry ' + telemetry_rule['name'] + ')'
+      job_data['request_data']['movies'] = tier_1_output
       job_data['request_data']['movies']['source'] = this.makeSourceForPassedT1Output(tier_1_output)
     }
     return job_data
