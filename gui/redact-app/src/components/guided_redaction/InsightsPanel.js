@@ -323,85 +323,52 @@ class InsightsPanel extends React.Component {
     return movies_obj
   }
 
-
-
-
-
-  buildOcrJobData(scope, extra_data) {
-    if (!this.props.current_ocr_rule_id) {
-      this.displayInsightsMessage('no ocr rule selected, cannot submit a job')
-      return
-    }
-    const ocr_rule = this.props.ocr_rules[this.props.current_ocr_rule_id]
+  buildTier1JobData(scanner_type, scope, extra_data) {
     let job_data = {
       request_data: {},
     }
-    job_data['request_data']['movies'] = {}
-    job_data['request_data']['ocr_rules'] = {}
-    job_data['request_data']['ocr_rules'][ocr_rule['id']] = ocr_rule
-    job_data['app'] = 'analyze'
-    job_data['operation'] = 'scan_ocr'
-    job_data['request_data']['scan_level'] = ocr_rule['scan_level']
-    job_data['request_data']['id'] = ocr_rule['id']
-    job_data['description'] = 'scan ocr (rule ' + ocr_rule['name'] + ') '
-    if (scope === 'ocr_current_frame') {
-      job_data['description'] += 'for frame '
-      job_data['request_data']['movies'] = this.buildOneFrameMovieForCurrentInsightsImage()
-    } else if (scope === 'ocr_current_movie') {
-      job_data['description'] += 'for movie: ' + this.props.movie_url
-      job_data['request_data']['movies'][this.props.movie_url] = this.props.movies[this.props.movie_url]
-    } else if (scope === 'ocr_all_movies') {
-      job_data['description'] += 'for all movies'
-      job_data['request_data']['movies'] = this.props.movies
-    } else if (scope === 'ocr_t1_template') {
-      const template_id = extra_data
-      const t1_template = this.props.templates[template_id]
-      const tier_1_output = this.props.tier_1_matches['template'][template_id]['movies']
-      job_data['description'] += 'on t1 template results (template ' + t1_template['name'] + ')'
-      job_data['request_data']['movies'] = tier_1_output
-      job_data['request_data']['movies']['source'] = this.makeSourceForPassedT1Output(tier_1_output)
-    } else if (scope === 'ocr_t1_selected_area') {
-      const selected_area_id = extra_data
-      const t1_selected_area_meta = this.props.selected_area_metas[selected_area_id]
-      const tier_1_output = this.props.tier_1_matches['selected_area'][selected_area_id]['movies']
-      job_data['description'] += 'on t1 selected area results (sa ' + t1_selected_area_meta['name'] + ')'
-      job_data['request_data']['movies'] = tier_1_output
-      job_data['request_data']['movies']['source'] = this.makeSourceForPassedT1Output(tier_1_output)
-    } else if (scope === 'ocr_t1_ocr') {
-      const ocr_id = extra_data
-      const t1_ocr_rule = this.props.ocr_rules[ocr_id]
-      const tier_1_output = this.props.tier_1_matches['ocr'][ocr_id]['movies']
-      job_data['description'] += 'on t1 ocr results (ocr ' + t1_ocr_rule['name'] + ')'
-      job_data['request_data']['movies'] = tier_1_output
-      job_data['request_data']['movies']['source'] = this.makeSourceForPassedT1Output(tier_1_output)
-    } else if (scope === 'ocr_t1_telemetry') {
-      const telemetry_id = extra_data
-      const telemetry_rule = this.props.telemetry_rules[telemetry_id]
-      const tier_1_output = this.props.tier_1_matches['telemetry'][telemetry_id]['movies']
-      job_data['description'] += 'on t1 telemetry results (telemetry ' + telemetry_rule['name'] + ')'
-      job_data['request_data']['movies'] = tier_1_output
-      job_data['request_data']['movies']['source'] = this.makeSourceForPassedT1Output(tier_1_output)
-    }
-    return job_data
-  }
-
-  buildTemplateJobData(scope, extra_data) {
-    if (!this.props.current_template_id) {
-      this.displayInsightsMessage('no template selected, cannot submit a job')
-      return
-    }
-    const template = this.props.templates[this.props.current_template_id]
-    let job_data = {
-      request_data: {},
+    if (scanner_type === 'template') {
+      if (!this.props.current_template_id) {
+        this.displayInsightsMessage('no template selected, cannot submit a job')
+        return
+      }
+      const template = this.props.templates[this.props.current_template_id]
+      job_data['request_data']['templates'] = {}
+      job_data['request_data']['templates'][template['id']] = template
+      job_data['app'] = 'analyze'
+      job_data['operation'] = 'scan_template'
+      job_data['request_data']['scan_level'] = template['scan_level']
+      job_data['request_data']['id'] = template['id']
+      job_data['description'] = 'scan template (' + template['name'] + ') '
+    } else if (scanner_type === 'ocr') {
+      if (!this.props.current_ocr_rule_id) {
+        this.displayInsightsMessage('no ocr rule selected, cannot submit a job')
+        return
+      }
+      const ocr_rule = this.props.ocr_rules[this.props.current_ocr_rule_id]
+      job_data['request_data']['movies'] = {}
+      job_data['request_data']['ocr_rules'] = {}
+      job_data['request_data']['ocr_rules'][ocr_rule['id']] = ocr_rule
+      job_data['app'] = 'analyze'
+      job_data['operation'] = 'scan_ocr'
+      job_data['request_data']['scan_level'] = ocr_rule['scan_level']
+      job_data['request_data']['id'] = ocr_rule['id']
+      job_data['description'] = 'scan ocr (rule ' + ocr_rule['name'] + ') '
+    } else if (scanner_type === 'selected_area') {
+      if (!this.props.current_selected_area_meta_id) {
+        this.displayInsightsMessage('no selected_area_meta selected, cannot submit a job')
+        return
+      }
+      job_data['app'] = 'analyze'
+      job_data['operation'] = 'selected_area_threaded'
+      const cur_selected_area = this.props.selected_area_metas[this.props.current_selected_area_meta_id]
+      job_data['request_data']['selected_area_metas'] = {}
+      job_data['request_data']['selected_area_metas'][this.props.current_selected_area_meta_id] = cur_selected_area
+      job_data['request_data']['id'] = this.props.current_selected_area_meta_id
+      job_data['request_data']['scan_level'] = cur_selected_area['scan_level']
+      job_data['description'] = 'scan selected area (' + cur_selected_area['name'] + ') '
     }
     job_data['request_data']['movies'] = {}
-    job_data['request_data']['templates'] = {}
-    job_data['request_data']['templates'][template['id']] = template
-    job_data['app'] = 'analyze'
-    job_data['operation'] = 'scan_template'
-    job_data['request_data']['scan_level'] = template['scan_level']
-    job_data['request_data']['id'] = template['id']
-    job_data['description'] = 'scan template (' + template['name'] + ') '
     if (scope.match(/_current_frame$/)) {   
       job_data['description'] += 'for frame '
       job_data['request_data']['movies'] = this.buildOneFrameMovieForCurrentInsightsImage()
@@ -443,60 +410,6 @@ class InsightsPanel extends React.Component {
     return job_data
   }
 
-  buildSelectedAreaJobData(scope, extra_data) {
-    let job_data = {
-      request_data: {},
-    }
-    job_data['app'] = 'analyze'
-    job_data['operation'] = 'selected_area_threaded'
-    const cur_selected_area = this.props.selected_area_metas[this.props.current_selected_area_meta_id]
-    job_data['request_data']['selected_area_metas'] = {}
-    job_data['request_data']['selected_area_metas'][this.props.current_selected_area_meta_id] = cur_selected_area
-    job_data['request_data']['id'] = this.props.current_selected_area_meta_id
-    job_data['request_data']['scan_level'] = cur_selected_area['scan_level']
-    job_data['description'] = 'scan selected area (' + cur_selected_area['name'] + ') '
-    if (scope === 'selected_area_current_frame') {
-      job_data['description'] += ' for current frame'
-      job_data['request_data']['movies'] = this.buildOneFrameMovieForCurrentInsightsImage()
-    } else if (scope === 'selected_area_current_movie') {
-      job_data['description'] += ' for current movie'
-      job_data['request_data']['movies'] = {}
-      job_data['request_data']['movies'][this.props.movie_url] = this.props.movies[this.props.movie_url]
-    } else if (scope === 'current_selected_area_meta_all_movies') {
-      job_data['description'] += ' for all movies'
-      job_data['request_data']['movies'] = this.props.movies
-    } else if (scope === 'selected_area_t1_template') {
-      const template_id = extra_data
-      const t1_template = this.props.templates[template_id]
-      const tier_1_output = this.props.tier_1_matches['template'][template_id]['movies']
-      job_data['description'] += 'on t1 template results (template ' + t1_template['name'] + ')'
-      job_data['request_data']['movies'] = tier_1_output
-      job_data['request_data']['movies']['source'] = this.makeSourceForPassedT1Output(tier_1_output)
-    } else if (scope === 'selected_area_t1_selected_area') {
-      const selected_area_id = extra_data
-      const t1_selected_area_meta = this.props.selected_area_metas[selected_area_id]
-      const tier_1_output = this.props.tier_1_matches['selected_area'][selected_area_id]['movies']
-      job_data['description'] += 'on t1 selected area results (sa ' + t1_selected_area_meta['name'] + ')'
-      job_data['request_data']['movies'] = tier_1_output
-      job_data['request_data']['movies']['source'] = this.makeSourceForPassedT1Output(tier_1_output)
-    } else if (scope === 'selected_area_t1_ocr') {
-      const ocr_id = extra_data
-      const t1_ocr_rule = this.props.ocr_rules[ocr_id]
-      const tier_1_output = this.props.tier_1_matches['ocr'][ocr_id]['movies']
-      job_data['description'] += 'on t1 ocr results (ocr ' + t1_ocr_rule['name'] + ')'
-      job_data['request_data']['movies'] = tier_1_output
-      job_data['request_data']['movies']['source'] = this.makeSourceForPassedT1Output(tier_1_output)
-    } else if (scope === 'selected_area_t1_telemetry') {
-      const telemetry_id = extra_data
-      const telemetry_rule = this.props.telemetry_rules[telemetry_id]
-      const tier_1_output = this.props.tier_1_matches['telemetry'][telemetry_id]['movies']
-      job_data['description'] += 'on t1 telemetry results (telemetry ' + telemetry_rule['name'] + ')'
-      job_data['request_data']['movies'] = tier_1_output
-      job_data['request_data']['movies']['source'] = this.makeSourceForPassedT1Output(tier_1_output)
-    }
-    return job_data
-  }
-
   buildOneFrameMovieForCurrentInsightsImage() {
     const cur_hash = this.props.getFramesetHashForImageUrl(this.state.insights_image)
     let movies_wrap = {}
@@ -506,31 +419,6 @@ class InsightsPanel extends React.Component {
        this.props.movies[this.props.movie_url]['framesets'][cur_hash]
     )
     return movies_wrap
-  }
-
-  buildScanTemplateCurTempTier1JobData(scanner_type='template', extra_data) {
-    let job_data = {
-      request_data: {},
-    }
-    const tier_1_scanner_id = extra_data
-    const movie_build_obj = this.buildTierOneMatchesMovieObject(scanner_type, tier_1_scanner_id)
-    const counts = this.getCountsFromMovieBuildObj(movie_build_obj)
-
-    job_data['app'] = 'analyze'
-    job_data['operation'] = 'scan_template_threaded'
-    let template = this.props.templates[this.props.current_template_id]
-    let template_wrap = {}
-    template_wrap[this.props.current_template_id] = template
-    job_data['description'] = 'single template match (template ' + template['name'] + ') '
-    job_data['description'] += counts['movie'].toString() + ' movies '
-    job_data['description'] += counts['frameset'].toString() + ' framesets'
-    job_data['description'] += ' using ' + scanner_type + ' rule ' + extra_data
-    job_data['request_data']['templates'] = template_wrap
-    job_data['request_data']['template_id'] = this.props.current_template_id
-    job_data['request_data']['movies'] = movie_build_obj
-    job_data['request_data']['scan_level'] = template['scan_level']
-    job_data['request_data']['id'] = this.props.current_template_id
-    return job_data
   }
 
   getCountsFromMovieBuildObj(movie_build_obj) {
@@ -546,24 +434,6 @@ class InsightsPanel extends React.Component {
       }
     }
     return counts
-  }
-
-  buildTierOneMatchesMovieObject(scanner_type, tier_1_scanner_id) {
-    const tier_1_movie_matches = this.props.tier_1_matches[scanner_type][tier_1_scanner_id]['movies']
-    let movie_build_obj = {}
-    movie_build_obj = {}
-    for (let i=0; i < Object.keys(tier_1_movie_matches).length; i++) {
-      const movie_url = Object.keys(tier_1_movie_matches)[i]
-      movie_build_obj[movie_url] = {}
-      movie_build_obj[movie_url]['framesets'] = {}
-      const frameset_hashes = Object.keys(tier_1_movie_matches[movie_url]['framesets'])
-      for (let j=0; j < frameset_hashes.length; j++) {
-        const frameset_hash = frameset_hashes[j]
-        const movie_frameset = this.props.movies[movie_url]['framesets'][frameset_hash]
-        movie_build_obj[movie_url]['framesets'][frameset_hash] = movie_frameset
-      }
-    }
-    return movie_build_obj
   }
 
   buildLoadMovieJobData(extra_data) {
@@ -738,7 +608,7 @@ class InsightsPanel extends React.Component {
         job_string === 'ocr_current_movie' || 
         job_string === 'ocr_all_movies'
     ) {
-      let job_data = this.buildOcrJobData(job_string, extra_data)
+      let job_data = this.buildTier1JobData('ocr', job_string, extra_data)
       this.props.submitJob({
         job_data: job_data,
       })
@@ -751,7 +621,7 @@ class InsightsPanel extends React.Component {
         job_string === 'template_current_movie' || 
         job_string === 'template_all_movies'
     ) {
-      let job_data = this.buildTemplateJobData(job_string, extra_data)
+      let job_data = this.buildTier1JobData('template', job_string, extra_data)
       this.props.submitJob({
         job_data: job_data,
       })
@@ -764,7 +634,7 @@ class InsightsPanel extends React.Component {
         job_string === 'selected_area_t1_selected_area' || 
         job_string === 'selected_area_movie_set'
     ) {
-      let job_data = this.buildSelectedAreaJobData(job_string, extra_data)
+      let job_data = this.buildTier1JobData('selected_area', job_string, extra_data)
       this.props.submitJob({
         job_data: job_data,
       })
