@@ -478,13 +478,11 @@ class SelectedAreaControls extends React.Component {
     if (!this.state.id) {
       return ''
     }
-    const tier_1_template_run_options = this.props.buildTier1RunOptions('template', 'current_selected_area_meta_tier1')
-    const tier_1_selected_area_run_options = this.props.buildTier1RunOptions('selected_area', 'current_selected_area_meta_tier1')
-    const tier_1_ocr_run_options = this.props.buildTier1RunOptions('ocr', 'current_selected_area_meta_tier1')
-    const tier_1_telemetry_run_options = this.props.buildTier1RunOptions('telemetry', 'current_selected_area_meta_tier1')
-
-
-    const movie_set_run_options = this.props.buildMovieSetOptions('current_selected_area_meta_movie_set')
+    const tier_1_template_run_options = this.props.buildTier1RunOptions('template', 'selected_area_t1_template')
+    const tier_1_selected_area_run_options = this.props.buildTier1RunOptions('selected_area', 'selected_area_t1_selected_area')
+    const tier_1_ocr_run_options = this.props.buildTier1RunOptions('ocr', 'selected_area_t1_ocr')
+    const tier_1_telemetry_run_options = this.props.buildTier1RunOptions('telemetry', 'selected_area_t1_telemetry')
+    const movie_set_run_options = this.props.buildMovieSetOptions('selected_area_movie_set')
 
     return (
       <div className='d-inline'>
@@ -500,17 +498,17 @@ class SelectedAreaControls extends React.Component {
         </button>
         <div className='dropdown-menu' aria-labelledby='scanSelectedAreaDropdownButton'>
           <button className='dropdown-item'
-              onClick={() => this.props.submitInsightsJob('current_selected_are_meta_current_frame')}
+              onClick={() => this.props.submitInsightsJob('selected_area_current_frame')}
           >
             Frame
           </button>
           <button className='dropdown-item'
-              onClick={() => this.props.submitInsightsJob('current_selected_area_meta_current_movie')}
+              onClick={() => this.props.submitInsightsJob('selected_area_current_movie')}
           >
             Movie
           </button>
           <button className='dropdown-item'
-              onClick={() => this.props.submitInsightsJob('current_selected_area_meta_all_movies')}
+              onClick={() => this.props.submitInsightsJob('selected_area_all_movies')}
           >
             All Movies
           </button>

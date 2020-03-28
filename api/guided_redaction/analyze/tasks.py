@@ -50,7 +50,7 @@ def scan_template(job_uuid):
             return
         job = Job.objects.get(pk=job_uuid)
         request = json.loads(job.request_data)
-        template_id = request['template_id']
+        template_id = list(request['templates'].keys())[0]
         if ('match_method' not in request['templates'][template_id] or
             request['templates'][template_id]['match_method'] == 'any'):
             job.response_data = json.dumps(response.data)

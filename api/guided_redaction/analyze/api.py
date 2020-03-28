@@ -162,11 +162,9 @@ class AnalyzeViewSetScanTemplate(viewsets.ViewSet):
         matches = {}
         if not request_data.get("templates"):
             return self.error("templates is required")
-        if not request_data.get("template_id"):
-            return self.error("template_id is required")
         if not request_data.get("movies"):
             return self.error("movies is required")
-        template_id = request_data.get('template_id')
+        template_id = list(request_data.get('templates').keys())[0]
         template = request_data.get('templates')[template_id]
         template_matcher = TemplateMatcher(template)
         for anchor in template.get("anchors"):

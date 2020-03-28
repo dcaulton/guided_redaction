@@ -229,6 +229,7 @@ class OcrControls extends React.Component {
     return ocr_rule
   }
 
+// TODO make this a shared module
   buildRunButton() {
     if (!this.state.id) {
       return ''
