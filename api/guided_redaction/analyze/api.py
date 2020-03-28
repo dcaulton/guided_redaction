@@ -23,6 +23,52 @@ from rest_framework.response import Response
 from guided_redaction.utils.classes.FileWriter import FileWriter
 
 
+def adjust_start_end_origin_for_t1(coords_in, tier_1_frameset):
+    adjusted_coords = {}
+    scanner_type = ''
+    if tier_1_frameset:
+        first_key = list(tier_1_frameset.keys())[0]
+        if tier_1_frameset[first_key]['scanner_type'] == 'selected_area':
+            print('adjusting coords by sa location')
+            adjusted_coords['start'] = subscanner['location']
+            adjusted_coords['end'] = [
+                subscanner['location'][0] + subscanner['size'][0],
+                subscanner['location'][1] + subscanner['size'][1]
+            ]
+            return adjusted_coords
+
+    adjusted_coords['start'] = coords_in['start']
+    adjusted_coords['end'] = coords_in['end']
+    adjusted_coords['origin'] = coords_in['origin']
+    if 'images' in tier_1_frameset: # its just a virgin frameset, not t1 output
+        return adjusted_coords
+    for subscanner_key in tier_1_frameset:
+        subscanner = tier_1_frameset[subscanner_key]
+        if 'location' in subscanner and 'origin' in coords_in:
+            disp_x = subscanner['location'][0] - coords_in['origin'][0]
+            disp_y = subscanner['location'][1] - coords_in['origin'][1]
+            if abs(disp_x) or abs(disp_y):
+                print('adjusting ocr coords by non sa location {}, {}'.format(disp_x, disp_y))
+                adjusted_coords['start'] = [
+                    adjusted_coords['start'][0] + disp_x,
+                    adjusted_coords['start'][1] + disp_y
+                ]
+                adjusted_coords['end'] = [
+                    adjusted_coords['end'][0] + disp_x,
+                    adjusted_coords['end'][1] + disp_y
+                ]
+                adjusted_coords['origin'] = [
+                    adjusted_coords['origin'][0] + disp_x,
+                    adjusted_coords['origin'][1] + disp_y 
+                ]
+            return adjusted_coords
+        if 'start' in subscanner and 'end' in subscanner:
+            print('adjusting ocr coords by non sa start end')
+            adjusted_coords['start'] = subscanner['start']
+            adjusted_coords['end'] = subscanner['end']
+            return adjusted_coords
+    return adjusted_coords
+
 class AnalyzeViewSetOcr(viewsets.ViewSet):
     def create(self, request):
         request_data = request.data
@@ -45,7 +91,13 @@ class AnalyzeViewSetOcr(viewsets.ViewSet):
         analyzer = EastPlusTessGuidedAnalyzer()
         nparr = np.fromstring(image, np.uint8)
         cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-        adjusted_coords = self.adjust_envelope_for_t1(ocr_rule, request_data.get('tier_1_data'))
+
+        box_coords = {
+            'start': ocr_rule['start'],
+            'end': ocr_rule['end'],
+            'origin': ocr_rule['origin_entity_location'],
+        }
+        adjusted_coords = adjust_start_end_origin_for_t1(box_coords, request_data.get('tier_1_data'))
         start = adjusted_coords['start']
         end = adjusted_coords['end']
         origin = adjusted_coords['origin']
@@ -88,47 +140,6 @@ class AnalyzeViewSetOcr(viewsets.ViewSet):
 
         return Response(recognized_text_areas)
 
-    def adjust_envelope_for_t1(self, ocr_rule, tier_1_frameset):
-        adjusted_coords = {}
-        adjusted_coords['start'] = ocr_rule['start']
-        adjusted_coords['end'] = ocr_rule['end']
-        adjusted_coords['origin'] = ocr_rule['origin_entity_location']
-        if 'images' in tier_1_frameset: # its just a virgin frameset, not t1 output
-            return adjusted_coords
-        for subscanner_key in tier_1_frameset:
-            subscanner = tier_1_frameset[subscanner_key]
-            if subscanner['scanner_type'] == 'selected_area':
-                print('adjusting ocr coords by sa location')
-                adjusted_coords['start'] = subscanner['location']
-                adjusted_coords['end'] = [
-                    subscanner['location'][0] + subscanner['size'][0],
-                    subscanner['location'][1] + subscanner['size'][1]
-                ]
-                return adjusted_coords
-            if 'location' in subscanner:
-                disp_x = subscanner['location'][0] - ocr_rule['origin_entity_location'][0]
-                disp_y = subscanner['location'][1] - ocr_rule['origin_entity_location'][1]
-                if abs(disp_x) or abs(disp_y):
-                    print('adjusting ocr coords by non sa location {}, {}'.format(disp_x, disp_y))
-                    adjusted_coords['start'] = [
-                        adjusted_coords['start'][0] + disp_x,
-                        adjusted_coords['start'][1] + disp_y
-                    ]
-                    adjusted_coords['end'] = [
-                        adjusted_coords['end'][0] + disp_x,
-                        adjusted_coords['end'][1] + disp_y
-                    ]
-                    adjusted_coords['origin'] = [
-                        adjusted_coords['origin'][0] + disp_x,
-                        adjusted_coords['origin'][1] + disp_y 
-                    ]
-                return adjusted_coords
-            if 'start' in subscanner and 'end' in subscanner:
-                adjusted_coords['start'] = subscanner['start']
-                adjusted_coords['end'] = subscanner['end']
-                return adjusted_coords
-        return adjusted_coords
-
 
 class AnalyzeViewSetScanTemplate(viewsets.ViewSet):
     def create(self, request):
@@ -164,6 +175,11 @@ class AnalyzeViewSetScanTemplate(viewsets.ViewSet):
             return self.error("templates is required")
         if not request_data.get("movies"):
             return self.error("movies is required")
+        source_movies = {}
+        movies = request_data.get('movies')
+        if 'source' in movies:
+          source_movies = movies['source']
+          del movies['source']
         template_id = list(request_data.get('templates').keys())[0]
         template = request_data.get('templates')[template_id]
         template_matcher = TemplateMatcher(template)
@@ -173,16 +189,18 @@ class AnalyzeViewSetScanTemplate(viewsets.ViewSet):
             end = anchor.get("end")
             size = (end[0] - start[0], end[1] - start[1])
             anchor_id = anchor.get("id")
-            movies_in = request_data['movies']
-            for movie_name in movies_in:
-                movie = movies_in[movie_name]
+            for movie_url in movies:
+                movie = movies[movie_url]
                 if not movie:
-                    print('no movie error for {}'.format(movie_name))
+                    print('no movie error for {}'.format(movie_url))
                     continue
                 framesets = movie["framesets"]
                 for frameset_hash in framesets:
                     frameset = framesets[frameset_hash]
-                    one_image_url = frameset["images"][0]
+                    if 'images' in frameset:
+                        one_image_url = frameset["images"][0]
+                    else:
+                        one_image_url = source_movies[movie_url]['framesets'][frameset_hash]['images'][0]
                     oi_response = requests.get(
                       one_image_url,
                       verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
@@ -191,6 +209,7 @@ class AnalyzeViewSetScanTemplate(viewsets.ViewSet):
                     if one_image:
                         oi_nparr = np.fromstring(one_image, np.uint8)
                         target_image = cv2.imdecode(oi_nparr, cv2.IMREAD_COLOR)
+                        target_image = self.trim_target_image_to_t1_inputs(target_image, frameset)
                         match_results = template_matcher.get_template_coords(
                             target_image, match_image
                         )
@@ -198,25 +217,72 @@ class AnalyzeViewSetScanTemplate(viewsets.ViewSet):
                             (temp_coords, temp_scale) = match_results
                             if 'movies' not in matches:
                                 matches['movies'] = {}
-                            if movie_name not in matches['movies']:
-                                matches['movies'][movie_name] = {}
-                                matches['movies'][movie_name]['framesets'] = {}
-                            if frameset_hash not in matches['movies'][movie_name]['framesets']:
-                                matches['movies'][movie_name]['framesets'][frameset_hash] = {}
-                            matches['movies'][movie_name]['framesets'][frameset_hash][anchor_id] = {}
-                            matches['movies'][movie_name]['framesets'][frameset_hash][anchor_id][
+                            if movie_url not in matches['movies']:
+                                matches['movies'][movie_url] = {}
+                                matches['movies'][movie_url]['framesets'] = {}
+                            if frameset_hash not in matches['movies'][movie_url]['framesets']:
+                                matches['movies'][movie_url]['framesets'][frameset_hash] = {}
+                            matches['movies'][movie_url]['framesets'][frameset_hash][anchor_id] = {}
+                            matches['movies'][movie_url]['framesets'][frameset_hash][anchor_id][
                                 "location"
                             ] = temp_coords
-                            matches['movies'][movie_name]['framesets'][frameset_hash][anchor_id][
+                            matches['movies'][movie_url]['framesets'][frameset_hash][anchor_id][
                                 "size"
                             ] = size
-                            matches['movies'][movie_name]['framesets'][frameset_hash][anchor_id][
+                            matches['movies'][movie_url]['framesets'][frameset_hash][anchor_id][
                                 "scale"
                             ] = temp_scale
-                            matches['movies'][movie_name]['framesets'][frameset_hash][anchor_id][
+                            matches['movies'][movie_url]['framesets'][frameset_hash][anchor_id][
                                 "scanner_type"
                             ] = "template"
         return Response(matches)
+
+    def trim_target_image_to_t1_inputs(self, target_image, tier_1_record):
+        print(tier_1_record.keys())
+        if len(tier_1_record.keys()) == 1 and list(tier_1_record.keys())[0] == 'image':
+            return target_image # it's a virgin frameset, not t1
+        for t1_subscanner_id in tier_1_record:
+            t1_subscanner = tier_1_record[t1_subscanner_id]
+            if 'location' in t1_subscanner  \
+                and 'size' in t1_subscanner \
+                and t1_subscanner['scanner_type'] == 'selected_area':
+                start = t1_subscanner['location']
+                end = [
+                    t1_subscanner['location'][0] + t1_subscanner['size'][0],
+                    t1_subscanner['location'][1] + t1_subscanner['size'][1],
+                ]
+                height = target_image.shape[0]
+                width = target_image.shape[1]
+                cv2.rectangle(
+                    target_image,
+                    (0,0),
+                    (start[0], height),
+                    (0, 0, 0),
+                    -1,
+                )
+                cv2.rectangle(
+                    target_image,
+                    (end[0],0),
+                    (width, height),
+                    (0, 0, 0),
+                    -1,
+                )
+                cv2.rectangle(
+                    target_image,
+                    (0,0),
+                    (width, start[1]),
+                    (0, 0, 0),
+                    -1,
+                )
+                cv2.rectangle(
+                    target_image,
+                    (start[0],end[1]),
+                    (end[0], height),
+                    (0, 0, 0),
+                    -1,
+                )
+                return target_image
+        return target_image
 
 
 class AnalyzeViewSetSelectedArea(viewsets.ViewSet):
