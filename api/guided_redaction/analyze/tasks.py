@@ -9,7 +9,7 @@ from guided_redaction.analyze.api import (
     AnalyzeViewSetTelemetry,
     AnalyzeViewSetTimestamp,
     AnalyzeViewSetSelectedArea,
-    AnalyzeViewSetEastTess
+    AnalyzeViewSetOcr
 )
 
 
@@ -349,7 +349,7 @@ def scan_ocr_image(job_uuid):
         job = Job.objects.get(pk=job_uuid)
         job.status = 'running'
         job.save()
-        scanner = AnalyzeViewSetEastTess()
+        scanner = AnalyzeViewSetOcr()
         response = scanner.process_create_request(json.loads(job.request_data))
         if not Job.objects.filter(pk=job_uuid).exists():
             return

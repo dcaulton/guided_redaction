@@ -23,7 +23,7 @@ from rest_framework.response import Response
 from guided_redaction.utils.classes.FileWriter import FileWriter
 
 
-class AnalyzeViewSetEastTess(viewsets.ViewSet):
+class AnalyzeViewSetOcr(viewsets.ViewSet):
     def create(self, request):
         request_data = request.data
         return self.process_create_request(request_data)

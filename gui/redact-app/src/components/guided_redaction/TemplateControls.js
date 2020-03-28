@@ -425,7 +425,7 @@ class TemplateControls extends React.Component {
   }
 
   buildRunButton() {
-    if (!this.props.current_template_id) {
+    if (!this.state.id) {
       return ''
     }
     const tier_1_template_run_options = this.props.buildTier1RunOptions('template', 'current_template_tier1_template')
