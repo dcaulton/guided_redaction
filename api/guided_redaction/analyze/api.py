@@ -24,19 +24,7 @@ from guided_redaction.utils.classes.FileWriter import FileWriter
 
 
 def adjust_start_end_origin_for_t1(coords_in, tier_1_frameset):
-    adjusted_coords = {}
-    scanner_type = ''
-    if tier_1_frameset:
-        first_key = list(tier_1_frameset.keys())[0]
-        if tier_1_frameset[first_key]['scanner_type'] == 'selected_area':
-            print('adjusting coords by sa location')
-            adjusted_coords['start'] = subscanner['location']
-            adjusted_coords['end'] = [
-                subscanner['location'][0] + subscanner['size'][0],
-                subscanner['location'][1] + subscanner['size'][1]
-            ]
-            return adjusted_coords
-
+    adjusted_coords = []
     adjusted_coords['start'] = coords_in['start']
     adjusted_coords['end'] = coords_in['end']
     adjusted_coords['origin'] = coords_in['origin']
@@ -44,6 +32,14 @@ def adjust_start_end_origin_for_t1(coords_in, tier_1_frameset):
         return adjusted_coords
     for subscanner_key in tier_1_frameset:
         subscanner = tier_1_frameset[subscanner_key]
+        if subscanner['scanner_type'] == 'selected_area':
+            print('adjusting coords by sa location')
+            adjusted_coords['start'] = subscanner['location']
+            adjusted_coords['end'] = [
+                subscanner['location'][0] + subscanner['size'][0],
+                subscanner['location'][1] + subscanner['size'][1]
+            ]
+            return adjusted_coords
         if 'location' in subscanner and 'origin' in coords_in:
             disp_x = subscanner['location'][0] - coords_in['origin'][0]
             disp_y = subscanner['location'][1] - coords_in['origin'][1]
@@ -325,12 +321,14 @@ class AnalyzeViewSetSelectedArea(viewsets.ViewSet):
             nparr = np.fromstring(image, np.uint8)
             cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
             regions_for_image = {'regions': [], 'origin': [0,0]}
+            offset = self.get_offset_for_t1(selected_area_meta, frameset)
             if self.frameset_is_t1_output(frameset):
                 regions_for_image = self.process_t1_results(
                     frameset, 
                     cv2_image, 
                     selected_area_meta, 
                     finder, 
+                    offset,
                     tolerance
                 )
             else:
@@ -339,6 +337,7 @@ class AnalyzeViewSetSelectedArea(viewsets.ViewSet):
                     cv2_image, 
                     selected_area_meta, 
                     finder, 
+                    offset,
                     tolerance
                 )
             regions_as_hashes = {}
@@ -363,19 +362,23 @@ class AnalyzeViewSetSelectedArea(viewsets.ViewSet):
                     }
                     regions_as_hashes[region['sam_area_id']] = region_hash
             if 'minimum_zones' in selected_area_meta and selected_area_meta['minimum_zones']:
-                regions_as_hashes = self.append_min_zones(selected_area_meta, regions_as_hashes)
+                regions_as_hashes = self.append_min_zones(selected_area_meta, regions_as_hashes, offset)
             if regions_as_hashes:
                 response_movies[movie_url]['framesets'][frameset_hash] = regions_as_hashes
         return Response({"movies": response_movies})
 
-    def append_min_zones(self, selected_area_meta, regions_as_hashes):
+    def append_min_zones(self, selected_area_meta, regions_as_hashes, offset):
         for minimum_zone in selected_area_meta['minimum_zones']:
             size_arr =[
                 minimum_zone['end'][0] - minimum_zone['start'][0],
                 minimum_zone['end'][1] - minimum_zone['start'][1],
             ]
+            location = [
+                minimum_zone['start'][0] + offset[0],
+                minimum_zone['start'][1] + offset[1]
+            ]
             region_hash = {
-                'location': minimum_zone['start'],
+                'location': location,
                 'scale': 1,
                 'size': size_arr,
                 "scanner_type": "selected_area",
@@ -384,7 +387,7 @@ class AnalyzeViewSetSelectedArea(viewsets.ViewSet):
         return regions_as_hashes
             
 
-    def process_t1_results(self, frameset, cv2_image, selected_area_meta, finder, tolerance):
+    def process_t1_results(self, frameset, cv2_image, selected_area_meta, finder, offset, tolerance):
         regions_for_image = []
         for scanner_matcher_id in frameset:
             match_data = {}
@@ -398,7 +401,11 @@ class AnalyzeViewSetSelectedArea(viewsets.ViewSet):
                 found_location = match_data['location']
             for area in selected_area_meta['areas']:
                 selected_point = area['center']
-                selected_point = self.adjust_selected_point_for_t1(selected_point, selected_area_meta, frameset)
+                offset = self.get_offset_for_t1(selected_area_meta, frameset)
+                selected_point = [
+                    selected_point[0] + offset[0],
+                    selected_point[1] + offset[1]
+                ]
                 if selected_area_meta['select_type'] == 'arrow':
                     regions = finder.determine_arrow_fill_area(
                         cv2_image, selected_point, tolerance
@@ -420,11 +427,10 @@ class AnalyzeViewSetSelectedArea(viewsets.ViewSet):
                     })
         return regions_for_image
 
-    def process_virgin_image(self, frameset, cv2_image, selected_area_meta, finder, tolerance):
+    def process_virgin_image(self, frameset, cv2_image, selected_area_meta, finder, offset, tolerance):
         regions_for_image = []
         for area in selected_area_meta['areas']:
             selected_point = area['center']
-            selected_point = self.adjust_selected_point_for_t1(selected_point, selected_area_meta, frameset)
             if selected_area_meta['select_type'] == 'arrow':
                 regions = finder.determine_arrow_fill_area(
                     cv2_image, selected_point, tolerance
@@ -451,16 +457,15 @@ class AnalyzeViewSetSelectedArea(viewsets.ViewSet):
             return False
         return True
 
-    def adjust_selected_point_for_t1(self, selected_point, selected_area_meta, frameset):
+    def get_offset_for_t1(self, selected_area_meta, frameset):
         if 'origin_entity_location' in selected_area_meta:
             for anchor_id in frameset:
                 anchor = frameset[anchor_id]
                 if 'location' in anchor:
                     disp_x = anchor['location'][0] - selected_area_meta['origin_entity_location'][0]
                     disp_y = anchor['location'][1] - selected_area_meta['origin_entity_location'][1]
-                    if abs(disp_x) or abs(disp_y):
-                        selected_point = [selected_point[0] + disp_x, selected_point[1] + disp_y]
-        return selected_point
+                    return [disp_x, disp_y]
+        return [0, 0]
 
     def transform_interior_selection_to_exterior(self, regions_for_image, cv2_image):
         print(regions_for_image)
