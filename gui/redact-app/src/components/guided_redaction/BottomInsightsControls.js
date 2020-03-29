@@ -167,6 +167,10 @@ class BottomInsightsControls extends React.Component {
           importScanner={this.props.importScanner}
           saveScannerToDatabase={this.props.saveScannerToDatabase}
           submitInsightsJob={this.props.submitInsightsJob}
+          movies={this.props.movies}
+          setCurrentVideo={this.props.setCurrentVideo}
+          setScrubberToIndex={this.props.setScrubberToIndex}
+          getFramesetHashesInOrder={this.props.getFramesetHashesInOrder}
         />
 
         <OcrControls
@@ -176,7 +180,6 @@ class BottomInsightsControls extends React.Component {
           toggleShowVisibility={this.props.toggleShowVisibility}
           submitInsightsJob={this.props.submitInsightsJob}
           handleSetMode={this.props.handleSetMode}
-          movie_sets={this.props.movie_sets}
           clicked_coords={this.props.clicked_coords}
           buildTier1RunOptions={this.buildTier1RunOptions}
           buildMovieSetOptions={this.buildMovieSetOptions}
@@ -190,6 +193,29 @@ class BottomInsightsControls extends React.Component {
           insights_image={this.props.insights_image}
           movie_url={this.props.movie_url}
           tier_1_matches={this.props.tier_1_matches}
+          movies={this.props.movies}
+          setCurrentVideo={this.props.setCurrentVideo}
+          setScrubberToIndex={this.props.setScrubberToIndex}
+          getFramesetHashesInOrder={this.props.getFramesetHashesInOrder}
+          getFramesetHashForImageUrl={this.props.getFramesetHashForImageUrl}
+        />
+
+        <TelemetryControls
+          displayInsightsMessage={this.props.displayInsightsMessage}
+          movie_sets={this.props.movie_sets}
+          submitInsightsJob={this.props.submitInsightsJob}
+          telemetry_rules={this.props.telemetry_rules}
+          current_telemetry_rule_id={this.props.current_telemetry_rule_id}
+          telemetry_data={this.props.telemetry_data}
+          setTelemetryData={this.props.setTelemetryData}
+          setGlobalStateVar={this.props.setGlobalStateVar}
+          visibilityFlags={this.props.visibilityFlags}
+          toggleShowVisibility={this.props.toggleShowVisibility}
+        />
+
+        <PipelineControls
+          visibilityFlags={this.props.visibilityFlags}
+          toggleShowVisibility={this.props.toggleShowVisibility}
         />
 
         <AnnotationControls
@@ -202,19 +228,6 @@ class BottomInsightsControls extends React.Component {
           handleSetMode={this.props.handleSetMode}
           setKeyDownCallback={this.props.setKeyDownCallback}
           getAnnotations={this.props.getAnnotations}
-          visibilityFlags={this.props.visibilityFlags}
-          toggleShowVisibility={this.props.toggleShowVisibility}
-        />
-
-        <TelemetryControls
-          displayInsightsMessage={this.props.displayInsightsMessage}
-          movie_sets={this.props.movie_sets}
-          submitInsightsJob={this.props.submitInsightsJob}
-          telemetry_rules={this.props.telemetry_rules}
-          current_telemetry_rule_id={this.props.current_telemetry_rule_id}
-          telemetry_data={this.props.telemetry_data}
-          setTelemetryData={this.props.setTelemetryData}
-          setGlobalStateVar={this.props.setGlobalStateVar}
           visibilityFlags={this.props.visibilityFlags}
           toggleShowVisibility={this.props.toggleShowVisibility}
         />
@@ -241,11 +254,6 @@ class BottomInsightsControls extends React.Component {
 
         <ResultsControls
           displayInsightsMessage={this.props.displayInsightsMessage}
-          visibilityFlags={this.props.visibilityFlags}
-          toggleShowVisibility={this.props.toggleShowVisibility}
-        />
-
-        <PipelineControls
           visibilityFlags={this.props.visibilityFlags}
           toggleShowVisibility={this.props.toggleShowVisibility}
         />

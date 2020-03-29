@@ -44,6 +44,35 @@ class OcrControls extends React.Component {
     this.getCurrentOcrOriginLocation=this.getCurrentOcrOriginLocation.bind(this)
   }
 
+  showSourceFrame(movie_url, image_frameset_index) {
+    this.props.setCurrentVideo(movie_url)
+    setTimeout((() => {this.props.setScrubberToIndex(image_frameset_index)}), 1000)
+  }
+
+  buildGotoSourceLink() {
+    if (this.state.movie && this.state.image) {
+      if (Object.keys(this.props.movies).includes(this.state.movie)) {
+        const the_movie = this.props.movies[this.state.movie]
+        const the_frameset = this.props.getFramesetHashForImageUrl(
+          this.state.image,
+          the_movie['framesets']
+        )
+        const movie_framesets = this.props.getFramesetHashesInOrder(the_movie['framesets'])
+        const image_frameset_index = movie_framesets.indexOf(the_frameset)
+        return (
+          <div>
+            <button
+              className='bg-light border-0 text-primary'
+              onClick={() => this.showSourceFrame(this.state.movie, image_frameset_index)}
+            >
+              goto source frame
+            </button>
+          </div>
+        )
+      }
+    }
+  }
+
   getCurrentOcrOriginLocation() {
     return this.state.origin_entity_location
   }
@@ -511,6 +540,7 @@ class OcrControls extends React.Component {
     const attributes_list = this.buildAttributesList()
     const add_origin_location_button = this.buildAddOriginLocationButton()
     const clear_origin_location_button = this.buildClearOriginLocationButton()
+    const goto_source_link = this.buildGotoSourceLink()
     const header_row = makeHeaderRow(
       'ocr',
       'ocr_body',
@@ -547,6 +577,10 @@ class OcrControls extends React.Component {
 
                 <div className='row bg-light'>
                   {id_string}
+                </div>
+
+                <div className='row bg-light'>
+                  {goto_source_link}
                 </div>
 
                 <div className='row bg-light'>

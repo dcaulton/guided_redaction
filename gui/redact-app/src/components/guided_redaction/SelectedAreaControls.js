@@ -48,6 +48,36 @@ class SelectedAreaControls extends React.Component {
     this.setLocalStateVar=this.setLocalStateVar.bind(this)
   }
 
+  showSourceFrame(movie_url, image_frameset_index) {
+    this.props.setCurrentVideo(movie_url)
+    setTimeout((() => {this.props.setScrubberToIndex(image_frameset_index)}), 1000)
+  }
+
+  buildGotoSourceLink() {
+    if (this.state.areas.length > 0) {
+      const area = this.state.areas[0]
+      if (Object.keys(this.props.movies).includes(area['movie'])) {
+        const the_movie = this.props.movies[area['movie']]
+        const the_frameset = this.props.getFramesetHashForImageUrl(
+          area['image'], 
+          the_movie['framesets']
+        )
+        const movie_framesets = this.props.getFramesetHashesInOrder(the_movie['framesets'])
+        const image_frameset_index = movie_framesets.indexOf(the_frameset)
+        return (
+          <div>
+            <button
+              className='bg-light border-0 text-primary'
+              onClick={() => this.showSourceFrame(area['movie'], image_frameset_index)}
+            >
+              goto source frame
+            </button>
+          </div>
+        )
+      }
+    }
+  }
+
   addMinimumZonesCallback1(click_coords) {
     this.setState({
       first_click_coords: click_coords,
@@ -644,6 +674,7 @@ class SelectedAreaControls extends React.Component {
     const delete_button = this.buildDeleteButton()
     const save_to_db_button = this.buildSaveToDatabaseButton()
     const clear_matches_button = this.buildClearMatchesButton2()
+    const goto_source_link = this.buildGotoSourceLink()
     const header_row = makeHeaderRow(
       'selected area',
       'selected_area_body',
@@ -685,6 +716,10 @@ class SelectedAreaControls extends React.Component {
 
                 <div className='row mt-2'>
                   {id_string}
+                </div>
+
+                <div className='row mt-2'>
+                  {goto_source_link}
                 </div>
 
                 <div className='row mt-2'>
