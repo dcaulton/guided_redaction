@@ -86,6 +86,9 @@ export function buildAttributesAddRow(name_element_id, value_element_id, onclick
 }
 
 export function buildAttributesAsRows(the_attributes, delete_attribute_function) {
+  if (!the_attributes) {
+    return ''
+  }
   return (
     <div>
     {Object.keys(the_attributes).map((name, index) => {

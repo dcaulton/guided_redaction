@@ -6,6 +6,7 @@ import {
   buildAttributesAsRows,
   buildAttributesAddRow,
   buildTier1DeleteButton,
+  buildTier1LoadButton,
 } from './SharedControls'
 
 class PipelineControls extends React.Component {
@@ -18,6 +19,7 @@ class PipelineControls extends React.Component {
       description: '',
       attributes: {},
       steps: [],
+      movie_urls: [],
       attribute_search_value: '',
       unsaved_changes: false,
     }
@@ -27,6 +29,8 @@ class PipelineControls extends React.Component {
     this.moveStepEarlier=this.moveStepEarlier.bind(this)
     this.moveStepLater=this.moveStepLater.bind(this)
     this.updateStepValue=this.updateStepValue.bind(this)
+    this.loadPipeline=this.loadPipeline.bind(this)
+    this.loadNewPipeline=this.loadNewPipeline.bind(this)
   }
 
   addStep() {
@@ -77,11 +81,22 @@ class PipelineControls extends React.Component {
   }
 
   getPipelineFromState() {
+    let build_movies = {}
+    for (let i=0; i < this.state.movie_urls.length; i++) {
+      const movie_url = this.state.movie_urls[i]
+      if (Object.keys(this.props.movies).includes(movie_url)) {
+        build_movies[movie_url] = this.props.movies[movie_url]
+      } else {
+        build_movies[movie_url] = {}
+      }
+    }
     const pipeline = {
       id: this.state.id,
       name: this.state.name,
       description: this.state.description,
-      attributes: this.state.attributes
+      attributes: this.state.attributes,
+      steps: this.state.steps,
+      movies: build_movies,
     }
     return pipeline
   }
@@ -117,8 +132,44 @@ class PipelineControls extends React.Component {
     )
   }
 
+  loadNewPipeline() {
+    this.props.setGlobalStateVar('current_pipeline_id', '')
+    this.setState({
+      id: '',
+      name: '',
+      description: '',
+      attributes: {},
+      steps: [],
+      movie_urls: [],
+      unsaved_changes: false,
+    })
+  }
+
   loadPipeline(pipeline_id) {
-  console.log('loading a pipeline')
+    if (!pipeline_id) {
+      this.loadNewPipeline()
+    } else {
+      const pipeline = this.props.pipelines[pipeline_id]
+      if (!pipeline) {
+        return
+      }
+      const content = JSON.parse(pipeline['content'])
+      let movie_urls = []
+      for (let i=0; i < Object.keys(content['movies']).length; i++) {
+        movie_urls.push(Object.keys(content['movies'])[i])
+      }
+      this.setState({
+        id: pipeline_id,
+        name: content['name'],
+        description: content['description'],
+        attributes: pipeline['attributes'],
+        movie_urls: movie_urls,
+        steps: content['steps'],
+        unsaved_changes: false,
+      })
+    }
+    this.props.setGlobalStateVar('current_pipeline_id', pipeline_id)
+    this.props.displayInsightsMessage('pipeline has been loaded')
   }
 
   setLocalStateVar(var_name, var_value, when_done=(()=>{})) {
@@ -130,9 +181,10 @@ class PipelineControls extends React.Component {
   }
 
   buildLoadButton() {
-    return buildInlinePrimaryButton(
-      'Load',
-      (()=>{this.loadPipeline()})
+    return buildTier1LoadButton(
+      'pipeline', 
+      this.props.pipelines, 
+      ((id)=>{this.loadPipeline(id)})
     )
   }
 
@@ -144,12 +196,7 @@ class PipelineControls extends React.Component {
   }
 
   buildDeleteButton() {
-    let build_pipelines = {}
-    for (let i=0; i < this.props.pipelines.length; i++) {
-      const pipeline = this.props.pipelines[i]
-      build_pipelines[pipeline['id']] = pipeline
-    }
-    return buildTier1DeleteButton('pipeline', build_pipelines, this.deletePipeline)
+    return buildTier1DeleteButton('pipeline', this.props.pipelines, this.deletePipeline)
   }
 
   buildSaveButton() {
@@ -239,6 +286,29 @@ class PipelineControls extends React.Component {
     this.props.displayInsightsMessage('Attribute was deleted')
   }
 
+  buildMovieUrlsBox() {
+    const movie_urls_string = this.state.movie_urls.join('\n')
+    return (
+      <div>
+        <div className='row'>
+        movie urls
+        </div>
+      <textarea
+         cols='80'
+         rows='5'
+         value={movie_urls_string}
+         onChange={(event) => this.setMovieUrls(event.target.value)}
+      />
+      </div>
+    )
+  }
+
+  setMovieUrls(movie_urls) {
+    if (typeof movie_urls === 'string' || movie_urls instanceof String) {
+      movie_urls = movie_urls.split('\n')
+    }
+    this.setLocalStateVar('movie_urls', movie_urls)
+  }
 
   render() {
     if (!this.props.visibilityFlags['pipelines']) {
@@ -251,6 +321,7 @@ class PipelineControls extends React.Component {
     const name_field = this.buildNameField()
     const description_field = this.buildDescriptionField()
     const attributes_list = this.buildAttributesList()
+    const movie_urls_box = this.buildMovieUrlsBox()
     const header_row = makeHeaderRow(
       'pipelines',
       'pipelines_body',
@@ -286,6 +357,10 @@ class PipelineControls extends React.Component {
 
               <div className='row mt-2'>
                 {description_field}
+              </div>
+
+              <div className='row mt-2'>
+                {movie_urls_box}
               </div>
 
               <div className='row mt-2'>

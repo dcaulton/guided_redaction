@@ -226,6 +226,8 @@ class BottomInsightsControls extends React.Component {
           selected_area_metas={this.props.selected_area_metas}
           ocr_rules={this.props.ocr_rules}
           telemetry_rules={this.props.telemetry_rules}
+          setGlobalStateVar={this.props.setGlobalStateVar}
+          movies={this.props.movies}
         />
 
         <AnnotationControls

@@ -22,6 +22,7 @@ class PipelinesViewSet(viewsets.ViewSet):
                     'created_on': pipeline.created_on,
                     'updated_on': pipeline.updated_on,
                     'attributes': build_attributes,
+                    'content': pipeline.content,
                 }
             )
 
@@ -46,11 +47,23 @@ class PipelinesViewSet(viewsets.ViewSet):
         return Response({"pipeline": p_data})
 
     def create(self, request):
+        request_content = request.data.get('content')
         pipeline = Pipeline(
             name=request.data.get('name'),
             description=request.data.get('description'),
-            content=json.dumps(request.data.get('content')),
         )
+        pipeline.save()
+        if 'attributes' in request_content:
+            for attribute_name in request_content['attributes']:
+                attribute_value = request_content['attributes'][attribute_name]
+                attribute = Attribute(
+                    name=attribute_name,
+                    value=attribute_value,
+                    pipeline=pipeline,
+                )
+                attribute.save()
+            del request_content['attributes']
+        pipeline.content=json.dumps(request_content)
         pipeline.save()
         return Response({"pipeline_id": pipeline.id})
 

@@ -1732,7 +1732,12 @@ class RedactApplication extends React.Component {
     .then((response) => response.json())
     .then((responseJson) => {
       if (Object.keys(responseJson).includes('pipelines')) {
-        this.setGlobalStateVar('pipelines', responseJson['pipelines'])
+        const pipelines_list = responseJson['pipelines']
+        let pipelines_hash = {}
+        for (let i=0; i < pipelines_list.length; i++) {
+          pipelines_hash[pipelines_list[i]['id']] = pipelines_list[i]
+        }
+        this.setGlobalStateVar('pipelines', pipelines_hash)
       }
     })
     .catch((error) => {
