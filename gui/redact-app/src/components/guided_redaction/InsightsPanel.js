@@ -1232,6 +1232,11 @@ class InsightsPanel extends React.Component {
             current_selected_area_meta_id={this.props.current_selected_area_meta_id}
             setSelectedAreaMetas={this.props.setSelectedAreaMetas}
             ocr_rules={this.props.ocr_rules}
+            pipelines={this.props.pipelines}
+            current_pipeline_id={this.props.current_pipeline_id}
+            getPipelines={this.props.getPipelines}
+            deletePipeline={this.props.deletePipeline}
+            savePipelineToDatabase={this.props.savePipelineToDatabase}
           />
         </div>
 

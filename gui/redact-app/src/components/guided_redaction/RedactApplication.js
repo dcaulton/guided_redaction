@@ -72,6 +72,8 @@ class RedactApplication extends React.Component {
         raw_data_url: '',
         movie_mappings: [],
       },
+      pipelines: {},
+      current_pipeline_id: '',
       userTone: 'lfo',
       preserve_movie_audio: false,
     }
@@ -85,7 +87,10 @@ class RedactApplication extends React.Component {
     this.submitJob=this.submitJob.bind(this)
     this.getJobs=this.getJobs.bind(this)
     this.getFiles=this.getFiles.bind(this)
+    this.getPipelines=this.getPipelines.bind(this)
     this.deleteFile=this.deleteFile.bind(this)
+    this.deletePipeline=this.deletePipeline.bind(this)
+    this.savePipelineToDatabase=this.savePipelineToDatabase.bind(this)
     this.loadJobResults=this.loadJobResults.bind(this)
     this.getWorkbooks=this.getWorkbooks.bind(this)
     this.saveWorkbook=this.saveWorkbook.bind(this)
@@ -162,6 +167,8 @@ class RedactApplication extends React.Component {
       return api_server_url + 'v1/link/get-telemetry-rows'
     } else if (url_name === 'files_url') {
       return api_server_url + 'v1/files'
+    } else if (url_name === 'pipelines_url') {
+      return api_server_url + 'v1/pipelines'
     }
   }
 
@@ -1716,6 +1723,63 @@ class RedactApplication extends React.Component {
     })
   }
 
+  async getPipelines() {
+    let the_url = this.getUrl('pipelines_url')
+    await fetch(the_url, {
+      method: 'GET',
+      headers: this.buildJsonHeaders(),
+    })
+    .then((response) => response.json())
+    .then((responseJson) => {
+      if (Object.keys(responseJson).includes('pipelines')) {
+        this.setGlobalStateVar('pipelines', responseJson['pipelines'])
+      }
+    })
+    .catch((error) => {
+      console.error(error);
+    })
+  }
+
+  async deletePipeline(the_uuid, when_done=(()=>{})) {
+    let the_url = this.getUrl('pipelines_url') + '/' + the_uuid
+    await fetch(the_url, {
+      method: 'DELETE',
+      headers: this.buildJsonHeaders(),
+    })
+    .then(() => {
+      this.getPipelines()
+      when_done()
+    })
+    .catch((error) => {
+      console.error(error);
+    })
+  }
+
+  async savePipelineToDatabase(pipeline_obj, when_done=(()=>{})) {
+    let description_string = ''
+    if (Object.keys(pipeline_obj).includes('description')) {
+      description_string = pipeline_obj['description']
+    }
+    let response = await fetch(this.getUrl('pipelines_url'), {
+      method: 'POST',
+      headers: this.buildJsonHeaders(),
+      body: JSON.stringify({
+        name: pipeline_obj['name'],
+        description: description_string,
+        content: pipeline_obj,
+      }),
+    })
+    .then((response) => response.json())
+    .then((responseJson) => {
+      this.getPipelines()
+      when_done(responseJson)
+    })
+    .catch((error) => {
+      console.error(error)
+    })
+    await response
+  }
+
   async getFiles() {
     let the_url = this.getUrl('files_url')
     await fetch(the_url, {
@@ -2310,6 +2374,11 @@ class RedactApplication extends React.Component {
                 wrapUpJob={this.wrapUpJob}
                 preserve_movie_audio={this.state.preserve_movie_audio}
                 ocr_rules={this.state.ocr_rules}
+                pipelines={this.state.pipelines}
+                current_pipeline_id={this.state.current_pipeline_id}
+                getPipelines={this.getPipelines}
+                deletePipeline={this.deletePipeline}
+                savePipelineToDatabase={this.savePipelineToDatabase}
               />
             </Route>
           </Switch>

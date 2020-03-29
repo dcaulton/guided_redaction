@@ -216,6 +216,12 @@ class BottomInsightsControls extends React.Component {
         <PipelineControls
           visibilityFlags={this.props.visibilityFlags}
           toggleShowVisibility={this.props.toggleShowVisibility}
+          pipelines={this.props.pipelines}
+          current_pipeline_id={this.props.current_pipeline_id}
+          getPipelines={this.props.getPipelines}
+          deletePipeline={this.props.deletePipeline}
+          displayInsightsMessage={this.props.displayInsightsMessage}
+          savePipelineToDatabase={this.props.savePipelineToDatabase}
         />
 
         <AnnotationControls
