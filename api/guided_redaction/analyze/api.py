@@ -305,7 +305,6 @@ class AnalyzeViewSetSelectedArea(viewsets.ViewSet):
         finder = ExtentsFinder()
         response_movies[movie_url] = {}
         response_movies[movie_url]['framesets'] = {}
-        tolerance = 5 # todo let this come in with the selected area spec
         for frameset_hash in movie['framesets']:
             frameset = movie['framesets'][frameset_hash]
             if 'images' in frameset:
@@ -328,8 +327,7 @@ class AnalyzeViewSetSelectedArea(viewsets.ViewSet):
                     cv2_image, 
                     selected_area_meta, 
                     finder, 
-                    offset,
-                    tolerance
+                    offset
                 )
             else:
                 regions_for_image = self.process_virgin_image(
@@ -337,8 +335,7 @@ class AnalyzeViewSetSelectedArea(viewsets.ViewSet):
                     cv2_image, 
                     selected_area_meta, 
                     finder, 
-                    offset,
-                    tolerance
+                    offset
                 )
             regions_as_hashes = {}
             if regions_for_image and regions_for_image[0]['regions']:
@@ -387,8 +384,9 @@ class AnalyzeViewSetSelectedArea(viewsets.ViewSet):
         return regions_as_hashes
             
 
-    def process_t1_results(self, frameset, cv2_image, selected_area_meta, finder, offset, tolerance):
+    def process_t1_results(self, frameset, cv2_image, selected_area_meta, finder, offset):
         regions_for_image = []
+        tolerance = int(selected_area_meta['tolerance'])
         for scanner_matcher_id in frameset:
             match_data = {}
             regions_for_image = []
@@ -427,8 +425,9 @@ class AnalyzeViewSetSelectedArea(viewsets.ViewSet):
                     })
         return regions_for_image
 
-    def process_virgin_image(self, frameset, cv2_image, selected_area_meta, finder, offset, tolerance):
+    def process_virgin_image(self, frameset, cv2_image, selected_area_meta, finder, offset):
         regions_for_image = []
+        tolerance = int(selected_area_meta['tolerance'])
         for area in selected_area_meta['areas']:
             selected_point = area['center']
             if selected_area_meta['select_type'] == 'arrow':
@@ -468,7 +467,6 @@ class AnalyzeViewSetSelectedArea(viewsets.ViewSet):
         return [0, 0]
 
     def transform_interior_selection_to_exterior(self, regions_for_image, cv2_image):
-        print(regions_for_image)
         if len(regions_for_image) == 1:
             start_x = min(regions_for_image['regions'][0][0][0], regions_for_image['regions'][0][1][0])
             end_x = max(regions_for_image['regions'][0][0][0], regions_for_image['regions'][0][1][0])

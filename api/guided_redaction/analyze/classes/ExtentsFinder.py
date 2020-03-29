@@ -28,6 +28,7 @@ class ExtentsFinder:
         return rect
 
     def determine_arrow_fill_area(self, image, fill_center, tolerance=5):
+        print('tolerance is {}'.format(tolerance))
         x = fill_center[0]
         y = fill_center[1]
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -40,27 +41,28 @@ class ExtentsFinder:
         mask = abs(target_color - row) > tolerance
         if not np.where(mask)[0].any():
             plus_x = 0
+            plus_x = img_width
         else:
            plus_x = np.where(mask)[0][0]
         # find x to the left
         row = gray[y, 0:x]
         mask = abs(target_color - row) > tolerance
         if not np.where(mask)[0].any():
-            minus_x = plus_x
+            minus_x = 0
         else:
            minus_x = np.where(mask)[0][-1]
         # find y down
         row = gray[y:img_height, x]
         mask = abs(target_color - row) > tolerance
         if not np.where(mask)[0].any():
-            plus_y = 0
+            plus_y = img_height
         else:
            plus_y = np.where(mask)[0][0]
         # find y up
         row = gray[0:y, x]
         mask = abs(target_color - row) > tolerance
         if not np.where(mask)[0].any():
-            minus_y = plus_y
+            minus_y = 0
         else:
            minus_y = np.where(mask)[0][-1]
 
