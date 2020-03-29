@@ -353,8 +353,8 @@ class CanvasInsightsOverlay extends React.Component {
 
   render() {
     let canvasDivStyle= {
-      width: this.props.width,
-      height: this.props.height,
+      width: this.props.width * this.props.insights_image_scale,
+      height: this.props.height * this.props.insights_image_scale,
     }
     return (
       <div 
@@ -363,8 +363,8 @@ class CanvasInsightsOverlay extends React.Component {
       >
         <canvas id='overlay_canvas' 
           ref='insights_canvas'
-          width={this.props.width}
-          height={this.props.height}
+          width={this.props.width * this.props.insights_image_scale}
+          height={this.props.height * this.props.insights_image_scale}
           onClick={(e) => this.props.clickCallback(e)}
         />
       </div>
