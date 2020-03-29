@@ -222,6 +222,10 @@ class BottomInsightsControls extends React.Component {
           deletePipeline={this.props.deletePipeline}
           displayInsightsMessage={this.props.displayInsightsMessage}
           savePipelineToDatabase={this.props.savePipelineToDatabase}
+          templates={this.props.templates}
+          selected_area_metas={this.props.selected_area_metas}
+          ocr_rules={this.props.ocr_rules}
+          telemetry_rules={this.props.telemetry_rules}
         />
 
         <AnnotationControls

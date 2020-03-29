@@ -17,11 +17,59 @@ class PipelineControls extends React.Component {
       name: '',
       description: '',
       attributes: {},
+      steps: [],
       attribute_search_value: '',
       unsaved_changes: false,
     }
     this.afterPipelineSaved=this.afterPipelineSaved.bind(this)
     this.deletePipeline=this.deletePipeline.bind(this)
+    this.addStep=this.addStep.bind(this)
+    this.moveStepEarlier=this.moveStepEarlier.bind(this)
+    this.moveStepLater=this.moveStepLater.bind(this)
+    this.updateStepValue=this.updateStepValue.bind(this)
+  }
+
+  addStep() {
+    const new_step = {
+      type: '',
+      name: '',
+      entity_id: '',
+    }
+    let deepCopySteps = JSON.parse(JSON.stringify(this.state.steps))
+    deepCopySteps.push(new_step)
+    this.setLocalStateVar(
+      'steps', 
+      deepCopySteps,
+      (()=>{this.props.displayInsightsMessage('step was added')})
+    )
+  }
+
+  updateStepValue(step_position, field_name, value) {
+    let deepCopySteps = JSON.parse(JSON.stringify(this.state.steps))
+    deepCopySteps[step_position][field_name] = value
+    this.setLocalStateVar('steps', deepCopySteps)
+  }
+
+  moveStepEarlier(step_current_position) {
+    if (step_current_position === 0) {
+      return
+    }
+    let deepCopySteps = JSON.parse(JSON.stringify(this.state.steps))
+    let deepCopyCurStep = JSON.parse(JSON.stringify(this.state.steps[step_current_position]))
+    deepCopySteps[step_current_position] = this.state.steps[step_current_position-1]
+    deepCopySteps[step_current_position-1] = deepCopyCurStep
+    this.setLocalStateVar('steps', deepCopySteps)
+  }
+
+  moveStepLater(step_current_position) {
+    if (step_current_position >= this.state.steps.length) {
+      return
+    }
+    let deepCopySteps = JSON.parse(JSON.stringify(this.state.steps))
+    let deepCopyCurStep = JSON.parse(JSON.stringify(this.state.steps[step_current_position]))
+    deepCopySteps[step_current_position] = this.state.steps[step_current_position+1]
+    deepCopySteps[step_current_position+1] = deepCopyCurStep
+    this.setLocalStateVar('steps', deepCopySteps)
   }
 
   componentDidMount() {
@@ -85,6 +133,13 @@ class PipelineControls extends React.Component {
     return buildInlinePrimaryButton(
       'Load',
       (()=>{this.loadPipeline()})
+    )
+  }
+
+  buildAddStepButton() {
+    return buildInlinePrimaryButton(
+      'Add Step',
+      (()=>{this.addStep()})
     )
   }
 
@@ -200,10 +255,11 @@ class PipelineControls extends React.Component {
       'pipelines',
       'pipelines_body',
     )
-    const sequence_header_row = makeHeaderRow(
-      'sequence',
-      'pipelines_sequence_body'
-    )
+    const sequence_header_row = ''
+//    const sequence_header_row = makeHeaderRow(
+//      'sequence',
+//      'pipelines_sequence_body'
+//    )
 
     return (
       <div className='row bg-light rounded mt-3'>
@@ -239,8 +295,20 @@ class PipelineControls extends React.Component {
               <div className='row'>
                 <div className='col'>
                   {sequence_header_row}
-                  <div id='pipelines_sequence_body' className='row collapse'>
-                  bippity bop
+                  <div id='pipelines_sequence_body' className='row '>
+
+                    <StepCardList
+                      steps={this.state.steps}
+                      addStep={this.addStep}
+                      moveStepEarlier={this.moveStepEarlier}
+                      moveStepLater={this.moveStepLater}
+                      updateStepValue={this.updateStepValue}
+                      templates={this.props.templates}
+                      selected_area_metas={this.props.selected_area_metas}
+                      ocr_rules={this.props.ocr_rules}
+                      telemetry_rules={this.props.telemetry_rules}
+                    />
+                  
                   </div>
 
                 </div>
@@ -251,6 +319,227 @@ class PipelineControls extends React.Component {
 
         </div>
       </div>
+    )
+  }
+}
+
+class StepCardList extends React.Component {
+  render() {
+    return (
+      <div className='col'>
+        <div className='row'>
+          <div className='col-lg-3'>
+            <button
+                className='btn btn-primary p-1'
+                onClick={() => this.props.addStep()}
+            >
+              Add Step
+            </button>
+          </div>
+          <div className='col-lg-6'>
+            {this.props.steps.map((step_data, index) => {
+              return (
+                <StepCard
+                  key={index}
+                  card_data={step_data}
+                  position={index}
+                  steps={this.props.steps}
+                  moveStepEarlier={this.props.moveStepEarlier}
+                  moveStepLater={this.props.moveStepLater}
+                  updateStepValue={this.props.updateStepValue}
+                  templates={this.props.templates}
+                  selected_area_metas={this.props.selected_area_metas}
+                  ocr_rules={this.props.ocr_rules}
+                  telemetry_rules={this.props.telemetry_rules}
+                />
+              )
+            })}
+          </div>
+          <div className='col-lg-3'>
+          right
+          </div>
+        </div>
+      </div>
+    )
+  }
+}
+
+class StepCard extends React.Component {
+  buildMoveUpLink() {
+    return (
+      <button
+          className='btn btn-link'
+          onClick={() => this.props.moveStepEarlier(this.props.position)}
+      >
+        move up 
+      </button>
+    )
+  }
+
+  buildMoveDownLink() {
+    return (
+      <button
+          className='btn btn-link ml-5'
+          onClick={() => this.props.moveStepLater(this.props.position)}
+      >
+        move down
+      </button>
+    )
+  }
+
+  buildNameField() {
+    if (!this.props.steps) {
+      return ''
+    }
+    return (
+      <div>
+        <div className='d-inline'>
+          Name
+        </div>
+        <div
+            className='d-inline ml-2'
+        >
+          <input
+              size='25'
+              value={this.props.steps[this.props.position]['name']}
+              onChange={
+                (event) => this.props.updateStepValue(this.props.position, 'name', event.target.value)
+              }
+          />
+        </div>
+      </div>
+    )
+  }
+
+  getSelectForEntityId() {
+    let options = []
+    if (this.props.steps[this.props.position]['type'] === 'template') {
+      for (let i=0; i < Object.keys(this.props.templates).length; i++) {
+        const scanner_id = Object.keys(this.props.templates)[i]
+        const scanner= this.props.templates[scanner_id]
+        options.push(
+          <option value={scanner_id} key={i}>{scanner['name']}</option>
+        )
+      }
+    } else if (this.props.steps[this.props.position]['type'] === 'selected_area') {
+      for (let i=0; i < Object.keys(this.props.selected_area_metas).length; i++) {
+        const scanner_id = Object.keys(this.props.selected_area_metas)[i]
+        const scanner= this.props.selected_area_metas[scanner_id]
+        options.push(
+          <option value={scanner_id} key={i}>{scanner['name']}</option>
+        )
+      }
+    } else if (this.props.steps[this.props.position]['type'] === 'ocr') {
+      for (let i=0; i < Object.keys(this.props.ocr_rules).length; i++) {
+        const scanner_id = Object.keys(this.props.ocr_rules)[i]
+        const scanner= this.props.ocr_rules[scanner_id]
+        options.push(
+          <option value={scanner_id} key={i}>{scanner['name']}</option>
+        )
+      }
+    } else if (this.props.steps[this.props.position]['type'] === 'telemetry') {
+      for (let i=0; i < Object.keys(this.props.telemetry_rules).length; i++) {
+        const scanner_id = Object.keys(this.props.telemetry_rules)[i]
+        const scanner= this.props.telemetry_rules[scanner_id]
+        options.push(
+          <option value={scanner_id} key={i}>{scanner['name']}</option>
+        )
+      }
+    }
+    return (
+      <select
+          name='step_type'
+          value={this.props.steps[this.props.position]['type']}
+          onChange={
+            (event) => this.props.updateStepValue(this.props.position, 'entity_id', event.target.value)
+          }
+      >
+        {options}
+      </select>
+    )
+  }
+
+  buildEntityIdField() {
+    if (!this.props.steps) {
+      return ''
+    }
+    const id_types = ['template', 'selected_area', 'ocr', 'telemetry']
+    if (!id_types.includes(this.props.steps[this.props.position]['type'])) {
+      return ''
+    }
+    const select = this.getSelectForEntityId()
+    return (
+      <div>
+        <div className='d-inline'>
+          Entity Id
+        </div>
+        <div className='d-inline ml-2'>
+          {select}
+        </div>
+      </div>
+    )
+  }
+
+  buildTypeField() {
+    if (!this.props.steps) {
+      return ''
+    }
+    return (
+      <div>
+        <div className='d-inline'>
+          Type
+        </div>
+        <div className='d-inline ml-2'>
+          <select
+              name='step_type'
+              value={this.props.steps[this.props.position]['type']}
+              onChange={
+                (event) => this.props.updateStepValue(this.props.position, 'type', event.target.value)
+              }
+          >
+            <option value=''></option>
+            <option value='template'>template</option>
+            <option value='selected_area'>selected area</option>
+            <option value='ocr'>ocr</option>
+            <option value='telemetry'>telemetry</option>
+            <option value='split_and_hash'>split and hash</option>
+            <option value='redact'>redact</option>
+            <option value='zip'>zip</option>
+          </select>
+        </div>
+      </div>
+    )
+  }
+
+  render() {
+    const move_up_link = this.buildMoveUpLink()
+    const move_down_link = this.buildMoveDownLink()
+    const name_field = this.buildNameField()
+    const type_field = this.buildTypeField()
+    const entity_id_field = this.buildEntityIdField()
+    return (
+    <div
+        className='row mt-2 card'
+    >
+      <div className='col'>
+        <div className='row'>
+    {this.props.position}
+        </div>
+        <div className='row'>
+          {name_field}
+        </div>
+        <div className='row'>
+          {type_field}
+        </div>
+        <div className='row'>
+          {entity_id_field}
+        </div>
+        <div className='row'>
+          {move_up_link}
+          {move_down_link}
+        </div>
+      </div>
+    </div>
     )
   }
 }
