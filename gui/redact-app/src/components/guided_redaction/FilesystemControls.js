@@ -250,8 +250,7 @@ class FilesystemControls extends React.Component {
     const build_movie_metadata_link = this.buildMovieMetadataLink()
     const header_row = makeHeaderRow(
       'file system',
-      'filesystem_body',
-      (()=>{this.props.toggleShowVisibility('filesystem')})
+      'filesystem_body'
     )
 
     return (

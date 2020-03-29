@@ -23,8 +23,7 @@ class ResultsControls extends React.Component {
     }
     const header_row = makeHeaderRow(
       'results',
-      'results_body',
-      (()=>{this.props.toggleShowVisibility('results')})
+      'results_body'
     )
 
     return (

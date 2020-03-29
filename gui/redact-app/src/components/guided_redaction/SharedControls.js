@@ -134,7 +134,7 @@ export function buildInlinePrimaryButton(label, onclick) {
   )
 }
 
-export function makeHeaderRow(label, body_id, plus_minus_onchange) {
+export function makeHeaderRow(label, body_id) {
   const datatarget = '#' + body_id
   return (
     <div className='row'>
@@ -160,7 +160,6 @@ export function makeHeaderRow(label, body_id, plus_minus_onchange) {
           <input
             className='mr-2 mt-3'
             type='checkbox'
-            onChange={() => plus_minus_onchange()}
           />
         </div>
       </div>

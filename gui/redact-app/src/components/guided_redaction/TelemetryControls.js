@@ -535,8 +535,7 @@ class TelemetryControls extends React.Component {
     const scan_for_timestamp_button = this.buildScanForTimestampButton() 
     const header_row = makeHeaderRow(
       'telemetry',
-      'telemetry_body',
-      (()=>{this.props.toggleShowVisibility('telemetry')})
+      'telemetry_body'
     )
 
     return (
