@@ -70,3 +70,9 @@ class PipelinesViewSet(viewsets.ViewSet):
     def delete(self, request, pk, format=None):
         Pipeline.objects.get(pk=pk).delete()
         return Response('', status=204)
+
+class PipelinesViewSetDispatch(viewsets.ViewSet):
+    # TODO convert this over to use FileWriter
+    def create(self, request):
+        print('dispatching something {}'.format(request.data))
+        return Response()

@@ -148,7 +148,8 @@ class PipelineControls extends React.Component {
   }
 
   doRun() {
-  console.log('running a pipeline')
+    this.props.dispatchPipeline(this.props.current_pipeline_id)
+    this.props.displayInsightsMessage('pipeline was dispatched')
   }
 
   deletePipeline(pipeline_id) {

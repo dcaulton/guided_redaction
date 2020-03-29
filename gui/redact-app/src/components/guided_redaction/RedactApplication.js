@@ -88,6 +88,7 @@ class RedactApplication extends React.Component {
     this.getJobs=this.getJobs.bind(this)
     this.getFiles=this.getFiles.bind(this)
     this.getPipelines=this.getPipelines.bind(this)
+    this.dispatchPipeline=this.dispatchPipeline.bind(this)
     this.deleteFile=this.deleteFile.bind(this)
     this.deletePipeline=this.deletePipeline.bind(this)
     this.savePipelineToDatabase=this.savePipelineToDatabase.bind(this)
@@ -1745,6 +1746,24 @@ class RedactApplication extends React.Component {
     })
   }
 
+  async dispatchPipeline(the_uuid, when_done=(()=>{})) {
+    let the_url = this.getUrl('pipelines_url') + '/dispatch'
+    await fetch(the_url, {
+      method: 'POST',
+      headers: this.buildJsonHeaders(),
+      body: JSON.stringify({
+        pipeline_id: the_uuid,
+      }),
+    })
+    .then(() => {
+      this.getPipelines()
+      when_done()
+    })
+    .catch((error) => {
+      console.error(error);
+    })
+  }
+
   async deletePipeline(the_uuid, when_done=(()=>{})) {
     let the_url = this.getUrl('pipelines_url') + '/' + the_uuid
     await fetch(the_url, {
@@ -2382,6 +2401,7 @@ class RedactApplication extends React.Component {
                 pipelines={this.state.pipelines}
                 current_pipeline_id={this.state.current_pipeline_id}
                 getPipelines={this.getPipelines}
+                dispatchPipeline={this.dispatchPipeline}
                 deletePipeline={this.deletePipeline}
                 savePipelineToDatabase={this.savePipelineToDatabase}
               />

@@ -5,5 +5,8 @@ from guided_redaction.pipelines import api
 router = get_router()
 
 router.register(
+    r"v1/pipelines/dispatch", api.PipelinesViewSetDispatch, basename="PresidentCamacho"
+)
+router.register(
     r"v1/pipelines", api.PipelinesViewSet, basename="PaulLynde"
 )

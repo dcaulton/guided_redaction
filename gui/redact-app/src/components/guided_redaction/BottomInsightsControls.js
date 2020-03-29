@@ -219,6 +219,7 @@ class BottomInsightsControls extends React.Component {
           pipelines={this.props.pipelines}
           current_pipeline_id={this.props.current_pipeline_id}
           getPipelines={this.props.getPipelines}
+          dispatchPipeline={this.props.dispatchPipeline}
           deletePipeline={this.props.deletePipeline}
           displayInsightsMessage={this.props.displayInsightsMessage}
           savePipelineToDatabase={this.props.savePipelineToDatabase}
