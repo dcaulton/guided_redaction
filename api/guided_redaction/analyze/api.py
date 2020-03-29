@@ -24,7 +24,7 @@ from guided_redaction.utils.classes.FileWriter import FileWriter
 
 
 def adjust_start_end_origin_for_t1(coords_in, tier_1_frameset):
-    adjusted_coords = []
+    adjusted_coords = {}
     adjusted_coords['start'] = coords_in['start']
     adjusted_coords['end'] = coords_in['end']
     adjusted_coords['origin'] = coords_in['origin']
