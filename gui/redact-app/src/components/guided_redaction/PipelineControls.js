@@ -51,7 +51,7 @@ class PipelineControls extends React.Component {
   updateStepValue(step_position, field_name, value) {
     let deepCopySteps = JSON.parse(JSON.stringify(this.state.steps))
     deepCopySteps[step_position][field_name] = value
-    this.setLocalStateVar('steps', deepCopySteps)
+    this.setState({'steps': deepCopySteps})
   }
 
   moveStepEarlier(step_current_position) {
@@ -80,6 +80,29 @@ class PipelineControls extends React.Component {
     this.props.getPipelines()
   }
 
+  makeStepMetadata() {
+    let step_metadata = {
+      'ocr': {},
+      'template': {},
+      'selected_area': {},
+      'telemetry': {},
+      'redact': {},
+    }
+    for (let i=0; i < this.state.steps.length; i++) {
+      const step = this.state.steps[i]
+      if (step['type'] === 'ocr' && step['entity_id']) {
+        step_metadata['ocr'][step['entity_id']] = this.props.ocr_rules[step['entity_id']]
+      } else if (step['type'] === 'template' && step['entity_id']) {
+        step_metadata['template'][step['entity_id']] = this.props.templates[step['entity_id']]
+      } else if (step['type'] === 'selected_area' && step['entity_id']) {
+        step_metadata['selected_area'][step['entity_id']] = this.props.selected_area_metas[step['entity_id']]
+      } else if (step['type'] === 'telemetry' && step['entity_id']) {
+        step_metadata['telemetry'][step['entity_id']] = this.props.telemetry_rules[step['entity_id']]
+      }
+    }
+    return step_metadata
+  }
+
   getPipelineFromState() {
     let build_movies = {}
     for (let i=0; i < this.state.movie_urls.length; i++) {
@@ -90,12 +113,15 @@ class PipelineControls extends React.Component {
         build_movies[movie_url] = {}
       }
     }
+
+    const step_metadata = this.makeStepMetadata()
     const pipeline = {
       id: this.state.id,
       name: this.state.name,
       description: this.state.description,
       attributes: this.state.attributes,
       steps: this.state.steps,
+      step_metadata: step_metadata,
       movies: build_movies,
     }
     return pipeline
@@ -488,6 +514,7 @@ class StepCard extends React.Component {
 
   getSelectForEntityId() {
     let options = []
+    options.push(<option value='' key='9999sw'></option>)
     if (this.props.steps[this.props.position]['type'] === 'template') {
       for (let i=0; i < Object.keys(this.props.templates).length; i++) {
         const scanner_id = Object.keys(this.props.templates)[i]
@@ -524,7 +551,7 @@ class StepCard extends React.Component {
     return (
       <select
           name='step_type'
-          value={this.props.steps[this.props.position]['type']}
+          value={this.props.steps[this.props.position]['entity_id']}
           onChange={
             (event) => this.props.updateStepValue(this.props.position, 'entity_id', event.target.value)
           }
