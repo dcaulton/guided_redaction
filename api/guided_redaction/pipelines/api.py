@@ -126,7 +126,32 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
             return self.build_tier_1_scanner_job('selected_area', content, step, parent_job, previous_job)
         if step['type'] == 'ocr':
             return self.build_tier_1_scanner_job('ocr', content, step, parent_job, previous_job)
+        if step['type'] == 'split_and_hash':
+            return self.build_split_and_hash_job(content, step, parent_job)
+
         return ''
+
+    def build_split_and_hash_job(self, content, step, parent_job):
+        movie_url = list(content['movies'].keys())[0]
+        description = 'split and hash threaded: ' + movie_url
+        # for now hardcoded to one movie, we need a split_and_hash_multi task to fix this!
+        request_data = {
+          'movie_url': movie_url,
+          'frameset_discriminator': 'gray8',
+          'preserve_movie_audio': False,
+        }
+        job = Job(
+            status='created',
+            description=description,
+            app='parse',
+            operation='split_and_hash_threaded',
+            sequence=0,
+            elapsed_time=0.0,
+            request_data=json.dumps(request_data),
+            parent=parent_job,
+        )
+        job.save()
+        return job
 
     def build_tier_1_scanner_job(self, scanner_type, content, step, parent_job, previous_job):
         desc_string = 'scan ' + scanner_type + ' threaded '
@@ -134,13 +159,21 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
         scanner = content['step_metadata'][scanner_type][step['entity_id']]
         build_scanners[step['entity_id']] = scanner
         build_movies = {}
+
+        source_movies = {}
+        if parent_job.request_data:
+            parent_job_request_data = json.loads(parent_job.request_data)
+            if 'movies' in parent_job_request_data:
+                source_movies = parent_job_request_data['movies']
+        if 'movies' in content and not source_movies:
+            source_movies = content['movies']
+
         if previous_job:
             previous_result = json.loads(previous_job.response_data)
             build_movies = previous_result['movies']
-            build_movies['source'] = content['movies']
-            print(build_movies)
         else:
-            build_movies = content['movies']
+            build_movies = source_movies
+
         build_request_data = {
             'movies': build_movies,
             'scan_level': scanner['scan_level'],
@@ -176,11 +209,23 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
     def handle_job_finished(self, job, pipeline):
         response_data = json.loads(job.response_data)
         content = json.loads(pipeline.content)
+        parent_job = job.parent
+        if job.operation == 'split_and_hash_threaded':
+            if parent_job.request_data:
+                parent_job_request_data = json.loads(parent_job.request_data)
+            else:
+                parent_job_request_data = {'movies': {},}
+            for movie_url in response_data['movies']:
+                parent_job_request_data['movies'][movie_url] = response_data['movies'][movie_url]
+            parent_job.request_data = json.dumps(parent_job_request_data)
         child_job_count = Job.objects.filter(parent=job.parent).count()
         num_steps = len(content['steps'])
         if num_steps > child_job_count:
-            child_job = self.build_job(content, child_job_count, job.parent, job)
+            parent_job.elapsed_time = child_job_count / num_steps
+            child_job = self.build_job(content, child_job_count, parent_job, job)
             jobs_api.dispatch_job(child_job)
         else:
-            print('============+BABALOOOOOOOOOOO =================')
-            print('should be wrapping up the parent pipeline job now')
+            parent_job.response_data = job.response_data
+            parent_job.elapsed_time = 1
+            parent_job.status = 'success'
+        parent_job.save()

@@ -4,6 +4,8 @@ import math
 import os
 import json                                                                     
 from guided_redaction.jobs.models import Job                                    
+from guided_redaction.attributes.models import Attribute
+from guided_redaction.pipelines.api import PipelinesViewSetDispatch
 from guided_redaction.parse.api import (
         ParseViewSetZipMovie,
         ParseViewSetSplitMovie,
@@ -18,6 +20,12 @@ from guided_redaction.parse.api import (
 hash_frames_batch_size = 50
 split_frames_multithreaded_threshold = 200
 split_frames_chunk_size = 100
+
+def get_pipeline_for_job(job):
+    if not job:
+        return
+    if Attribute.objects.filter(job=job, name='pipeline_job_link').exists():
+        return Attribute.objects.filter(job=job, name='pipeline_job_link').first().pipeline
 
 # TODO this is a cut and past from analyze/tasks.py.  Find a better way to share it soon
 # also, get it working for split_and_hash_threaded
@@ -177,6 +185,10 @@ def split_and_hash_threaded(job_uuid):
             return
         elif next_step == 'wrap_up':
             wrap_up_split_and_hash_threaded(job, children)
+            pipeline = get_pipeline_for_job(job.parent)
+            if pipeline:
+                worker = PipelinesViewSetDispatch()
+                worker.handle_job_finished(job, pipeline)
         elif next_step == 'update_complete_percent':
             job.elapsed_time = percent_done
             job.save()

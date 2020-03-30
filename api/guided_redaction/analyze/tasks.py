@@ -408,6 +408,10 @@ def scan_ocr_movie(job_uuid):
           job.save()
         elif next_step == 'wrap_up':
           wrap_up_scan_ocr_movie(job, children)
+          pipeline = get_pipeline_for_job(job.parent)
+          if pipeline:
+              worker = PipelinesViewSetDispatch()
+              worker.handle_job_finished(job, pipeline)
         elif next_step == 'abort':
           job.status = 'failed'
           job.save()
