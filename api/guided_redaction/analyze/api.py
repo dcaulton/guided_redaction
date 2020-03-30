@@ -234,7 +234,6 @@ class AnalyzeViewSetScanTemplate(viewsets.ViewSet):
         return Response(matches)
 
     def trim_target_image_to_t1_inputs(self, target_image, tier_1_record):
-        print(tier_1_record.keys())
         if len(tier_1_record.keys()) == 1 and list(tier_1_record.keys())[0] == 'image':
             return target_image # it's a virgin frameset, not t1
         for t1_subscanner_id in tier_1_record:

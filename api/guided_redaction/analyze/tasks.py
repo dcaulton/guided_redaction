@@ -3,6 +3,8 @@ import json
 import os
 from fuzzywuzzy import fuzz
 from guided_redaction.jobs.models import Job
+from guided_redaction.attributes.models import Attribute
+from guided_redaction.pipelines.api import PipelinesViewSetDispatch
 from guided_redaction.analyze.api import (
     AnalyzeViewSetFilter, 
     AnalyzeViewSetScanTemplate,
@@ -12,6 +14,12 @@ from guided_redaction.analyze.api import (
     AnalyzeViewSetOcr
 )
 
+
+def get_pipeline_for_job(job):
+    if not job:
+        return
+    if Attribute.objects.filter(job=job, name='pipeline_job_link').exists():
+        return Attribute.objects.filter(job=job, name='pipeline_job_link').first().pipeline
 
 def evaluate_children(operation, child_operation, children):
     all_children = 0
@@ -285,6 +293,10 @@ def scan_template_threaded(job_uuid):
           job.save()
         elif next_step == 'wrap_up':
           wrap_up_scan_template_threaded(job, children)
+          pipeline = get_pipeline_for_job(job.parent)
+          if pipeline:
+              worker = PipelinesViewSetDispatch()
+              worker.handle_job_finished(pipeline)
         elif next_step == 'abort':
           job.status = 'failed'
           job.save()
