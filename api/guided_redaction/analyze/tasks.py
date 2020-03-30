@@ -296,7 +296,7 @@ def scan_template_threaded(job_uuid):
           pipeline = get_pipeline_for_job(job.parent)
           if pipeline:
               worker = PipelinesViewSetDispatch()
-              worker.handle_job_finished(pipeline)
+              worker.handle_job_finished(job, pipeline)
         elif next_step == 'abort':
           job.status = 'failed'
           job.save()
@@ -549,6 +549,10 @@ def selected_area_threaded(job_uuid):
           job.save()
         elif next_step == 'wrap_up':
           wrap_up_selected_area_threaded(job, children)
+          pipeline = get_pipeline_for_job(job.parent)
+          if pipeline:
+              worker = PipelinesViewSetDispatch()
+              worker.handle_job_finished(job, pipeline)
         elif next_step == 'abort':
           job.status = 'failed'
           job.save()

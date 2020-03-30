@@ -118,14 +118,14 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
         attribute.save()
         return job
 
-    def build_job(self, content, steps_index, parent_job):
+    def build_job(self, content, steps_index, parent_job, previous_job=None):
         step = content['steps'][steps_index]
         if step['type'] == 'template':
-            return self.build_tier_1_scanner_job('template', content, step, parent_job, None)
+            return self.build_tier_1_scanner_job('template', content, step, parent_job, previous_job)
         if step['type'] == 'selected_area':
-            return self.build_tier_1_scanner_job('selected_area', content, step, parent_job, None)
+            return self.build_tier_1_scanner_job('selected_area', content, step, parent_job, previous_job)
         if step['type'] == 'ocr':
-            return self.build_tier_1_scanner_job('ocr', content, step, parent_job, None)
+            return self.build_tier_1_scanner_job('ocr', content, step, parent_job, previous_job)
         return ''
 
     def build_tier_1_scanner_job(self, scanner_type, content, step, parent_job, previous_job):
@@ -135,26 +135,30 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
         build_scanners[step['entity_id']] = scanner
         build_movies = {}
         if previous_job:
-            previous_result = json.loads(previous_job['result_data'])
-            print('lester holt baby')
-            print(previous_result)
+            previous_result = json.loads(previous_job.response_data)
+            build_movies = previous_result['movies']
             build_movies['source'] = content['movies']
+            print(build_movies)
         else:
             build_movies = content['movies']
-        request_data = json.dumps({
-            'templates': build_scanners,
+        build_request_data = {
             'movies': build_movies,
             'scan_level': scanner['scan_level'],
             'id': scanner['id'],
-        })
+        }
         if scanner_type == 'template':
             operation = 'scan_template_threaded'
+            build_request_data['templates'] = build_scanners
         elif scanner_type == 'selected_area':
             operation = 'selected_area_threaded'
+            build_request_data['selected_area_metas'] = build_scanners
         elif scanner_type == 'ocr':
             operation = 'scan_ocr'
+            build_request_data['ocr_rules'] = build_scanners
         elif scanner_type == 'telemetry':
             operation = 'telemetry_find_matching_frames'
+            build_request_data['telemetry_rules'] = build_scanners
+        request_data = json.dumps(build_request_data)
 
         job = Job(
             status='created',
@@ -169,6 +173,14 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
         job.save()
         return job
 
-    def handle_job_finished(self, pipeline):
-        print('pipeline dispatcher, handling job finished')
-        pass
+    def handle_job_finished(self, job, pipeline):
+        response_data = json.loads(job.response_data)
+        content = json.loads(pipeline.content)
+        child_job_count = Job.objects.filter(parent=job.parent).count()
+        num_steps = len(content['steps'])
+        if num_steps > child_job_count:
+            child_job = self.build_job(content, child_job_count, job.parent, job)
+            jobs_api.dispatch_job(child_job)
+        else:
+            print('============+BABALOOOOOOOOOOO =================')
+            print('should be wrapping up the parent pipeline job now')

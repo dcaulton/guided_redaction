@@ -28,7 +28,6 @@ class ExtentsFinder:
         return rect
 
     def determine_arrow_fill_area(self, image, fill_center, tolerance=5):
-        print('tolerance is {}'.format(tolerance))
         x = fill_center[0]
         y = fill_center[1]
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
