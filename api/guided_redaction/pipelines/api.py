@@ -122,14 +122,15 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
         step = content['steps'][steps_index]
         if step['type'] == 'template':
             return self.build_tier_1_scanner_job('template', content, step, parent_job, previous_job)
-        if step['type'] == 'selected_area':
+        elif step['type'] == 'selected_area':
             return self.build_tier_1_scanner_job('selected_area', content, step, parent_job, previous_job)
-        if step['type'] == 'ocr':
+        elif step['type'] == 'ocr':
             return self.build_tier_1_scanner_job('ocr', content, step, parent_job, previous_job)
-        if step['type'] == 'split_and_hash':
+        elif step['type'] == 'split_and_hash':
             return self.build_split_and_hash_job(content, step, parent_job)
-
-        return ''
+        else:
+            print('=============== UNRECOGNIZED JOB TYPE: {} ========'.format(step['type']))
+            return ''
 
     def build_split_and_hash_job(self, content, step, parent_job):
         movie_url = list(content['movies'].keys())[0]

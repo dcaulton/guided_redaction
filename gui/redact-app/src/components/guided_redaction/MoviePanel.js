@@ -164,7 +164,7 @@ class MoviePanel extends React.Component {
     job_data['app'] = 'parse'
     job_data['operation'] = 'split_and_hash_threaded'
     job_data['description'] = 'split and hash threaded from MoviePanel: ' + extra_data
-    job_data['request_data']['movie_url'] = extra_data
+    job_data['request_data']['movie_urls'] = [extra_data]
     job_data['request_data']['preserve_movie_audio'] = this.props.preserve_movie_audio
     job_data['request_data']['frameset_discriminator'] = this.props.frameset_discriminator
     return job_data

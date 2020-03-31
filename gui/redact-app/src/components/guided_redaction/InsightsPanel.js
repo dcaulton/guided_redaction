@@ -436,14 +436,22 @@ class InsightsPanel extends React.Component {
     return counts
   }
 
-  buildLoadMovieJobData(extra_data) {
+  buildSplitAndHashJobData(extra_data) {
     let job_data = {
       request_data: {},
     }
     job_data['app'] = 'parse'
     job_data['operation'] = 'split_and_hash_threaded'
-    job_data['description'] = 'split and hash threaded: ' + extra_data
-    job_data['request_data']['movie_url'] = extra_data
+    if (Array.isArray(extra_data)) {
+      job_data['description'] = 'split and hash threaded - all campaign movies'
+    } else {
+      job_data['description'] = 'split and hash threaded: ' + extra_data
+    }
+    if (Array.isArray(extra_data)) {
+      job_data['request_data']['movie_urls'] = extra_data
+    } else {
+      job_data['request_data']['movie_urls'] = [extra_data]
+    }
     job_data['request_data']['preserve_movie_audio'] = this.props.preserve_movie_audio
     job_data['request_data']['frameset_discriminator'] = this.props.frameset_discriminator
     return job_data
@@ -638,8 +646,8 @@ class InsightsPanel extends React.Component {
       this.props.submitJob({
         job_data: job_data,
       })
-    } else if (job_string === 'load_movie') {
-      let job_data = this.buildLoadMovieJobData(extra_data)
+    } else if (job_string === 'split_and_hash_movie') {
+      let job_data = this.buildSplitAndHashJobData(extra_data)
       this.props.submitJob({
         job_data: job_data
       })
@@ -1079,7 +1087,7 @@ class InsightsPanel extends React.Component {
           <MovieCardList 
             setCurrentVideo={this.setCurrentVideo}
             movie_url={this.props.movie_url}
-            movie_urls={this.props.campaign_movies}
+            campaign_movies={this.props.campaign_movies}
             movies={this.props.movies}
             submitInsightsJob={this.submitInsightsJob}
             setMovieNickname={this.props.setMovieNickname}

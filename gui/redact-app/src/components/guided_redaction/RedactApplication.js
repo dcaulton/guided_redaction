@@ -1216,9 +1216,12 @@ class RedactApplication extends React.Component {
     const response_data = JSON.parse(job.response_data)
     const request_data = JSON.parse(job.request_data)
     let deepCopyMovies = JSON.parse(JSON.stringify(this.state.movies))
-    const movie_url = request_data['movie_url']
-    deepCopyMovies[movie_url] = response_data['movies'][movie_url]
-    deepCopyMovies[movie_url]['nickname'] = this.getMovieNicknameFromUrl(movie_url)
+    let movie_url = ''
+    for (let i=0; i < request_data['movie_urls'].length; i++) {
+      movie_url = request_data['movie_urls'][i]
+      deepCopyMovies[movie_url] = response_data['movies'][movie_url]
+      deepCopyMovies[movie_url]['nickname'] = this.getMovieNicknameFromUrl(movie_url)
+    }
     this.addMovieAndSetActive(
       movie_url,
       deepCopyMovies,

@@ -133,6 +133,9 @@ def split_movie(job_uuid):
 @shared_task
 def hash_frames(job_uuid):
     # TODO make this threading aware
+    if not Job.objects.filter(pk=job_uuid).exists():
+        print('calling hash_frames on nonexistent job: '+ job_uuid) 
+        return
     job = Job.objects.get(pk=job_uuid)
     if job:
         job.status = 'running'
@@ -201,26 +204,32 @@ def split_and_hash_threaded(job_uuid):
 def wrap_up_split_and_hash_threaded(parent_job, children):
     framesets = {}
     hash_children = [x for x in children if x.operation == 'hash_movie']
-    frameset_discriminator = ''
+    frameset_discriminators = {}
     for hash_child in hash_children:
         child_response_data = json.loads(hash_child.response_data)
         movie_url = list(child_response_data['movies'].keys())[0]
-        if not frameset_discriminator:
-            frameset_discriminator = child_response_data['movies'][movie_url]['frameset_discriminator']
-        frameset_hashes = child_response_data['movies'][movie_url]['framesets'].keys()
+        if movie_url not in framesets:
+            framesets[movie_url] = {}
+        if movie_url not in frameset_discriminators:
+            frameset_discriminators[movie_url] = ''
+        child_response_framesets = child_response_data['movies'][movie_url]['framesets']
+        resp_disc = child_response_data['movies'][movie_url]['frameset_discriminator']
+        frameset_discriminators[movie_url] = resp_disc
+        frameset_hashes = child_response_framesets.keys()
         for frameset_hash in frameset_hashes:
+            child_response_images = child_response_framesets[frameset_hash]['images']
             if frameset_hash in framesets:
-               framesets[frameset_hash]['images'] += child_response_data['movies'][movie_url]['framesets'][frameset_hash]['images']
+               framesets[movie_url][frameset_hash]['images'] += child_response_images
             else:
-               framesets[frameset_hash] = {}
-               framesets[frameset_hash]['images'] = child_response_data['movies'][movie_url]['framesets'][frameset_hash]['images']
-            framesets[frameset_hash]['images'] = sorted(framesets[frameset_hash]['images'])
+               framesets[movie_url][frameset_hash] = {}
+               framesets[movie_url][frameset_hash]['images'] = child_response_images
+            framesets[movie_url][frameset_hash]['images'].sort()
         
     resp_data = json.loads(parent_job.response_data)
     req_data = json.loads(parent_job.request_data)
-    movie_url = req_data['movie_url']
-    resp_data['movies'][movie_url]['framesets'] = framesets 
-    resp_data['movies'][movie_url]['frameset_discriminator'] = frameset_discriminator
+    for movie_url in framesets:
+        resp_data['movies'][movie_url]['framesets'] = framesets[movie_url]
+        resp_data['movies'][movie_url]['frameset_discriminator'] = frameset_discriminators[movie_url]
     parent_job.response_data = json.dumps(resp_data)
     parent_job.status = 'success'
     parent_job.elapsed_time = 1
@@ -272,68 +281,72 @@ def evaluate_split_and_hash_threaded_children(children):
         return ('abort', 0)
 
 def gather_split_threaded_data(split_tasks):
-    frames = []
-    audio_url = ''
-    frame_dimensions = []
+    frames = {}
+    audio_urls = {}
+    frame_dimensions = {}
     for i, split_task in enumerate(split_tasks):
         resp_data = json.loads(split_task.response_data)
         req_data = json.loads(split_task.request_data)
         movie_url = req_data['movie_url']
-        frames += resp_data['movies'][movie_url]['frames']
+        if movie_url not in frames:
+            frames[movie_url] = []
+        frames[movie_url] += resp_data['movies'][movie_url]['frames']
         if 'frame_dimensions' in resp_data['movies'][movie_url]:
-            frame_dimensions = resp_data['movies'][movie_url]['frame_dimensions']
+            frame_dimensions[movie_url] = resp_data['movies'][movie_url]['frame_dimensions']
         if 'audio_url' in resp_data['movies'][movie_url]:
-            audio_url = resp_data['movies'][movie_url]['audio_url']
-    frames.sort()
+            audio_urls[movie_url] = resp_data['movies'][movie_url]['audio_url']
+    for movie_url in frames:
+        frames[movie_url].sort()
     movies_obj = {}
     movies_obj['movies'] = {}
-    movies_obj['movies'][movie_url] = {
-        'frames': frames,
-        'frame_dimensions': frame_dimensions,
-    }
-    if audio_url:
-        movies_obj['movies'][movie_url]['audio_url'] = audio_url
+    for movie_url in frames:
+        movies_obj['movies'][movie_url] = {
+            'frames': frames[movie_url],
+            'frame_dimensions': frame_dimensions[movie_url],
+        }
+        if movie_url in audio_urls:
+            movies_obj['movies'][movie_url]['audio_url'] = audio_urls[movie_url]
 
     return movies_obj
 
 def make_and_dispatch_hash_tasks(parent_job, split_tasks):
     movies_obj = gather_split_threaded_data(split_tasks)
     request_data = json.loads(parent_job.request_data)
-    movie_url = request_data['movie_url']
-    frameset_discriminator = request_data['frameset_discriminator']
-    frames = movies_obj['movies'][movie_url]['frames']
-    parent_job.response_data = json.dumps(movies_obj)
-    parent_job.save()
+    movie_urls = request_data['movie_urls']
+    for movie_url in movies_obj['movies']:
+        frameset_discriminator = request_data['frameset_discriminator']
+        frames = movies_obj['movies'][movie_url]['frames']
+        parent_job.response_data = json.dumps(movies_obj)
+        parent_job.save()
 
-    num_jobs = math.ceil(len(frames) / hash_frames_batch_size)
-    for i in range(num_jobs):
-        start_point = i * hash_frames_batch_size
-        end_point = ((i+1) * hash_frames_batch_size)
-        if i == (num_jobs-1):
-            end_point = len(frames)
-        build_movie_obj = {}
-        build_movie_obj['movies'] = {}
-        build_movie_obj['movies'][movie_url] = {
-            'frames': frames[start_point:end_point],
-            'frameset_discriminator': frameset_discriminator,
-        }
-        request_data = json.dumps(build_movie_obj)
-        job = Job(
-            request_data=request_data,
-            status='created',
-            description='hash_movie',
-            app='parse',
-            operation='hash_movie',
-            sequence=i,
-            elapsed_time=0.0,
-            parent=parent_job,
-        )
-        job.save()
-        print('make and dispatch hash tasks, dispatching job {}'.format(job.id))
-        hash_frames.delay(job.id)
-        if i % 3 == 0:
-            split_and_hash_threaded.delay(parent_job.id)
-    return
+        num_jobs = math.ceil(len(frames) / hash_frames_batch_size)
+        for i in range(num_jobs):
+            start_point = i * hash_frames_batch_size
+            end_point = ((i+1) * hash_frames_batch_size)
+            if i == (num_jobs-1):
+                end_point = len(frames)
+            build_movie_obj = {}
+            build_movie_obj['movies'] = {}
+            build_movie_obj['movies'][movie_url] = {
+                'frames': frames[start_point:end_point],
+                'frameset_discriminator': frameset_discriminator,
+            }
+            build_request_data = json.dumps(build_movie_obj)
+            job = Job(
+                request_data=build_request_data,
+                status='created',
+                description='hash_movie',
+                app='parse',
+                operation='hash_movie',
+                sequence=i,
+                elapsed_time=0.0,
+                parent=parent_job,
+            )
+            job.save()
+            print('make and dispatch hash tasks, dispatching job {}'.format(job.id))
+            hash_frames.delay(job.id)
+            if i % 3 == 0:
+                split_and_hash_threaded.delay(parent_job.id)
 
 def get_movie_length_in_seconds(movie_url):
     worker = ParseViewSetSplitMovie()
@@ -342,37 +355,36 @@ def get_movie_length_in_seconds(movie_url):
     
 def make_and_dispatch_split_tasks(parent_job):
     request_data = json.loads(parent_job.request_data)
-    movie_url = request_data['movie_url']
-    movie_length_seconds = get_movie_length_in_seconds(movie_url)
-    if movie_length_seconds < split_frames_multithreaded_threshold:
-        parent_job.status = 'running'
-        parent_job.save()
-        job = Job(
-            request_data=parent_job.request_data,
-            status='created',
-            description='split_movie',
-            app='parse',
-            operation='split_movie',
-            sequence=0,
-            elapsed_time=0.0,
-            parent=parent_job,
-        )
-        job.save()
-        print('make and dispatch split tasks, dispatching job {}'.format(job.id))
-        split_movie.delay(job.id)
-    else: 
-        build_and_dispatch_split_tasks_multithreaded(parent_job, movie_url, movie_length_seconds)
+    for movie_url in request_data['movie_urls']:
+        movie_length_seconds = get_movie_length_in_seconds(movie_url)
+        build_request_data = {'movie_url': movie_url}
+        if movie_length_seconds < split_frames_multithreaded_threshold:
+            parent_job.status = 'running'
+            parent_job.save()
+            job = Job(
+                request_data=json.dumps(build_request_data),
+                status='created',
+                description='split_movie',
+                app='parse',
+                operation='split_movie',
+                sequence=0,
+                elapsed_time=0.0,
+                parent=parent_job,
+            )
+            job.save()
+            print('make and dispatch split tasks, dispatching job {}'.format(job.id))
+            split_movie.delay(job.id)
+        else: 
+            build_and_dispatch_split_tasks_multithreaded(parent_job, movie_url, movie_length_seconds)
 
 def build_and_dispatch_split_tasks_multithreaded(parent_job, movie_url, movie_length_seconds):
     parent_job.status = 'running'
     parent_job.save()
     request_data = json.loads(parent_job.request_data)
-    movie_url = request_data['movie_url']
     preserve_movie_audio = False
     num_jobs = math.ceil(movie_length_seconds/split_frames_chunk_size)
     for i in range(num_jobs):
-        build_request_data = {}
-        build_request_data['movie_url'] = movie_url
+        build_request_data = {'movie_url': movie_url}
         start_offset = i * split_frames_chunk_size
         build_request_data['start_seconds_offset'] = start_offset
         if i < num_jobs - 1:

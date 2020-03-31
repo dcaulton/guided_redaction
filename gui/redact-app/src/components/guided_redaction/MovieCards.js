@@ -39,16 +39,31 @@ class MovieCardList extends React.Component {
     )
   }
 
+  buildSplitAndHashAllLink() {
+    return (
+      <div className='d-inline'>
+        <button
+            className='btn btn-link'
+            onClick={() => this.props.submitInsightsJob('split_and_hash_movie', this.props.campaign_movies)}
+        >
+        s&h all
+        </button>
+      </div>
+    )
+  }
+
   render() {
     let cacl = this.buildCollapseAllCardsLink()
+    let split_and_hash_all_link = this.buildSplitAndHashAllLink() 
     return (
       <div>
         <div className='row'>
-          <span className='h3 mr-5'>Videos</span>
+          <span className='h3 mr-1'>Videos</span>
+          {split_and_hash_all_link}
           {cacl}
         </div>
         <div id='movie_card_wrapper'>
-        {this.props.movie_urls.map((value, index) => {
+        {this.props.campaign_movies.map((value, index) => {
           return (
           <MovieCard
               key={index}
@@ -204,7 +219,7 @@ class MovieCard extends React.Component {
     return (
       <button
           className='btn btn-link'
-          onClick={() => this.props.submitInsightsJob('load_movie', this.props.this_cards_movie_url)}
+          onClick={() => this.props.submitInsightsJob('split_and_hash_movie', this.props.this_cards_movie_url)}
       >
       split
       </button>
