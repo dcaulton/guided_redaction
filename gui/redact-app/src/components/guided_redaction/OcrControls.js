@@ -39,6 +39,7 @@ class OcrControls extends React.Component {
     this.addOcrZoneCallback=this.addOcrZoneCallback.bind(this)
     this.getOcrMetaFromState=this.getOcrMetaFromState.bind(this)
     this.setLocalStateVar=this.setLocalStateVar.bind(this)
+    this.setLocalStateVarNoWarning=this.setLocalStateVarNoWarning.bind(this)
     this.getOcrWindow=this.getOcrWindow.bind(this)
     this.addOriginLocation=this.addOriginLocation.bind(this)
     this.getCurrentOcrOriginLocation=this.getCurrentOcrOriginLocation.bind(this)
@@ -113,6 +114,14 @@ class OcrControls extends React.Component {
     this.setState({
       [var_name]: var_value,
       unsaved_changes: true,
+    },
+    when_done())
+  }
+
+  setLocalStateVarNoWarning(var_name, var_value, when_done=(()=>{})) {
+    this.setState({
+      [var_name]: var_value,
+      unsaved_changes: false,
     },
     when_done())
   }
@@ -439,7 +448,7 @@ class OcrControls extends React.Component {
       this.props.ocr_rules,
       'ocr_rules',
       'current_ocr_rule_id',
-      this.setLocalStateVar,
+      this.setLocalStateVarNoWarning,
       this.props.setGlobalStateVar,
       when_done
     )

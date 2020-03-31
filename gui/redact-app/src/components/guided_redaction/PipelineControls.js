@@ -7,6 +7,7 @@ import {
   buildAttributesAddRow,
   buildTier1DeleteButton,
   buildTier1LoadButton,
+  buildIdString,
 } from './SharedControls'
 
 class PipelineControls extends React.Component {
@@ -21,6 +22,7 @@ class PipelineControls extends React.Component {
       steps: [],
       movie_urls: [],
       attribute_search_value: '',
+      use_parsed_movies: false,
       unsaved_changes: false,
     }
     this.afterPipelineSaved=this.afterPipelineSaved.bind(this)
@@ -107,7 +109,7 @@ class PipelineControls extends React.Component {
     let build_movies = {}
     for (let i=0; i < this.state.movie_urls.length; i++) {
       const movie_url = this.state.movie_urls[i]
-      if (Object.keys(this.props.movies).includes(movie_url)) {
+      if (Object.keys(this.props.movies).includes(movie_url) && this.state.use_parsed_movies) {
         build_movies[movie_url] = this.props.movies[movie_url]
       } else {
         build_movies[movie_url] = {}
@@ -130,7 +132,10 @@ class PipelineControls extends React.Component {
   afterPipelineSaved(pipeline_response_obj) {
     if (Object.keys(pipeline_response_obj).includes('pipeline_id')) {
       const pipeline_id = pipeline_response_obj['pipeline_id']
-      this.setLocalStateVar('id', pipeline_id)
+      this.setState({
+        id: pipeline_id,
+        unsaved_changes: false,
+      })
       this.props.displayInsightsMessage('pipeline was successfully saved')
     }
   }
@@ -234,6 +239,9 @@ class PipelineControls extends React.Component {
   }
 
   buildRunButton() {
+    if (!this.state.id) {
+      return ''
+    }
     return buildInlinePrimaryButton(
       'Run',
       (()=>{this.doRun()})
@@ -260,6 +268,32 @@ class PipelineControls extends React.Component {
       80,
       ((value)=>{this.setLocalStateVar('description', value)})
     )
+  }
+
+  buildUseParsedMoviesCheckbox() {
+    let use_parsed_movies_checked = ''
+    if (this.state.use_parsed_movies) {
+      use_parsed_movies_checked = 'checked'
+    }
+    return (
+      <div>
+        <input
+          className='ml-2 mr-2 mt-1'
+          id='toggle_show_brief'
+          checked={use_parsed_movies_checked}
+          type='checkbox'
+          onChange={() => this.toggleUseParsedMovies()}
+        />
+        Use Parsed Movies
+      </div>
+    )
+  }
+
+  toggleUseParsedMovies() {
+    const new_value = (!this.state.use_parsed_movies)
+    this.setState({
+      use_parsed_movies: new_value,
+    })
   }
 
   buildAttributesList() {
@@ -341,6 +375,7 @@ class PipelineControls extends React.Component {
     if (!this.props.visibilityFlags['pipelines']) {
       return([])
     }
+    const id_string = buildIdString(this.state.id, 'pipeline', this.state.unsaved_changes)
     const load_button = this.buildLoadButton()
     const save_button = this.buildSaveButton()
     const delete_button = this.buildDeleteButton()
@@ -349,6 +384,7 @@ class PipelineControls extends React.Component {
     const description_field = this.buildDescriptionField()
     const attributes_list = this.buildAttributesList()
     const movie_urls_box = this.buildMovieUrlsBox()
+    const use_parsed_movies_checkbox = this.buildUseParsedMoviesCheckbox()
     const header_row = makeHeaderRow(
       'pipelines',
       'pipelines_body',
@@ -379,11 +415,19 @@ class PipelineControls extends React.Component {
               </div>
 
               <div className='row mt-2'>
+                {id_string}
+              </div>
+
+              <div className='row mt-2'>
                 {name_field}
               </div>
 
               <div className='row mt-2'>
                 {description_field}
+              </div>
+
+              <div className='row mt-2'>
+                {use_parsed_movies_checkbox}
               </div>
 
               <div className='row mt-2'>

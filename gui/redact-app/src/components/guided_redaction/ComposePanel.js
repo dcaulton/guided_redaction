@@ -576,8 +576,6 @@ class ComposePanel extends React.Component {
     const datetime_regex = /\d\d\d\d-\d\d-\d\dT(\d\d):(\d\d):(\d\d)/
     const first_telemetry = this.getFirstTelemetryMinSec()
     const movie_length_seconds = this.props.movies[this.props.movie_url]['frames'].length
-    let movie_timestamp_seconds = 0
-    let movie_delay = 0
     if (Object.keys(this.props.movies[this.props.movie_url]).includes('start_timestamp')) {
       const movie_timestamp = this.props.movies[this.props.movie_url]['start_timestamp']
       let mins_diff = parseInt(movie_timestamp['minute']) - first_telemetry['minute']

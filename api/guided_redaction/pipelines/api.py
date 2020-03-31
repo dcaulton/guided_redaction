@@ -134,10 +134,10 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
 
     def build_split_and_hash_job(self, content, step, parent_job):
         movie_url = list(content['movies'].keys())[0]
-        description = 'split and hash threaded: ' + movie_url
+        description = 'split and hash threaded for pipeline'
         # for now hardcoded to one movie, we need a split_and_hash_multi task to fix this!
         request_data = {
-          'movie_url': movie_url,
+          'movie_urls': list(content['movies'].keys()),
           'frameset_discriminator': 'gray8',
           'preserve_movie_audio': False,
         }
