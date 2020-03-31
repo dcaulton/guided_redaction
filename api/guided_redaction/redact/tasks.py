@@ -3,7 +3,15 @@ import json
 import os
 from guided_redaction.jobs.models import Job
 from guided_redaction.redact.api import RedactViewSetRedactImage, RedactViewSetIllustrateImage
+from guided_redaction.attributes.models import Attribute
+from guided_redaction.pipelines.api import PipelinesViewSetDispatch
 
+
+def get_pipeline_for_job(job):
+    if not job:
+        return
+    if Attribute.objects.filter(job=job, name='pipeline_job_link').exists():
+        return Attribute.objects.filter(job=job, name='pipeline_job_link').first().pipeline
 
 @shared_task
 def redact_single(job_uuid):
@@ -94,13 +102,13 @@ def wrap_up_redact_threaded(job, children):
         child_request_data = json.loads(child.request_data)
         movie_url = child_request_data['movie_url']
         frameset_hash = child_request_data['frameset_hash']
+        child_request_data = json.loads(child.request_data)
         if movie_url not in aggregate_response_data['movies']:
             aggregate_response_data['movies'][movie_url] = {}
             aggregate_response_data['movies'][movie_url]['framesets'] = {}
-        aggregate_response_data['movies'][movie_url]['framesets'][frameset_hash] = {}
-        aggregate_response_data['movies'][movie_url]['framesets'][frameset_hash]['redacted_image'] = redacted_image_url
-
-    print('wrap_up_get_timestamp_threaded: wrapping up parent job')
+        agg_resp_data_framesets = aggregate_response_data['movies'][movie_url]['framesets']
+        agg_resp_data_framesets[frameset_hash] = {}
+        agg_resp_data_framesets[frameset_hash]['redacted_image'] = redacted_image_url
     job.status = 'success'
     job.response_data = json.dumps(aggregate_response_data)
     job.elapsed_time = 1
@@ -116,52 +124,56 @@ def redact_threaded(job_uuid):
         (next_step, percent_done) = evaluate_redact_threaded_children(children)
         print('next step is {}, percent done {}'.format(next_step, percent_done))
         if next_step == 'build_child_tasks':
-          build_and_dispatch_redact_threaded_children(job)
+            build_and_dispatch_redact_threaded_children(job)
         elif next_step == 'update_percent_complete':
-          job.elapsed_time = percent_done
-          job.save()
+            job.elapsed_time = percent_done
+            job.save()
         elif next_step == 'wrap_up':
-          wrap_up_redact_threaded(job, children)
+            wrap_up_redact_threaded(job, children)
+            pipeline = get_pipeline_for_job(job.parent)
+            if pipeline:
+                worker = PipelinesViewSetDispatch()
+                worker.handle_job_finished(job, pipeline)
         elif next_step == 'abort':
-          job.status = 'failed'
-          job.save()
+            job.status = 'failed'
+            job.save()
         return
 
-    job = Job.objects.get(pk=job_uuid)
-    if job:
-        job.status = 'running'
-        job.save()
-        if not job.parent:
-            children = Job.objects.filter(parent_id=job.id, status='created').order_by('sequence')
-            if children.count():
-              next_child = children[0]
-              redact.delay(next_child.id)
-              # TODO the modern standard is to mark the children complete as they finish, and to 
-              #   have a parent module decide what to do.  See movie split and hash threaded for example
-              return
-        else:
-            rvsri = RedactViewSetRedactImage()
-            response = rvsri.process_create_request(json.loads(job.request_data))
-            prev_working_dir = get_file_uuid_from_response(response.data)
-            job.response_data = json.dumps(response.data)
-            job.status = 'success'
-            job.save()
-            children = Job.objects.filter(parent_id=job.parent_id, status='created').order_by('sequence')
-            if children.count():
-              next_child = children[0]
-
-              ncrd = json.loads(next_child.request_data)
-              if (ncrd['preserve_working_dir_across_batch'] == 'true' and prev_working_dir): 
-                  ncrd['working_dir'] = prev_working_dir
-                  next_child.request_data = json.dumps(ncrd)
-                  next_child.save()
-
-              redact.delay(next_child.id)
-              return
-            else:
-              job.parent.status = 'success'
-              job.parent.save()
-
+#    job = Job.objects.get(pk=job_uuid)
+#    if job:
+#        job.status = 'running'
+#        job.save()
+#        if not job.parent:
+#            children = Job.objects.filter(parent_id=job.id, status='created').order_by('sequence')
+#            if children.count():
+#              next_child = children[0]
+#              redact.delay(next_child.id)
+#              # TODO the modern standard is to mark the children complete as they finish, and to 
+#              #   have a parent module decide what to do.  See movie split and hash threaded for example
+#              return
+#        else:
+#            rvsri = RedactViewSetRedactImage()
+#            response = rvsri.process_create_request(json.loads(job.request_data))
+#            prev_working_dir = get_file_uuid_from_response(response.data)
+#            job.response_data = json.dumps(response.data)
+#            job.status = 'success'
+#            job.save()
+#            children = Job.objects.filter(parent_id=job.parent_id, status='created').order_by('sequence')
+#            if children.count():
+#              next_child = children[0]
+#
+#              ncrd = json.loads(next_child.request_data)
+#              if (ncrd['preserve_working_dir_across_batch'] == 'true' and prev_working_dir): 
+#                  ncrd['working_dir'] = prev_working_dir
+#                  next_child.request_data = json.dumps(ncrd)
+#                  next_child.save()
+#
+#              redact.delay(next_child.id)
+#              return
+#            else:
+#              job.parent.status = 'success'
+#              job.parent.save()
+#
 def get_file_uuid_from_response(response_dict):
     the_uuid = ''
     if 'redacted_image_url' in response_dict:

@@ -20,7 +20,8 @@ class PipelinesViewSet(viewsets.ViewSet):
             if Attribute.objects.filter(pipeline=pipeline, name='pipeline_job_link').exists():
                 attributes = Attribute.objects.filter(pipeline=pipeline, name='pipeline_job_link')
                 for attribute in attributes:
-                    job_ids.append(attribute.job.id)
+                    if attribute.job:
+                        job_ids.append(attribute.job.id)
             pipelines_list.append(
                 {
                     'id': pipeline.id,
@@ -127,15 +128,14 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
         elif step['type'] == 'ocr':
             return self.build_tier_1_scanner_job('ocr', content, step, parent_job, previous_job)
         elif step['type'] == 'split_and_hash':
-            return self.build_split_and_hash_job(content, step, parent_job)
+            return self.build_split_and_hash_job(content, parent_job)
+        elif step['type'] == 'redact':
+            return self.build_redact_job(content, parent_job, previous_job)
         else:
             print('=============== UNRECOGNIZED JOB TYPE: {} ========'.format(step['type']))
             return ''
 
-    def build_split_and_hash_job(self, content, step, parent_job):
-        movie_url = list(content['movies'].keys())[0]
-        description = 'split and hash threaded for pipeline'
-        # for now hardcoded to one movie, we need a split_and_hash_multi task to fix this!
+    def build_split_and_hash_job(self, content, parent_job):
         request_data = {
           'movie_urls': list(content['movies'].keys()),
           'frameset_discriminator': 'gray8',
@@ -143,12 +143,72 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
         }
         job = Job(
             status='created',
-            description=description,
+            description='split and hash threaded for pipeline',
             app='parse',
             operation='split_and_hash_threaded',
             sequence=0,
             elapsed_time=0.0,
             request_data=json.dumps(request_data),
+            parent=parent_job,
+        )
+        job.save()
+        return job
+
+    def add_t1_output_to_areas_to_redact(self, source_movie, framesets_to_redact):
+        for frameset_hash in framesets_to_redact:
+            areas_to_redact = framesets_to_redact[frameset_hash]
+            build_areas = []
+            for area_id in areas_to_redact:
+                area = areas_to_redact[area_id]
+                build_area = {
+                    'id': area_id,
+                }
+                if 'location' in area and 'size' in area:
+                    end = [
+                        area['location'][0] + area['size'][0],
+                        area['location'][1] + area['size'][1]
+                    ]
+                    build_area['start'] = area['location']
+                    build_area['end'] = end
+                    build_areas.append(build_area)
+                elif 'start' in area and 'end' in area:
+                    build_area['start'] = area['start']
+                    build_area['end'] = area['end']
+                    build_areas.append(build_area)
+            if build_areas:
+                source_movie['framesets'][frameset_hash]['areas_to_redact'] = build_areas
+        return source_movie
+                
+    def build_redact_job(self, content, parent_job, previous_job):
+        movie_url = list(content['movies'].keys())[0]
+        build_movies = {}
+        parent_request_data = json.loads(parent_job.request_data)
+        t1_output = json.loads(previous_job.response_data)
+
+        # TODO loop on movie urls here
+        source_movie = parent_request_data['movies'][movie_url]
+        t1_framesets = {}
+        if movie_url in t1_output['movies']:
+            t1_framesets = t1_output['movies'][movie_url]['framesets']
+        merged_movie = self.add_t1_output_to_areas_to_redact(source_movie, t1_framesets)
+        build_movies[movie_url] = merged_movie
+        build_request_data = {
+            "movies": build_movies,
+            'mask_method': 'black_rectangle',
+            'meta': {
+                'return_type': 'url',
+                'preserve_working_dir_across_batch': True,
+                'working_dir': '',
+            }
+        }
+        job = Job(
+            status='created',
+            description='redact for pipeline',
+            app='redact',
+            operation='redact',
+            sequence=0,
+            elapsed_time=0.0,
+            request_data=json.dumps(build_request_data),
             parent=parent_job,
         )
         job.save()
@@ -162,16 +222,21 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
         build_movies = {}
 
         source_movies = {}
+        print('bibbity 00')
         if parent_job.request_data:
+            print('bibbity 01')
             parent_job_request_data = json.loads(parent_job.request_data)
             if 'movies' in parent_job_request_data:
                 source_movies = parent_job_request_data['movies']
         if 'movies' in content and not source_movies:
+            print('bibbity 02')
             source_movies = content['movies']
 
         if previous_job:
             previous_result = json.loads(previous_job.response_data)
             build_movies = previous_result['movies']
+            if source_movies:
+                build_movies['source'] = source_movies
         else:
             build_movies = source_movies
 
