@@ -10,7 +10,6 @@ class ImageMasker:
         self, source, regions_to_mask, mask_method, blur_foreground_background
     ):
         output = source.copy()
-        print("mask method is "+ mask_method)
         mask = np.zeros((output.shape[0], output.shape[1]))
         combine_via_mask = False
         if output.shape[2] == 3:
@@ -21,7 +20,6 @@ class ImageMasker:
             green_mask_color = 128
         if blur_foreground_background == "foreground":
             for region_number, masking_region in enumerate(regions_to_mask):
-                print("masking region"+ str(masking_region))
                 mask_method = mask_method or "blur_7x7"
                 if mask_method == "black_rectangle":
                     cv2.rectangle(

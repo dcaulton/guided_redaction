@@ -314,7 +314,7 @@ def wrap_up_split_and_hash_threaded(parent_job, children):
         frameset_hashes = child_response_framesets.keys()
         for frameset_hash in frameset_hashes:
             child_response_images = child_response_framesets[frameset_hash]['images']
-            if frameset_hash in framesets:
+            if frameset_hash in framesets[movie_url]:
                framesets[movie_url][frameset_hash]['images'] += child_response_images
             else:
                framesets[movie_url][frameset_hash] = {}

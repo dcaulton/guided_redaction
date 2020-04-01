@@ -85,9 +85,6 @@ def build_and_dispatch_redact_threaded_children(parent_job):
                     parent=parent_job,
                 )
                 job.save()
-                msg = 'build_and_dispatch_redact_threaded_children: '
-                msg += 'dispatching job for frameset {}'.format(frameset_hash)
-                print(msg)
                 redact_single.delay(job.id)
                 # intersperse these evenly in the job stack so we get regular updates
                 if job_counter% 5 == 0:
