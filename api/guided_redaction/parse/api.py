@@ -328,31 +328,20 @@ class ParseViewSetHashFrames(viewsets.ViewSet):
 
 class ParseViewSetZipMovie(viewsets.ViewSet):
     def create(self, request):
-        resp_data = self.process_create_request(request.data)
-        movie_frame_dims = get_movie_frame_dimensions(resp_data['response_data']['frames'])
-        if resp_data['errors_400']:
-            return self.error(resp_data['errors_400'], status_code=400)
-        if resp_data['errors_422']:
-            return self.error(resp_data['errors_422'], status_code=422)
+        request_data = request.data
+        return self.process_create_request(request_data)
         resp_payload = {
             "movie_url": resp_data['response_data']['movie_url'],
         }
         return Response(resp_payload)
 
     def process_create_request(self, request_data):
-        return_data = {
-            'errors_400': [],
-            'errors_422': [],
-            'response_data': None,
-        }
         if not request_data.get("image_urls"):
-            return_data['errors_400'].append("image_urls is required")
-        if not request_data.get("movie_name"):
-            return_data['errors_400'].append("movie_name is required")
-        if return_data['errors_400']:
-            return return_data
+            return self.error("image_urls is required")
+        if not request_data.get("new_movie_name"):
+            return self.error("new_movie_name is required")
         image_urls = request_data["image_urls"]
-        movie_name = request_data["movie_name"]
+        movie_name = request_data["new_movie_name"]
 
         file_writer = FileWriter(
             working_dir=settings.REDACT_FILE_STORAGE_DIR,
@@ -374,10 +363,9 @@ class ParseViewSetZipMovie(viewsets.ViewSet):
         if request_data.get('audio_url'):
             output_url = add_movie_audio(file_writer, output_url, request_data.get('audio_url'))
 
-        return_data['response_data'] = {
+        return Response({
             "movie_url": output_url,
-        }
-        return return_data
+        })
 
 
 class ParseViewSetPing(viewsets.ViewSet):

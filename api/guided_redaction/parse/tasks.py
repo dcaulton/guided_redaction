@@ -1,4 +1,5 @@
 from celery import shared_task                                                  
+from urllib.parse import urlsplit
 import pprint
 import math
 import os
@@ -54,27 +55,122 @@ def evaluate_children(operation, child_operation, children):
         return ('abort', 0)
 
 @shared_task
+def zip_movie_threaded(job_uuid):
+    if Job.objects.filter(pk=job_uuid).exists():
+        job = Job.objects.get(pk=job_uuid)
+        if job.status in ['success', 'failed']:
+            return
+        children = Job.objects.filter(parent=job)
+        (next_step, percent_done) = evaluate_children('ZIP MOVIE THREADED', 'zip_movie', children)
+        print('next step is {}, percent done {}'.format(next_step, percent_done))
+        request_data = json.loads(job.request_data)
+        if next_step == 'build_child_tasks':
+            build_and_dispatch_zip_movie_tasks(job)
+        elif next_step == 'update_percent_complete':
+            job.elapsed_time = percent_done
+            job.save()
+        elif next_step == 'wrap_up':
+            movies_obj = wrap_up_zip_movie_threaded(children, job)
+            pipeline = get_pipeline_for_job(job.parent)
+            if pipeline:
+                worker = PipelinesViewSetDispatch()
+                worker.handle_job_finished(job, pipeline)
+        elif next_step == 'abort':
+            job.status = 'failed'
+            job.save()
+
+def get_frameset_hash_for_image_url(framesets, image_url):
+    for frameset_hash in framesets:
+        if image_url in framesets[frameset_hash]['images']:
+            return frameset_hash
+    print('WARNING couldnt find a match for image url {}'.format(image_url))
+    return list(framesets.keys())[0]
+
+def get_final_image_for_frameset_hash(framesets, frameset_hash):
+    frameset = framesets[frameset_hash]
+    if 'illustrated_image' in frameset:
+        return frameset['illustrated_image']
+    if 'redacted_image' in frameset:
+        return frameset['redacted_image']
+    return frameset['images'][0]
+
+def build_and_dispatch_zip_movie_tasks(parent_job):
+    parent_job.status = 'running'
+    parent_job.save()
+    request_data = json.loads(parent_job.request_data)
+    movies = request_data['movies']
+    for index, movie_url in enumerate(movies.keys()):
+        movie = movies[movie_url]
+        build_image_urls = []
+        for source_image_url in movie['frames']:
+            frameset_hash = get_frameset_hash_for_image_url(movie['framesets'], source_image_url)
+            final_image_url = get_final_image_for_frameset_hash(movie['framesets'], frameset_hash)
+            build_image_urls.append(final_image_url)
+        inbound_filename = (urlsplit(movie_url)[2]).split("/")[-1]
+        (file_basename, file_extension) = os.path.splitext(inbound_filename)
+        new_filename = file_basename + "_redacted" + file_extension
+        build_request_data = json.dumps({
+            'image_urls': build_image_urls,
+            'new_movie_name': new_filename,
+            'movie_url': movie_url,
+        })
+        job = Job(
+            request_data=build_request_data,
+            status='created',
+            description='zip movie for movie {}'.format(movie_url),
+            app='parse',
+            operation='zip_movie',
+            sequence=0,
+            elapsed_time=0.0,
+            parent=parent_job,
+        )
+        job.save()
+        print('build_and_dispatch_zip_movie_tasks: dispatching job for movie {}'.format(movie_url))
+        zip_movie.delay(job.id)
+        # intersperse these evenly in the job stack so we get regular updates
+        if index % 5 == 0:
+            zip_movie_threaded.delay(parent_job.id)
+    zip_movie_threaded.delay(parent_job.id)
+
+def wrap_up_zip_movie_threaded(zip_tasks, parent_job):
+    print('wrapping up zip_movie_threaded')
+    movies = {}
+    for i, zip_task in enumerate(zip_tasks):
+        resp_data = json.loads(zip_task.response_data)
+        req_data = json.loads(zip_task.request_data)
+        movies[req_data['movie_url']] = {
+            'redacted_movie_url': resp_data['movie_url']
+        }
+    parent_job.response_data = json.dumps(movies)
+    parent_job.status = 'success'
+    parent_job.elapsed_time = 1
+    parent_job.save()
+
+    return movies
+
+@shared_task
 def zip_movie(job_uuid):
     if not Job.objects.filter(pk=job_uuid).exists():
         print('calling zip_movie on nonexistent job: '+ job_uuid) 
         return
     job = Job.objects.get(pk=job_uuid)
-    job.status = 'running'
-    job.save()
-    request_data = json.loads(job.request_data)
-    print('zipping movie for job ', job_uuid)
-    pvszm = ParseViewSetZipMovie()
-    response_data = pvszm.process_create_request(request_data)
-    if response_data['errors_400']:
-        job.status = 'failed'
-        job.response_data = json.dumps(response_data['errors_400'])
-    elif response_data['errors_422']:
-        job.status = 'failed'
-        job.response_data = json.dumps(response_data['errors_422'])
-    else:
-        job.response_data = json.dumps(response_data['response_data'])
+    if job:
+        job.status = 'running'
+        job.save()
+        request_data = json.loads(job.request_data)
+        worker = ParseViewSetZipMovie()
+        response = worker.process_create_request(request_data)
+        if not Job.objects.filter(pk=job_uuid).exists():
+            return
+        job = Job.objects.get(pk=job_uuid)
+        job.response_data = json.dumps(response.data)
         job.status = 'success'
-    job.save()
+        job.save()
+
+        if job.parent_id:
+            parent_job = Job.objects.get(pk=job.parent_id)
+            if parent_job.app == 'parse' and parent_job.operation == 'zip_movie_threaded':
+                zip_movie_threaded.delay(parent_job.id)
 
 @shared_task
 def split_threaded(job_uuid):
@@ -114,8 +210,8 @@ def split_movie(job_uuid):
         job.status = 'running'
         job.save()
         request_data = json.loads(job.request_data)
-        pvssahm = ParseViewSetSplitMovie()
-        response = pvssahm.process_create_request(request_data)
+        worker = ParseViewSetSplitMovie()
+        response = worker.process_create_request(request_data)
         if not Job.objects.filter(pk=job_uuid).exists():
             return
         job = Job.objects.get(pk=job_uuid)

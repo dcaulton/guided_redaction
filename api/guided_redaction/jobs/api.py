@@ -71,6 +71,8 @@ def dispatch_job(job):
         redact_tasks.illustrate.delay(job_uuid)
     if job.app == 'parse' and job.operation == 'zip_movie':
         parse_tasks.zip_movie.delay(job_uuid)
+    if job.app == 'parse' and job.operation == 'zip_movie_threaded':
+        parse_tasks.zip_movie_threaded.delay(job_uuid)
     if job.app == 'files' and job.operation == 'get_secure_file':
         files_tasks.get_secure_file.delay(job_uuid)
     if job.app == 'files' and job.operation == 'save_movie_metadata':

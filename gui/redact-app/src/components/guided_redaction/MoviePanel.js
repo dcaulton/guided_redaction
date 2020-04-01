@@ -149,7 +149,8 @@ class MoviePanel extends React.Component {
     job_data['app'] = 'parse'
     job_data['operation'] = 'zip_movie'
     job_data['description'] = 'zip movie: ' + this.props.movie_url
-    job_data['request_data']['movie_name'] = this.buildRedactedMovieFilename()
+    job_data['request_data']['new_movie_name'] = this.buildRedactedMovieFilename()
+    job_data['request_data']['movie_url'] = this.props.movie_url
     if (Object.keys(movie).includes('audio_url')) {
         job_data['request_data']['audio_url'] = movie['audio_url']
     }

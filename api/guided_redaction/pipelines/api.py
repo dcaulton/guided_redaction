@@ -131,9 +131,29 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
             return self.build_split_and_hash_job(content, parent_job)
         elif step['type'] == 'redact':
             return self.build_redact_job(content, parent_job, previous_job)
+        elif step['type'] == 'zip':
+            return self.build_zip_job(content, parent_job)
         else:
             print('=============== UNRECOGNIZED JOB TYPE: {} ========'.format(step['type']))
             return ''
+
+    def build_zip_job(self, content, parent_job):
+        parent_request_data = json.loads(parent_job.request_data)
+        build_request_data = {
+          'movies': parent_request_data['movies'],
+        }
+        job = Job(
+            status='created',
+            description='zip movie for pipeline',
+            app='parse',
+            operation='zip_movie_threaded',
+            sequence=0,
+            elapsed_time=0.0,
+            request_data=json.dumps(build_request_data),
+            parent=parent_job,
+        )
+        job.save()
+        return job
 
     def build_split_and_hash_job(self, content, parent_job):
         request_data = {
@@ -222,14 +242,11 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
         build_movies = {}
 
         source_movies = {}
-        print('bibbity 00')
         if parent_job.request_data:
-            print('bibbity 01')
             parent_job_request_data = json.loads(parent_job.request_data)
             if 'movies' in parent_job_request_data:
                 source_movies = parent_job_request_data['movies']
         if 'movies' in content and not source_movies:
-            print('bibbity 02')
             source_movies = content['movies']
 
         if previous_job:
@@ -276,14 +293,23 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
         response_data = json.loads(job.response_data)
         content = json.loads(pipeline.content)
         parent_job = job.parent
+        if parent_job.request_data:
+            parent_job_request_data = json.loads(parent_job.request_data)
+        else:
+            parent_job_request_data = {'movies': {}}
         if job.operation == 'split_and_hash_threaded':
-            if parent_job.request_data:
-                parent_job_request_data = json.loads(parent_job.request_data)
-            else:
-                parent_job_request_data = {'movies': {},}
             for movie_url in response_data['movies']:
                 parent_job_request_data['movies'][movie_url] = response_data['movies'][movie_url]
             parent_job.request_data = json.dumps(parent_job_request_data)
+        elif job.operation == 'redact':
+            source_movies = json.loads(parent_job.request_data)['movies']
+            for movie_url in response_data['movies']:
+                for frameset_hash in response_data['movies'][movie_url]['framesets']:
+                    frameset = response_data['movies'][movie_url]['framesets'][frameset_hash]
+                    if 'redacted_image' in frameset:
+                        source_frameset = source_movies[movie_url]['framesets'][frameset_hash]
+                        source_frameset['redacted_image'] = frameset['redacted_image']
+            parent_job.request_data = json.dumps({'movies': source_movies})
         child_job_count = Job.objects.filter(parent=job.parent).count()
         num_steps = len(content['steps'])
         if num_steps > child_job_count:
