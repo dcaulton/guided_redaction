@@ -140,10 +140,14 @@ class MoviePanel extends React.Component {
     for (let i=0; i < movie['frames'].length; i++) {
       const frame_image = movie['frames'][i]
       const frameset_hash = this.props.getFramesetHashForImageUrl(frame_image)
-      if (Object.keys(movie['framesets'][frameset_hash]).includes('redacted_image')) {
-        image_urls.push(movie['framesets'][frameset_hash]['redacted_image'])
+      if (frameset_hash) {
+        if (Object.keys(movie['framesets'][frameset_hash]).includes('redacted_image')) {
+          image_urls.push(movie['framesets'][frameset_hash]['redacted_image'])
+        } else {
+          image_urls.push(frame_image)
+        }
       } else {
-        image_urls.push(frame_image)
+        console.log('PROBLEM: no frameset hash found for ' + frame_image)
       }
     }
     job_data['app'] = 'parse'
