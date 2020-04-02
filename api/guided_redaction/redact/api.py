@@ -24,6 +24,11 @@ def save_image_to_disk(cv2_image, image_name, the_uuid):
     file_url = fw.write_cv2_image_to_filepath(cv2_image, outfilename)
     return file_url
 
+def get_uuid_from_url(the_url):
+    (x_part, file_part) = os.path.split(the_url)
+    (y_part, uuid_part) = os.path.split(x_part)
+    return uuid_part
+
 class RedactViewSetRedactImage(viewsets.ViewSet):
     def create(self, request):
         request_data = request.data
@@ -48,6 +53,8 @@ class RedactViewSetRedactImage(viewsets.ViewSet):
         nparr = np.fromstring(image, np.uint8)
         cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 
+        print('gappy')
+        print(request_data)
         areas_to_redact_inbound = request_data['areas_to_redact']
         mask_method = request_data.get("mask_method", "blur_7x7")
         blur_foreground_background = request_data.get(
@@ -82,9 +89,8 @@ class RedactViewSetRedactImage(viewsets.ViewSet):
         else:
             image_hash = str(uuid.uuid4())
             if ('preserve_working_dir_across_batch' in request_data['meta'] and
-                    request_data['meta']['preserve_working_dir_across_batch'] == 'true' and
-                    request_data['meta']['working_dir']):
-                image_hash = request_data['meta']['working_dir']
+                    request_data['meta']['preserve_working_dir_across_batch']):
+                image_hash = get_uuid_from_url(request_data['image_url'])
             inbound_image_url = request_data["image_url"]
             inbound_filename = (urlsplit(inbound_image_url)[2]).split("/")[-1]
             (file_basename, file_extension) = os.path.splitext(inbound_filename)

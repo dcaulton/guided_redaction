@@ -117,8 +117,7 @@ class MoviePanel extends React.Component {
     job_data['request_data']['mask_method'] = this.props.mask_method
     job_data['request_data']['meta'] = {
       return_type: 'url',
-      preserve_working_dir_across_batch: 'true',
-      working_dir: '',
+      preserve_working_dir_across_batch: true,
     }
     return job_data
   }

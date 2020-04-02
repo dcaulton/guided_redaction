@@ -129,7 +129,6 @@ class ImagePanel extends React.Component {
     //   url.  That means the system doesn't know to display a new version of the image
     job_data['request_data']['meta'] = {
       preserve_working_dir_across_batch: false,
-      working_dir: '',
       return_type: 'url',
     }
     job_data['request_data']['mask_method'] = this.props.mask_method

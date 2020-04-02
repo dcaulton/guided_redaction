@@ -19,8 +19,8 @@ def redact_single(job_uuid):
     if job:
         job.status = 'running'
         job.save()
-        rvsri = RedactViewSetRedactImage()
-        response = rvsri.process_create_request(json.loads(job.request_data))
+        worker = RedactViewSetRedactImage()
+        response = worker.process_create_request(json.loads(job.request_data))
         job.response_data = json.dumps(response.data)
         job.status = 'success'
         job.save()

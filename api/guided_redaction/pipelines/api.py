@@ -218,7 +218,6 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
             'meta': {
                 'return_type': 'url',
                 'preserve_working_dir_across_batch': True,
-                'working_dir': '',
             }
         }
         job = Job(
