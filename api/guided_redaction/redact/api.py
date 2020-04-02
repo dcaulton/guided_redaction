@@ -53,8 +53,6 @@ class RedactViewSetRedactImage(viewsets.ViewSet):
         nparr = np.fromstring(image, np.uint8)
         cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 
-        print('gappy')
-        print(request_data)
         areas_to_redact_inbound = request_data['areas_to_redact']
         mask_method = request_data.get("mask_method", "blur_7x7")
         blur_foreground_background = request_data.get(
