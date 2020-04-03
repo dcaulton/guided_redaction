@@ -27,7 +27,7 @@ class TemplateMatcher:
         elif scale == '+/-40/1':
             self.scales = np.linspace(.60, 1.40, 81)[::-1]
         elif scale == '+/-40/5':
-            self.scales = np.linspace(.60, 1.40, 19)[::-1]
+            self.scales = np.linspace(.60, 1.40, 17)[::-1]
         elif scale == '+/-50/1':
             self.scales = np.linspace(.50, 1.50, 101)[::-1]
         elif scale == '+/-50/5':
@@ -74,7 +74,10 @@ class TemplateMatcher:
             print_str += '*'
             template_top_left = found[1]
             found_scale = found[2]
-            scaled_match_upper_left = (int(template_top_left[0] / found_scale), int(template_top_left[1] / found_scale))
+            scaled_match_upper_left = (
+                int(template_top_left[0] / found_scale), 
+                int(template_top_left[1] / found_scale)
+            )
         print(print_str)
 
         if match_was_found:
