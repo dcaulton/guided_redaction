@@ -118,7 +118,6 @@ class AnalyzeViewSetOcr(viewsets.ViewSet):
 
         recognized_text_areas = {}
         for raw_rta in raw_recognized_text_areas:
-            print('pippy rtas is {}'.format(raw_rta))
             the_id = 'rta_' + str(random.randint(100000000, 999000000))
             
             if 'start' in raw_rta and 'end' in raw_rta:
