@@ -61,10 +61,19 @@ class RedactViewSetRedactImage(viewsets.ViewSet):
 
         areas_to_redact = []
         for a2r in areas_to_redact_inbound:
-            coords_dict = {
-                "start": tuple(a2r['start']), 
-                "end": tuple(a2r['end']),
-            }
+            if 'start' in a2r and 'end' in a2r:
+                coords_dict = {
+                    "start": tuple(a2r['start']), 
+                    "end": tuple(a2r['end']),
+                }
+            elif 'location' in a2r and 'size' in a2r:
+                coords_dict = {
+                    "start": tuple(a2r['location']), 
+                    "end": tuple((
+                        a2r['location'][0] + a2r['size'][0],
+                        a2r['location'][1] + a2r['size'][1]
+                    ))
+                }
             areas_to_redact.append(coords_dict)
 
         image_masker = ImageMasker()
