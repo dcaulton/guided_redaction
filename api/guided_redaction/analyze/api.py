@@ -118,15 +118,27 @@ class AnalyzeViewSetOcr(viewsets.ViewSet):
 
         recognized_text_areas = {}
         for raw_rta in raw_recognized_text_areas:
+            print('pippy rtas is {}'.format(raw_rta))
             the_id = 'rta_' + str(random.randint(100000000, 999000000))
-            size = [
-                raw_rta['end'][0]-raw_rta['start'][0], 
-                raw_rta['end'][1]-raw_rta['start'][1] 
-            ]
-
+            
+            if 'start' in raw_rta and 'end' in raw_rta:
+                # we used east, so coords come with the ocr results
+                size = [
+                    raw_rta['end'][0]-raw_rta['start'][0], 
+                    raw_rta['end'][1]-raw_rta['start'][1] 
+                ]
+                returned_start_coords = raw_rta['start']
+            else:
+                # 'skip east' requested, use adjusted box coords
+                size = [
+                    end[0] - start[0],
+                    end[1] - start[1]
+                ]
+                returned_start_coords = start
+                
             recognized_text_areas[the_id] = {
                 'source': raw_rta['source'],
-                'location': raw_rta['start'],
+                'location': returned_start_coords,
                 'size': size,
                 'origin': adjusted_coords['origin'],
                 'scale': 1,
