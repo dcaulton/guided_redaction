@@ -444,6 +444,12 @@ class RedactApplication extends React.Component {
         sam['attributes'] = responseJson['scanner']['attributes']
         deepCopySelectedAreaMetas[sam['id']] = sam
         this.setGlobalStateVar('selected_area_metas', deepCopySelectedAreaMetas)
+      } else if (responseJson['scanner']['type'] === 'ocr_rule') {
+        const ocr_rule = JSON.parse(responseJson['scanner']['content'])
+        let deepCopyOcrRules = JSON.parse(JSON.stringify(this.state.ocr_rules))
+        ocr_rule['attributes'] = responseJson['scanner']['attributes']
+        deepCopyOcrRules[ocr_rule['id']] = ocr_rule
+        this.setGlobalStateVar('ocr_rules', deepCopyOcrRules)
       }
       return responseJson
     })

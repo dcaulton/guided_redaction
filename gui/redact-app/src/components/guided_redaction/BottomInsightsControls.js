@@ -188,6 +188,7 @@ class BottomInsightsControls extends React.Component {
           setGlobalStateVar={this.props.setGlobalStateVar}
           scanners={this.props.scanners}
           getScanners={this.props.getScanners}
+          importScanner={this.props.importScanner}
           deleteScanner={this.props.deleteScanner}
           saveScannerToDatabase={this.props.saveScannerToDatabase}
           insights_image={this.props.insights_image}
