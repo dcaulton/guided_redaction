@@ -44,7 +44,7 @@ class ImagePanel extends React.Component {
         when_failed: () => {this.setMessage('template match failed')},
       })
     } else if (job_string === 'scan_ocr') {
-      const job_data = this.buildScanOcrJobdata(extra_data)
+      const job_data = this.buildOcrJobdata(extra_data)
       this.props.submitJob({
         job_data: job_data, 
         after_submit: () => {this.setMessage('ocr scan job was submitted')}, 
@@ -91,24 +91,47 @@ class ImagePanel extends React.Component {
     } 
   }  
 
-  buildScanOcrJobdata(extra_data) {
+  buildSingleUseOcrRule(last_click, current_click) {
+    let ocr_rule = {}
+    ocr_rule['id'] = 'ocr_rule_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
+    ocr_rule['name'] = 'single use'
+    ocr_rule['start'] = last_click
+    ocr_rule['end'] = current_click
+    ocr_rule['image'] = ''
+    ocr_rule['movie'] = ''
+    ocr_rule['match_text'] = []
+    ocr_rule['match_percent'] = 0
+    ocr_rule['skip_east'] = false
+    ocr_rule['scan_level'] = 'tier_2'
+    ocr_rule['origin_entity_location'] = [0, 0]
+    return ocr_rule
+  }
+
+  buildMoviesForSingleFrame() {
+    const image_url = this.props.getImageUrl()
+    const frameset_hash = this.props.getFramesetHashForImageUrl(image_url)
+    let movies = {}
+    movies[this.props.movie_url] = {framesets: {}}
+    movies[this.props.movie_url]['framesets'][frameset_hash] = {images: []}
+    movies[this.props.movie_url]['framesets'][frameset_hash]['images'].push(image_url)
+    return movies
+  }
+
+  buildOcrJobdata(extra_data) {
     let job_data = {
       request_data: {},
     }
+    const ocr_rule = this.buildSingleUseOcrRule(this.state.last_click, extra_data['current_click'])
+    let ocr_rules = {}
+    ocr_rules[ocr_rule['id']] = ocr_rule
+    const movies = this.buildMoviesForSingleFrame()
     job_data['app'] = 'analyze'
-    job_data['operation'] = 'scan_ocr_image'
-    job_data['description'] = 'scan ocr for image'
-    job_data['request_data']['movie_url'] = this.props.movie_url
-    job_data['request_data']['frameset_hash'] = this.props.getFramesetHashForImageUrl(this.props.getImageUrl())
-    job_data['request_data']['movie'] = this.props.movies[this.props.movie_url]
-    job_data['request_data']['image_url'] = this.props.getImageUrl()
-    job_data['request_data']['roi_start_x'] = this.state.last_click[0]
-    job_data['request_data']['roi_start_y'] = this.state.last_click[1]
-    job_data['request_data']['roi_end_x'] = extra_data['current_click'][0]
-    job_data['request_data']['roi_end_y'] = extra_data['current_click'][1]
+    job_data['operation'] = 'scan_ocr'
+    job_data['description'] = 'scan ocr for Image Panel'
+    job_data['request_data']['movies'] = movies
+    job_data['request_data']['ocr_rules'] = ocr_rules
     job_data['request_data']['scan_level'] = 'tier_2'
-    const ocr_request_id = 'ocr_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
-    job_data['request_data']['id'] = ocr_request_id
+    job_data['request_data']['id'] = ocr_rule['id']
     return job_data
   }
 

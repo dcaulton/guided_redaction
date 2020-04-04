@@ -1562,39 +1562,6 @@ class RedactApplication extends React.Component {
     this.setGlobalStateVar('current_telemetry_rule_id', rule_id)
   }
 
-// TODO refactor imagePanel to use the movie format for this job, remove loadScanOcrImageResults
-//    and the code that builds its job
-  async loadScanOcrImageResults(job, when_done=(()=>{})) {
-    const responseJson = JSON.parse(job.response_data)
-
-    const req_data = JSON.parse(job.request_data)
-    const movie_url = req_data['movie_url']
-    const frameset_hash = req_data['frameset_hash']
-    let deepCopyMovies = JSON.parse(JSON.stringify(this.state.movies))
-    if (!Object.keys(deepCopyMovies).includes(movie_url)) {
-      deepCopyMovies[movie_url] = req_data['movie']
-    }
-    if (!Object.keys(deepCopyMovies[movie_url]['framesets'][frameset_hash]).includes('areas_to_redact')) {
-      deepCopyMovies[movie_url]['framesets'][frameset_hash]['areas_to_redact'] = []
-    }
-    let deepCopyAreasToRedact = JSON.parse(JSON.stringify(
-      deepCopyMovies[movie_url]['framesets'][frameset_hash]['areas_to_redact']
-    ))
-    const new_area_keys = Object.keys(responseJson)
-    for (let i=0; i < new_area_keys.length; i++) {
-      let key = new_area_keys[i]
-      const new_area = responseJson[key]
-      deepCopyAreasToRedact.push(new_area)
-    }
-    deepCopyMovies[movie_url]['framesets'][frameset_hash]['areas_to_redact'] = deepCopyAreasToRedact
-    this.setState({
-      movies: deepCopyMovies,
-      movie_url: movie_url,
-    })
-    this.addToCampaignMovies(movie_url)
-    this.setFramesetHash(frameset_hash)
-  }
-
   async getJobResultData(job_id, when_done=(()=>{})) {
     let job_url = this.getUrl('jobs_url') + '/' + job_id
     await fetch(job_url, {
@@ -1641,8 +1608,6 @@ class RedactApplication extends React.Component {
         this.loadFilterResults(job, when_done)
 			} else if (job.app === 'analyze' && job.operation === 'get_timestamp_threaded') {
         this.loadGetTimestampResults(job, when_done)
-			} else if (job.app === 'analyze' && job.operation === 'scan_ocr_image') {
-        this.loadScanOcrImageResults(job, when_done)
 			} else if (job.app === 'analyze' && job.operation === 'scan_ocr') {
         this.loadOcrResults(job, when_done)
 			} else if (job.app === 'analyze' && job.operation === 'telemetry_find_matching_frames') {
