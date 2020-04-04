@@ -85,10 +85,21 @@ class CanvasImageOverlay extends React.Component {
     const areas_to_redact = this.props.getRedactionFromFrameset(this.props.frameset_hash)
     for (let i= 0; i < areas_to_redact.length; i++) {
       let a2r = areas_to_redact[i]
-      const start_x_scaled = a2r['start'][0] * this.props.image_scale
-      const start_y_scaled = a2r['start'][1] * this.props.image_scale
-      let width = (a2r['end'][0] - a2r['start'][0]) * this.props.image_scale
-      let height = (a2r['end'][1] - a2r['start'][1]) * this.props.image_scale
+      let width = 0
+      let height = 0
+      let start_x_scaled = 0
+      let start_y_scaled = 0
+      if (Object.keys(a2r).includes('location') && Object.keys(a2r).includes('size')) {
+        start_x_scaled = a2r['location'][0] * this.props.image_scale
+        start_y_scaled = a2r['location'][1] * this.props.image_scale
+        width = a2r['size'][0] * this.props.image_scale
+        height = a2r['size'][1] * this.props.image_scale
+      } else {
+        start_x_scaled = a2r['start'][0] * this.props.image_scale
+        start_y_scaled = a2r['start'][1] * this.props.image_scale
+        width = (a2r['end'][0] - a2r['start'][0]) * this.props.image_scale
+        height = (a2r['end'][1] - a2r['start'][1]) * this.props.image_scale
+      }
       ctx.strokeRect(start_x_scaled, start_y_scaled, width, height)
     }
   }
