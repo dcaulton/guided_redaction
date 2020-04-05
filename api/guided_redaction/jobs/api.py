@@ -47,8 +47,6 @@ def dispatch_job(job):
         analyze_tasks.get_timestamp_threaded.delay(job_uuid)
     if job.app == 'analyze' and job.operation == 'selected_area_threaded':
         analyze_tasks.selected_area_threaded.delay(job_uuid)
-    if job.app == 'parse' and job.operation == 'split_and_hash_movie':
-        parse_tasks.split_and_hash_movie.delay(job_uuid)
     if job.app == 'parse' and job.operation == 'split_and_hash_threaded':
         parse_tasks.split_and_hash_threaded.delay(job_uuid)
     if job.app == 'parse' and job.operation == 'split_threaded':
@@ -191,19 +189,6 @@ class JobsViewSet(viewsets.ViewSet):
             'children': child_ids,
         }
         return Response({"job": job_data})
-
-    def get_file_uuids_from_request(self, request_dict):
-        uuids = []
-        app = request_dict.get('app')
-        operation = request_dict.get('operation')
-        if (app == 'parse' and operation == 'split_and_hash_movie'):
-            movie = request_dict['request_data'].get('movie_url')
-            if movie:
-                (x_part, file_part) = os.path.split(movie)
-                (y_part, uuid_part) = os.path.split(x_part)
-                if uuid_part and len(uuid_part) == 36:
-                    uuids.append(uuid_part)
-        return uuids
 
     def build_job(self, request):
         job = Job(

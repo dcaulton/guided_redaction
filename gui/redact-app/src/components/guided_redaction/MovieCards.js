@@ -44,7 +44,7 @@ class MovieCardList extends React.Component {
       <div className='d-inline'>
         <button
             className='btn btn-link'
-            onClick={() => this.props.submitInsightsJob('split_and_hash_movie', this.props.campaign_movies)}
+            onClick={() => this.props.submitInsightsJob('split_and_hash_threaded', this.props.campaign_movies)}
         >
         s&h all
         </button>
@@ -219,7 +219,7 @@ class MovieCard extends React.Component {
     return (
       <button
           className='btn btn-link'
-          onClick={() => this.props.submitInsightsJob('split_and_hash_movie', this.props.this_cards_movie_url)}
+          onClick={() => this.props.submitInsightsJob('split_and_hash_threaded', this.props.this_cards_movie_url)}
       >
       split
       </button>

@@ -1620,8 +1620,7 @@ class RedactApplication extends React.Component {
         this.loadTelemetryResults(job, when_done)
 			} else if (job.app === 'analyze' && job.operation === 'selected_area_threaded') {
         this.loadSelectedAreaResults(job, when_done)
-			} else if ((job.app === 'parse' && job.operation === 'split_and_hash_movie') 
-	        || (job.app === 'parse' && job.operation === 'split_and_hash_threaded')) {
+			} else if ((job.app === 'parse' && job.operation === 'split_and_hash_threaded')) {
         this.loadSplitAndHashResults(job, when_done)
 			} else if (job.app === 'parse' && job.operation === 'split_threaded') {
         this.loadSplitResults(job, when_done)

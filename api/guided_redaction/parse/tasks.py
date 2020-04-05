@@ -295,7 +295,7 @@ def split_and_hash_threaded(job_uuid):
             print('some subtasks arent complete or failed, let them finish')
             return
     else:
-        print('calling split_and_hash_movie on nonexistent job: '+ job_uuid) 
+        print('calling split_and_hash_threaded on nonexistent job: '+ job_uuid) 
 
 def wrap_up_split_and_hash_threaded(parent_job, children):
     framesets = {}

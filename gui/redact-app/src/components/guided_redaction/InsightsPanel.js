@@ -229,8 +229,7 @@ class InsightsPanel extends React.Component {
 
   loadInsightsJobResults(job_id) {
     const job = this.getJobForId(job_id)
-    if ((job.app === 'parse' && job.operation === 'split_and_hash_movie') 
-       || (job.app === 'parse' && job.operation === 'split_and_hash_threaded')) {
+    if ((job.app === 'parse' && job.operation === 'split_and_hash_threaded')) {
       this.props.loadJobResults(
         job_id, 
         this.afterMovieSplitInsightsJobLoaded
@@ -646,7 +645,7 @@ class InsightsPanel extends React.Component {
       this.props.submitJob({
         job_data: job_data,
       })
-    } else if (job_string === 'split_and_hash_movie') {
+    } else if (job_string === 'split_and_hash_threaded') {
       let job_data = this.buildSplitAndHashJobData(extra_data)
       this.props.submitJob({
         job_data: job_data
