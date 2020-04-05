@@ -500,57 +500,6 @@ class AnalyzeViewSetSelectedArea(viewsets.ViewSet):
         return regions_for_image
 
 
-class AnalyzeViewSetFloodFill(viewsets.ViewSet):
-    def create(self, request):
-        regions = (
-            []
-        )  # response will be a list of rectangles.  These are screen grabs; this should be fine
-        if not request.data.get("source_image_url"):
-            return self.error("source_image_url is required")
-        if not request.data.get("selected_point"):
-            return self.error("selected_point is required")
-        selected_point = request.data.get("selected_point")
-        tolerance = request.data.get("tolerance")
-        image = requests.get(
-          request.data["source_image_url"],
-          verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
-        ).content
-        if not image:
-            return self.error("couldnt read image data", status_code=422)
-        nparr = np.fromstring(image, np.uint8)
-        cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-        finder = ExtentsFinder()
-        regions = finder.determine_flood_fill_area(
-            cv2_image, selected_point, tolerance
-        )
-        return Response({"flood_fill_regions": regions})
-
-
-class AnalyzeViewSetArrowFill(viewsets.ViewSet):
-    def create(self, request):
-        regions = (
-            []
-        )  # response will be a list of rectangles.  These are screen grabs; this should be fine
-        if not request.data.get("source_image_url"):
-            return self.error("source_image_url is required")
-        if not request.data.get("selected_point"):
-            return self.error("selected_point is required")
-        selected_point = request.data.get("selected_point")
-        tolerance = request.data.get("tolerance")
-        image = requests.get(
-          request.data["source_image_url"],
-          verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
-        ).content
-        if not image:
-            return self.error("couldnt read image data", status_code=422)
-        nparr = np.fromstring(image, np.uint8)
-        cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-        finder = ExtentsFinder()
-        regions = finder.determine_arrow_fill_area(
-            cv2_image, selected_point, tolerance
-        )
-        return Response({"arrow_fill_regions": regions})
-
 class AnalyzeViewSetFilter(viewsets.ViewSet):
     def build_result_file_name(self, image_url):
         inbound_filename = (urlsplit(image_url)[2]).split("/")[-1]

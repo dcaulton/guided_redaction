@@ -12,9 +12,3 @@ router.register(
     api.AnalyzeViewSetScanTemplate,
     basename="GaryColeman",
 )
-router.register(
-    r"v1/analyze/flood-fill", api.AnalyzeViewSetFloodFill, basename="RichardPryor"
-)
-router.register(
-    r"v1/analyze/arrow-fill", api.AnalyzeViewSetArrowFill, basename="ReddFoxx"
-)
