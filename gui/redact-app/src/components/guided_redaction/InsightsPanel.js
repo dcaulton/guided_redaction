@@ -856,30 +856,16 @@ class InsightsPanel extends React.Component {
     })
     if (this.state.mode === 'add_template_anchor_1') {
       this.handleSetMode('add_template_anchor_2') 
-    } else if (this.state.mode === 'add_template_anchor_2') {
-      this.state.callbacks['add_template_anchor_2']([x_scaled, y_scaled])
-    } else if (this.state.mode === 'selected_area_area_coords_1') {
-      this.state.callbacks['selected_area_area_coords_1']([x_scaled, y_scaled])
+    } else if (Object.keys(this.state.callbacks).includes(this.state.mode)) {
+      this.state.callbacks[this.state.mode]([x_scaled, y_scaled])
     } else if (this.state.mode === 'add_template_mask_zone_1') {
       this.handleSetMode('add_template_mask_zone_2') 
-    } else if (this.state.mode === 'add_template_mask_zone_2') {
-      this.state.callbacks['add_template_mask_zone_2']([x_scaled, y_scaled])
     } else if (this.state.mode === 'scan_ocr_1') {
       this.handleSetMode('scan_ocr_2') 
-    } else if (this.state.mode === 'scan_ocr_2') {
-      this.state.callbacks['scan_ocr_2']([x_scaled, y_scaled])
     } else if (this.state.mode === 'add_annotations_ocr_start') {
       this.handleSetMode('add_annotations_ocr_end') 
     } else if (this.state.mode === 'add_annotations_ocr_end') {
       this.handleSetMode('add_annotations_ocr_end') 
-    } else if (this.state.mode === 'add_sa_origin_location_1') {
-      this.state.callbacks['add_sa_origin_location_1']([x_scaled, y_scaled])
-    } else if (this.state.mode === 'add_ocr_origin_location_1') {
-      this.state.callbacks['add_ocr_origin_location_1']([x_scaled, y_scaled])
-    } else if (this.state.mode === 'selected_area_minimum_zones_1') {
-      this.state.callbacks['selected_area_minimum_zones_1']([x_scaled, y_scaled])
-    } else if (this.state.mode === 'selected_area_minimum_zones_2') {
-      this.state.callbacks['selected_area_minimum_zones_2']([x_scaled, y_scaled])
     }
   }
 
