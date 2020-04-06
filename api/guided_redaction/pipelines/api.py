@@ -94,12 +94,26 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
         pipeline = Pipeline.objects.get(pk=request_data['pipeline_id'])
         content = json.loads(pipeline.content)
         parent_job = self.build_parent_job(pipeline, content)
-        child_job = self.build_job(content, 0, parent_job)
-        jobs_api.dispatch_job(child_job)
-        parent_job.status = 'running'
-        parent_job.save()
+        first_node_id = self.get_first_node_id(content)
+        if first_node_id:
+            child_job = self.build_job(content, first_node_id, parent_job)
+            jobs_api.dispatch_job(child_job)
+            parent_job.status = 'running'
+            parent_job.save()
         return Response({'job_id': parent_job.id})
 
+    def get_first_node_id(self, content):
+        inbound_counts = {}
+        for node_id in content['node_metadata']['node']:
+            inbound_counts[node_id] = 0
+        for source_node_id in content['edges']:
+            for target_node_id in content['edges'][source_node_id]:
+                inbound_counts[target_node_id] += 1
+        nodes_without_inbound = [x for x in inbound_counts.keys() if inbound+counts[x] == 0]
+        if nodes_without_inbound:
+            return nodes_without_inbound[0]
+
+        
     def build_parent_job(self, pipeline, content):
         job = Job(
             status='created',
@@ -119,25 +133,25 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
         attribute.save()
         return job
 
-    def build_job(self, content, steps_index, parent_job, previous_job=None):
-        step = content['steps'][steps_index]
-        if step['type'] == 'template':
-            return self.build_tier_1_scanner_job('template', content, step, parent_job, previous_job)
-        elif step['type'] == 'selected_area':
-            return self.build_tier_1_scanner_job('selected_area', content, step, parent_job, previous_job)
-        elif step['type'] == 'ocr':
-            return self.build_tier_1_scanner_job('ocr', content, step, parent_job, previous_job)
-        elif step['type'] == 'split_and_hash':
-            return self.build_split_and_hash_job(content, parent_job)
-        elif step['type'] == 'redact':
-            return self.build_redact_job(content, parent_job, previous_job)
-        elif step['type'] == 'zip':
-            return self.build_zip_job(content, parent_job)
+    def build_job(self, content, node_id, parent_job, previous_job=None):
+        node = content['node_metadata']['node'][node_id]
+        if node['type'] == 'template':
+            return self.build_tier_1_scanner_job('template', content, node, parent_job, previous_job)
+        elif node['type'] == 'selected_area':
+            return self.build_tier_1_scanner_job('selected_area', content, node, parent_job, previous_job)
+        elif node['type'] == 'ocr':
+            return self.build_tier_1_scanner_job('ocr', content, node, parent_job, previous_job)
+        elif node['type'] == 'split_and_hash':
+            return self.build_split_and_hash_job(content, node, parent_job)
+        elif node['type'] == 'redact':
+            return self.build_redact_job(content, node, parent_job, previous_job)
+        elif node['type'] == 'zip':
+            return self.build_zip_job(content, node, parent_job)
         else:
             print('=============== UNRECOGNIZED JOB TYPE: {} ========'.format(step['type']))
             return ''
 
-    def build_zip_job(self, content, parent_job):
+    def build_zip_job(self, content, node, parent_job):
         parent_request_data = json.loads(parent_job.request_data)
         build_request_data = {
           'movies': parent_request_data['movies'],
@@ -153,9 +167,14 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
             parent=parent_job,
         )
         job.save()
+        Attribute(
+            name='node_id',
+            value=node['id'],
+            job=job,
+        ).save()
         return job
 
-    def build_split_and_hash_job(self, content, parent_job):
+    def build_split_and_hash_job(self, content, node, parent_job):
         request_data = {
           'movie_urls': list(content['movies'].keys()),
           'frameset_discriminator': 'gray8',
@@ -172,6 +191,11 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
             parent=parent_job,
         )
         job.save()
+        Attribute(
+            name='node_id',
+            value=node['id'],
+            job=job,
+        ).save()
         return job
 
     def add_t1_output_to_areas_to_redact(self, source_movie, framesets_to_redact):
@@ -199,7 +223,7 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
                 source_movie['framesets'][frameset_hash]['areas_to_redact'] = build_areas
         return source_movie
                 
-    def build_redact_job(self, content, parent_job, previous_job):
+    def build_redact_job(self, content, node, parent_job, previous_job):
         movie_url = list(content['movies'].keys())[0]
         build_movies = {}
         parent_request_data = json.loads(parent_job.request_data)
@@ -218,7 +242,7 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
             'meta': {
                 'return_type': 'url',
                 'preserve_working_dir_across_batch': True,
-            }
+            },
         }
         job = Job(
             status='created',
@@ -231,13 +255,18 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
             parent=parent_job,
         )
         job.save()
+        Attribute(
+            name='node_id',
+            value=node['id'],
+            job=job,
+        ).save()
         return job
 
-    def build_tier_1_scanner_job(self, scanner_type, content, step, parent_job, previous_job):
+    def build_tier_1_scanner_job(self, scanner_type, content, node, parent_job, previous_job):
         desc_string = 'scan ' + scanner_type + ' threaded '
         build_scanners = {}
-        scanner = content['step_metadata'][scanner_type][step['entity_id']]
-        build_scanners[step['entity_id']] = scanner
+        scanner = content['node_metadata'][scanner_type][node['id']]['entity_id']]
+        build_scanners[node['entity_id']] = scanner
         build_movies = {}
 
         source_movies = {}
@@ -286,12 +315,50 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
             parent=parent_job,
         )
         job.save()
+        Attribute(
+            name='node_id',
+            value=node['id'],
+            job=job,
+        ).save()
         return job
+
+    def get_job_for_node(self, node_id, parent_job):
+        if Attribute.objects.filter(name='node_id', value=next_node_id).exists():
+            attrs = Attribute.objects.filter(name='node_id', value=next_node_id)
+            for attr in attrs:
+                if attr.job and attr.job.parent = parent_job:
+                    return attr.job
+
+    def node_has_no_job_yet(self, next_node_id, parent_job):
+        job_for_node = self.get_job_for_node(node_id, parent_job)
+        if job_for_node:
+            return False
+        return True
+
+    def all_other_inbound_edges_are_complete(self, next_node_id, content, parent_job):
+        inbound_edges = []
+        for node_id in content['edges']:
+            if next_node_id in content['edges'][node_id]:
+                inbound_edges.append(next_node_id)
+        for inbound_node_id in inbound_edges:
+            job = self.get_job_for_node(inbound_node_id, parent_job)
+            if job.status !== 'success':
+                return False
+        return True
 
     def handle_job_finished(self, job, pipeline):
         response_data = json.loads(job.response_data)
         content = json.loads(pipeline.content)
         parent_job = job.parent
+        nodes_to_build = []
+        node_id = Attribute.objects.filter(job=job, name='node_id').first().value
+        for next_node_id in content['edges'][node_id]:
+            if self.node_has_no_job_yet(next_node_id, parent_job):
+                if self.all_other_inbound_edges_are_complete(next_node_id, content, parent_job):
+                    # TODO WRITE STUFF HERE
+
+
+
         if parent_job.request_data:
             parent_job_request_data = json.loads(parent_job.request_data)
         else:
