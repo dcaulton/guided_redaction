@@ -19,7 +19,17 @@ class PipelineControls extends React.Component {
       name: '',
       description: '',
       attributes: {},
-      steps: [],
+      edges: {},
+      node_metadata: {
+        'node': {},
+        'template': {},
+        'selected_area': {},
+        'ocr': {},
+        'telemetry': {},
+        'redact': {},
+        'split_and_hash': {},
+        'zip': {},
+      },
       movie_urls: [],
       attribute_search_value: '',
       use_parsed_movies: false,
@@ -27,82 +37,86 @@ class PipelineControls extends React.Component {
     }
     this.afterPipelineSaved=this.afterPipelineSaved.bind(this)
     this.deletePipeline=this.deletePipeline.bind(this)
-    this.addStep=this.addStep.bind(this)
-    this.moveStepEarlier=this.moveStepEarlier.bind(this)
-    this.moveStepLater=this.moveStepLater.bind(this)
-    this.updateStepValue=this.updateStepValue.bind(this)
+    this.addNode=this.addNode.bind(this)
+    this.updateNodeValue=this.updateNodeValue.bind(this)
     this.loadPipeline=this.loadPipeline.bind(this)
     this.loadNewPipeline=this.loadNewPipeline.bind(this)
+    this.addNodeEdge=this.addNodeEdge.bind(this)
+    this.deleteNodeEdge=this.deleteNodeEdge.bind(this)
   }
 
-  addStep() {
-    const new_step = {
-      type: '',
+  addNode() {
+    const node_id = 'node_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
+    const new_node = {
+      id: node_id,
       name: '',
+      type: '',
+      scope: '',
       entity_id: '',
     }
-    let deepCopySteps = JSON.parse(JSON.stringify(this.state.steps))
-    deepCopySteps.push(new_step)
+    let deepCopyNodeMetadata = JSON.parse(JSON.stringify(this.state.node_metadata))
+    deepCopyNodeMetadata['node'][node_id] = new_node
     this.setLocalStateVar(
-      'steps', 
-      deepCopySteps,
-      (()=>{this.props.displayInsightsMessage('step was added')})
+      'node_metadata', 
+      deepCopyNodeMetadata,
+      (()=>{this.props.displayInsightsMessage('node was added')})
     )
   }
 
-  updateStepValue(step_position, field_name, value) {
-    let deepCopySteps = JSON.parse(JSON.stringify(this.state.steps))
-    deepCopySteps[step_position][field_name] = value
-    this.setState({'steps': deepCopySteps})
+  deleteNodeEdge(originating_node_id, target_node_id) {
+    let deepCopyEdges = JSON.parse(JSON.stringify(this.state.edges))
+    let new_node_edges = []
+    for (let i=0; i < this.state.edges[originating_node_id].length; i++) {
+      const tt = this.state.edges[originating_node_id][i]
+      if (tt !== target_node_id) {
+        new_node_edges.push(tt)
+      }
+    }
+    deepCopyEdges[originating_node_id] = new_node_edges
+    this.setLocalStateVar(
+      'edges', 
+      deepCopyEdges,
+      (()=>{this.props.displayInsightsMessage('edge was removed')})
+    )
   }
 
-  moveStepEarlier(step_current_position) {
-    if (step_current_position === 0) {
-      return
+  addNodeEdge(originating_node_id, target_node_id) {
+    let deepCopyEdges = JSON.parse(JSON.stringify(this.state.edges))
+    if (!Object.keys(deepCopyEdges).includes(originating_node_id)) {
+      deepCopyEdges[originating_node_id] = []
     }
-    let deepCopySteps = JSON.parse(JSON.stringify(this.state.steps))
-    let deepCopyCurStep = JSON.parse(JSON.stringify(this.state.steps[step_current_position]))
-    deepCopySteps[step_current_position] = this.state.steps[step_current_position-1]
-    deepCopySteps[step_current_position-1] = deepCopyCurStep
-    this.setLocalStateVar('steps', deepCopySteps)
+    deepCopyEdges[originating_node_id].push(target_node_id)
+    this.setLocalStateVar(
+      'edges', 
+      deepCopyEdges,
+      (()=>{this.props.displayInsightsMessage('edge was added')})
+    )
   }
 
-  moveStepLater(step_current_position) {
-    if (step_current_position >= this.state.steps.length) {
-      return
+  handleAddEntityId(deepCopyNodeMetadata, node_id, value) {
+    const node = deepCopyNodeMetadata['node'][node_id]
+    if (node['type'] === 'template') {
+      deepCopyNodeMetadata['template'][value] = this.props.templates[value]
+    } else if (node['type'] === 'selected_area') {
+      deepCopyNodeMetadata['selected_area'][value] = this.props.selected_area_metas[value]
+    } else if (node['type'] === 'ocr') {
+      deepCopyNodeMetadata['ocr'][value] = this.props.ocr_rules[value]
+    } else if (node['type'] === 'telemetry') {
+      deepCopyNodeMetadata['telemetry'][value] = this.props.telemetry_rules[value]
     }
-    let deepCopySteps = JSON.parse(JSON.stringify(this.state.steps))
-    let deepCopyCurStep = JSON.parse(JSON.stringify(this.state.steps[step_current_position]))
-    deepCopySteps[step_current_position] = this.state.steps[step_current_position+1]
-    deepCopySteps[step_current_position+1] = deepCopyCurStep
-    this.setLocalStateVar('steps', deepCopySteps)
+  }
+
+  updateNodeValue(node_id, field_name, value) {
+    let deepCopyNodeMetadata = JSON.parse(JSON.stringify(this.state.node_metadata))
+    deepCopyNodeMetadata['node'][node_id][field_name] = value
+    if (field_name === 'entity_id') {
+      this.handleAddEntityId(deepCopyNodeMetadata, node_id, value)
+    } 
+    this.setState({'node_metadata': deepCopyNodeMetadata})
   }
 
   componentDidMount() {
     this.props.getPipelines()
-  }
-
-  makeStepMetadata() {
-    let step_metadata = {
-      'ocr': {},
-      'template': {},
-      'selected_area': {},
-      'telemetry': {},
-      'redact': {},
-    }
-    for (let i=0; i < this.state.steps.length; i++) {
-      const step = this.state.steps[i]
-      if (step['type'] === 'ocr' && step['entity_id']) {
-        step_metadata['ocr'][step['entity_id']] = this.props.ocr_rules[step['entity_id']]
-      } else if (step['type'] === 'template' && step['entity_id']) {
-        step_metadata['template'][step['entity_id']] = this.props.templates[step['entity_id']]
-      } else if (step['type'] === 'selected_area' && step['entity_id']) {
-        step_metadata['selected_area'][step['entity_id']] = this.props.selected_area_metas[step['entity_id']]
-      } else if (step['type'] === 'telemetry' && step['entity_id']) {
-        step_metadata['telemetry'][step['entity_id']] = this.props.telemetry_rules[step['entity_id']]
-      }
-    }
-    return step_metadata
   }
 
   getPipelineFromState() {
@@ -116,14 +130,13 @@ class PipelineControls extends React.Component {
       }
     }
 
-    const step_metadata = this.makeStepMetadata()
     const pipeline = {
       id: this.state.id,
       name: this.state.name,
       description: this.state.description,
       attributes: this.state.attributes,
-      steps: this.state.steps,
-      step_metadata: step_metadata,
+      edges: this.state.edges,
+      node_metadata: this.state.node_metadata,
       movies: build_movies,
     }
     return pipeline
@@ -196,7 +209,8 @@ class PipelineControls extends React.Component {
         description: content['description'],
         attributes: pipeline['attributes'],
         movie_urls: movie_urls,
-        steps: content['steps'],
+        edges: content['edges'],
+        node_metadata: content['node_metadata'],
         unsaved_changes: false,
       })
     }
@@ -223,7 +237,7 @@ class PipelineControls extends React.Component {
   buildAddStepButton() {
     return buildInlinePrimaryButton(
       'Add Step',
-      (()=>{this.addStep()})
+      (()=>{this.addNode()})
     )
   }
 
@@ -390,10 +404,6 @@ class PipelineControls extends React.Component {
       'pipelines_body',
     )
     const sequence_header_row = ''
-//    const sequence_header_row = makeHeaderRow(
-//      'sequence',
-//      'pipelines_sequence_body'
-//    )
 
     return (
       <div className='row bg-light rounded mt-3'>
@@ -443,12 +453,13 @@ class PipelineControls extends React.Component {
                   {sequence_header_row}
                   <div id='pipelines_sequence_body' className='row '>
 
-                    <StepCardList
-                      steps={this.state.steps}
-                      addStep={this.addStep}
-                      moveStepEarlier={this.moveStepEarlier}
-                      moveStepLater={this.moveStepLater}
-                      updateStepValue={this.updateStepValue}
+                    <NodeCardList
+                      node_metadata={this.state.node_metadata}
+                      edges={this.state.edges}
+                      addNode={this.addNode}
+                      addNodeEdge={this.addNodeEdge}
+                      deleteNodeEdge={this.deleteNodeEdge}
+                      updateNodeValue={this.updateNodeValue}
                       templates={this.props.templates}
                       selected_area_metas={this.props.selected_area_metas}
                       ocr_rules={this.props.ocr_rules}
@@ -469,30 +480,37 @@ class PipelineControls extends React.Component {
   }
 }
 
-class StepCardList extends React.Component {
+class NodeCardList extends React.Component {
+  buildAddStepButton() {
+    return (
+      <button
+          className='btn btn-primary p-1'
+          onClick={() => this.props.addNode()}
+      >
+        Add Step
+      </button>
+    )
+  }
+  
   render() {
+    const add_button = this.buildAddStepButton() 
     return (
       <div className='col'>
         <div className='row'>
           <div className='col-lg-3'>
-            <button
-                className='btn btn-primary p-1'
-                onClick={() => this.props.addStep()}
-            >
-              Add Step
-            </button>
+            {add_button}
           </div>
           <div className='col-lg-6'>
-            {this.props.steps.map((step_data, index) => {
+            {Object.keys(this.props.node_metadata['node']).map((node_id, index) => {
               return (
-                <StepCard
+                <NodeCard
                   key={index}
-                  card_data={step_data}
-                  position={index}
-                  steps={this.props.steps}
-                  moveStepEarlier={this.props.moveStepEarlier}
-                  moveStepLater={this.props.moveStepLater}
-                  updateStepValue={this.props.updateStepValue}
+                  node_id={node_id}
+                  node_metadata={this.props.node_metadata}
+                  edges={this.props.edges}
+                  updateNodeValue={this.props.updateNodeValue}
+                  addNodeEdge={this.props.addNodeEdge}
+                  deleteNodeEdge={this.props.deleteNodeEdge}
                   templates={this.props.templates}
                   selected_area_metas={this.props.selected_area_metas}
                   ocr_rules={this.props.ocr_rules}
@@ -510,31 +528,9 @@ class StepCardList extends React.Component {
   }
 }
 
-class StepCard extends React.Component {
-  buildMoveUpLink() {
-    return (
-      <button
-          className='btn btn-link'
-          onClick={() => this.props.moveStepEarlier(this.props.position)}
-      >
-        move up 
-      </button>
-    )
-  }
-
-  buildMoveDownLink() {
-    return (
-      <button
-          className='btn btn-link ml-5'
-          onClick={() => this.props.moveStepLater(this.props.position)}
-      >
-        move down
-      </button>
-    )
-  }
-
+class NodeCard extends React.Component {
   buildNameField() {
-    if (!this.props.steps) {
+    if (!this.props.node_metadata['node']) {
       return ''
     }
     return (
@@ -547,9 +543,9 @@ class StepCard extends React.Component {
         >
           <input
               size='25'
-              value={this.props.steps[this.props.position]['name']}
+              value={this.props.node_metadata['node'][this.props.node_id]['name']}
               onChange={
-                (event) => this.props.updateStepValue(this.props.position, 'name', event.target.value)
+                (event) => this.props.updateNodeValue(this.props.node_id, 'name', event.target.value)
               }
           />
         </div>
@@ -560,7 +556,7 @@ class StepCard extends React.Component {
   getSelectForEntityId() {
     let options = []
     options.push(<option value='' key='9999sw'></option>)
-    if (this.props.steps[this.props.position]['type'] === 'template') {
+    if (this.props.node_metadata['node'][this.props.node_id]['type'] === 'template') {
       for (let i=0; i < Object.keys(this.props.templates).length; i++) {
         const scanner_id = Object.keys(this.props.templates)[i]
         const scanner= this.props.templates[scanner_id]
@@ -568,7 +564,14 @@ class StepCard extends React.Component {
           <option value={scanner_id} key={i}>{scanner['name']}</option>
         )
       }
-    } else if (this.props.steps[this.props.position]['type'] === 'selected_area') {
+      for (let i=0; i < Object.keys(this.props.node_metadata['template']).length; i++) {
+        const scanner_id = Object.keys(this.props.node_metadata['template'])[i]
+        const scanner= this.props.node_metadata['template'][scanner_id]
+        options.push(
+          <option value={scanner_id} key={scanner_id}>{scanner['name']}</option>
+        )
+      }
+    } else if (this.props.node_metadata['node'][this.props.node_id]['type'] === 'selected_area') {
       for (let i=0; i < Object.keys(this.props.selected_area_metas).length; i++) {
         const scanner_id = Object.keys(this.props.selected_area_metas)[i]
         const scanner= this.props.selected_area_metas[scanner_id]
@@ -576,7 +579,14 @@ class StepCard extends React.Component {
           <option value={scanner_id} key={i}>{scanner['name']}</option>
         )
       }
-    } else if (this.props.steps[this.props.position]['type'] === 'ocr') {
+      for (let i=0; i < Object.keys(this.props.node_metadata['selected_area']).length; i++) {
+        const scanner_id = Object.keys(this.props.node_metadata['selected_area'])[i]
+        const scanner= this.props.node_metadata['selected_area'][scanner_id]
+        options.push(
+          <option value={scanner_id} key={scanner_id}>{scanner['name']}</option>
+        )
+      }
+    } else if (this.props.node_Metadata['node'][this.props.node_id]['type'] === 'ocr') {
       for (let i=0; i < Object.keys(this.props.ocr_rules).length; i++) {
         const scanner_id = Object.keys(this.props.ocr_rules)[i]
         const scanner= this.props.ocr_rules[scanner_id]
@@ -584,7 +594,14 @@ class StepCard extends React.Component {
           <option value={scanner_id} key={i}>{scanner['name']}</option>
         )
       }
-    } else if (this.props.steps[this.props.position]['type'] === 'telemetry') {
+      for (let i=0; i < Object.keys(this.props.node_metadata['ocr']).length; i++) {
+        const scanner_id = Object.keys(this.props.node_metadata['ocr'])[i]
+        const scanner= this.props.node_metadata['ocr'][scanner_id]
+        options.push(
+          <option value={scanner_id} key={scanner_id}>{scanner['name']}</option>
+        )
+      }
+    } else if (this.props.node_metadata['node'][this.props.node_id]['type'] === 'telemetry') {
       for (let i=0; i < Object.keys(this.props.telemetry_rules).length; i++) {
         const scanner_id = Object.keys(this.props.telemetry_rules)[i]
         const scanner= this.props.telemetry_rules[scanner_id]
@@ -592,13 +609,20 @@ class StepCard extends React.Component {
           <option value={scanner_id} key={i}>{scanner['name']}</option>
         )
       }
+      for (let i=0; i < Object.keys(this.props.node_metadata['telemetry']).length; i++) {
+        const scanner_id = Object.keys(this.props.node_metadata['telemetry'])[i]
+        const scanner= this.props.node_metadata['telemetry'][scanner_id]
+        options.push(
+          <option value={scanner_id} key={scanner_id}>{scanner['name']}</option>
+        )
+      }
     }
     return (
       <select
           name='step_type'
-          value={this.props.steps[this.props.position]['entity_id']}
+          value={this.props.node_metadata['node'][this.props.node_id]['entity_id']}
           onChange={
-            (event) => this.props.updateStepValue(this.props.position, 'entity_id', event.target.value)
+            (event) => this.props.updateNodeValue(this.props.node_id, 'entity_id', event.target.value)
           }
       >
         {options}
@@ -607,11 +631,11 @@ class StepCard extends React.Component {
   }
 
   buildEntityIdField() {
-    if (!this.props.steps) {
+    if (!this.props.node_metadata['node']) {
       return ''
     }
     const id_types = ['template', 'selected_area', 'ocr', 'telemetry']
-    if (!id_types.includes(this.props.steps[this.props.position]['type'])) {
+    if (!id_types.includes(this.props.node_metadata['node'][this.props.node_id]['type'])) {
       return ''
     }
     const select = this.getSelectForEntityId()
@@ -628,7 +652,7 @@ class StepCard extends React.Component {
   }
 
   buildTypeField() {
-    if (!this.props.steps) {
+    if (!this.props.node_metadata['node']) {
       return ''
     }
     return (
@@ -639,9 +663,9 @@ class StepCard extends React.Component {
         <div className='d-inline ml-2'>
           <select
               name='step_type'
-              value={this.props.steps[this.props.position]['type']}
+              value={this.props.node_metadata['node'][this.props.node_id]['type']}
               onChange={
-                (event) => this.props.updateStepValue(this.props.position, 'type', event.target.value)
+                (event) => this.props.updateNodeValue(this.props.node_id, 'type', event.target.value)
               }
           >
             <option value=''></option>
@@ -658,10 +682,109 @@ class StepCard extends React.Component {
     )
   }
 
+  buildEdgeDropdownId() {
+    return this.props.node_id +  '_edge_dropdown'
+  }
+
+  doAddNodeEdge() {
+    const edge_dropdown_field_id = this.buildEdgeDropdownId()
+    const edge_dropdown_id = document.getElementById(edge_dropdown_field_id).value
+    this.props.addNodeEdge(this.props.node_id, edge_dropdown_id)
+  }
+
+  buildAddEdgeDropdown() {
+    const edge_dropdown_id = this.buildEdgeDropdownId()
+    if (Object.keys(this.props.edges).includes(this.props.node_id) && 
+        this.props.edges[this.props.node_id].length === Object.keys(this.props.node_metadata['node']).length-1) {
+      return ''
+    }
+    return (
+      <div>
+        <div className='d-inline'>
+          Add Edge
+        </div>
+        <div className='d-inline'>
+          <select
+              name='step_type'
+              id={edge_dropdown_id}
+          >
+            {Object.keys(this.props.node_metadata['node']).map((node_id, index) => {
+              if (node_id === this.props.node_id) {
+                return ''
+              }
+              if (Object.keys(this.props.edges).includes(this.props.node_id) && 
+                  this.props.edges[this.props.node_id].includes(node_id)) {
+                return ''
+              }
+              return (
+                <option key={index} value={node_id}>{node_id}</option>
+              )
+            })}
+          </select>
+          
+        </div>
+        <div className='d-inline'>
+            <button
+                className='btn btn-primary p-1'
+                onClick={() => this.doAddNodeEdge()}
+            >
+              Go
+            </button>
+          
+        </div>
+      </div>
+    )
+  }
+
+  buildDeleteEdgeLink(target_node_id) {
+    return (
+      <button
+          className='btn btn-link'
+          onClick={() => this.props.deleteNodeEdge(this.props.node_id, target_node_id)}
+      >
+        delete
+      </button>
+    )
+  }
+
+  buildEdgeList() {
+    if (!Object.keys(this.props.edges).includes(this.props.node_id)) {
+      return (
+        <div>
+          <div className='font-italic'>
+            no edges
+          </div>
+        </div>
+      )
+    }
+    return (
+      <div>
+        <div className='font-weight-bold'>
+          edge list
+        </div>
+        <ul>
+          {this.props.edges[this.props.node_id].map((target_node_id, index) => {
+            const delete_link = this.buildDeleteEdgeLink(target_node_id) 
+            return (
+              <li key={index}>
+                <div className='d-inline'>
+                  {target_node_id}
+                </div>
+                <div className='d-inline ml-2'>
+                  {delete_link}
+                </div>
+              </li>
+            )
+          })}
+        </ul>
+      </div>
+    )
+  }
+
   render() {
-    const move_up_link = this.buildMoveUpLink()
-    const move_down_link = this.buildMoveDownLink()
     const name_field = this.buildNameField()
+    const add_edge_dropdown = this.buildAddEdgeDropdown()
+    const edge_list = this.buildEdgeList()
     const type_field = this.buildTypeField()
     const entity_id_field = this.buildEntityIdField()
     return (
@@ -670,7 +793,7 @@ class StepCard extends React.Component {
     >
       <div className='col'>
         <div className='row'>
-    {this.props.position}
+          {this.props.node_id}
         </div>
         <div className='row'>
           {name_field}
@@ -682,8 +805,10 @@ class StepCard extends React.Component {
           {entity_id_field}
         </div>
         <div className='row'>
-          {move_up_link}
-          {move_down_link}
+          {edge_list}
+        </div>
+        <div className='row'>
+          {add_edge_dropdown}
         </div>
       </div>
     </div>
