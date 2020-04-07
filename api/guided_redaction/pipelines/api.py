@@ -109,7 +109,7 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
         for source_node_id in content['edges']:
             for target_node_id in content['edges'][source_node_id]:
                 inbound_counts[target_node_id] += 1
-        nodes_without_inbound = [x for x in inbound_counts.keys() if inbound+counts[x] == 0]
+        nodes_without_inbound = [x for x in inbound_counts.keys() if inbound_counts[x] == 0]
         if nodes_without_inbound:
             return nodes_without_inbound[0]
 
@@ -265,7 +265,7 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
     def build_tier_1_scanner_job(self, scanner_type, content, node, parent_job, previous_job):
         desc_string = 'scan ' + scanner_type + ' threaded '
         build_scanners = {}
-        scanner = content['node_metadata'][scanner_type][node['id']]['entity_id']]
+        scanner = content['node_metadata'][scanner_type][node['entity_id']]
         build_scanners[node['entity_id']] = scanner
         build_movies = {}
 
@@ -323,14 +323,14 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
         return job
 
     def get_job_for_node(self, node_id, parent_job):
-        if Attribute.objects.filter(name='node_id', value=next_node_id).exists():
-            attrs = Attribute.objects.filter(name='node_id', value=next_node_id)
+        if Attribute.objects.filter(name='node_id', value=node_id).exists():
+            attrs = Attribute.objects.filter(name='node_id', value=node_id)
             for attr in attrs:
-                if attr.job and attr.job.parent = parent_job:
+                if attr.job and attr.job.parent == parent_job:
                     return attr.job
 
     def node_has_no_job_yet(self, next_node_id, parent_job):
-        job_for_node = self.get_job_for_node(node_id, parent_job)
+        job_for_node = self.get_job_for_node(next_node_id, parent_job)
         if job_for_node:
             return False
         return True
@@ -339,26 +339,14 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
         inbound_edges = []
         for node_id in content['edges']:
             if next_node_id in content['edges'][node_id]:
-                inbound_edges.append(next_node_id)
+                inbound_edges.append(node_id)
         for inbound_node_id in inbound_edges:
             job = self.get_job_for_node(inbound_node_id, parent_job)
-            if job.status !== 'success':
+            if job.status != 'success':
                 return False
         return True
 
-    def handle_job_finished(self, job, pipeline):
-        response_data = json.loads(job.response_data)
-        content = json.loads(pipeline.content)
-        parent_job = job.parent
-        nodes_to_build = []
-        node_id = Attribute.objects.filter(job=job, name='node_id').first().value
-        for next_node_id in content['edges'][node_id]:
-            if self.node_has_no_job_yet(next_node_id, parent_job):
-                if self.all_other_inbound_edges_are_complete(next_node_id, content, parent_job):
-                    # TODO WRITE STUFF HERE
-
-
-
+    def load_split_and_redact_results(self, job, response_data, parent_job):
         if parent_job.request_data:
             parent_job_request_data = json.loads(parent_job.request_data)
         else:
@@ -367,6 +355,7 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
             for movie_url in response_data['movies']:
                 parent_job_request_data['movies'][movie_url] = response_data['movies'][movie_url]
             parent_job.request_data = json.dumps(parent_job_request_data)
+            return True
         elif job.operation == 'redact':
             source_movies = json.loads(parent_job.request_data)['movies']
             for movie_url in response_data['movies']:
@@ -376,14 +365,24 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
                         source_frameset = source_movies[movie_url]['framesets'][frameset_hash]
                         source_frameset['redacted_image'] = frameset['redacted_image']
             parent_job.request_data = json.dumps({'movies': source_movies})
-        child_job_count = Job.objects.filter(parent=job.parent).count()
-        num_steps = len(content['steps'])
-        if num_steps > child_job_count:
-            parent_job.elapsed_time = child_job_count / num_steps
-            child_job = self.build_job(content, child_job_count, parent_job, job)
-            jobs_api.dispatch_job(child_job)
-        else:
+            return True
+
+    def handle_job_finished(self, job, pipeline):
+        response_data = json.loads(job.response_data)
+        content = json.loads(pipeline.content)
+        parent_job = job.parent
+        something_changed = self.load_split_and_redact_results(job, response_data, parent_job)
+        if something_changed:
+            parent_job.save()
+        node_id = Attribute.objects.filter(job=job, name='node_id').first().value
+        if node_id not in content['edges']: # no nodes left to dispatch, wrap up
             parent_job.response_data = job.response_data
             parent_job.elapsed_time = 1
             parent_job.status = 'success'
-        parent_job.save()
+            parent_job.save()
+            return
+        for next_node_id in content['edges'][node_id]:
+            if self.node_has_no_job_yet(next_node_id, parent_job):
+                if self.all_other_inbound_edges_are_complete(next_node_id, content, parent_job):
+                    child_job = self.build_job(content, next_node_id, parent_job, job)
+                    jobs_api.dispatch_job(child_job)
