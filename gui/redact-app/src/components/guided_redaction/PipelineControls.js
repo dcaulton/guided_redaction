@@ -669,11 +669,12 @@ class NodeCard extends React.Component {
               }
           >
             <option value=''></option>
+            <option value='split_and_hash'>split and hash</option>
             <option value='template'>template</option>
             <option value='selected_area'>selected area</option>
             <option value='ocr'>ocr</option>
             <option value='telemetry'>telemetry</option>
-            <option value='split_and_hash'>split and hash</option>
+            <option value='t1_sum'>sum t1 outputs</option>
             <option value='redact'>redact</option>
             <option value='zip'>zip</option>
           </select>

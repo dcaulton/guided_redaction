@@ -147,9 +147,14 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
             return self.build_redact_job(content, node, parent_job, previous_job)
         elif node['type'] == 'zip':
             return self.build_zip_job(content, node, parent_job)
+        elif node['type'] == 't1_sum':
+            return self.build_t1_sum_job(content, node, parent_job)
         else:
-            print('=============== UNRECOGNIZED JOB TYPE: {} ========'.format(step['type']))
-            return ''
+            raise Exception('UNRECOGNIZED PIPELINE JOB TYPE: {}'.format(node['type']))
+
+    def build_t1_sum_job(self, content, node, parent_job):
+        print('=================T1 SUM NEEDS TO BE WRITTEN')
+        return ''
 
     def build_zip_job(self, content, node, parent_job):
         parent_request_data = json.loads(parent_job.request_data)
