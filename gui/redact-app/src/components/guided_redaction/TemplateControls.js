@@ -25,6 +25,7 @@ class TemplateControls extends React.Component {
       scale: '1_1',
       match_percent: 90,
       match_method: 'any',
+      save_match_statistics: false,
       scan_level: 'tier_2',
       anchors: [],
       mask_zones: [],
@@ -66,6 +67,7 @@ class TemplateControls extends React.Component {
       attributes: template['attributes'],
       match_percent: template['match_percent'],
       match_method: template['match_method'],
+      save_match_statistics: template['save_match_statistics'],
       scan_level: template['scan_level'],
       anchors: template['anchors'],
       mask_zones: template['mask_zones'],
@@ -119,6 +121,7 @@ class TemplateControls extends React.Component {
       scale: '1_1',
       match_percent: 90,
       match_method: 'any',
+      save_match_statistics: false,
       scan_level: 'tier_2',
       anchors: [],
       mask_zones: [],
@@ -139,6 +142,7 @@ class TemplateControls extends React.Component {
         scale: template['scale'],
         match_percent: template['match_percent'],
         match_method: template['match_method'],
+        save_match_statistics: template['save_match_statistics'],
         scan_level: template['scan_level'],
         anchors: template['anchors'],
         mask_zones: template['mask_zones'],
@@ -190,6 +194,7 @@ class TemplateControls extends React.Component {
       scale: this.state.scale,
       match_percent: this.state.match_percent,
       match_method: this.state.match_method,
+      save_match_statistics: this.state.save_match_statistics,
       scan_level: this.state.scan_level,
       anchors: this.state.anchors,
       mask_zones: this.state.mask_zones,
@@ -325,6 +330,7 @@ class TemplateControls extends React.Component {
       scale: this.state.scale,
       match_percent: this.state.match_percent,
       match_method: this.state.match_method,
+      save_match_statistics: this.state.save_match_statistics,
       scan_level: this.state.scan_level,
       anchors: this.state.anchors,
       mask_zones: this.state.mask_zones,
@@ -563,6 +569,36 @@ class TemplateControls extends React.Component {
     )
   }
 
+  toggleSaveMatchStatistics() {
+    const new_value = (!this.state.save_match_statistics)
+    this.setState({
+      save_match_statistics: new_value,
+    })
+  }
+
+  buildSaveMatchStatistics() {
+    let checked_state = ''
+    if (this.state.save_match_statistics) {
+      checked_state = 'checked'
+    }
+    return (
+      <div>
+        <div className='d-inline'>
+          Save Match Statistics?
+        </div>
+        <div className='d-inline'>
+          <input
+            className='ml-2 mr-2 mt-1'
+            id='toggle_skip_east'
+            checked={checked_state}
+            type='checkbox'
+            onChange={() => this.toggleSaveMatchStatistics()}
+          />
+        </div>
+      </div>
+    )
+  }
+
   buildScanLevel() {
     return buildLabelAndDropdown(
       [{'tier_1': 'Tier 1 (select only)'}, {'tier_2': 'Tier 2 (select and redact)'}],
@@ -745,6 +781,7 @@ class TemplateControls extends React.Component {
     const scale_dropdown = this.buildScaleDropdown() 
     const match_percent = this.buildMatchPercent()
     const match_method = this.buildMatchMethod()
+    const save_match_statistics = this.buildSaveMatchStatistics()
     const scan_level = this.buildScanLevel()
     const import_button = this.buildImportButton()
     const export_button = this.buildExportButton()
@@ -807,6 +844,10 @@ class TemplateControls extends React.Component {
 
                 <div className='row mt-2'>
                   {match_method}
+                </div>
+
+                <div className='row mt-2'>
+                  {save_match_statistics}
                 </div>
 
                 <div className='row mt-2'>

@@ -1666,7 +1666,7 @@ class RedactApplication extends React.Component {
   async getJobs() {
     let the_url = this.getUrl('jobs_url')
     if (this.state.current_workbook_id) {
-        the_url += '?workbook_id=' + this.state.current_workbook_id
+      the_url += '?workbook_id=' + this.state.current_workbook_id
     } 
     await fetch(the_url, {
       method: 'GET',
@@ -1729,15 +1729,21 @@ class RedactApplication extends React.Component {
     } else if (scope === 'current_movie') {
       build_movies[this.state.movie_url] = {}
     }
+    let build_payload = {
+      pipeline_id: the_uuid,
+      movies: build_movies,
+    }
+    if (this.state.current_workbook_id) {
+      build_payload['workbook_id'] = this.state.current_workbook_id
+    } 
     await fetch(the_url, {
       method: 'POST',
       headers: this.buildJsonHeaders(),
-      body: JSON.stringify({
-        pipeline_id: the_uuid,
-        movies: build_movies,
-      }),
+      body: JSON.stringify(build_payload)
     })
-    .then(() => {
+    .then((response) => response.json())
+    .then((responseJson) => {
+      this.watchForJob(responseJson['job_id'], (()=>{}), false)
       this.getPipelines()
       when_done()
     })
@@ -2263,7 +2269,6 @@ class RedactApplication extends React.Component {
                 submitJob={this.submitJob}
                 loadJobResults={this.loadJobResults}
                 jobs={this.state.jobs}
-                watchForJob={this.watchForJob}
                 postMakeUrlCall={this.postMakeUrlCall}
                 establishNewMovie={this.establishNewMovie}
                 preserve_movie_audio={this.state.preserve_movie_audio}

@@ -95,8 +95,9 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
             return self.error("movies is required", status_code=400)
         pipeline = Pipeline.objects.get(pk=request_data['pipeline_id'])
         movies = request_data.get("movies")
+        workbook_id = request_data.get("workbook_id")
         content = json.loads(pipeline.content)
-        parent_job = self.build_parent_job(pipeline, movies, content)
+        parent_job = self.build_parent_job(pipeline, movies, content, workbook_id)
         first_node_id = self.get_first_node_id(content)
         if first_node_id:
             child_job = self.build_job(content, first_node_id, parent_job)
@@ -117,7 +118,7 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
             return nodes_without_inbound[0]
 
         
-    def build_parent_job(self, pipeline, movies, content):
+    def build_parent_job(self, pipeline, movies, content, workbook_id):
         build_request_data = {
             'movies': movies,
         }
@@ -128,6 +129,7 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
             operation='pipeline',
             sequence=0,
             elapsed_time=0.0,
+            workbook_id=workbook_id,
             request_data=json.dumps(build_request_data),
         )
         job.save()

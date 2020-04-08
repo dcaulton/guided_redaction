@@ -151,7 +151,6 @@ class JobsViewSet(viewsets.ViewSet):
                 {
                     'id': job.id,
                     'status': job.status,
-                    'workbook_id': job.workbook_id,
                     'description': job.description,
                     'created_on': job.created_on,
                     'updated': job.updated,
@@ -176,7 +175,6 @@ class JobsViewSet(viewsets.ViewSet):
         job_data = {
             'id': job.id,
             'status': job.status,
-            'workbook_id': job.workbook_id,
             'description': job.description,
             'created_on': job.created_on,
             'updated': job.updated,

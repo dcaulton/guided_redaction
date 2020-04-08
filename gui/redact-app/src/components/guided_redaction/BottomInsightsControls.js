@@ -307,6 +307,7 @@ class BottomInsightsControls extends React.Component {
           userTone={this.props.userTone}
           submitInsightsJob={this.props.submitInsightsJob}
           preserve_movie_audio={this.props.preserve_movie_audio}
+          getPipelines={this.props.getPipelines}
         />
 
       </div>

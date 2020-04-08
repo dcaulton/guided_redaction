@@ -24,10 +24,7 @@ class SessionControls extends React.Component {
           <button 
               className='dropdown-item'
               key={index}
-              onClick={() => 
-                this.props.loadWorkbook(value['id'], 
-                this.props.displayInsightsMessage('Workbook has been loaded'))
-              }
+              onClick={() => this.doWorkbookLoad(value['id'])}
           >
             {value['name']}
           </button>
@@ -36,10 +33,7 @@ class SessionControls extends React.Component {
           <button 
               className='dropdown-item'
               key='000'
-              onClick={() => 
-                this.props.loadWorkbook('-1', 
-                this.props.displayInsightsMessage('Workbook has been loaded'))
-              }
+              onClick={() => this.doWorkbookLoad('-1')}
           >
             none
           </button>
@@ -48,6 +42,14 @@ class SessionControls extends React.Component {
       )
     }
     return return_array
+  }
+
+  doWorkbookLoad(workbook_id) {
+    this.props.loadWorkbook(
+      workbook_id,
+      this.props.displayInsightsMessage('Workbook has been loaded')
+    )
+    this.props.getPipelines()
   }
 
   buildWorkbookDeleteButton() {

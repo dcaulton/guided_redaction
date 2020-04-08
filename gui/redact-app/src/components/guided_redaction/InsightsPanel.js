@@ -274,6 +274,7 @@ class InsightsPanel extends React.Component {
     }
     this.props.getJobs()
     this.props.getWorkbooks()
+    this.props.getPipelines()
   }
 
   setDraggedId = (the_id) => {
