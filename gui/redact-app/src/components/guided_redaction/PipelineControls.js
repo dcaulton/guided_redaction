@@ -165,8 +165,8 @@ class PipelineControls extends React.Component {
     )
   }
 
-  doRun() {
-    this.props.dispatchPipeline(this.props.current_pipeline_id)
+  doRun(scope) {
+    this.props.dispatchPipeline(this.props.current_pipeline_id, scope)
     this.props.displayInsightsMessage('pipeline was dispatched')
   }
 
@@ -256,9 +256,36 @@ class PipelineControls extends React.Component {
     if (!this.state.id) {
       return ''
     }
-    return buildInlinePrimaryButton(
-      'Run',
-      (()=>{this.doRun()})
+    return (
+      <div className='d-inline'>
+        <button
+            className='btn btn-primary ml-2 dropdown-toggle'
+            type='button'
+            id='run_pipeline_button'
+            data-toggle='dropdown'
+            area-haspopup='true'
+            area-expanded='false'
+        >
+          Run
+        </button>
+        <div
+            className='dropdown-menu'
+            aria-labelledby='run_pipeline_button'
+        >
+          <button
+              className='dropdown-item'
+              onClick={() => this.doRun('current_movie')}
+          >
+            Selected Movie
+          </button>
+          <button
+              className='dropdown-item'
+              onClick={() => this.doRun('all_movies')}
+          >
+            All Movies
+          </button>
+        </div>
+      </div>
     )
   }
 
@@ -361,30 +388,6 @@ class PipelineControls extends React.Component {
     this.props.displayInsightsMessage('Attribute was deleted')
   }
 
-  buildMovieUrlsBox() {
-    const movie_urls_string = this.state.movie_urls.join('\n')
-    return (
-      <div>
-        <div className='row'>
-        movie urls
-        </div>
-      <textarea
-         cols='80'
-         rows='5'
-         value={movie_urls_string}
-         onChange={(event) => this.setMovieUrls(event.target.value)}
-      />
-      </div>
-    )
-  }
-
-  setMovieUrls(movie_urls) {
-    if (typeof movie_urls === 'string' || movie_urls instanceof String) {
-      movie_urls = movie_urls.split('\n')
-    }
-    this.setLocalStateVar('movie_urls', movie_urls)
-  }
-
   render() {
     if (!this.props.visibilityFlags['pipelines']) {
       return([])
@@ -397,7 +400,6 @@ class PipelineControls extends React.Component {
     const name_field = this.buildNameField()
     const description_field = this.buildDescriptionField()
     const attributes_list = this.buildAttributesList()
-    const movie_urls_box = this.buildMovieUrlsBox()
     const use_parsed_movies_checkbox = this.buildUseParsedMoviesCheckbox()
     const header_row = makeHeaderRow(
       'pipelines',
@@ -438,10 +440,6 @@ class PipelineControls extends React.Component {
 
               <div className='row mt-2'>
                 {use_parsed_movies_checkbox}
-              </div>
-
-              <div className='row mt-2'>
-                {movie_urls_box}
               </div>
 
               <div className='row mt-2'>

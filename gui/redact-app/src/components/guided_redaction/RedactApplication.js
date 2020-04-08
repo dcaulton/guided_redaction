@@ -1719,13 +1719,22 @@ class RedactApplication extends React.Component {
     })
   }
 
-  async dispatchPipeline(the_uuid, when_done=(()=>{})) {
+  async dispatchPipeline(the_uuid, scope, when_done=(()=>{})) {
     let the_url = this.getUrl('pipelines_url') + '/dispatch'
+    let build_movies = {}
+    if (scope === 'all_movies') {
+      for (let i=0; i < this.state.campaign_movies.length; i++) {
+        build_movies[this.state.campaign_movies[i]] = {}
+      }
+    } else if (scope === 'current_movie') {
+      build_movies[this.state.movie_url] = {}
+    }
     await fetch(the_url, {
       method: 'POST',
       headers: this.buildJsonHeaders(),
       body: JSON.stringify({
         pipeline_id: the_uuid,
+        movies: build_movies,
       }),
     })
     .then(() => {

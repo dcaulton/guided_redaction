@@ -91,9 +91,12 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
             return self.error("pipeline_id is required", status_code=400)
         if not Pipeline.objects.filter(id=request_data['pipeline_id']).exists():
             return self.error("invalid pipeline id specified", status_code=400)
+        if not request_data.get("movies"):
+            return self.error("movies is required", status_code=400)
         pipeline = Pipeline.objects.get(pk=request_data['pipeline_id'])
+        movies = request_data.get("movies")
         content = json.loads(pipeline.content)
-        parent_job = self.build_parent_job(pipeline, content)
+        parent_job = self.build_parent_job(pipeline, movies, content)
         first_node_id = self.get_first_node_id(content)
         if first_node_id:
             child_job = self.build_job(content, first_node_id, parent_job)
@@ -114,7 +117,10 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
             return nodes_without_inbound[0]
 
         
-    def build_parent_job(self, pipeline, content):
+    def build_parent_job(self, pipeline, movies, content):
+        build_request_data = {
+            'movies': movies,
+        }
         job = Job(
             status='created',
             description='top level job for pipeline '+pipeline.name,
@@ -122,6 +128,7 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
             operation='pipeline',
             sequence=0,
             elapsed_time=0.0,
+            request_data=json.dumps(build_request_data),
         )
         job.save()
         attribute = Attribute(
@@ -203,8 +210,9 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
         return job
 
     def build_split_and_hash_job(self, content, node, parent_job):
+        parent_request_data = json.loads(parent_job.request_data)
         request_data = {
-          'movie_urls': list(content['movies'].keys()),
+          'movie_urls': list(parent_request_data['movies'].keys()),
           'frameset_discriminator': 'gray8',
           'preserve_movie_audio': False,
         }
@@ -252,7 +260,8 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
         return source_movie
                 
     def build_redact_job(self, content, node, parent_job, previous_job):
-        movie_url = list(content['movies'].keys())[0]
+        parent_request_data = json.loads(parent_job.request_data)
+        movie_url = list(parent_request_data['movies'].keys())[0]
         build_movies = {}
         parent_request_data = json.loads(parent_job.request_data)
         t1_output = json.loads(previous_job.response_data)
@@ -291,6 +300,7 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
         return job
 
     def build_tier_1_scanner_job(self, scanner_type, content, node, parent_job, previous_job):
+        parent_request_data = json.loads(parent_job.request_data)
         desc_string = 'scan ' + scanner_type + ' threaded '
         build_scanners = {}
         scanner = content['node_metadata'][scanner_type][node['entity_id']]
@@ -303,7 +313,7 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
             if 'movies' in parent_job_request_data:
                 source_movies = parent_job_request_data['movies']
         if 'movies' in content and not source_movies:
-            source_movies = content['movies']
+            source_movies = parent_request_data['movies']
 
         if previous_job:
             previous_result = json.loads(previous_job.response_data)
