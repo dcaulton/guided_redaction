@@ -10,6 +10,7 @@ from guided_redaction.analyze import tasks as analyze_tasks
 from guided_redaction.parse import tasks as parse_tasks
 from guided_redaction.redact import tasks as redact_tasks
 from guided_redaction.files import tasks as files_tasks
+from guided_redaction.pipelines import tasks as pipelines_tasks
 import json
 import pytz
 import math
@@ -77,6 +78,8 @@ def dispatch_job(job):
         files_tasks.save_movie_metadata.delay(job_uuid)
     if job.app == 'files' and job.operation == 'load_movie_metadata':
         files_tasks.load_movie_metadata.delay(job_uuid)
+    if job.app == 'pipelines' and job.operation == 't1_sum':
+        pipelines_tasks.t1_sum.delay(job_uuid)
 
 
 class JobsViewSet(viewsets.ViewSet):

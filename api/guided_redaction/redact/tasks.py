@@ -138,16 +138,6 @@ def redact_threaded(job_uuid):
             job.save()
         return
 
-def get_file_uuid_from_response(response_dict):
-    the_uuid = ''
-    if 'redacted_image_url' in response_dict:
-        ts = response_dict['redacted_image_url'].split('/')
-        print(ts)
-
-        if len(ts) > 1:
-            the_uuid = ts[-2]
-    return the_uuid
-
 @shared_task
 def illustrate(job_uuid):
     job = Job.objects.get(pk=job_uuid)

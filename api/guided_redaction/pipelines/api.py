@@ -153,8 +153,31 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
             raise Exception('UNRECOGNIZED PIPELINE JOB TYPE: {}'.format(node['type']))
 
     def build_t1_sum_job(self, content, node, parent_job):
-        print('=================T1 SUM NEEDS TO BE WRITTEN')
-        return ''
+        build_job_ids = []
+        inbound_node_ids = self.get_node_ids_with_inbound_edges(node['id'], content)
+        for node_id in inbound_node_ids:
+            job = self.get_job_for_node(node_id, parent_job)
+            build_job_ids.append(str(job.id))
+        build_request_data = {
+            'job_ids': build_job_ids,
+        }
+        job = Job(
+            status='created',
+            description='t1 sum for pipeline',
+            app='pipelines',
+            operation='t1_sum',
+            sequence=0,
+            elapsed_time=0.0,
+            request_data=json.dumps(build_request_data),
+            parent=parent_job,
+        )
+        job.save()
+        Attribute(
+            name='node_id',
+            value=node['id'],
+            job=job,
+        ).save()
+        return job
 
     def build_zip_job(self, content, node, parent_job):
         parent_request_data = json.loads(parent_job.request_data)
@@ -340,12 +363,16 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
             return False
         return True
 
-    def all_other_inbound_edges_are_complete(self, next_node_id, content, parent_job):
-        inbound_edges = []
+    def get_node_ids_with_inbound_edges(self, target_node_id, content):
+        inbound_nodes = []
         for node_id in content['edges']:
-            if next_node_id in content['edges'][node_id]:
-                inbound_edges.append(node_id)
-        for inbound_node_id in inbound_edges:
+            if target_node_id in content['edges'][node_id]:
+                inbound_nodes.append(node_id)
+        return inbound_nodes
+
+    def all_other_inbound_edges_are_complete(self, next_node_id, content, parent_job):
+        inbound_node_ids = self.get_node_ids_with_inbound_edges(next_node_id, content)
+        for inbound_node_id in inbound_node_ids:
             job = self.get_job_for_node(inbound_node_id, parent_job)
             if job.status != 'success':
                 return False
@@ -391,3 +418,32 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
                 if self.all_other_inbound_edges_are_complete(next_node_id, content, parent_job):
                     child_job = self.build_job(content, next_node_id, parent_job, job)
                     jobs_api.dispatch_job(child_job)
+
+
+class PipelineT1SumViewSet(viewsets.ViewSet):
+    def create(self, request):
+        request_data = request.data
+        return self.process_create_request(request_data)
+
+    def process_create_request(self, request_data):
+        if not request_data.get("job_ids"):
+            return self.error("job_ids is required", status_code=400)
+        build_movies = {}
+        for job_id in request_data.get('job_ids'):
+            if not Job.objects.filter(id=job_id).exists():
+                return self.error("invalid job id: {}".format(job_id), status_code=400)
+            job = Job.objects.get(pk=job_id)
+            job_response_data = json.loads(job.response_data)
+            if 'movies' in job_response_data:
+                for movie_url in job_response_data['movies']:
+                    movie_data = job_response_data['movies'][movie_url]
+                    if movie_url not in build_movies:
+                        build_movies[movie_url] = {'framesets': {}}
+                    for frameset_hash in movie_data['framesets']:
+                        frameset = movie_data['framesets'][frameset_hash]
+                        for key in frameset:
+                            if frameset_hash not in build_movies[movie_url]['framesets']:
+                                build_movies[movie_url]['framesets'][frameset_hash] = {}
+                            build_movies[movie_url]['framesets'][frameset_hash][key] = frameset[key]
+
+        return Response({'movies': build_movies})
