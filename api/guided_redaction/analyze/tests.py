@@ -44,7 +44,8 @@ class TemplateMatcherTestCase(TestCase):
         draw_text_on_image(template_image, 'Russek', (0, 30))
 
         # NOTE: these coords come back as X, Y, upper left corner
-        match_obj = template_matcher.get_template_coords(source_image, template_image)
+        match_wrapper = template_matcher.get_template_coords(source_image, template_image)
+        match_obj = match_wrapper['match_coords']
 
         # Russek is close enough to Russell, it compares at .934
         self.assertEquals(match_obj[0], (10, 70))
@@ -64,7 +65,8 @@ class TemplateMatcherTestCase(TestCase):
         draw_text_on_image(source_image, 'Russett', (180, 300))
         draw_text_on_image(template_image, 'Russek', (0, 30))
 
-        match_obj = template_matcher.get_template_coords(source_image, template_image)
+        match_wrapper = template_matcher.get_template_coords(source_image, template_image)
+        match_obj = match_wrapper['match_coords']
         # Russek will not be close enough to Russell, it compares at .934
         self.assertEquals(match_obj, False)
 
@@ -83,7 +85,8 @@ class TemplateMatcherTestCase(TestCase):
         draw_text_on_image(template_image, 'Russell', (0, 30), font_scale=.8)
 
         # NOTE: these coords come back as X, Y, upper left corner
-        match_obj = template_matcher.get_template_coords(source_image, template_image)
+        match_wrapper = template_matcher.get_template_coords(source_image, template_image)
+        match_obj = match_wrapper['match_coords']
 
         # the below indicates that we matched at positioh 10, 62 in the source image, when we reduced
         #   it to 80% of the original size, so 62 ~ .8 * 70, and 10 ~ .8 * 10 (after accounting for aliasing)
@@ -107,7 +110,8 @@ class TemplateMatcherTestCase(TestCase):
         draw_text_on_image(template_image, 'Randy', (0, 30), font_scale=.8)
 
         # NOTE: these coords come back as X, Y, upper left corner
-        match_obj = template_matcher.get_template_coords(source_image, template_image)
+        match_wrapper = template_matcher.get_template_coords(source_image, template_image)
+        match_obj = match_wrapper['match_coords']
 
         # the below indicates that we matched at positioh 10, 62 in the source image, when we reduced
         #   it to 80% of the original size, so 62 ~ .8 * 70, and 10 ~ .8 * 10 (after accounting for aliasing)
@@ -130,7 +134,8 @@ class TemplateMatcherTestCase(TestCase):
         draw_text_on_image(template_image, 'Russell', (0, 30), font_scale=.8)
 
         # NOTE: these coords come back as X, Y, upper left corner
-        match_obj = template_matcher.get_template_coords(source_image, template_image)
+        match_wrapper = template_matcher.get_template_coords(source_image, template_image)
+        match_obj = match_wrapper['match_coords']
 
         # the below indicates that we matched at positioh 10, 62 in the source image, when we reduced
         #   it to 80% of the original size, so 62 ~ .8 * 70, and 10 ~ .8 * 10 (after accounting for aliasing)

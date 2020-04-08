@@ -73,6 +73,7 @@ def scan_template(job_uuid):
                     anchor_match_keys = set(raw_response[movie_url][frameset_hash].keys())
                     if anchor_match_keys == all_anchor_keys:
                         built_response_data[movie_url][frameset_hash] = raw_response[movie_url][frameset_hash]
+            # TODO get this to respect save_match_statistics
             job.response_data = json.dumps(built_response_data)
         job.status = 'success'
         job.save()

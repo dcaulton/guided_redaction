@@ -59,6 +59,7 @@ class TemplateMatcher:
 
         found = (0, (-1, -1), 0)
         match_was_found = False
+        match_metadata = {}
         for scale in self.scales:
             resized = imutils.resize(tm_source, width=int(tm_source.shape[1] * scale))
             res = cv2.matchTemplate(resized, tm_template, cv2.TM_CCOEFF_NORMED)
@@ -68,6 +69,10 @@ class TemplateMatcher:
         match_percent_short = '{0:.4f}'.format(found[0])
         match_scale_short = '{0:.2f}'.format(found[2])
         print_str = 'max val {} is at scale {}'.format(match_percent_short, match_scale_short)
+        match_metadata = {
+            'scale': match_scale_short,
+            'percent': match_percent_short,
+        }
 
         if found[0] > self.template_match_percent:
             match_was_found = True
@@ -81,6 +86,14 @@ class TemplateMatcher:
         print(print_str)
 
         if match_was_found:
-            return (scaled_match_upper_left, found_scale)
+            return {
+                'match_found': True,
+                'match_coords': (scaled_match_upper_left, found_scale),
+                'match_metadata': match_metadata,
+            }
         else:
-            return ()
+            return {
+                'match_found': False,
+                'match_coords': (),
+                'match_metadata': match_metadata,
+            }

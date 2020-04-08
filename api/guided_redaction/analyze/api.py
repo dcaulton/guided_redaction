@@ -190,20 +190,24 @@ class AnalyzeViewSetScanTemplate(viewsets.ViewSet):
         template_id = list(request_data.get('templates').keys())[0]
         template = request_data.get('templates')[template_id]
         template_matcher = TemplateMatcher(template)
+        match_statistics = {}
         for anchor in template.get("anchors"):
             match_image = self.get_match_image_for_anchor(anchor)
             start = anchor.get("start")
             end = anchor.get("end")
             size = (end[0] - start[0], end[1] - start[1])
             anchor_id = anchor.get("id")
+            match_statistics[anchor_id] = {'movies': {}}
             for movie_url in movies:
                 movie = movies[movie_url]
                 if not movie:
                     print('no movie error for {}'.format(movie_url))
                     continue
+                match_statistics[anchor_id]['movies'][movie_url] = {'framesets': {}}
                 framesets = movie["framesets"]
                 for frameset_hash in framesets:
                     frameset = framesets[frameset_hash]
+                    match_statistics[anchor_id]['movies'][movie_url]['framesets'][frameset_hash] = {}
                     if 'images' in frameset:
                         one_image_url = frameset["images"][0]
                     else:
@@ -217,11 +221,14 @@ class AnalyzeViewSetScanTemplate(viewsets.ViewSet):
                         oi_nparr = np.fromstring(one_image, np.uint8)
                         target_image = cv2.imdecode(oi_nparr, cv2.IMREAD_COLOR)
                         target_image = self.trim_target_image_to_t1_inputs(target_image, frameset)
-                        match_results = template_matcher.get_template_coords(
+                        match_obj = template_matcher.get_template_coords(
                             target_image, match_image
                         )
-                        if match_results:
-                            (temp_coords, temp_scale) = match_results
+                        if template['save_match_statistics']:
+                            match_statistics[anchor_id]['movies'][movie_url]['framesets'][frameset_hash] = match_obj['match_metadata']
+
+                        if match_obj['match_found']:
+                            (temp_coords, temp_scale) = match_obj['match_coords']
                             if 'movies' not in matches:
                                 matches['movies'] = {}
                             if movie_url not in matches['movies']:
@@ -230,20 +237,17 @@ class AnalyzeViewSetScanTemplate(viewsets.ViewSet):
                             if frameset_hash not in matches['movies'][movie_url]['framesets']:
                                 matches['movies'][movie_url]['framesets'][frameset_hash] = {}
                             matches['movies'][movie_url]['framesets'][frameset_hash][anchor_id] = {}
-                            matches['movies'][movie_url]['framesets'][frameset_hash][anchor_id][
-                                "location"
-                            ] = temp_coords
-                            matches['movies'][movie_url]['framesets'][frameset_hash][anchor_id][
-                                "size"
-                            ] = size
-                            matches['movies'][movie_url]['framesets'][frameset_hash][anchor_id][
-                                "scale"
-                            ] = temp_scale
-                            matches['movies'][movie_url]['framesets'][frameset_hash][anchor_id][
-                                "scanner_type"
-                            ] = "template"
+                            matches_for_anchor = \
+                                matches['movies'][movie_url]['framesets'][frameset_hash][anchor_id]
+                            matches_for_anchor['location'] = temp_coords
+                            matches_for_anchor['size'] = size
+                            matches_for_anchor['scale'] = temp_scale
+                            matches_for_anchor['scanner_type'] = 'template'
+        if template['save_match_statistics']:
+            matches['statistics'] = match_statistics
         return Response(matches)
 
+    #TODO make sure this works, a unit test would be nice
     def trim_target_image_to_t1_inputs(self, target_image, tier_1_record):
         if len(tier_1_record.keys()) == 1 and list(tier_1_record.keys())[0] == 'image':
             return target_image # it's a virgin frameset, not t1
