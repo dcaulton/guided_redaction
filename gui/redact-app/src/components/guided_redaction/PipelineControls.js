@@ -553,7 +553,8 @@ class NodeCard extends React.Component {
 
   getSelectForEntityId() {
     let options = []
-    options.push(<option value='' key='9999sw'></option>)
+    let added_ids = []
+    options.push(<option value='' key='pipeline_node_entity_id_none'></option>)
     if (this.props.node_metadata['node'][this.props.node_id]['type'] === 'template') {
       for (let i=0; i < Object.keys(this.props.templates).length; i++) {
         const scanner_id = Object.keys(this.props.templates)[i]
@@ -561,13 +562,16 @@ class NodeCard extends React.Component {
         options.push(
           <option value={scanner_id} key={i}>{scanner['name']}</option>
         )
+        added_ids.push(scanner_id)
       }
       for (let i=0; i < Object.keys(this.props.node_metadata['template']).length; i++) {
         const scanner_id = Object.keys(this.props.node_metadata['template'])[i]
         const scanner= this.props.node_metadata['template'][scanner_id]
-        options.push(
-          <option value={scanner_id} key={scanner_id}>{scanner['name']}</option>
-        )
+        if (!added_ids.includes(scanner_id)) {
+          options.push(
+            <option value={scanner_id} key={scanner_id}>{scanner['name']}</option>
+          )
+        }
       }
     } else if (this.props.node_metadata['node'][this.props.node_id]['type'] === 'selected_area') {
       for (let i=0; i < Object.keys(this.props.selected_area_metas).length; i++) {
@@ -576,13 +580,16 @@ class NodeCard extends React.Component {
         options.push(
           <option value={scanner_id} key={i}>{scanner['name']}</option>
         )
+        added_ids.push(scanner_id)
       }
       for (let i=0; i < Object.keys(this.props.node_metadata['selected_area']).length; i++) {
         const scanner_id = Object.keys(this.props.node_metadata['selected_area'])[i]
         const scanner= this.props.node_metadata['selected_area'][scanner_id]
-        options.push(
-          <option value={scanner_id} key={scanner_id}>{scanner['name']}</option>
-        )
+        if (!added_ids.includes(scanner_id)) {
+          options.push(
+            <option value={scanner_id} key={scanner_id}>{scanner['name']}</option>
+          )
+        }
       }
     } else if (this.props.node_Metadata['node'][this.props.node_id]['type'] === 'ocr') {
       for (let i=0; i < Object.keys(this.props.ocr_rules).length; i++) {
@@ -591,13 +598,16 @@ class NodeCard extends React.Component {
         options.push(
           <option value={scanner_id} key={i}>{scanner['name']}</option>
         )
+        added_ids.push(scanner_id)
       }
       for (let i=0; i < Object.keys(this.props.node_metadata['ocr']).length; i++) {
         const scanner_id = Object.keys(this.props.node_metadata['ocr'])[i]
         const scanner= this.props.node_metadata['ocr'][scanner_id]
-        options.push(
-          <option value={scanner_id} key={scanner_id}>{scanner['name']}</option>
-        )
+        if (!added_ids.includes(scanner_id)) {
+          options.push(
+            <option value={scanner_id} key={scanner_id}>{scanner['name']}</option>
+          )
+        }
       }
     } else if (this.props.node_metadata['node'][this.props.node_id]['type'] === 'telemetry') {
       for (let i=0; i < Object.keys(this.props.telemetry_rules).length; i++) {
@@ -606,13 +616,16 @@ class NodeCard extends React.Component {
         options.push(
           <option value={scanner_id} key={i}>{scanner['name']}</option>
         )
+        added_ids.push(scanner_id)
       }
       for (let i=0; i < Object.keys(this.props.node_metadata['telemetry']).length; i++) {
         const scanner_id = Object.keys(this.props.node_metadata['telemetry'])[i]
         const scanner= this.props.node_metadata['telemetry'][scanner_id]
-        options.push(
-          <option value={scanner_id} key={scanner_id}>{scanner['name']}</option>
-        )
+        if (!added_ids.includes(scanner_id)) {
+          options.push(
+            <option value={scanner_id} key={scanner_id}>{scanner['name']}</option>
+          )
+        }
       }
     }
     return (
