@@ -686,6 +686,7 @@ class NodeCard extends React.Component {
             <option value='ocr'>ocr</option>
             <option value='telemetry'>telemetry</option>
             <option value='t1_sum'>sum t1 outputs</option>
+            <option value='template_match_chart'>template match chart</option>
             <option value='redact'>redact</option>
             <option value='zip'>zip</option>
           </select>

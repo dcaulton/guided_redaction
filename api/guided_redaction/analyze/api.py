@@ -11,6 +11,7 @@ from guided_redaction.analyze.classes.EastPlusTessGuidedAnalyzer import (
 from guided_redaction.analyze.classes.TelemetryAnalyzer import TelemetryAnalyzer
 from guided_redaction.analyze.classes.TemplateMatcher import TemplateMatcher
 from guided_redaction.analyze.classes.ExtentsFinder import ExtentsFinder
+from guided_redaction.analyze.classes.ChartMaker import ChartMaker
 import json
 import base64
 import numpy as np
@@ -863,3 +864,34 @@ class AnalyzeViewSetTimestamp(viewsets.ViewSet):
                 time_result['second']
             )
         return found_datetime
+
+
+class AnalyzeViewSetTemplateMatchChart(viewsets.ViewSet):
+    def create(self, request):
+        request_data = request.data
+        return self.process_create_request(request_data)
+
+    def process_create_request(self, request_data):
+        if not request_data.get("job_ids"):
+            return self.error("job_ids is required", status_code=400)
+        chart_info = {
+            'chart_type': 'template_match',
+        }
+        jobs = Job.objects.filter(id__in=request_data.get('job_ids'))
+        build_data = {}
+        for job in jobs:
+            build_data[job.id] = {
+                'request_data': json.loads(job.request_data),
+                'response_data': json.loads(job.response_data),
+            }
+        file_writer = FileWriter(
+            working_dir=settings.REDACT_FILE_STORAGE_DIR,
+            base_url=settings.REDACT_FILE_BASE_URL,
+            image_request_verify_headers=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
+        )
+
+        chart_maker = ChartMaker(chart_info, build_data, file_writer)
+
+        charts_obj = chart_maker.make_charts()
+
+        return Response({'charts': charts_obj})
