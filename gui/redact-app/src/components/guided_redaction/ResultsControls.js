@@ -7,14 +7,95 @@ class ResultsControls extends React.Component {
   constructor(props) {
     super(props)
     this.state = ({
-      report_title: '',
+      type: '',
+      job_id: '',
     })
   }
 
-  setReportTitle(the_title) {
+  submitResultsJob() {
+    const pass_data = {
+      type: this.state.type,
+      job_id: this.state.job_id,
+    }
+    this.props.submitInsightsJob('results', pass_data)
+  }
+
+  buildTypeSelector() {
+    return (
+      <div>
+        <div className='d-inline'>
+          Report Type:
+        </div>
+        <div className='d-inline ml-2'>
+          <select
+              name='report_type'
+              value={this.state.type}
+              onChange={(event) => this.setType(event.target.value)}
+          >
+            <option value=''></option>
+            <option value='template_match_chart'>template match chart</option>
+          </select>
+        </div>
+      </div>
+    )
+  }
+
+  setJobId(job_id) {
     this.setState({
-      report_title: the_title,
+      job_id: job_id,
     })
+  }
+
+  setType(the_type) {
+    this.setState({
+      type: the_type,
+    })
+  }
+
+  buildJobSelector() {
+    let eligible_jobs = []
+    for (let i=0; i < this.props.jobs.length; i++) {
+      const job = this.props.jobs[i]
+      if (this.state.type === 'template_match_chart' && 
+          job['operation'] === 'scan_template') {
+        eligible_jobs.push(job)
+      }
+    }
+
+    return (
+      <div>
+        <div className='d-inline'>
+          Job Results
+        </div>
+        <div className='d-inline ml-2'>
+          <select
+              name='report_job'
+              value={this.state.job_id}
+              onChange={(event) => this.setJobId(event.target.value)}
+          >
+            <option value=''></option>
+            {eligible_jobs.map((job, index) => {
+              return (
+                <option value={job['id']} key={index}>{job['description']} - {job['id']}</option>
+              )
+            })}
+          </select>
+        </div>
+      </div>
+    )
+  }
+
+  buildSubmitButton() {
+    return (
+      <div>
+        <button
+            className='btn btn-primary'
+            onClick={() => this.submitResultsJob()}
+        >
+          Submit Job
+        </button>
+      </div>
+    )
   }
 
   render() {
@@ -25,6 +106,9 @@ class ResultsControls extends React.Component {
       'results',
       'results_body'
     )
+    const type_selector = this.buildTypeSelector()
+    const job_selector = this.buildJobSelector()
+    const submit_button = this.buildSubmitButton()
 
     return (
         <div className='row bg-light rounded mt-3'>
@@ -39,38 +123,19 @@ class ResultsControls extends React.Component {
               <div id='results_main' className='col'>
 
                 <div className='row mt-3 bg-light'>
-                
-                  <div
-                      className='d-inline ml-2 mt-2'
-                  >   
-                      <input 
-                          id='results_text'
-                          size='30'
-                          title='report title'
-                          value={this.state.report_title}
-                          onChange={(event) => this.setReportTitle(event.target.value)}
-                      />
+                  {type_selector}
+                </div>
 
+                <div className='row bg-light'>
+                  {job_selector}
+                </div>
 
-                  <select
-                      name='movieset'
-                      onChange={(event) => alert(event.target.value)}
-                  >
-                    <option value='0'>--MovieSet--</option>
-                    <option value='823828432342'>custom 1</option>
-                  </select>
+                <div className='row bg-light'>
+                  {submit_button}
+                </div>
 
-                      <button
-                          className='btn btn-primary m-2'
-                          onClick={() => alert('stuff 2')}
-                      >
-                        Prepare 
-                      </button>
-
-
-                  </div>
-
-
+                <div id='results_image_div' className='row mt-3 bg-light'>
+                results go here
                 </div>
 
               </div>

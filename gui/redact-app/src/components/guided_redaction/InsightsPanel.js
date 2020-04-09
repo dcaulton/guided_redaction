@@ -504,6 +504,19 @@ class InsightsPanel extends React.Component {
     return job_data
   }
 
+  buildResultsData(extra_data) {
+    let job_data = {
+      request_data: {},
+    }
+    job_data['app'] = 'analyze'
+    if (extra_data['type'] === 'template_match_chart') {
+      job_data['operation'] = 'template_match_chart'
+      job_data['request_data']['job_ids'] = [extra_data['job_id']]
+    }
+    job_data['description'] = 'chart results for job ' + extra_data['job_id']
+    return job_data
+  }
+
   buildGetTimestampJobData(scope, extra_data) {
     let job_data = {
       request_data: {},
@@ -601,6 +614,11 @@ class InsightsPanel extends React.Component {
       let job_data = this.buildLoadMovieMetadataJobData(extra_data)
       this.props.submitJob({
         job_data: job_data
+      })
+    } else if (job_string === 'results') {
+      let job_data = this.buildResultsData(extra_data)
+      this.props.submitJob({
+        job_data: job_data,
       })
     }
     if (!this.props.movie_url) {
@@ -1232,6 +1250,7 @@ class InsightsPanel extends React.Component {
             dispatchPipeline={this.props.dispatchPipeline}
             deletePipeline={this.props.deletePipeline}
             savePipelineToDatabase={this.props.savePipelineToDatabase}
+            jobs={this.props.jobs}
           />
         </div>
 
