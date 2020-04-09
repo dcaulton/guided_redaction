@@ -872,26 +872,18 @@ class AnalyzeViewSetTemplateMatchChart(viewsets.ViewSet):
         return self.process_create_request(request_data)
 
     def process_create_request(self, request_data):
-        if not request_data.get("job_ids"):
-            return self.error("job_ids is required", status_code=400)
+        if not request_data.get("job_data"):
+            return self.error("job_data is required", status_code=400)
+        job_data = request_data.get('job_data')
         chart_info = {
             'chart_type': 'template_match',
         }
-        jobs = Job.objects.filter(id__in=request_data.get('job_ids'))
-        build_data = {}
-        for job in jobs:
-            build_data[job.id] = {
-                'request_data': json.loads(job.request_data),
-                'response_data': json.loads(job.response_data),
-            }
         file_writer = FileWriter(
             working_dir=settings.REDACT_FILE_STORAGE_DIR,
             base_url=settings.REDACT_FILE_BASE_URL,
             image_request_verify_headers=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
         )
-
-        chart_maker = ChartMaker(chart_info, build_data, file_writer)
-
+        chart_maker = ChartMaker(chart_info, job_data, file_writer)
         charts_obj = chart_maker.make_charts()
 
         return Response({'charts': charts_obj})

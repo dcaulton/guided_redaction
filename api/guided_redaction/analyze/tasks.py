@@ -11,6 +11,7 @@ from guided_redaction.analyze.api import (
     AnalyzeViewSetTelemetry,
     AnalyzeViewSetTimestamp,
     AnalyzeViewSetSelectedArea,
+    AnalyzeViewSetTemplateMatchChart,
     AnalyzeViewSetOcr
 )
 
@@ -614,3 +615,33 @@ def wrap_up_selected_area_threaded(job, children):
     job.elapsed_time = 1
     job.save()
 
+@shared_task
+def template_match_chart(job_uuid):
+    if not Job.objects.filter(pk=job_uuid).exists():
+        print('calling template_match_chart on nonexistent job: {}'.format(job_uuid))
+    job = Job.objects.get(pk=job_uuid)
+    job.status = 'running'
+    job.save()
+    print('running template_match_chart for job {}'.format(job_uuid))
+
+    req_obj = json.loads(job.request_data)
+    build_job_data = {}
+    if 'job_ids' in req_obj:
+        for job_id in req_obj['job_ids']:
+            job = Job.objects.get(pk=job_id)
+            build_job_data[job_id] = {
+                'request_data': json.loads(job.request_data),
+                'response_data': json.loads(job.response_data),
+            }
+
+
+    worker = AnalyzeViewSetTemplateMatchChart()
+    response = worker.process_create_request({
+        'job_data': build_job_data,
+    })
+    if not Job.objects.filter(pk=job_uuid).exists():
+        return
+    job = Job.objects.get(pk=job_uuid)
+    job.response_data = json.dumps(response.data)
+    job.status = 'success'
+    job.save()
