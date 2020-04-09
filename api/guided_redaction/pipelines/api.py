@@ -101,9 +101,10 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
         first_node_id = self.get_first_node_id(content)
         if first_node_id:
             child_job = self.build_job(content, first_node_id, parent_job)
-            jobs_api.dispatch_job(child_job)
-            parent_job.status = 'running'
-            parent_job.save()
+            if child_job:
+                jobs_api.dispatch_job(child_job)
+                parent_job.status = 'running'
+                parent_job.save()
         return Response({'job_id': parent_job.id})
 
     def get_first_node_id(self, content):
@@ -166,6 +167,8 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
         inbound_node_ids = self.get_node_ids_with_inbound_edges(node['id'], content)
         for node_id in inbound_node_ids:
             job = self.get_job_for_node(node_id, parent_job)
+            if not job:
+                return
             build_job_ids.append(str(job.id))
         build_request_data = {
             'job_ids': build_job_ids,
@@ -386,7 +389,7 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
         inbound_node_ids = self.get_node_ids_with_inbound_edges(next_node_id, content)
         for inbound_node_id in inbound_node_ids:
             job = self.get_job_for_node(inbound_node_id, parent_job)
-            if job.status != 'success':
+            if job and job.status != 'success':
                 return False
         return True
 
@@ -429,7 +432,8 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
             if self.node_has_no_job_yet(next_node_id, parent_job):
                 if self.all_other_inbound_edges_are_complete(next_node_id, content, parent_job):
                     child_job = self.build_job(content, next_node_id, parent_job, job)
-                    jobs_api.dispatch_job(child_job)
+                    if child_job:
+                        jobs_api.dispatch_job(child_job)
 
 
 class PipelineT1SumViewSet(viewsets.ViewSet):

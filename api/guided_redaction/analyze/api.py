@@ -224,7 +224,7 @@ class AnalyzeViewSetScanTemplate(viewsets.ViewSet):
                         match_obj = template_matcher.get_template_coords(
                             target_image, match_image
                         )
-                        if template['save_match_statistics']:
+                        if 'save_match_statistics' in template and template['save_match_statistics']:
                             match_statistics[anchor_id]['movies'][movie_url]['framesets'][frameset_hash] = match_obj['match_metadata']
 
                         if match_obj['match_found']:
@@ -243,7 +243,7 @@ class AnalyzeViewSetScanTemplate(viewsets.ViewSet):
                             matches_for_anchor['size'] = size
                             matches_for_anchor['scale'] = temp_scale
                             matches_for_anchor['scanner_type'] = 'template'
-        if template['save_match_statistics']:
+        if 'save_match_statistics' in template and template['save_match_statistics']:
             matches['statistics'] = match_statistics
         return Response(matches)
 
