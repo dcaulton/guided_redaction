@@ -1,4 +1,5 @@
 import numpy as np
+import random
 import matplotlib.pyplot as plt
 import uuid
 
@@ -48,6 +49,7 @@ class ChartMaker:
                     build_chart_data[movie_url][template_id] = {
                         'match_percent': template['match_percent'],
                         'name': template['name'],
+                        'anchor_scale_counts': {},
                     }
                 if 'source' in job_req_data['movies']:
                     source_movie = job_req_data['movies']['source'][movie_url]
@@ -55,6 +57,7 @@ class ChartMaker:
                     source_movie = job_req_data['movies'][movie_url]
                 framesets_in_order = self.get_frameset_hashes_in_order(source_movie)
                 for anchor_id in stats:
+                    scale_counts = {}
                     match_framesets = stats[anchor_id]['movies'][movie_url]['framesets']
                     if not match_framesets: 
                         continue
@@ -63,35 +66,66 @@ class ChartMaker:
                         build_chart_data[movie_url][template_id][anchor_id].append(
                             float(match_framesets[frameset_hash]['percent'])
                         )
+                        scale = match_framesets[frameset_hash]['scale']
+                        if scale not in scale_counts:
+                            scale_counts[scale] = 0
+                        scale_counts[scale] += 1
+
+                    best_scale_count = sorted(scale_counts.items(), key=lambda item: item[1])[-1][0]
+                    build_chart_data[movie_url][template_id]['anchor_scale_counts'][anchor_id] = \
+                        best_scale_count
 
         for movie_url in build_chart_data:
             the_uuid = str(uuid.uuid4())
             self.file_writer.create_unique_directory(the_uuid)
             for template_id in build_chart_data[movie_url]:
                 for anchor_id in build_chart_data[movie_url][template_id]:
-                    if anchor_id in ['name', 'match_percent']:
+                    if anchor_id in ['name', 'match_percent', 'anchor_scale_counts']:
                         continue
+                    scale_for_anchor = \
+                        build_chart_data[movie_url][template_id]['anchor_scale_counts'][anchor_id]
                     chart_data = build_chart_data[movie_url][template_id][anchor_id]
                     x_ints = list(range(len(chart_data)))
                     decimal_match_percent = \
                         build_chart_data[movie_url][template_id]['match_percent'] / 100.0
                     mp_data = [decimal_match_percent] * len(chart_data)
-                    plt.plot(x_ints, mp_data, 'r')
+                    desc = anchor_id + ' : ' 
+                    desc += 'match=' + \
+                        str(build_chart_data[movie_url][template_id]['match_percent']) + '% '
+                    desc += 'scale=' + scale_for_anchor
 
-                    plt.plot(x_ints, chart_data, 'bo')
+                    rand_color = [random.random(), random.random(), random.random()]
+                    plt.plot(
+                        x_ints, 
+                        mp_data, 
+                        color=rand_color, 
+                        label=desc
+                    )
+
+                    plt.plot(
+                        x_ints, 
+                        chart_data, 
+                        color=rand_color, 
+                        marker='o', 
+                        linestyle='none', 
+                    )
                     plt.ylabel('match percent')
                     plt.xlabel('time (kind of)')
                     plt.axis([1, 100, 0, 1])
-                    plt.title('Match statistics for template {} movie {}'.format(
+                    movie_name = movie_url.split('/')[-1]
+                    plt.title('{}\n{}'.format(
                         build_chart_data[movie_url][template_id]['name'],
-                        movie_url,
+                        movie_name,
                     ))
+
+                    plt.legend(bbox_to_anchor=(0., -0.12, 1., .102), loc='lower left',
+                        ncol=2, mode="expand", borderaxespad=0.)
 
                     file_fullpath = self.file_writer.build_file_fullpath_for_uuid_and_filename(
                         the_uuid, 
                         'template_match_chart_' + template_id + '__' + anchor_id + '.png')
-                    plt.savefig(file_fullpath)
-#                    plt.savefig(file_fullpath, transparent=True)
+#                    plt.savefig(file_fullpath)
+                    plt.savefig(file_fullpath, transparent=True)
                     plot_url = self.file_writer.get_url_for_file_path(file_fullpath)
                     charts.append(plot_url)
         return charts
