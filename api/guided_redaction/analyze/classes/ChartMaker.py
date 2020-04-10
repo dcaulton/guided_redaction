@@ -61,7 +61,7 @@ class ChartMaker:
                     build_chart_data[movie_url][template_id][anchor_id] = []
                     for frameset_hash in framesets_in_order:
                         build_chart_data[movie_url][template_id][anchor_id].append(
-                            match_framesets[frameset_hash]['percent']
+                            float(match_framesets[frameset_hash]['percent'])
                         )
 
         for movie_url in build_chart_data:
@@ -71,18 +71,27 @@ class ChartMaker:
                 for anchor_id in build_chart_data[movie_url][template_id]:
                     if anchor_id in ['name', 'match_percent']:
                         continue
-                    print('plotting {}'.format(build_chart_data[movie_url][template_id][anchor_id]))
-                    plt.plot(build_chart_data[movie_url][template_id][anchor_id])
+                    chart_data = build_chart_data[movie_url][template_id][anchor_id]
+                    x_ints = list(range(len(chart_data)))
+                    decimal_match_percent = \
+                        build_chart_data[movie_url][template_id]['match_percent'] / 100.0
+                    mp_data = [decimal_match_percent] * len(chart_data)
+                    plt.plot(x_ints, mp_data, 'r')
+
+                    plt.plot(x_ints, chart_data, 'bo')
                     plt.ylabel('match percent')
-                    plt.xlabel('time')
+                    plt.xlabel('time (kind of)')
+                    plt.axis([1, 100, 0, 1])
                     plt.title('Match statistics for template {} movie {}'.format(
                         build_chart_data[movie_url][template_id]['name'],
                         movie_url,
                     ))
+
                     file_fullpath = self.file_writer.build_file_fullpath_for_uuid_and_filename(
                         the_uuid, 
                         'template_match_chart_' + template_id + '__' + anchor_id + '.png')
                     plt.savefig(file_fullpath)
+#                    plt.savefig(file_fullpath, transparent=True)
                     plot_url = self.file_writer.get_url_for_file_path(file_fullpath)
                     charts.append(plot_url)
         return charts
