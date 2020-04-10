@@ -1251,6 +1251,7 @@ class InsightsPanel extends React.Component {
             deletePipeline={this.props.deletePipeline}
             savePipelineToDatabase={this.props.savePipelineToDatabase}
             jobs={this.props.jobs}
+            results={this.props.results}
           />
         </div>
 

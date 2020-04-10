@@ -76,7 +76,7 @@ class ResultsControls extends React.Component {
             <option value=''></option>
             {eligible_jobs.map((job, index) => {
               return (
-                <option value={job['id']} key={index}>{job['description']} - {job['id']}</option>
+                <option value={job['id']} key={index}>{job['id']}</option>
               )
             })}
           </select>
@@ -98,6 +98,29 @@ class ResultsControls extends React.Component {
     )
   }
 
+  buildChartsDiv() {
+    if (!this.props.results || !Object.keys(this.props.results).includes('charts')) {
+      return ''
+    }
+    return (
+      <div>
+        {this.props.results['charts'].map((chart_url, index) => {
+          return (
+            <div
+                key={index}
+            >
+              <img
+                  key={index}
+                  src={chart_url}
+                  alt='chart displaying template match results'
+              />
+            </div>
+          )
+        })}
+      </div>
+    )
+  }
+
   render() {
     if (!this.props.visibilityFlags['results']) {
       return([])
@@ -109,6 +132,7 @@ class ResultsControls extends React.Component {
     const type_selector = this.buildTypeSelector()
     const job_selector = this.buildJobSelector()
     const submit_button = this.buildSubmitButton()
+    const charts_div = this.buildChartsDiv()
 
     return (
         <div className='row bg-light rounded mt-3'>
@@ -135,7 +159,7 @@ class ResultsControls extends React.Component {
                 </div>
 
                 <div id='results_image_div' className='row mt-3 bg-light'>
-                results go here
+                  {charts_div}
                 </div>
 
               </div>

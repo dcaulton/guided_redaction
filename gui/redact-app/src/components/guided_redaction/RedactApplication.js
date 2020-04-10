@@ -73,6 +73,7 @@ class RedactApplication extends React.Component {
         movie_mappings: [],
       },
       pipelines: {},
+      results: {},
       current_pipeline_id: '',
       userTone: 'lfo',
       preserve_movie_audio: false,
@@ -1444,6 +1445,13 @@ class RedactApplication extends React.Component {
     })
   }
 
+  loadGetTemplateMatchChartResults(job, when_done=(()=>{})) {
+    const resp_data = JSON.parse(job.response_data)
+    this.setState({
+      results: resp_data,
+    })
+  }
+
   async loadFilterResults(job, when_done=(()=>{})) {
     const resp_data = JSON.parse(job.response_data)
     const req_data = JSON.parse(job.request_data)
@@ -1614,6 +1622,8 @@ class RedactApplication extends React.Component {
         this.loadFilterResults(job, when_done)
 			} else if (job.app === 'analyze' && job.operation === 'get_timestamp_threaded') {
         this.loadGetTimestampResults(job, when_done)
+			} else if (job.app === 'analyze' && job.operation === 'template_match_chart') {
+        this.loadGetTemplateMatchChartResults(job, when_done)
 			} else if (job.app === 'analyze' && job.operation === 'scan_ocr') {
         this.loadOcrResults(job, when_done)
 			} else if (job.app === 'analyze' && job.operation === 'telemetry_find_matching_frames') {
@@ -2391,6 +2401,7 @@ class RedactApplication extends React.Component {
                 dispatchPipeline={this.dispatchPipeline}
                 deletePipeline={this.deletePipeline}
                 savePipelineToDatabase={this.savePipelineToDatabase}
+                results={this.state.results}
               />
             </Route>
           </Switch>
