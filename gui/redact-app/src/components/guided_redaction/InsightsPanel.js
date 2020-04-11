@@ -336,7 +336,7 @@ class InsightsPanel extends React.Component {
       job_data['request_data']['templates'] = {}
       job_data['request_data']['templates'][template['id']] = template
       job_data['app'] = 'analyze'
-      job_data['operation'] = 'scan_template'
+      job_data['operation'] = 'scan_template_threaded'
       job_data['request_data']['scan_level'] = template['scan_level']
       job_data['request_data']['id'] = template['id']
       job_data['description'] = 'scan template (' + template['name'] + ') '

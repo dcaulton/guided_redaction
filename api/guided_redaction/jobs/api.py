@@ -34,8 +34,6 @@ def dispatch_job(job):
         analyze_tasks.scan_template_multi.delay(job_uuid)
     if job.app == 'analyze' and job.operation == 'filter':
         analyze_tasks.filter.delay(job_uuid)
-    if job.app == 'analyze' and job.operation == 'scan_ocr_image':
-        analyze_tasks.scan_ocr_image.delay(job_uuid)
     if job.app == 'analyze' and job.operation == 'scan_ocr_movie':
         analyze_tasks.scan_ocr_movie.delay(job_uuid)
     if job.app == 'analyze' and job.operation == 'scan_ocr':
