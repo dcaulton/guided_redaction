@@ -198,17 +198,18 @@ class AnalyzeViewSetScanTemplate(viewsets.ViewSet):
             end = anchor.get("end")
             size = (end[0] - start[0], end[1] - start[1])
             anchor_id = anchor.get("id")
-            match_statistics[anchor_id] = {'movies': {}}
+            match_statistics = {'movies': {}}
             for movie_url in movies:
+                match_statistics['movies'][movie_url] = {'framesets': {}}
                 movie = movies[movie_url]
                 if not movie:
                     print('no movie error for {}'.format(movie_url))
                     continue
-                match_statistics[anchor_id]['movies'][movie_url] = {'framesets': {}}
                 framesets = movie["framesets"]
                 for frameset_hash in framesets:
                     frameset = framesets[frameset_hash]
-                    match_statistics[anchor_id]['movies'][movie_url]['framesets'][frameset_hash] = {}
+                    match_statistics['movies'][movie_url]['framesets'][frameset_hash] = {}
+                    match_statistics['movies'][movie_url]['framesets'][frameset_hash][anchor_id] = {}
                     if 'images' in frameset:
                         one_image_url = frameset["images"][0]
                     else:
@@ -226,7 +227,7 @@ class AnalyzeViewSetScanTemplate(viewsets.ViewSet):
                             target_image, match_image
                         )
                         if 'save_match_statistics' in template and template['save_match_statistics']:
-                            match_statistics[anchor_id]['movies'][movie_url]['framesets'][frameset_hash] = match_obj['match_metadata']
+                            match_statistics['movies'][movie_url]['framesets'][frameset_hash][anchor_id] = match_obj['match_metadata']
 
                         if match_obj['match_found']:
                             (temp_coords, temp_scale) = match_obj['match_coords']

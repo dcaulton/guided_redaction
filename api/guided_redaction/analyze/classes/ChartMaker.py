@@ -13,7 +13,7 @@ class ChartMaker:
 
     def make_charts(self):
         if self.chart_info['chart_type'] == 'template_match':
-            return self.make_template_match_chart()
+            return self.make_template_match_charts()
         raise Exception('unrecognized chart type')
 
     def get_frameset_hash_for_image(self, movie, image_url):
@@ -29,20 +29,13 @@ class ChartMaker:
                 build_framesets.append(frameset_hash)
         return build_framesets
 
-    def make_template_match_chart(self):
-        # assume one template multiple anchors for now
-        charts = []
+    def make_template_match_charts(self):
         build_chart_data = {}
         for job_id in self.job_data:
             job_req_data = self.job_data[job_id]['request_data']
-            template_ids = list(job_req_data['templates'].keys())
-            if template_ids:
-                template = job_req_data['templates'][template_ids[0]]
-                for anchor in template['anchors']:
-                    build_chart_data[anchor['id']] = {}
             job_resp_data = self.job_data[job_id]['response_data']
             stats = job_resp_data['statistics']
-            for movie_url in job_resp_data['movies']:
+            for movie_url in stats['movies']:
                 build_chart_data[movie_url] = {}
                 for template_id in job_req_data['templates']:
                     template = job_req_data['templates'][template_id]
@@ -56,25 +49,32 @@ class ChartMaker:
                 else:
                     source_movie = job_req_data['movies'][movie_url]
                 framesets_in_order = self.get_frameset_hashes_in_order(source_movie)
-                for anchor_id in stats:
-                    scale_counts = {}
-                    match_framesets = stats[anchor_id]['movies'][movie_url]['framesets']
-                    if not match_framesets: 
-                        continue
-                    build_chart_data[movie_url][template_id][anchor_id] = []
-                    for frameset_hash in framesets_in_order:
+
+                scale_counts = {}
+                stats_framesets = stats['movies'][movie_url]['framesets']
+                if not stats_framesets: 
+                    continue
+                for frameset_hash in framesets_in_order:
+                    for anchor_id in stats_framesets[frameset_hash]:
+                        if anchor_id not in build_chart_data[movie_url][template_id]:
+                            build_chart_data[movie_url][template_id][anchor_id] = []
                         build_chart_data[movie_url][template_id][anchor_id].append(
-                            float(match_framesets[frameset_hash]['percent'])
+                            float(stats_framesets[frameset_hash][anchor_id]['percent'])
                         )
-                        scale = match_framesets[frameset_hash]['scale']
+                        scale = stats_framesets[frameset_hash][anchor_id]['scale']
                         if scale not in scale_counts:
                             scale_counts[scale] = 0
                         scale_counts[scale] += 1
 
-                    best_scale_count = sorted(scale_counts.items(), key=lambda item: item[1])[-1][0]
-                    build_chart_data[movie_url][template_id]['anchor_scale_counts'][anchor_id] = \
-                        best_scale_count
+                best_scale_count = sorted(scale_counts.items(), key=lambda item: item[1])[-1][0]
+                build_chart_data[movie_url][template_id]['anchor_scale_counts'][anchor_id] = \
+                    best_scale_count
 
+        charts = self.make_template_match_charts_from_build_data(build_chart_data)
+        return charts
+
+    def make_template_match_charts_from_build_data(self, build_chart_data):
+        charts = []
         for movie_url in build_chart_data:
             the_uuid = str(uuid.uuid4())
             self.file_writer.create_unique_directory(the_uuid)
@@ -87,7 +87,7 @@ class ChartMaker:
                     chart_data = build_chart_data[movie_url][template_id][anchor_id]
                     x_ints = list(range(len(chart_data)))
                     decimal_match_percent = \
-                        build_chart_data[movie_url][template_id]['match_percent'] / 100.0
+                        float(build_chart_data[movie_url][template_id]['match_percent']) / 100.0
                     mp_data = [decimal_match_percent] * len(chart_data)
                     desc = anchor_id + ' : ' 
                     desc += 'match=' + \
