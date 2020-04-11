@@ -70,6 +70,15 @@ class ChartMaker:
                 build_chart_data[movie_url][template_id]['anchor_scale_counts'][anchor_id] = \
                     best_scale_count
 
+
+
+        print('pippin build chart data summary')
+        import pprint
+        pprint.pprint(build_chart_data)
+
+
+
+
         charts = self.make_template_match_charts_from_build_data(build_chart_data)
         return charts
 

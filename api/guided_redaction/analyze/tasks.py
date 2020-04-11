@@ -73,7 +73,8 @@ def scan_template(job_uuid):
                     anchor_matches = raw_response[movie_url][frameset_hash]
                     anchor_match_keys = set(raw_response[movie_url][frameset_hash].keys())
                     if anchor_match_keys == all_anchor_keys:
-                        built_response_data[movie_url][frameset_hash] = raw_response[movie_url][frameset_hash]
+                        built_response_data[movie_url][frameset_hash] = \
+                            raw_response[movie_url][frameset_hash]
             # TODO get this to respect save_match_statistics
             job.response_data = json.dumps(built_response_data)
         job.status = 'success'
@@ -339,17 +340,35 @@ def build_and_dispatch_scan_template_threaded_children(parent_job):
             scan_template_threaded.delay(parent_job.id)
     scan_template_threaded.delay(parent_job.id)
 
+def aggregate_statistics_from_template_child(aggregate_response_data, child_response_data):
+    if 'statistics' in child_response_data:
+        for movie_url in child_response_data['statistics']['movies']:
+            if movie_url not in aggregate_response_data['statistics']:
+                aggregate_response_data['statistics']['movies'][movie_url] = {'framesets': {}}
+            crd_framesets = \
+                child_response_data['statistics']['movies'][movie_url]['framesets']
+            ard_stats_framesets = \
+                aggregate_response_data['statistics']['movies'][movie_url]['framesets']
+            for frameset_hash in crd_framesets:
+                if frameset_hash not in ard_stats_framesets:
+                    aggregate_response_data['statistics']['movies'][movie_url]['framesets'][frameset_hash] = {}
+                for anchor_id in crd_framesets[frameset_hash]:
+                    aggregate_response_data['statistics']['movies'][movie_url]['framesets'][frameset_hash][anchor_id] = crd_framesets[frameset_hash][anchor_id]
+
 def wrap_up_scan_template_threaded(job, children):
     aggregate_response_data = {
         'movies': {},
     }
     for child in children:
         child_response_data = json.loads(child.response_data)
+        if 'statistics' in child_response_data and 'statistics' not in aggregate_response_data:
+            aggregate_response_data['statistics'] = {'movies': {}}
         if not child_response_data:
             continue
         if len(child_response_data['movies'].keys()) > 0:
             movie_url = list(child_response_data['movies'].keys())[0]
             aggregate_response_data['movies'][movie_url] = child_response_data['movies'][movie_url]
+        aggregate_statistics_from_template_child(aggregate_response_data, child_response_data)
 
     print('wrap_up_scan_template_threaded: wrapping up parent job')
     job.status = 'success'

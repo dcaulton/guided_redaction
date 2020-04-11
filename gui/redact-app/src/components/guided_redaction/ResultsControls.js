@@ -57,7 +57,7 @@ class ResultsControls extends React.Component {
     for (let i=0; i < this.props.jobs.length; i++) {
       const job = this.props.jobs[i]
       if (this.state.type === 'template_match_chart' && 
-          job['operation'] === 'scan_template') {
+          job['operation'] === 'scan_template_threaded') {
         eligible_jobs.push(job)
       }
     }

@@ -178,7 +178,7 @@ class AnalyzeViewSetScanTemplate(viewsets.ViewSet):
             return match_image
 
     def process_create_request(self, request_data):
-        matches = {}
+        matches = {'movies': {}}
         if not request_data.get("templates"):
             return self.error("templates is required")
         if not request_data.get("movies"):
@@ -231,8 +231,6 @@ class AnalyzeViewSetScanTemplate(viewsets.ViewSet):
 
                         if match_obj['match_found']:
                             (temp_coords, temp_scale) = match_obj['match_coords']
-                            if 'movies' not in matches:
-                                matches['movies'] = {}
                             if movie_url not in matches['movies']:
                                 matches['movies'][movie_url] = {}
                                 matches['movies'][movie_url]['framesets'] = {}
