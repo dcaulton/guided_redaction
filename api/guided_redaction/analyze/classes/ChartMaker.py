@@ -101,6 +101,7 @@ class ChartMaker:
                     linestyle='none', 
                     label=match_phrase,
                 )
+                top_title = plt.text(-0.0,1.15, "Ocr Match Chart")
                 plt.ylabel('match percent')
                 plt.xlabel('time (kind of)')
                 plt.axis([1, 100, 0, 1])
@@ -108,14 +109,18 @@ class ChartMaker:
                 plt.title('Ocr matches for\n{}'.format(movie_name))
                 movie_uuid = movie_name.split('.')[0]
 
-                plt.legend(bbox_to_anchor=(0., -0.12, 1., .102), loc='lower left',
+                lgd = plt.legend(bbox_to_anchor=(0., -0.32, 1., .102), loc='lower left',
                     ncol=1, mode="expand", borderaxespad=0.)
 
                 file_fullpath = self.file_writer.build_file_fullpath_for_uuid_and_filename(
                     the_uuid, 
                     'ocr_match_chart_' + movie_uuid + '.png')
-#            plt.savefig(file_fullpath, transparent=True)
-            plt.savefig(file_fullpath)
+            plt.savefig(
+                file_fullpath, 
+                bbox_extra_artists=(lgd,top_title), 
+                bbox_inches='tight',
+                transparent=True,
+            )
             plot_url = self.file_writer.get_url_for_file_path(file_fullpath)
             charts.append(plot_url)
         return charts
@@ -207,6 +212,7 @@ class ChartMaker:
                         marker='o', 
                         linestyle='none', 
                     )
+                    top_title = plt.text(-0.0,1.15, "Template Match Chart")
                     plt.ylabel('match percent')
                     plt.xlabel('time (kind of)')
                     plt.axis([1, 100, 0, 1])
@@ -217,14 +223,18 @@ class ChartMaker:
                     ))
                     movie_uuid = movie_name.split('.')[0]
 
-                    plt.legend(bbox_to_anchor=(0., -0.12, 1., .102), loc='lower left',
+                    lgd = plt.legend(bbox_to_anchor=(0., -0.25, 1., .102), loc='lower left',
                         ncol=1, mode="expand", borderaxespad=0.)
 
                     file_fullpath = self.file_writer.build_file_fullpath_for_uuid_and_filename(
                         the_uuid, 
                         'template_match_chart_' + movie_uuid + '__' + template_id + '.png')
-#                    plt.savefig(file_fullpath)
-            plt.savefig(file_fullpath, transparent=True)
+            plt.savefig(
+                file_fullpath, 
+                bbox_extra_artists=(lgd,top_title), 
+                bbox_inches='tight',
+                transparent=True,
+             )
             plot_url = self.file_writer.get_url_for_file_path(file_fullpath)
             charts.append(plot_url)
         return charts
