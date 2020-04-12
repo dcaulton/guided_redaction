@@ -48,6 +48,8 @@ def dispatch_job(job):
         analyze_tasks.selected_area_threaded.delay(job_uuid)
     if job.app == 'analyze' and job.operation == 'template_match_chart':
         analyze_tasks.template_match_chart.delay(job_uuid)
+    if job.app == 'analyze' and job.operation == 'ocr_match_chart':
+        analyze_tasks.ocr_match_chart.delay(job_uuid)
     if job.app == 'parse' and job.operation == 'split_and_hash_threaded':
         parse_tasks.split_and_hash_threaded.delay(job_uuid)
     if job.app == 'parse' and job.operation == 'split_threaded':

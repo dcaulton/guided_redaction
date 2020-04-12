@@ -12,6 +12,7 @@ from guided_redaction.analyze.api import (
     AnalyzeViewSetTimestamp,
     AnalyzeViewSetSelectedArea,
     AnalyzeViewSetTemplateMatchChart,
+    AnalyzeViewSetOcrMatchChart,
     AnalyzeViewSetOcr
 )
 
@@ -529,18 +530,21 @@ def find_relevant_areas_from_response(match_strings, match_percent, areas_to_red
         area = areas_to_redact[a2r_key]
         subject_string = area['text']
         for pattern in match_strings:
+            match_percentages[pattern] = {'percent': 0}
             pattern_length = len(pattern)
             subject_string_length = len(subject_string)
             num_compares = subject_string_length - pattern_length + 1
             if pattern_length > subject_string_length:
                 ratio = fuzz.ratio(pattern, subject_string)
-                match_percentages[pattern] = {'percent': ratio}
+                if ratio > match_percentages[pattern]['percent']:
+                    match_percentages[pattern] = {'percent': ratio}
                 if ratio >= match_percent:
                     relevant_areas.append(area)
                     continue
             for i in range(num_compares):
                 ratio = fuzz.ratio(pattern, subject_string[i:i+pattern_length])
-                match_percentages[pattern] = {'percent': ratio}
+                if ratio > match_percentages[pattern]['percent']:
+                    match_percentages[pattern] = {'percent': ratio}
                 if ratio >= match_percent:
                     relevant_areas[a2r_key] = area
                     continue
@@ -665,6 +669,37 @@ def template_match_chart(job_uuid):
 
 
     worker = AnalyzeViewSetTemplateMatchChart()
+    response = worker.process_create_request({
+        'job_data': build_job_data,
+    })
+    if not Job.objects.filter(pk=job_uuid).exists():
+        return
+    job = Job.objects.get(pk=job_uuid)
+    job.response_data = json.dumps(response.data)
+    job.status = 'success'
+    job.save()
+
+@shared_task
+def ocr_match_chart(job_uuid):
+    if not Job.objects.filter(pk=job_uuid).exists():
+        print('calling ocr_match_chart on nonexistent job: {}'.format(job_uuid))
+    job = Job.objects.get(pk=job_uuid)
+    job.status = 'running'
+    job.save()
+    print('running ocr_match_chart for job {}'.format(job_uuid))
+
+    req_obj = json.loads(job.request_data)
+    build_job_data = {}
+    if 'job_ids' in req_obj:
+        for job_id in req_obj['job_ids']:
+            job = Job.objects.get(pk=job_id)
+            build_job_data[job_id] = {
+                'request_data': json.loads(job.request_data),
+                'response_data': json.loads(job.response_data),
+            }
+
+
+    worker = AnalyzeViewSetOcrMatchChart()
     response = worker.process_create_request({
         'job_data': build_job_data,
     })
