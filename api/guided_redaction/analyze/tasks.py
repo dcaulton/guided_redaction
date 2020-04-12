@@ -496,19 +496,23 @@ def wrap_up_scan_ocr_movie(parent_job, children):
         frameset_hash = child_request_data['frameset_hash']
         movie_url = child_request_data['movie_url']
         print('--------looking at ocr results for {}'.format(movie_url.split('/')[-1]))
+        print('frameset hash {}'.format(frameset_hash))
         if ('movies' not in aggregate_response_data):
+            print('bing 01')
             aggregate_response_data['movies'] = {}
         areas_to_redact = child_response_data
         if (ocr_rule['match_text'] and ocr_rule['match_percent']):
             if 'match_percent' not in aggregate_stats:
                 aggregate_stats['match_percent'] = ocr_rule['match_percent']
             if movie_url not in aggregate_stats['movies']:
+                aggregate_stats['match_percent'] = ocr_rule['match_percent']
                 aggregate_stats['movies'][movie_url] = {'framesets': {}}
             (areas_to_redact, match_percentages) = find_relevant_areas_from_response(
                 ocr_rule['match_text'], 
                 int(ocr_rule['match_percent']), 
                 areas_to_redact
             )
+            print('bing 04 {}'.format(match_percentages))
             aggregate_stats['movies'][movie_url]['framesets'][frameset_hash] = match_percentages
             if len(areas_to_redact) == 0:
                 continue
@@ -530,21 +534,22 @@ def find_relevant_areas_from_response(match_strings, match_percent, areas_to_red
         area = areas_to_redact[a2r_key]
         subject_string = area['text']
         for pattern in match_strings:
-            match_percentages[pattern] = {'percent': 0}
+            if pattern not in match_percentages:
+                match_percentages[pattern] = {'percent': 0}
             pattern_length = len(pattern)
             subject_string_length = len(subject_string)
             num_compares = subject_string_length - pattern_length + 1
             if pattern_length > subject_string_length:
                 ratio = fuzz.ratio(pattern, subject_string)
                 if ratio > match_percentages[pattern]['percent']:
-                    match_percentages[pattern] = {'percent': ratio}
+                    match_percentages[pattern]['percent'] = ratio
                 if ratio >= match_percent:
                     relevant_areas.append(area)
                     continue
             for i in range(num_compares):
                 ratio = fuzz.ratio(pattern, subject_string[i:i+pattern_length])
                 if ratio > match_percentages[pattern]['percent']:
-                    match_percentages[pattern] = {'percent': ratio}
+                    match_percentages[pattern]['percent'] = ratio
                 if ratio >= match_percent:
                     relevant_areas[a2r_key] = area
                     continue

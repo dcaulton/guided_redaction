@@ -418,6 +418,7 @@ class InsightsPanel extends React.Component {
     movies_wrap[this.props.movie_url]['framesets'][cur_hash] = (
        this.props.movies[this.props.movie_url]['framesets'][cur_hash]
     )
+    movies_wrap[this.props.movie_url]['frames'] = [this.state.insights_image]
     return movies_wrap
   }
 

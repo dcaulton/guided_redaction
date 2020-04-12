@@ -56,8 +56,6 @@ class ChartMaker:
                         build_chart_data[movie_url][match_phrase].append(
                             float(stats_framesets[frameset_hash][match_phrase]['percent'] / 100)
                         )
-        print('poppy  {}'.format(build_chart_data))
-
 
         charts = self.make_ocr_match_charts_from_build_data(build_chart_data)
         return charts
@@ -137,7 +135,6 @@ class ChartMaker:
                         if scale not in scale_counts:
                             scale_counts[anchor_id][scale] = 0
                         scale_counts[anchor_id][scale] += 1
-
 
                 for anchor in template['anchors']:
                     anchor_id = anchor['id']
