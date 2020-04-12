@@ -495,10 +495,7 @@ def wrap_up_scan_ocr_movie(parent_job, children):
         child_request_data = json.loads(child.request_data)
         frameset_hash = child_request_data['frameset_hash']
         movie_url = child_request_data['movie_url']
-        print('--------looking at ocr results for {}'.format(movie_url.split('/')[-1]))
-        print('frameset hash {}'.format(frameset_hash))
         if ('movies' not in aggregate_response_data):
-            print('bing 01')
             aggregate_response_data['movies'] = {}
         areas_to_redact = child_response_data
         if (ocr_rule['match_text'] and ocr_rule['match_percent']):
@@ -512,7 +509,6 @@ def wrap_up_scan_ocr_movie(parent_job, children):
                 int(ocr_rule['match_percent']), 
                 areas_to_redact
             )
-            print('bing 04 {}'.format(match_percentages))
             aggregate_stats['movies'][movie_url]['framesets'][frameset_hash] = match_percentages
             if len(areas_to_redact) == 0:
                 continue

@@ -31,12 +31,21 @@ class ChartMaker:
                 build_framesets.append(frameset_hash)
         return build_framesets
 
+
+    def get_ocr_match_percent(self, request_data):
+        if 'ocr_rules' in request_data and request_data['ocr_rules']:
+            first_key = list(request_data['ocr_rules'].keys())[0]
+            ocr_rule = request_data['ocr_rules'][first_key]
+            return ocr_rule['match_percent']
+        return 0
+
     def make_ocr_match_charts(self):
         build_chart_data = {}
         for job_id in self.job_data:
             job_req_data = self.job_data[job_id]['request_data']
             job_resp_data = self.job_data[job_id]['response_data']
             stats = job_resp_data['statistics']
+            build_chart_data['match_percent'] = self.get_ocr_match_percent(job_req_data)
             for movie_url in stats['movies']:
                 build_chart_data[movie_url] = {}
                 if 'source' in job_req_data['movies']:
@@ -65,18 +74,32 @@ class ChartMaker:
         the_uuid = str(uuid.uuid4())
         self.file_writer.create_unique_directory(the_uuid)
         for movie_number, movie_url in enumerate(build_chart_data):
+            if movie_url in ['match_percent']:
+                continue
             plt.figure(movie_number)
-            for match_phrase in build_chart_data[movie_url]:
+            for match_number, match_phrase in enumerate(build_chart_data[movie_url]):
                 desc = match_phrase
                 chart_data = build_chart_data[movie_url][match_phrase]
                 rand_color = [random.random(), random.random(), random.random()]
                 x_ints = list(range(len(chart_data)))
+                decimal_match_percent = float(build_chart_data['match_percent'] / 100.0)
+                mp_data = [decimal_match_percent] * len(chart_data)
+
+                if match_number == 0:
+                    plt.plot(
+                        x_ints, 
+                        mp_data, 
+                        color=rand_color, 
+                        label='match threshold for all'
+                    )
+
                 plt.plot(
                     x_ints, 
                     chart_data, 
                     color=rand_color, 
                     marker='o', 
                     linestyle='none', 
+                    label=match_phrase,
                 )
                 plt.ylabel('match percent')
                 plt.xlabel('time (kind of)')
