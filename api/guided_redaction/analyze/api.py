@@ -198,9 +198,11 @@ class AnalyzeViewSetScanTemplate(viewsets.ViewSet):
             end = anchor.get("end")
             size = (end[0] - start[0], end[1] - start[1])
             anchor_id = anchor.get("id")
-            match_statistics = {'movies': {}}
+            if 'movies' not in match_statistics:
+                match_statistics = {'movies': {}}
             for movie_url in movies:
-                match_statistics['movies'][movie_url] = {'framesets': {}}
+                if movie_url not in match_statistics['movies']:
+                    match_statistics['movies'][movie_url] = {'framesets': {}}
                 movie = movies[movie_url]
                 if not movie:
                     print('no movie error for {}'.format(movie_url))
@@ -208,8 +210,8 @@ class AnalyzeViewSetScanTemplate(viewsets.ViewSet):
                 framesets = movie["framesets"]
                 for frameset_hash in framesets:
                     frameset = framesets[frameset_hash]
-                    match_statistics['movies'][movie_url]['framesets'][frameset_hash] = {}
-                    match_statistics['movies'][movie_url]['framesets'][frameset_hash][anchor_id] = {}
+                    if frameset_hash not in match_statistics['movies'][movie_url]['framesets']:
+                        match_statistics['movies'][movie_url]['framesets'][frameset_hash] = {}
                     if 'images' in frameset:
                         one_image_url = frameset["images"][0]
                     else:

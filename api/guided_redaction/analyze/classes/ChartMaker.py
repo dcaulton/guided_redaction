@@ -58,17 +58,24 @@ class ChartMaker:
                     for anchor_id in stats_framesets[frameset_hash]:
                         if anchor_id not in build_chart_data[movie_url][template_id]:
                             build_chart_data[movie_url][template_id][anchor_id] = []
+                        if anchor_id not in scale_counts:
+                            scale_counts[anchor_id] = {}
                         build_chart_data[movie_url][template_id][anchor_id].append(
                             float(stats_framesets[frameset_hash][anchor_id]['percent'])
                         )
                         scale = stats_framesets[frameset_hash][anchor_id]['scale']
                         if scale not in scale_counts:
-                            scale_counts[scale] = 0
-                        scale_counts[scale] += 1
+                            scale_counts[anchor_id][scale] = 0
+                        scale_counts[anchor_id][scale] += 1
 
-                best_scale_count = sorted(scale_counts.items(), key=lambda item: item[1])[-1][0]
-                build_chart_data[movie_url][template_id]['anchor_scale_counts'][anchor_id] = \
-                    best_scale_count
+
+                for anchor in template['anchors']:
+                    anchor_id = anchor['id']
+                    best_scale_count = sorted(
+                        scale_counts[anchor_id].items(), key=lambda item: item[1]
+                    )[-1][0]
+                    build_chart_data[movie_url][template_id]['anchor_scale_counts'][anchor_id] = \
+                        best_scale_count
 
         charts = self.make_template_match_charts_from_build_data(build_chart_data)
         return charts
@@ -78,6 +85,7 @@ class ChartMaker:
         the_uuid = str(uuid.uuid4())
         self.file_writer.create_unique_directory(the_uuid)
         for movie_number, movie_url in enumerate(build_chart_data):
+            plt.figure(movie_number)
             for template_id in build_chart_data[movie_url]:
                 for anchor_id in build_chart_data[movie_url][template_id]:
                     if anchor_id in ['name', 'match_percent', 'anchor_scale_counts']:
@@ -95,7 +103,6 @@ class ChartMaker:
                     desc += 'scale=' + scale_for_anchor
 
                     rand_color = [random.random(), random.random(), random.random()]
-                    plt.figure(movie_number)
                     plt.plot(
                         x_ints, 
                         mp_data, 
@@ -121,13 +128,13 @@ class ChartMaker:
                     movie_uuid = movie_name.split('.')[0]
 
                     plt.legend(bbox_to_anchor=(0., -0.12, 1., .102), loc='lower left',
-                        ncol=2, mode="expand", borderaxespad=0.)
+                        ncol=1, mode="expand", borderaxespad=0.)
 
                     file_fullpath = self.file_writer.build_file_fullpath_for_uuid_and_filename(
                         the_uuid, 
                         'template_match_chart_' + movie_uuid + '__' + template_id + '.png')
 #                    plt.savefig(file_fullpath)
-                    plt.savefig(file_fullpath, transparent=True)
-                    plot_url = self.file_writer.get_url_for_file_path(file_fullpath)
-                    charts.append(plot_url)
+            plt.savefig(file_fullpath, transparent=True)
+            plot_url = self.file_writer.get_url_for_file_path(file_fullpath)
+            charts.append(plot_url)
         return charts

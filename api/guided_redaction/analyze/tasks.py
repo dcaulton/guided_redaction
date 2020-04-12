@@ -485,6 +485,7 @@ def wrap_up_scan_ocr_movie(parent_job, children):
     ocr_rule_id = list(parent_request_data['ocr_rules'].keys())[0]
     ocr_rule = parent_request_data['ocr_rules'][ocr_rule_id]
     aggregate_response_data = {}
+    aggregate_stats = {'movies': {}}
     print('========================== WRAPPING UP OCR')
     for child in children:
         child_response_data = json.loads(child.response_data)
@@ -498,17 +499,23 @@ def wrap_up_scan_ocr_movie(parent_job, children):
             aggregate_response_data['movies'] = {}
         areas_to_redact = child_response_data
         if (ocr_rule['match_text'] and ocr_rule['match_percent']):
-            areas_to_redact = find_relevant_areas_from_response(
+            if 'match_percent' not in aggregate_stats:
+                aggregate_stats['match_percent'] = ocr_rule['match_percent']
+            if movie_url not in aggregate_stats['movies']:
+                aggregate_stats['movies'][movie_url] = {'framesets': {}}
+            (areas_to_redact, match_percentages) = find_relevant_areas_from_response(
                 ocr_rule['match_text'], 
                 int(ocr_rule['match_percent']), 
                 areas_to_redact
             )
+            aggregate_stats['movies'][movie_url]['framesets'][frameset_hash] = match_percentages
             if len(areas_to_redact) == 0:
                 continue
         if (movie_url not in aggregate_response_data['movies']):
             aggregate_response_data['movies'][movie_url] = {}
             aggregate_response_data['movies'][movie_url]['framesets'] = {}
         aggregate_response_data['movies'][movie_url]['framesets'][frameset_hash] = areas_to_redact
+    aggregate_response_data['statistics'] = aggregate_stats
     print('wrap_up_scan_template_threaded: wrapping up parent job')
     parent_job.status = 'success'
     parent_job.response_data = json.dumps(aggregate_response_data)
@@ -517,6 +524,7 @@ def wrap_up_scan_ocr_movie(parent_job, children):
 
 def find_relevant_areas_from_response(match_strings, match_percent, areas_to_redact):
     relevant_areas = {}
+    match_percentages = {}
     for a2r_key in areas_to_redact:
         area = areas_to_redact[a2r_key]
         subject_string = area['text']
@@ -526,15 +534,17 @@ def find_relevant_areas_from_response(match_strings, match_percent, areas_to_red
             num_compares = subject_string_length - pattern_length + 1
             if pattern_length > subject_string_length:
                 ratio = fuzz.ratio(pattern, subject_string)
+                match_percentages[pattern] = {'percent': ratio}
                 if ratio >= match_percent:
                     relevant_areas.append(area)
                     continue
             for i in range(num_compares):
                 ratio = fuzz.ratio(pattern, subject_string[i:i+pattern_length])
+                match_percentages[pattern] = {'percent': ratio}
                 if ratio >= match_percent:
                     relevant_areas[a2r_key] = area
                     continue
-    return relevant_areas
+    return (relevant_areas, match_percentages)
 
 @shared_task
 def selected_area(job_uuid):
