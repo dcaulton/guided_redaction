@@ -271,9 +271,7 @@ class SelectedAreaControls extends React.Component {
   buildSelectTypeDropdown() {
     const values = [
       {'flood': 'flood simple'},
-      {'flood_true': 'flood'},
       {'arrow': 'arrow simple'},
-      {'arrow_chain': 'arrow chain'},
     ]
     return buildLabelAndDropdown(
       values,

@@ -44,22 +44,33 @@ class ChartMaker:
             return ocr_rule['match_percent']
         return 0
 
-    def get_image_dimensions(self, image_url):
-        pic_response = requests.get(
-          image_url,
-          verify=self.verify_file_url,
-        )
-        image = pic_response.content
-        if not image:
-            return (0,0)
-        nparr = np.fromstring(image, np.uint8)
-        cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-        return cv2_image.shape[:2]
+    def get_movie_dimensions(self, movie):
+        for frameset_hash in movie['framesets']:
+            image_url = movie['framesets'][frameset_hash]['images'][0]
+            pic_response = requests.get(
+              image_url,
+              verify=self.verify_file_url,
+            )
+            image = pic_response.content
+            if not image:
+                return (0,0)
+            nparr = np.fromstring(image, np.uint8)
+            cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+            return cv2_image.shape[:2]
+        return (0,0)
 
     def make_selected_area_charts(self):
         build_chart_data = {}
         for job_id in self.job_data:
             job_req_data = self.job_data[job_id]['request_data']
+            sam_key = list(job_req_data['selected_area_metas'].keys())[0]
+            sam = job_req_data['selected_area_metas'][sam_key]
+            if sam['select_type'] == 'flood':
+                legend = 'type: flood fill, {}%'.format(str(sam['tolerance']))
+                build_chart_data['operation'] = legend
+            else:
+                legend = 'type: {}'.format(str(sam['operation']))
+                build_chart_data['operation'] = legend
             job_resp_data = self.job_data[job_id]['response_data']
             for movie_url in job_resp_data['movies']:
                 build_chart_data[movie_url] = {'data': []}
@@ -67,17 +78,14 @@ class ChartMaker:
                     source_movie = job_req_data['movies']['source'][movie_url]
                 else:
                     source_movie = job_req_data['movies'][movie_url]
+                image_shape = self.get_movie_dimensions(source_movie)
+                total_pixel_count = image_shape[0] * image_shape[1]
                 framesets_in_order = self.get_frameset_hashes_in_order(source_movie)
                 for frameset_hash in framesets_in_order:
-                    image_url = source_movie['framesets'][frameset_hash]['images'][0]
-                    image_shape = self.get_image_dimensions(image_url)
-                    total_pixel_count = image_shape[0] * image_shape[1]
                     mask = np.zeros(image_shape, dtype='uint8')
-                    build_mask = ''
                     for sa_zone_id in job_resp_data['movies'][movie_url]['framesets'][frameset_hash]:
                         sa_zone = job_resp_data['movies'][movie_url]['framesets'][frameset_hash][sa_zone_id]
                         if 'location' in sa_zone and 'size' in sa_zone:
-#                            print('pork belly {}'.format(tuple(sa_zone['location'])))
                             cv2.rectangle(
                                 mask, 
                                 tuple(sa_zone['location']), 
@@ -88,7 +96,10 @@ class ChartMaker:
                     white_pixel_count = cv2.countNonZero(mask)
                     normalized_pixel_count = white_pixel_count / total_pixel_count
                     build_chart_data[movie_url]['data'].append(normalized_pixel_count)
-                    cv2.imwrite('/Users/dcaulton/Desktop/junk/frameset_'+frameset_hash+'_debug.png', mask)
+                    #for debugging
+                    movie_name = movie_url.split('/')[-1]
+                    movie_uuid = movie_name.split('.')[0]
+                    cv2.imwrite('/Users/dcaulton/Desktop/junk/frameset_'+movie_uuid+'__'+frameset_hash+'_debug.png', mask)
 
         charts = self.make_selected_area_charts_from_build_data(build_chart_data)
         return charts
@@ -98,10 +109,13 @@ class ChartMaker:
         the_uuid = str(uuid.uuid4())
         self.file_writer.create_unique_directory(the_uuid)
         for movie_number, movie_url in enumerate(build_chart_data):
+            if movie_url in ['operation']:
+                continue
             plt.figure(movie_number)
             chart_data = build_chart_data[movie_url]['data']
             rand_color = [random.random(), random.random(), random.random()]
             x_ints = list(range(len(chart_data)))
+            operation = build_chart_data['operation']
 
             plt.plot(
                 x_ints, 
@@ -109,6 +123,7 @@ class ChartMaker:
                 color=rand_color, 
                 marker='o', 
                 linestyle='none', 
+                label=operation,
             )
             top_title = plt.text(-0.0,1.15, "Selected Area Chart")
             plt.ylabel('% pixels selected')
@@ -118,13 +133,16 @@ class ChartMaker:
             plt.title('Selected Areas for\n{}'.format(movie_name))
             movie_uuid = movie_name.split('.')[0]
 
+            lgd = plt.legend(bbox_to_anchor=(0., -0.25, 1., .102), loc='lower left',
+                ncol=1, mode="expand", borderaxespad=0.)
+
             file_fullpath = self.file_writer.build_file_fullpath_for_uuid_and_filename(
                 the_uuid, 
                 'selected_area_chart_' + movie_uuid + '.png')
 
             plt.savefig(
                 file_fullpath, 
-                bbox_extra_artists=(top_title,), 
+                bbox_extra_artists=(lgd, top_title), 
                 bbox_inches='tight',
                 transparent=True,
             )

@@ -459,7 +459,6 @@ class AnalyzeViewSetSelectedArea(viewsets.ViewSet):
                 regions = finder.determine_flood_fill_area(
                     cv2_image, selected_point, tolerance
                 )
-                regions_for_image.append(regions)
                 regions_for_image.append({
                     'regions': regions, 
                     'origin': selected_point,
