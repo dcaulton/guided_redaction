@@ -68,7 +68,7 @@ class TemplateMatcher:
                 found = (max_val, max_loc, scale)
         match_percent_short = '{0:.4f}'.format(found[0])
         match_scale_short = '{0:.2f}'.format(found[2])
-        print_str = 'max val {} is at scale {}'.format(match_percent_short, match_scale_short)
+#        print_str = 'max val {} is at scale {}'.format(match_percent_short, match_scale_short)
         match_metadata = {
             'scale': match_scale_short,
             'percent': match_percent_short,
@@ -76,14 +76,14 @@ class TemplateMatcher:
 
         if found[0] > self.template_match_percent:
             match_was_found = True
-            print_str += '*'
+#            print_str += '*'
             template_top_left = found[1]
             found_scale = found[2]
             scaled_match_upper_left = (
                 int(template_top_left[0] / found_scale), 
                 int(template_top_left[1] / found_scale)
             )
-        print(print_str)
+#        print(print_str)
 
         if match_was_found:
             return {
