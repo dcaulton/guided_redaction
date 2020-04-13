@@ -1623,6 +1623,7 @@ class RedactApplication extends React.Component {
 			} else if (job.app === 'analyze' && job.operation === 'get_timestamp_threaded') {
         this.loadGetTimestampResults(job, when_done)
 			} else if ((job.app === 'analyze' && job.operation === 'template_match_chart')  ||
+          (job.app === 'analyze' && job.operation === 'selected_area_chart') ||
           (job.app === 'analyze' && job.operation === 'ocr_match_chart')) {
         this.loadGetMatchChartResults(job, when_done)
 			} else if (job.app === 'analyze' && job.operation === 'scan_ocr') {

@@ -34,6 +34,7 @@ class ResultsControls extends React.Component {
           >
             <option value=''></option>
             <option value='template_match_chart'>template match chart</option>
+            <option value='selected_area_chart'>selected area chart</option>
             <option value='ocr_match_chart'>ocr match chart</option>
           </select>
         </div>
@@ -62,6 +63,8 @@ class ResultsControls extends React.Component {
         eligible_jobs.push(job)
       } else if (this.state.type === 'ocr_match_chart' && 
           job['operation'] === 'scan_ocr') {
+      } else if (this.state.type === 'selected_area_chart' && 
+          job['operation'] === 'selected_area_threaded') {
         eligible_jobs.push(job)
       }
     }

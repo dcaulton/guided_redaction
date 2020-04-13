@@ -510,13 +510,8 @@ class InsightsPanel extends React.Component {
       request_data: {},
     }
     job_data['app'] = 'analyze'
-    if (extra_data['type'] === 'template_match_chart') {
-      job_data['operation'] = 'template_match_chart'
-      job_data['request_data']['job_ids'] = [extra_data['job_id']]
-    } else if (extra_data['type'] === 'ocr_match_chart') {
-      job_data['operation'] = 'ocr_match_chart'
-      job_data['request_data']['job_ids'] = [extra_data['job_id']]
-    }
+    job_data['operation'] = extra_data['type']
+    job_data['request_data']['job_ids'] = [extra_data['job_id']]
     job_data['description'] = 'chart results for job ' + extra_data['job_id']
     return job_data
   }
