@@ -1,21 +1,26 @@
 import numpy as np
+import cv2
 import random
+import requests
 import matplotlib.pyplot as plt
 import uuid
 
 
 class ChartMaker:
 
-    def __init__(self, chart_info, job_data, file_writer):
+    def __init__(self, chart_info, job_data, file_writer, verify_file_url):
         self.chart_info = chart_info
         self.job_data = job_data
         self.file_writer = file_writer
+        self.verify_file_url = verify_file_url
 
     def make_charts(self):
         if self.chart_info['chart_type'] == 'template_match':
             return self.make_template_match_charts()
         if self.chart_info['chart_type'] == 'ocr_match':
             return self.make_ocr_match_charts()
+        if self.chart_info['chart_type'] == 'selected_area':
+            return self.make_selected_area_charts()
         raise Exception('unrecognized chart type')
 
     def get_frameset_hash_for_image(self, movie, image_url):
@@ -38,6 +43,94 @@ class ChartMaker:
             ocr_rule = request_data['ocr_rules'][first_key]
             return ocr_rule['match_percent']
         return 0
+
+    def get_image_dimensions(self, image_url):
+        pic_response = requests.get(
+          image_url,
+          verify=self.verify_file_url,
+        )
+        image = pic_response.content
+        if not image:
+            return (0,0)
+        nparr = np.fromstring(image, np.uint8)
+        cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        return cv2_image.shape[:2]
+
+    def make_selected_area_charts(self):
+        build_chart_data = {}
+        for job_id in self.job_data:
+            job_req_data = self.job_data[job_id]['request_data']
+            job_resp_data = self.job_data[job_id]['response_data']
+            for movie_url in job_resp_data['movies']:
+                build_chart_data[movie_url] = {'data': []}
+                if 'source' in job_req_data['movies']:
+                    source_movie = job_req_data['movies']['source'][movie_url]
+                else:
+                    source_movie = job_req_data['movies'][movie_url]
+                framesets_in_order = self.get_frameset_hashes_in_order(source_movie)
+                for frameset_hash in framesets_in_order:
+                    image_url = source_movie['framesets'][frameset_hash]['images'][0]
+                    image_shape = self.get_image_dimensions(image_url)
+                    total_pixel_count = image_shape[0] * image_shape[1]
+                    mask = np.zeros(image_shape, dtype='uint8')
+                    build_mask = ''
+                    for sa_zone_id in job_resp_data['movies'][movie_url]['framesets'][frameset_hash]:
+                        sa_zone = job_resp_data['movies'][movie_url]['framesets'][frameset_hash][sa_zone_id]
+                        if 'location' in sa_zone and 'size' in sa_zone:
+#                            print('pork belly {}'.format(tuple(sa_zone['location'])))
+                            cv2.rectangle(
+                                mask, 
+                                tuple(sa_zone['location']), 
+                                tuple(sa_zone['size']), 
+                                255, 
+                                -1
+                            )
+                    white_pixel_count = cv2.countNonZero(mask)
+                    normalized_pixel_count = white_pixel_count / total_pixel_count
+                    build_chart_data[movie_url]['data'].append(normalized_pixel_count)
+                    cv2.imwrite('/Users/dcaulton/Desktop/junk/frameset_'+frameset_hash+'_debug.png', mask)
+
+        charts = self.make_selected_area_charts_from_build_data(build_chart_data)
+        return charts
+
+    def make_selected_area_charts_from_build_data(self, build_chart_data):
+        charts = []
+        the_uuid = str(uuid.uuid4())
+        self.file_writer.create_unique_directory(the_uuid)
+        for movie_number, movie_url in enumerate(build_chart_data):
+            plt.figure(movie_number)
+            chart_data = build_chart_data[movie_url]['data']
+            rand_color = [random.random(), random.random(), random.random()]
+            x_ints = list(range(len(chart_data)))
+
+            plt.plot(
+                x_ints, 
+                chart_data, 
+                color=rand_color, 
+                marker='o', 
+                linestyle='none', 
+            )
+            top_title = plt.text(-0.0,1.15, "Selected Area Chart")
+            plt.ylabel('% pixels selected')
+            plt.xlabel('time (kind of)')
+            plt.axis([1, 100, 0, 1])
+            movie_name = movie_url.split('/')[-1]
+            plt.title('Selected Areas for\n{}'.format(movie_name))
+            movie_uuid = movie_name.split('.')[0]
+
+            file_fullpath = self.file_writer.build_file_fullpath_for_uuid_and_filename(
+                the_uuid, 
+                'selected_area_chart_' + movie_uuid + '.png')
+
+            plt.savefig(
+                file_fullpath, 
+                bbox_extra_artists=(top_title,), 
+                bbox_inches='tight',
+                transparent=True,
+            )
+            plot_url = self.file_writer.get_url_for_file_path(file_fullpath)
+            charts.append(plot_url)
+        return charts
 
     def make_ocr_match_charts(self):
         build_chart_data = {}
