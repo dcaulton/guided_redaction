@@ -273,6 +273,10 @@ class BottomInsightsControls extends React.Component {
           submitInsightsJob={this.props.submitInsightsJob}
           jobs={this.props.jobs}
           results={this.props.results}
+          setScrubberToIndex={this.props.setScrubberToIndex}
+          movies={this.props.movies}
+          movie_url={this.props.movie_url}
+          setCurrentVideo={this.props.setCurrentVideo}
         />
 
         <FilesystemControls

@@ -105,6 +105,50 @@ class ResultsControls extends React.Component {
     )
   }
 
+  setScrubberToResultsClick(movie_url, offset) {
+    if (!Object.keys(this.props.movies).includes(movie_url)) {
+      this.props.displayInsightsMessage('cannot set scrubber, movie not loaded')
+      return
+    }
+    if (this.props.movie_url !== movie_url) {
+      this.props.setCurrentVideo(movie_url)
+    }
+    setTimeout((() => {this.props.setScrubberToIndex(offset)}), 1000)
+  }
+
+  handleImageClick(e, movie_url, image_id) {
+    if (!Object.keys(this.props.movies).includes(movie_url)) {
+      this.props.displayInsightsMessage('not going to set the scrubber, movie not loaded')
+      return
+    }
+    const x = e.nativeEvent.offsetX
+    const x_min = 54
+    const x_max = 557
+    const x_range = x_max - x_min
+    const clicked_x_offset = Math.floor((x - x_min) / x_range * 100)
+    if (clicked_x_offset < 0 || clicked_x_offset > 100) {
+      return
+    }
+    this.setScrubberToResultsClick(movie_url, clicked_x_offset)
+  }
+
+  getMovieUrlFromChartUrl(chart_url) {
+    const movie_uuid_to_end = chart_url.split('chart_').slice(-1)[0]
+    const movie_uuid = movie_uuid_to_end.split('__')[0]
+    for (let i=0; i < Object.keys(this.props.movies).length; i++) {
+      const movie_url = Object.keys(this.props.movies)[i]
+      if (movie_url.includes(movie_uuid)) {
+        return movie_url
+      }
+    }
+  }
+
+  getIdFromChartUrl(chart_url) {
+    const movie_uuid_to_end = chart_url.split('chart_').slice(-1)[0]
+    const the_id = movie_uuid_to_end.split('.')[0]
+    return the_id
+  }
+
   buildChartsDiv() {
     if (!this.props.results || !Object.keys(this.props.results).includes('charts')) {
       return ''
@@ -112,14 +156,18 @@ class ResultsControls extends React.Component {
     return (
       <div>
         {this.props.results['charts'].map((chart_url, index) => {
+          const img_id = this.getIdFromChartUrl(chart_url)
+          const movie_url = this.getMovieUrlFromChartUrl(chart_url)
           return (
             <div
                 key={index}
             >
               <img
                   key={index}
+                  id={img_id}
                   src={chart_url}
                   alt='chart displaying template match results'
+                  onClick={(e) => this.handleImageClick(e, movie_url, img_id)}
               />
             </div>
           )
