@@ -134,7 +134,8 @@ class ResultsControls extends React.Component {
     }
     const header_row = makeHeaderRow(
       'results',
-      'results_body'
+      'results_body',
+      (() => this.props.toggleShowVisibility('results'))
     )
     const type_selector = this.buildTypeSelector()
     const job_selector = this.buildJobSelector()

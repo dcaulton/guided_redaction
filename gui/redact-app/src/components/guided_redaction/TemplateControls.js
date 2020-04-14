@@ -795,7 +795,8 @@ class TemplateControls extends React.Component {
     const template_source_movie_image_info = this.buildSourceMovieImageInfo()
     const header_row = makeHeaderRow(
       'templates',
-      'template_controls_body'
+      'template_controls_body',
+      (()=> {this.props.toggleShowVisibility('templates')})
     )
 
     return (

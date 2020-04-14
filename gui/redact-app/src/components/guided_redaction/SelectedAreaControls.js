@@ -675,7 +675,8 @@ class SelectedAreaControls extends React.Component {
     const goto_source_link = this.buildGotoSourceLink()
     const header_row = makeHeaderRow(
       'selected area',
-      'selected_area_body'
+      'selected_area_body',
+      (() => this.props.toggleShowVisibility('selectedArea'))
     )
 
     return (

@@ -151,7 +151,8 @@ class MovieSetsControls extends React.Component {
     }
     const header_row = makeHeaderRow(
       'movie sets',
-      'movie_sets_body'
+      'movie_sets_body',
+      (() => this.props.toggleShowVisibility('movieSets'))
     )
 
     return (

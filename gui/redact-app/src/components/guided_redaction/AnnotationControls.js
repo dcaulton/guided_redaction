@@ -192,7 +192,8 @@ class AnnotationControls extends React.Component {
 
     const header_row = makeHeaderRow(
       'annotate',
-      'annotations_body'
+      'annotations_body',
+      (() => this.props.toggleShowVisibility('annotate'))
     )
     return (
         <div className='row bg-light rounded mt-3'>

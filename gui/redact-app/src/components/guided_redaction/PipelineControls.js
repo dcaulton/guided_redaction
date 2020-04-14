@@ -404,6 +404,7 @@ class PipelineControls extends React.Component {
     const header_row = makeHeaderRow(
       'pipelines',
       'pipelines_body',
+      (() => this.props.toggleShowVisibility('pipelines'))
     )
     const sequence_header_row = ''
 

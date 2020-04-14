@@ -79,7 +79,8 @@ class DiffControls extends React.Component {
     const itd_checkbox = this.buildToggleImageTypeToDisplayCheckbox()
     const header_row = makeHeaderRow(
       'diffs',
-      'diff_body'
+      'diff_body',
+      (() => this.props.toggleShowVisibility('diffs'))
     )
 
     return (

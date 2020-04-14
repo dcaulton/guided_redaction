@@ -552,7 +552,8 @@ class OcrControls extends React.Component {
     const goto_source_link = this.buildGotoSourceLink()
     const header_row = makeHeaderRow(
       'ocr',
-      'ocr_body'
+      'ocr_body',
+      (() => this.props.toggleShowVisibility('ocr'))
     )
     const name_field = this.buildNameField()
 

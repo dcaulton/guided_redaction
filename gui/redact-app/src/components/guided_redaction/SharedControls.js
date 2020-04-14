@@ -137,7 +137,7 @@ export function buildInlinePrimaryButton(label, onclick) {
   )
 }
 
-export function makeHeaderRow(label, body_id) {
+export function makeHeaderRow(label, body_id, show_visibility_callback=(()=>{})) {
   const datatarget = '#' + body_id
   return (
     <div className='row'>
@@ -163,6 +163,7 @@ export function makeHeaderRow(label, body_id) {
           <input
             className='mr-2 mt-3'
             type='checkbox'
+            onChange={() => {show_visibility_callback()}}
           />
         </div>
       </div>
