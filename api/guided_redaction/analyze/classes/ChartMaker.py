@@ -105,7 +105,7 @@ class ChartMaker:
         return charts
 
     def make_selected_area_charts_from_build_data(self, build_chart_data):
-        charts = []
+        movies = {}
         the_uuid = str(uuid.uuid4())
         self.file_writer.create_unique_directory(the_uuid)
         for movie_number, movie_url in enumerate(build_chart_data):
@@ -146,8 +146,8 @@ class ChartMaker:
                 transparent=True,
             )
             plot_url = self.file_writer.get_url_for_file_path(file_fullpath)
-            charts.append(plot_url)
-        return charts
+            movies[movie_url] = [plot_url]
+        return movies
 
     def make_ocr_match_charts(self):
         build_chart_data = {}
@@ -180,7 +180,7 @@ class ChartMaker:
         return charts
 
     def make_ocr_match_charts_from_build_data(self, build_chart_data):
-        charts = []
+        movies = {}
         the_uuid = str(uuid.uuid4())
         self.file_writer.create_unique_directory(the_uuid)
         for movie_number, movie_url in enumerate(build_chart_data):
@@ -231,8 +231,8 @@ class ChartMaker:
                 transparent=True,
             )
             plot_url = self.file_writer.get_url_for_file_path(file_fullpath)
-            charts.append(plot_url)
-        return charts
+            movies[movie_url] = [plot_url]
+        return movies
 
     def make_template_match_charts(self):
         build_chart_data = {}
@@ -285,7 +285,7 @@ class ChartMaker:
         return charts
 
     def make_template_match_charts_from_build_data(self, build_chart_data):
-        charts = []
+        movies = {}
         the_uuid = str(uuid.uuid4())
         self.file_writer.create_unique_directory(the_uuid)
         for movie_number, movie_url in enumerate(build_chart_data):
@@ -344,5 +344,5 @@ class ChartMaker:
                 transparent=True,
              )
             plot_url = self.file_writer.get_url_for_file_path(file_fullpath)
-            charts.append(plot_url)
-        return charts
+            movies[movie_url] = [plot_url]
+        return movies

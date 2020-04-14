@@ -93,6 +93,24 @@ class ResultsControls extends React.Component {
     )
   }
 
+  clearResults() {
+    this.props.setGlobalStateVar('results', {})
+    this.props.displayInsightsMessage('all results have been cleared')
+  }
+
+  buildClearButton() {
+    return (
+      <div>
+        <button
+            className='btn btn-primary'
+            onClick={() => this.clearResults()}
+        >
+          Clear all Jobs
+        </button>
+      </div>
+    )
+  }
+
   buildSubmitButton() {
     return (
       <div>
@@ -133,17 +151,6 @@ class ResultsControls extends React.Component {
     this.setScrubberToResultsClick(movie_url, clicked_x_offset)
   }
 
-  getMovieUrlFromChartUrl(chart_url) {
-    const movie_uuid_to_end = chart_url.split('chart_').slice(-1)[0]
-    const movie_uuid = movie_uuid_to_end.split('__')[0]
-    for (let i=0; i < Object.keys(this.props.movies).length; i++) {
-      const movie_url = Object.keys(this.props.movies)[i]
-      if (movie_url.includes(movie_uuid)) {
-        return movie_url
-      }
-    }
-  }
-
   getIdFromChartUrl(chart_url) {
     const movie_uuid_to_end = chart_url.split('chart_').slice(-1)[0]
     const the_id = movie_uuid_to_end.split('.')[0]
@@ -156,15 +163,16 @@ class ResultsControls extends React.Component {
   }
 
   buildChartsDiv() {
-    if (!this.props.results || !Object.keys(this.props.results).includes('charts')) {
+    if (!this.props.results || !Object.keys(this.props.results).includes('movies')) {
       return ''
     }
+    const charts_movie_urls = Object.keys(this.props.results['movies'])
     return (
       <div className='col'>
-        {this.props.results['charts'].map((chart_url, index) => {
+        {charts_movie_urls.map((movie_url, index) => {
+          const chart_url = this.props.results['movies'][movie_url]['charts'][0]
           const img_id = this.getIdFromChartUrl(chart_url)
           const row_id = 'row_' + img_id
-          const movie_url = this.getMovieUrlFromChartUrl(chart_url)
           let movie_name = ''
           if (movie_url) {
               movie_name = 'movie ' + this.getMovieNameFromUrl(movie_url)
@@ -208,6 +216,7 @@ class ResultsControls extends React.Component {
     const type_selector = this.buildTypeSelector()
     const job_selector = this.buildJobSelector()
     const submit_button = this.buildSubmitButton()
+    const clear_button = this.buildClearButton()
     const charts_div = this.buildChartsDiv()
 
     return (

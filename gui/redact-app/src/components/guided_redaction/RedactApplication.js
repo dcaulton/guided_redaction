@@ -1447,8 +1447,28 @@ class RedactApplication extends React.Component {
 
   loadGetMatchChartResults(job, when_done=(()=>{})) {
     const resp_data = JSON.parse(job.response_data)
+    if (!Object.keys(resp_data).includes('movies')) {
+      return
+    }
+    let deepCopyResults = JSON.parse(JSON.stringify(this.state.results))
+    if (!Object.keys(deepCopyResults).includes('movies')) {
+      deepCopyResults = {movies: {}}
+    }
+    for (let i=0; i < Object.keys(resp_data['movies']).length; i++) {
+      const movie_url = Object.keys(resp_data['movies'])[i]
+      if (!resp_data['movies'][movie_url]) {
+        continue
+      }
+      if (!Object.keys(deepCopyResults['movies']).includes(movie_url)) {
+        deepCopyResults['movies'][movie_url] = {'charts': []}
+      }
+      for (let j=0; j < resp_data['movies'][movie_url].length; j++) {
+        const chart_url = resp_data['movies'][movie_url][j]
+        deepCopyResults['movies'][movie_url]['charts'].push(chart_url)
+      }
+    }
     this.setState({
-      results: resp_data,
+      results: deepCopyResults,
     })
   }
 

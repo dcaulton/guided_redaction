@@ -277,6 +277,7 @@ class BottomInsightsControls extends React.Component {
           movies={this.props.movies}
           movie_url={this.props.movie_url}
           setCurrentVideo={this.props.setCurrentVideo}
+          setGlobalStateVar={this.props.setGlobalStateVar}
         />
 
         <FilesystemControls

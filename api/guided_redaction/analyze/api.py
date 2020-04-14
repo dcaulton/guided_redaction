@@ -886,7 +886,7 @@ class AnalyzeViewSetTemplateMatchChart(viewsets.ViewSet):
         chart_maker = ChartMaker(chart_info, job_data, file_writer, settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS)
         charts_obj = chart_maker.make_charts()
 
-        return Response({'charts': charts_obj})
+        return Response({'movies': charts_obj})
 
 
 class AnalyzeViewSetOcrMatchChart(viewsets.ViewSet):
@@ -909,7 +909,7 @@ class AnalyzeViewSetOcrMatchChart(viewsets.ViewSet):
         chart_maker = ChartMaker(chart_info, job_data, file_writer, settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS)
         charts_obj = chart_maker.make_charts()
 
-        return Response({'charts': charts_obj})
+        return Response({'movies': charts_obj})
 
 class AnalyzeViewSetSelectedAreaChart(viewsets.ViewSet):
     def create(self, request):
@@ -931,4 +931,4 @@ class AnalyzeViewSetSelectedAreaChart(viewsets.ViewSet):
         chart_maker = ChartMaker(chart_info, job_data, file_writer, settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS)
         charts_obj = chart_maker.make_charts()
 
-        return Response({'charts': charts_obj})
+        return Response({'movies': charts_obj})
