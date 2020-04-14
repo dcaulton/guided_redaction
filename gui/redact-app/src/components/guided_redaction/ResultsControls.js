@@ -1,6 +1,7 @@
 import React from 'react';
 import {
   makeHeaderRow,
+  makePlusMinusRow,
 } from './SharedControls'
 
 class ResultsControls extends React.Component {
@@ -149,26 +150,45 @@ class ResultsControls extends React.Component {
     return the_id
   }
 
+  getMovieNameFromUrl(movie_url) {
+    const movie_name = movie_url.split('/').slice(-1)[0]
+    return movie_name
+  }
+
   buildChartsDiv() {
     if (!this.props.results || !Object.keys(this.props.results).includes('charts')) {
       return ''
     }
     return (
-      <div>
+      <div className='col'>
         {this.props.results['charts'].map((chart_url, index) => {
           const img_id = this.getIdFromChartUrl(chart_url)
+          const row_id = 'row_' + img_id
           const movie_url = this.getMovieUrlFromChartUrl(chart_url)
+          let movie_name = ''
+          if (movie_url) {
+              movie_name = 'movie ' + this.getMovieNameFromUrl(movie_url)
+          }
+          const show_hide_row = makePlusMinusRow(movie_name, row_id)
           return (
-            <div
-                key={index}
+            <div 
+                className='mt-2 pb-3 border-bottom'
+                key={row_id}
             >
-              <img
+              {show_hide_row}
+              <div
                   key={index}
-                  id={img_id}
-                  src={chart_url}
-                  alt='chart displaying template match results'
-                  onClick={(e) => this.handleImageClick(e, movie_url, img_id)}
-              />
+                  className='row'
+                  id={row_id}
+              >
+                <img
+                    key={index}
+                    id={img_id}
+                    src={chart_url}
+                    alt='chart displaying template match results'
+                    onClick={(e) => this.handleImageClick(e, movie_url, img_id)}
+                />
+              </div>
             </div>
           )
         })}
