@@ -79,7 +79,7 @@ class ChartMaker:
                 else:
                     source_movie = job_req_data['movies'][movie_url]
                 image_shape = self.get_movie_dimensions(source_movie)
-                total_pixel_count = image_shape[0] * image_shape[1]
+                total_pixel_count = image_shape[0] * image_shape[1] 
                 framesets_in_order = self.get_frameset_hashes_in_order(source_movie)
                 for frameset_hash in framesets_in_order:
                     mask = np.zeros(image_shape, dtype='uint8')
@@ -94,9 +94,9 @@ class ChartMaker:
                                 -1
                             )
                     white_pixel_count = cv2.countNonZero(mask)
-                    normalized_pixel_count = white_pixel_count / total_pixel_count
+                    normalized_pixel_count = white_pixel_count / total_pixel_count 
                     build_chart_data[movie_url]['data'].append(normalized_pixel_count)
-                    #for debugging
+                    #for debugging, remove when mask offset problem is fixed
                     movie_name = movie_url.split('/')[-1]
                     movie_uuid = movie_name.split('.')[0]
                     cv2.imwrite('/Users/dcaulton/Desktop/junk/frameset_'+movie_uuid+'__'+frameset_hash+'_debug.png', mask)
@@ -114,7 +114,7 @@ class ChartMaker:
             plt.figure(movie_number)
             chart_data = build_chart_data[movie_url]['data']
             rand_color = [random.random(), random.random(), random.random()]
-            x_ints = list(range(len(chart_data)))
+            x_ints = list(range(1, len(chart_data)+1))
             operation = build_chart_data['operation']
 
             plt.plot(
@@ -127,7 +127,6 @@ class ChartMaker:
             )
             top_title = plt.text(-0.0,1.15, "Selected Area Chart")
             plt.ylabel('% pixels selected')
-            plt.xlabel('time (kind of)')
             plt.axis([1, 100, 0, 1])
             movie_name = movie_url.split('/')[-1]
             plt.title('Selected Areas for\n{}'.format(movie_name))
@@ -192,7 +191,7 @@ class ChartMaker:
                 desc = match_phrase
                 chart_data = build_chart_data[movie_url][match_phrase]
                 rand_color = [random.random(), random.random(), random.random()]
-                x_ints = list(range(len(chart_data)))
+                x_ints = list(range(1, len(chart_data)+1))
                 decimal_match_percent = float(build_chart_data['match_percent'] / 100.0)
                 mp_data = [decimal_match_percent] * len(chart_data)
 
@@ -214,7 +213,6 @@ class ChartMaker:
                 )
                 top_title = plt.text(-0.0,1.15, "Ocr Match Chart")
                 plt.ylabel('match percent')
-                plt.xlabel('time (kind of)')
                 plt.axis([1, 100, 0, 1])
                 movie_name = movie_url.split('/')[-1]
                 plt.title('Ocr matches for\n{}'.format(movie_name))
@@ -299,7 +297,7 @@ class ChartMaker:
                     scale_for_anchor = \
                         build_chart_data[movie_url][template_id]['anchor_scale_counts'][anchor_id]
                     chart_data = build_chart_data[movie_url][template_id][anchor_id]
-                    x_ints = list(range(len(chart_data)))
+                    x_ints = list(range(1, len(chart_data)+1))
                     decimal_match_percent = \
                         float(build_chart_data[movie_url][template_id]['match_percent']) / 100.0
                     mp_data = [decimal_match_percent] * len(chart_data)
@@ -325,7 +323,6 @@ class ChartMaker:
                     )
                     top_title = plt.text(-0.0,1.15, "Template Match Chart")
                     plt.ylabel('match percent')
-                    plt.xlabel('time (kind of)')
                     plt.axis([1, 100, 0, 1])
                     movie_name = movie_url.split('/')[-1]
                     plt.title('{}\n{}'.format(
