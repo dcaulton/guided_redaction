@@ -140,7 +140,7 @@ export function buildInlinePrimaryButton(label, onclick) {
 export function makePlusMinusRow(label, body_id) {
   const datatarget = '#' + body_id
   return (
-    <div className='row'>
+    <div className='row bg-dark text-white'>
       <div className='col-lg-2' />
       <div
         className='col-lg-9 mt-2'
@@ -149,7 +149,7 @@ export function makePlusMinusRow(label, body_id) {
       </div>
       <div className='col-lg-1'>
         <button
-            className='btn btn-link'
+            className='btn btn-link text-white'
             aria-expanded='true'
             data-target={datatarget}
             aria-controls={body_id}

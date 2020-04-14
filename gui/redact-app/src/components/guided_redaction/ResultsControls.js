@@ -100,7 +100,7 @@ class ResultsControls extends React.Component {
 
   buildClearButton() {
     return (
-      <div>
+      <div className='ml-2'>
         <button
             className='btn btn-primary'
             onClick={() => this.clearResults()}
@@ -166,42 +166,93 @@ class ResultsControls extends React.Component {
     if (!this.props.results || !Object.keys(this.props.results).includes('movies')) {
       return ''
     }
-    const charts_movie_urls = Object.keys(this.props.results['movies'])
+    const movie_urls = Object.keys(this.props.results['movies'])
     return (
       <div className='col'>
-        {charts_movie_urls.map((movie_url, index) => {
-          const chart_url = this.props.results['movies'][movie_url]['charts'][0]
-          const img_id = this.getIdFromChartUrl(chart_url)
-          const row_id = 'row_' + img_id
+        {movie_urls.map((movie_url, index) => {
           let movie_name = ''
           if (movie_url) {
               movie_name = 'movie ' + this.getMovieNameFromUrl(movie_url)
           }
+          const row_id = 'results_movie_image_row_' + index.toString()
           const show_hide_row = makePlusMinusRow(movie_name, row_id)
+          const chart_urls = this.props.results['movies'][movie_url]['charts']
+          const wrap_div_style = {
+            'minHeight': '700px',
+          }
           return (
             <div 
-                className='mt-2 pb-3 border-bottom'
-                key={row_id}
+                className='mt-2 pb-3'
+                key={index}
             >
               {show_hide_row}
+
               <div
-                  key={index}
-                  className='row'
-                  id={row_id}
+                id={row_id}
               >
-                <img
+                <div className='row m-2'>
+                    {chart_urls.map((chart_url, chart_index) => {
+                      const img_id = this.getIdFromChartUrl(chart_url)
+                      return (
+                        <div 
+                            key={chart_index}
+                            className='d-inline ml-2'
+                        >
+                          <button
+                            key={chart_index}
+                            className='border-0 btn btn-primary'
+                            onClick={() => this.toggleImageVisibility(img_id)}
+                          >
+                            {chart_index.toString()}
+                          </button>
+                        </div>
+                      )
+                    })}
+                </div>
+
+                <div
                     key={index}
-                    id={img_id}
-                    src={chart_url}
-                    alt='chart displaying template match results'
-                    onClick={(e) => this.handleImageClick(e, movie_url, img_id)}
-                />
+                    className='row card'
+                    style={wrap_div_style}
+                >
+                  <div className='card-body'>
+                  {chart_urls.map((chart_url, chart_index) => {
+                    const img_id = this.getIdFromChartUrl(chart_url)
+                    return (
+                      <div
+                          key={chart_index}
+                          className='card-img-overlay'
+                      >
+                        <img
+                            key={chart_index}
+                            id={img_id}
+                            src={chart_url}
+                            alt='chart displaying template match results'
+                            onClick={(e) => this.handleImageClick(e, movie_url, img_id)}
+                        />
+                      </div>
+                    )
+                  })}
+                  </div>
+                </div>
               </div>
+
             </div>
           )
         })}
       </div>
     )
+  }
+
+  toggleImageVisibility(img_id) {
+    let ele = document.getElementById(img_id)
+    if (ele.style.display === 'none') {
+      ele.style.display = 'block'
+    } else if (ele.style.display === 'block') {
+      ele.style.display = 'none'
+    } else {
+      ele.style.display = 'none'
+    }
   }
 
   render() {
@@ -235,12 +286,13 @@ class ResultsControls extends React.Component {
                   {type_selector}
                 </div>
 
-                <div className='row bg-light'>
+                <div className='row mt-2 bg-light'>
                   {job_selector}
                 </div>
 
-                <div className='row bg-light'>
+                <div className='row mt-2 bg-light'>
                   {submit_button}
+                  {clear_button}
                 </div>
 
                 <div id='results_image_div' className='row mt-3 bg-light'>
