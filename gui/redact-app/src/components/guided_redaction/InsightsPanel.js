@@ -386,7 +386,7 @@ class InsightsPanel extends React.Component {
       job_data['request_data']['movies'] = this.props.movies
     } else if (scope.match(/_t1_template$/)) {   
       const template_id = extra_data
-      const t1_template = this.props.templates[template_id]
+      const t1_template = this.props.tier_1_scanners['template'][template_id]
       const tier_1_output = this.props.tier_1_matches['template'][template_id]['movies']
       job_data['description'] += 'on t1 template results (template ' + t1_template['name'] + ')'
       job_data['request_data']['movies'] = tier_1_output
@@ -728,12 +728,12 @@ class InsightsPanel extends React.Component {
   }
   
   currentImageIsTemplateAnchorImage() {
-    if (this.props.current_template_id) {
-      let key = this.props.current_template_id
-      if (!Object.keys(this.props.templates).includes(key)) {
+    if (this.props.tier_1_scanner_current_ids['template']) {
+      let key = this.props.tier_1_scanner_current_ids['template']
+      if (!Object.keys(this.props.tier_1_scanners['template']).includes(key)) {
         return false
       }
-      let template = this.props.templates[key]
+      let template = this.props.tier_1_scanners['template'][key]
       if (!Object.keys(template).includes('anchors')) {
         return false
       }
@@ -988,15 +988,7 @@ class InsightsPanel extends React.Component {
   }
 
   getTier1ScannerMatches(scanner_type) {
-    //TODO refactor when all sacnners live in tier_1_scanners
-    let current_scanner_id = ''
-    if (scanner_type === 'template') {
-      current_scanner_id = this.props.current_template_id
-    } else if (scanner_type === 'ocr') {
-      current_scanner_id = this.props.tier_1_scanner_current_ids['ocr']
-    } else if (scanner_type === 'selected_area') {
-      current_scanner_id = this.props.tier_1_scanner_current_ids['selected_area']
-    }
+    const current_scanner_id = this.props.tier_1_scanner_current_ids[scanner_type]
     const scanner_matches = this.props.tier_1_matches[scanner_type]
     if (!Object.keys(scanner_matches).includes(current_scanner_id)) {
       return
@@ -1016,10 +1008,10 @@ class InsightsPanel extends React.Component {
   }
 
   getAnnotations() {
-    if (!Object.keys(this.props.annotations).includes(this.props.current_template_id)) {
+    if (!Object.keys(this.props.annotations).includes(this.props.tier_1_scanner_current_ids['template'])) {
       return
     }
-    const cur_templates_matches = this.props.annotations[this.props.current_template_id]
+    const cur_templates_matches = this.props.annotations[this.props.tier_1_scanner_current_ids['template']]
     if (!Object.keys(cur_templates_matches).includes(this.props.movie_url)) {
       return
     }
@@ -1103,10 +1095,7 @@ class InsightsPanel extends React.Component {
             setMovieNickname={this.props.setMovieNickname}
             setDraggedId={this.setDraggedId}
             tier_1_matches={this.props.tier_1_matches}
-            current_template_id={this.props.current_template_id}
-            current_telemetry_rule_id={this.props.tier_1_scanner_current_ids['telemetry']}
             tier_1_scanner_current_ids={this.props.tier_1_scanner_current_ids}
-            current_selected_area_meta_id={this.props.tier_1_scanner_current_ids['selected_area']}
             getFramesetHashForImageUrl={this.props.getFramesetHashForImageUrl}
             getFramesetHashesInOrder={this.props.getFramesetHashesInOrder}
             setScrubberToIndex={this.setScrubberToIndex}
@@ -1190,8 +1179,6 @@ class InsightsPanel extends React.Component {
             insights_image={this.state.insights_image}
             movie_url={this.props.movie_url}
             callPing={this.callPing}
-            templates={this.props.templates}
-            current_template_id={this.props.current_template_id}
             submitInsightsJob={this.submitInsightsJob}
             saveWorkbook={this.props.saveWorkbook}
             saveWorkbookName={this.props.saveWorkbookName}

@@ -109,7 +109,6 @@ class BottomInsightsControls extends React.Component {
           handleSetMode={this.props.handleSetMode}
           tier_1_matches={this.props.tier_1_matches}
           submitInsightsJob={this.props.submitInsightsJob}
-          current_template_id={this.props.current_template_id}
           displayInsightsMessage={this.props.displayInsightsMessage}
           cropImage={this.props.cropImage}
           buildMovieSetOptions={this.buildMovieSetOptions}
@@ -143,7 +142,6 @@ class BottomInsightsControls extends React.Component {
           insights_image={this.props.insights_image}
           getFramesetHashForImageUrl={this.props.getFramesetHashForImageUrl}
           movie_url={this.props.movie_url}
-          current_template_id={this.props.current_template_id}
           setSelectedAreaTemplateAnchor={this.props.setSelectedAreaTemplateAnchor}
           getCurrentSelectedAreaMeta={this.props.getCurrentSelectedAreaMeta}
           visibilityFlags={this.props.visibilityFlags}
@@ -233,7 +231,6 @@ class BottomInsightsControls extends React.Component {
         />
 
         <AnnotationControls
-          current_template_id={this.props.current_template_id}
           displayInsightsMessage={this.props.displayInsightsMessage}
           saveAnnotation={this.props.saveAnnotation}
           deleteAnnotation={this.props.deleteAnnotation}

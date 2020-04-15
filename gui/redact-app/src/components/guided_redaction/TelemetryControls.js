@@ -19,8 +19,8 @@ class TelemetryControls extends React.Component {
   }
 
   componentDidMount() {
-    if (this.props.current_telemetry_rule_id) {
-      let rule = this.props.telemetry_rules[this.props.current_telemetry_rule_id]
+    if (this.props.tier_1_scanner_current_ids['telemetry']) {
+      let rule = this.props.tier_1_scanners['telemetry'][this.props.tier_1_scanner_current_ids['telemetry']]
       this.setState({
         id: rule['id'],
         name: rule['name'],
@@ -61,7 +61,7 @@ class TelemetryControls extends React.Component {
   }
 
   buildIdString()  {
-    if (!this.props.current_telemetry_rule_id) {
+    if (!this.props.tier_1_scanner_current_ids['telemetry']) {
       return (
         <div className='d-inline ml-2 font-italic'>
           this rule has not been saved and has no id yet
@@ -297,7 +297,7 @@ class TelemetryControls extends React.Component {
     if (!rule_id) {
       this.loadNewTelemetryRule()
     } else {
-      const rule = this.props.telemetry_rules[rule_id]
+      const rule = this.props.tier_1_scanners['telemetry'][rule_id]
       this.setState({
         id: rule['id'],
         name: rule['name'],
@@ -305,7 +305,9 @@ class TelemetryControls extends React.Component {
         account: rule['account'],
         start_conditions: rule['start_conditions'],
       })
-      this.props.setGlobalStateVar('current_telemetry_rule_id', rule_id)
+      let deepCopyIds = JSON.parse(JSON.stringify(this.props.tier_1_scanner_current_ids))
+      deepCopyIds['telemetry'] = rule_id
+      this.props.setGlobalStateVar('tier_1_scanner_current_ids', deepCopyIds)
       this.props.displayInsightsMessage('telemetry rule loaded')
     }
   }
@@ -410,11 +412,15 @@ class TelemetryControls extends React.Component {
       account: this.state.account,
       start_conditions: this.state.start_conditions,
     }
-    let deepCopyTelemetryRules = JSON.parse(JSON.stringify(this.props.telemetry_rules))
+    let deepCopyScanners = JSON.parse(JSON.stringify(this.props.tier_1_scanners))
+    let deepCopyTelemetryRules = deepCopyScanners['telemetry']
     deepCopyTelemetryRules[rule_id] = telemetry_rule
-    this.props.setGlobalStateVar('telemetry_rules', deepCopyTelemetryRules)
+    deepCopyScanners['telemetry'] = deepCopyTelemetryRules
+    this.props.setGlobalStateVar('tier_1_scanners', deepCopyScanners)
     this.props.displayInsightsMessage('Telemetry rule has been saved')
-    this.props.setGlobalStateVar('current_telemetry_rule_id', rule_id)
+    let deepCopyIds = JSON.parse(JSON.stringify(this.props.tier_1_scanner_current_ids))
+    deepCopyIds['telemetry'] = rule_id
+    this.props.setGlobalStateVar('tier_1_scanner_current_ids', deepCopyIds)
     this.setState({
       id: rule_id,
       unsaved_changes: false,

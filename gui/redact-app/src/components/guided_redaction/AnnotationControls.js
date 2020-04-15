@@ -58,10 +58,10 @@ class AnnotationControls extends React.Component {
   }
 
   buildTemplateAnchorDropdown() {
-    if (!this.props.current_template_id) {
+    if (!this.props.tier_1_scanner_current_ids || !this.props.tier_1_scanner_current_ids['template']) {
       return ''
     }
-    const cur_template = this.props.tier_1_scanners['template'][this.props.current_template_id]
+    const cur_template = this.props.tier_1_scanners['template'][this.props.tier_1_scanner_current_ids['template']]
     if (!cur_template) {
       return ''
     }
@@ -100,7 +100,7 @@ class AnnotationControls extends React.Component {
   buildAnnotationSaveTemplatePayload() {
     let the_template_id = this.state.active_template_id
     if (!the_template_id) {
-      the_template_id = this.props.current_template_id
+      the_template_id = this.props.tier_1_scanners_current_ids['template']
     }
     let the_anchor_id = 'all'
     if (this.state.active_template_anchor_id) {

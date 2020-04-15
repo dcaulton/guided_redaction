@@ -76,10 +76,7 @@ class MovieCardList extends React.Component {
               setDraggedId={this.props.setDraggedId}
               index={index}
               tier_1_matches={this.props.tier_1_matches}
-              current_template_id={this.props.current_template_id}
-              current_telemetry_rule_id={this.props.current_telemetry_rule_id}
-              current_ocr_rule_id={this.props.current_ocr_rule_id}
-              current_selected_area_meta_id={this.props.current_selected_area_meta_id}
+              tier_1_scanner_current_ids={this.props.tier_1_scanner_current_ids}
               getFramesetHashForImageUrl={this.props.getFramesetHashForImageUrl}
               getFramesetHashesInOrder={this.props.getFramesetHashesInOrder}
               setScrubberToIndex={this.props.setScrubberToIndex}
@@ -249,14 +246,10 @@ class MovieCard extends React.Component {
 
   getTier1MatchHashesForMovie(scanner_type, movie_url) {
     let hashes = []
-    let current_rule_id = ''
-    if (scanner_type === 'template') {
-      current_rule_id = this.props.current_template_id
-    } else if (scanner_type === 'ocr') {
-      current_rule_id = this.props.current_ocr_rule_id
-    } else if (scanner_type === 'selected_area') {
-      current_rule_id = this.props.current_selected_area_meta_id
+    if (!this.props.tier_1_scanner_current_ids) {
+      return []
     }
+    const current_rule_id = this.props.tier_1_scanner_current_ids[scanner_type]
     if (!Object.keys(this.props.tier_1_matches[scanner_type]).includes(current_rule_id)) {
       return []
     }
@@ -311,14 +304,7 @@ class MovieCard extends React.Component {
 
   clearTier1Matches(scanner_type) {
     let deepCopyTier1Matches= JSON.parse(JSON.stringify(this.props.tier_1_matches))
-    let current_scanner_id = ''
-    if (scanner_type === 'template') {
-      current_scanner_id = this.props.current_template_id
-    } else if (scanner_type === 'ocr') {
-      current_scanner_id = this.props.current_ocr_rule_id
-    } else if (scanner_type === 'selected_area') {
-      current_scanner_id = this.props.current_selected_area_meta_id
-    }
+    const current_scanner_id = this.props.tier_1_scanner_current_ids[scanner_type]
     delete deepCopyTier1Matches[scanner_type][current_scanner_id]
     this.props.setGlobalStateVar('tier_1_matches', deepCopyTier1Matches)
     this.props.displayInsightsMessage(scanner_type+' matches have been removed')
@@ -486,8 +472,11 @@ class MovieCard extends React.Component {
   }
 
   buildHasTelemetryInfo() {
-    if (Object.keys(this.props.tier_1_matches['telemetry']).includes(this.props.current_telemetry_rule_id)) {
-      const tel_matches = this.props.tier_1_matches['telemetry'][this.props.current_telemetry_rule_id]
+    if (!this.props.tier_1_scanner_current_ids) {
+      return ''
+    }
+    if (Object.keys(this.props.tier_1_matches['telemetry']).includes(this.props.tier_1_scanner_current_ids['telemetry'])) {
+      const tel_matches = this.props.tier_1_matches['telemetry'][this.props.tier_1_scanner_current_ids['telemetry']]
       if (Object.keys(tel_matches['movies']).includes(this.props.this_cards_movie_url)) {
         const offset = tel_matches['movies'][this.props.this_cards_movie_url][0]
         return (
