@@ -4,6 +4,7 @@ import AnnotationControls from './AnnotationControls'
 import TelemetryControls from './TelemetryControls'
 import SelectedAreaControls from './SelectedAreaControls'
 import OcrControls from './OcrControls'
+import OcrSceneAnalysisControls from './OcrSceneAnalysisControls'
 import DiffControls from './DiffControls'
 import MovieSetsControls from './MovieSetsControls'
 import ResultsControls from './ResultsControls'
@@ -209,6 +210,15 @@ class BottomInsightsControls extends React.Component {
           current_telemetry_rule_id={this.props.current_telemetry_rule_id}
           telemetry_data={this.props.telemetry_data}
           setTelemetryData={this.props.setTelemetryData}
+          setGlobalStateVar={this.props.setGlobalStateVar}
+          visibilityFlags={this.props.visibilityFlags}
+          toggleShowVisibility={this.props.toggleShowVisibility}
+        />
+
+        <OcrSceneAnalysisControls
+          displayInsightsMessage={this.props.displayInsightsMessage}
+          submitInsightsJob={this.props.submitInsightsJob}
+          app_codebooks={this.props.app_codebooks}
           setGlobalStateVar={this.props.setGlobalStateVar}
           visibilityFlags={this.props.visibilityFlags}
           toggleShowVisibility={this.props.toggleShowVisibility}

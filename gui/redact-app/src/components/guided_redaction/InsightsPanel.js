@@ -30,6 +30,7 @@ class InsightsPanel extends React.Component {
         'telemetry': true,
         'filesystem': true,
         'ocr': true,
+        'ocr_scene_analysis': true,
         'movieSets': true,
         'results': true,
         'diffs': true,
@@ -1251,6 +1252,7 @@ class InsightsPanel extends React.Component {
             savePipelineToDatabase={this.props.savePipelineToDatabase}
             jobs={this.props.jobs}
             results={this.props.results}
+            app_codebooks={this.props.app_codebooks}
           />
         </div>
 

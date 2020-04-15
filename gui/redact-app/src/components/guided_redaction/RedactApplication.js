@@ -77,6 +77,7 @@ class RedactApplication extends React.Component {
       current_pipeline_id: '',
       userTone: 'lfo',
       preserve_movie_audio: false,
+      app_codebooks: {},
     }
 
     this.getNextImageHash=this.getNextImageHash.bind(this)
@@ -2424,6 +2425,7 @@ class RedactApplication extends React.Component {
                 deletePipeline={this.deletePipeline}
                 savePipelineToDatabase={this.savePipelineToDatabase}
                 results={this.state.results}
+                app_codebooks={this.state.app_codebooks}
               />
             </Route>
           </Switch>

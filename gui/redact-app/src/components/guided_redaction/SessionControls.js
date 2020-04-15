@@ -312,6 +312,10 @@ class SessionControls extends React.Component {
     if (this.props.visibilityFlags['ocr']) {
       show_ocr_checked = 'checked'
     }
+    let show_ocr_scene_analysis_checked = ''
+    if (this.props.visibilityFlags['ocr_scene_analysis']) {
+      show_ocr_scene_analysis_checked = 'checked'
+    }
     let show_diffs_checked = ''
     if (this.props.visibilityFlags['diffs']) {
       show_diffs_checked = 'checked'
@@ -415,7 +419,6 @@ class SessionControls extends React.Component {
                 <div className='row mt-3 bg-light rounded'>
                   <input
                     className='ml-2 mr-2 mt-1'
-                    id='toggle_annotate'
                     checked={show_templates_checked}
                     type='checkbox'
                     onChange={() => this.props.toggleShowVisibility('templates')}
@@ -426,7 +429,6 @@ class SessionControls extends React.Component {
                 <div className='row mt-3 bg-light rounded'>
                   <input
                     className='ml-2 mr-2 mt-1'
-                    id='toggle_results'
                     checked={show_selected_area_checked}
                     type='checkbox'
                     onChange={() => this.props.toggleShowVisibility('selectedArea')}
@@ -437,7 +439,6 @@ class SessionControls extends React.Component {
                 <div className='row mt-3 bg-light rounded'>
                   <input
                     className='ml-2 mr-2 mt-1'
-                    id='toggle_annotate'
                     checked={show_annotate_checked}
                     type='checkbox'
                     onChange={() => this.props.toggleShowVisibility('annotate')}
@@ -448,7 +449,6 @@ class SessionControls extends React.Component {
                 <div className='row mt-3 bg-light rounded'>
                   <input
                     className='ml-2 mr-2 mt-1'
-                    id='toggle_telemetry'
                     checked={show_telemetry_checked}
                     type='checkbox'
                     onChange={() => this.props.toggleShowVisibility('telemetry')}
@@ -459,7 +459,6 @@ class SessionControls extends React.Component {
                 <div className='row mt-3 bg-light rounded'>
                   <input
                     className='ml-2 mr-2 mt-1'
-                    id='toggle_results'
                     checked={show_ocr_checked}
                     type='checkbox'
                     onChange={() => this.props.toggleShowVisibility('ocr')}
@@ -470,7 +469,16 @@ class SessionControls extends React.Component {
                 <div className='row mt-3 bg-light rounded'>
                   <input
                     className='ml-2 mr-2 mt-1'
-                    id='toggle_results'
+                    checked={show_ocr_scene_analysis_checked}
+                    type='checkbox'
+                    onChange={() => this.props.toggleShowVisibility('ocr_scene_analysis')}
+                  />
+                  Show Ocr Scene Analysis
+                </div>
+
+                <div className='row mt-3 bg-light rounded'>
+                  <input
+                    className='ml-2 mr-2 mt-1'
                     checked={show_diffs_checked}
                     type='checkbox'
                     onChange={() => this.props.toggleShowVisibility('diffs')}
@@ -481,7 +489,6 @@ class SessionControls extends React.Component {
                 <div className='row mt-3 bg-light rounded'>
                   <input
                     className='ml-2 mr-2 mt-1'
-                    id='toggle_movie_sets'
                     checked={show_movie_sets_checked}
                     type='checkbox'
                     onChange={() => this.props.toggleShowVisibility('movieSets')}
@@ -492,7 +499,6 @@ class SessionControls extends React.Component {
                 <div className='row mt-3 bg-light rounded'>
                   <input
                     className='ml-2 mr-2 mt-1'
-                    id='toggle_results'
                     checked={show_results_checked}
                     type='checkbox'
                     onChange={() => this.props.toggleShowVisibility('results')}
@@ -503,7 +509,6 @@ class SessionControls extends React.Component {
                 <div className='row mt-3 bg-light rounded'>
                   <input
                     className='ml-2 mr-2 mt-1'
-                    id='toggle_filesystem'
                     checked={show_filesystem_checked}
                     type='checkbox'
                     onChange={() => this.props.toggleShowVisibility('filesystem')}
@@ -514,7 +519,6 @@ class SessionControls extends React.Component {
                 <div className='row mt-3 bg-light rounded'>
                   <input
                     className='ml-2 mr-2 mt-1'
-                    id='toggle_pipelines'
                     checked={show_pipelines_checked}
                     type='checkbox'
                     onChange={() => this.props.toggleShowVisibility('pipelines')}
@@ -525,7 +529,6 @@ class SessionControls extends React.Component {
                 <div className='row mt-3 bg-light rounded'>
                   <input
                     className='ml-2 mr-2 mt-1'
-                    id='toggle_play_sound'
                     checked={play_sound_checked}
                     type='checkbox'
                     onChange={() => this.props.toggleGlobalStateVar('playSound')}
