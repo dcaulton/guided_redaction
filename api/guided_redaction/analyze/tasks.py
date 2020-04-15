@@ -447,8 +447,8 @@ def build_and_dispatch_scan_ocr_movie_children(parent_job):
     parent_job.status = 'running'
     parent_job.save()
     request_data = json.loads(parent_job.request_data)
-    ocr_rule_id = list(request_data['ocr_rules'].keys())[0]
-    ocr_rule = request_data['ocr_rules'][ocr_rule_id]
+    ocr_rule_id = list(request_data['tier_1_scanners']['ocr'].keys())[0]
+    ocr_rule = request_data['tier_1_scanners']['ocr'][ocr_rule_id]
     movies = request_data['movies']
     source_movies = {}
     if 'source' in movies:
@@ -488,8 +488,8 @@ def build_and_dispatch_scan_ocr_movie_children(parent_job):
 
 def wrap_up_scan_ocr_movie(parent_job, children):
     parent_request_data = json.loads(parent_job.request_data)
-    ocr_rule_id = list(parent_request_data['ocr_rules'].keys())[0]
-    ocr_rule = parent_request_data['ocr_rules'][ocr_rule_id]
+    ocr_rule_id = list(parent_request_data['tier_1_scanners']['ocr'].keys())[0]
+    ocr_rule = parent_request_data['tier_1_scanners']['ocr'][ocr_rule_id]
     aggregate_response_data = {}
     aggregate_stats = {'movies': {}}
     print('========================== WRAPPING UP OCR')
@@ -606,7 +606,7 @@ def build_and_dispatch_selected_area_threaded_children(parent_job):
     parent_job.status = 'running'
     parent_job.save()
     request_data = json.loads(parent_job.request_data)
-    selected_area_metas = request_data['selected_area_metas']
+    selected_area_metas = request_data['tier_1_scanners']['selected_area']
     movies = request_data['movies']
     source_movies = {}
     if 'source' in movies:

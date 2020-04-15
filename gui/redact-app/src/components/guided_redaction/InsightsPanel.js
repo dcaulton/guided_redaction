@@ -350,8 +350,9 @@ class InsightsPanel extends React.Component {
       }
       const ocr_rule = this.props.tier_1_scanners['ocr'][this.props.tier_1_scanner_current_ids['ocr']]
       job_data['request_data']['movies'] = {}
-      job_data['request_data']['ocr_rules'] = {}
-      job_data['request_data']['ocr_rules'][ocr_rule['id']] = ocr_rule
+      job_data['request_data']['tier_1_scanners'] = {}
+      job_data['request_data']['tier_1_scanners']['ocr'] = {}
+      job_data['request_data']['tier_1_scanners']['ocr'][ocr_rule['id']] = ocr_rule
       job_data['app'] = 'analyze'
       job_data['operation'] = 'scan_ocr'
       job_data['request_data']['scan_level'] = ocr_rule['scan_level']
@@ -366,8 +367,9 @@ class InsightsPanel extends React.Component {
       job_data['operation'] = 'selected_area_threaded'
       const cur_sa_id = this.props.tier_1_scanner_current_ids['selected_area']
       const cur_selected_area = this.props.tier_1_scanners['selected_area'][cur_sa_id]
-      job_data['request_data']['selected_area_metas'] = {}
-      job_data['request_data']['selected_area_metas'][cur_sa_id] = cur_selected_area
+      job_data['request_data']['tier_1_scanners'] = {}
+      job_data['request_data']['tier_1_scanners']['selected_area'] = {}
+      job_data['request_data']['tier_1_scanners']['selected_area'][cur_sa_id] = cur_selected_area
       job_data['request_data']['id'] = cur_sa_id
       job_data['request_data']['scan_level'] = cur_selected_area['scan_level']
       job_data['description'] = 'scan selected area (' + cur_selected_area['name'] + ') '
