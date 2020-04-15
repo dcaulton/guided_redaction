@@ -95,14 +95,15 @@ class PipelineControls extends React.Component {
 
   handleAddEntityId(deepCopyNodeMetadata, node_id, value) {
     const node = deepCopyNodeMetadata['node'][node_id]
+    // TODO can this become a two liner now?
     if (node['type'] === 'template') {
-      deepCopyNodeMetadata['template'][value] = this.props.templates[value]
+      deepCopyNodeMetadata['template'][value] = this.props.tier_1_scanners['template'][value]
     } else if (node['type'] === 'selected_area') {
-      deepCopyNodeMetadata['selected_area'][value] = this.props.selected_area_metas[value]
+      deepCopyNodeMetadata['selected_area'][value] = this.props.tier_1_scanners['selected_area'][value]
     } else if (node['type'] === 'ocr') {
-      deepCopyNodeMetadata['ocr'][value] = this.props.ocr_rules[value]
+      deepCopyNodeMetadata['ocr'][value] = this.props.tier_1_scanners['ocr'][value]
     } else if (node['type'] === 'telemetry') {
-      deepCopyNodeMetadata['telemetry'][value] = this.props.telemetry_rules[value]
+      deepCopyNodeMetadata['telemetry'][value] = this.props.tier_1_scanners['telemetry'][value]
     }
   }
 
@@ -459,10 +460,7 @@ class PipelineControls extends React.Component {
                       addNodeEdge={this.addNodeEdge}
                       deleteNodeEdge={this.deleteNodeEdge}
                       updateNodeValue={this.updateNodeValue}
-                      templates={this.props.templates}
-                      selected_area_metas={this.props.selected_area_metas}
-                      ocr_rules={this.props.ocr_rules}
-                      telemetry_rules={this.props.telemetry_rules}
+                      tier_1_scanners={this.props.tier_1_scanners}
                     />
                   
                   </div>
@@ -510,10 +508,7 @@ class NodeCardList extends React.Component {
                   updateNodeValue={this.props.updateNodeValue}
                   addNodeEdge={this.props.addNodeEdge}
                   deleteNodeEdge={this.props.deleteNodeEdge}
-                  templates={this.props.templates}
-                  selected_area_metas={this.props.selected_area_metas}
-                  ocr_rules={this.props.ocr_rules}
-                  telemetry_rules={this.props.telemetry_rules}
+                  tier_1_scanners={this.props.tier_1_scanners}
                 />
               )
             })}
@@ -555,11 +550,12 @@ class NodeCard extends React.Component {
   getSelectForEntityId() {
     let options = []
     let added_ids = []
+    // TODO can this be brought down to a small piece of code, iterating through scanner types?
     options.push(<option value='' key='pipeline_node_entity_id_none'></option>)
     if (this.props.node_metadata['node'][this.props.node_id]['type'] === 'template') {
-      for (let i=0; i < Object.keys(this.props.templates).length; i++) {
-        const scanner_id = Object.keys(this.props.templates)[i]
-        const scanner= this.props.templates[scanner_id]
+      for (let i=0; i < Object.keys(this.props.tier_1_scanners['template']).length; i++) {
+        const scanner_id = Object.keys(this.props.tier_1_scanners['template'])[i]
+        const scanner= this.props.tier_1_scanners['template'][scanner_id]
         options.push(
           <option value={scanner_id} key={i}>{scanner['name']}</option>
         )
@@ -575,9 +571,9 @@ class NodeCard extends React.Component {
         }
       }
     } else if (this.props.node_metadata['node'][this.props.node_id]['type'] === 'selected_area') {
-      for (let i=0; i < Object.keys(this.props.selected_area_metas).length; i++) {
-        const scanner_id = Object.keys(this.props.selected_area_metas)[i]
-        const scanner= this.props.selected_area_metas[scanner_id]
+      for (let i=0; i < Object.keys(this.props.tier_1_scanners['selected_area']).length; i++) {
+        const scanner_id = Object.keys(this.props.tier_1_scanners['selected_area'])[i]
+        const scanner= this.props.tier_1_scanners['selected_area'][scanner_id]
         options.push(
           <option value={scanner_id} key={i}>{scanner['name']}</option>
         )
@@ -593,9 +589,9 @@ class NodeCard extends React.Component {
         }
       }
     } else if (this.props.node_Metadata['node'][this.props.node_id]['type'] === 'ocr') {
-      for (let i=0; i < Object.keys(this.props.ocr_rules).length; i++) {
-        const scanner_id = Object.keys(this.props.ocr_rules)[i]
-        const scanner= this.props.ocr_rules[scanner_id]
+      for (let i=0; i < Object.keys(this.props.tier_1_scanners['ocr']).length; i++) {
+        const scanner_id = Object.keys(this.props.tier_1_scanners['ocr'])[i]
+        const scanner= this.props.tier_1_scanners['ocr'][scanner_id]
         options.push(
           <option value={scanner_id} key={i}>{scanner['name']}</option>
         )
@@ -611,9 +607,9 @@ class NodeCard extends React.Component {
         }
       }
     } else if (this.props.node_metadata['node'][this.props.node_id]['type'] === 'telemetry') {
-      for (let i=0; i < Object.keys(this.props.telemetry_rules).length; i++) {
-        const scanner_id = Object.keys(this.props.telemetry_rules)[i]
-        const scanner= this.props.telemetry_rules[scanner_id]
+      for (let i=0; i < Object.keys(this.props.tier_1_scanners['telemetry']).length; i++) {
+        const scanner_id = Object.keys(this.props.tier_1_scanners['telemetry'])[i]
+        const scanner= this.props.tier_1_scanners['telemetry'][scanner_id]
         options.push(
           <option value={scanner_id} key={i}>{scanner['name']}</option>
         )

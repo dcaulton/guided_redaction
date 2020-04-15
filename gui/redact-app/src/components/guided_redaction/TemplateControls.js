@@ -77,8 +77,8 @@ class TemplateControls extends React.Component {
   }
 
   componentDidMount() {
-    if (this.props.current_template_id) {
-      let template = this.props.templates[this.props.current_template_id]
+    if (this.props.tier_1_scanner_current_ids['template']) {
+      let template = this.props.tier_1_scanners['template'][this.props.tier_1_scanner_current_ids['template']]
       this.setLocalVarsFromTemplate(template)
     }
     this.props.addInsightsCallback('getCurrentTemplateAnchors', this.getCurrentAnchors)
@@ -96,10 +96,14 @@ class TemplateControls extends React.Component {
         app_this.setLocalVarsFromTemplate(template)
         app_this.props.displayInsightsMessage('Template has been loaded')
       }
-      let deepCopyTemplates = JSON.parse(JSON.stringify(app_this.props.templates))
+      let deepCopyScanners = JSON.parse(JSON.stringify(app_this.props.tier_1_scanners))
+      let deepCopyTemplates = deepCopyScanners['template']
       deepCopyTemplates[template['id']] = template
-      app_this.props.setGlobalStateVar('templates', deepCopyTemplates)
-      app_this.props.setGlobalStateVar('current_template_id', template['id'])
+      deepCopyScanners['template'] = deepCopyTemplates
+      app_this.props.setGlobalStateVar('tier_1_scanners', deepCopyScanners)
+      let deepCopyIds = JSON.parse(JSON.stringify(app_this.props.tier_1_scanner_current_ids))
+      deepCopyIds['template'] = template['id']
+      app_this.props.setGlobalStateVar('tier_1_scanner_current_ids', deepCopyIds)
     })
     reader.readAsBinaryString(files[0]);
   }
@@ -107,13 +111,15 @@ class TemplateControls extends React.Component {
   buildLoadButton() {                                                 
     return buildTier1LoadButton(
       'template',
-      this.props.templates,
+      this.props.tier_1_scanners['template'],
       ((value)=>{this.loadTemplate(value)})
     )
   } 
 
   loadNewTemplate() {
-    this.props.setGlobalStateVar('current_template_id', '')
+    let deepCopyIds = JSON.parse(JSON.stringify(this.props.tier_1_scanner_current_ids))
+    deepCopyIds['template'] = ''
+    this.props.setGlobalStateVar('tier_1_scanner_current_ids', deepCopyIds)
     this.setState({
       id: '',
       name: '',
@@ -134,7 +140,7 @@ class TemplateControls extends React.Component {
     if (!template_id) {
       this.loadNewTemplate()
     } else {
-      const template = this.props.templates[template_id]
+      const template = this.props.tier_1_scanners['template'][template_id]
       this.setState({
         id: template_id,
         name: template['name'],
@@ -150,7 +156,9 @@ class TemplateControls extends React.Component {
         unsaved_changes: false,
       })
     }
-    this.props.setGlobalStateVar('current_template_id', template_id)
+    let deepCopyIds = JSON.parse(JSON.stringify(this.props.tier_1_scanner_current_ids))
+    deepCopyIds['template'] = template_id
+    this.props.setGlobalStateVar('tier_1_scanner_current_ids', deepCopyIds)
     this.props.displayInsightsMessage('Template has been loaded')
   }
 
@@ -255,17 +263,21 @@ class TemplateControls extends React.Component {
   buildDeleteButton() {
     return buildTier1DeleteButton(
       'template',
-      this.props.templates,
+      this.props.tier_1_scanners['template'],
       ((value)=>{this.deleteTemplate(value)})
     )
   }
 
   deleteTemplate(template_id) {
-    let deepCopyTemplates = JSON.parse(JSON.stringify(this.props.templates))
+    let deepCopyScanners = JSON.parse(JSON.stringify(this.props.tier_1_scanners))
+    let deepCopyTemplates = deepCopyScanners['template']
     delete deepCopyTemplates[template_id]
-    this.props.setGlobalStateVar('templates', deepCopyTemplates)
-    if (template_id === this.props.current_template_id) {
-      this.props.setGlobalStateVar('current_template_id', '')
+    deepCopyScanners['template'] = deepCopyTemplates
+    this.props.setGlobalStateVar('tier_1_scanners', deepCopyScanners)
+    if (template_id === this.props.tier_1_scanner_current_ids['template']) {
+      let deepCopyIds = JSON.parse(JSON.stringify(this.props.tier_1_scanner_current_ids))
+      deepCopyIds['template'] = ''
+      this.props.setGlobalStateVar('tier_1_scanner_current_ids', deepCopyIds)
     }
     this.props.displayInsightsMessage('Template was deleted')
   }
@@ -346,9 +358,10 @@ class TemplateControls extends React.Component {
         this.state.name,
         this.getTemplateFromState,
         this.props.displayInsightsMessage,
-        this.props.templates,
-        'templates',
-        'current_template_id',
+        this.props.tier_1_scanners,
+        this.props.tier_1_scanner_current_ids,
+        'template',
+        'template',
         this.setLocalStateVar,
         this.props.setGlobalStateVar,
       )
@@ -499,7 +512,7 @@ class TemplateControls extends React.Component {
     return clearTier1Matches(
       'template',
       this.props.tier_1_matches,
-      this.props.current_template_id,
+      this.props.tier_1_scanner_current_ids['template'],
       this.props.movie_url,
       ((a,b)=>{this.props.setGlobalStateVar(a,b)}),
       ((a)=>{this.props.displayInsightsMessage(a)}),
@@ -711,8 +724,8 @@ class TemplateControls extends React.Component {
 
   buildSourceMovieImageInfo() {
     if (this.state.id) {
-      if (Object.keys(this.props.templates).includes(this.state['id'])) {
-        const template = this.props.templates[this.state['id']]
+      if (Object.keys(this.props.tier_1_scanners['template']).includes(this.state['id'])) {
+        const template = this.props.tier_1_scanners['template'][this.state['id']]
         if (template['anchors'].length > 0) {
           const movie_url = template['anchors'][0]['movie']
           const image_url = template['anchors'][0]['image']

@@ -159,7 +159,7 @@ class SelectedAreaControls extends React.Component {
   buildLoadButton() {                                                           
     return buildTier1LoadButton(
       'selected_area',
-      this.props.selected_area_metas,
+      this.props.tier_1_scanners['selected_area'],
       ((value)=>{this.loadSelectedAreaMeta(value)})
     )
   }
@@ -168,7 +168,7 @@ class SelectedAreaControls extends React.Component {
     if (!selected_area_meta_id) {
       this.loadNewSelectedAreaMeta()
     } else {
-      const sam = this.props.selected_area_metas[selected_area_meta_id]
+      const sam = this.props.tier_1_scanners['selected_area'][selected_area_meta_id]
       this.setState({
         id: sam['id'],
         name: sam['name'],
@@ -186,12 +186,16 @@ class SelectedAreaControls extends React.Component {
         unsaved_changes: false,
       })
     }
-    this.props.setGlobalStateVar('current_selected_area_meta_id', selected_area_meta_id)
+    let deepCopyIds = JSON.parse(JSON.stringify(this.props.tier_1_scanner_current_ids))
+    deepCopyIds['selected_area'] = selected_area_meta_id
+    this.props.setGlobalStateVar('tier_1_scanner_current_ids', deepCopyIds)
     this.props.displayInsightsMessage('Selected area meta has been loaded')
   }
 
   loadNewSelectedAreaMeta() {
-    this.props.setGlobalStateVar('current_selected_area_meta_id', '')
+    let deepCopyIds = JSON.parse(JSON.stringify(this.props.tier_1_scanner_current_ids))
+    deepCopyIds['selected_area'] = ''
+    this.props.setGlobalStateVar('tier_1_scanner_current_ids', deepCopyIds)
     this.setState({
       id: '',
       name: '',
@@ -231,13 +235,14 @@ class SelectedAreaControls extends React.Component {
 
   doSave(when_done=(()=>{})) {
     doTier1Save(
-      'selected_area_meta',
+      'selected_area',
       this.state.name,
       this.getSelectedAreaMetaFromState,
       this.props.displayInsightsMessage,
-      this.props.selected_area_metas,
-      'selected_area_metas',
-      'current_selected_area_meta_id',
+      this.props.tier_1_scanners,
+      this.props.tier_1_scanner_current_ids,
+      'selected_area',
+      'selected_area',
       this.setLocalStateVar,
       this.props.setGlobalStateVar,
       when_done
@@ -247,9 +252,9 @@ class SelectedAreaControls extends React.Component {
   async doSaveToDatabase() {
     this.doSave(((selected_area_meta) => {
       this.props.saveScannerToDatabase(
-        'selected_area_meta',
+        'selected_area',
         selected_area_meta,
-        (()=>{this.props.displayInsightsMessage('Selected Area Meta has been saved to database')})
+        (()=>{this.props.displayInsightsMessage('Selected Area has been saved to database')})
       )
     }))
   }
@@ -355,9 +360,9 @@ class SelectedAreaControls extends React.Component {
     let t2_temp_ids = []
     let adhoc_option = (<option value=''></option>)
     if (this.state.origin_entity_type === 'template_anchor') {
-      for (let i=0; i < Object.keys(this.props.templates).length; i++) {
-        const template_id = Object.keys(this.props.templates)[i]
-        const template = this.props.templates[template_id]
+      for (let i=0; i < Object.keys(this.props.tier_1_scanners['template']).length; i++) {
+        const template_id = Object.keys(this.props.tier_1_scanners['template'])[i]
+        const template = this.props.tier_1_scanners['template'][template_id]
         if (template['scan_level'] === 'tier_1') {
           t1_temp_ids.push(template_id)
         }
@@ -370,9 +375,9 @@ class SelectedAreaControls extends React.Component {
 
     let anchor_descs = {}
     let anchor_keys = []
-    for (let i=0; i < Object.keys(this.props.templates).length; i++) {
-      const template_id = Object.keys(this.props.templates)[i]
-      const template = this.props.templates[template_id]
+    for (let i=0; i < Object.keys(this.props.tier_1_scanners['template']).length; i++) {
+      const template_id = Object.keys(this.props.tier_1_scanners['template'])[i]
+      const template = this.props.tier_1_scanners['template'][template_id]
       let temp_type = 'unknown template'
       if (t1_temp_ids.includes(template_id)) {
         temp_type = 'Tier 1 template'
@@ -553,19 +558,23 @@ class SelectedAreaControls extends React.Component {
   buildDeleteButton() {
     return buildTier1DeleteButton(
       'selected_area',
-      this.props.selected_area_metas,
+      this.props.tier_1_scanners['selected_area'],
       ((value)=>{this.deleteSelectedAreaMeta(value)})
     )
   }
 
   deleteSelectedAreaMeta(sam_id) {
-    let deepCopySelectedAreaMetas = JSON.parse(JSON.stringify(this.props.selected_area_metas))
-    delete deepCopySelectedAreaMetas[sam_id]
-    this.props.setGlobalStateVar('selected_area_metas', deepCopySelectedAreaMetas)
-    if (sam_id === this.props.current_selected_area_meta_id) {
-      this.props.setGlobalStateVar('current_selected_area_meta_id', '')
+    let deepCopyScanners = JSON.parse(JSON.stringify(this.props.tier_1_scanners))
+    let deepCopySelectedAreas = deepCopyScanners['selected_area']
+    delete deepCopySelectedAreas[sam_id]
+    deepCopyScanners['selected_area'] = deepCopySelectedAreas
+    this.props.setGlobalStateVar('tier_1_scanners', deepCopyScanners)
+    if (sam_id === this.props.tier_1_scanner_current_ids['selected_area']) {
+      let deepCopyIds = JSON.parse(JSON.stringify(this.props.tier_1_scanner_current_ids))
+      deepCopyIds['selected_area'] = ''
+      this.props.setGlobalStateVar('tier_1_scanner_current_ids', deepCopyIds)
     }
-    this.props.displayInsightsMessage('Selected Area Meta was deleted')
+    this.props.displayInsightsMessage('Selected Area was deleted')
   }
 
   buildClearAreasButton() {
@@ -631,7 +640,7 @@ class SelectedAreaControls extends React.Component {
     return clearTier1Matches(
       'selected_area',
       this.props.tier_1_matches,
-      this.props.current_selected_area_meta_id,
+      this.props.tier_1_scanner_current_ids['selected_area'],
       this.props.movie_url,
       ((a,b)=>{this.props.setGlobalStateVar(a,b)}),
       ((a)=>{this.props.displayInsightsMessage(a)}),
@@ -765,7 +774,7 @@ class SelectedAreaControls extends React.Component {
                     deleteScanner={this.props.deleteScanner}
                     scanners={this.props.scanners}
                     displayInsightsMessage={this.props.displayInsightsMessage}
-                    search_type='selected_area_meta'
+                    search_type='selected_area'
                   />
                 </div>
 

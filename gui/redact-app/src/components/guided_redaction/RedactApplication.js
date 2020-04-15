@@ -36,22 +36,10 @@ class RedactApplication extends React.Component {
       workbooks: [],
       movies: {},
       movie_sets: {},
-      current_template_id: '',
-      templates: {},
-      tier_1_matches: {
-        'ocr': {},
-        'template': {},
-        'telemetry': {},
-        'selected_area': {},
-      },
       annotations: {},
       jobs: [],
       scanners: [],
       files: {},
-      selected_area_metas: {},
-      ocr_rules: {},
-      current_ocr_rule_id: '',
-      current_selected_area_meta_id: '',
       subsequences: {},
       showMovieParserLink: true,
       showInsightsLink: true,
@@ -66,8 +54,6 @@ class RedactApplication extends React.Component {
         lineWidth: 5,
       },
       preserveAllJobs: false,
-      telemetry_rules: {},
-      current_telemetry_rule_id: '',
       telemetry_data: {
         raw_data_url: '',
         movie_mappings: [],
@@ -78,6 +64,27 @@ class RedactApplication extends React.Component {
       userTone: 'lfo',
       preserve_movie_audio: false,
       app_codebooks: {},
+      tier_1_scanners: {
+        'ocr': {},
+        'ocr_scene_analysis': {},
+        'template': {},
+        'telemetry': {},
+        'selected_area': {},
+      },
+      tier_1_scanner_current_ids: {
+        'ocr': '',
+        'ocr_scene_analysis': '',
+        'template': '',
+        'telemetry': '',
+        'selected_area': '',
+      },
+      tier_1_matches: {
+        'ocr': {},
+        'ocr_scene_analysis': {},
+        'template': {},
+        'telemetry': {},
+        'selected_area': {},
+      },
     }
 
     this.getNextImageHash=this.getNextImageHash.bind(this)
@@ -434,24 +441,31 @@ class RedactApplication extends React.Component {
     })
     .then((response) => response.json())
     .then((responseJson) => {
+      // TODO refactor this when all t1s are in the same data objects
       if (responseJson['scanner']['type'] === 'template') {
         const template = JSON.parse(responseJson['scanner']['content'])
-        let deepCopyTemplates= JSON.parse(JSON.stringify(this.state.templates))
+        let deepCopyT1Scanners = JSON.parse(JSON.stringify(this.state.tier_1_scanners))
+        let deepCopyTemplates = deepCopyT1Scanners['template']
         template['attributes'] = responseJson['scanner']['attributes']
         deepCopyTemplates[template['id']] = template
-        this.setGlobalStateVar('templates', deepCopyTemplates)
+        deepCopyT1Scanners['template'] = deepCopyTemplates
+        this.setGlobalStateVar('tier_1_scanners', deepCopyT1Scanners)
       } else if (responseJson['scanner']['type'] === 'selected_area_meta') {
         const sam = JSON.parse(responseJson['scanner']['content'])
-        let deepCopySelectedAreaMetas = JSON.parse(JSON.stringify(this.state.selected_area_metas))
+        let deepCopyT1Scanners = JSON.parse(JSON.stringify(this.state.tier_1_scanners))
+        let deepCopySelectedAreaMetas = deepCopyT1Scanners['selected_area']
         sam['attributes'] = responseJson['scanner']['attributes']
         deepCopySelectedAreaMetas[sam['id']] = sam
-        this.setGlobalStateVar('selected_area_metas', deepCopySelectedAreaMetas)
+        deepCopyT1Scanners['selected_area'] = deepCopySelectedAreaMetas
+        this.setGlobalStateVar('tier_1_scanners', deepCopyT1Scanners)
       } else if (responseJson['scanner']['type'] === 'ocr_rule') {
         const ocr_rule = JSON.parse(responseJson['scanner']['content'])
-        let deepCopyOcrRules = JSON.parse(JSON.stringify(this.state.ocr_rules))
+        let deepCopyT1Scanners = JSON.parse(JSON.stringify(this.state.tier_1_scanners))
+        let deepCopyOcrRules = deepCopyT1Scanners['ocr']
         ocr_rule['attributes'] = responseJson['scanner']['attributes']
         deepCopyOcrRules[ocr_rule['id']] = ocr_rule
-        this.setGlobalStateVar('ocr_rules', deepCopyOcrRules)
+        deepCopyT1Scanners['ocr'] = deepCopyOcrRules
+        this.setGlobalStateVar('tier_1_scanners', deepCopyT1Scanners)
       }
       return responseJson
     })
@@ -814,13 +828,17 @@ class RedactApplication extends React.Component {
   }
 
   setSelectedAreaMetas = (the_metas, meta_id_to_make_active='') => {
+    let deepCopyScanners = JSON.parse(JSON.stringify(this.state.tier_1_scanners))
+    deepCopyScanners['selected_area'] = the_metas
+    let deepCopyIds = JSON.parse(JSON.stringify(this.state.tier_1_scanner_current_ids))
+    deepCopyIds['selected_area'] = meta_id_to_make_active
     if (meta_id_to_make_active) {
       this.setState({
-        selected_area_metas: the_metas,
-        current_selected_area_meta_id: meta_id_to_make_active,
+        tier_1_scanners: deepCopyScanners,
+        tier_1_scanner_current_ids: deepCopyIds,
       })
     } else {
-      this.setGlobalStateVar('selected_area_metas', the_metas)
+      this.setGlobalStateVar('tier_1_scanners', deepCopyScanners)
     }
   }
 
@@ -995,22 +1013,7 @@ class RedactApplication extends React.Component {
   loadTier1ScannersFromTier1Request(scanner_type, request_data) {
     let scanner_id = ''
     let something_changed = false
-    let scanner_hash = {}
-    let scanner_hash_varname = ''
-    let scanner_hash_current_id_name = ''
-    if (scanner_type === 'templates') {
-      scanner_hash = this.state.templates
-      scanner_hash_varname = 'templates'
-      scanner_hash_current_id_name = 'current_template_id'
-    } else if (scanner_type === 'selected_area_metas') {
-      scanner_hash = this.state.selected_area_metas
-      scanner_hash_varname = 'selected_area_metas'
-      scanner_hash_current_id_name = 'current_selected_area_meta_id'
-    } else if (scanner_type === 'ocr_rules') {
-      scanner_hash = this.state.ocr_rules
-      scanner_hash_varname = 'ocr_rules'
-      scanner_hash_current_id_name = 'current_ocr_rule_id'
-    }
+    const scanner_hash = this.state.tier_1_scanners[scanner_type]
     let deepCopyScanners = JSON.parse(JSON.stringify(scanner_hash))
     for (let i=0; i < Object.keys(request_data[scanner_type]).length; i++) {
       scanner_id = Object.keys(request_data[scanner_type])[i]
@@ -1020,9 +1023,13 @@ class RedactApplication extends React.Component {
       }
     }
     if (something_changed) {
+      let deepCopyScannersParent = JSON.parse(JSON.stringify(this.state.tier_1_scanners))
+      deepCopyScannersParent['ocr'] = deepCopyScanners
+      let deepCopyScannerIds = JSON.parse(JSON.stringify(this.state.tier_1_scanner_current_ids))
+      deepCopyScannerIds['ocr'] = scanner_id
       this.setState({
-        [scanner_hash_varname]: deepCopyScanners,
-        [scanner_hash_current_id_name]: scanner_id,
+        tier_1_scanners: deepCopyScannersParent,
+        tier_1_scanner_current_ids: deepCopyScannerIds,
       })
     }
   }
@@ -1063,7 +1070,7 @@ class RedactApplication extends React.Component {
       return
     }
     const request_data = JSON.parse(job.request_data)
-    this.loadTier1ScannersFromTier1Request('ocr_rules', request_data)
+    this.loadTier1ScannersFromTier1Request('ocr', request_data)
     let resp_obj = this.loadMoviesFromTier1Request(request_data)
     let movie_url = resp_obj['movie_url']
     let deepCopyMovies = resp_obj['deepCopyMovies']
@@ -1113,7 +1120,7 @@ class RedactApplication extends React.Component {
       return
     }
     const request_data = JSON.parse(job.request_data)
-    this.loadTier1ScannersFromTier1Request('templates', request_data)
+    this.loadTier1ScannersFromTier1Request('template', request_data)
     let resp_obj = this.loadMoviesFromTier1Request(request_data)
     let movie_url = resp_obj['movie_url']
     let deepCopyMovies = resp_obj['deepCopyMovies']
@@ -1171,7 +1178,7 @@ class RedactApplication extends React.Component {
       return
     }
     const request_data = JSON.parse(job.request_data)
-    this.loadTier1ScannersFromTier1Request('selected_area_metas', request_data)
+    this.loadTier1ScannersFromTier1Request('selected_area', request_data)
     let resp_obj = this.loadMoviesFromTier1Request(request_data)
     const movie_url = resp_obj['movie_url']
     let deepCopyMovies = resp_obj['deepCopyMovies']
@@ -1512,7 +1519,8 @@ class RedactApplication extends React.Component {
     let deepCopyMovies = JSON.parse(JSON.stringify(this.state.movies))
     let deepCopyTemplates = JSON.parse(JSON.stringify(this.state.templates))
     let deepCopyTier1Matches= JSON.parse(JSON.stringify(this.state.tier_1_matches))
-    let deepCopySelectedAreaMetas = JSON.parse(JSON.stringify(this.state.selected_area_metas))
+    let deepCopyT1Scanners = JSON.parse(JSON.stringify(this.state.tier_1_scanners))
+    let deepCopySelectedAreaMetas = deepCopyT1Scanners['selected_area']
     let movie_url = ''
     if (Object.keys(responseJson).includes('movies')) {
       for (let i=0; i < Object.keys(responseJson['movies']).length; i++) {
@@ -1563,13 +1571,14 @@ class RedactApplication extends React.Component {
       let something_changed = false
       for (let i=0; i < Object.keys(responseJson['selected_area_metas']).length; i++) {
         const sam_id = Object.keys(responseJson['selected_area_metas'])[i]
-        if (!Object.keys(this.state.selected_area_metas).includes(sam_id)) {
+        if (!Object.keys(this.state.tier_1_scanners['selected_area']).includes(sam_id)) {
           deepCopySelectedAreaMetas[sam_id] = responseJson['selected_area_metas'][sam_id]
           something_changed = true
         }
       }
       if (something_changed) {
-        this.setGlobalStateVar('selected_area_metas', deepCopySelectedAreaMetas)
+        deepCopyT1Scanners['selected_area'] = deepCopySelectedAreaMetas
+        this.setGlobalStateVar('tier_1_scanners', deepCopyT1Scanners)
       }
     }
   }
@@ -1594,7 +1603,10 @@ class RedactApplication extends React.Component {
     }
     deepCopyTier1Matches['telemetry'] = deepCopyTelemetryMatches  // is this needed?
     this.setGlobalStateVar('tier_1_matches', deepCopyTier1Matches)
-    this.setGlobalStateVar('current_telemetry_rule_id', rule_id)
+
+    let deepCopyIds = JSON.parse(JSON.stringify(this.state.tier_1_scanner_current_ids))
+    deepCopyIds['telemetry'] = rule_id
+    this.setGlobalStateVar('tier_1_scanner_current_ids', deepCopyIds)
   }
 
   async getJobResultData(job_id, when_done=(()=>{})) {
@@ -2296,7 +2308,7 @@ class RedactApplication extends React.Component {
                 frameset_discriminator={this.state.frameset_discriminator}
                 getRedactedMovieUrl={this.getRedactedMovieUrl}
                 setMovieRedactedUrl={this.setMovieRedactedUrl}
-                templates={this.state.templates}
+                templates={this.state.tier_1_scanners['template']}
                 getFramesetHashesInOrder={this.getFramesetHashesInOrder}
                 getJobs={this.getJobs}
                 submitJob={this.submitJob}
@@ -2325,7 +2337,7 @@ class RedactApplication extends React.Component {
                 getPrevImageHash={this.getPrevImageHash}
                 setImageScale={this.setImageScale}
                 showAdvancedPanels={this.state.showAdvancedPanels}
-                templates={this.state.templates}
+                templates={this.state.tier_1_scanners['template']}
                 clearCurrentFramesetChanges={this.clearCurrentFramesetChanges}
                 whenDoneTarget={this.state.whenDoneTarget}
                 gotoWhenDoneTarget={this.gotoWhenDoneTarget}
@@ -2368,8 +2380,6 @@ class RedactApplication extends React.Component {
                 movie_url={this.state.movie_url}
                 movies={this.state.movies}
                 getCurrentFramesets={this.getCurrentFramesets}
-                current_template_id={this.state.current_template_id}
-                templates={this.state.templates}
                 doPing={this.doPing}
                 cancelJob={this.cancelJob}
                 submitJob={this.submitJob}
@@ -2386,8 +2396,6 @@ class RedactApplication extends React.Component {
                 current_workbook_name={this.state.current_workbook_name}
                 current_workbook_id={this.state.current_workbook_id}
                 setSelectedAreaMetas={this.setSelectedAreaMetas}
-                selected_area_metas={this.state.selected_area_metas}
-                current_selected_area_meta_id={this.state.current_selected_area_meta_id}
                 annotations={this.state.annotations}
                 cropImage={this.cropImage}
                 setMovieNickname={this.setMovieNickname}
@@ -2402,10 +2410,7 @@ class RedactApplication extends React.Component {
                 getFiles={this.getFiles}
                 deleteFile={this.deleteFile}
                 preserveAllJobs={this.state.preserveAllJobs}
-                telemetry_rules={this.state.telemetry_rules}
                 tier_1_matches={this.state.tier_1_matches}
-                current_telemetry_rule_id={this.state.current_telemetry_rule_id}
-                current_ocr_rule_id={this.state.current_ocr_rule_id}
                 telemetry_data={this.state.telemetry_data}
                 setTelemetryData={this.setTelemetryData}
                 getJobResultData={this.getJobResultData}
@@ -2417,7 +2422,6 @@ class RedactApplication extends React.Component {
                 importScanner={this.importScanner}
                 wrapUpJob={this.wrapUpJob}
                 preserve_movie_audio={this.state.preserve_movie_audio}
-                ocr_rules={this.state.ocr_rules}
                 pipelines={this.state.pipelines}
                 current_pipeline_id={this.state.current_pipeline_id}
                 getPipelines={this.getPipelines}
@@ -2426,6 +2430,8 @@ class RedactApplication extends React.Component {
                 savePipelineToDatabase={this.savePipelineToDatabase}
                 results={this.state.results}
                 app_codebooks={this.state.app_codebooks}
+                tier_1_scanners={this.state.tier_1_scanners}
+                tier_1_scanner_current_ids={this.state.tier_1_scanner_current_ids}
               />
             </Route>
           </Switch>

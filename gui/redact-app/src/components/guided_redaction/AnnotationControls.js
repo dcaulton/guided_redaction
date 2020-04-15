@@ -38,7 +38,7 @@ class AnnotationControls extends React.Component {
   }
 
   buildTemplateDropdown() {
-    const template_keys = Object.keys(this.props.templates)
+    const template_keys = Object.keys(this.props.tier_1_scanners['template'])
     if (template_keys.length) {
       return(
         <select
@@ -47,7 +47,7 @@ class AnnotationControls extends React.Component {
         >
         {template_keys.map((value, index) => {
           return (
-            <option key={index} value={this.props.templates[value]['id']}>{this.props.templates[value]['name']}</option>
+            <option key={index} value={this.props.tier_1_scanners['template'][value]['id']}>{this.props.tier_1_scanners['template'][value]['name']}</option>
           )
         })}
         </select>
@@ -61,7 +61,7 @@ class AnnotationControls extends React.Component {
     if (!this.props.current_template_id) {
       return ''
     }
-    const cur_template = this.props.templates[this.props.current_template_id]
+    const cur_template = this.props.tier_1_scanners['template'][this.props.current_template_id]
     if (!cur_template) {
       return ''
     }
@@ -161,7 +161,7 @@ class AnnotationControls extends React.Component {
     let template_add_button = ''
     let template_delete_button = ''
     let template_interactive_add_button = ''
-    if (Object.keys(this.props.templates).length) {
+    if (Object.keys(this.props.tier_1_scanners['template']).length) {
       template_add_button = (
         <button
             className='btn btn-primary m-2'

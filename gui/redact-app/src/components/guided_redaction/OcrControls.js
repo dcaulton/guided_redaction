@@ -210,7 +210,7 @@ class OcrControls extends React.Component {
     if (!ocr_rule_id) {
       this.loadNewOcrRule()
     } else {
-      const ocr_rule = this.props.ocr_rules[ocr_rule_id]
+      const ocr_rule = this.props.tier_1_scanners['ocr'][ocr_rule_id]
       this.setState({
         id: ocr_rule['id'],
         name: ocr_rule['name'],
@@ -225,13 +225,18 @@ class OcrControls extends React.Component {
         origin_entity_location: ocr_rule['origin_entity_location'],
         unsaved_changes: false,
       })
+      ocr_rule_id = ocr_rule['id']
     }
-    this.props.setGlobalStateVar('current_ocr_rule_id', ocr_rule_id)
+    let deepCopyIds = JSON.parse(JSON.stringify(this.props.tier_1_scanner_current_ids))
+    deepCopyIds['ocr'] = ocr_rule_id
+    this.props.setGlobalStateVar('tier_1_scanner_current_ids', deepCopyIds)
     this.props.displayInsightsMessage('Ocr rule has been loaded')
   }
 
   loadNewOcrRule() {                                                   
-    this.props.setGlobalStateVar('current_ocr_rule_id', '')
+    let deepCopyIds = JSON.parse(JSON.stringify(this.state.tier_1_scanner_current_ids))
+    deepCopyIds['ocr'] = ''
+    this.props.setGlobalStateVar('tier_1_scanner_current_ids', deepCopyIds)
     this.setState({
       id: '',
       name: '',
@@ -441,13 +446,14 @@ class OcrControls extends React.Component {
 
   doSave(when_done=(()=>{})) {
     doTier1Save(
-      'ocr_rule',
+      'ocr',
       this.state.name,
       this.getOcrMetaFromState,
       this.props.displayInsightsMessage,
-      this.props.ocr_rules,
-      'ocr_rules',
-      'current_ocr_rule_id',
+      this.props.tier_1_scanners,
+      this.props.tier_1_scanner_current_ids,
+      'ocr',
+      'ocr',
       this.setLocalStateVarNoWarning,
       this.props.setGlobalStateVar,
       when_done
@@ -466,26 +472,30 @@ class OcrControls extends React.Component {
 
   buildLoadButton() {
     return buildTier1LoadButton(
-      'ocr_rule',
-      this.props.ocr_rules,
+      'ocr',
+      this.props.tier_1_scanners['ocr'],
       ((value)=>{this.loadOcrRule(value)})
     )
   }
 
   buildDeleteButton() {
     return buildTier1DeleteButton(
-      'ocr_rule',
-      this.props.ocr_rules,
+      'ocr',
+      this.props.tier_1_scanners['ocr'],
       ((value)=>{this.deleteOcrRule(value)})
     )
   }
 
   deleteOcrRule(ocr_rule_id) {
-    let deepCopyOcrRules= JSON.parse(JSON.stringify(this.props.ocr_rules))
+    let deepCopyScanners = JSON.parse(JSON.stringify(this.props.tier_1_scanners))
+    let deepCopyOcrRules= deepCopyScanners['ocr']
     delete deepCopyOcrRules[ocr_rule_id]
-    this.props.setGlobalStateVar('ocr_rules', deepCopyOcrRules)
-    if (ocr_rule_id === this.props.current_ocr_rule_id) {
-      this.props.setGlobalStateVar('current_ocr_rule_id', '')
+    deepCopyScanners['ocr'] = deepCopyOcrRules
+    this.props.setGlobalStateVar('tier_1_scanners', deepCopyScanners)
+    if (ocr_rule_id === this.props.tier_1_scanner_current_ids['ocr']) {
+      let deepCopyIds = JSON.parse(JSON.stringify(this.props.tier_1_scanner_current_ids))
+      deepCopyIds['ocr'] = ''
+      this.props.setGlobalStateVar('tier_1_scanner_current_ids', deepCopyIds)
     }
     this.props.displayInsightsMessage('Ocr rule was deleted')
   }
@@ -501,7 +511,7 @@ class OcrControls extends React.Component {
     return clearTier1Matches(
       'ocr',
       this.props.tier_1_matches,
-      this.props.current_ocr_rule_id,
+      this.props.tier_1_scanner_current_ids['ocr'],
       this.props.movie_url,
       ((a,b)=>{this.props.setGlobalStateVar(a,b)}),
       ((a)=>{this.props.displayInsightsMessage(a)}),

@@ -30,8 +30,8 @@ class BottomInsightsControls extends React.Component {
     return {
       movies: build_movies,
       tier_1_matches: this.props.tier_1_matches,
-      templates: this.props.templates,
-      selected_area_metas: this.props.selected_area_metas,
+      templates: this.props.tier_1_scanners['template'],
+      selected_area_metas: this.props.tier_1_scanners['selected_area'],
     }
   }
 
@@ -63,16 +63,7 @@ class BottomInsightsControls extends React.Component {
       return ''
     }
 
-    let scanner_inventory = {}
-    if (scanner_type === 'template') {
-      scanner_inventory = this.props.templates
-    } else if (scanner_type === 'selected_area') {
-      scanner_inventory = this.props.selected_area_metas
-    } else if (scanner_type === 'telemetry') {
-      scanner_inventory = this.props.telemetry_rules
-    } else if (scanner_type === 'ocr') {
-      scanner_inventory = this.props.ocr_rules
-    }
+    const scanner_inventory = this.props.tier_1_scanners[scanner_type]
     return (
       <div>
         {tier_1_match_keys.map((value, index) => {
@@ -118,7 +109,6 @@ class BottomInsightsControls extends React.Component {
           handleSetMode={this.props.handleSetMode}
           tier_1_matches={this.props.tier_1_matches}
           submitInsightsJob={this.props.submitInsightsJob}
-          templates={this.props.templates}
           current_template_id={this.props.current_template_id}
           displayInsightsMessage={this.props.displayInsightsMessage}
           cropImage={this.props.cropImage}
@@ -140,7 +130,8 @@ class BottomInsightsControls extends React.Component {
           getScanners={this.props.getScanners}
           deleteScanner={this.props.deleteScanner}
           importScanner={this.props.importScanner}
-          current_ocr_rule_id={this.props.current_ocr_rule_id}
+          tier_1_scanners={this.props.tier_1_scanners}
+          tier_1_scanner_current_ids={this.props.tier_1_scanner_current_ids}
         />
 
         <SelectedAreaControls
@@ -149,7 +140,6 @@ class BottomInsightsControls extends React.Component {
           buildTier1RunOptions={this.buildTier1RunOptions}
           handleSetMode={this.props.handleSetMode}
           tier_1_matches={this.props.tier_1_matches}
-          templates={this.props.templates}
           insights_image={this.props.insights_image}
           getFramesetHashForImageUrl={this.props.getFramesetHashForImageUrl}
           movie_url={this.props.movie_url}
@@ -160,7 +150,6 @@ class BottomInsightsControls extends React.Component {
           toggleShowVisibility={this.props.toggleShowVisibility}
           displayInsightsMessage={this.props.displayInsightsMessage}
           addInsightsCallback={this.props.addInsightsCallback}
-          selected_area_metas={this.props.selected_area_metas}
           setSelectedAreaMetas={this.props.setSelectedAreaMetas}
           scanners={this.props.scanners}
           getScanners={this.props.getScanners}
@@ -172,6 +161,8 @@ class BottomInsightsControls extends React.Component {
           setCurrentVideo={this.props.setCurrentVideo}
           setScrubberToIndex={this.props.setScrubberToIndex}
           getFramesetHashesInOrder={this.props.getFramesetHashesInOrder}
+          tier_1_scanners={this.props.tier_1_scanners}
+          tier_1_scanner_current_ids={this.props.tier_1_scanner_current_ids}
         />
 
         <OcrControls
@@ -184,8 +175,6 @@ class BottomInsightsControls extends React.Component {
           clicked_coords={this.props.clicked_coords}
           buildTier1RunOptions={this.buildTier1RunOptions}
           buildMovieSetOptions={this.buildMovieSetOptions}
-          ocr_rules={this.props.ocr_rules}
-          current_ocr_rule_id={this.props.current_ocr_rule_id}
           setGlobalStateVar={this.props.setGlobalStateVar}
           scanners={this.props.scanners}
           getScanners={this.props.getScanners}
@@ -200,19 +189,21 @@ class BottomInsightsControls extends React.Component {
           setScrubberToIndex={this.props.setScrubberToIndex}
           getFramesetHashesInOrder={this.props.getFramesetHashesInOrder}
           getFramesetHashForImageUrl={this.props.getFramesetHashForImageUrl}
+          tier_1_scanners={this.props.tier_1_scanners}
+          tier_1_scanner_current_ids={this.props.tier_1_scanner_current_ids}
         />
 
         <TelemetryControls
           displayInsightsMessage={this.props.displayInsightsMessage}
           movie_sets={this.props.movie_sets}
           submitInsightsJob={this.props.submitInsightsJob}
-          telemetry_rules={this.props.telemetry_rules}
-          current_telemetry_rule_id={this.props.current_telemetry_rule_id}
           telemetry_data={this.props.telemetry_data}
           setTelemetryData={this.props.setTelemetryData}
           setGlobalStateVar={this.props.setGlobalStateVar}
           visibilityFlags={this.props.visibilityFlags}
           toggleShowVisibility={this.props.toggleShowVisibility}
+          tier_1_scanners={this.props.tier_1_scanners}
+          tier_1_scanner_current_ids={this.props.tier_1_scanner_current_ids}
         />
 
         <OcrSceneAnalysisControls
@@ -222,6 +213,8 @@ class BottomInsightsControls extends React.Component {
           setGlobalStateVar={this.props.setGlobalStateVar}
           visibilityFlags={this.props.visibilityFlags}
           toggleShowVisibility={this.props.toggleShowVisibility}
+          tier_1_scanners={this.props.tier_1_scanners}
+          tier_1_scanner_current_ids={this.props.tier_1_scanner_current_ids}
         />
 
         <PipelineControls
@@ -234,16 +227,12 @@ class BottomInsightsControls extends React.Component {
           deletePipeline={this.props.deletePipeline}
           displayInsightsMessage={this.props.displayInsightsMessage}
           savePipelineToDatabase={this.props.savePipelineToDatabase}
-          templates={this.props.templates}
-          selected_area_metas={this.props.selected_area_metas}
-          ocr_rules={this.props.ocr_rules}
-          telemetry_rules={this.props.telemetry_rules}
           setGlobalStateVar={this.props.setGlobalStateVar}
           movies={this.props.movies}
+          tier_1_scanners={this.props.tier_1_scanners}
         />
 
         <AnnotationControls
-          templates={this.props.templates}
           current_template_id={this.props.current_template_id}
           displayInsightsMessage={this.props.displayInsightsMessage}
           saveAnnotation={this.props.saveAnnotation}
@@ -254,6 +243,7 @@ class BottomInsightsControls extends React.Component {
           getAnnotations={this.props.getAnnotations}
           visibilityFlags={this.props.visibilityFlags}
           toggleShowVisibility={this.props.toggleShowVisibility}
+          tier_1_scanners={this.props.tier_1_scanners}
         />
 
         <DiffControls

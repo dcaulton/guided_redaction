@@ -312,7 +312,7 @@ class TelemetryControls extends React.Component {
 
   buildLoadButton() {
     let return_array = []
-    const telemetry_ids = Object.keys(this.props.telemetry_rules)
+    const telemetry_ids = Object.keys(this.props.tier_1_scanners['telemetry'])
     return_array.push(
       <div key='x35' className='d-inline'>
       <button
@@ -328,7 +328,7 @@ class TelemetryControls extends React.Component {
       </button>
       <div className='dropdown-menu' aria-labelledby='loadTelemetryDropdownButton'>
         {telemetry_ids.map((value, index) => {
-          const telemetry_rule = this.props.telemetry_rules[value]
+          const telemetry_rule = this.props.tier_1_scanners['telemetry'][value]
           return (
             <button
                 className='dropdown-item'

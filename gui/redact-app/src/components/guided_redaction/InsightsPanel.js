@@ -82,12 +82,12 @@ class InsightsPanel extends React.Component {
   }
 
   currentImageIsOcrAnchorImage() {
-    if (this.props.current_ocr_rule_id) {
-      let key = this.props.current_ocr_rule_id
-      if (!Object.keys(this.props.ocr_rules).includes(key)) {
+    if (this.props.tier_1_scanner_current_ids['ocr']) {
+      let key = this.props.tier_1_scanner_current_ids['ocr']
+      if (!Object.keys(this.props.tier_1_scanners['ocr']).includes(key)) {
         return false
       }
-      let ocr_rule = this.props.ocr_rules[key]
+      let ocr_rule = this.props.tier_1_scanners['ocr'][key]
       if (!Object.keys(ocr_rule).includes('image')) {
         return false
       }
@@ -168,8 +168,8 @@ class InsightsPanel extends React.Component {
   }
 
   getCurrentOcrMatches() {
-    if (Object.keys(this.props.tier_1_matches['ocr']).includes(this.props.current_ocr_rule_id)) {
-      const this_ocr_rule_matches = this.props.tier_1_matches['ocr'][this.props.current_ocr_rule_id]  
+    if (Object.keys(this.props.tier_1_matches['ocr']).includes(this.props.tier_1_scanner_current_ids['ocr'])) {
+      const this_ocr_rule_matches = this.props.tier_1_matches['ocr'][this.props.tier_1_scanner_current_ids['ocr']]  
       if (Object.keys(this_ocr_rule_matches['movies']).includes(this.props.movie_url)) {
         const this_movies_matches = this_ocr_rule_matches['movies'][this.props.movie_url]
         const frameset_hash = this.props.getFramesetHashForImageUrl(this.state.insights_image)
@@ -300,11 +300,11 @@ class InsightsPanel extends React.Component {
   }
 
   getCurrentSelectedAreaMeta() {
-    if (this.props.current_selected_area_meta_id && 
-        Object.keys(this.props.selected_area_metas).includes(
-          this.props.current_selected_area_meta_id
+    if (this.props.tier_1_scanner_current_ids['selected_area'] && 
+        Object.keys(this.props.tier_1_scanners['selected_area']).includes(
+          this.props.tier_1_scanner_current_ids['selected_area']
         )) {
-      return this.props.selected_area_metas[this.props.current_selected_area_meta_id]
+      return this.props.tier_1_scanners['selected_area'][this.props.tier_1_scanner_current_ids['selected_area']]
     }
     return {}
   }
@@ -325,15 +325,16 @@ class InsightsPanel extends React.Component {
   }
 
   buildTier1JobData(scanner_type, scope, extra_data) {
+    // TODO merge a lot of this now that t1 stuff is unified
     let job_data = {
       request_data: {},
     }
     if (scanner_type === 'template') {
-      if (!this.props.current_template_id) {
+      if (!this.props.tier_1_scanner_current_ids['template']) {
         this.displayInsightsMessage('no template selected, cannot submit a job')
         return
       }
-      const template = this.props.templates[this.props.current_template_id]
+      const template = this.props.tier_1_scanners['template'][this.props.tier_1_scanner_current_ids['template']]
       job_data['request_data']['templates'] = {}
       job_data['request_data']['templates'][template['id']] = template
       job_data['app'] = 'analyze'
@@ -342,11 +343,11 @@ class InsightsPanel extends React.Component {
       job_data['request_data']['id'] = template['id']
       job_data['description'] = 'scan template (' + template['name'] + ') '
     } else if (scanner_type === 'ocr') {
-      if (!this.props.current_ocr_rule_id) {
+      if (!this.props.tier_1_scanner_current_ids['ocr']) {
         this.displayInsightsMessage('no ocr rule selected, cannot submit a job')
         return
       }
-      const ocr_rule = this.props.ocr_rules[this.props.current_ocr_rule_id]
+      const ocr_rule = this.props.tier_1_scanners['ocr'][this.props.tier_1_scanner_current_ids['ocr']]
       job_data['request_data']['movies'] = {}
       job_data['request_data']['ocr_rules'] = {}
       job_data['request_data']['ocr_rules'][ocr_rule['id']] = ocr_rule
@@ -356,16 +357,17 @@ class InsightsPanel extends React.Component {
       job_data['request_data']['id'] = ocr_rule['id']
       job_data['description'] = 'scan ocr (rule ' + ocr_rule['name'] + ') '
     } else if (scanner_type === 'selected_area') {
-      if (!this.props.current_selected_area_meta_id) {
+      if (!this.props.tier_1_scanner_current_ids['selected_area']) {
         this.displayInsightsMessage('no selected_area_meta selected, cannot submit a job')
         return
       }
       job_data['app'] = 'analyze'
       job_data['operation'] = 'selected_area_threaded'
-      const cur_selected_area = this.props.selected_area_metas[this.props.current_selected_area_meta_id]
+      const cur_sa_id = this.props.tier_1_scanner_current_ids['selected_area']
+      const cur_selected_area = this.props.tier_1_scanners['selected_area'][cur_sa_id]
       job_data['request_data']['selected_area_metas'] = {}
-      job_data['request_data']['selected_area_metas'][this.props.current_selected_area_meta_id] = cur_selected_area
-      job_data['request_data']['id'] = this.props.current_selected_area_meta_id
+      job_data['request_data']['selected_area_metas'][cur_sa_id] = cur_selected_area
+      job_data['request_data']['id'] = cur_sa_id
       job_data['request_data']['scan_level'] = cur_selected_area['scan_level']
       job_data['description'] = 'scan selected area (' + cur_selected_area['name'] + ') '
     }
@@ -388,21 +390,21 @@ class InsightsPanel extends React.Component {
       job_data['request_data']['movies']['source'] = this.makeSourceForPassedT1Output(tier_1_output)
     } else if (scope.match(/_t1_selected_area$/)) {   
       const selected_area_id = extra_data
-      const t1_selected_area_meta = this.props.selected_area_metas[selected_area_id]
+      const t1_selected_area_meta = this.props.tier_1_scanners['selected_area'][selected_area_id]
       const tier_1_output = this.props.tier_1_matches['selected_area'][selected_area_id]['movies']
       job_data['description'] += 'on t1 selected area results (sa ' + t1_selected_area_meta['name'] + ')'
       job_data['request_data']['movies'] = tier_1_output
       job_data['request_data']['movies']['source'] = this.makeSourceForPassedT1Output(tier_1_output)
     } else if (scope.match(/_t1_ocr$/)) {   
       const ocr_id = extra_data
-      const t1_ocr_rule = this.props.ocr_rules[ocr_id]
+      const t1_ocr_rule = this.props.tier_1_scanners['ocr'][ocr_id]
       const tier_1_output = this.props.tier_1_matches['ocr'][ocr_id]['movies']
       job_data['description'] += 'on t1 ocr results (ocr ' + t1_ocr_rule['name'] + ')'
       job_data['request_data']['movies'] = tier_1_output
       job_data['request_data']['movies']['source'] = this.makeSourceForPassedT1Output(tier_1_output)
     } else if (scope.match(/_t1_telemetry$/)) {   
       const telemetry_id = extra_data
-      const telemetry_rule = this.props.telemetry_rules[telemetry_id]
+      const telemetry_rule = this.props.tier_1_scanners['telemetry'][telemetry_id]
       const tier_1_output = this.props.tier_1_matches['telemetry'][telemetry_id]['movies']
       job_data['description'] += 'on t1 telemetry results (telemetry ' + telemetry_rule['name'] + ')'
       job_data['request_data']['movies'] = tier_1_output
@@ -560,12 +562,12 @@ class InsightsPanel extends React.Component {
     let job_data = {
       request_data: {},
     }
-    const telemetry_rule = this.props.telemetry_rules[this.props.current_telemetry_rule_id]
+    const telemetry_rule = this.props.tier_1_scanners['telemetry'][this.props.tier_1_scanner_current_ids['telemetry']]
     job_data['app'] = 'analyze'
     job_data['operation'] = 'telemetry_find_matching_frames'
     job_data['request_data']['telemetry_data'] = this.props.telemetry_data
     job_data['request_data']['telemetry_rule'] = telemetry_rule
-    job_data['request_data']['id'] = this.props.current_telemetry_rule_id
+    job_data['request_data']['id'] = this.props.tier_1_scanner_current_ids['telemetry']
     job_data['request_data']['scan_level'] = 'tier_1' // this is the only thing that makes sense for telemetry
     if (job_type === 'current_movie') {
       job_data['request_data']['movies'] = {}
@@ -743,12 +745,12 @@ class InsightsPanel extends React.Component {
   }
 
   currentImageIsSelectedAreaAnchorImage() {
-    if (this.props.current_selected_area_meta_id) {
-      let key = this.props.current_selected_area_meta_id
-      if (!Object.keys(this.props.selected_area_metas).includes(key)) {
+    if (this.props.tier_1_scanner_current_ids['selected_area']) {
+      let key = this.props.tier_1_scanner_current_ids['selected_area']
+      if (!Object.keys(this.props.tier_1_scanners['selected_area']).includes(key)) {
         return false
       }
-      let sam = this.props.selected_area_metas[key]
+      let sam = this.props.tier_1_scanners['selected_area'][key]
       if (!Object.keys(sam).includes('areas')) {
         return false
       }
@@ -983,13 +985,14 @@ class InsightsPanel extends React.Component {
   }
 
   getTier1ScannerMatches(scanner_type) {
+    //TODO refactor when all sacnners live in tier_1_scanners
     let current_scanner_id = ''
     if (scanner_type === 'template') {
       current_scanner_id = this.props.current_template_id
     } else if (scanner_type === 'ocr') {
-      current_scanner_id = this.props.current_ocr_rule_id
+      current_scanner_id = this.props.tier_1_scanner_current_ids['ocr']
     } else if (scanner_type === 'selected_area') {
-      current_scanner_id = this.props.current_selected_area_meta_id
+      current_scanner_id = this.props.tier_1_scanner_current_ids['selected_area']
     }
     const scanner_matches = this.props.tier_1_matches[scanner_type]
     if (!Object.keys(scanner_matches).includes(current_scanner_id)) {
@@ -1098,9 +1101,9 @@ class InsightsPanel extends React.Component {
             setDraggedId={this.setDraggedId}
             tier_1_matches={this.props.tier_1_matches}
             current_template_id={this.props.current_template_id}
-            current_telemetry_rule_id={this.props.current_telemetry_rule_id}
-            current_ocr_rule_id={this.props.current_ocr_rule_id}
-            current_selected_area_meta_id={this.props.current_selected_area_meta_id}
+            current_telemetry_rule_id={this.props.tier_1_scanner_current_ids['telemetry']}
+            tier_1_scanner_current_ids={this.props.tier_1_scanner_current_ids}
+            current_selected_area_meta_id={this.props.tier_1_scanner_current_ids['selected_area']}
             getFramesetHashForImageUrl={this.props.getFramesetHashForImageUrl}
             getFramesetHashesInOrder={this.props.getFramesetHashesInOrder}
             setScrubberToIndex={this.setScrubberToIndex}
@@ -1220,8 +1223,6 @@ class InsightsPanel extends React.Component {
             deleteFile={this.props.deleteFile}
             frameset_discriminator={this.props.frameset_discriminator}
             preserveAllJobs={this.props.preserveAllJobs}
-            telemetry_rules={this.props.telemetry_rules}
-            current_telemetry_rule_id={this.props.current_telemetry_rule_id}
             telemetry_data={this.props.telemetry_data}
             setTelemetryData={this.props.setTelemetryData}
             setTelemetryRules={this.props.setTelemetryRules}
@@ -1238,12 +1239,8 @@ class InsightsPanel extends React.Component {
             getScanners={this.props.getScanners}
             deleteScanner={this.props.deleteScanner}
             importScanner={this.props.importScanner}
-            current_ocr_rule_id={this.props.current_ocr_rule_id}
             preserve_movie_audio={this.props.preserve_movie_audio}
-            selected_area_metas={this.props.selected_area_metas}
-            current_selected_area_meta_id={this.props.current_selected_area_meta_id}
             setSelectedAreaMetas={this.props.setSelectedAreaMetas}
-            ocr_rules={this.props.ocr_rules}
             pipelines={this.props.pipelines}
             current_pipeline_id={this.props.current_pipeline_id}
             getPipelines={this.props.getPipelines}
@@ -1253,6 +1250,8 @@ class InsightsPanel extends React.Component {
             jobs={this.props.jobs}
             results={this.props.results}
             app_codebooks={this.props.app_codebooks}
+            tier_1_scanners={this.props.tier_1_scanners}
+            tier_1_scanner_current_ids={this.props.tier_1_scanner_current_ids}
           />
         </div>
 
