@@ -71,6 +71,7 @@ class ChartMaker:
             else:
                 legend = 'type: {}'.format(str(sam['operation']))
                 build_chart_data['operation'] = legend
+                build_chart_data['selected_area_meta_name'] = sam['name']
             job_resp_data = self.job_data[job_id]['response_data']
             for movie_url in job_resp_data['movies']:
                 build_chart_data[movie_url] = {'data': []}
@@ -109,7 +110,7 @@ class ChartMaker:
         the_uuid = str(uuid.uuid4())
         self.file_writer.create_unique_directory(the_uuid)
         for movie_number, movie_url in enumerate(build_chart_data):
-            if movie_url in ['operation']:
+            if movie_url in ['operation', 'selected_area_meta_name']:
                 continue
             plt.figure(movie_number)
             chart_data = build_chart_data[movie_url]['data']
@@ -129,7 +130,7 @@ class ChartMaker:
             plt.ylabel('% pixels selected')
             plt.axis([1, 100, 0, 1])
             movie_name = movie_url.split('/')[-1]
-            plt.title('Selected Areas for\n{}'.format(movie_name))
+            plt.title('{}\n{}'.format(build_chart_data['name'], movie_name))
             movie_uuid = movie_name.split('.')[0]
 
             lgd = plt.legend(bbox_to_anchor=(0., -0.25, 1., .102), loc='lower left',

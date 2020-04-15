@@ -162,11 +162,44 @@ class ResultsControls extends React.Component {
     return movie_name
   }
 
+  moveResultToTop(movie_url) {
+    let deepCopyResults = JSON.parse(JSON.stringify(this.props.results))
+    let ordered_results = [movie_url]
+    let movie_list = Object.keys(deepCopyResults['movies'])
+    if (Object.keys(deepCopyResults).includes('movie_display_order')) {
+      movie_list = deepCopyResults['movie_display_order']
+    }
+    for (let i=0; i < movie_list.length; i++) {
+      const this_movie_url = movie_list[i]
+      if (this_movie_url !== movie_url) {
+        ordered_results.push(this_movie_url)
+      }
+    }
+    deepCopyResults['movie_display_order'] = ordered_results
+    this.props.setGlobalStateVar('results', deepCopyResults)
+  }
+
+  buildMoveUpLink(movie_url) {
+    return (
+      <button
+        className='btn btn-link'
+        onClick={() => this.moveResultToTop(movie_url)}
+      >
+        move to top
+      </button>
+    )
+  }
+
   buildChartsDiv() {
     if (!this.props.results || !Object.keys(this.props.results).includes('movies')) {
       return ''
     }
-    const movie_urls = Object.keys(this.props.results['movies'])
+    let movie_urls = []
+    if (Object.keys(this.props.results).includes('movie_display_order')) {
+      movie_urls = this.props.results['movie_display_order']
+    } else {
+      movie_urls = Object.keys(this.props.results['movies'])
+    }
     return (
       <div className='col'>
         {movie_urls.map((movie_url, index) => {
@@ -180,6 +213,10 @@ class ResultsControls extends React.Component {
           const wrap_div_style = {
             'minHeight': '700px',
           }
+          let move_up_link = ''
+          if (index) {
+            move_up_link = this.buildMoveUpLink(movie_url) 
+          }
           return (
             <div 
                 className='mt-2 pb-3'
@@ -188,9 +225,11 @@ class ResultsControls extends React.Component {
               {show_hide_row}
 
               <div
+                className='collapse show'
                 id={row_id}
               >
                 <div className='row m-2'>
+                  <div className='col-lg-9'>
                     {chart_urls.map((chart_url, chart_index) => {
                       const img_id = this.getIdFromChartUrl(chart_url)
                       return (
@@ -208,6 +247,10 @@ class ResultsControls extends React.Component {
                         </div>
                       )
                     })}
+                  </div>
+                  <div className='col-lg-3'>
+                    {move_up_link}
+                  </div>
                 </div>
 
                 <div
