@@ -97,7 +97,8 @@ class MoviePanel extends React.Component {
       job_data['request_data']['template_id'] = template['id']
       job_data['request_data']['id'] = template['id']
     }
-    job_data['request_data']['templates'] = templates_wrap
+    job_data['request_data']['tier_1_scanners'] = {}
+    job_data['request_data']['tier_1_scanners']['template'] = templates_wrap
     job_data['request_data']['scan_level'] = 'tier_2'
     let movies_wrap = {}
     movies_wrap[this.props.movie_url] = this.props.movies[this.props.movie_url]

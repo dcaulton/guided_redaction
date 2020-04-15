@@ -335,8 +335,9 @@ class InsightsPanel extends React.Component {
         return
       }
       const template = this.props.tier_1_scanners['template'][this.props.tier_1_scanner_current_ids['template']]
-      job_data['request_data']['templates'] = {}
-      job_data['request_data']['templates'][template['id']] = template
+      job_data['request_data']['tier_1_scanners'] = {}
+      job_data['request_data']['tier_1_scanners']['template'] = {}
+      job_data['request_data']['tier_1_scanners']['template'][template['id']] = template
       job_data['app'] = 'analyze'
       job_data['operation'] = 'scan_template_threaded'
       job_data['request_data']['scan_level'] = template['scan_level']

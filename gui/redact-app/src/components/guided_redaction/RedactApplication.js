@@ -1013,22 +1013,21 @@ class RedactApplication extends React.Component {
   loadTier1ScannersFromTier1Request(scanner_type, request_data) {
     let scanner_id = ''
     let something_changed = false
-    const scanner_hash = this.state.tier_1_scanners[scanner_type]
-    let deepCopyScanners = JSON.parse(JSON.stringify(scanner_hash))
-    for (let i=0; i < Object.keys(request_data[scanner_type]).length; i++) {
-      scanner_id = Object.keys(request_data[scanner_type])[i]
-      if (!Object.keys(scanner_hash).includes(scanner_id)) {
-        deepCopyScanners[scanner_id] = request_data[scanner_type][scanner_id]
+    let deepCopyScanners = JSON.parse(JSON.stringify(this.state.tier_1_scanners))
+    let deepCopyThisScanners = deepCopyScanners[scanner_type]
+    for (let i=0; i < Object.keys(request_data['tier_1_scanners'][scanner_type]).length; i++) {
+      scanner_id = Object.keys(request_data['tier_1_scanners'][scanner_type])[i]
+      if (!Object.keys(deepCopyThisScanners).includes(scanner_id)) {
+        deepCopyThisScanners[scanner_id] = request_data['tier_1_scanners'][scanner_type][scanner_id]
         something_changed = true
       }
     }
     if (something_changed) {
-      let deepCopyScannersParent = JSON.parse(JSON.stringify(this.state.tier_1_scanners))
-      deepCopyScannersParent['ocr'] = deepCopyScanners
+      deepCopyScanners[scanner_type] = deepCopyThisScanners
       let deepCopyScannerIds = JSON.parse(JSON.stringify(this.state.tier_1_scanner_current_ids))
-      deepCopyScannerIds['ocr'] = scanner_id
+      deepCopyScannerIds[scanner_type] = scanner_id
       this.setState({
-        tier_1_scanners: deepCopyScannersParent,
+        tier_1_scanners: deepCopyScanners,
         tier_1_scanner_current_ids: deepCopyScannerIds,
       })
     }

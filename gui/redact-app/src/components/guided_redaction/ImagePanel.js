@@ -238,7 +238,8 @@ class ImagePanel extends React.Component {
       job_data['request_data']['id'] = extra_data
       job_data['request_data']['template_id'] = extra_data
     }
-    job_data['request_data']['templates'] = templates_wrap
+    job_data['request_data']['tier_1_scanners'] = {}
+    job_data['request_data']['tier_1_scanners']['template'] = templates_wrap
     job_data['request_data']['scan_level'] = 'tier_2'
     const movies_wrap = {}
 

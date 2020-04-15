@@ -61,13 +61,13 @@ def scan_template(job_uuid):
             return
         job = Job.objects.get(pk=job_uuid)
         request = json.loads(job.request_data)
-        template_id = list(request['templates'].keys())[0]
-        if ('match_method' not in request['templates'][template_id] or
-            request['templates'][template_id]['match_method'] == 'any'):
+        template_id = list(request['tier_1_scanners']['template'].keys())[0]
+        if ('match_method' not in request['tier_1_scanners']['template'][template_id] or
+            request['tier_1_scanners']['template'][template_id]['match_method'] == 'any'):
             job.response_data = json.dumps(response.data)
-        elif request['templates'][template_id]['match_method'] == 'all':
+        elif request['tier_1_scanners']['template'][template_id]['match_method'] == 'all':
             built_response_data = {}
-            all_anchor_keys = set([x['id'] for x in request['templates'][template_id]['anchors']])
+            all_anchor_keys = set([x['id'] for x in request['tier_1_scanners']['template'][template_id]['anchors']])
             raw_response = response.data
             for movie_url in raw_response.keys():
                 built_response_data[movie_url] = {}
@@ -223,8 +223,8 @@ def build_and_dispatch_scan_template_multi_children(parent_job):
     request_data = json.loads(parent_job.request_data)
     movies = request_data['movies']
     total_index = 0
-    for template_id in request_data['templates']:
-        template = request_data['templates'][template_id]
+    for template_id in request_data['tier_1_scanners']['template']:
+        template = request_data['tier_1_scanners']['template'][template_id]
         build_templates = {}
         build_templates[template_id] = template
         for movie_url in request_data['movies']:
@@ -232,7 +232,9 @@ def build_and_dispatch_scan_template_multi_children(parent_job):
             build_movies = {}
             build_movies[movie_url] = movies[movie_url]
             build_request_data = json.dumps({
-                'templates': build_templates,
+                'tier_1_scanners': {
+                    'templates': build_templates,
+                },
                 'template_id': template_id,
                 'movies': build_movies,
             })
@@ -310,8 +312,8 @@ def build_and_dispatch_scan_template_threaded_children(parent_job):
     parent_job.status = 'running'
     parent_job.save()
     request_data = json.loads(parent_job.request_data)
-    template_id = list(request_data['templates'].keys())[0]
-    template = request_data['templates'][template_id]
+    template_id = list(request_data['tier_1_scanners']['template'].keys())[0]
+    template = request_data['tier_1_scanners']['template'][template_id]
     movies = request_data['movies']
     for index, movie_url in enumerate(movies):
         movie = movies.get(movie_url)
@@ -320,7 +322,9 @@ def build_and_dispatch_scan_template_threaded_children(parent_job):
         build_templates = {}
         build_templates[template_id] = template
         request_data = json.dumps({
-            'templates': build_templates,
+            'tier_1_scanners': {
+                'template': build_templates,
+            },
             'template_id': template_id,
             'movies': build_movies,
         })

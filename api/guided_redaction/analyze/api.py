@@ -179,8 +179,8 @@ class AnalyzeViewSetScanTemplate(viewsets.ViewSet):
 
     def process_create_request(self, request_data):
         matches = {'movies': {}}
-        if not request_data.get("templates"):
-            return self.error("templates is required")
+        if not request_data.get("tier_1_scanners"):
+            return self.error("tier_1_scanners is required")
         if not request_data.get("movies"):
             return self.error("movies is required")
         source_movies = {}
@@ -188,8 +188,10 @@ class AnalyzeViewSetScanTemplate(viewsets.ViewSet):
         if 'source' in movies:
           source_movies = movies['source']
           del movies['source']
-        template_id = list(request_data.get('templates').keys())[0]
-        template = request_data.get('templates')[template_id]
+        if 'template' not in request_data['tier_1_scanners']:
+            return self.error("tier_1_scanners > template is required")
+        template_id = list(request_data['tier_1_scanners']['template'].keys())[0]
+        template = request_data['tier_1_scanners']['template'][template_id]
         template_matcher = TemplateMatcher(template)
         match_statistics = {}
         for anchor in template.get("anchors"):
