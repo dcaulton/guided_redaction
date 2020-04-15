@@ -44,7 +44,6 @@ class RedactApplication extends React.Component {
       showMovieParserLink: true,
       showInsightsLink: true,
       showComposeLink: true,
-      showAdvancedPanels: false,
       whenJobLoaded: {},
       whenDoneTarget: '',
       campaign_movies: [],
@@ -2335,7 +2334,6 @@ class RedactApplication extends React.Component {
                 getNextImageHash={this.getNextImageHash}
                 getPrevImageHash={this.getPrevImageHash}
                 setImageScale={this.setImageScale}
-                showAdvancedPanels={this.state.showAdvancedPanels}
                 templates={this.state.tier_1_scanners['template']}
                 clearCurrentFramesetChanges={this.clearCurrentFramesetChanges}
                 whenDoneTarget={this.state.whenDoneTarget}

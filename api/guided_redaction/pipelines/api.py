@@ -332,19 +332,17 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
             'movies': build_movies,
             'scan_level': scanner['scan_level'],
             'id': scanner['id'],
+            'tier_one_scanners': {},
         }
+        build_request_data['tier_one_scanners'][scanner_type] = build_scanners
         if scanner_type == 'template':
             operation = 'scan_template_threaded'
-            build_request_data['templates'] = build_scanners
         elif scanner_type == 'selected_area':
             operation = 'selected_area_threaded'
-            build_request_data['selected_area_metas'] = build_scanners
         elif scanner_type == 'ocr':
             operation = 'scan_ocr'
-            build_request_data['ocr_rules'] = build_scanners
         elif scanner_type == 'telemetry':
             operation = 'telemetry_find_matching_frames'
-            build_request_data['telemetry_rules'] = build_scanners
         request_data = json.dumps(build_request_data)
 
         job = Job(

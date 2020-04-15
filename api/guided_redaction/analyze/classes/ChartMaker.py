@@ -38,9 +38,9 @@ class ChartMaker:
 
 
     def get_ocr_match_percent(self, request_data):
-        if 'ocr_rules' in request_data and request_data['ocr_rules']:
-            first_key = list(request_data['ocr_rules'].keys())[0]
-            ocr_rule = request_data['ocr_rules'][first_key]
+        if 'ocr' in request_data['tier_1_scanners'] and request_data['tier_1_scanners']['ocr']:
+            first_key = list(request_data['tier_1_scanners']['ocr'].keys())[0]
+            ocr_rule = request_data['tier_1_scanners']['ocr'][first_key]
             return ocr_rule['match_percent']
         return 0
 
@@ -63,15 +63,15 @@ class ChartMaker:
         build_chart_data = {}
         for job_id in self.job_data:
             job_req_data = self.job_data[job_id]['request_data']
-            sam_key = list(job_req_data['selected_area_metas'].keys())[0]
-            sam = job_req_data['selected_area_metas'][sam_key]
+            sam_key = list(job_req_data['tier_1_scanners']['selected_area'].keys())[0]
+            sam = job_req_data['tier_1_scanners']['selected_area'][sam_key]
             if sam['select_type'] == 'flood':
                 legend = 'type: flood fill, {}%'.format(str(sam['tolerance']))
                 build_chart_data['operation'] = legend
             else:
-                legend = 'type: {}'.format(str(sam['operation']))
+                legend = 'type: {}'.format(str(sam['select_type']))
                 build_chart_data['operation'] = legend
-                build_chart_data['selected_area_meta_name'] = sam['name']
+            build_chart_data['name'] = sam['name']
             job_resp_data = self.job_data[job_id]['response_data']
             for movie_url in job_resp_data['movies']:
                 build_chart_data[movie_url] = {'data': []}
@@ -95,6 +95,8 @@ class ChartMaker:
                                 -1
                             )
                     white_pixel_count = cv2.countNonZero(mask)
+                    print('bippa babba {}'.format(white_pixel_count))
+                    print('mama {}'.format(total_pixel_count))
                     normalized_pixel_count = white_pixel_count / total_pixel_count 
                     build_chart_data[movie_url]['data'].append(normalized_pixel_count)
                     #for debugging, remove when mask offset problem is fixed
@@ -110,7 +112,7 @@ class ChartMaker:
         the_uuid = str(uuid.uuid4())
         self.file_writer.create_unique_directory(the_uuid)
         for movie_number, movie_url in enumerate(build_chart_data):
-            if movie_url in ['operation', 'selected_area_meta_name']:
+            if movie_url in ['operation', 'name']:
                 continue
             plt.figure(movie_number)
             chart_data = build_chart_data[movie_url]['data']
@@ -243,8 +245,8 @@ class ChartMaker:
             stats = job_resp_data['statistics']
             for movie_url in stats['movies']:
                 build_chart_data[movie_url] = {}
-                for template_id in job_req_data['templates']:
-                    template = job_req_data['templates'][template_id]
+                for template_id in job_req_data['tier_1_scanners']['template']:
+                    template = job_req_data['tier_1_scanners']['template'][template_id]
                     build_chart_data[movie_url][template_id] = {
                         'match_percent': template['match_percent'],
                         'name': template['name'],

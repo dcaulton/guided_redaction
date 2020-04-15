@@ -230,9 +230,8 @@ class AnalyzeViewSetScanTemplate(viewsets.ViewSet):
                         match_obj = template_matcher.get_template_coords(
                             target_image, match_image
                         )
-                        if 'save_match_statistics' in template and template['save_match_statistics']:
-                            match_statistics['movies'][movie_url]['framesets'][frameset_hash][anchor_id] = match_obj['match_metadata']
-
+                        match_statistics['movies'][movie_url]['framesets'][frameset_hash][anchor_id] = \
+                            match_obj['match_metadata']
                         if match_obj['match_found']:
                             (temp_coords, temp_scale) = match_obj['match_coords']
                             if movie_url not in matches['movies']:
@@ -247,8 +246,7 @@ class AnalyzeViewSetScanTemplate(viewsets.ViewSet):
                             matches_for_anchor['size'] = size
                             matches_for_anchor['scale'] = temp_scale
                             matches_for_anchor['scanner_type'] = 'template'
-        if 'save_match_statistics' in template and template['save_match_statistics']:
-            matches['statistics'] = match_statistics
+        matches['statistics'] = match_statistics
         return Response(matches)
 
     #TODO make sure this works, a unit test would be nice
