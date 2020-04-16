@@ -129,7 +129,8 @@ class ImagePanel extends React.Component {
     job_data['operation'] = 'scan_ocr'
     job_data['description'] = 'scan ocr for Image Panel'
     job_data['request_data']['movies'] = movies
-    job_data['request_data']['ocr_rules'] = ocr_rules
+    job_data['request_data']['tier_1_scanners'] = {}
+    job_data['request_data']['tier_1_scanners']['ocr'] = ocr_rules
     job_data['request_data']['scan_level'] = 'tier_2'
     job_data['request_data']['id'] = ocr_rule['id']
     return job_data

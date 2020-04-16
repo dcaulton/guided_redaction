@@ -1141,7 +1141,7 @@ class RedactApplication extends React.Component {
           const anchor_id = Object.keys(frameset)[k]
           const anchor_found_coords = frameset[anchor_id]['location']
           const anchor_found_scale = frameset[anchor_id]['scale']
-          const template = this.getTemplateForAnchor(request_data['templates'], anchor_id) 
+          const template = this.getTemplateForAnchor(request_data['tier_1_scanners']['template'], anchor_id) 
           const mask_zones = this.getMaskZonesForAnchor(template, anchor_id)
           for (let m=0; m < mask_zones.length; m++) {
             const mask_zone = mask_zones[m]
