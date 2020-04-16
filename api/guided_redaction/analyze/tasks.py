@@ -11,6 +11,7 @@ from guided_redaction.analyze.api import (
     AnalyzeViewSetTelemetry,
     AnalyzeViewSetTimestamp,
     AnalyzeViewSetSelectedArea,
+    AnalyzeViewSetOcrSceneAnalysis,
     AnalyzeViewSetTemplateMatchChart,
     AnalyzeViewSetOcrMatchChart,
     AnalyzeViewSetSelectedAreaChart,
@@ -745,4 +746,111 @@ def selected_area_chart(job_uuid):
     job = Job.objects.get(pk=job_uuid)
     job.response_data = json.dumps(response.data)
     job.status = 'success'
+    job.save()
+
+@shared_task
+def ocr_scene_analysis(job_uuid):
+    if not Job.objects.filter(pk=job_uuid).exists():
+        print('calling ocr_scene_analysis on nonexistent job: {}'.format(job_uuid))
+    job = Job.objects.get(pk=job_uuid)
+    job.status = 'running'
+    job.save()
+    print('running ocr_scene_analysis for job {}'.format(job_uuid))
+    worker = AnalyzeViewSetOcrSceneAnalysis()
+    rd = json.loads(job.request_data)
+    response = worker.process_create_request(rd)
+    if not Job.objects.filter(pk=job_uuid).exists():
+        return
+    job = Job.objects.get(pk=job_uuid)
+    job.response_data = json.dumps(response.data)
+    job.status = 'success'
+    job.save()
+
+    if job.parent_id:
+        parent_job = Job.objects.get(pk=job.parent_id)
+        if parent_job.app == 'analyze' and parent_job.operation == 'ocr_scene_analysis_threaded':
+            ocr_scene_analysis_threaded.delay(parent_job.id)
+
+@shared_task
+def ocr_scene_analysis_threaded(job_uuid):
+    if Job.objects.filter(pk=job_uuid).exists():
+        job = Job.objects.get(pk=job_uuid)
+        if job.status in ['success', 'failed']:
+            return
+        children = Job.objects.filter(parent=job)
+        (next_step, percent_done) = evaluate_children('OCR SCENE ANALYSIS THREADED', 'ocr_scene_analysis', children)
+        print('next step is {}, percent done {}'.format(next_step, percent_done))
+        if next_step == 'build_child_tasks':
+          build_and_dispatch_ocr_scene_analysis_threaded_children(job)
+        elif next_step == 'update_percent_complete':
+          job.elapsed_time = percent_done
+          job.save()
+        elif next_step == 'wrap_up':
+          wrap_up_ocr_scene_analysis_threaded(job, children)
+          pipeline = get_pipeline_for_job(job.parent)
+          if pipeline:
+              worker = PipelinesViewSetDispatch()
+              worker.handle_job_finished(job, pipeline)
+        elif next_step == 'abort':
+          job.status = 'failed'
+          job.save()
+
+def build_and_dispatch_ocr_scene_analysis_threaded_children(parent_job):
+    parent_job.status = 'running'
+    parent_job.save()
+    request_data = json.loads(parent_job.request_data)
+    osas = request_data['tier_1_scanners']['ocr_scene_analysis']
+    movies = request_data['movies']
+    source_movies = {}
+    if 'source' in movies:
+        source_movies = movies['source']
+        del movies['source']
+    for osa_id in osas:
+        osa = osas[osa_id]
+        for index, movie_url in enumerate(movies.keys()):
+            movie = movies[movie_url]
+            build_movies = {}
+            build_movies[movie_url] = movie
+            if source_movies:
+                build_movies['source'] = source_movies
+            build_request_data = json.dumps({
+                'movies': build_movies,
+                'ocr_scene_analysis_meta': osa,
+            })
+            job = Job(
+                request_data=build_request_data,
+                status='created',
+                description='ocr scene analysis for movie {}'.format(movie_url),
+                app='analyze',
+                operation='ocr_scene_analysis',
+                sequence=0,
+                elapsed_time=0.0,
+                parent=parent_job,
+            )
+            job.save()
+            print('build_and_dispatch_ocr_scene_analysis_threaded_children: dispatching job for movie {}'.format(movie_url))
+            ocr_scene_analysis.delay(job.id)
+
+def wrap_up_ocr_scene_analysis_threaded(job, children):
+    aggregate_response_data = {
+      'movies': {}
+    }
+    aggregate_stats = {'movies': {}}
+    for child in children:
+        child_response_movies = json.loads(child.response_data)['movies']
+        child_stats = json.loads(child.response_data)['statistics']
+        if len(child_response_movies.keys()) > 0:
+            movie_url = list(child_response_movies.keys())[0]
+            aggregate_response_data['movies'][movie_url] = child_response_movies[movie_url]
+            if movie_url not in aggregate_stats['movies']:
+                aggregate_stats['movies'][movie_url] = {'framesets': {}}
+            for frameset_hash in child_stats['movies'][movie_url]['framesets']:
+                aggregate_stats['movies'][movie_url]['framesets'][frameset_hash] = \
+                    child_stats['movies'][movie_url]['framesets'][frameset_hash]
+
+    aggregate_response_data['statistics'] = aggregate_stats
+    print('wrap_up_ocr_scene_analysis_threaded: wrapping up parent job')
+    job.status = 'success'
+    job.response_data = json.dumps(aggregate_response_data)
+    job.elapsed_time = 1
     job.save()

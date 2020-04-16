@@ -373,6 +373,21 @@ class InsightsPanel extends React.Component {
       job_data['request_data']['id'] = cur_sa_id
       job_data['request_data']['scan_level'] = cur_selected_area['scan_level']
       job_data['description'] = 'scan selected area (' + cur_selected_area['name'] + ') '
+    } else if (scanner_type === 'ocr_scene_analysis') {
+      if (!this.props.tier_1_scanner_current_ids['ocr_scene_analysis']) {
+        this.displayInsightsMessage('no ocr_scene_analysis_meta selected, cannot submit a job')
+        return
+      }
+      job_data['app'] = 'analyze'
+      job_data['operation'] = 'ocr_scene_analysis_threaded'
+      const cur_osa_id = this.props.tier_1_scanner_current_ids['ocr_scene_analysis']
+      const cur_osa = this.props.tier_1_scanners['ocr_scene_analysis'][cur_osa_id]
+      job_data['request_data']['tier_1_scanners'] = {}
+      job_data['request_data']['tier_1_scanners']['ocr_scene_analysis'] = {}
+      job_data['request_data']['tier_1_scanners']['ocr_scene_analysis'][cur_osa_id] = cur_osa
+      job_data['request_data']['id'] = cur_osa_id
+      job_data['request_data']['scan_level'] = 'tier_1'
+      job_data['description'] = 'ocr scene analysis (' + cur_osa['name'] + ') '
     }
     job_data['request_data']['movies'] = {}
     if (scope.match(/_current_frame$/)) {   
@@ -666,6 +681,15 @@ class InsightsPanel extends React.Component {
         job_string === 'selected_area_movie_set'
     ) {
       let job_data = this.buildTier1JobData('selected_area', job_string, extra_data)
+      this.props.submitJob({
+        job_data: job_data,
+      })
+    } else if (
+        job_string === 'ocr_scene_analysis_current_frame' ||
+        job_string === 'ocr_scene_analysis_current_movie' ||
+        job_string === 'ocr_scene_analysis_all_movies'
+    ) {
+      let job_data = this.buildTier1JobData('ocr_scene_analysis', job_string, extra_data)
       this.props.submitJob({
         job_data: job_data,
       })

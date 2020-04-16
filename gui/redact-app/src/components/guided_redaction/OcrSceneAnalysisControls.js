@@ -20,7 +20,7 @@ class OcrSceneAnalysisControls extends React.Component {
       id: '',
       name: '',
       skip_frames: 10,
-      apps: [],
+      apps: {},
       attributes: {},
       unsaved_changes: false,
     }
@@ -135,7 +135,6 @@ class OcrSceneAnalysisControls extends React.Component {
         skip_frames: osa['skip_frames'],
         apps: osa['apps'],
         attributes: osa['attributes'],
-        attributes: osa['attributes'],
         unsaved_changes: false,
       })
     }
@@ -153,8 +152,7 @@ class OcrSceneAnalysisControls extends React.Component {
       id: '',
       name: '',
       skip_frames: 10,
-      apps: [],
-      attributes: {},
+      apps: {},
       attributes: {},
       unsaved_changes: false,
     })
@@ -231,14 +229,18 @@ class OcrSceneAnalysisControls extends React.Component {
     )
   }
 
-  updateApps(rows_as_string) {
-    const apps = rows_as_string.split('\n')
+  updateApps(apps_string) {
+    const apps_obj = JSON.parse(apps_string)
     this.setState({
-      apps: apps,
+      apps: apps_obj,
     })
   }
 
   buildAppsField() {
+    let pretty_apps_string = ''
+    if (this.state.apps) {
+      pretty_apps_string = JSON.stringify(this.state.apps, undefined, 2)
+    }
     return (
       <div className='ml-2 mt-2'>
         <div>
@@ -250,8 +252,8 @@ class OcrSceneAnalysisControls extends React.Component {
           <textarea
              id='ocr_selected_area_apps'
              cols='50'
-             rows='3'
-             value={this.state.apps.join('\n')}
+             rows='6'
+             value={pretty_apps_string}
              onChange={(event) => this.updateApps(event.target.value)}
           />
         </div>

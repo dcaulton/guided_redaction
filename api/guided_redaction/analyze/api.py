@@ -66,6 +66,19 @@ def adjust_start_end_origin_for_t1(coords_in, tier_1_frameset):
             return adjusted_coords
     return adjusted_coords
 
+def get_frameset_hash_for_frame(frame, framesets):
+    for frameset_hash in framesets:
+        if frame in framesets[frameset_hash]['images']:
+            return frameset_hash
+
+def get_frameset_hashes_in_order(frames, framesets):
+    ret_arr = []
+    for frame in frames:
+        frameset_hash = get_frameset_hash_for_frame(frame, framesets)
+        if frameset_hash and frameset_hash not in ret_arr:
+            ret_arr.append(frameset_hash)
+    return ret_arr
+
 class AnalyzeViewSetOcr(viewsets.ViewSet):
     def create(self, request):
         request_data = request.data
@@ -537,7 +550,7 @@ class AnalyzeViewSetFilter(viewsets.ViewSet):
             frames = movie['frames']
             framesets = movie['framesets']
 
-            ordered_hashes = self.get_frameset_hashes_in_order(frames, framesets)
+            ordered_hashes = get_frameset_hashes_in_order(frames, framesets)
             workdir_uuid = str(uuid.uuid4())
             workdir = fw.create_unique_directory(workdir_uuid)
             for index, frameset_hash in enumerate(ordered_hashes):
@@ -567,18 +580,6 @@ class AnalyzeViewSetFilter(viewsets.ViewSet):
 
         return Response({'movies': response_movies})
 
-    def get_frameset_hash_for_frame(self, frame, framesets):
-        for frameset_hash in framesets:
-            if frame in framesets[frameset_hash]['images']:
-                return frameset_hash
-
-    def get_frameset_hashes_in_order(self, frames, framesets):
-        ret_arr = []
-        for frame in frames:
-            frameset_hash = self.get_frameset_hash_for_frame(frame, framesets)
-            if frameset_hash and frameset_hash not in ret_arr:
-                ret_arr.append(frameset_hash)
-        return ret_arr
 
 class AnalyzeViewSetTelemetry(viewsets.ViewSet):
     def create(self, request):
@@ -933,3 +934,73 @@ class AnalyzeViewSetSelectedAreaChart(viewsets.ViewSet):
         charts_obj = chart_maker.make_charts()
 
         return Response({'movies': charts_obj})
+
+
+class AnalyzeViewSetOcrSceneAnalysis(viewsets.ViewSet):
+    def create(self, request):
+        request_data = request.data
+        return self.process_create_request(request_data)
+
+    def process_create_request(self, request_data):
+        if not request_data.get("movies"):
+            return self.error("movies is required", status_code=400)
+        if not request_data.get("ocr_scene_analysis_meta"):
+            return self.error("ocr_scene_analysis_meta is required", status_code=400)
+        osa = request_data.get("ocr_scene_analysis_meta")
+        skip_frames = int(osa['skip_frames'])
+        app_dictionary = osa['apps']
+        movies = request_data.get("movies")
+        build_response_data = {'movies': {}}
+        build_statistics = {'movies': {}}
+        for movie_url in movies:
+            build_response_data['movies'][movie_url] = {'framesets': {}}
+            build_statistics['movies'][movie_url] = {'framesets': {}}
+            movie = movies[movie_url]
+            frames = movie['frames']
+            framesets = movie['framesets']
+            ordered_hashes = get_frameset_hashes_in_order(frames, framesets)
+            for index, frameset_hash in enumerate(ordered_hashes):
+                if index % skip_frames == 0:
+                    frameset = movie['framesets'][frameset_hash]
+                    (response, statistics) = self.analyze_one_frame(frameset, app_dictionary)
+                    build_response_data['movies'][movie_url]['framesets'][frameset_hash] = response
+                    build_statistics['movies'][movie_url]['framesets'][frameset_hash] = statistics
+
+        build_response_data['statistics'] = build_statistics
+        return Response(build_response_data)
+
+
+    def order_recognized_text_areas_by_geometry(raw_recognized_text_areas):
+        rows = []
+
+    def analyze_one_frame(self, frameset, app_dictionary):
+        print('tastee freeze')
+        print(app_dictionary)
+        pic_response = requests.get(
+          frameset['images'][0],
+          verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
+        )
+        image = pic_response.content
+        if not image:
+            return 
+        analyzer = EastPlusTessGuidedAnalyzer()
+        nparr = np.fromstring(image, np.uint8)
+        cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        start = (0, 0)
+        end = (cv2_image.shape[1], cv2_image.shape[0])
+        raw_recognized_text_areas = analyzer.analyze_text(
+            cv2_image, [start, end]
+        )
+        print('bimpliey')
+        print(raw_recognized_text_areas)
+
+        resp_obj = {
+            'great': 'googley moogley',
+            'hot': 'and spicy',
+        }
+        stats_obj = {
+            'something': 'else',
+            'super': 'gainer',
+        }
+
+        return (resp_obj, stats_obj)
