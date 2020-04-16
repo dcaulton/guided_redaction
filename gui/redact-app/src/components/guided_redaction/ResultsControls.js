@@ -153,9 +153,11 @@ class ResultsControls extends React.Component {
   }
 
   getIdFromChartUrl(chart_url) {
-    const movie_uuid_to_end = chart_url.split('chart_').slice(-1)[0]
-    const the_id = movie_uuid_to_end.split('.')[0]
-    return the_id
+    const movie_uuid_to_end_2 = chart_url.split('chart_').slice(-1)[0]
+    const movie_uuid = movie_uuid_to_end_2.split('.')[0]
+    const directory_uuid = chart_url.split('/').slice(-2)[0]
+    const new_str = directory_uuid + '_' + movie_uuid
+    return new_str
   }
 
   getMovieNameFromUrl(movie_url) {

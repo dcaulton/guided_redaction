@@ -387,28 +387,15 @@ export function doTier1Save(
     scanner['id'] = scanner_id
     updates_are_needed = true
   }
-  // TODO refactor when all t1s are done
-  if ((scanner_type === 'ocr_scene_analysis') || 
-      (scanner_type === 'selected_area') ||
-      (scanner_type === 'ocr')) {
-    let deepCopyScanners = JSON.parse(JSON.stringify(globalScannersDict))
-    let deepCopyThisScannerType = deepCopyScanners[scanner_type]
-    deepCopyThisScannerType[scanner['id']] = scanner
-    deepCopyScanners[scanner_type] = deepCopyThisScannerType
-    globalSetStateVar('tier_1_scanners', deepCopyScanners)
-    let deepCopyScannerIds = JSON.parse(JSON.stringify(globalScannerIdsDict))
-    deepCopyScannerIds[scanner_type] = scanner['id']
-    globalSetStateVar('tier_1_scanner_current_ids', deepCopyScannerIds)
-    localSetState('id', scanner['id'])
-  } else {
-    let deepCopyScanners = JSON.parse(JSON.stringify(globalScannersDict))
-    deepCopyScanners[scanner['id']] = scanner
-    globalSetStateVar(globalScannerGroupName, deepCopyScanners)
-    if (updates_are_needed) {
-      globalSetStateVar(globalCurrentScannerIdName, scanner['id'])
-      localSetState('id', scanner['id'])
-    }
-  }
+  let deepCopyScanners = JSON.parse(JSON.stringify(globalScannersDict))
+  let deepCopyThisScannerType = deepCopyScanners[scanner_type]
+  deepCopyThisScannerType[scanner['id']] = scanner
+  deepCopyScanners[scanner_type] = deepCopyThisScannerType
+  globalSetStateVar('tier_1_scanners', deepCopyScanners)
+  let deepCopyScannerIds = JSON.parse(JSON.stringify(globalScannerIdsDict))
+  deepCopyScannerIds[scanner_type] = scanner['id']
+  globalSetStateVar('tier_1_scanner_current_ids', deepCopyScannerIds)
+  localSetState('id', scanner['id'])
   localSetState('unsaved_changes', false)
   displayMessageFunction(scanner_type + ' has been saved')
   when_done(scanner)

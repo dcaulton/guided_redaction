@@ -211,6 +211,7 @@ class AnalyzeViewSetScanTemplate(viewsets.ViewSet):
                     continue
                 framesets = movie["framesets"]
                 for frameset_hash in framesets:
+                    print('scanning frameset {}'.format(frameset_hash))
                     frameset = framesets[frameset_hash]
                     if frameset_hash not in match_statistics['movies'][movie_url]['framesets']:
                         match_statistics['movies'][movie_url]['framesets'][frameset_hash] = {}
