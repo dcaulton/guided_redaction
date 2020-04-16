@@ -213,6 +213,11 @@ class BottomInsightsControls extends React.Component {
           toggleShowVisibility={this.props.toggleShowVisibility}
           tier_1_scanners={this.props.tier_1_scanners}
           tier_1_scanner_current_ids={this.props.tier_1_scanner_current_ids}
+          scanners={this.props.scanners}
+          getScanners={this.props.getScanners}
+          deleteScanner={this.props.deleteScanner}
+          importScanner={this.props.importScanner}
+          saveScannerToDatabase={this.props.saveScannerToDatabase}
         />
 
         <PipelineControls

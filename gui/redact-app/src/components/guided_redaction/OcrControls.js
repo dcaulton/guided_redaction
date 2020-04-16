@@ -452,8 +452,6 @@ class OcrControls extends React.Component {
       this.props.displayInsightsMessage,
       this.props.tier_1_scanners,
       this.props.tier_1_scanner_current_ids,
-      'ocr',
-      'ocr',
       this.setLocalStateVarNoWarning,
       this.props.setGlobalStateVar,
       when_done

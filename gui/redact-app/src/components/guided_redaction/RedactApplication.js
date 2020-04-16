@@ -440,32 +440,14 @@ class RedactApplication extends React.Component {
     })
     .then((response) => response.json())
     .then((responseJson) => {
-      // TODO refactor this when all t1s are in the same data objects
-      if (responseJson['scanner']['type'] === 'template') {
-        const template = JSON.parse(responseJson['scanner']['content'])
-        let deepCopyT1Scanners = JSON.parse(JSON.stringify(this.state.tier_1_scanners))
-        let deepCopyTemplates = deepCopyT1Scanners['template']
-        template['attributes'] = responseJson['scanner']['attributes']
-        deepCopyTemplates[template['id']] = template
-        deepCopyT1Scanners['template'] = deepCopyTemplates
-        this.setGlobalStateVar('tier_1_scanners', deepCopyT1Scanners)
-      } else if (responseJson['scanner']['type'] === 'selected_area_meta') {
-        const sam = JSON.parse(responseJson['scanner']['content'])
-        let deepCopyT1Scanners = JSON.parse(JSON.stringify(this.state.tier_1_scanners))
-        let deepCopySelectedAreaMetas = deepCopyT1Scanners['selected_area']
-        sam['attributes'] = responseJson['scanner']['attributes']
-        deepCopySelectedAreaMetas[sam['id']] = sam
-        deepCopyT1Scanners['selected_area'] = deepCopySelectedAreaMetas
-        this.setGlobalStateVar('tier_1_scanners', deepCopyT1Scanners)
-      } else if (responseJson['scanner']['type'] === 'ocr_rule') {
-        const ocr_rule = JSON.parse(responseJson['scanner']['content'])
-        let deepCopyT1Scanners = JSON.parse(JSON.stringify(this.state.tier_1_scanners))
-        let deepCopyOcrRules = deepCopyT1Scanners['ocr']
-        ocr_rule['attributes'] = responseJson['scanner']['attributes']
-        deepCopyOcrRules[ocr_rule['id']] = ocr_rule
-        deepCopyT1Scanners['ocr'] = deepCopyOcrRules
-        this.setGlobalStateVar('tier_1_scanners', deepCopyT1Scanners)
-      }
+      const scanner = JSON.parse(responseJson['scanner']['content'])
+      const scanner_type = responseJson['scanner']['type']
+      let deepCopyT1Scanners = JSON.parse(JSON.stringify(this.state.tier_1_scanners))
+      let deepCopyThisScanners = deepCopyT1Scanners[scanner_type]
+      scanner['attributes'] = responseJson['scanner']['attributes']
+      deepCopyThisScanners[scanner['id']] = scanner
+      deepCopyT1Scanners[scanner_type] = deepCopyThisScanners
+      this.setGlobalStateVar('tier_1_scanners', deepCopyT1Scanners)
       return responseJson
     })
     .then((responseJson) => {

@@ -241,8 +241,6 @@ class SelectedAreaControls extends React.Component {
       this.props.displayInsightsMessage,
       this.props.tier_1_scanners,
       this.props.tier_1_scanner_current_ids,
-      'selected_area',
-      'selected_area',
       this.setLocalStateVar,
       this.props.setGlobalStateVar,
       when_done

@@ -369,8 +369,6 @@ export function doTier1Save(
     displayMessageFunction, 
     globalScannersDict, 
     globalScannerIdsDict,
-    globalScannerGroupName, 
-    globalCurrentScannerIdName, 
     localSetState,
     globalSetStateVar,
     when_done=(()=>{})

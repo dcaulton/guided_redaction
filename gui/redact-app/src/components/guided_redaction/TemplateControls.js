@@ -354,8 +354,6 @@ class TemplateControls extends React.Component {
         this.props.displayInsightsMessage,
         this.props.tier_1_scanners,
         this.props.tier_1_scanner_current_ids,
-        'template',
-        'template',
         this.setLocalStateVar,
         this.props.setGlobalStateVar,
       )
