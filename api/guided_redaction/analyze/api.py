@@ -970,12 +970,31 @@ class AnalyzeViewSetOcrSceneAnalysis(viewsets.ViewSet):
         return Response(build_response_data)
 
 
-    def order_recognized_text_areas_by_geometry(raw_recognized_text_areas):
-        rows = []
+    def order_recognized_text_areas_by_geometry(self, raw_rtas):
+        response_rtas = []
+        rtas_by_id = {}
+        for rta in raw_rtas:
+            rtas_by_id[rta['id']] = rta
+        rows = sorted(raw_rtas, key = lambda i: i['start'][1])
+        # merge rows that are only a few pixels off from each others
+        current_y = -200
+        row_y_bunches = {}
+        for row in rows:
+            if row['start'][1] - current_y > 10:
+                current_y = row['start'][1]
+                row_y_bunches[current_y] = [row['id']]
+                continue
+            row_y_bunches[current_y].append(row['id'])
+        for rco_key in sorted(row_y_bunches.keys()):
+            x_keys = []
+            for rta_id in row_y_bunches[rco_key]:
+                x_keys.append(rtas_by_id[rta_id])
+            x_keys_sorted = sorted(x_keys, key = lambda i: i['start'][0])
+            response_rtas.append(x_keys_sorted)
+        return response_rtas
 
     def analyze_one_frame(self, frameset, app_dictionary):
-        print('tastee freeze')
-        print(app_dictionary)
+        debug = False
         pic_response = requests.get(
           frameset['images'][0],
           verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
@@ -991,8 +1010,24 @@ class AnalyzeViewSetOcrSceneAnalysis(viewsets.ViewSet):
         raw_recognized_text_areas = analyzer.analyze_text(
             cv2_image, [start, end]
         )
-        print('bimpliey')
-        print(raw_recognized_text_areas)
+        sorted_rtas = self.order_recognized_text_areas_by_geometry(raw_recognized_text_areas)
+        if debug:
+            print('==========================ocr rows bunched by y, then sorted by x:')
+            for row in sorted_rtas:
+                print('----------- new row')
+                for rta in row:
+                    print('{} {}'.format(rta['start'], rta['text']))
+
+        for app_name in app_dictionary:
+            app_phrases = app_dictionary[app_name]['phrases']
+            for rta_row in sorted_rtas:
+                for rta in rta_row:
+                    for app_row in app_phrases:
+                        for app_phrase in app_row:
+                            print('comparing {} and {}'.format(rta['text'], app_phrase))
+
+
+
 
         resp_obj = {
             'great': 'googley moogley',
