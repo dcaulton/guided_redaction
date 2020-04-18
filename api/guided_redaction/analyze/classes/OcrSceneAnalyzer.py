@@ -1,5 +1,4 @@
-import cv2
-from guided_redaction.analyze.classes.EastPlusTessScanner import EastPlusTessScanner
+from fuzzywuzzy import fuzz
 
 
 class OcrSceneAnalyzer:
@@ -7,21 +6,23 @@ class OcrSceneAnalyzer:
     def __init__(self, recognized_text_areas, app_dictionary, debug=False):
         self.recognized_text_areas = recognized_text_areas
         self.app_dictionary = app_dictionary
+        self.sorted_rtas = []
+        self.match_cache = {}
         self.debug=debug
+        self.match_threshold = 80
 
     def analyze_scene(self):
-        sorted_rtas = self.order_recognized_text_areas_by_geometry()
+        self.sorted_rtas = self.order_recognized_text_areas_by_geometry()
 
         rta_scores = {}
         for app_name in self.app_dictionary:
             print('considering app {}'.format(app_name))
             rta_scores[app_name] = {}
-            app_phrases = app_dictionary[app_name]['phrases']
-            for rta_row_number, rta_row in enumerate(sorted_rtas):
+            app_phrases = self.app_dictionary[app_name]['phrases']
+            for rta_row_number, rta_row in enumerate(self.sorted_rtas):
                 rta_scores[app_name][rta_row_number] = {}
                 for rta_column_number, rta in enumerate(rta_row):
                     scores = self.analyze_one_rta_row_field_vs_one_app(
-                        sorted_rtas,
                         app_phrases,
                         rta_row_number,
                         rta_column_number,
@@ -41,24 +42,124 @@ class OcrSceneAnalyzer:
 
         return (resp_obj, stats_obj)
 
-    def analyze_one_rta_row_field_vs_one_app(self, sorted_rtas, app_phrases, rta_row_number, rta_col_number):
-        match_threshold = .5
-        return_data = {}
-        print('comparing app phrases for rta row {} col {}'.format(rta_row_number, rta_col_number))
+    def score_rta_point_and_app_phrase_point(self, rta_coords, app_coords, app_phrases):
+        total_score = 0
+        rta_text = self.sorted_rtas[rta_coords[0]][rta_coords[1]]['text']
+        app_text = app_phrases[app_coords[0]][app_coords[1]]
+        if self.debug:
+            print('matching the rest of the protein for RTA: {}-{} APP {}-{}'.format(rta_text, rta_coords, app_text, app_coords))
+        # add the rta and app point score
+        total_score += self.match_cache[rta_text][app_text]['ratio']
+        ###### add scores for rows below this point
+        print('adding below matches')
+        current_app_row = app_coords[0]
+        current_rta_row = rta_coords[0]
+        # for app rows from current_app_row to the end of the app_phrases:
+        for i in range(current_app_row+1, len(app_phrases)):
+            app_row = app_phrases[i]
+        #     for app_item in this app row:
+            print('dalai {}'.format(app_row))
+            for app_row_text in app_row:
+                app_row_text_matched = False
+                print('bipin {}'.format(app_row_text))
+        #         for rta rows from current_rta_row to the end of self.sorted_rtas:
+                for j in range(current_rta_row+1, len(self.sorted_rtas)):
+                    if app_row_text_matched:
+                        continue
+                    rta_row = self.sorted_rtas[j]
+        #             for rta_item in this rta row:
+                    for rta in rta_row:
+                        if app_row_text_matched:
+                            continue
+                        print('  {}---{}'.format(app_row_text, rta['text']))
+                        if rta['text'] not in self.match_cache:
+                            self.match_cache[rta['text']] = {}
+                        if app_row_text in self.match_cache[rta['text']]:
+                            ratio = self.match_cache[rta['text']][app_row_text]['ratio']
+                        else:
+                            ratio = fuzz.ratio(rta['text'], app_row_text)
+                            self.match_cache[rta['text']][app_row_text] = {
+                                'ratio': ratio,
+                                'app_locations': [],
+                            }
+        #                 if the match exceeds the threshold:
+        #                     add match score to the total
+        #                     current_app_row = this row
+        #                     current_rta_row = this row
+                        if ratio > self.match_threshold:
+                            total_score += ratio
+                            print('adding match for APP {}-{}, RTA {}-{}'.format(app_row_text, i, rta['text'] ,j))
+#                            current_rta_row = j
+                            app_row_text_matched = True
+                            continue
+        print('total score {}'.format(total_score))
+        # #### add scores for rows above this point
+        # current_app_row = app_coords[0]
+        # current_rta_row = rta_coords[0]
+        # for app rows from current_app_row to the row zero of app_phrases
+        #     for app_item in this app row:
+        #         for rta rows from current_rta_row zero of self.sorted_rtas:
+        #             for rta_item in this rta row:
+        #                 if the match exceeds the threshold:
+        #                     add match score to the total
+        #                     current_app_row = this row
+        #                     current_rta_row = this row
+        # #### TODO add scores for items on the rta/app row before this point
+        # #### TODO add scores for items on the rta/app row after this point
+        # return total_score
 
+        return (0, [])
+
+    def analyze_one_rta_row_field_vs_one_app(self, app_phrases, rta_row_number, rta_col_number):
+        return_data = {}
+        rta_text = self.sorted_rtas[rta_row_number][rta_col_number]['text']
+        if rta_text not in self.match_cache:
+            self.match_cache[rta_text] = {}
+        if self.debug:
+            print('---comparing app phrases for rta *{}* at row {} col {}'.format(rta_text, rta_row_number, rta_col_number))
 #        compare the rta text at row and col to every phrase in app_phrases,
 #            (this will be the strongest base pair match for the protein)
-#        if any scores are better than match_threshold, save them in rta-phrase-scores[phrase]
-#        phrase_match_points = []
-#        find the highest score in rta-phrase-scores
-#        if its more than 33% higher than the next highest, phrase_match_points = [this_phrase]
-#        else, phrase_match_points = [all phrases in the top third]
-#
-#        rta_phrase_matches = {}
-#        for phrase_match_point in phrase_match_points:
-#            total_match_score, row_scores = get_scores_from_rta_point_and_app_phrase_point()
+        for row_number, phrase_row in enumerate(app_phrases):
+            for col_number, app_phrase in enumerate(phrase_row):
+                if app_phrase in self.match_cache[rta_text]:
+                    self.match_cache[rta_text][app_phrase]['app_locations'].append((row_number, col_number))
+                else:
+                    ratio = fuzz.ratio(rta_text, app_phrase)
+                    self.match_cache[rta_text][app_phrase] = {
+                        'ratio': ratio,
+                        'app_locations': [(row_number, col_number)],
+                    }
+        app_phrase_matches = {}
+#        if any scores are better than match_threshold, save them in app_phrase_matches[phrase]
+        for app_phrase in self.match_cache[rta_text]:
+            if self.match_cache[rta_text][app_phrase]['ratio'] > self.match_threshold:
+                app_phrase_matches[app_phrase] = self.match_cache[rta_text][app_phrase]
+        if not app_phrase_matches:
+            return 
+        if self.debug:
+            print('app phrase matches from lev distance: {}'.format(app_phrase_matches))
+
+#       evaluate all matched app phrases to get a base pair match score and stats
+        rta_phrase_matches = {}
+        for app_phrase in app_phrase_matches:
+            matched_app_phrase_data = app_phrase_matches[app_phrase]
+            scores_for_this_phrase = {}
+            for location_number, app_phrase_coords in enumerate(matched_app_phrase_data['app_locations']):
+                (total_match_score, row_scores) = \
+                    self.score_rta_point_and_app_phrase_point(
+                        (rta_row_number, rta_col_number), 
+                        app_phrase_coords, 
+                        app_phrases
+                    )
+                scores_for_this_phrase[location_number] = {
+                    'total_match_score': total_match_score,
+                    'row_scores': row_scores,
+                }
+        
+#            get the highest score for this phrase, save it in rta_phrase_matches               
 #            rta_phrase_matches[this_phrase] = {total_match_score, row_scores}
-#
+
+
 #        get highest value for rta_phrase_matches[x]['total_match_score']
 #        return rta_phrase_matches[highest_value]
 
