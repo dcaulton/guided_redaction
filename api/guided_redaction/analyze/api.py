@@ -12,6 +12,7 @@ from guided_redaction.analyze.classes.TelemetryAnalyzer import TelemetryAnalyzer
 from guided_redaction.analyze.classes.TemplateMatcher import TemplateMatcher
 from guided_redaction.analyze.classes.ExtentsFinder import ExtentsFinder
 from guided_redaction.analyze.classes.ChartMaker import ChartMaker
+from guided_redaction.analyze.classes.OcrSceneAnalyzer import OcrSceneAnalyzer
 import json
 import base64
 import numpy as np
@@ -969,65 +970,10 @@ class AnalyzeViewSetOcrSceneAnalysis(viewsets.ViewSet):
         build_response_data['statistics'] = build_statistics
         return Response(build_response_data)
 
-
-    def order_recognized_text_areas_by_geometry(self, raw_rtas):
-        response_rtas = []
-        rtas_by_id = {}
-        for rta in raw_rtas:
-            rtas_by_id[rta['id']] = rta
-        rows = sorted(raw_rtas, key = lambda i: i['start'][1])
-        # merge rows that are only a few pixels off from each others
-        current_y = -200
-        row_y_bunches = {}
-        for row in rows:
-            if row['start'][1] - current_y > 10:
-                current_y = row['start'][1]
-                row_y_bunches[current_y] = [row['id']]
-                continue
-            row_y_bunches[current_y].append(row['id'])
-        for rco_key in sorted(row_y_bunches.keys()):
-            x_keys = []
-            for rta_id in row_y_bunches[rco_key]:
-                x_keys.append(rtas_by_id[rta_id])
-            x_keys_sorted = sorted(x_keys, key = lambda i: i['start'][0])
-            response_rtas.append(x_keys_sorted)
-        return response_rtas
-
-    def analyze_one_rta_row_field_vs_one_app(self, sorted_rtas, app_phrases, rta_row_number, rta_col_number):
-        match_threshold = .5
-        return_data = {}
-        print('comparing app phrases for rta row {} col {}'.format(rta_row_number, rta_col_number))
-
-#        compare the rta text at row and col to every phrase in app_phrases, 
-#            (this will be the strongest base pair match for the protein)
-#        if any scores are better than match_threshold, save them in rta-phrase-scores[phrase]
-#        phrase_match_points = []
-#        find the highest score in rta-phrase-scores
-#        if its more than 33% higher than the next highest, phrase_match_points = [this_phrase]
-#        else, phrase_match_points = [all phrases in the top third]
-#
-#        rta_phrase_matches = {}
-#        for phrase_match_point in phrase_match_points:
-#            total_match_score, row_scores = get_scores_from_rta_point_and_app_phrase_point()
-#            rta_phrase_matches[this_phrase] = {total_match_score, row_scores}
-#
-#        get highest value for rta_phrase_matches[x]['total_match_score']
-#        return rta_phrase_matches[highest_value]
-
-        return_data = {
-            'total_match_score': .5,
-            'row_scores': [
-              1.4,
-              0,
-              .665,
-              0,
-              .2,
-            ],
-        }
-        return return_data
-
     def analyze_one_frame(self, frameset, app_dictionary):
         debug = False
+        if 'images' not in frameset or not frameset['images']:
+            return
         pic_response = requests.get(
           frameset['images'][0],
           verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
@@ -1035,48 +981,17 @@ class AnalyzeViewSetOcrSceneAnalysis(viewsets.ViewSet):
         image = pic_response.content
         if not image:
             return 
+
         analyzer = EastPlusTessGuidedAnalyzer()
         nparr = np.fromstring(image, np.uint8)
         cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
         start = (0, 0)
         end = (cv2_image.shape[1], cv2_image.shape[0])
+
         raw_recognized_text_areas = analyzer.analyze_text(
             cv2_image, [start, end]
         )
-        sorted_rtas = self.order_recognized_text_areas_by_geometry(raw_recognized_text_areas)
-        if debug:
-            print('==========================ocr rta rows bunched by y, then sorted by x:')
-            for row in sorted_rtas:
-                print('----------- new row')
-                for rta in row:
-                    print('{} {}'.format(rta['start'], rta['text']))
 
-        rta_scores = {}
-        for app_name in app_dictionary:
-            print('considering app {}'.format(app_name))
-            rta_scores[app_name] = {}
-            app_phrases = app_dictionary[app_name]['phrases']
-            for rta_row_number, rta_row in enumerate(sorted_rtas):
-                rta_scores[app_name][rta_row_number] = {}
-                for rta_column_number, rta in enumerate(rta_row):
-                    scores = self.analyze_one_rta_row_field_vs_one_app(
-                        sorted_rtas,
-                        app_phrases,
-                        rta_row_number,
-                        rta_column_number,
-                    )
-                    if scores:
-                        rta_scores[app_name][rta_row_number][rta_column_number] = scores
+        ocr_scene_analyzer = OcrSceneAnalyzer(raw_recognized_text_areas, app_dictionary, debug=True)
 
-#        find the app_name with the highest score in rta_scores (may be null)
-
-        resp_obj = {
-            'great': 'googley moogley',
-            'hot': 'and spicy',
-        }
-        stats_obj = {
-            'something': 'else',
-            'super': 'gainer',
-        }
-
-        return (resp_obj, stats_obj)
+        return ocr_scene_analyzer.analyze_scene()
