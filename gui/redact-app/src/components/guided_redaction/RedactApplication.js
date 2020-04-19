@@ -1051,7 +1051,7 @@ class RedactApplication extends React.Component {
     }
     const request_data = JSON.parse(job.request_data)
     this.loadTier1ScannersFromTier1Request('ocr_scene_analysis', request_data)
-    let resp_obj = this.loadMoviesFromTier1Request(request_data)
+    this.loadMoviesFromTier1Request(request_data)
     let deepCopyTier1Matches = JSON.parse(JSON.stringify(this.state.tier_1_matches))
     let deepCopyOsaMatches = deepCopyTier1Matches['ocr_scene_analysis']
     deepCopyOsaMatches[request_data['id']] = response_data

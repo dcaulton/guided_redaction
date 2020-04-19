@@ -49,6 +49,7 @@ class InsightsPanel extends React.Component {
     this.currentImageIsTemplateAnchorImage=this.currentImageIsTemplateAnchorImage.bind(this)
     this.currentImageIsSelectedAreaAnchorImage=this.currentImageIsSelectedAreaAnchorImage.bind(this)
     this.currentImageIsOcrAnchorImage=this.currentImageIsOcrAnchorImage.bind(this)
+    this.currentImageIsOsaMatchImage=this.currentImageIsOsaMatchImage.bind(this)
     this.afterPingSuccess=this.afterPingSuccess.bind(this)
     this.afterPingFailure=this.afterPingFailure.bind(this)
     this.callPing=this.callPing.bind(this)
@@ -78,7 +79,16 @@ class InsightsPanel extends React.Component {
     this.getCurrentSelectedAreaOriginLocation=this.getCurrentSelectedAreaOriginLocation.bind(this)
     this.getCurrentOcrOriginLocation=this.getCurrentOcrOriginLocation.bind(this)
     this.getCurrentTemplateMaskZones=this.getCurrentTemplateMaskZones.bind(this)
+    this.getCurrentOcrSceneAnalysisMatches=this.getCurrentOcrSceneAnalysisMatches.bind(this)
     this.getCurrentOcrWindow=this.getCurrentOcrWindow.bind(this)
+  }
+
+  getCurrentOcrSceneAnalysisMatches() {
+    const osa_key = this.props.tier_1_scanner_current_ids['ocr_scene_analysis']
+    const frameset_hash = this.props.getFramesetHashForImageUrl(this.state.insights_image)
+
+    const data = this.props.tier_1_matches['ocr_scene_analysis'][osa_key]['movies'][this.props.movie_url]['framesets'][frameset_hash]
+    return data
   }
 
   currentImageIsOcrAnchorImage() {
@@ -94,7 +104,29 @@ class InsightsPanel extends React.Component {
       let cur_ocr_rule_anchor_image_name = ocr_rule['image']
       return (cur_ocr_rule_anchor_image_name === this.state.insights_image)
     } else {
-      return true
+      return true // TODO I think this should be false, test it later
+    }
+  }
+
+  currentImageIsOsaMatchImage() {
+    if (!this.props.tier_1_matches['ocr_scene_analysis']) {
+        return
+    }
+    if (this.props.tier_1_scanner_current_ids['ocr_scene_analysis']) {
+      let osa_key = this.props.tier_1_scanner_current_ids['ocr_scene_analysis']
+      if (!Object.keys(this.props.tier_1_scanners['ocr_scene_analysis']).includes(osa_key)) {
+        return false
+      }
+      if (!Object.keys(this.props.tier_1_matches['ocr_scene_analysis']).includes(osa_key)) {
+        return false
+      }
+      const frameset_hash = this.props.getFramesetHashForImageUrl(this.state.insights_image)
+      const frameset_hashes = Object.keys(
+        this.props.tier_1_matches['ocr_scene_analysis'][osa_key]['movies'][this.props.movie_url]['framesets']
+      )
+      return frameset_hashes.includes(frameset_hash)
+    } else {
+      return false
     }
   }
 
@@ -1164,6 +1196,7 @@ class InsightsPanel extends React.Component {
               currentImageIsTemplateAnchorImage={this.currentImageIsTemplateAnchorImage}
               currentImageIsSelectedAreaAnchorImage={this.currentImageIsSelectedAreaAnchorImage}
               currentImageIsOcrAnchorImage={this.currentImageIsOcrAnchorImage}
+              currentImageIsOsaMatchImage={this.currentImageIsOsaMatchImage}
               insights_image_scale={this.state.insights_image_scale}
               getTier1ScannerMatches={this.getTier1ScannerMatches}
               getAnnotations={this.getAnnotations}
@@ -1179,6 +1212,7 @@ class InsightsPanel extends React.Component {
               getCurrentSelectedAreaMinimumZones={this.getCurrentSelectedAreaMinimumZones}
               getCurrentSelectedAreaOriginLocation={this.getCurrentSelectedAreaOriginLocation}
               getCurrentOcrOriginLocation={this.getCurrentOcrOriginLocation}
+              getCurrentOcrSceneAnalysisMatches={this.getCurrentOcrSceneAnalysisMatches}
             />
           </div>
 

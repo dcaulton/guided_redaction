@@ -86,6 +86,49 @@ class CanvasInsightsOverlay extends React.Component {
     }
   }
 
+  drawShadedRectangle(start, end, color, label='') {
+    const canvas = this.refs.insights_canvas
+    let ctx = canvas.getContext('2d')
+    ctx.fillStyle = color
+    ctx.globalAlpha = 0.4
+    const start_x_scaled = start[0] * this.props.insights_image_scale
+    const start_y_scaled = start[1] * this.props.insights_image_scale
+    const width_scaled = (end[0] - start[0]) * this.props.insights_image_scale
+    const height_scaled = (end[1] - start[1]) * this.props.insights_image_scale
+    ctx.fillRect(start_x_scaled, start_y_scaled, width_scaled, height_scaled)
+    if (label) {
+      const x = (start[0]+50) * this.props.insights_image_scale
+      const y = (start[1]+50) * this.props.insights_image_scale
+      ctx.globalAlpha = 1
+      ctx.fillStyle = '#000'
+      ctx.fillText(label, x, y)
+    }
+  }
+
+  drawOsaMatches() {
+    if (!this.props.currentImageIsOsaMatchImage()) {
+      return
+    }
+    const matches = this.props.getCurrentOcrSceneAnalysisMatches()
+    for (let i=0; i < Object.keys(matches).length; i++) {
+      const key = Object.keys(matches)[i]
+      const match = matches[key]
+      const rand_color = '#'+(Math.random()*0xFFFFFF<<0).toString(16);
+      this.drawShadedRectangle(match['start'], match['end'], rand_color, match['name'])
+      this.drawBoxesAroundStartEndRecords(
+        [match],
+        rand_color
+      )
+    }
+//    const window = this.props.getCurrentOcrWindow()
+//    if (window) {
+//      this.drawBoxesAroundStartEndRecords(
+//        [window],
+//        this.ocr_window_color
+//      )
+//    }
+  }
+
   drawTemplateMaskZones() {
     if (!this.props.currentImageIsTemplateAnchorImage()) {
       return
@@ -330,6 +373,7 @@ class CanvasInsightsOverlay extends React.Component {
     this.drawAnnotations()
     this.drawOcrMatches()
     this.drawOcrWindow()
+    this.drawOsaMatches()
     this.drawAreasToRedact()
   }
 
@@ -348,6 +392,7 @@ class CanvasInsightsOverlay extends React.Component {
     this.drawAnnotations()
     this.drawOcrMatches()
     this.drawOcrWindow()
+    this.drawOsaMatches()
     this.drawAreasToRedact()
   }
 
