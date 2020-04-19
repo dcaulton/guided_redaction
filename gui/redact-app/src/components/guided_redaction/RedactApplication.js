@@ -1041,6 +1041,24 @@ class RedactApplication extends React.Component {
     }
   }
 
+  async loadOcrSceneAnalysisResults(job, when_done=(()=>{})) {
+    const response_data = JSON.parse(job.response_data)
+    if (!response_data) {
+      return
+    }
+    if (!Object.keys(response_data).includes('movies')) {
+      return
+    }
+    const request_data = JSON.parse(job.request_data)
+    this.loadTier1ScannersFromTier1Request('ocr_scene_analysis', request_data)
+    let resp_obj = this.loadMoviesFromTier1Request(request_data)
+    let deepCopyTier1Matches = JSON.parse(JSON.stringify(this.state.tier_1_matches))
+    let deepCopyOsaMatches = deepCopyTier1Matches['ocr_scene_analysis']
+    deepCopyOsaMatches[request_data['id']] = response_data
+    deepCopyTier1Matches['ocr_scene_analysis'] = deepCopyOsaMatches
+    this.setGlobalStateVar('tier_1_matches', deepCopyTier1Matches)
+  }
+
   async loadOcrResults(job, when_done=(()=>{})) {
     const response_data = JSON.parse(job.response_data)
     if (!response_data) {
@@ -1643,6 +1661,8 @@ class RedactApplication extends React.Component {
         this.loadOcrResults(job, when_done)
 			} else if (job.app === 'analyze' && job.operation === 'telemetry_find_matching_frames') {
         this.loadTelemetryResults(job, when_done)
+			} else if (job.app === 'analyze' && job.operation === 'ocr_scene_analysis_threaded') {
+        this.loadOcrSceneAnalysisResults(job, when_done)
 			} else if (job.app === 'analyze' && job.operation === 'selected_area_threaded') {
         this.loadSelectedAreaResults(job, when_done)
 			} else if ((job.app === 'parse' && job.operation === 'split_and_hash_threaded')) {

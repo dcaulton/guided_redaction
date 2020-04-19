@@ -320,6 +320,8 @@ class MovieCard extends React.Component {
       scanner_type_short = 'temp'
     } else if (scanner_type === 'selected_area') {
       scanner_type_short = 'sel ar'
+    } else if (scanner_type === 'ocr_scene_analysis') {
+      scanner_type_short = 'osa'
     }
     let matches_button = ''
     let clear_button = ''
@@ -516,6 +518,7 @@ class MovieCard extends React.Component {
     const make_active_button = this.buildMakeActiveButton(this.props.this_cards_movie_url)
     const template_matches_string = this.getTier1MatchesString('template')
     const ocr_matches_string = this.getTier1MatchesString('ocr')
+    const ocr_scene_analysis_matches_string = this.getTier1MatchesString('ocr_scene_analysis')
     const selected_areas_string = this.getTier1MatchesString('selected_area')
     const areas_to_redact_string = this.getAreasToRedactString()
     const diffs_string = this.getMovieDiffsFound()
@@ -580,6 +583,9 @@ class MovieCard extends React.Component {
                   </div>
                   <div className='row'>
                     {ocr_matches_string}
+                  </div>
+                  <div className='row'>
+                    {ocr_scene_analysis_matches_string}
                   </div>
                   <div className='row'>
                     {diffs_string}
