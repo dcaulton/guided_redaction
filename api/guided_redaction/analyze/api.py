@@ -964,7 +964,9 @@ class AnalyzeViewSetOcrSceneAnalysis(viewsets.ViewSet):
                 if index % skip_frames == 0:
                     frameset = movie['framesets'][frameset_hash]
                     (response, statistics) = self.analyze_one_frame(frameset, app_dictionary)
-                    build_response_data['movies'][movie_url]['framesets'][frameset_hash] = response
+                    response_id = response['name']
+                    build_response_data['movies'][movie_url]['framesets'][frameset_hash] = {}
+                    build_response_data['movies'][movie_url]['framesets'][frameset_hash][response_id] = response
                     build_statistics['movies'][movie_url]['framesets'][frameset_hash] = statistics
 
         build_response_data['statistics'] = build_statistics

@@ -8,7 +8,7 @@ class OcrSceneAnalyzer:
         self.app_dictionary = app_dictionary
         self.sorted_rtas = []
         self.match_cache = {}
-        self.debug=debug
+        self.debug = debug
         self.match_threshold = 80
 
     def analyze_scene(self):
@@ -20,7 +20,6 @@ class OcrSceneAnalyzer:
             rta_scores[app_name] = {}
             app_phrases = self.app_dictionary[app_name]['phrases']
             for rta_row_number, rta_row in enumerate(self.sorted_rtas):
-                rta_scores[app_name][rta_row_number] = {}
                 for rta_column_number, rta in enumerate(rta_row):
                     scores = self.analyze_one_rta_row_field_vs_one_app(
                         app_phrases,
@@ -28,18 +27,47 @@ class OcrSceneAnalyzer:
                         rta_column_number,
                     )
                     if scores:
+                        if rta_row_number not in rta_scores[app_name]:
+                            rta_scores[app_name][rta_row_number] = {}
                         rta_scores[app_name][rta_row_number][rta_column_number] = scores
-        print('all done, final data')
-        print(rta_scores)
+        if self.debug:
+            print('all done, final data')
+            print(rta_scores)
+
+        if self.debug:
+            print(self.sorted_rtas)
+
+        high_score_app = ''
+        high_score = 0
+        high_score_coords = {'start': (0,0), 'end': (0,0)}
+        for app_name in rta_scores:
+            app_high_score = 0
+            app_high_score_coords = {'start': (0,0), 'end': (0,0)}
+            for row_id in rta_scores[app_name]:
+                row = rta_scores[app_name][row_id]
+                for col_id in row:
+                    col = row[col_id]
+                    if col['total_score'] > app_high_score:
+                        app_high_score = col['total_score']
+                        app_high_score_coords['start'] = col['window_start']
+                        app_high_score_coords['end'] = col['window_end']
+
+            if app_high_score > high_score:
+                high_score = app_high_score
+                high_score_app = app_name
+                high_score_coords['start'] = app_high_score_coords['start']
+                high_score_coords['end'] = app_high_score_coords['end']
 
 #        find the app_name with the highest score in rta_scores (may be null)
-        resp_obj = {
-            'great': 'googley moogley',
-            'hot': 'and spicy',
-        }
         stats_obj = {
-            'something': 'else',
-            'super': 'gainer',
+            'rta_scores': rta_scores,
+            'ordered_rtas': self.sorted_rtas,
+        }
+        resp_obj = {
+            'name': high_score_app,
+            'score': high_score,
+            'start': high_score_coords['start'],
+            'end': high_score_coords['end'],
         }
 
         return (resp_obj, stats_obj)
