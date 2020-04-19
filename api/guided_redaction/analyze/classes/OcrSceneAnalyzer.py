@@ -29,6 +29,8 @@ class OcrSceneAnalyzer:
                     )
                     if scores:
                         rta_scores[app_name][rta_row_number][rta_column_number] = scores
+        print('all done, final data')
+        print(rta_scores)
 
 #        find the app_name with the highest score in rta_scores (may be null)
         resp_obj = {
@@ -87,8 +89,8 @@ class OcrSceneAnalyzer:
         #                     last claimed rta row and column = current rta row/col
                         if ratio > self.match_threshold:
                             if self.debug:
-                                print('adding match for APP {}-{},{}, RTA {}-{},{}'.format(
-                                    app_row_text, i, app_col_number, rta['text'] ,j, rta_number))
+                                print('adding match for APP {}-{},{}, RTA {}-{},{}  score {}'.format(
+                                    app_row_text, i, app_col_number, rta['text'] ,j, rta_number, ratio))
                             app_row_score.append(ratio)
                             app_row_text_matched = True
                             last_rta_row_claimed = j
@@ -106,6 +108,75 @@ class OcrSceneAnalyzer:
                     app_row_score.append(0)
             app_row_scores.append(app_row_score)
 
+    def add_above_matches(self, app_row_scores, window_start, window_end, rta_coords, app_coords, app_phrases):
+        ###### add scores for rows below this point
+        print('adding above matches')
+        current_app_row = app_coords[0]
+        current_rta_row = rta_coords[0]
+        last_rta_row_claimed = rta_coords[0]
+        last_rta_col_claimed = rta_coords[1]
+        build_app_row_scores = []
+        # for app rows from current_app_row to the end of the app_phrases:
+        for i in range(current_app_row-1, 0, -1):
+            app_row_score = []
+            app_row = app_phrases[i]
+        #     for app_item in this app row:
+            if self.debug:
+                print('-new app row: {}'.format(app_row))
+            for app_col_number, app_row_text in enumerate(reversed(app_row)):
+                app_row_text_matched = False
+                if self.debug:
+                    print('--new app field {}'.format(app_row_text))
+        #         for rta rows from last_claimed_rta_row to the end of self.sorted_rtas:
+                for j in range(current_rta_row-1, 0, -1):
+                    if app_row_text_matched:
+                        continue
+                    rta_row = self.sorted_rtas[j]
+        #             for unclaimed rta_items in this rta row:
+                    for rta_number, rta in enumerate(reversed(rta_row)):
+                        if rta_number >= last_rta_col_claimed and j >= last_rta_row_claimed:
+                            continue
+                        if app_row_text_matched:
+                            continue
+                        print('  {}---{}'.format(app_row_text, rta['text']))
+                        if rta['text'] not in self.match_cache:
+                            self.match_cache[rta['text']] = {}
+                        if app_row_text in self.match_cache[rta['text']]:
+                            ratio = self.match_cache[rta['text']][app_row_text]['ratio']
+                        else:
+                            ratio = fuzz.ratio(rta['text'], app_row_text)
+                            self.match_cache[rta['text']][app_row_text] = {
+                                'ratio': ratio,
+                                'app_locations': [],
+                            }
+        #                 if the match exceeds the threshold:
+        #                     add match score to the total
+        #                     last claimed rta row and column = current rta row/col
+                        if ratio > self.match_threshold:
+                            if self.debug:
+                                print('adding match for APP {}-{},{}, RTA {}-{},{}  score {}'.format(
+                                    app_row_text, i, app_col_number, rta['text'] ,j, rta_number, ratio))
+                            app_row_score.append(ratio)
+                            app_row_text_matched = True
+                            last_rta_row_claimed = j
+                            last_rta_col_claimed = rta_number
+                            if rta['start'][0] < window_start[0]:
+                                window_start[0] = rta['start'][0]
+                            if rta['start'][1] < window_start[1]:
+                                window_start[1] = rta['start'][1]
+                            if rta['end'][0] > window_end[0]:
+                                window_end[0] = rta['end'][0]
+                            if rta['end'][1] > window_end[1]:
+                                window_end[1] = rta['end'][1]
+                            continue
+                if not app_row_text_matched:
+                    app_row_score.append(0)
+            build_app_row_scores.append(app_row_score)
+
+        for ars in reversed(build_app_row_scores):
+            app_row_scores.append(ars)
+        
+
 
     def score_rta_point_and_app_phrase_point(self, rta_coords, app_coords, app_phrases):
         primary_rta = self.sorted_rtas[rta_coords[0]][rta_coords[1]]
@@ -117,11 +188,18 @@ class OcrSceneAnalyzer:
             print('matching the rest of the protein for RTA: {}-{} APP {}-{}'.format(rta_text, rta_coords, app_text, app_coords))
         # add the rta and app point score
         primary_score = self.match_cache[rta_text][app_text]['ratio']
-        # #### TODO add scores for rows above this point
         # #### TODO add scores for items on the rta/app row before this point
         # #### TODO add scores for items on the rta/app row after this point
 
         app_row_scores = []
+        self.add_above_matches(
+            app_row_scores, 
+            window_start, 
+            window_end, 
+            rta_coords, 
+            app_coords, 
+            app_phrases
+        )
         app_row_scores.append([primary_score])
         self.add_below_matches(
             app_row_scores, 
@@ -144,11 +222,14 @@ class OcrSceneAnalyzer:
             print('bounding box {} {}'.format(window_start, window_end))
 
 
+        app_home_text = app_phrases[app_coords[0]][app_coords[1]]
         return_obj = {
             'total_score': total_score,
             'app_row_scores': app_row_scores,
             'window_start': window_start,
             'window_end': window_end,
+            'app_home_coords': app_coords,
+            'app_home_text': app_home_text,
         }
         return return_obj
 
@@ -193,25 +274,23 @@ class OcrSceneAnalyzer:
                         app_phrases
                     )
                 scores_for_this_phrase[location_number] = return_obj
-        
 #            get the highest score for this phrase, save it in rta_phrase_matches               
-#            rta_phrase_matches[this_phrase] = {total_match_score, row_scores}
+            best_score_this_phrase = {'total_score': 0, 'row_scores': []}
+            for location_number in scores_for_this_phrase:
+                score_at_location = scores_for_this_phrase[location_number]
+                if score_at_location['total_score'] > best_score_this_phrase['total_score']:
+                    best_score_this_phrase = score_at_location
+            rta_phrase_matches[app_phrase] = best_score_this_phrase
 
-
-#        get highest value for rta_phrase_matches[x]['total_match_score']
-#        return rta_phrase_matches[highest_value]
-
-        return_data = {
-            'total_match_score': .5,
-            'row_scores': [
-              1.4,
-              0,
-              .665,
-              0,
-              .2,
-            ],
-        }
-        return return_data
+        #TODO make sure this is really needed, 
+#        get highest value for rta_phrase_matches[x]['total_score']
+        best_score_overall = {'total_score': 0, 'row_scores': []}
+        for app_phrase in rta_phrase_matches:
+            score_at_location = rta_phrase_matches[app_phrase]
+            if score_at_location['total_score'] > best_score_overall['total_score']:
+                best_score_overall = score_at_location
+        print('best score overall: {}'.format(best_score_overall))
+        return best_score_overall
 
     def order_recognized_text_areas_by_geometry(self):
         raw_rtas = self.recognized_text_areas
