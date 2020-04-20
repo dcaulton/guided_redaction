@@ -32,9 +32,6 @@ class OcrSceneAnalyzer:
                         if rta_row_number not in rta_scores[app_name]:
                             rta_scores[app_name][rta_row_number] = {}
                         rta_scores[app_name][rta_row_number][rta_column_number] = scores
-        if self.debug:
-            print('all done, final data')
-            print(rta_scores)
 
         winning_apps = {}
         for app_name in rta_scores:
@@ -80,12 +77,12 @@ class OcrSceneAnalyzer:
             app_row_score = []
             app_row = app_phrases[i]
         #     for app_item in this app row:
-            if self.debug:
-                print('-new app row: {}'.format(app_row))
+#            if self.debug:
+#                print('-new app row: {}'.format(app_row))
             for app_col_number, app_row_text in enumerate(app_row):
                 app_row_text_matched = False
-                if self.debug:
-                    print('--new app field {}'.format(app_row_text))
+#                if self.debug:
+#                    print('--new app field {}'.format(app_row_text))
         #         for rta rows from last_claimed_rta_row to the end of self.sorted_rtas:
                 for j in range(current_rta_row+1, len(self.sorted_rtas)):
                     if app_row_text_matched:
@@ -97,7 +94,8 @@ class OcrSceneAnalyzer:
                             continue
                         if app_row_text_matched:
                             continue
-                        print('  {}---{}'.format(app_row_text, rta['text']))
+#                        if self.debug:
+#                            print('  {}---{}'.format(app_row_text, rta['text']))
                         if rta['text'] not in self.match_cache:
                             self.match_cache[rta['text']] = {}
                         if app_row_text in self.match_cache[rta['text']]:
@@ -158,11 +156,14 @@ class OcrSceneAnalyzer:
                     rta_row = self.sorted_rtas[j]
         #             for unclaimed rta_items in this rta row:
                     for rta_number, rta in enumerate(reversed(rta_row)):
-                        if rta_number >= last_rta_col_claimed and j >= last_rta_row_claimed:
+                        true_rta_col_number = len(rta_row) - rta_number - 1
+                        if j > last_rta_row_claimed:
+                            continue
+                        if true_rta_col_number >= last_rta_col_claimed and j == last_rta_row_claimed:
                             continue
                         if app_row_text_matched:
                             continue
-                        print('  {}---{}'.format(app_row_text, rta['text']))
+                        print('  {}---{} at rta loc {},{}'.format(app_row_text, rta['text'], true_rta_col_number, j))
                         if rta['text'] not in self.match_cache:
                             self.match_cache[rta['text']] = {}
                         if app_row_text in self.match_cache[rta['text']]:
@@ -179,11 +180,11 @@ class OcrSceneAnalyzer:
                         if ratio > self.match_threshold:
                             if self.debug:
                                 print('adding match for APP {}-{},{}, RTA {}-{},{}  score {}'.format(
-                                    app_row_text, i, app_col_number, rta['text'] ,j, rta_number, ratio))
+                                    app_row_text, i, app_col_number, rta['text'], true_rta_col_number, j, ratio))
                             app_row_score.append(ratio)
                             app_row_text_matched = True
                             last_rta_row_claimed = j
-                            last_rta_col_claimed = rta_number
+                            last_rta_col_claimed = true_rta_col_number
                             if rta['start'][0] < window_start[0]:
                                 window_start[0] = rta['start'][0]
                             if rta['start'][1] < window_start[1]:
@@ -199,8 +200,6 @@ class OcrSceneAnalyzer:
 
         for ars in reversed(build_app_row_scores):
             app_row_scores.append(ars)
-        
-
 
     def score_rta_point_and_app_phrase_point(self, rta_coords, app_coords, app_phrases):
         primary_rta = self.sorted_rtas[rta_coords[0]][rta_coords[1]]
