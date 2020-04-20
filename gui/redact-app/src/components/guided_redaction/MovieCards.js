@@ -250,6 +250,12 @@ class MovieCard extends React.Component {
       return []
     }
     const current_rule_id = this.props.tier_1_scanner_current_ids[scanner_type]
+    if (!current_rule_id) {
+      return []
+    }
+    if (!Object.keys(this.props.tier_1_matches).includes(scanner_type)) {
+      return []
+    }
     if (!Object.keys(this.props.tier_1_matches[scanner_type]).includes(current_rule_id)) {
       return []
     }

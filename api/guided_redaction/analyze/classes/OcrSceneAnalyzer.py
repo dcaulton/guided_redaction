@@ -10,12 +10,14 @@ class OcrSceneAnalyzer:
         self.match_cache = {}
         self.debug = debug
         self.match_threshold = 80
+        self.app_score_threshold = 150
 
     def analyze_scene(self):
         self.sorted_rtas = self.order_recognized_text_areas_by_geometry()
 
         rta_scores = {}
         for app_name in self.app_dictionary:
+            self.clear_match_phrase_locations()
             print('considering app {}'.format(app_name))
             rta_scores[app_name] = {}
             app_phrases = self.app_dictionary[app_name]['phrases']
@@ -26,7 +28,7 @@ class OcrSceneAnalyzer:
                         rta_row_number,
                         rta_column_number,
                     )
-                    if scores:
+                    if scores and scores['total_score'] > 0:
                         if rta_row_number not in rta_scores[app_name]:
                             rta_scores[app_name][rta_row_number] = {}
                         rta_scores[app_name][rta_row_number][rta_column_number] = scores
@@ -34,12 +36,7 @@ class OcrSceneAnalyzer:
             print('all done, final data')
             print(rta_scores)
 
-        if self.debug:
-            print(self.sorted_rtas)
-
-        high_score_app = ''
-        high_score = 0
-        high_score_coords = {'start': (0,0), 'end': (0,0)}
+        winning_apps = {}
         for app_name in rta_scores:
             app_high_score = 0
             app_high_score_coords = {'start': (0,0), 'end': (0,0)}
@@ -52,25 +49,24 @@ class OcrSceneAnalyzer:
                         app_high_score_coords['start'] = col['window_start']
                         app_high_score_coords['end'] = col['window_end']
 
-            if app_high_score > high_score:
-                high_score = app_high_score
-                high_score_app = app_name
-                high_score_coords['start'] = app_high_score_coords['start']
-                high_score_coords['end'] = app_high_score_coords['end']
+            if app_high_score > self.app_score_threshold:
+                winning_apps[app_name] = {
+                    'name': app_name,
+                    'score': app_high_score,
+                    'start': app_high_score_coords['start'],
+                    'end': app_high_score_coords['end'],
+                }
 
-#        find the app_name with the highest score in rta_scores (may be null)
         stats_obj = {
             'rta_scores': rta_scores,
             'ordered_rtas': self.sorted_rtas,
         }
-        resp_obj = {
-            'name': high_score_app,
-            'score': high_score,
-            'start': high_score_coords['start'],
-            'end': high_score_coords['end'],
-        }
+        return (winning_apps, stats_obj)
 
-        return (resp_obj, stats_obj)
+    def clear_match_phrase_locations(self):
+        for rta_key in self.match_cache:
+            for app_key in self.match_cache[rta_key]:
+                self.match_cache[rta_key][app_key]['app_locations'] = []
 
     def add_below_matches(self, app_row_scores, window_start, window_end, rta_coords, app_coords, app_phrases):
         ###### add scores for rows below this point

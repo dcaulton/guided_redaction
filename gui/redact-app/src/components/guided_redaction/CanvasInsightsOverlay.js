@@ -86,7 +86,7 @@ class CanvasInsightsOverlay extends React.Component {
     }
   }
 
-  drawShadedRectangle(start, end, color, label='') {
+  drawShadedRectangleWithLabel(start, end, color, label='') {
     const canvas = this.refs.insights_canvas
     let ctx = canvas.getContext('2d')
     ctx.fillStyle = color
@@ -114,19 +114,8 @@ class CanvasInsightsOverlay extends React.Component {
       const key = Object.keys(matches)[i]
       const match = matches[key]
       const rand_color = '#'+(Math.random()*0xFFFFFF<<0).toString(16);
-      this.drawShadedRectangle(match['start'], match['end'], rand_color, match['name'])
-      this.drawBoxesAroundStartEndRecords(
-        [match],
-        rand_color
-      )
+      this.drawShadedRectangleWithLabel(match['start'], match['end'], rand_color, match['name'])
     }
-//    const window = this.props.getCurrentOcrWindow()
-//    if (window) {
-//      this.drawBoxesAroundStartEndRecords(
-//        [window],
-//        this.ocr_window_color
-//      )
-//    }
   }
 
   drawTemplateMaskZones() {

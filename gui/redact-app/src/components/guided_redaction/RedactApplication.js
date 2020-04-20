@@ -1054,6 +1054,9 @@ class RedactApplication extends React.Component {
     this.loadMoviesFromTier1Request(request_data)
     let deepCopyTier1Matches = JSON.parse(JSON.stringify(this.state.tier_1_matches))
     let deepCopyOsaMatches = deepCopyTier1Matches['ocr_scene_analysis']
+    if (!deepCopyOsaMatches) {
+      deepCopyOsaMatches = {}
+    }
     deepCopyOsaMatches[request_data['id']] = response_data
     deepCopyTier1Matches['ocr_scene_analysis'] = deepCopyOsaMatches
     this.setGlobalStateVar('tier_1_matches', deepCopyTier1Matches)
