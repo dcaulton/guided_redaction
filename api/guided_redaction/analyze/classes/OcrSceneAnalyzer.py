@@ -77,12 +77,12 @@ class OcrSceneAnalyzer:
             app_row_score = []
             app_row = app_phrases[i]
         #     for app_item in this app row:
-#            if self.debug:
-#                print('-new app row: {}'.format(app_row))
+            if self.debug:
+                print('-new app row: {}'.format(app_row))
             for app_col_number, app_row_text in enumerate(app_row):
                 app_row_text_matched = False
-#                if self.debug:
-#                    print('--new app field {}'.format(app_row_text))
+                if self.debug:
+                    print('--new app field {}'.format(app_row_text))
         #         for rta rows from last_claimed_rta_row to the end of self.sorted_rtas:
                 for j in range(current_rta_row+1, len(self.sorted_rtas)):
                     if app_row_text_matched:
@@ -94,8 +94,8 @@ class OcrSceneAnalyzer:
                             continue
                         if app_row_text_matched:
                             continue
-#                        if self.debug:
-#                            print('  {}---{}'.format(app_row_text, rta['text']))
+                        if self.debug:
+                            print('  {}---{}'.format(app_row_text, rta['text']))
                         if rta['text'] not in self.match_cache:
                             self.match_cache[rta['text']] = {}
                         if app_row_text in self.match_cache[rta['text']]:
@@ -130,6 +130,77 @@ class OcrSceneAnalyzer:
                     app_row_score.append(0)
             app_row_scores.append(app_row_score)
 
+    def add_earlier_this_row_matches(self, remaining_app_phrases, rta_coords):
+        print('adding earlier same row matches')
+        current_rta_row = self.sorted_rtas[rta_coords[0]]
+        last_rta_col_claimed = rta_coords[1]
+        app_row_score = []
+        for app_col_number, app_phrase in enumerate(reversed(remaining_app_phrases)):
+            if self.debug:
+                print('--new app field {}'.format(app_phrase))
+            match_found = False
+            for rta_col_number, rta in enumerate(reversed(current_rta_row)):
+                true_rta_col_number = len(current_rta_row) - rta_col_number - 1
+                if true_rta_col_number >= last_rta_col_claimed:
+                    continue
+                if match_found:
+                    continue
+                if self.debug:
+                    print('  {}---{} at rta col {}'.format(app_phrase, rta['text'], true_rta_col_number))
+                if app_phrase in self.match_cache[rta['text']]:
+                    ratio = self.match_cache[rta['text']][app_phrase]['ratio']
+                else:
+                    ratio = fuzz.ratio(rta['text'], app_phrase)
+                    self.match_cache[rta['text']][app_phrase] = {
+                        'ratio': ratio,
+                        'app_locations': [],
+                    }
+                if ratio > self.match_threshold:
+                    if self.debug:
+                        print('adding match for APP {}-{}, RTA {}-{}  score {}'.format(
+                            app_phrase, app_col_number, rta['text'], true_rta_col_number, ratio))
+                        app_row_score.append(ratio)
+                last_rta_col_claimed = true_rta_col_number
+                match_found = True
+            if not match_found:
+                app_row_score.append(0)
+        return list(reversed(app_row_score))
+
+    def add_later_this_row_matches(self, remaining_app_phrases, rta_coords):
+        print('adding later same row matches')
+        current_rta_row = self.sorted_rtas[rta_coords[0]]
+        last_rta_col_claimed = rta_coords[1]
+        app_row_score = []
+        for app_col_number, app_phrase in enumerate(remaining_app_phrases):
+            if self.debug:
+                print('--new app field {}'.format(app_phrase))
+            match_found = False
+            for rta_col_number, rta in enumerate(current_rta_row):
+                if rta_col_number <= last_rta_col_claimed:
+                    continue
+                if match_found:
+                    continue
+                if self.debug:
+                    print('  {}---{} at rta col {}'.format(app_phrase, rta['text'], rta_col_number))
+                if app_phrase in self.match_cache[rta['text']]:
+                    ratio = self.match_cache[rta['text']][app_phrase]['ratio']
+                else:
+                    ratio = fuzz.ratio(rta['text'], app_phrase)
+                    self.match_cache[rta['text']][app_phrase] = {
+                        'ratio': ratio,
+                        'app_locations': [],
+                    }
+                if ratio > self.match_threshold:
+                    if self.debug:
+                        print('adding match for APP {}-{}, RTA {}-{}  score {}'.format(
+                            app_phrase, app_col_number, rta['text'], rta_col_number, ratio))
+                        app_row_score.append(ratio)
+                last_rta_col_claimed = rta_col_number
+                match_found = True
+            if not match_found:
+                app_row_score.append(0)
+        return app_row_score
+
     def add_above_matches(self, app_row_scores, window_start, window_end, rta_coords, app_coords, app_phrases):
         ###### add scores for rows below this point
         print('adding above matches')
@@ -163,7 +234,8 @@ class OcrSceneAnalyzer:
                             continue
                         if app_row_text_matched:
                             continue
-                        print('  {}---{} at rta loc {},{}'.format(app_row_text, rta['text'], true_rta_col_number, j))
+                        if self.debug:
+                            print('  {}---{} at rta loc {},{}'.format(app_row_text, rta['text'], true_rta_col_number, j))
                         if rta['text'] not in self.match_cache:
                             self.match_cache[rta['text']] = {}
                         if app_row_text in self.match_cache[rta['text']]:
@@ -178,9 +250,9 @@ class OcrSceneAnalyzer:
         #                     add match score to the total
         #                     last claimed rta row and column = current rta row/col
                         if ratio > self.match_threshold:
-                            if self.debug:
-                                print('adding match for APP {}-{},{}, RTA {}-{},{}  score {}'.format(
-                                    app_row_text, i, app_col_number, rta['text'], true_rta_col_number, j, ratio))
+#                            if self.debug:
+#                                print('adding match for APP {}-{},{}, RTA {}-{},{}  score {}'.format(
+#                                    app_row_text, i, app_col_number, rta['text'], true_rta_col_number, j, ratio))
                             app_row_score.append(ratio)
                             app_row_text_matched = True
                             last_rta_row_claimed = j
@@ -211,8 +283,6 @@ class OcrSceneAnalyzer:
             print('matching the rest of the protein for RTA: {}-{} APP {}-{}'.format(rta_text, rta_coords, app_text, app_coords))
         # add the rta and app point score
         primary_score = self.match_cache[rta_text][app_text]['ratio']
-        # #### TODO add scores for items on the rta/app row before this point
-        # #### TODO add scores for items on the rta/app row after this point
 
         app_row_scores = []
         self.add_above_matches(
@@ -223,7 +293,20 @@ class OcrSceneAnalyzer:
             app_coords, 
             app_phrases
         )
-        app_row_scores.append([primary_score])
+
+        scores_before = []
+        scores_after = []
+        if app_coords[1] > 0:
+          remaining_app_phrases = app_phrases[app_coords[0]][0:app_coords[1]]
+          print('remaining phrases: {}'.format(remaining_app_phrases))
+          scores_before = self.add_earlier_this_row_matches(remaining_app_phrases, rta_coords)
+        app_phrases_row_length = len(app_phrases[app_coords[0]])
+        if app_coords[1] < app_phrases_row_length - 1:
+          remaining_app_phrases = app_phrases[app_coords[0]][app_coords[1]+1:]
+          scores_after = self.add_later_this_row_matches(remaining_app_phrases, rta_coords)
+
+        this_rows_scores = scores_before + [primary_score] + scores_after
+        app_row_scores.append(this_rows_scores)
         self.add_below_matches(
             app_row_scores, 
             window_start, 
