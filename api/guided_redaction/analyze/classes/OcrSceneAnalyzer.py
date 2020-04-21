@@ -1,16 +1,17 @@
 from fuzzywuzzy import fuzz
+from copy import deepcopy
 
 
 class OcrSceneAnalyzer:
 
-    def __init__(self, recognized_text_areas, app_dictionary, debug=False):
+    def __init__(self, recognized_text_areas, osa_rule):
         self.recognized_text_areas = recognized_text_areas
-        self.app_dictionary = app_dictionary
+        self.app_dictionary = osa_rule['apps']
         self.sorted_rtas = []
         self.match_cache = {}
-        self.debug = debug
+        self.debug = osa_rule['debugging_output']
         self.match_threshold = 80
-        self.app_score_threshold = 150
+        self.app_score_threshold = int(osa_rule['app_score_threshold'])
 
     def analyze_scene(self):
         self.sorted_rtas = self.order_recognized_text_areas_by_geometry()
@@ -22,8 +23,8 @@ class OcrSceneAnalyzer:
             rta_scores[app_name] = {}
             app_phrases = self.app_dictionary[app_name]['phrases']
             app_max_feature_distances = None
-            if 'max_feature_distances' in self.app_dictionary[app_name]:
-                app_max_feature_distances = self.app_dictionary[app_name]['max_feature_distances']
+            if 'max_feature_distance' in self.app_dictionary[app_name]:
+                app_max_feature_distances = self.app_dictionary[app_name]['max_feature_distance']
             for rta_row_number, rta_row in enumerate(self.sorted_rtas):
                 for rta_column_number, rta in enumerate(rta_row):
                     scores = self.analyze_one_rta_row_field_vs_one_app(
@@ -50,7 +51,7 @@ class OcrSceneAnalyzer:
                         app_high_score_coords['start'] = col['window_start']
                         app_high_score_coords['end'] = col['window_end']
 
-            if app_high_score > self.app_score_threshold:
+            if app_high_score >= self.app_score_threshold:
                 winning_apps[app_name] = {
                     'name': app_name,
                     'score': app_high_score,
@@ -151,6 +152,7 @@ class OcrSceneAnalyzer:
     def box_exceeds_max_feature_distances(self, new_bounding_box, app_max_feature_distances):
         if not app_max_feature_distances:
             return False
+
         if new_bounding_box['width'] > app_max_feature_distances[0]:
             if self.debug:
                 print('whoops!  new bounding box exceeds max feature width')
@@ -162,8 +164,8 @@ class OcrSceneAnalyzer:
         return False
 
     def build_new_bounding_box(self, rta, existing_start, existing_end):
-        new_start = existing_start
-        new_end = existing_end
+        new_start = deepcopy(existing_start)
+        new_end = deepcopy(existing_end)
         if rta['start'][0] < existing_start[0]:
             new_start[0] = rta['start'][0]
         if rta['start'][1] < existing_start[1]:
