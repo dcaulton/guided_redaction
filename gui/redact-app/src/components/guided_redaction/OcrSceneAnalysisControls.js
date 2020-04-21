@@ -20,6 +20,7 @@ class OcrSceneAnalysisControls extends React.Component {
       id: '',
       name: '',
       skip_frames: 10,
+      debugging_output: false,
       apps: {},
       attributes: {},
       unsaved_changes: false,
@@ -64,6 +65,7 @@ class OcrSceneAnalysisControls extends React.Component {
       id: this.state.id,
       name: this.state.name,
       skip_frames: this.state.skip_frames,
+      debugging_output: this.state.debugging_output,
       apps: this.state.apps,
       attributes: this.state.attributes,
     }
@@ -116,6 +118,31 @@ class OcrSceneAnalysisControls extends React.Component {
     )
   }
 
+  toggleDebuggingOutput() {
+    const new_value = (!this.state.debugging_output)
+    this.setState({
+      debugging_output: new_value,
+    })
+  }
+
+  buildDebuggingOutputField() {
+    let debugging_output_checked = ''
+    if (this.state.debugging_output) {
+      debugging_output_checked = 'checked'
+    }
+    return (
+      <div className='ml-1'>
+        <input
+          className='mr-2 mt-2'
+          checked={debugging_output_checked}
+          type='checkbox'
+          onChange={() => this.toggleDebuggingOutput('debugging_output')}
+        />
+        produce debugging output
+      </div>
+    )
+  }
+
   buildLoadButton() {
     return buildTier1LoadButton(
       'ocr_scene_analysis',
@@ -133,6 +160,7 @@ class OcrSceneAnalysisControls extends React.Component {
         id: osa['id'],
         name: osa['name'],
         skip_frames: osa['skip_frames'],
+        debugging_output: osa['debugging_output'],
         apps: osa['apps'],
         attributes: osa['attributes'],
         unsaved_changes: false,
@@ -152,6 +180,7 @@ class OcrSceneAnalysisControls extends React.Component {
       id: '',
       name: '',
       skip_frames: 10,
+      debugging_output: false,
       apps: {},
       attributes: {},
       unsaved_changes: false,
@@ -327,6 +356,7 @@ class OcrSceneAnalysisControls extends React.Component {
     const name_field = this.buildNameField()
     const apps_field = this.buildAppsField()
     const skip_frames_field = this.buildSkipFramesField()
+    const debugging_output_field = this.buildDebuggingOutputField()
     const load_button = this.buildLoadButton()
     const delete_button = this.buildDeleteButton()
     const run_button = this.buildRunButton()
@@ -363,6 +393,10 @@ class OcrSceneAnalysisControls extends React.Component {
 
                 <div className='row bg-light'>
                   {skip_frames_field}
+                </div>
+
+                <div className='row bg-light'>
+                  {debugging_output_field}
                 </div>
 
                 <div className='row bg-light'>

@@ -963,7 +963,7 @@ class AnalyzeViewSetOcrSceneAnalysis(viewsets.ViewSet):
             for index, frameset_hash in enumerate(ordered_hashes):
                 if index % skip_frames == 0:
                     frameset = movie['framesets'][frameset_hash]
-                    (response, statistics) = self.analyze_one_frame(frameset, app_dictionary)
+                    (response, statistics) = self.analyze_one_frame(frameset, app_dictionary, osa['debugging_output'])
                     for app_name in response:
                         if frameset_hash not in build_response_data['movies'][movie_url]['framesets']:
                             build_response_data['movies'][movie_url]['framesets'][frameset_hash] = {}
@@ -973,7 +973,7 @@ class AnalyzeViewSetOcrSceneAnalysis(viewsets.ViewSet):
         build_response_data['statistics'] = build_statistics
         return Response(build_response_data)
 
-    def analyze_one_frame(self, frameset, app_dictionary):
+    def analyze_one_frame(self, frameset, app_dictionary, produce_debugging_output=False):
         debug = False
         if 'images' not in frameset or not frameset['images']:
             return
@@ -995,7 +995,6 @@ class AnalyzeViewSetOcrSceneAnalysis(viewsets.ViewSet):
             cv2_image, [start, end]
         )
 
-        ocr_scene_analyzer = OcrSceneAnalyzer(raw_recognized_text_areas, app_dictionary, debug=False)
-#        ocr_scene_analyzer = OcrSceneAnalyzer(raw_recognized_text_areas, app_dictionary, debug=True)
+        ocr_scene_analyzer = OcrSceneAnalyzer(raw_recognized_text_areas, app_dictionary, debug=produce_debugging_output)
 
         return ocr_scene_analyzer.analyze_scene()

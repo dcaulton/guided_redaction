@@ -21,10 +21,14 @@ class OcrSceneAnalyzer:
             print('considering app {}'.format(app_name))
             rta_scores[app_name] = {}
             app_phrases = self.app_dictionary[app_name]['phrases']
+            app_max_feature_distances = None
+            if 'max_feature_distances' in self.app_dictionary[app_name]:
+                app_max_feature_distances = self.app_dictionary[app_name]['max_feature_distances']
             for rta_row_number, rta_row in enumerate(self.sorted_rtas):
                 for rta_column_number, rta in enumerate(rta_row):
                     scores = self.analyze_one_rta_row_field_vs_one_app(
                         app_phrases,
+                        app_max_feature_distances,
                         rta_row_number,
                         rta_column_number,
                     )
@@ -65,9 +69,18 @@ class OcrSceneAnalyzer:
             for app_key in self.match_cache[rta_key]:
                 self.match_cache[rta_key][app_key]['app_locations'] = []
 
-    def add_below_matches(self, app_row_scores, window_start, window_end, rta_coords, app_coords, app_phrases):
+    def add_below_matches(self, 
+            app_row_scores, 
+            window_start, 
+            window_end, 
+            rta_coords, 
+            app_coords, 
+            app_phrases, 
+            app_max_feature_distances
+        ):
         ###### add scores for rows below this point
-        print('adding below matches')
+        if self.debug:
+            print('adding below matches')
         current_app_row = app_coords[0]
         current_rta_row = rta_coords[0]
         last_rta_row_claimed = rta_coords[0]
@@ -112,6 +125,9 @@ class OcrSceneAnalyzer:
         #                     add match score to the total
         #                     last claimed rta row and column = current rta row/col
                         if ratio > self.match_threshold:
+                            new_bounding_box = self.build_new_bounding_box(rta, window_start, window_end)
+                            if self.box_exceeds_max_feature_distances(new_bounding_box, app_max_feature_distances):
+                                continue
                             if self.debug:
                                 print('adding match for APP {}-{},{}, RTA {}-{},{}  score {}'.format(
                                     app_row_text, i, app_col_number, rta['text'] ,j, rta_number, ratio))
@@ -132,8 +148,42 @@ class OcrSceneAnalyzer:
                     app_row_score.append(0)
             app_row_scores.append(app_row_score)
 
+    def box_exceeds_max_feature_distances(self, new_bounding_box, app_max_feature_distances):
+        if not app_max_feature_distances:
+            return False
+        if new_bounding_box['width'] > app_max_feature_distances[0]:
+            if self.debug:
+                print('whoops!  new bounding box exceeds max feature width')
+            return True
+        if new_bounding_box['height'] > app_max_feature_distances[1]:
+            if self.debug:
+                print('whoops!  new bounding box exceeds max feature height')
+            return True
+        return False
+
+    def build_new_bounding_box(self, rta, existing_start, existing_end):
+        new_start = existing_start
+        new_end = existing_end
+        if rta['start'][0] < existing_start[0]:
+            new_start[0] = rta['start'][0]
+        if rta['start'][1] < existing_start[1]:
+            new_start[1] = rta['start'][1]
+        if rta['end'][0] > existing_end[0]:
+            new_end[0] = rta['end'][0]
+        if rta['end'][1] > existing_end[1]:
+            new_end[1] = rta['end'][1]
+        width = new_end[0] - new_start[0]
+        height = new_end[1] - new_start[1]
+        return {
+            'start': new_start,
+            'end': new_end,
+            'width': width,
+            'height': height,
+        }
+
     def add_earlier_this_row_matches(self, remaining_app_phrases, rta_coords):
-        print('adding earlier same row matches')
+        if self.debug:
+            print('adding earlier same row matches')
         current_rta_row = self.sorted_rtas[rta_coords[0]]
         last_rta_col_claimed = rta_coords[1]
         app_row_score = []
@@ -171,7 +221,8 @@ class OcrSceneAnalyzer:
         return list(reversed(app_row_score))
 
     def add_later_this_row_matches(self, remaining_app_phrases, rta_coords):
-        print('adding later same row matches')
+        if self.debug:
+            print('adding later same row matches')
         current_rta_row = self.sorted_rtas[rta_coords[0]]
         last_rta_col_claimed = rta_coords[1]
         app_row_score = []
@@ -207,9 +258,19 @@ class OcrSceneAnalyzer:
                 app_row_score.append(0)
         return app_row_score
 
-    def add_above_matches(self, app_row_scores, window_start, window_end, rta_coords, app_coords, app_phrases):
+    def add_above_matches(
+            self, 
+            app_row_scores, 
+            window_start, 
+            window_end, 
+            rta_coords, 
+            app_coords, 
+            app_phrases,
+            app_max_feature_distances
+        ):
         ###### add scores for rows below this point
-        print('adding above matches')
+        if self.debug:
+            print('adding above matches')
         current_app_row = app_coords[0]
         current_rta_row = rta_coords[0]
         last_rta_row_claimed = rta_coords[0]
@@ -258,9 +319,12 @@ class OcrSceneAnalyzer:
         #                     add match score to the total
         #                     last claimed rta row and column = current rta row/col
                         if ratio > self.match_threshold:
-#                            if self.debug:
-#                                print('adding match for APP {}-{},{}, RTA {}-{},{}  score {}'.format(
-#                                    app_row_text, i, app_col_number, rta['text'], true_rta_col_number, j, ratio))
+                            new_bounding_box = self.build_new_bounding_box(rta, window_start, window_end)
+                            if self.box_exceeds_max_feature_distances(new_bounding_box, app_max_feature_distances):
+                                continue
+                            if self.debug:
+                                print('adding match for APP {}-{},{}, RTA {}-{},{}  score {}'.format(
+                                    app_row_text, i, app_col_number, rta['text'], true_rta_col_number, j, ratio))
                             app_row_score.append(ratio)
                             app_row_text_matched = True
                             last_rta_row_claimed = j
@@ -281,7 +345,7 @@ class OcrSceneAnalyzer:
         for ars in reversed(build_app_row_scores):
             app_row_scores.append(ars)
 
-    def score_rta_point_and_app_phrase_point(self, rta_coords, app_coords, app_phrases):
+    def score_rta_point_and_app_phrase_point(self, rta_coords, app_coords, app_phrases, app_max_feature_distances):
         primary_rta = self.sorted_rtas[rta_coords[0]][rta_coords[1]]
         rta_text = primary_rta['text']
         window_start = list(primary_rta['start'])
@@ -299,14 +363,16 @@ class OcrSceneAnalyzer:
             window_end, 
             rta_coords, 
             app_coords, 
-            app_phrases
+            app_phrases,
+            app_max_feature_distances
         )
 
         scores_before = []
         scores_after = []
         if app_coords[1] > 0:
           remaining_app_phrases = app_phrases[app_coords[0]][0:app_coords[1]]
-          print('remaining phrases: {}'.format(remaining_app_phrases))
+          if self.debug:
+              print('remaining phrases: {}'.format(remaining_app_phrases))
           scores_before = self.add_earlier_this_row_matches(remaining_app_phrases, rta_coords)
         app_phrases_row_length = len(app_phrases[app_coords[0]])
         if app_coords[1] < app_phrases_row_length - 1:
@@ -321,7 +387,8 @@ class OcrSceneAnalyzer:
             window_end, 
             rta_coords, 
             app_coords, 
-            app_phrases
+            app_phrases,
+            app_max_feature_distances
         )
 
         total_score = 0
@@ -347,7 +414,7 @@ class OcrSceneAnalyzer:
         }
         return return_obj
 
-    def analyze_one_rta_row_field_vs_one_app(self, app_phrases, rta_row_number, rta_col_number):
+    def analyze_one_rta_row_field_vs_one_app(self, app_phrases, app_max_feature_distances, rta_row_number, rta_col_number):
         return_data = {}
         rta_text = self.sorted_rtas[rta_row_number][rta_col_number]['text']
         if rta_text not in self.match_cache:
@@ -385,7 +452,8 @@ class OcrSceneAnalyzer:
                 return_obj = self.score_rta_point_and_app_phrase_point(
                         (rta_row_number, rta_col_number), 
                         app_phrase_coords, 
-                        app_phrases
+                        app_phrases,
+                        app_max_feature_distances,
                     )
                 scores_for_this_phrase[location_number] = return_obj
 #            get the highest score for this phrase, save it in rta_phrase_matches               
