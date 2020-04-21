@@ -101,6 +101,8 @@ class OcrSceneAnalyzer:
                         if app_row_text in self.match_cache[rta['text']]:
                             ratio = self.match_cache[rta['text']][app_row_text]['ratio']
                         else:
+                            if rta['text'] not in self.match_cache:
+                                self.match_cache[rta['text']] = {}
                             ratio = fuzz.ratio(rta['text'], app_row_text)
                             self.match_cache[rta['text']][app_row_text] = {
                                 'ratio': ratio,
@@ -150,6 +152,8 @@ class OcrSceneAnalyzer:
                 if app_phrase in self.match_cache[rta['text']]:
                     ratio = self.match_cache[rta['text']][app_phrase]['ratio']
                 else:
+                    if rta['text'] not in self.match_cache:
+                        self.match_cache[rta['text']] = {}
                     ratio = fuzz.ratio(rta['text'], app_phrase)
                     self.match_cache[rta['text']][app_phrase] = {
                         'ratio': ratio,
@@ -182,9 +186,11 @@ class OcrSceneAnalyzer:
                     continue
                 if self.debug:
                     print('  {}---{} at rta col {}'.format(app_phrase, rta['text'], rta_col_number))
-                if app_phrase in self.match_cache[rta['text']]:
+                if rta['text'] in self.match_cache and app_phrase in self.match_cache[rta['text']]:
                     ratio = self.match_cache[rta['text']][app_phrase]['ratio']
                 else:
+                    if rta['text'] not in self.match_cache:
+                        self.match_cache[rta['text']] = {}
                     ratio = fuzz.ratio(rta['text'], app_phrase)
                     self.match_cache[rta['text']][app_phrase] = {
                         'ratio': ratio,
@@ -241,6 +247,8 @@ class OcrSceneAnalyzer:
                         if app_row_text in self.match_cache[rta['text']]:
                             ratio = self.match_cache[rta['text']][app_row_text]['ratio']
                         else:
+                            if rta['text'] not in self.match_cache:
+                                self.match_cache[rta['text']] = {}
                             ratio = fuzz.ratio(rta['text'], app_row_text)
                             self.match_cache[rta['text']][app_row_text] = {
                                 'ratio': ratio,
@@ -395,7 +403,8 @@ class OcrSceneAnalyzer:
             score_at_location = rta_phrase_matches[app_phrase]
             if score_at_location['total_score'] > best_score_overall['total_score']:
                 best_score_overall = score_at_location
-        print('best score overall: {}'.format(best_score_overall))
+        if self.debug:
+            print('best score overall: {}'.format(best_score_overall))
         return best_score_overall
 
     def order_recognized_text_areas_by_geometry(self):

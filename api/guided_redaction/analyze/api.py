@@ -995,6 +995,7 @@ class AnalyzeViewSetOcrSceneAnalysis(viewsets.ViewSet):
             cv2_image, [start, end]
         )
 
-        ocr_scene_analyzer = OcrSceneAnalyzer(raw_recognized_text_areas, app_dictionary, debug=True)
+        ocr_scene_analyzer = OcrSceneAnalyzer(raw_recognized_text_areas, app_dictionary, debug=False)
+#        ocr_scene_analyzer = OcrSceneAnalyzer(raw_recognized_text_areas, app_dictionary, debug=True)
 
         return ocr_scene_analyzer.analyze_scene()
