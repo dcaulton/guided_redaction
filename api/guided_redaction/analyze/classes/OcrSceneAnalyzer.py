@@ -4,7 +4,7 @@ from copy import deepcopy
 
 class OcrSceneAnalyzer:
 
-    def __init__(self, recognized_text_areas, osa_rule):
+    def __init__(self, recognized_text_areas, osa_rule, frame_dimensions):
         self.recognized_text_areas = recognized_text_areas
         self.app_dictionary = osa_rule['apps']
         self.sorted_rtas = []
@@ -12,6 +12,7 @@ class OcrSceneAnalyzer:
         self.debug = osa_rule['debugging_output']
         self.match_threshold = 80
         self.osa_rule = osa_rule
+        self.frame_dimensions = frame_dimensions
 
     def analyze_scene(self):
         self.sorted_rtas = self.order_recognized_text_areas_by_geometry()
@@ -62,6 +63,7 @@ class OcrSceneAnalyzer:
         stats_obj = {
             'rta_scores': rta_scores,
             'ordered_rtas': self.sorted_rtas,
+            'frame_dimensions': self.frame_dimensions,
         }
         return (winning_apps, stats_obj)
 

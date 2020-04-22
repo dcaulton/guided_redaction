@@ -1009,6 +1009,7 @@ class AnalyzeViewSetOcrSceneAnalysis(viewsets.ViewSet):
         analyzer = EastPlusTessGuidedAnalyzer()
         nparr = np.fromstring(image, np.uint8)
         cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        frame_dimensions = [cv2_image.shape[1], cv2_image.shape[0]]
         start = (0, 0)
         end = (cv2_image.shape[1], cv2_image.shape[0])
 
@@ -1016,6 +1017,6 @@ class AnalyzeViewSetOcrSceneAnalysis(viewsets.ViewSet):
             cv2_image, [start, end]
         )
 
-        ocr_scene_analyzer = OcrSceneAnalyzer(raw_recognized_text_areas, osa_rule)
+        ocr_scene_analyzer = OcrSceneAnalyzer(raw_recognized_text_areas, osa_rule, frame_dimensions)
 
         return ocr_scene_analyzer.analyze_scene()

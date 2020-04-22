@@ -170,6 +170,7 @@ class ChartMaker:
                 if not stats_framesets: 
                     continue
                 for frameset_hash in stats['movies'][movie_url]['framesets']:
+                    frame_dimensions = stats['movies'][movie_url]['framesets'][frameset_hash]['frame_dimensions']
                     build_chart_data[movie_url][frameset_hash] = {}
                     app_hits_for_hash = {}
                     if movie_url in job_resp_data['movies'] and \
@@ -182,26 +183,87 @@ class ChartMaker:
                         matched_score = 0
                         print('building chart for frameset {} app {}'.format(frameset_hash, app_name))
                         high_score = 0
-                        best_row_data = []
+                        best_row_scores = []
+                        best_row_rta_coords = []
                         for row_number in rta_scores[app_name]:
                             for col_number in rta_scores[app_name][row_number]:
                                 if rta_scores[app_name][row_number][col_number]['total_score'] > high_score:
-                                    best_row_data = rta_scores[app_name][row_number][col_number]['app_row_scores']
+                                    best_row_scores = rta_scores[app_name][row_number][col_number]['app_row_scores']
+                                    best_row_rta_coords = rta_scores[app_name][row_number][col_number]['app_row_rta_coords']
                                     high_score = rta_scores[app_name][row_number][col_number]['total_score']
+#                        print('best match for {} is row scores {} row rta coords {}'.format(
+#                            app_name, best_row_scores, best_row_rta_coords))
 
                         super_best_row_data = []
-                        for row in best_row_data:
-                            for col in row:
-                                print('best row data {} {}'.format(row, col))
+                        for row_number, row in enumerate(best_row_scores):
+                            for col_number, col in enumerate(row):
+                                score = best_row_scores[row_number][col_number]
+                                rta_coords = best_row_rta_coords[row_number][col_number]
+                                rta = ordered_rtas[rta_coords[0]][rta_coords[1]]
+                                if score > 0:
+                                    super_best_row_data.append({
+                                        'score': score,
+                                        'centroid': rta['centroid'],
+                                    })
 
                         build_chart_data[movie_url][frameset_hash][app_name] = {
                             'best_row_data': super_best_row_data,
                         }
 
-#
-#        charts = self.make_ocr_match_charts_from_build_data(build_chart_data)
-#        return charts
-        print(build_chart_data)
+        charts = self.make_ocr_scene_analysis_charts_from_build_data(build_chart_data, frame_dimensions)
+        return charts
+
+    def make_ocr_scene_analysis_charts_from_build_data(self, build_chart_data, frame_dimensions):
+        movies = {}
+        the_uuid = str(uuid.uuid4())
+        self.file_writer.create_unique_directory(the_uuid)
+        counter = 0
+        for movie_url in build_chart_data:
+            movies[movie_url] = {}
+            movie_name = movie_url.split('/')[-1]
+            movie_uuid = movie_name.split('.')[0]
+            for frameset_hash in build_chart_data[movie_url]:
+                if 'framesets' not in movies[movie_url]:
+                    movies[movie_url]['framesets'] = {}
+                counter += 1
+                plt.figure(counter)
+                plt.axis([0, frame_dimensions[0], 0, frame_dimensions[1]])
+                file_fullpath = self.file_writer.build_file_fullpath_for_uuid_and_filename(
+                    the_uuid, 
+                    'osa_chart_' + movie_uuid + '_' + frameset_hash + '.png')
+                for app_name in build_chart_data[movie_url][frameset_hash]:
+                    x = []
+                    y = []
+                    sizes = []
+                    colors = []
+                    chart_data = build_chart_data[movie_url][frameset_hash][app_name]['best_row_data']
+                    rand_color = [random.random(), random.random(), random.random()]
+                    for item in chart_data:
+                        x.append(item['centroid'][0])
+                        y.append(frame_dimensions[1] - item['centroid'][1])
+                        score = (item['score'] - 50) * 2
+                        sizes.append(score)
+                        colors.append(rand_color)
+
+                    plt.scatter(
+                        x, 
+                        y, 
+                        s=sizes, 
+                        c=colors, 
+                        alpha=0.5
+                    )
+                top_title = plt.text(-0.0, 1.15 * frame_dimensions[1], "Ocr Scene Analysis Chart")
+                plt.title('{}\nframeset hash {}'.format(movie_name, frameset_hash))
+                plt.savefig(
+                    file_fullpath, 
+#                    bbox_extra_artists=(lgd, top_title), 
+                    bbox_inches='tight',
+#                    transparent=True,
+                )
+                plot_url = self.file_writer.get_url_for_file_path(file_fullpath)
+                movies[movie_url]['framesets'][frameset_hash] = plot_url
+        return movies
+
 
     def make_ocr_match_charts(self):
         build_chart_data = {}
