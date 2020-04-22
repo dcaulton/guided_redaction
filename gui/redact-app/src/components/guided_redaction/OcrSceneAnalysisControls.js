@@ -20,7 +20,6 @@ class OcrSceneAnalysisControls extends React.Component {
       id: '',
       name: '',
       skip_frames: 10,
-      app_score_threshold: 200,
       debugging_output: false,
       apps: {},
       attributes: {},
@@ -66,7 +65,6 @@ class OcrSceneAnalysisControls extends React.Component {
       id: this.state.id,
       name: this.state.name,
       skip_frames: this.state.skip_frames,
-      app_score_threshold: this.state.app_score_threshold,
       debugging_output: this.state.debugging_output,
       apps: this.state.apps,
       attributes: this.state.attributes,
@@ -120,17 +118,6 @@ class OcrSceneAnalysisControls extends React.Component {
     )
   }
 
-  buildAppScoreThresholdField() {
-    return buildLabelAndTextInput(
-      this.state.app_score_threshold,
-      'App score threshold',
-      'ocr_scene_analysis_app_score_threshol',
-      'app_score_threshold',
-      5,
-      ((value)=>{this.setLocalStateVar('app_score_threshold', value)})
-    )
-  }
-
   toggleDebuggingOutput() {
     const new_value = (!this.state.debugging_output)
     this.setState({
@@ -173,7 +160,6 @@ class OcrSceneAnalysisControls extends React.Component {
         id: osa['id'],
         name: osa['name'],
         skip_frames: osa['skip_frames'],
-        app_score_threshold: osa['app_score_threshold'],
         debugging_output: osa['debugging_output'],
         apps: osa['apps'],
         attributes: osa['attributes'],
@@ -194,7 +180,6 @@ class OcrSceneAnalysisControls extends React.Component {
       id: '',
       name: '',
       skip_frames: 10,
-      app_score_threshold: 200,
       debugging_output: false,
       apps: {},
       attributes: {},
@@ -371,7 +356,6 @@ class OcrSceneAnalysisControls extends React.Component {
     const name_field = this.buildNameField()
     const apps_field = this.buildAppsField()
     const skip_frames_field = this.buildSkipFramesField()
-    const app_score_threshold_field = this.buildAppScoreThresholdField()
     const debugging_output_field = this.buildDebuggingOutputField()
     const load_button = this.buildLoadButton()
     const delete_button = this.buildDeleteButton()
@@ -409,10 +393,6 @@ class OcrSceneAnalysisControls extends React.Component {
 
                 <div className='row bg-light'>
                   {skip_frames_field}
-                </div>
-
-                <div className='row bg-light'>
-                  {app_score_threshold_field}
                 </div>
 
                 <div className='row bg-light'>

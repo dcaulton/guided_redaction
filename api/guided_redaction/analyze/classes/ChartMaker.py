@@ -17,10 +17,12 @@ class ChartMaker:
     def make_charts(self):
         if self.chart_info['chart_type'] == 'template_match':
             return self.make_template_match_charts()
-        if self.chart_info['chart_type'] == 'ocr_match':
+        elif self.chart_info['chart_type'] == 'ocr_match':
             return self.make_ocr_match_charts()
-        if self.chart_info['chart_type'] == 'selected_area':
+        elif self.chart_info['chart_type'] == 'selected_area':
             return self.make_selected_area_charts()
+        elif self.chart_info['chart_type'] == 'ocr_scene_analysis_match':
+            return self.make_ocr_scene_analysis_charts()
         raise Exception('unrecognized chart type')
 
     def get_frameset_hash_for_image(self, movie, image_url):
@@ -151,6 +153,55 @@ class ChartMaker:
             plot_url = self.file_writer.get_url_for_file_path(file_fullpath)
             movies[movie_url] = [plot_url]
         return movies
+
+    def make_ocr_scene_analysis_charts(self):
+        build_chart_data = {'movies': {}}
+        for job_id in self.job_data:
+            job_req_data = self.job_data[job_id]['request_data']
+            job_resp_data = self.job_data[job_id]['response_data']
+            stats = job_resp_data['statistics']
+            for movie_url in stats['movies']:
+                build_chart_data[movie_url] = {}
+                if 'source' in job_req_data['movies']:
+                    source_movie = job_req_data['movies']['source'][movie_url]
+                else:
+                    source_movie = job_req_data['movies'][movie_url]
+                stats_framesets = stats['movies'][movie_url]['framesets']
+                if not stats_framesets: 
+                    continue
+                for frameset_hash in stats['movies'][movie_url]['framesets']:
+                    build_chart_data[movie_url][frameset_hash] = {}
+                    app_hits_for_hash = {}
+                    if movie_url in job_resp_data['movies'] and \
+                            frameset_hash in job_resp_data['movies'][movie_url]['framesets']:
+                        app_hits_for_hash = job_resp_data['movies'][movie_url]['framesets'][frameset_hash]
+                    ordered_rtas = stats['movies'][movie_url]['framesets'][frameset_hash]['ordered_rtas']
+                    rta_scores = stats['movies'][movie_url]['framesets'][frameset_hash]['rta_scores']
+                    for app_name in rta_scores: 
+                        app_info = {}
+                        matched_score = 0
+                        print('building chart for frameset {} app {}'.format(frameset_hash, app_name))
+                        high_score = 0
+                        best_row_data = []
+                        for row_number in rta_scores[app_name]:
+                            for col_number in rta_scores[app_name][row_number]:
+                                if rta_scores[app_name][row_number][col_number]['total_score'] > high_score:
+                                    best_row_data = rta_scores[app_name][row_number][col_number]['app_row_scores']
+                                    high_score = rta_scores[app_name][row_number][col_number]['total_score']
+
+                        super_best_row_data = []
+                        for row in best_row_data:
+                            for col in row:
+                                print('best row data {} {}'.format(row, col))
+
+                        build_chart_data[movie_url][frameset_hash][app_name] = {
+                            'best_row_data': super_best_row_data,
+                        }
+
+#
+#        charts = self.make_ocr_match_charts_from_build_data(build_chart_data)
+#        return charts
+        print(build_chart_data)
 
     def make_ocr_match_charts(self):
         build_chart_data = {}

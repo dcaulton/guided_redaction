@@ -936,6 +936,28 @@ class AnalyzeViewSetSelectedAreaChart(viewsets.ViewSet):
 
         return Response({'movies': charts_obj})
 
+class AnalyzeViewSetOcrSceneAnalysisChart(viewsets.ViewSet):
+    def create(self, request):
+        request_data = request.data
+        return self.process_create_request(request_data)
+
+    def process_create_request(self, request_data):
+        if not request_data.get("job_data"):
+            return self.error("job_data is required", status_code=400)
+        job_data = request_data.get('job_data')
+        chart_info = {
+            'chart_type': 'ocr_scene_analysis_match',
+        }
+        file_writer = FileWriter(
+            working_dir=settings.REDACT_FILE_STORAGE_DIR,
+            base_url=settings.REDACT_FILE_BASE_URL,
+            image_request_verify_headers=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
+        )
+        chart_maker = ChartMaker(chart_info, job_data, file_writer, settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS)
+        charts_obj = chart_maker.make_charts()
+
+        return Response({'movies': charts_obj})
+
 
 class AnalyzeViewSetOcrSceneAnalysis(viewsets.ViewSet):
     def create(self, request):

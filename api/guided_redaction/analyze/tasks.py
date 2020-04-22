@@ -14,6 +14,7 @@ from guided_redaction.analyze.api import (
     AnalyzeViewSetOcrSceneAnalysis,
     AnalyzeViewSetTemplateMatchChart,
     AnalyzeViewSetOcrMatchChart,
+    AnalyzeViewSetOcrSceneAnalysisChart,
     AnalyzeViewSetSelectedAreaChart,
     AnalyzeViewSetOcr
 )
@@ -738,6 +739,37 @@ def selected_area_chart(job_uuid):
 
 
     worker = AnalyzeViewSetSelectedAreaChart()
+    response = worker.process_create_request({
+        'job_data': build_job_data,
+    })
+    if not Job.objects.filter(pk=job_uuid).exists():
+        return
+    job = Job.objects.get(pk=job_uuid)
+    job.response_data = json.dumps(response.data)
+    job.status = 'success'
+    job.save()
+
+@shared_task
+def ocr_scene_analysis_chart(job_uuid):
+    if not Job.objects.filter(pk=job_uuid).exists():
+        print('calling ocr_scene_analysis_chart on nonexistent job: {}'.format(job_uuid))
+    job = Job.objects.get(pk=job_uuid)
+    job.status = 'running'
+    job.save()
+    print('running ocr_scene_analysis_chart for job {}'.format(job_uuid))
+
+    req_obj = json.loads(job.request_data)
+    build_job_data = {}
+    if 'job_ids' in req_obj:
+        for job_id in req_obj['job_ids']:
+            job = Job.objects.get(pk=job_id)
+            build_job_data[job_id] = {
+                'request_data': json.loads(job.request_data),
+                'response_data': json.loads(job.response_data),
+            }
+
+
+    worker = AnalyzeViewSetOcrSceneAnalysisChart()
     response = worker.process_create_request({
         'job_data': build_job_data,
     })

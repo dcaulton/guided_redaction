@@ -11,7 +11,7 @@ class OcrSceneAnalyzer:
         self.match_cache = {}
         self.debug = osa_rule['debugging_output']
         self.match_threshold = 80
-        self.app_score_threshold = int(osa_rule['app_score_threshold'])
+        self.osa_rule = osa_rule
 
     def analyze_scene(self):
         self.sorted_rtas = self.order_recognized_text_areas_by_geometry()
@@ -51,7 +51,7 @@ class OcrSceneAnalyzer:
                         app_high_score_coords['start'] = col['window_start']
                         app_high_score_coords['end'] = col['window_end']
 
-            if app_high_score >= self.app_score_threshold:
+            if app_high_score >= self.osa_rule['apps'][app_name]['app_score_threshold']:
                 winning_apps[app_name] = {
                     'name': app_name,
                     'score': app_high_score,
@@ -392,6 +392,9 @@ class OcrSceneAnalyzer:
             app_phrases,
             app_max_feature_distances
         )
+        app_row_scores_primary_coords = [0, 0]
+        app_row_scores_primary_coords[0] = len(app_row_scores)
+        app_row_scores_primary_coords[1] = len(scores_before)
 
         total_score = 0
         for row in app_row_scores:
@@ -413,6 +416,7 @@ class OcrSceneAnalyzer:
             'window_end': window_end,
             'app_home_coords': app_coords,
             'app_home_text': app_home_text,
+            'app_row_scores_primary_coords': app_row_scores_primary_coords,
         }
         return return_obj
 

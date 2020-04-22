@@ -50,6 +50,8 @@ def dispatch_job(job):
         analyze_tasks.template_match_chart.delay(job_uuid)
     if job.app == 'analyze' and job.operation == 'ocr_match_chart':
         analyze_tasks.ocr_match_chart.delay(job_uuid)
+    if job.app == 'analyze' and job.operation == 'ocr_scene_analysis_chart':
+        analyze_tasks.ocr_scene_analysis_chart.delay(job_uuid)
     if job.app == 'analyze' and job.operation == 'selected_area_chart':
         analyze_tasks.selected_area_chart.delay(job_uuid)
     if job.app == 'analyze' and job.operation == 'ocr_scene_analysis_threaded':
