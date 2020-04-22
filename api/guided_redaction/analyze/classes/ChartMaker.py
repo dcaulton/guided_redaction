@@ -229,8 +229,13 @@ class ChartMaker:
                 if 'framesets' not in movies[movie_url]:
                     movies[movie_url]['framesets'] = {}
                 counter += 1
-                plt.figure(counter)
+                aspect = frame_dimensions[0] / frame_dimensions[1]
+                fig_width=20
+                fig_height = fig_width / aspect
+                plt.figure(counter, figsize=(fig_width, fig_height))
                 plt.axis([0, frame_dimensions[0], 0, frame_dimensions[1]])
+                plt.gca().axes.get_xaxis().set_visible(False)
+                plt.gca().axes.get_yaxis().set_visible(False)
                 file_fullpath = self.file_writer.build_file_fullpath_for_uuid_and_filename(
                     the_uuid, 
                     'osa_chart_' + movie_uuid + '_' + frameset_hash + '.png')
@@ -266,6 +271,10 @@ class ChartMaker:
                         c=colors, 
                         alpha=0.5
                     )
+                    if x and y:
+                        x_portion = x[-1] / frame_dimensions[0]
+                        y_portion = y[-1] / frame_dimensions[1]
+                        plt.figtext(x_portion, y_portion,  app_name, color=rand_color, fontsize='xx-large')
                 top_title = plt.text(-0.0, 1.15 * frame_dimensions[1], "Ocr Scene Analysis Chart")
                 plt.title('{}\nframeset hash {}'.format(movie_name, frameset_hash))
                 plt.savefig(
