@@ -155,7 +155,7 @@ class ChartMaker:
         return movies
 
     def make_ocr_scene_analysis_charts(self):
-        build_chart_data = {'movies': {}}
+        build_chart_data = {}
         for job_id in self.job_data:
             job_req_data = self.job_data[job_id]['request_data']
             job_resp_data = self.job_data[job_id]['response_data']
@@ -170,6 +170,7 @@ class ChartMaker:
                 if not stats_framesets: 
                     continue
                 for frameset_hash in stats['movies'][movie_url]['framesets']:
+                    frameset_image = job_req_data['movies'][movie_url]['framesets'][frameset_hash]['images'][0]
                     frame_dimensions = stats['movies'][movie_url]['framesets'][frameset_hash]['frame_dimensions']
                     build_chart_data[movie_url][frameset_hash] = {}
                     app_hits_for_hash = {}
@@ -181,7 +182,7 @@ class ChartMaker:
                     for app_name in rta_scores: 
                         app_info = {}
                         matched_score = 0
-                        print('building chart for frameset {} app {}'.format(frameset_hash, app_name))
+                        print('building chart data for frameset {} app {}'.format(frameset_hash, app_name))
                         high_score = 0
                         best_row_scores = []
                         best_row_rta_coords = []
@@ -208,6 +209,7 @@ class ChartMaker:
 
                         build_chart_data[movie_url][frameset_hash][app_name] = {
                             'best_row_data': super_best_row_data,
+                            'frameset_image': frameset_image,
                         }
 
         charts = self.make_ocr_scene_analysis_charts_from_build_data(build_chart_data, frame_dimensions)
@@ -223,6 +225,7 @@ class ChartMaker:
             movie_name = movie_url.split('/')[-1]
             movie_uuid = movie_name.split('.')[0]
             for frameset_hash in build_chart_data[movie_url]:
+                image_was_drawn = False
                 if 'framesets' not in movies[movie_url]:
                     movies[movie_url]['framesets'] = {}
                 counter += 1
@@ -237,11 +240,22 @@ class ChartMaker:
                     sizes = []
                     colors = []
                     chart_data = build_chart_data[movie_url][frameset_hash][app_name]['best_row_data']
+                    if not image_was_drawn:
+                        print('drawing frameset image')
+                        frameset_image_url = build_chart_data[movie_url][frameset_hash][app_name]['frameset_image']
+                        frameset_image_np = self.get_np_image_from_url(frameset_image_url)
+                        frameset_image_cv2 = cv2.imdecode(frameset_image_np, cv2.IMREAD_COLOR)
+
+                        image_extents = (0, frame_dimensions[0], 0, frame_dimensions[1])
+                        # todo draw the frameset image here
+                        fi2 = cv2.cvtColor(frameset_image_cv2, cv2.COLOR_BGR2RGB)
+                        im1 = plt.imshow(fi2[::-1], origin='upper')
+                        image_was_drawn = True
                     rand_color = [random.random(), random.random(), random.random()]
                     for item in chart_data:
                         x.append(item['centroid'][0])
                         y.append(frame_dimensions[1] - item['centroid'][1])
-                        score = (item['score'] - 50) * 2
+                        score = (item['score'] - 50) * 7
                         sizes.append(score)
                         colors.append(rand_color)
 
@@ -264,6 +278,16 @@ class ChartMaker:
                 movies[movie_url]['framesets'][frameset_hash] = plot_url
         return movies
 
+    def get_np_image_from_url(self, the_url):
+        pic_response = requests.get(
+          the_url,
+          verify=self.verify_file_url,
+        )
+        image = pic_response.content
+        if not image:
+            return
+        nparr = np.fromstring(image, np.uint8)
+        return nparr
 
     def make_ocr_match_charts(self):
         build_chart_data = {}
