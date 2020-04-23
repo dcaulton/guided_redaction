@@ -992,6 +992,8 @@ class AnalyzeViewSetOcrSceneAnalysis(viewsets.ViewSet):
                     build_statistics['movies'][movie_url]['framesets'][frameset_hash] = statistics
 
         build_response_data['statistics'] = build_statistics
+        print('flopper hopper')
+        print(build_response_data['movies'])
         return Response(build_response_data)
 
     def analyze_one_frame(self, frameset, osa_rule):

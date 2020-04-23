@@ -197,10 +197,139 @@ class ResultsControls extends React.Component {
     )
   }
 
+  movieChartResultsExist() {
+    for (let i=0; i < Object.keys(this.props.results['movies']).length; i++) {
+      const movie_url = Object.keys(this.props.results['movies'])[i]
+      if (Object.keys(this.props.results['movies'][movie_url]).includes('charts')) {
+        return true
+      }
+    }
+    return false
+  }
+
+  framesetChartResultsExist() {
+    for (let i=0; i < Object.keys(this.props.results['movies']).length; i++) {
+      const movie_url = Object.keys(this.props.results['movies'])[i]
+      for (let j=0; j < Object.keys(this.props.results['movies'][movie_url]['framesets']).length; j++) {
+        const frameset_hash = Object.keys(this.props.results['movies'][movie_url]['framesets'])[j]
+        if (Object.keys(this.props.results['movies'][movie_url]['framesets'][frameset_hash]).includes('charts')) {
+          return true
+        }
+      }
+    }
+    return false
+  }
+
   buildChartsDiv() {
     if (!this.props.results || !Object.keys(this.props.results).includes('movies')) {
       return ''
     }
+    if (this.movieChartResultsExist()) {
+      return this.buildMovieChartsDiv()
+    } else if (this.framesetChartResultsExist()) {
+      return this.buildFramesetChartsDiv()
+    }
+  }
+
+  buildFramesetChartsDiv() {
+    const movie_urls = Object.keys(this.props.results['movies'])
+    return (
+      <div className='col'>
+        {movie_urls.map((movie_url, index) => {
+          let movie_name = ''
+          if (movie_url) {
+              movie_name = 'movie ' + this.getMovieNameFromUrl(movie_url)
+          }
+          const row_id = 'results_movie_image_row_' + index.toString()
+          const show_hide_row = makePlusMinusRow(movie_name, row_id)
+          const charts_for_movie = this.buildFramesetChartsForMovie(movie_url)
+          return (
+            <div 
+                className='mt-2 pb-3'
+                key={index}
+            >
+              {show_hide_row}
+
+              <div
+                className='collapse show'
+                id={row_id}
+              >
+                <div className='row m-2'>
+                  <div className='col-lg-9'>
+                    {charts_for_movie}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    )
+  }
+
+  buildShowChartInModalLink(chart_url) {
+    return (
+      <button
+        className='border-0 text-primary'
+        onClick={() => this.props.setModalImage(chart_url)}
+      >
+        show
+      </button>
+    )
+  }
+
+  buildFramesetChartsForMovie(movie_url) {
+    if (!Object.keys(this.props.results['movies'][movie_url]).includes('framesets')) {
+      return
+    }
+    const image_fit_style = {
+      'width': '100%',
+    }
+    const frameset_hashes = Object.keys(this.props.results['movies'][movie_url]['framesets'])
+    return (
+      <div>
+        {frameset_hashes.map((frameset_hash, frameset_index) => {
+          if (!Object.keys(this.props.results['movies'][movie_url]['framesets'][frameset_hash]).includes('charts')) {
+            return ''
+          }
+          const charts = this.props.results['movies'][movie_url]['framesets'][frameset_hash]['charts']
+          return (
+            <div
+              key={frameset_index}
+              className='row mt-3'
+            >
+              <div 
+              >
+                frameset {frameset_hash}
+              </div>
+              {charts.map((chart_url, chart_index) => {
+                const show_in_modal_link = this.buildShowChartInModalLink(chart_url)
+                const img_id = this.getIdFromChartUrl(chart_url)
+                return (
+                  <div
+                    key={chart_index}
+                  >
+                    <div>
+                      {show_in_modal_link}
+                    </div>
+                    <img
+                        key={chart_index}
+                        id={img_id}
+                        src={chart_url}
+                        style={image_fit_style}
+                        alt='chart displaying osa results'
+                    />
+                  </div>
+                )
+              })}
+            </div>
+          )
+        })}
+      </div>
+    )
+  }
+
+  buildMovieChartsDiv() {
     let movie_urls = []
     if (Object.keys(this.props.results).includes('movie_display_order')) {
       movie_urls = this.props.results['movie_display_order']

@@ -39,6 +39,7 @@ class InsightsPanel extends React.Component {
       imageTypeToDisplay: '',
       callbacks: {},
       modal_data: '',
+      modal_image: '',
     }
     this.getAnnotations=this.getAnnotations.bind(this)
     this.setCurrentVideo=this.setCurrentVideo.bind(this)
@@ -70,6 +71,7 @@ class InsightsPanel extends React.Component {
     this.setImageTypeToDisplay=this.setImageTypeToDisplay.bind(this)
     this.addInsightsCallback=this.addInsightsCallback.bind(this)
     this.setModalData=this.setModalData.bind(this)
+    this.setModalImage=this.setModalImage.bind(this)
     this.getCurrentOcrMatches=this.getCurrentOcrMatches.bind(this)
     this.getCurrentAreasToRedact=this.getCurrentAreasToRedact.bind(this)
     this.setScrubberToIndex=this.setScrubberToIndex.bind(this)
@@ -225,6 +227,12 @@ class InsightsPanel extends React.Component {
   setModalData(the_data) {
     this.setState({
       modal_data: the_data,
+    })
+  }
+
+  setModalImage(the_url) {
+    this.setState({
+      modal_image: the_url,
     })
   }
 
@@ -1111,8 +1119,31 @@ class InsightsPanel extends React.Component {
           </div>
         </div>
       )
+    } else if (this.state.modal_image) {
+      return (
+        <div className="modal" id='insightsPanelModal' tabIndex="-1" role="dialog">
+          <div className="modal-dialog modal-xl" id='insightsPanelModalInner' role="document">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Viewing Image</h5>
+              </div>
+              <div className="modal-body">
+                <img
+                    id='insights_modal_image'
+                    src={this.state.modal_image}
+                    alt='stuff'
+                />
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-secondary" data-dismiss="modal">Close</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )
+    } else {
+      return ''
     }
-    return ''
   }
 
   render() {
@@ -1300,6 +1331,7 @@ class InsightsPanel extends React.Component {
             app_codebooks={this.props.app_codebooks}
             tier_1_scanners={this.props.tier_1_scanners}
             tier_1_scanner_current_ids={this.props.tier_1_scanner_current_ids}
+            setModalImage={this.setModalImage}
           />
         </div>
 

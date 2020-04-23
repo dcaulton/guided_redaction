@@ -1455,32 +1455,17 @@ class RedactApplication extends React.Component {
   }
 
   loadGetFramesetMatchChartResults(job, when_done=(()=>{})) {
-    return // TODO figure out why this is looping
     const resp_data = JSON.parse(job.response_data)
     if (!Object.keys(resp_data).includes('movies')) {
       return
     }
     let deepCopyResults = JSON.parse(JSON.stringify(this.state.results))
     if (!Object.keys(deepCopyResults).includes('movies')) {
-      deepCopyResults = {movies: {}}
+      deepCopyResults = {'movies': {}}
     }
     for (let i=0; i < Object.keys(resp_data['movies']).length; i++) {
       const movie_url = Object.keys(resp_data['movies'])[i]
-      if (!Object.keys(deepCopyResults['movies']).includes(movie_url)) {
-        deepCopyResults['movies'][movie_url] = {framesets: {}}
-      }
-      if (!Object.keys(resp_data['movies'][movie_url]).includes('framesets')) {
-        return
-      }
-      for (let j=0; i < Object.keys(resp_data['movies'][movie_url]['framesets']).length; j++) {
-        const frameset_hash = Object.keys(resp_data['movies'][movie_url]['framesets'])[j]
-        if (!Object.keys(deepCopyResults['movies'][movie_url]['framesets']).includes(frameset_hash)) {
-          deepCopyResults['movies'][movie_url]['framesets'][frameset_hash] = {}
-          deepCopyResults['movies'][movie_url]['framesets'][frameset_hash]['charts'] = []
-        }
-        const chart_url_for_frameset_hash = resp_data['movies'][movie_url]['framesets'][frameset_hash]
-        deepCopyResults['movies'][movie_url]['framesets'][frameset_hash]['charts'] = chart_url_for_frameset_hash
-      }
+      deepCopyResults['movies'][movie_url] = resp_data['movies'][movie_url]
     }
     this.setState({
       results: deepCopyResults,

@@ -284,7 +284,9 @@ class ChartMaker:
 #                    transparent=True,
                 )
                 plot_url = self.file_writer.get_url_for_file_path(file_fullpath)
-                movies[movie_url]['framesets'][frameset_hash] = plot_url
+                movies[movie_url]['framesets'][frameset_hash] = {
+                    'charts': [plot_url],
+                }
         return movies
 
     def get_np_image_from_url(self, the_url):
