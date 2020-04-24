@@ -1022,3 +1022,15 @@ class AnalyzeViewSetOcrSceneAnalysis(viewsets.ViewSet):
         ocr_scene_analyzer = OcrSceneAnalyzer(raw_recognized_text_areas, osa_rule, frame_dimensions)
 
         return ocr_scene_analyzer.analyze_scene()
+
+
+class AnalyzeViewSetOcrMovieAnalysis(viewsets.ViewSet):
+    def create(self, request):
+        request_data = request.data
+        return self.process_collect_one_frame_request(request_data)
+
+    def process_collect_one_frame_request(self, request_data):
+        if not request_data.get("frameset"):
+            return self.error("frameset is required", status_code=400)
+
+        return Response()

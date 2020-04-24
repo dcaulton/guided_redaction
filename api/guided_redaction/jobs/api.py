@@ -56,6 +56,8 @@ def dispatch_job(job):
         analyze_tasks.selected_area_chart.delay(job_uuid)
     if job.app == 'analyze' and job.operation == 'ocr_scene_analysis_threaded':
         analyze_tasks.ocr_scene_analysis_threaded.delay(job_uuid)
+    if job.app == 'analyze' and job.operation == 'ocr_movie_analysis_threaded':
+        analyze_tasks.ocr_movie_analysis_threaded.delay(job_uuid)
     if job.app == 'parse' and job.operation == 'split_and_hash_threaded':
         parse_tasks.split_and_hash_threaded.delay(job_uuid)
     if job.app == 'parse' and job.operation == 'split_threaded':

@@ -316,6 +316,10 @@ class SessionControls extends React.Component {
     if (this.props.visibilityFlags['ocr_scene_analysis']) {
       show_ocr_scene_analysis_checked = 'checked'
     }
+    let show_ocr_movie_analysis_checked = ''
+    if (this.props.visibilityFlags['ocr_movie_analysis']) {
+      show_ocr_movie_analysis_checked = 'checked'
+    }
     let show_diffs_checked = ''
     if (this.props.visibilityFlags['diffs']) {
       show_diffs_checked = 'checked'
@@ -532,6 +536,16 @@ class SessionControls extends React.Component {
                     onChange={() => this.props.toggleShowVisibility('results')}
                   />
                   Show Results
+                </div>
+
+                <div className='row mt-3 bg-light rounded'>
+                  <input
+                    className='ml-2 mr-2 mt-1'
+                    checked={show_ocr_movie_analysis_checked}
+                    type='checkbox'
+                    onChange={() => this.props.toggleShowVisibility('ocr_movie_analysis')}
+                  />
+                  Show Ocr Movie Analysis
                 </div>
 
                 <div className='row mt-3 bg-light rounded'>

@@ -5,6 +5,7 @@ import TelemetryControls from './TelemetryControls'
 import SelectedAreaControls from './SelectedAreaControls'
 import OcrControls from './OcrControls'
 import OcrSceneAnalysisControls from './OcrSceneAnalysisControls'
+import OcrMovieAnalysisControls from './OcrMovieAnalysisControls'
 import DiffControls from './DiffControls'
 import RedactControls from './RedactControls'
 import ZipControls from './ZipControls'
@@ -302,6 +303,14 @@ class BottomInsightsControls extends React.Component {
           setGlobalStateVar={this.props.setGlobalStateVar}
           setModalImage={this.props.setModalImage}
 
+        />
+
+        <OcrMovieAnalysisControls
+          displayInsightsMessage={this.props.displayInsightsMessage}
+          visibilityFlags={this.props.visibilityFlags}
+          toggleShowVisibility={this.props.toggleShowVisibility}
+          submitInsightsJob={this.props.submitInsightsJob}
+          movies={this.props.movies}
         />
 
         <FilesystemControls

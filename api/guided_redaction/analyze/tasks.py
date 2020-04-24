@@ -12,6 +12,7 @@ from guided_redaction.analyze.api import (
     AnalyzeViewSetTimestamp,
     AnalyzeViewSetSelectedArea,
     AnalyzeViewSetOcrSceneAnalysis,
+    AnalyzeViewSetOcrMovieAnalysis,
     AnalyzeViewSetTemplateMatchChart,
     AnalyzeViewSetOcrMatchChart,
     AnalyzeViewSetOcrSceneAnalysisChart,
@@ -882,6 +883,84 @@ def wrap_up_ocr_scene_analysis_threaded(job, children):
 
     aggregate_response_data['statistics'] = aggregate_stats
     print('wrap_up_ocr_scene_analysis_threaded: wrapping up parent job')
+    job.status = 'success'
+    job.response_data = json.dumps(aggregate_response_data)
+    job.elapsed_time = 1
+    job.save()
+
+@shared_task
+def ocr_movie_analysis_collect_one_frame(job_uuid):
+    if not Job.objects.filter(pk=job_uuid).exists():
+        print('calling ocr_movie_analysis_collect_one_frame on nonexistent job: {}'.format(job_uuid))
+    job = Job.objects.get(pk=job_uuid)
+    job.status = 'running'
+    job.save()
+    print('running ocr_movie_analysis_collect_one_frame for job {}'.format(job_uuid))
+    worker = AnalyzeViewSetOcrMovieAnalysis()
+    rd = json.loads(job.request_data)
+    response = worker.process_collect_one_frame_request(rd)
+    if not Job.objects.filter(pk=job_uuid).exists():
+        return
+    job = Job.objects.get(pk=job_uuid)
+    job.response_data = json.dumps(response.data)
+    job.status = 'success'
+    job.save()
+
+    if job.parent_id:
+        parent_job = Job.objects.get(pk=job.parent_id)
+        if parent_job.app == 'analyze' and parent_job.operation == 'ocr_movie_analysis_threaded':
+            ocr_movie_analysis_threaded.delay(parent_job.id)
+
+@shared_task
+def ocr_movie_analysis_threaded(job_uuid):
+    if Job.objects.filter(pk=job_uuid).exists():
+        job = Job.objects.get(pk=job_uuid)
+        if job.status in ['success', 'failed']:
+            return
+        children = Job.objects.filter(parent=job)
+        (next_step, percent_done) = evaluate_children('OCR MOVIE ANALYSIS THREADED', 'ocr_movie_analysis_collect_one_frame', children)
+        print('next step is {}, percent done {}'.format(next_step, percent_done))
+        if next_step == 'build_child_tasks':
+          build_and_dispatch_ocr_movie_analysis_threaded_collect_one_frame_children(job)
+        elif next_step == 'update_percent_complete':
+          job.elapsed_time = percent_done
+          job.save()
+        elif next_step == 'wrap_up':
+          wrap_up_ocr_movie_analysis_threaded(job, children)
+        elif next_step == 'abort':
+          job.status = 'failed'
+          job.save()
+
+def build_and_dispatch_ocr_movie_analysis_threaded_collect_one_frame_children(parent_job):
+    parent_job.status = 'running'
+    parent_job.save()
+    request_data = json.loads(parent_job.request_data)
+    for movie_url in request_data['movies']:
+        for frameset_index, frameset_hash in enumerate(request_data['movies'][movie_url]['framesets']):
+            build_request_data = json.dumps({
+                'frameset': request_data['movies'][movie_url]['framesets'][frameset_hash],
+            })
+            job = Job(
+                request_data=build_request_data,
+                status='created',
+                description='ocr movie analysis for movie {} frameset hash {}'.format(movie_url, frameset_hash),
+                app='analyze',
+                operation='ocr_movie_analysis_collect_one_frame',
+                sequence=0,
+                elapsed_time=0.0,
+                parent=parent_job,
+            )
+            job.save()
+            print('build_and_dispatch_ocr_movie_analysis_threaded_collect_one_frame_children: dispatching job for movie {}'.format(movie_url))
+            ocr_movie_analysis_collect_one_frame.delay(job.id)
+            return  # THIS IS A HACK UNTIL WE ARE GOOD WITH THE FIRST PART OF THIS OPERATION
+
+def wrap_up_ocr_movie_analysis_threaded(job, children):
+    aggregate_response_data = {
+      'application_dictionary': {},
+      'templates': {}
+    }
+    print('wrap_up_ocr_movie_analysis_threaded: wrapping up parent job')
     job.status = 'success'
     job.response_data = json.dumps(aggregate_response_data)
     job.elapsed_time = 1
