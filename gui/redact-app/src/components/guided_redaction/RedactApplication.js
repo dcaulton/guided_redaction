@@ -2454,6 +2454,7 @@ class RedactApplication extends React.Component {
                 app_codebooks={this.state.app_codebooks}
                 tier_1_scanners={this.state.tier_1_scanners}
                 tier_1_scanner_current_ids={this.state.tier_1_scanner_current_ids}
+                mask_method={this.state.mask_method}
               />
             </Route>
           </Switch>

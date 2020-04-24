@@ -34,6 +34,7 @@ class InsightsPanel extends React.Component {
         'movieSets': true,
         'results': true,
         'diffs': true,
+        'redact': true,
         'pipelines': true,
       },
       imageTypeToDisplay: '',
@@ -566,6 +567,28 @@ class InsightsPanel extends React.Component {
     return job_data
   }
 
+  buildRedactJobData(job_type, extra_data) {
+    let job_data = {
+      request_data: {},
+    }
+    job_data['app'] = 'redact'
+    job_data['operation'] = 'redact'
+    job_data['request_data']['mask_method'] = this.props.mask_method
+    job_data['request_data']['meta'] = {
+      return_type: 'url',
+      preserve_working_dir_across_batch: true,
+    }
+    if (job_type === 'redact_current_movie') {
+      job_data['request_data']['movies'] = {}
+      job_data['request_data']['movies'][this.props.movie_url] = this.props.movies[this.props.movie_url]
+      job_data['description'] = 'redact movie: ' + this.props.movie_url
+    } else if (job_type === 'redact_all_movies') {
+      job_data['request_data']['movies'] = this.props.movies
+      job_data['description'] = 'redact all movies'
+    }
+    return job_data
+  }
+
   buildResultsData(extra_data) {
     let job_data = {
       request_data: {},
@@ -730,6 +753,14 @@ class InsightsPanel extends React.Component {
         job_string === 'ocr_scene_analysis_all_movies'
     ) {
       let job_data = this.buildTier1JobData('ocr_scene_analysis', job_string, extra_data)
+      this.props.submitJob({
+        job_data: job_data,
+      })
+    } else if (
+        job_string === 'redact_current_movie' ||
+        job_string === 'redact_all_movies'
+    ) {
+      let job_data = this.buildRedactJobData(job_string, extra_data)
       this.props.submitJob({
         job_data: job_data,
       })
@@ -1332,6 +1363,7 @@ class InsightsPanel extends React.Component {
             tier_1_scanners={this.props.tier_1_scanners}
             tier_1_scanner_current_ids={this.props.tier_1_scanner_current_ids}
             setModalImage={this.setModalImage}
+            mask_method={this.props.mask_method}
           />
         </div>
 

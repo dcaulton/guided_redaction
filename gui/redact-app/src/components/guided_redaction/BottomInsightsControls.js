@@ -6,6 +6,7 @@ import SelectedAreaControls from './SelectedAreaControls'
 import OcrControls from './OcrControls'
 import OcrSceneAnalysisControls from './OcrSceneAnalysisControls'
 import DiffControls from './DiffControls'
+import RedactControls from './RedactControls'
 import MovieSetsControls from './MovieSetsControls'
 import ResultsControls from './ResultsControls'
 import FilesystemControls from './FilesystemControls'
@@ -257,6 +258,16 @@ class BottomInsightsControls extends React.Component {
           blinkDiff={this.props.blinkDiff}
           setImageTypeToDisplay={this.props.setImageTypeToDisplay}
           imageTypeToDisplay={this.props.imageTypeToDisplay}
+        />
+
+        <RedactControls
+          displayInsightsMessage={this.props.displayInsightsMessage}
+          visibilityFlags={this.props.visibilityFlags}
+          toggleShowVisibility={this.props.toggleShowVisibility}
+          submitInsightsJob={this.props.submitInsightsJob}
+          mask_method={this.props.mask_method}
+          movies={this.props.movies}
+          setGlobalStateVar={this.props.setGlobalStateVar}
         />
 
         <MovieSetsControls
