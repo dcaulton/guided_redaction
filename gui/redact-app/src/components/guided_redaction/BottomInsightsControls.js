@@ -7,6 +7,7 @@ import OcrControls from './OcrControls'
 import OcrSceneAnalysisControls from './OcrSceneAnalysisControls'
 import DiffControls from './DiffControls'
 import RedactControls from './RedactControls'
+import ZipControls from './ZipControls'
 import MovieSetsControls from './MovieSetsControls'
 import ResultsControls from './ResultsControls'
 import FilesystemControls from './FilesystemControls'
@@ -268,6 +269,14 @@ class BottomInsightsControls extends React.Component {
           mask_method={this.props.mask_method}
           movies={this.props.movies}
           setGlobalStateVar={this.props.setGlobalStateVar}
+        />
+
+        <ZipControls
+          displayInsightsMessage={this.props.displayInsightsMessage}
+          visibilityFlags={this.props.visibilityFlags}
+          toggleShowVisibility={this.props.toggleShowVisibility}
+          submitInsightsJob={this.props.submitInsightsJob}
+          movies={this.props.movies}
         />
 
         <MovieSetsControls

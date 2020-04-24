@@ -324,6 +324,10 @@ class SessionControls extends React.Component {
     if (this.props.visibilityFlags['redact']) {
       show_redact_checked = 'checked'
     }
+    let show_zip_checked = ''
+    if (this.props.visibilityFlags['zip']) {
+      show_zip_checked = 'checked'
+    }
     let show_pipelines_checked = ''
     if (this.props.visibilityFlags['pipelines']) {
       show_pipelines_checked = 'checked'
@@ -498,6 +502,16 @@ class SessionControls extends React.Component {
                     onChange={() => this.props.toggleShowVisibility('redact')}
                   />
                   Show Redact
+                </div>
+
+                <div className='row mt-3 bg-light rounded'>
+                  <input
+                    className='ml-2 mr-2 mt-1'
+                    checked={show_zip_checked}
+                    type='checkbox'
+                    onChange={() => this.props.toggleShowVisibility('zip')}
+                  />
+                  Show Zip
                 </div>
 
                 <div className='row mt-3 bg-light rounded'>

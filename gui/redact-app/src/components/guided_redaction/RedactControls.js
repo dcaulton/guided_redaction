@@ -5,10 +5,6 @@ import {
 
 class RedactControls extends React.Component {
 
-  constructor(props) {
-    super(props)
-  }
-
   buildMaskMethodDropdown() {
     return (
       <div>

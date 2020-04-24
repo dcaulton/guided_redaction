@@ -35,6 +35,7 @@ class InsightsPanel extends React.Component {
         'results': true,
         'diffs': true,
         'redact': true,
+        'zip': true,
         'pipelines': true,
       },
       imageTypeToDisplay: '',
@@ -589,6 +590,53 @@ class InsightsPanel extends React.Component {
     return job_data
   }
 
+  buildRedactedMovieFilename() {
+    //TODO this is not friendly to file names with more than one period, or with a slash in them
+    // TODO this method is duplicated in MoviePanel
+    let parts = this.props.movie_url.split('/')
+    let file_parts = parts[parts.length-1].split('.')
+    let new_filename = file_parts[0] + '_redacted.' + file_parts[1]
+    return new_filename
+  }
+
+  buildImageUrlsToZip(movie) {
+    // TODO this is method duplicated in MoviePanel
+    let image_urls = []
+    for (let i=0; i < movie['frames'].length; i++) {
+      const frame_image = movie['frames'][i]
+      const frameset_hash = this.props.getFramesetHashForImageUrl(frame_image)
+      if (frameset_hash) {
+        if (Object.keys(movie['framesets'][frameset_hash]).includes('redacted_image')) {
+          image_urls.push(movie['framesets'][frameset_hash]['redacted_image'])
+        } else {
+          image_urls.push(frame_image)
+        }
+      } else {
+        console.log('PROBLEM: no frameset hash found for ' + frame_image)
+      }
+    }
+    return image_urls
+  }
+
+  buildZipJobData(job_type, extra_data) {
+    let job_data = {
+      request_data: {},
+    }
+    job_data['app'] = 'parse'
+    job_data['operation'] = 'zip_movie'
+    job_data['request_data']['new_movie_name'] = this.buildRedactedMovieFilename()
+    if (job_type === 'zip_current_movie') {
+      job_data['description'] = 'zip movie: ' + this.props.movie_url
+      const movie = this.props.movies[this.props.movie_url]
+      const image_urls = this.buildImageUrlsToZip(movie)
+      job_data['request_data']['image_urls'] = image_urls
+    } else if (job_type === 'zip_all_movies') {
+      // TODO build this when we support multiple movie zip in one job
+      job_data['description'] = 'zip all movies'
+    }
+    return job_data
+  }
+
   buildResultsData(extra_data) {
     let job_data = {
       request_data: {},
@@ -761,6 +809,14 @@ class InsightsPanel extends React.Component {
         job_string === 'redact_all_movies'
     ) {
       let job_data = this.buildRedactJobData(job_string, extra_data)
+      this.props.submitJob({
+        job_data: job_data,
+      })
+    } else if (
+        job_string === 'zip_current_movie' ||
+        job_string === 'zip_all_movies'
+    ) {
+      let job_data = this.buildZipJobData(job_string, extra_data)
       this.props.submitJob({
         job_data: job_data,
       })

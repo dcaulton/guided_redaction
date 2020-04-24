@@ -131,12 +131,8 @@ class MoviePanel extends React.Component {
     return new_filename
   }
 
-  buildZipMovieJobdata() {
-    let job_data = {
-      request_data: {},
-    }
+  buildImageUrlsToZip(movie) {
     let image_urls = []
-    let movie = this.props.movies[this.props.movie_url]
     for (let i=0; i < movie['frames'].length; i++) {
       const frame_image = movie['frames'][i]
       const frameset_hash = this.props.getFramesetHashForImageUrl(frame_image)
@@ -150,6 +146,14 @@ class MoviePanel extends React.Component {
         console.log('PROBLEM: no frameset hash found for ' + frame_image)
       }
     }
+    return image_urls
+  }
+
+  buildZipMovieJobdata() {
+    let job_data = {
+      request_data: {},
+    }
+    let movie = this.props.movies[this.props.movie_url]
     job_data['app'] = 'parse'
     job_data['operation'] = 'zip_movie'
     job_data['description'] = 'zip movie: ' + this.props.movie_url
@@ -158,6 +162,7 @@ class MoviePanel extends React.Component {
     if (Object.keys(movie).includes('audio_url')) {
         job_data['request_data']['audio_url'] = movie['audio_url']
     }
+    const image_urls = this.buildImageUrlsToZip(movie) 
     job_data['request_data']['image_urls'] = image_urls
     return job_data
   }
