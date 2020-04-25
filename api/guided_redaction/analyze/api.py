@@ -13,6 +13,7 @@ from guided_redaction.analyze.classes.TemplateMatcher import TemplateMatcher
 from guided_redaction.analyze.classes.ExtentsFinder import ExtentsFinder
 from guided_redaction.analyze.classes.ChartMaker import ChartMaker
 from guided_redaction.analyze.classes.OcrSceneAnalyzer import OcrSceneAnalyzer
+from guided_redaction.analyze.classes.OcrMovieAnalyzer import OcrMovieAnalyzer
 import json
 import base64
 import numpy as np
@@ -997,7 +998,6 @@ class AnalyzeViewSetOcrSceneAnalysis(viewsets.ViewSet):
         return Response(build_response_data)
 
     def analyze_one_frame(self, frameset, osa_rule):
-        debug = False
         if 'images' not in frameset or not frameset['images']:
             return
         pic_response = requests.get(
@@ -1032,5 +1032,29 @@ class AnalyzeViewSetOcrMovieAnalysis(viewsets.ViewSet):
     def process_collect_one_frame_request(self, request_data):
         if not request_data.get("frameset"):
             return self.error("frameset is required", status_code=400)
+        frameset = request_data['frameset']
 
-        return Response()
+        if 'images' not in frameset or not frameset['images']:
+            return
+        pic_response = requests.get(
+          frameset['images'][0],
+          verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
+        )
+        image = pic_response.content
+        if not image:
+            return self.error('could not open image for frameset')
+
+        analyzer = EastPlusTessGuidedAnalyzer()
+        nparr = np.fromstring(image, np.uint8)
+        cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        start = (0, 0)
+        end = (cv2_image.shape[1], cv2_image.shape[0])
+
+        raw_rtas = analyzer.analyze_text(
+            cv2_image, [start, end]
+        )
+
+        ocr_movie_analyzer = OcrMovieAnalyzer(debug=True)
+        results = ocr_movie_analyzer.collect_one_frame(raw_rtas)
+
+        return Response(results)
