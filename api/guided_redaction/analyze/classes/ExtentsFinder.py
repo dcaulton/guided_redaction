@@ -67,9 +67,9 @@ class ExtentsFinder:
 
         xd = x - (x - minus_x)
         yd = y - (y - minus_y)
-        top_left = [int(xd), int(yd)]
-        bottom_right = [int(x + plus_x), int(y + plus_y)]
-        ret_arr = [top_left, bottom_right]
+        top_left = (int(xd), int(yd))
+        bottom_right = (int(x + plus_x), int(y + plus_y))
+        ret_arr = (top_left, bottom_right)
 
         return ret_arr
 

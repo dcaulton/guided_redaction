@@ -1033,11 +1033,12 @@ class AnalyzeViewSetOcrMovieAnalysis(viewsets.ViewSet):
         if not request_data.get("frameset"):
             return self.error("frameset is required", status_code=400)
         frameset = request_data['frameset']
+        image_url = frameset['images'][0]
 
         if 'images' not in frameset or not frameset['images']:
             return
         pic_response = requests.get(
-          frameset['images'][0],
+          image_url,
           verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
         )
         image = pic_response.content
@@ -1050,11 +1051,12 @@ class AnalyzeViewSetOcrMovieAnalysis(viewsets.ViewSet):
         start = (0, 0)
         end = (cv2_image.shape[1], cv2_image.shape[0])
 
+        print('============ oma frameset name is {}'.format(image_url))
         raw_rtas = analyzer.analyze_text(
             cv2_image, [start, end]
         )
 
         ocr_movie_analyzer = OcrMovieAnalyzer(debug=True)
-        results = ocr_movie_analyzer.collect_one_frame(raw_rtas)
+        results = ocr_movie_analyzer.collect_one_frame(raw_rtas, cv2_image)
 
         return Response(results)
