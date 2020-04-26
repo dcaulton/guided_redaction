@@ -54,7 +54,7 @@ class OcrSceneAnalyzer:
 
             if app_high_score >= self.osa_rule['apps'][app_name]['app_score_threshold']:
                 winning_apps[app_name] = {
-                    'name': app_name,
+                    'app_id': app_name,
                     'score': app_high_score,
                     'start': app_high_score_coords['start'],
                     'end': app_high_score_coords['end'],

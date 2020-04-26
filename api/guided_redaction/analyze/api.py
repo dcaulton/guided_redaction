@@ -37,7 +37,8 @@ def adjust_start_end_origin_for_t1(coords_in, tier_1_frameset, ocr_rule):
     if 'app_id' in ocr_rule['attributes']:
         match_app_id = ocr_rule['attributes']['app_id']
     for subscanner_key in tier_1_frameset:
-        if match_app_id and subscanner_key != match_app_id:
+        if match_app_id and 'app_id' in tier_1_frameset[subscanner_key] and \
+            tier_1_frameset[subscanner_key]['app_id'] != match_app_id:
             continue
         subscanner = tier_1_frameset[subscanner_key]
         if subscanner['scanner_type'] == 'selected_area':
@@ -241,8 +242,18 @@ class AnalyzeViewSetScanTemplate(viewsets.ViewSet):
                 for frameset_hash in framesets:
                     print('scanning frameset {}'.format(frameset_hash))
                     frameset = framesets[frameset_hash]
-                    if match_app_id and match_app_id not in frameset.keys():
-                        continue
+                    if match_app_id:
+                        frameset_contains_app = False
+                        all_match_objs_have_app_ids = True
+                        for match_obj_key in frameset:
+                            match_obj = frameset[match_obj_key]
+                            if 'app_id' in match_obj:
+                                if match_obj['app_id'] == match_app_id:
+                                    frameset_contains_app = True
+                            else:
+                                all_match_objs_have_app_ids = False
+                        if all_match_objs_have_app_ids and not frameset_contains_app:
+                            continue
                     if frameset_hash not in match_statistics['movies'][movie_url]['framesets']:
                         match_statistics['movies'][movie_url]['framesets'][frameset_hash] = {}
                     if 'images' in frameset:
@@ -436,7 +447,8 @@ class AnalyzeViewSetSelectedArea(viewsets.ViewSet):
         tolerance = int(selected_area_meta['tolerance'])
         regions_for_image = []
         for scanner_matcher_id in frameset:
-            if match_app_id and scanner_matcher_id != match_app_id:
+            if match_app_id and 'app_id' in frameset[scanner_matcher_id] and \
+                frameset[scanner_matcher_id]['app_id'] != match_app_id:
                 continue
             match_data = {}
             if selected_area_meta['origin_entity_type'] == 'template_anchor':

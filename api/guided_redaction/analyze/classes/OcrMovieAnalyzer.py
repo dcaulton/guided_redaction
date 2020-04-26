@@ -87,6 +87,9 @@ class OcrMovieAnalyzer:
             before_region = finder.determine_arrow_fill_area(
                 cv2_image, before_point, 2
             )
+
+            return  #### DEBUG
+
             if self.debug:
                 before_size = (before_region[1][0] - before_region[0][1], before_region[1][1] - before_region[1][0])
                 blk = np.zeros(cv2_image_copy.shape, np.uint8)
