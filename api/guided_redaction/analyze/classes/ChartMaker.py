@@ -85,6 +85,8 @@ class ChartMaker:
                 total_pixel_count = image_shape[0] * image_shape[1] 
                 framesets_in_order = self.get_frameset_hashes_in_order(source_movie)
                 for frameset_hash in framesets_in_order:
+                    if frameset_hash not in job_resp_data['movies'][movie_url]['framesets']:
+                        continue
                     mask = np.zeros(image_shape, dtype='uint8')
                     for sa_zone_id in job_resp_data['movies'][movie_url]['framesets'][frameset_hash]:
                         sa_zone = job_resp_data['movies'][movie_url]['framesets'][frameset_hash][sa_zone_id]
