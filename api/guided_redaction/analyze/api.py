@@ -424,10 +424,15 @@ class AnalyzeViewSetSelectedArea(viewsets.ViewSet):
             
 
     def process_t1_results(self, frameset, cv2_image, selected_area_meta, finder):
+        match_app_id = ''
+        if 'app_id' in selected_area_meta['attributes']:
+            match_app_id = selected_area_meta['attributes']['app_id']
         regions_for_image = []
         tolerance = int(selected_area_meta['tolerance'])
         regions_for_image = []
         for scanner_matcher_id in frameset:
+            if match_app_id and scanner_matcher_id != match_app_id:
+                continue
             match_data = {}
             if selected_area_meta['origin_entity_type'] == 'template_anchor':
                 if selected_area_meta['origin_entity_id'] == scanner_matcher_id:
