@@ -58,6 +58,7 @@ class OcrSceneAnalyzer:
                     'score': app_high_score,
                     'start': app_high_score_coords['start'],
                     'end': app_high_score_coords['end'],
+                    'scanner_type': 'ocr_scene_analysis',
                 }
 
         stats_obj = {

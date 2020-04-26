@@ -792,6 +792,7 @@ class InsightsPanel extends React.Component {
         job_string === 'ocr_t1_template' || 
         job_string === 'ocr_t1_selected_area' || 
         job_string === 'ocr_t1_ocr' || 
+        job_string === 'ocr_t1_osa' || 
         job_string === 'ocr_t1_telemetry' || 
         job_string === 'ocr_current_movie' || 
         job_string === 'ocr_all_movies'

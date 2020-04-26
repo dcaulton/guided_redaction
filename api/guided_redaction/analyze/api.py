@@ -26,22 +26,28 @@ from rest_framework.response import Response
 from guided_redaction.utils.classes.FileWriter import FileWriter
 
 
-def adjust_start_end_origin_for_t1(coords_in, tier_1_frameset):
+def adjust_start_end_origin_for_t1(coords_in, tier_1_frameset, ocr_rule):
     adjusted_coords = {}
     adjusted_coords['start'] = coords_in['start']
     adjusted_coords['end'] = coords_in['end']
     adjusted_coords['origin'] = coords_in['origin']
     if 'images' in tier_1_frameset: # its just a virgin frameset, not t1 output
         return adjusted_coords
+    match_app_id = ''
+    if 'app_id' in ocr_rule['attributes']:
+        match_app_id = ocr_rule['attributes']['app_id']
     for subscanner_key in tier_1_frameset:
+        if match_app_id and subscanner_key != match_app_id:
+            continue
         subscanner = tier_1_frameset[subscanner_key]
         if subscanner['scanner_type'] == 'selected_area':
-            print('adjusting coords by sa location')
-            adjusted_coords['start'] = subscanner['location']
-            adjusted_coords['end'] = [
-                subscanner['location'][0] + subscanner['size'][0],
-                subscanner['location'][1] + subscanner['size'][1]
-            ]
+            if 'location' in subscanner and 'size' in subscanner:
+                print('adjusting ocr coords by sa location for {}'.format(subscanner_key))
+                adjusted_coords['start'] = subscanner['location']
+                adjusted_coords['end'] = [
+                    subscanner['location'][0] + subscanner['size'][0],
+                    subscanner['location'][1] + subscanner['size'][1]
+                ]
             return adjusted_coords
         if 'location' in subscanner and 'origin' in coords_in:
             disp_x = subscanner['location'][0] - coords_in['origin'][0]
@@ -61,6 +67,7 @@ def adjust_start_end_origin_for_t1(coords_in, tier_1_frameset):
                     adjusted_coords['origin'][1] + disp_y 
                 ]
             return adjusted_coords
+        # TODO this seems redundant if we don't limit above to SA
         if 'start' in subscanner and 'end' in subscanner:
             print('adjusting ocr coords by non sa start end')
             adjusted_coords['start'] = subscanner['start']
@@ -109,7 +116,10 @@ class AnalyzeViewSetOcr(viewsets.ViewSet):
             'end': ocr_rule['end'],
             'origin': ocr_rule['origin_entity_location'],
         }
-        adjusted_coords = adjust_start_end_origin_for_t1(box_coords, request_data.get('tier_1_data'))
+        adjusted_coords = adjust_start_end_origin_for_t1(box_coords, request_data.get('tier_1_data'), ocr_rule)
+        # this assumes there will be just one origin in each frame to work with.  
+        # If we want to ocr against multi boxes in the frame, or when there are multiple boxes
+        #   in the frame, but only one is the app we want OCR to target, we need new logic here
         start = adjusted_coords['start']
         end = adjusted_coords['end']
         origin = adjusted_coords['origin']

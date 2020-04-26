@@ -280,6 +280,7 @@ class OcrControls extends React.Component {
     const tier_1_template_run_options = this.props.buildTier1RunOptions('template', 'ocr_t1_template')
     const tier_1_selected_area_run_options = this.props.buildTier1RunOptions('selected_area', 'ocr_t1_selected_area')
     const tier_1_ocr_run_options = this.props.buildTier1RunOptions('ocr', 'ocr_t1_ocr')
+    const tier_1_osa_run_options = this.props.buildTier1RunOptions('ocr_scene_analysis', 'ocr_t1_osa')
     const tier_1_telemetry_run_options = this.props.buildTier1RunOptions('telemetry', 'ocr_t1_telemetry')
     const movie_set_run_options = this.props.buildMovieSetOptions('ocr_movie_set')
     return (
@@ -314,6 +315,7 @@ class OcrControls extends React.Component {
           {tier_1_template_run_options}
           {tier_1_selected_area_run_options}
           {tier_1_ocr_run_options}
+          {tier_1_osa_run_options}
           {tier_1_telemetry_run_options}
         </div>
       </div>
