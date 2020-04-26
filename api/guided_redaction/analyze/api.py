@@ -352,22 +352,19 @@ class AnalyzeViewSetSelectedArea(viewsets.ViewSet):
             nparr = np.fromstring(image, np.uint8)
             cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
             regions_for_image = {'regions': [], 'origin': [0,0]}
-            offset = self.get_offset_for_t1(selected_area_meta, frameset)
             if self.frameset_is_t1_output(frameset):
                 regions_for_image = self.process_t1_results(
                     frameset, 
                     cv2_image, 
                     selected_area_meta, 
-                    finder, 
-                    offset
+                    finder
                 )
             else:
                 regions_for_image = self.process_virgin_image(
                     frameset, 
                     cv2_image, 
                     selected_area_meta, 
-                    finder, 
-                    offset
+                    finder
                 )
             regions_as_hashes = {}
             if regions_for_image and regions_for_image[0]['regions']:
@@ -416,22 +413,22 @@ class AnalyzeViewSetSelectedArea(viewsets.ViewSet):
         return regions_as_hashes
             
 
-    def process_t1_results(self, frameset, cv2_image, selected_area_meta, finder, offset):
+    def process_t1_results(self, frameset, cv2_image, selected_area_meta, finder):
         regions_for_image = []
         tolerance = int(selected_area_meta['tolerance'])
+        regions_for_image = []
         for scanner_matcher_id in frameset:
             match_data = {}
-            regions_for_image = []
             if selected_area_meta['origin_entity_type'] == 'template_anchor':
                 if selected_area_meta['origin_entity_id'] == scanner_matcher_id:
                     match_data = frameset[scanner_matcher_id]
             else:
                 match_data = frameset[scanner_matcher_id]
-            if 'location' in match_data:
-                found_location = match_data['location']
+
             for area in selected_area_meta['areas']:
+                area_scanner_key = area['id'] + '-' + scanner_matcher_id
                 selected_point = area['center']
-                offset = self.get_offset_for_t1(selected_area_meta, frameset)
+                offset = self.get_offset_for_t1(selected_area_meta, frameset, scanner_matcher_id)
                 selected_point = [
                     selected_point[0] + offset[0],
                     selected_point[1] + offset[1]
@@ -443,21 +440,20 @@ class AnalyzeViewSetSelectedArea(viewsets.ViewSet):
                     regions_for_image.append({
                         'regions': regions, 
                         'origin': selected_point,
-                        'sam_area_id': area['id'],
+                        'sam_area_id': area_scanner_key,
                     })
                 if selected_area_meta['select_type'] == 'flood':
                     regions = finder.determine_flood_fill_area(
                         cv2_image, selected_point, tolerance
                     )
-                    regions_for_image.append(regions)
                     regions_for_image.append({
                         'regions': regions, 
                         'origin': selected_point,
-                        'sam_area_id': area['id'],
+                        'sam_area_id': area_scanner_key,
                     })
         return regions_for_image
 
-    def process_virgin_image(self, frameset, cv2_image, selected_area_meta, finder, offset):
+    def process_virgin_image(self, frameset, cv2_image, selected_area_meta, finder):
         regions_for_image = []
         tolerance = int(selected_area_meta['tolerance'])
         for area in selected_area_meta['areas']:
@@ -487,14 +483,17 @@ class AnalyzeViewSetSelectedArea(viewsets.ViewSet):
             return False
         return True
 
-    def get_offset_for_t1(self, selected_area_meta, frameset):
+    def get_offset_for_t1(self, selected_area_meta, frameset, scanner_matcher_id):
         if 'origin_entity_location' in selected_area_meta:
-            for anchor_id in frameset:
-                anchor = frameset[anchor_id]
-                if 'location' in anchor:
-                    disp_x = anchor['location'][0] - selected_area_meta['origin_entity_location'][0]
-                    disp_y = anchor['location'][1] - selected_area_meta['origin_entity_location'][1]
-                    return [disp_x, disp_y]
+            match_element = frameset[scanner_matcher_id]
+            if 'location' in match_element:
+                disp_x = match_element['location'][0] - selected_area_meta['origin_entity_location'][0]
+                disp_y = match_element['location'][1] - selected_area_meta['origin_entity_location'][1]
+                return [disp_x, disp_y]
+            if 'start' in match_element:
+                disp_x = match_element['start'][0] - selected_area_meta['origin_entity_location'][0]
+                disp_y = match_element['start'][1] - selected_area_meta['origin_entity_location'][1]
+                return [disp_x, disp_y]
         return [0, 0]
 
     def transform_interior_selection_to_exterior(self, regions_for_image, cv2_image):
