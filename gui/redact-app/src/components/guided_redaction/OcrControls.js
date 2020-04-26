@@ -220,6 +220,7 @@ class OcrControls extends React.Component {
         scan_level: ocr_rule['scan_level'],
         start: ocr_rule['start'],
         end: ocr_rule['end'],
+        attributes: ocr_rule['attributes'],
         image: ocr_rule['image'],
         movie: ocr_rule['movie'],
         origin_entity_location: ocr_rule['origin_entity_location'],
@@ -463,7 +464,7 @@ class OcrControls extends React.Component {
   async doSaveToDatabase() {
     this.doSave(((ocr_rule) => {
       this.props.saveScannerToDatabase(
-        'ocr_rule',
+        'ocr',
         ocr_rule,
         (()=>{this.props.displayInsightsMessage('Ocr Rule has been saved to database')})
       )
@@ -635,7 +636,7 @@ class OcrControls extends React.Component {
                     deleteScanner={this.props.deleteScanner}
                     scanners={this.props.scanners}
                     displayInsightsMessage={this.props.displayInsightsMessage}
-                    search_type='ocr_rule'
+                    search_type='ocr'
                   />
                 </div>
 
