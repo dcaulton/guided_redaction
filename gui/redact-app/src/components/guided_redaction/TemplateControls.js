@@ -444,6 +444,7 @@ class TemplateControls extends React.Component {
     const tier_1_selected_area_run_options = this.props.buildTier1RunOptions('selected_area', 'template_t1_selected_area')
     const tier_1_ocr_run_options = this.props.buildTier1RunOptions('ocr', 'template_t1_ocr')
     const tier_1_telemetry_run_options = this.props.buildTier1RunOptions('telemetry', 'template_t1_telemetry')
+    const tier_1_osa_run_options = this.props.buildTier1RunOptions('ocr_scene_analysis', 'template_t1_osa')
     const movie_set_run_options = this.props.buildMovieSetOptions('template_movie_set')
 
     return (
@@ -478,6 +479,7 @@ class TemplateControls extends React.Component {
           {tier_1_template_run_options}
           {tier_1_selected_area_run_options}
           {tier_1_ocr_run_options}
+          {tier_1_osa_run_options}
           {tier_1_telemetry_run_options}
         </div>
       </div>

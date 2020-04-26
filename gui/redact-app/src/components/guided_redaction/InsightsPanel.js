@@ -463,6 +463,13 @@ class InsightsPanel extends React.Component {
       job_data['description'] += 'on t1 ocr results (ocr ' + t1_ocr_rule['name'] + ')'
       job_data['request_data']['movies'] = tier_1_output
       job_data['request_data']['movies']['source'] = this.makeSourceForPassedT1Output(tier_1_output)
+    } else if (scope.match(/_t1_osa$/)) {   
+      const osa_id = extra_data
+      const t1_osa_rule = this.props.tier_1_scanners['ocr_scene_analysis'][osa_id]
+      const tier_1_output = this.props.tier_1_matches['ocr_scene_analysis'][osa_id]['movies']
+      job_data['description'] += 'on t1 osa results (osa ' + t1_osa_rule['name'] + ')'
+      job_data['request_data']['movies'] = tier_1_output
+      job_data['request_data']['movies']['source'] = this.makeSourceForPassedT1Output(tier_1_output)
     } else if (scope.match(/_t1_telemetry$/)) {   
       const telemetry_id = extra_data
       const telemetry_rule = this.props.tier_1_scanners['telemetry'][telemetry_id]
@@ -792,6 +799,7 @@ class InsightsPanel extends React.Component {
         job_string === 'template_t1_template' || 
         job_string === 'template_t1_selected_area' || 
         job_string === 'template_t1_ocr' || 
+        job_string === 'template_t1_osa' || 
         job_string === 'template_t1_telemetry' || 
         job_string === 'template_current_movie' || 
         job_string === 'template_all_movies'

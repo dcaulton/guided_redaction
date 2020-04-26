@@ -319,9 +319,15 @@ def build_and_dispatch_scan_template_threaded_children(parent_job):
     template = request_data['tier_1_scanners']['template'][template_id]
     movies = request_data['movies']
     for index, movie_url in enumerate(movies):
+        if movie_url == 'source':
+            continue
         movie = movies.get(movie_url)
         build_movies = {}
         build_movies[movie_url] = movie
+        if 'source' in movies:
+            source_movie = movies['source'][movie_url]
+        build_movies['source'] = {}
+        build_movies['source'][movie_url] = source_movie
         build_templates = {}
         build_templates[template_id] = template
         request_data = json.dumps({
