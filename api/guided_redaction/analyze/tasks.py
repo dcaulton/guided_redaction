@@ -326,8 +326,8 @@ def build_and_dispatch_scan_template_threaded_children(parent_job):
         build_movies[movie_url] = movie
         if 'source' in movies:
             source_movie = movies['source'][movie_url]
-        build_movies['source'] = {}
-        build_movies['source'][movie_url] = source_movie
+            build_movies['source'] = {}
+            build_movies['source'][movie_url] = source_movie
         build_templates = {}
         build_templates[template_id] = template
         request_data = json.dumps({

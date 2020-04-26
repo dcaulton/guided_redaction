@@ -114,8 +114,11 @@ class InsightsPanel extends React.Component {
   }
 
   currentImageIsOsaMatchImage() {
+    if (!this.state.insights_image) {
+      return
+    }
     if (!this.props.tier_1_matches['ocr_scene_analysis']) {
-        return
+      return
     }
     if (this.props.tier_1_scanner_current_ids['ocr_scene_analysis']) {
       let osa_key = this.props.tier_1_scanner_current_ids['ocr_scene_analysis']
@@ -190,6 +193,9 @@ class InsightsPanel extends React.Component {
   }
 
   getCurrentAreasToRedact() {
+    if (!this.state.insights_image) {
+      return []
+    }
     const frameset_hash = this.props.getFramesetHashForImageUrl(this.state.insights_image)
     if (!frameset_hash) {
       return []
@@ -811,6 +817,7 @@ class InsightsPanel extends React.Component {
     } else if (
         job_string === 'selected_area_t1_template' || 
         job_string === 'selected_area_t1_ocr' || 
+        job_string === 'selected_area_t1_osa' || 
         job_string === 'selected_area_current_frame' || 
         job_string === 'selected_area_current_movie' || 
         job_string === 'selected_area_all_movies' || 
@@ -1173,6 +1180,9 @@ class InsightsPanel extends React.Component {
   }
 
   getTier1ScannerMatches(scanner_type) {
+    if (!this.state.insights_image) {
+      return
+    }
     const current_scanner_id = this.props.tier_1_scanner_current_ids[scanner_type]
     const scanner_matches = this.props.tier_1_matches[scanner_type]
     if (!Object.keys(scanner_matches).includes(current_scanner_id)) {

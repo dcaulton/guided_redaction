@@ -1024,7 +1024,12 @@ class RedactApplication extends React.Component {
       }
       movie_url = Object.keys(request_data['movies'])[i]
       if (!Object.keys(deepCopyMovies).includes(movie_url)) {
-        deepCopyMovies[movie_url] = request_data['movies'][movie_url]
+        if ((Object.keys(request_data['movies']).includes('source')) &&
+            (Object.keys(request_data['movies']['source']).includes(movie_url))) {
+            deepCopyMovies[movie_url] = request_data['movies']['source'][movie_url]
+        } else {
+            deepCopyMovies[movie_url] = request_data['movies'][movie_url]
+        }
         this.addToCampaignMovies(movie_url)
         something_changed = true
       }

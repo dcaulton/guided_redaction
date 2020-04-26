@@ -512,6 +512,7 @@ class SelectedAreaControls extends React.Component {
     const tier_1_template_run_options = this.props.buildTier1RunOptions('template', 'selected_area_t1_template')
     const tier_1_selected_area_run_options = this.props.buildTier1RunOptions('selected_area', 'selected_area_t1_selected_area')
     const tier_1_ocr_run_options = this.props.buildTier1RunOptions('ocr', 'selected_area_t1_ocr')
+    const tier_1_osa_run_options = this.props.buildTier1RunOptions('ocr_scene_analysis', 'selected_area_t1_osa')
     const tier_1_telemetry_run_options = this.props.buildTier1RunOptions('telemetry', 'selected_area_t1_telemetry')
     const movie_set_run_options = this.props.buildMovieSetOptions('selected_area_movie_set')
 
@@ -547,6 +548,7 @@ class SelectedAreaControls extends React.Component {
           {tier_1_template_run_options}
           {tier_1_selected_area_run_options}
           {tier_1_ocr_run_options}
+          {tier_1_osa_run_options}
           {tier_1_telemetry_run_options}
         </div>
       </div>
