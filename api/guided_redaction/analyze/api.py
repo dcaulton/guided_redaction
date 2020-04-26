@@ -218,6 +218,9 @@ class AnalyzeViewSetScanTemplate(viewsets.ViewSet):
         template_id = list(request_data['tier_1_scanners']['template'].keys())[0]
         template = request_data['tier_1_scanners']['template'][template_id]
         template_matcher = TemplateMatcher(template)
+        match_app_id = ''
+        if 'app_id' in template['attributes']:
+            match_app_id = template['attributes']['app_id']
         match_statistics = {}
         for anchor in template.get("anchors"):
             match_image = self.get_match_image_for_anchor(anchor)
@@ -238,6 +241,8 @@ class AnalyzeViewSetScanTemplate(viewsets.ViewSet):
                 for frameset_hash in framesets:
                     print('scanning frameset {}'.format(frameset_hash))
                     frameset = framesets[frameset_hash]
+                    if match_app_id and match_app_id not in frameset.keys():
+                        continue
                     if frameset_hash not in match_statistics['movies'][movie_url]['framesets']:
                         match_statistics['movies'][movie_url]['framesets'][frameset_hash] = {}
                     if 'images' in frameset:
