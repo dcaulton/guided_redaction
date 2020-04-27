@@ -79,16 +79,15 @@ class OcrMovieAnalyzer:
                 cv2_image_copy = cv2_image.copy()
             print('runny looking at rta NUMBER {}: {}'.format(rta_number, rta))
             neighborhood = [rta['start'], rta['end']]
-            before_point = [rta['start'][0] - 5, rta['start'][1] - 5]
+            before_point = [rta['start'][0] - 5, rta['start'][1]]
             if before_point[0] < 0:
                 before_point[0] = 0
             if before_point[1] < 0:
                 before_point[1] = 0
-            before_region = finder.determine_arrow_fill_area(
-                cv2_image, before_point, 2
-            )
 
-            return  #### DEBUG
+            before_region = finder.determine_flood_fill_area(
+                cv2_image, before_point, 5
+            )
 
             if self.debug:
                 before_size = (before_region[1][0] - before_region[0][1], before_region[1][1] - before_region[1][0])
@@ -96,7 +95,7 @@ class OcrMovieAnalyzer:
                 cv2.rectangle(
                     blk,
                     before_region[0],
-                    before_size,
+                    before_region[1],
                     (3, 25, 222),
                     -1
                 )
@@ -116,18 +115,19 @@ class OcrMovieAnalyzer:
                     -1
                 )
                 print('before region {}'.format(before_region))
+
             before_region_area = (before_region[1][0] - before_region[0][0]) * \
                 (before_region[1][1] - before_region[0][1])
             if before_region_area > 25:
                 print('add before region --- {}'.format(before_region_area))
 
-            after_point = [rta['end'][0] + 5, rta['end'][1] + 5]
+            after_point = [rta['end'][0] + 5, rta['end'][1]]
             if after_point[0] > cv2_image.shape[1] - 1:
                 after_point[0] = cv2_image.shape[1] - 1
             if after_point[1] > cv2_image.shape[0] - 1:
                 after_point[1] = cv2_image.shape[0] - 1
             print('after point {}'.format(after_point))
-            after_region = finder.determine_arrow_fill_area(
+            after_region = finder.determine_flood_fill_area(
                 cv2_image, after_point, 2
             )
             if self.debug:
@@ -136,7 +136,7 @@ class OcrMovieAnalyzer:
                 cv2.rectangle(
                     blk,
                     after_region[0],
-                    after_size,
+                    after_region[1],
                     (255, 5, 12),
                     -1
                 )
