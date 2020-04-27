@@ -77,98 +77,83 @@ class OcrMovieAnalyzer:
             rta = rta_dict[rta_id]
             if self.debug:
                 cv2_image_copy = cv2_image.copy()
-            print('runny looking at rta NUMBER {}: {}'.format(rta_number, rta))
+            if self.debug:
+                print('gather rta ns: looking at rta number {}: {}'.format(rta_number, rta))
             neighborhood = [rta['start'], rta['end']]
+
             before_point = [rta['start'][0] - 5, rta['start'][1]]
             if before_point[0] < 0:
                 before_point[0] = 0
             if before_point[1] < 0:
                 before_point[1] = 0
-
             before_region = finder.determine_flood_fill_area(
                 cv2_image, before_point, 5
             )
-
-            if self.debug:
-                before_size = (before_region[1][0] - before_region[0][1], before_region[1][1] - before_region[1][0])
-                blk = np.zeros(cv2_image_copy.shape, np.uint8)
-                cv2.rectangle(
-                    blk,
-                    before_region[0],
-                    before_region[1],
-                    (3, 25, 222),
-                    -1
-                )
-                cv2_image_copy = cv2.addWeighted(
-                    cv2_image_copy, 
-                    .75, 
-                    blk, 
-                    .25, 
-                    0,
-                    cv2_image_copy
-                )
-                cv2.circle(
-                    cv2_image_copy,
-                    tuple(before_point),
-                    5,
-                    (0, 0, 255),
-                    -1
-                )
-                print('before region {}'.format(before_region))
-
-            before_region_area = (before_region[1][0] - before_region[0][0]) * \
-                (before_region[1][1] - before_region[0][1])
-            if before_region_area > 25:
-                print('add before region --- {}'.format(before_region_area))
+            if self.region_contains_point(before_region, rta['centroid']):
+                neighborhood = self.merge_regions(neighborhood, before_region)
 
             after_point = [rta['end'][0] + 5, rta['end'][1]]
             if after_point[0] > cv2_image.shape[1] - 1:
                 after_point[0] = cv2_image.shape[1] - 1
             if after_point[1] > cv2_image.shape[0] - 1:
                 after_point[1] = cv2_image.shape[0] - 1
-            print('after point {}'.format(after_point))
             after_region = finder.determine_flood_fill_area(
                 cv2_image, after_point, 2
             )
-            if self.debug:
-                after_size = (after_region[1][0] - after_region[0][1], after_region[1][1] - after_region[1][0])
-                blk = np.zeros(cv2_image_copy.shape, np.uint8)
-                cv2.rectangle(
-                    blk,
-                    after_region[0],
-                    after_region[1],
-                    (255, 5, 12),
-                    -1
-                )
-                cv2_image_copy = cv2.addWeighted(
-                    cv2_image_copy, 
-                    .75, 
-                    blk, 
-                    .25, 
-                    0, 
-                    cv2_image_copy
-                )
-                cv2.circle(
-                    cv2_image_copy,
-                    tuple(after_point),
-                    5,
-                    (0, 0, 255),
-                    -1
-                )
-                print('after region {}'.format(after_region))
-            after_region_area = (after_region[1][0] - after_region[0][0]) * \
-                (after_region[1][1] - after_region[0][1])
-            if after_region_area > 25:
-                print('add after region --- {}'.format(after_region_area))
+            if self.region_contains_point(after_region, rta['centroid']):
+                neighborhood = self.merge_regions(neighborhood, after_region)
 
             if self.debug:
-                cv2.circle(
-                    cv2_image_copy,
-                    rta['centroid'],
-                    5,
-                    (0, 0, 255),
-                    -1
-                )
-            if self.debug:
+                print('rta neighborhood is {}'.format(neighborhood))
+                self.draw_region_and_point(neighborhood, rta['centroid'], cv2_image_copy)
                 path = '/Users/dcaulton/Desktop/junk/{}.png'.format(rta_number)
                 cv2.imwrite(path, cv2_image_copy)
+
+    def draw_region_and_point(self, region, point, cv2_image):
+        color = (3, 25, 222)
+  
+        size = (region[1][0] - region[0][1], region[1][1] - region[1][0])
+        blk = np.zeros(cv2_image.shape, np.uint8)
+        cv2.rectangle(
+            blk,
+            tuple(region[0]),
+            tuple(region[1]),
+            color, 
+            -1
+        )
+        cv2_image_copy = cv2.addWeighted(
+            cv2_image, 
+            .75, 
+            blk, 
+            .25, 
+            0,
+            cv2_image
+        )
+        cv2.circle(
+            cv2_image,
+            tuple(point),
+            5,
+            (0, 0, 255),
+            -1
+        )
+
+    def region_contains_point(self, region, point):
+        if region[0][0] < point[0] < region[1][0]:
+            if region[0][1] < point[1] < region[1][1]:
+                return True
+
+    def merge_regions(self, region_1, region_2):
+        new_region = [
+            [region_1[0][0], region_1[0][1]],
+            [region_1[1][0], region_1[1][1]],
+        ]
+        if region_2[0][0] < new_region[0][0]:
+            new_region[0][0] = region_2[0][0]
+        if region_2[0][1] < new_region[0][1]:
+            new_region[0][1] = region_2[0][1]
+        if region_2[1][0] > new_region[1][0]:
+            new_region[1][0] = region_2[1][0]
+        if region_2[1][1] > new_region[1][1]:
+            new_region[1][1] = region_2[1][1]
+        return new_region
+
