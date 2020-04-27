@@ -22,11 +22,24 @@ class OcrMovieAnalyzer:
         self.gather_rta_neighborhoods(rta_dict, cv2_image)
 
         # coalesce rta neighborhoods
+        self.coalesce_rta_neighborhoods(rta_dict, cv2_image)
 
         # coalesce apparent header rows in rta neighborhoods
 
         # build a list of app geometries and phrases
         
+        # filter out singleton apps
+
+
+        for rta_number, rta_id in enumerate(rta_dict):
+            cv2_image_copy = cv2_image.copy()
+            rta = rta_dict[rta_id]
+            self.draw_region_and_point(rta['neighborhood'], rta['centroid'], cv2_image_copy)
+            path = '/Users/dcaulton/Desktop/junk/{}.png'.format(rta_number)
+            cv2.imwrite(path, cv2_image_copy)
+
+
+
         return_obj = {
             'apps': apps,
             'rta_dict': rta_dict,
@@ -77,8 +90,6 @@ class OcrMovieAnalyzer:
             rta = rta_dict[rta_id]
             if self.debug:
                 cv2_image_copy = cv2_image.copy()
-            if self.debug:
-                print('gather rta ns: looking at rta number {}: {}'.format(rta_number, rta))
             neighborhood = [rta['start'], rta['end']]
 
             before_point = [rta['start'][0] - 5, rta['start'][1]]
@@ -103,11 +114,74 @@ class OcrMovieAnalyzer:
             if self.region_contains_point(after_region, rta['centroid']):
                 neighborhood = self.merge_regions(neighborhood, after_region)
 
+            rta['neighborhood'] = neighborhood
+
+    def coalesce_rta_neighborhoods(self, rta_dict, cv2_image):
+        for cur_rta_counter, cur_rta_id in enumerate(rta_dict):
+            needed_to_process_count = 0
+            cur_rta = rta_dict[cur_rta_id]
             if self.debug:
-                print('rta neighborhood is {}'.format(neighborhood))
-                self.draw_region_and_point(neighborhood, rta['centroid'], cv2_image_copy)
-                path = '/Users/dcaulton/Desktop/junk/{}.png'.format(rta_number)
-                cv2.imwrite(path, cv2_image_copy)
+                print('coalescing neighborhood for rta number {}'.format(cur_rta_counter))
+            for comp_rta_id in rta_dict:
+                comp_rta = rta_dict[comp_rta_id]
+                if cur_rta['id'] == comp_rta['id']:
+                    continue
+                if cur_rta['neighborhood'] == comp_rta['neighborhood']:
+                    continue
+                needed_to_process_count += 1
+                if self.areas_overlap_by_minimum(cur_rta['neighborhood'], comp_rta['neighborhood'], cv2_image):
+                    new_neighborhood = self.merge_regions(
+                        cur_rta['neighborhood'], 
+                        comp_rta['neighborhood']
+                    )
+                    rta_dict[cur_rta_id]['neighborhood'] = new_neighborhood
+                    rta_dict[comp_rta_id]['neighborhood'] = new_neighborhood
+            print('  processed {} partners'.format(needed_to_process_count))
+
+    def areas_overlap_by_minimum(self, region_1, region_2, cv2_image):
+        # if region 1s start and end points are not within region 2, and
+        #  region 2s start and end points are not within region 1 there is no overlap
+        if not self.region_contains_point(region_1, region_2[0]) \
+            and not self.region_contains_point(region_1, region_2[1]) \
+            and not self.region_contains_point(region_2, region_1[0]) \
+            and not self.region_contains_point(region_2, region_1[1]):
+            return False
+
+        blk_1 = np.zeros(cv2_image.shape, np.uint8)
+        cv2.rectangle(
+            blk_1,
+            tuple(region_1[0]),
+            tuple(region_1[1]),
+            (255, 255, 255),
+            -1
+        )
+
+        blk_2 = np.zeros(cv2_image.shape, np.uint8)
+        cv2.rectangle(
+            blk_2,
+            tuple(region_2[0]),
+            tuple(region_2[1]),
+            (255, 255, 255),
+            -1
+        )
+
+        overlap_image = cv2.bitwise_and(blk_1, blk_2)
+
+        overlap_pixels = np.all(overlap_image == (255, 255, 255), axis=-1)
+        if not overlap_pixels.any():
+            return False
+        start_y = np.where(overlap_pixels)[0][0]
+        end_y = np.where(overlap_pixels)[0][-1]
+        start_x = np.where(overlap_pixels)[1][0]
+        end_x = np.where(overlap_pixels)[1][-1]
+
+        x_range = end_x - start_x
+        y_range = end_y - start_y
+
+        if (x_range * y_range) > 25:
+            return True
+
+        return False
 
     def draw_region_and_point(self, region, point, cv2_image):
         color = (3, 25, 222)
