@@ -33,9 +33,15 @@ class OcrMovieAnalyzer:
         apps = self.build_app_geometries_and_phrases(sorted_rta_ids, rta_dict, cv2_image)
         
         # coalesce apparent app header rows 
+        self.coalesce_app_header_rows(apps)
 
         # filter out singleton apps and those with small bounding boxes
 
+
+
+
+        if self.debug:
+            self.draw_apps(apps, cv2_image)
 
 
         return_obj = {
@@ -181,6 +187,13 @@ class OcrMovieAnalyzer:
 
         return apps
 
+    def coalesce_app_header_rows(self, apps):
+        for cur_app_key in apps:
+            cur_app = apps[cur_app_key]
+            for comp_app_key in apps:
+                comp_app = apps[comp_app_key]
+                if self.first_app_looks_like_a_header(cur_app, comp_app):
+                    self.merge_cur_into_comp(cur_app, comp_app, apps)
 
 
 
@@ -205,11 +218,62 @@ class OcrMovieAnalyzer:
 
 
 
+    def first_app_looks_like_a_header(self, cur_app, comp_app):
+        if len(cur_app['phrases']) > 1:
+            return False  # more than one row of text, not a header
+        if cur_app['bounding_box'][1][1] > comp_app['bounding_box'][0][1]: 
+            return False # cur app is not above comp app
+        if comp_app['bounding_box'][0][1] - cur_app['bounding_box'][1][1] > 10:
+            return False # cur app is more than 10 pix above 
+        cur_app_width = cur_app['bounding_box'][1][0] - cur_app['bounding_box'][0][0]
+        comp_app_width = comp_app['bounding_box'][1][0] - comp_app['bounding_box'][0][0]
+        if abs(cur_app_width - comp_app_width) > 10:
+            return False
+        return True
 
+    def merge_cur_into_comp(self, cur_app, comp_app, apps):
+        comp_app['phrases'] = cur_app['phrases'] + comp_app['phrases']
+        comp_app['first_row_is_header'] = True
+        comp_app['bounding_box'] = self.merge_regions(
+            cur_app['bounding_box'], 
+            comp_app['bounding_box']
+        )
 
-
-
-
+    def draw_apps(self, apps, cv2_image):
+        cv2_image_copy = cv2_image.copy()
+        overlay = np.zeros(cv2_image.shape, np.uint8)
+        for app_id in apps:
+            app = apps[app_id]
+            bounding_box = app['bounding_box']
+            rand_color = [
+                math.floor(random.random() * 255), 
+                math.floor(random.random() * 255), 
+                math.floor(random.random() * 255)
+            ]
+            cv2.rectangle(
+                overlay,
+                tuple(bounding_box[0]),
+                tuple(bounding_box[1]),
+                rand_color,
+                -1
+            )
+            cv2.rectangle(
+                overlay,
+                tuple(bounding_box[0]),
+                tuple(bounding_box[1]),
+                (0, 0, 255),
+                3
+            )
+        cv2_image_copy = cv2.addWeighted(
+            cv2_image_copy, 
+            .75, 
+            overlay, 
+            .25, 
+            0,
+            cv2_image_copy
+        )
+        path = '/Users/dcaulton/Desktop/junk/apps.png'
+        cv2.imwrite(path, cv2_image_copy)
 
 
     def draw_box_dict_entries(self, box_dict, cv2_image, rta_dict):
