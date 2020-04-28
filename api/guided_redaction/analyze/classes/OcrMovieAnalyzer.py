@@ -1,4 +1,6 @@
 import cv2
+import math
+import random
 import numpy as np
 from guided_redaction.analyze.classes.ExtentsFinder import ExtentsFinder                                                
 
@@ -27,8 +29,9 @@ class OcrMovieAnalyzer:
         # coalesce apparent header rows in rta neighborhoods
 
         # build a list of app geometries and phrases
+        apps = self.build_app_geometries_and_phrases(sorted_rta_ids, rta_dict, cv2_image)
         
-        # filter out singleton apps
+        # filter out singleton apps and those with small bounding boxes
 
 
         for rta_number, rta_id in enumerate(rta_dict):
@@ -138,6 +141,93 @@ class OcrMovieAnalyzer:
                     rta_dict[comp_rta_id]['neighborhood'] = new_neighborhood
             print('  processed {} partners'.format(needed_to_process_count))
 
+    def build_app_geometries_and_phrases(self, sorted_rta_ids, rta_dict, cv2_image):
+        box_dict = {}
+        for rta_row_number, rta_row in enumerate(sorted_rta_ids):
+            for rta_id in rta_row:
+                rta = rta_dict[rta_id]
+                rta_box_key = '{}-{}-{}-{}'.format(
+                    rta['neighborhood'][0][0],
+                    rta['neighborhood'][0][1],
+                    rta['neighborhood'][1][0],
+                    rta['neighborhood'][1][1]
+                )
+                if rta_box_key not in box_dict:
+                   box_dict[rta_box_key] = {}
+                if rta_row_number not in box_dict[rta_box_key]:
+                    box_dict[rta_box_key][rta_row_number] = []
+                box_dict[rta_box_key][rta_row_number].append(rta_id)
+
+
+        if self.debug:
+            print('box dict: {}'.format(box_dict))
+            self.draw_box_dict_entries(box_dict, cv2_image, rta_dict)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    def draw_box_dict_entries(self, box_dict, cv2_image, rta_dict):
+        for box_count, box_key in enumerate(box_dict):
+            cv2_image_copy = cv2_image.copy()
+            first_rta_row_key = list(box_dict[box_key].keys())[0]
+            first_rta_id = box_dict[box_key][first_rta_row_key][0]
+            bounding_box = rta_dict[first_rta_id]['neighborhood']
+            rand_color = [
+                math.floor(random.random() * 255), 
+                math.floor(random.random() * 255), 
+                math.floor(random.random() * 255)
+            ]
+            overlay = np.zeros(cv2_image.shape, np.uint8)
+            cv2.rectangle(
+                overlay,
+                tuple(bounding_box[0]),
+                tuple(bounding_box[1]),
+                rand_color,
+                -1
+            )
+            cv2_image_copy = cv2.addWeighted(
+                cv2_image_copy, 
+                .75, 
+                overlay, 
+                .25, 
+                0,
+                cv2_image_copy
+            )
+            cv2.putText(
+                cv2_image_copy,
+                box_key,
+                (100, 100),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                3,
+                (255, 255, 0),
+                2
+            )
+            for rta_row_key in box_dict[box_key]:
+                rta_row = box_dict[box_key][rta_row_key]
+                for rta_id in rta_row:
+                    rta = rta_dict[rta_id]
+                    cv2.circle(
+                        cv2_image_copy,
+                        tuple(rta['centroid']),
+                        5,
+                        (0, 0, 255),
+                        -1
+                    )
+
+            path = '/Users/dcaulton/Desktop/junk/box_dict_{}.png'.format(box_count)
+            cv2.imwrite(path, cv2_image_copy)
+
     def areas_overlap_by_minimum(self, region_1, region_2, cv2_image):
         # if region 1s start and end points are not within region 2, and
         #  region 2s start and end points are not within region 1 there is no overlap
@@ -212,8 +302,8 @@ class OcrMovieAnalyzer:
         )
 
     def region_contains_point(self, region, point):
-        if region[0][0] < point[0] < region[1][0]:
-            if region[0][1] < point[1] < region[1][1]:
+        if region[0][0] <= point[0] <= region[1][0]:
+            if region[0][1] <= point[1] <= region[1][1]:
                 return True
 
     def merge_regions(self, region_1, region_2):
