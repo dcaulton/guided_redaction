@@ -938,11 +938,14 @@ def ocr_movie_analysis_threaded(job_uuid):
           job.save()
 
 def build_and_dispatch_ocr_movie_analysis_threaded_collect_one_frame_children(parent_job):
+    skip_frames = 10
     parent_job.status = 'running'
     parent_job.save()
     request_data = json.loads(parent_job.request_data)
     for movie_url in request_data['movies']:
         for frameset_index, frameset_hash in enumerate(request_data['movies'][movie_url]['framesets']):
+            if frameset_index % skip_frames != 0:
+                continue
             build_request_data = json.dumps({
                 'frameset': request_data['movies'][movie_url]['framesets'][frameset_hash],
             })
@@ -959,7 +962,6 @@ def build_and_dispatch_ocr_movie_analysis_threaded_collect_one_frame_children(pa
             job.save()
             print('build_and_dispatch_ocr_movie_analysis_threaded_collect_one_frame_children: dispatching job for movie {}'.format(movie_url))
             ocr_movie_analysis_collect_one_frame.delay(job.id)
-            return  # THIS IS A HACK UNTIL WE ARE GOOD WITH THE FIRST PART OF THIS OPERATION
 
 def wrap_up_ocr_movie_analysis_threaded(job, children):
     aggregate_response_data = {
@@ -967,7 +969,8 @@ def wrap_up_ocr_movie_analysis_threaded(job, children):
       'templates': {}
     }
     print('wrap_up_ocr_movie_analysis_threaded: wrapping up parent job')
-    job.status = 'success'
+# DEBUG COMMENTED THIS OUT UNTIL WE HAVE MULTI FRAME ASSESSMENTS WORKING
+#    job.status = 'success'
     job.response_data = json.dumps(aggregate_response_data)
     job.elapsed_time = 1
     job.save()

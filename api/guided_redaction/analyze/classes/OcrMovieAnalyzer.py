@@ -12,6 +12,7 @@ class OcrMovieAnalyzer:
         self.file_writer = file_writer
         self.min_app_width = 100
         self.min_app_height = 100
+        self.max_header_height = 100
         self.max_header_vertical_separation = 10
         self.max_header_width_difference = 10
         if self.debug:
@@ -165,7 +166,6 @@ class OcrMovieAnalyzer:
                     box_dict[rta_box_key][rta_row_number] = []
                 box_dict[rta_box_key][rta_row_number].append(rta_id)
 
-
         if self.debug:
             print('box dict: {}'.format(box_dict))
             self.draw_box_dict_entries(box_dict, cv2_image, rta_dict)
@@ -220,26 +220,6 @@ class OcrMovieAnalyzer:
         for app_key in keys_to_delete:
             del apps[app_key]
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     def first_app_looks_like_a_header(self, cur_app, comp_app):
         if len(cur_app['phrases']) > 1:
             return False  # more than one row of text, not a header
@@ -248,9 +228,14 @@ class OcrMovieAnalyzer:
         header_separation = comp_app['bounding_box'][0][1] - cur_app['bounding_box'][1][1]
         if header_separation > self.max_header_vertical_separation:
             return False 
+
         cur_app_width = cur_app['bounding_box'][1][0] - cur_app['bounding_box'][0][0]
+        cur_app_height = cur_app['bounding_box'][1][1] - cur_app['bounding_box'][0][1]
         comp_app_width = comp_app['bounding_box'][1][0] - comp_app['bounding_box'][0][0]
+
         if abs(cur_app_width - comp_app_width) > self.max_header_width_difference:
+            return False
+        if cur_app_height > self.max_header_height:
             return False
         return True
 
@@ -300,9 +285,7 @@ class OcrMovieAnalyzer:
             self.debug_file_uuid,
             'apps.png'
         )
-
         cv2.imwrite(path, cv2_image_copy)
-
 
     def draw_box_dict_entries(self, box_dict, cv2_image, rta_dict):
         for box_count, box_key in enumerate(box_dict):
@@ -461,4 +444,3 @@ class OcrMovieAnalyzer:
                 'rta_{}.png'.format(rta_number)
             )
             cv2.imwrite(path, cv2_image_copy)
-
