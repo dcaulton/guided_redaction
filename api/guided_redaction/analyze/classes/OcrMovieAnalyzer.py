@@ -26,20 +26,15 @@ class OcrMovieAnalyzer:
         # coalesce rta neighborhoods
         self.coalesce_rta_neighborhoods(rta_dict, cv2_image)
 
-        # coalesce apparent header rows in rta neighborhoods
+        if self.debug:
+            self.draw_rtas(rta_dict, cv2_image)
 
         # build a list of app geometries and phrases
         apps = self.build_app_geometries_and_phrases(sorted_rta_ids, rta_dict, cv2_image)
         
+        # coalesce apparent app header rows 
+
         # filter out singleton apps and those with small bounding boxes
-
-
-        for rta_number, rta_id in enumerate(rta_dict):
-            cv2_image_copy = cv2_image.copy()
-            rta = rta_dict[rta_id]
-            self.draw_region_and_point(rta['neighborhood'], rta['centroid'], cv2_image_copy)
-            path = '/Users/dcaulton/Desktop/junk/{}.png'.format(rta_number)
-            cv2.imwrite(path, cv2_image_copy)
 
 
 
@@ -162,6 +157,46 @@ class OcrMovieAnalyzer:
         if self.debug:
             print('box dict: {}'.format(box_dict))
             self.draw_box_dict_entries(box_dict, cv2_image, rta_dict)
+
+        apps = {}
+        for box_number, box_key in enumerate(box_dict):
+            phrase_list = []
+            row_keys = sorted(box_dict[box_key].keys())
+            for row_key in row_keys:
+                row = []
+                for rta_id in box_dict[box_key][row_key]:
+                    rta = rta_dict[rta_id]
+                    row.append(rta['text'])
+                phrase_list.append(row)
+                bounding_box = rta['neighborhood']
+            app = {
+                'phrases': phrase_list,
+                'bounding_box': bounding_box,
+                'rta_ids': box_dict[box_key],
+            }
+            apps[box_number] = app
+
+        if self.debug:
+            print('all the apps {}'.format(apps))
+
+        return apps
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -320,4 +355,12 @@ class OcrMovieAnalyzer:
         if region_2[1][1] > new_region[1][1]:
             new_region[1][1] = region_2[1][1]
         return new_region
+
+    def draw_rtas(self, rta_dict, cv2_image):
+        for rta_number, rta_id in enumerate(rta_dict):
+            cv2_image_copy = cv2_image.copy()
+            rta = rta_dict[rta_id]
+            self.draw_region_and_point(rta['neighborhood'], rta['centroid'], cv2_image_copy)
+            path = '/Users/dcaulton/Desktop/junk/{}.png'.format(rta_number)
+            cv2.imwrite(path, cv2_image_copy)
 
