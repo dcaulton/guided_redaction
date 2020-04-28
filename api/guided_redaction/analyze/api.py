@@ -1076,6 +1076,11 @@ class AnalyzeViewSetOcrMovieAnalysis(viewsets.ViewSet):
         if not image:
             return self.error('could not open image for frameset')
 
+        file_writer = FileWriter(
+            working_dir=settings.REDACT_FILE_STORAGE_DIR,
+            base_url=settings.REDACT_FILE_BASE_URL,
+            image_request_verify_headers=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
+        )
         analyzer = EastPlusTessGuidedAnalyzer()
         nparr = np.fromstring(image, np.uint8)
         cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
@@ -1087,7 +1092,7 @@ class AnalyzeViewSetOcrMovieAnalysis(viewsets.ViewSet):
             cv2_image, [start, end]
         )
 
-        ocr_movie_analyzer = OcrMovieAnalyzer(debug=True)
+        ocr_movie_analyzer = OcrMovieAnalyzer(True, file_writer)
         results = ocr_movie_analyzer.collect_one_frame(raw_rtas, cv2_image)
 
         return Response(results)

@@ -2,16 +2,23 @@ import cv2
 import math
 import random
 import numpy as np
+import uuid
 from guided_redaction.analyze.classes.ExtentsFinder import ExtentsFinder                                                
 
 class OcrMovieAnalyzer:
 
-    def __init__(self, debug=False):
+    def __init__(self, debug, file_writer):
         self.debug = debug
+        self.file_writer = file_writer
+        self.min_app_width = 100
+        self.min_app_height = 100
+        self.max_header_vertical_separation = 10
+        self.max_header_width_difference = 10
+        if self.debug:
+            self.debug_file_uuid = str(uuid.uuid4())
+            self.file_writer.create_unique_directory(self.debug_file_uuid)
 
     def collect_one_frame(self, raw_rtas, cv2_image):
-        apps = {}
-
         # put rtas into a dict for easier access
         rta_dict = {}
         for rta in raw_rtas:
@@ -36,19 +43,18 @@ class OcrMovieAnalyzer:
         self.coalesce_app_header_rows(apps)
 
         # filter out singleton apps and those with small bounding boxes
-
-
-
+        self.filter_out_weak_apps(apps)
 
         if self.debug:
             self.draw_apps(apps, cv2_image)
-
 
         return_obj = {
             'apps': apps,
             'rta_dict': rta_dict,
             'sorted_rta_ids': sorted_rta_ids,
+            'debug_directory': self.debug_file_uuid,
         }
+
         return return_obj
 
     def order_recognized_text_areas_by_geometry(self, raw_rtas):
@@ -195,8 +201,24 @@ class OcrMovieAnalyzer:
                 if self.first_app_looks_like_a_header(cur_app, comp_app):
                     self.merge_cur_into_comp(cur_app, comp_app, apps)
 
+    def filter_out_weak_apps(self, apps):
+        keys_to_delete = []
+        for app_key in apps:
+            app = apps[app_key]
+            if len(app['phrases']) == 1 and len(app['phrases'][0]) == 1:
+                keys_to_delete.append(app_key)
+                continue
+            app_width = app['bounding_box'][1][0] - app['bounding_box'][0][0]
+            app_height= app['bounding_box'][1][1] - app['bounding_box'][0][1]
+            if app_width < self.min_app_width:
+                keys_to_delete.append(app_key)
+                continue
+            if app_height < self.min_app_height:
+                keys_to_delete.append(app_key)
+                continue
 
-
+        for app_key in keys_to_delete:
+            del apps[app_key]
 
 
 
@@ -223,11 +245,12 @@ class OcrMovieAnalyzer:
             return False  # more than one row of text, not a header
         if cur_app['bounding_box'][1][1] > comp_app['bounding_box'][0][1]: 
             return False # cur app is not above comp app
-        if comp_app['bounding_box'][0][1] - cur_app['bounding_box'][1][1] > 10:
-            return False # cur app is more than 10 pix above 
+        header_separation = comp_app['bounding_box'][0][1] - cur_app['bounding_box'][1][1]
+        if header_separation > self.max_header_vertical_separation:
+            return False 
         cur_app_width = cur_app['bounding_box'][1][0] - cur_app['bounding_box'][0][0]
         comp_app_width = comp_app['bounding_box'][1][0] - comp_app['bounding_box'][0][0]
-        if abs(cur_app_width - comp_app_width) > 10:
+        if abs(cur_app_width - comp_app_width) > self.max_header_width_difference:
             return False
         return True
 
@@ -272,7 +295,12 @@ class OcrMovieAnalyzer:
             0,
             cv2_image_copy
         )
-        path = '/Users/dcaulton/Desktop/junk/apps.png'
+
+        path = self.file_writer.build_file_fullpath_for_uuid_and_filename(
+            self.debug_file_uuid,
+            'apps.png'
+        )
+
         cv2.imwrite(path, cv2_image_copy)
 
 
@@ -324,7 +352,10 @@ class OcrMovieAnalyzer:
                         -1
                     )
 
-            path = '/Users/dcaulton/Desktop/junk/box_dict_{}.png'.format(box_count)
+            path = self.file_writer.build_file_fullpath_for_uuid_and_filename(
+                self.debug_file_uuid,
+                'box_dict_{}.png'.format(box_count)
+            )
             cv2.imwrite(path, cv2_image_copy)
 
     def areas_overlap_by_minimum(self, region_1, region_2, cv2_image):
@@ -425,6 +456,9 @@ class OcrMovieAnalyzer:
             cv2_image_copy = cv2_image.copy()
             rta = rta_dict[rta_id]
             self.draw_region_and_point(rta['neighborhood'], rta['centroid'], cv2_image_copy)
-            path = '/Users/dcaulton/Desktop/junk/{}.png'.format(rta_number)
+            path = self.file_writer.build_file_fullpath_for_uuid_and_filename(
+                self.debug_file_uuid,
+                'rta_{}.png'.format(rta_number)
+            )
             cv2.imwrite(path, cv2_image_copy)
 
