@@ -918,6 +918,30 @@ def ocr_movie_analysis_collect_one_frame(job_uuid):
             ocr_movie_analysis_threaded.delay(parent_job.id)
 
 @shared_task
+def ocr_movie_analysis_condense_all_frames(job_uuid):
+    if not Job.objects.filter(pk=job_uuid).exists():
+        print('calling ocr_movie_analysis_condense_all_frames on nonexistent job: {}'.format(job_uuid))
+    job = Job.objects.get(pk=job_uuid)
+    job.status = 'running'
+    job.save()
+    print('running ocr_movie_analysis_condense_all_frames for job {}'.format(job_uuid))
+    worker = AnalyzeViewSetOcrMovieAnalysis()
+    rd = json.loads(job.request_data)
+    response = worker.process_condense_all_frames_request(rd)
+    if not Job.objects.filter(pk=job_uuid).exists():
+        return
+    job = Job.objects.get(pk=job_uuid)
+    job.response_data = json.dumps(response.data)
+    job.status = 'success'
+    job.save()
+
+# TODO when this works uncomment and make it so it won't just loop here
+#    if job.parent_id:
+#        parent_job = Job.objects.get(pk=job.parent_id)
+#        if parent_job.app == 'analyze' and parent_job.operation == 'ocr_movie_analysis_threaded':
+#            ocr_movie_analysis_threaded.delay(parent_job.id)
+
+@shared_task
 def ocr_movie_analysis_threaded(job_uuid):
     if Job.objects.filter(pk=job_uuid).exists():
         job = Job.objects.get(pk=job_uuid)
@@ -963,14 +987,34 @@ def build_and_dispatch_ocr_movie_analysis_threaded_collect_one_frame_children(pa
             print('build_and_dispatch_ocr_movie_analysis_threaded_collect_one_frame_children: dispatching job for movie {}'.format(movie_url))
             ocr_movie_analysis_collect_one_frame.delay(job.id)
 
-def wrap_up_ocr_movie_analysis_threaded(job, children):
+def wrap_up_ocr_movie_analysis_threaded(parent_job, children):
+#    if job.elapsed_time == 1:
+#        return # someone is already completing this job
     aggregate_response_data = {
       'application_dictionary': {},
       'templates': {}
     }
     print('wrap_up_ocr_movie_analysis_threaded: wrapping up parent job')
+    children = Job.objects.filter(parent=parent_job)
+    child_job_ids = [str(x.id) for x in children if x.operation == 'ocr_movie_analysis_collect_one_frame']
+    build_request_data = json.dumps({
+        'job_ids': child_job_ids,
+    })
+    job = Job(
+        request_data=build_request_data,
+        status='created',
+        description='ocr movie analysis condense all frames',
+        app='analyze',
+        operation='ocr_movie_analysis_condense_all_frames',
+        sequence=0,
+        elapsed_time=0.0,
+        parent=parent_job,
+    )
+    job.save()
+    print('wrap_up_cr_movie_analysis_threaded: dispatching condense all frames job')
+    ocr_movie_analysis_condense_all_frames.delay(job.id)
 # DEBUG COMMENTED THIS OUT UNTIL WE HAVE MULTI FRAME ASSESSMENTS WORKING
 #    job.status = 'success'
+#    job.elapsed_time = 1
     job.response_data = json.dumps(aggregate_response_data)
-    job.elapsed_time = 1
     job.save()

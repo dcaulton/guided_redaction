@@ -23,6 +23,7 @@ import re
 import requests
 from base import viewsets
 from rest_framework.response import Response
+from guided_redaction.jobs.models import Job
 from guided_redaction.utils.classes.FileWriter import FileWriter
 
 
@@ -1094,5 +1095,27 @@ class AnalyzeViewSetOcrMovieAnalysis(viewsets.ViewSet):
 
         ocr_movie_analyzer = OcrMovieAnalyzer(True, file_writer)
         results = ocr_movie_analyzer.collect_one_frame(raw_rtas, cv2_image)
+
+        return Response(results)
+
+    def process_condense_all_frames_request(self, request_data):
+        if not request_data.get("job_ids"):
+            return self.error("job_ids is required", status_code=400)
+        job_ids = request_data['job_ids']
+        job_data = []
+        for job_id in job_ids:
+            if not Job.objects.filter(pk=job_id).exists():
+                return self.error('could not fetch job with id {}'.format(job_id))
+            child_job = Job.objects.get(pk=job_id)
+            child_response_data = json.loads(child_job.response_data)
+            job_data.append(child_response_data)
+
+        file_writer = FileWriter(
+            working_dir=settings.REDACT_FILE_STORAGE_DIR,
+            base_url=settings.REDACT_FILE_BASE_URL,
+            image_request_verify_headers=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
+        )
+        ocr_movie_analyzer = OcrMovieAnalyzer(True, file_writer)
+        results = ocr_movie_analyzer.condense_all_frames(job_data)
 
         return Response(results)

@@ -25,6 +25,9 @@ class OcrMovieAnalyzer:
         for rta in raw_rtas:
             rta_dict[rta['id']] = rta
 
+        # TODO if we have no borders on some apps, add some lines to help fill operations
+
+
         # quantize the rtas into rows
         sorted_rta_ids = self.order_recognized_text_areas_by_geometry(raw_rtas)
 
@@ -43,6 +46,9 @@ class OcrMovieAnalyzer:
         # coalesce apparent app header rows 
         self.coalesce_app_header_rows(apps)
 
+        # TODO search for and merge duplicate occurrences of the same app.
+
+
         # filter out singleton apps and those with small bounding boxes
         self.filter_out_weak_apps(apps)
 
@@ -57,6 +63,27 @@ class OcrMovieAnalyzer:
         }
 
         return return_obj
+
+    def condense_all_frames(self, all_job_data_array):
+        global_apps = {}
+
+        for job_sequence_number, job_data in enumerate(all_job_data_array):
+            print(job_sequence_number)
+            if job_sequence_number == 0:
+                global_apps = job_data['apps']
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     def order_recognized_text_areas_by_geometry(self, raw_rtas):
         ordered_rtas = []
