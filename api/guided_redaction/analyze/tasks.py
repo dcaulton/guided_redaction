@@ -970,11 +970,13 @@ def build_and_dispatch_ocr_movie_analysis_threaded_collect_one_frame_children(pa
         for frameset_index, frameset_hash in enumerate(request_data['movies'][movie_url]['framesets']):
             if frameset_index % skip_frames != 0:
                 continue
-            build_request_data = json.dumps({
-                'frameset': request_data['movies'][movie_url]['framesets'][frameset_hash],
-            })
+            build_request_data = {'movies': {}}
+            build_request_data['movies'][movie_url] = {}
+            build_request_data['movies'][movie_url]['framesets'] = {}
+            build_request_data['movies'][movie_url]['framesets'][frameset_hash] = \
+                request_data['movies'][movie_url]['framesets'][frameset_hash]
             job = Job(
-                request_data=build_request_data,
+                request_data=json.dumps(build_request_data),
                 status='created',
                 description='ocr movie analysis for movie {} frameset hash {}'.format(movie_url, frameset_hash),
                 app='analyze',

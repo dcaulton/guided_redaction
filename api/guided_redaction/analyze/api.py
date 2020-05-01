@@ -1062,13 +1062,13 @@ class AnalyzeViewSetOcrMovieAnalysis(viewsets.ViewSet):
         return self.process_collect_one_frame_request(request_data)
 
     def process_collect_one_frame_request(self, request_data):
-        if not request_data.get("frameset"):
-            return self.error("frameset is required", status_code=400)
-        frameset = request_data['frameset']
-        image_url = frameset['images'][0]
+        if not request_data.get("movies"):
+            return self.error("movies is required", status_code=400)
+        movies = request_data['movies']
+        movie_url = list(movies.keys())[0]
+        frameset_hash = list(movies[movie_url]['framesets'].keys())[0]
+        image_url = movies[movie_url]['framesets'][frameset_hash]['images'][0]
 
-        if 'images' not in frameset or not frameset['images']:
-            return
         pic_response = requests.get(
           image_url,
           verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
@@ -1102,14 +1102,17 @@ class AnalyzeViewSetOcrMovieAnalysis(viewsets.ViewSet):
         if not request_data.get("job_ids"):
             return self.error("job_ids is required", status_code=400)
         job_ids = request_data['job_ids']
-        job_data = []
+        job_data = {}
         for job_id in job_ids:
             if not Job.objects.filter(pk=job_id).exists():
                 return self.error('could not fetch job with id {}'.format(job_id))
             child_job = Job.objects.get(pk=job_id)
             child_response_data = json.loads(child_job.response_data)
-            job_data.append(child_response_data)
-
+            child_request_data = json.loads(child_job.request_data)
+            job_data[job_id] = {
+                'request_data': child_request_data,
+                'response_data': child_response_data,
+            }
         file_writer = FileWriter(
             working_dir=settings.REDACT_FILE_STORAGE_DIR,
             base_url=settings.REDACT_FILE_BASE_URL,

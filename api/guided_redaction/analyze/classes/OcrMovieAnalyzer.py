@@ -1,4 +1,5 @@
 import cv2
+import json
 import math
 import random
 import numpy as np
@@ -67,10 +68,14 @@ class OcrMovieAnalyzer:
     def condense_all_frames(self, all_job_data_array):
         global_apps = {}
 
-        for job_sequence_number, job_data in enumerate(all_job_data_array):
-            print(job_sequence_number)
+        for job_sequence_number, job_id in enumerate(all_job_data_array):
+            job_response_data = all_job_data_array[job_id]['response_data']
+            job_request_data = all_job_data_array[job_id]['request_data']
+            self.print_job_processing_line(job_id, job_request_data)
             if job_sequence_number == 0:
-                global_apps = job_data['apps']
+                global_apps = self.build_all_apps_from_first_job(job_response_data)
+            else:
+                print('ADD APPS TO GLOBAL APPS HERE')
 
 
 
@@ -84,6 +89,46 @@ class OcrMovieAnalyzer:
 
 
 
+
+    def build_all_apps_from_first_job(self, job_data):
+        if self.debug:
+            print('building all apps from the first job')
+        for job_app_key in job_data['apps']:
+            job_app = job_data['apps'][job_app_key]
+            build_app = {}
+            build_app['phrases'] = job_app['phrases']
+            build_app['coords'] = []
+            app_row_keys_sorted = sorted(list(map(int, job_app['rta_ids'].keys())))
+            app_origin_rta_id = job_app['rta_ids'][str(app_row_keys_sorted[0])][0]
+            app_origin_point = job_data['rta_dict'][app_origin_rta_id]['start']
+            for rta_row_number in job_app['rta_ids']:
+                build_coords_row = []
+                rta_row = job_app['rta_ids'][rta_row_number]
+                for rta_id in rta_row:
+                    rta = job_data['rta_dict'][rta_id]
+                    start_offset = [
+                        rta['start'][0] - app_origin_point[0],
+                        rta['start'][1] - app_origin_point[1]
+                    ]
+                    end_offset = [
+                        rta['end'][0] - app_origin_point[0],
+                        rta['end'][1] - app_origin_point[1]
+                    ]
+                    build_coords = {
+                        'start': start_offset,
+                        'end': end_offset,
+                    }
+                    build_coords_row.append(build_coords)
+                build_app['coords'].append(build_coords_row)
+                build_app['has_header_row'] = True
+            else:
+                build_app['has_header_row'] = False
+
+    def print_job_processing_line(self, job_id, request_data):
+        if self.debug:
+            movie_url = list(request_data['movies'].keys())[0]
+            frameset_hash = list(request_data['movies'][movie_url]['framesets'].keys())[0]
+            print('processing job id {} with movie {} frameset {}'.format(job_id, movie_url, frameset_hash))
 
     def order_recognized_text_areas_by_geometry(self, raw_rtas):
         ordered_rtas = []
