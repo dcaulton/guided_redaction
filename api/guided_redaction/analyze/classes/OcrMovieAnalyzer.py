@@ -8,8 +8,8 @@ from guided_redaction.analyze.classes.ExtentsFinder import ExtentsFinder
 
 class OcrMovieAnalyzer:
 
-    def __init__(self, debug, file_writer):
-        self.debug = debug
+    def __init__(self, meta, file_writer):
+        self.debug = meta['debug_level']
         self.file_writer = file_writer
         self.min_app_width = 100
         self.min_app_height = 100
@@ -17,8 +17,11 @@ class OcrMovieAnalyzer:
         self.max_header_vertical_separation = 10
         self.max_header_width_difference = 10
         if self.debug:
-            self.debug_file_uuid = str(uuid.uuid4())
-            self.file_writer.create_unique_directory(self.debug_file_uuid)
+            if 'debug_directory' in meta:
+                self.debug_file_uuid = meta['debug_directory']
+            else:
+                self.debug_file_uuid = str(uuid.uuid4())
+                self.file_writer.create_unique_directory(self.debug_file_uuid)
 
     def collect_one_frame(self, raw_rtas, cv2_image, image_name):
         # put rtas into a dict for easier access

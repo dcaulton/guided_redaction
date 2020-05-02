@@ -1,4 +1,7 @@
 from celery import shared_task
+import uuid
+from django.conf import settings
+from guided_redaction.utils.classes.FileWriter import FileWriter
 import json
 import os
 from fuzzywuzzy import fuzz
@@ -966,6 +969,16 @@ def build_and_dispatch_ocr_movie_analysis_threaded_collect_one_frame_children(pa
     parent_job.status = 'running'
     parent_job.save()
     request_data = json.loads(parent_job.request_data)
+    if request_data['meta']['debug_level'] == 'normal':
+        file_writer = FileWriter(
+            working_dir=settings.REDACT_FILE_STORAGE_DIR,
+            base_url=settings.REDACT_FILE_BASE_URL,
+            image_request_verify_headers=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
+        )
+        the_uuid = str(uuid.uuid4())
+        file_writer.create_unique_directory(the_uuid)
+        request_data['meta']['debug_directory'] = the_uuid
+
     for movie_url in request_data['movies']:
         for frameset_index, frameset_hash in enumerate(request_data['movies'][movie_url]['framesets']):
             if frameset_index % skip_frames != 0:
@@ -975,6 +988,7 @@ def build_and_dispatch_ocr_movie_analysis_threaded_collect_one_frame_children(pa
             build_request_data['movies'][movie_url]['framesets'] = {}
             build_request_data['movies'][movie_url]['framesets'][frameset_hash] = \
                 request_data['movies'][movie_url]['framesets'][frameset_hash]
+            build_request_data['meta'] = request_data['meta']
             job = Job(
                 request_data=json.dumps(build_request_data),
                 status='created',

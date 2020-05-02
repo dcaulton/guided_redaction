@@ -1064,6 +1064,8 @@ class AnalyzeViewSetOcrMovieAnalysis(viewsets.ViewSet):
     def process_collect_one_frame_request(self, request_data):
         if not request_data.get("movies"):
             return self.error("movies is required", status_code=400)
+        if not request_data.get("meta"):
+            return self.error("meta is required", status_code=400)
         movies = request_data['movies']
         movie_url = list(movies.keys())[0]
         frameset_hash = list(movies[movie_url]['framesets'].keys())[0]
@@ -1095,7 +1097,7 @@ class AnalyzeViewSetOcrMovieAnalysis(viewsets.ViewSet):
             cv2_image, [start, end]
         )
 
-        ocr_movie_analyzer = OcrMovieAnalyzer(True, file_writer)
+        ocr_movie_analyzer = OcrMovieAnalyzer(request_data['meta'], file_writer)
         results = ocr_movie_analyzer.collect_one_frame(raw_rtas, cv2_image, image_name)
 
         return Response(results)
