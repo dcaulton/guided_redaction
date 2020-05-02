@@ -1004,6 +1004,8 @@ def build_and_dispatch_ocr_movie_analysis_threaded_collect_one_frame_children(pa
             ocr_movie_analysis_collect_one_frame.delay(job.id)
 
 def wrap_up_ocr_movie_analysis_threaded(parent_job, children):
+    print('SKIPPING WRAP UP, WE ARE DEBUGGING ONE FRAME STUFF')
+    return
 #    if job.elapsed_time == 1:
 #        return # someone is already completing this job
     aggregate_response_data = {

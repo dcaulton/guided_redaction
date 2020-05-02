@@ -13,6 +13,7 @@ class OcrMovieAnalyzer:
         self.file_writer = file_writer
         self.min_app_width = 100
         self.min_app_height = 100
+        self.max_rta_neighborhood_area = 1000 * 1000
         self.max_header_height = 100
         self.max_header_vertical_separation = 10
         self.max_header_width_difference = 10
@@ -38,11 +39,14 @@ class OcrMovieAnalyzer:
         # gather rta neighborhoods
         self.gather_rta_neighborhoods(rta_dict, cv2_image)
 
+        if self.debug == 'everything':
+            self.draw_rtas(rta_dict, cv2_image, 'pre_coalesce_rta')
+
         # coalesce rta neighborhoods
         self.coalesce_rta_neighborhoods(rta_dict, cv2_image)
 
         if self.debug == 'everything':
-            self.draw_rtas(rta_dict, cv2_image)
+            self.draw_rtas(rta_dict, cv2_image, 'post_coalesce_rta')
 
         # build a list of app geometries and phrases
         apps = self.build_app_geometries_and_phrases(sorted_rta_ids, rta_dict, cv2_image)
@@ -57,7 +61,7 @@ class OcrMovieAnalyzer:
         self.filter_out_weak_apps(apps)
 
         if self.debug:
-            self.draw_apps(apps, cv2_image, image_name)
+            self.draw_apps(apps, rta_dict, cv2_image, image_name)
 
         return_obj = {
             'apps': apps,
@@ -177,6 +181,10 @@ class OcrMovieAnalyzer:
             if self.debug:
                 cv2_image_copy = cv2_image.copy()
             neighborhood = [rta['start'], rta['end']]
+            # TODO add chrome tab and address bar recog here
+            if rta['end'][1] < 100: # it's probably a chrome tab or address bar, skip for now
+                rta['neighborhood'] = neighborhood
+                continue
 
             before_point = [rta['start'][0] - 5, rta['start'][1]]
             if before_point[0] < 0:
@@ -195,11 +203,16 @@ class OcrMovieAnalyzer:
             if after_point[1] > cv2_image.shape[0] - 1:
                 after_point[1] = cv2_image.shape[0] - 1
             after_region = finder.determine_flood_fill_area(
-                cv2_image, after_point, 2
+                cv2_image, after_point, 5
             )
             if self.region_contains_point(after_region, rta['centroid']):
                 neighborhood = self.merge_regions(neighborhood, after_region)
 
+            n_w = neighborhood[1][0] - neighborhood[0][0]
+            n_h = neighborhood[1][1] - neighborhood[0][1]
+            if n_w * n_h > self.max_rta_neighborhood_area:
+                neighborhood = [rta['start'], rta['end']]
+            
             rta['neighborhood'] = neighborhood
 
     def coalesce_rta_neighborhoods(self, rta_dict, cv2_image):
@@ -323,7 +336,7 @@ class OcrMovieAnalyzer:
             comp_app['bounding_box']
         )
 
-    def draw_apps(self, apps, cv2_image, image_name):
+    def draw_apps(self, apps, rta_dict, cv2_image, image_name):
         cv2_image_copy = cv2_image.copy()
         overlay = np.zeros(cv2_image.shape, np.uint8)
         for app_id in apps:
@@ -348,6 +361,17 @@ class OcrMovieAnalyzer:
                 (0, 0, 255),
                 3
             )
+            for row_id in app['rta_ids']:
+                rta_id_row = app['rta_ids'][row_id]
+                for rta_id in rta_id_row:
+                    rta = rta_dict[rta_id]
+                    cv2.circle(
+                        cv2_image_copy,
+                        tuple(rta['centroid']),
+                        5,
+                        (0, 0, 255),
+                        -1
+                    )
         cv2_image_copy = cv2.addWeighted(
             cv2_image_copy, 
             .75, 
@@ -511,13 +535,13 @@ class OcrMovieAnalyzer:
             new_region[1][1] = region_2[1][1]
         return new_region
 
-    def draw_rtas(self, rta_dict, cv2_image):
+    def draw_rtas(self, rta_dict, cv2_image, filename_prefix):
         for rta_number, rta_id in enumerate(rta_dict):
             cv2_image_copy = cv2_image.copy()
             rta = rta_dict[rta_id]
             self.draw_region_and_point(rta['neighborhood'], rta['centroid'], cv2_image_copy)
             path = self.file_writer.build_file_fullpath_for_uuid_and_filename(
                 self.debug_file_uuid,
-                'rta_{}.png'.format(rta_number)
+                '{}_{}.png'.format(filename_prefix, rta_number)
             )
             cv2.imwrite(path, cv2_image_copy)
