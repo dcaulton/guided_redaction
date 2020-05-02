@@ -20,7 +20,7 @@ class OcrMovieAnalyzer:
             self.debug_file_uuid = str(uuid.uuid4())
             self.file_writer.create_unique_directory(self.debug_file_uuid)
 
-    def collect_one_frame(self, raw_rtas, cv2_image):
+    def collect_one_frame(self, raw_rtas, cv2_image, image_name):
         # put rtas into a dict for easier access
         rta_dict = {}
         for rta in raw_rtas:
@@ -38,7 +38,7 @@ class OcrMovieAnalyzer:
         # coalesce rta neighborhoods
         self.coalesce_rta_neighborhoods(rta_dict, cv2_image)
 
-        if self.debug:
+        if self.debug == 'everything':
             self.draw_rtas(rta_dict, cv2_image)
 
         # build a list of app geometries and phrases
@@ -54,7 +54,7 @@ class OcrMovieAnalyzer:
         self.filter_out_weak_apps(apps)
 
         if self.debug:
-            self.draw_apps(apps, cv2_image)
+            self.draw_apps(apps, cv2_image, image_name)
 
         return_obj = {
             'apps': apps,
@@ -152,16 +152,16 @@ class OcrMovieAnalyzer:
             x_keys_sorted = sorted(x_keys, key = lambda i: i['start'][0])
             ordered_rtas.append(x_keys_sorted)
 
-        if self.debug:
+        if self.debug == 'everything':
             print('==========================ocr rta rows bunched by y, then sorted by x:')
         ordered_rta_keys = []
         for row in ordered_rtas:
             rta_keys_this_row = []
-            if self.debug:
+            if self.debug == 'everything':
                 print('----------- new row')
             for rta in row:
                 rta_keys_this_row.append(rta['id'])
-                if self.debug:
+                if self.debug == 'everything':
                     print('{} {}'.format(rta['start'], rta['text']))
             ordered_rta_keys.append(rta_keys_this_row)
             
@@ -203,7 +203,7 @@ class OcrMovieAnalyzer:
         for cur_rta_counter, cur_rta_id in enumerate(rta_dict):
             needed_to_process_count = 0
             cur_rta = rta_dict[cur_rta_id]
-            if self.debug:
+            if self.debug == 'everything':
                 print('coalescing neighborhood for rta number {}'.format(cur_rta_counter))
             for comp_rta_id in rta_dict:
                 comp_rta = rta_dict[comp_rta_id]
@@ -219,7 +219,8 @@ class OcrMovieAnalyzer:
                     )
                     rta_dict[cur_rta_id]['neighborhood'] = new_neighborhood
                     rta_dict[comp_rta_id]['neighborhood'] = new_neighborhood
-            print('  processed {} partners'.format(needed_to_process_count))
+            if self.debug == 'everyghing': 
+                print('  processed {} partners'.format(needed_to_process_count))
 
     def build_app_geometries_and_phrases(self, sorted_rta_ids, rta_dict, cv2_image):
         box_dict = {}
@@ -238,7 +239,7 @@ class OcrMovieAnalyzer:
                     box_dict[rta_box_key][rta_row_number] = []
                 box_dict[rta_box_key][rta_row_number].append(rta_id)
 
-        if self.debug:
+        if self.debug == 'everything':
             print('box dict: {}'.format(box_dict))
             self.draw_box_dict_entries(box_dict, cv2_image, rta_dict)
 
@@ -260,7 +261,7 @@ class OcrMovieAnalyzer:
             }
             apps[box_number] = app
 
-        if self.debug:
+        if self.debug == 'everything':
             print('all the apps {}'.format(apps))
 
         return apps
@@ -319,7 +320,7 @@ class OcrMovieAnalyzer:
             comp_app['bounding_box']
         )
 
-    def draw_apps(self, apps, cv2_image):
+    def draw_apps(self, apps, cv2_image, image_name):
         cv2_image_copy = cv2_image.copy()
         overlay = np.zeros(cv2_image.shape, np.uint8)
         for app_id in apps:
@@ -353,9 +354,10 @@ class OcrMovieAnalyzer:
             cv2_image_copy
         )
 
+        pic_name = image_name + '_apps.png'
         path = self.file_writer.build_file_fullpath_for_uuid_and_filename(
             self.debug_file_uuid,
-            'apps.png'
+            pic_name
         )
         cv2.imwrite(path, cv2_image_copy)
 

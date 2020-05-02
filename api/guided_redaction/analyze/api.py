@@ -1068,6 +1068,8 @@ class AnalyzeViewSetOcrMovieAnalysis(viewsets.ViewSet):
         movie_url = list(movies.keys())[0]
         frameset_hash = list(movies[movie_url]['framesets'].keys())[0]
         image_url = movies[movie_url]['framesets'][frameset_hash]['images'][0]
+        i2 = image_url.split('/')[-1]
+        image_name = i2.split('.')[0]
 
         pic_response = requests.get(
           image_url,
@@ -1094,7 +1096,7 @@ class AnalyzeViewSetOcrMovieAnalysis(viewsets.ViewSet):
         )
 
         ocr_movie_analyzer = OcrMovieAnalyzer(True, file_writer)
-        results = ocr_movie_analyzer.collect_one_frame(raw_rtas, cv2_image)
+        results = ocr_movie_analyzer.collect_one_frame(raw_rtas, cv2_image, image_name)
 
         return Response(results)
 
