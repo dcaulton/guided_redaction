@@ -17,6 +17,7 @@ class OcrMovieAnalyzer:
         self.max_header_height = 100
         self.max_header_vertical_separation = 10
         self.max_header_width_difference = 10
+        self.debug_file_uuid = ''
         if self.debug:
             if 'debug_directory' in meta:
                 self.debug_file_uuid = meta['debug_directory']

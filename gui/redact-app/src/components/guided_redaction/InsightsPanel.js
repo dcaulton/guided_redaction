@@ -588,9 +588,7 @@ class InsightsPanel extends React.Component {
     }
     job_data['app'] = 'analyze'
     job_data['operation'] = 'ocr_movie_analysis_threaded'
-    job_data['request_data']['meta'] = {
-      debug_level: extra_data['debug_level'],
-    }
+    job_data['request_data']['meta'] = extra_data
     if (job_type === 'ocr_movie_analysis_current_movie') {
       job_data['request_data']['movies'] = {}
       job_data['request_data']['movies'][this.props.movie_url] = this.props.movies[this.props.movie_url]

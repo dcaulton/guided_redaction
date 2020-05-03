@@ -965,10 +965,13 @@ def ocr_movie_analysis_threaded(job_uuid):
           job.save()
 
 def build_and_dispatch_ocr_movie_analysis_threaded_collect_one_frame_children(parent_job):
-    skip_frames = 10
     parent_job.status = 'running'
     parent_job.save()
     request_data = json.loads(parent_job.request_data)
+    if 'skip_frames' in request_data['meta']:
+        skip_frames = int(request_data['meta']['skip_frames'])
+    else:
+        skip_frames = 10
     if request_data['meta']['debug_level'] == 'normal':
         file_writer = FileWriter(
             working_dir=settings.REDACT_FILE_STORAGE_DIR,

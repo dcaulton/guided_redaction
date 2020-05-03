@@ -1,6 +1,7 @@
 import React from 'react';
 import {
   buildLabelAndDropdown,
+  buildLabelAndTextInput,
   makeHeaderRow,
   } from './SharedControls'
 
@@ -10,6 +11,7 @@ class OcrMovieAnalysisControls extends React.Component {
     super(props)
     this.state = {
       debug_level: '',
+      skip_frames: '10',
     }
   }
 
@@ -23,10 +25,15 @@ class OcrMovieAnalysisControls extends React.Component {
 
   buildRunButton() {
     if (Object.keys(this.props.movies).length === 0) {
-      return 'no movies to analyze'
+      return (
+        <div className='h3 font-italic'>
+          no movies to analyze
+        </div>
+      )
     }
     const job_params = {
       debug_level: this.state.debug_level,
+      skip_frames: this.state.skip_frames,
     }
     return (
       <div className='d-inline'>
@@ -71,6 +78,17 @@ class OcrMovieAnalysisControls extends React.Component {
     )
   }
 
+  buildSkipFrames() {
+    return buildLabelAndTextInput(
+      this.state.skip_frames,
+      'Skip Frames',
+      'oma_skip_frames',
+      'skip frames',
+      4,
+      ((value)=>{this.setLocalStateVar('skip_frames', value)})
+    )
+  }
+
   render() {
     if (!this.props.visibilityFlags['ocr_movie_analysis']) {
       return([])
@@ -83,6 +101,7 @@ class OcrMovieAnalysisControls extends React.Component {
     )
     const run_button = this.buildRunButton()
     const debug_level_dropdown = this.buildDebugLevelDropdown()
+    const skip_frames = this.buildSkipFrames()
     return (
         <div className='row bg-light rounded mt-3'>
           <div className='col'>
@@ -91,15 +110,19 @@ class OcrMovieAnalysisControls extends React.Component {
 
             <div 
                 id='oma_body' 
-                className='row collapse'
+                className='row collapse ml-1'
             >
               <div id='oma_main' className='col pb-2'>
 
-                <div id='row mt-2'>
+                <div className='row mt-2'>
                   {debug_level_dropdown}
                 </div>
 
-                <div id='row mt-2'>
+                <div className='row mt-2'>
+                  {skip_frames}
+                </div>
+
+                <div className='row mt-2'>
                   {run_button}
                 </div>
 
