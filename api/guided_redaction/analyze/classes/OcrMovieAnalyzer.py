@@ -12,11 +12,23 @@ class OcrMovieAnalyzer:
         self.debug = meta['debug_level']
         self.file_writer = file_writer
         self.min_app_width = 100
+        if 'min_app_width' in meta:
+            self.min_app_width = meta['min_app_width']
         self.min_app_height = 100
+        if 'min_app_height' in meta:
+            self.min_app_height = meta['min_app_height']
         self.max_rta_neighborhood_area = 1000 * 1000
+        if 'max_rta_neighborhood_area' in meta:
+            self.max_rta_neighborhood_area = meta['max_rta_neighborhood_area']
         self.max_header_height = 100
+        if 'max_header_height' in meta:
+            self.max_header_height = meta['max_header_height']
         self.max_header_vertical_separation = 10
+        if 'max_header_vertical_separation' in meta:
+            self.max_header_vertical_separation = meta['max_header_vertical_separation']
         self.max_header_width_difference = 10
+        if 'max_header_width_difference' in meta:
+            self.max_header_width_difference = meta['max_header_width_difference']
         self.debug_file_uuid = ''
         if self.debug:
             if 'debug_directory' in meta:

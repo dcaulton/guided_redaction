@@ -11,7 +11,13 @@ class OcrMovieAnalysisControls extends React.Component {
     super(props)
     this.state = {
       debug_level: '',
-      skip_frames: '10',
+      skip_frames: 10,
+      min_app_width: 100,
+      min_app_height: 100,
+      max_rta_neighborhood_area: 1000*1000,
+      max_header_height: 100,
+      max_header_vertical_separation:10,
+      max_header_width_difference: 10,
     }
   }
 
@@ -89,6 +95,72 @@ class OcrMovieAnalysisControls extends React.Component {
     )
   }
 
+  buildMaxHeaderHeight() {
+    return buildLabelAndTextInput(
+      this.state.max_header_height,
+      'Max Header Height',
+      'oma_max_header_height',
+      'max header height',
+      6,
+      ((value)=>{this.setLocalStateVar('max_header_height', value)})
+    )
+  }
+
+  buildMaxHeaderVerticalSeparation() {
+    return buildLabelAndTextInput(
+      this.state.max_header_vertical_separation,
+      'Max Header Vertical Separation',
+      'oma_max_header_vertical_separation',
+      'max header vertical separation',
+      6,
+      ((value)=>{this.setLocalStateVar('max_header_vertical_separation', value)})
+    )
+  }
+
+  buildMaxHeaderWidthDifference() {
+    return buildLabelAndTextInput(
+      this.state.max_header_width_difference,
+      'Max Header Width Difference',
+      'oma_max_header_width_difference',
+      'max header width difference',
+      6,
+      ((value)=>{this.setLocalStateVar('max_header_width_difference', value)})
+    )
+  }
+
+  buildMinAppWidth() {
+    return buildLabelAndTextInput(
+      this.state.min_app_width,
+      'Min App Width',
+      'oma_min_app_width',
+      'min app width',
+      6,
+      ((value)=>{this.setLocalStateVar('min_app_width', value)})
+    )
+  }
+
+  buildMinAppHeight() {
+    return buildLabelAndTextInput(
+      this.state.min_app_height,
+      'Min App Height',
+      'oma_min_app_height',
+      'min app height',
+      6,
+      ((value)=>{this.setLocalStateVar('min_app_height', value)})
+    )
+  }
+
+  buildMaxRtaNeighborhoodArea() {
+    return buildLabelAndTextInput(
+      this.state.max_rta_neighborhood_area,
+      'Max Rta Neighborhood Area',
+      'oma_max_rta_neighborhood_area',
+      'max rta neighborhood area',
+      12,
+      ((value)=>{this.setLocalStateVar('max_rta_neighborhood_area', value)})
+    )
+  }
+
   render() {
     if (!this.props.visibilityFlags['ocr_movie_analysis']) {
       return([])
@@ -102,6 +174,12 @@ class OcrMovieAnalysisControls extends React.Component {
     const run_button = this.buildRunButton()
     const debug_level_dropdown = this.buildDebugLevelDropdown()
     const skip_frames = this.buildSkipFrames()
+    const min_app_width = this.buildMinAppWidth()
+    const min_app_height = this.buildMinAppHeight()
+    const max_rta_neighborhood_area = this.buildMaxRtaNeighborhoodArea()
+    const max_header_height = this.buildMaxHeaderHeight()
+    const max_header_vertical_separation = this.buildMaxHeaderVerticalSeparation()
+    const max_header_width_difference = this.buildMaxHeaderWidthDifference()
     return (
         <div className='row bg-light rounded mt-3'>
           <div className='col'>
@@ -120,6 +198,30 @@ class OcrMovieAnalysisControls extends React.Component {
 
                 <div className='row mt-2'>
                   {skip_frames}
+                </div>
+
+                <div className='row mt-2'>
+                  {min_app_width}
+                </div>
+
+                <div className='row mt-2'>
+                  {min_app_height}
+                </div>
+
+                <div className='row mt-2'>
+                  {max_rta_neighborhood_area}
+                </div>
+
+                <div className='row mt-2'>
+                  {max_header_height}
+                </div>
+
+                <div className='row mt-2'>
+                  {max_header_vertical_separation}
+                </div>
+
+                <div className='row mt-2'>
+                  {max_header_width_difference}
                 </div>
 
                 <div className='row mt-2'>
