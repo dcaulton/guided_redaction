@@ -29,7 +29,7 @@ class OcrMovieAnalysisControls extends React.Component {
     when_done())
   }
 
-  buildRunButton() {
+  buildFirstRunButton() {
     if (Object.keys(this.props.movies).length === 0) {
       return (
         <div className='h3 font-italic'>
@@ -51,7 +51,7 @@ class OcrMovieAnalysisControls extends React.Component {
             area-haspopup='true'
             area-expanded='false'
         >
-          Run
+          First Scan
         </button>
         <div className='dropdown-menu' aria-labelledby='omaDropdownButton'>
           <button className='dropdown-item'
@@ -171,7 +171,7 @@ class OcrMovieAnalysisControls extends React.Component {
       'oma_body',
       (() => this.props.toggleShowVisibility('ocr_movie_analysis'))
     )
-    const run_button = this.buildRunButton()
+    const run_button = this.buildFirstRunButton()
     const debug_level_dropdown = this.buildDebugLevelDropdown()
     const skip_frames = this.buildSkipFrames()
     const min_app_width = this.buildMinAppWidth()

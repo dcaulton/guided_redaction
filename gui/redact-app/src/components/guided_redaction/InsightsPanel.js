@@ -582,20 +582,20 @@ class InsightsPanel extends React.Component {
     return job_data
   }
 
-  buildOmaJobData(job_type, extra_data) {
+  buildOmaFirstScanJobData(job_type, extra_data) {
     let job_data = {
       request_data: {},
     }
     job_data['app'] = 'analyze'
-    job_data['operation'] = 'ocr_movie_analysis_threaded'
+    job_data['operation'] = 'oma_first_scan_threaded'
     job_data['request_data']['meta'] = extra_data
     if (job_type === 'ocr_movie_analysis_current_movie') {
       job_data['request_data']['movies'] = {}
       job_data['request_data']['movies'][this.props.movie_url] = this.props.movies[this.props.movie_url]
-      job_data['description'] = 'ocr movie analysis on movie: ' + this.props.movie_url
+      job_data['description'] = 'ocr movie analysis first scan on movie: ' + this.props.movie_url
     } else if (job_type === 'ocr_movie_analysis_all_movies') {
       job_data['request_data']['movies'] = this.props.movies
-      job_data['description'] = 'ocr movie analysis on all movies'
+      job_data['description'] = 'ocr movie analysis first scan on all movies'
     }
     return job_data
   }
@@ -843,7 +843,7 @@ class InsightsPanel extends React.Component {
         job_string === 'ocr_movie_analysis_current_movie' ||
         job_string === 'ocr_movie_analysis_all_movies'
     ) {
-      let job_data = this.buildOmaJobData(job_string, extra_data)
+      let job_data = this.buildOmaFirstScanJobData(job_string, extra_data)
       this.props.submitJob({
         job_data: job_data,
       })

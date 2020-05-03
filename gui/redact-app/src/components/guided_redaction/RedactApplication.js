@@ -1067,6 +1067,31 @@ class RedactApplication extends React.Component {
     this.setGlobalStateVar('tier_1_matches', deepCopyTier1Matches)
   }
 
+  async loadOmaScanResults(job, when_done=(()=>{})) {
+    const response_data = JSON.parse(job.response_data)
+    if (!response_data) {
+      return
+    }
+    if (!Object.keys(response_data).includes('movies')) {
+      return
+    }
+    let something_changed = false
+    let movie_url = ''
+    let deepCopyMovies= JSON.parse(JSON.stringify(this.state.movies))
+    for (let i=0; i < Object.keys(response_data['movies']).length; i++) {
+      movie_url = Object.keys(response_data['movies'])[i]
+      deepCopyMovies[movie_url] = response_data['movies'][movie_url]
+      something_changed = true
+    }
+    if (something_changed) {
+      this.addMovieAndSetActive(
+        movie_url,
+        deepCopyMovies,
+        when_done,
+      )
+    }
+  }
+
   async loadOcrResults(job, when_done=(()=>{})) {
     const response_data = JSON.parse(job.response_data)
     if (!response_data) {
@@ -1691,6 +1716,8 @@ class RedactApplication extends React.Component {
         this.loadTelemetryResults(job, when_done)
 			} else if (job.app === 'analyze' && job.operation === 'ocr_scene_analysis_threaded') {
         this.loadOcrSceneAnalysisResults(job, when_done)
+			} else if (job.app === 'analyze' && job.operation === 'oma_first_scan_threaded') {
+        this.loadOmaScanResults(job, when_done)
 			} else if (job.app === 'analyze' && job.operation === 'selected_area_threaded') {
         this.loadSelectedAreaResults(job, when_done)
 			} else if ((job.app === 'parse' && job.operation === 'split_and_hash_threaded')) {

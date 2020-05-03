@@ -29,13 +29,11 @@ class OcrMovieAnalyzer:
         self.max_header_width_difference = 10
         if 'max_header_width_difference' in meta:
             self.max_header_width_difference = meta['max_header_width_difference']
-        self.debug_file_uuid = ''
-        if self.debug:
-            if 'debug_directory' in meta:
-                self.debug_file_uuid = meta['debug_directory']
-            else:
-                self.debug_file_uuid = str(uuid.uuid4())
-                self.file_writer.create_unique_directory(self.debug_file_uuid)
+        if 'debug_directory' in meta:
+            self.debug_file_uuid = meta['debug_directory']
+        else:
+            self.debug_file_uuid = str(uuid.uuid4())
+            self.file_writer.create_unique_directory(self.debug_file_uuid)
 
     def collect_one_frame(self, raw_rtas, cv2_image, image_name):
         # put rtas into a dict for easier access
@@ -73,14 +71,14 @@ class OcrMovieAnalyzer:
         # filter out singleton apps and those with small bounding boxes
         self.filter_out_weak_apps(apps)
 
-        if self.debug:
-            self.draw_apps(apps, rta_dict, cv2_image, image_name)
+        apps_image_url = self.draw_apps(apps, rta_dict, cv2_image, image_name)
 
         return_obj = {
             'apps': apps,
             'rta_dict': rta_dict,
             'sorted_rta_ids': sorted_rta_ids,
             'debug_directory': self.debug_file_uuid,
+            'apps_image_url': apps_image_url,
         }
 
         return return_obj
@@ -387,19 +385,21 @@ class OcrMovieAnalyzer:
                     )
         cv2_image_copy = cv2.addWeighted(
             cv2_image_copy, 
-            .75, 
-            overlay, 
             .25, 
+            overlay, 
+            .75, 
             0,
             cv2_image_copy
         )
 
         pic_name = image_name + '_apps.png'
-        path = self.file_writer.build_file_fullpath_for_uuid_and_filename(
+        file_fullpath = self.file_writer.build_file_fullpath_for_uuid_and_filename(
             self.debug_file_uuid,
             pic_name
         )
-        cv2.imwrite(path, cv2_image_copy)
+        cv2.imwrite(file_fullpath, cv2_image_copy)
+        apps_image_url = self.file_writer.get_url_for_file_path(file_fullpath)
+        return apps_image_url
 
     def draw_box_dict_entries(self, box_dict, cv2_image, rta_dict):
         for box_count, box_key in enumerate(box_dict):
@@ -422,9 +422,9 @@ class OcrMovieAnalyzer:
             )
             cv2_image_copy = cv2.addWeighted(
                 cv2_image_copy, 
-                .75, 
+                .60, 
                 overlay, 
-                .25, 
+                .40, 
                 0,
                 cv2_image_copy
             )
@@ -454,6 +454,7 @@ class OcrMovieAnalyzer:
                 'box_dict_{}.png'.format(box_count)
             )
             cv2.imwrite(path, cv2_image_copy)
+
 
     def areas_overlap_by_minimum(self, region_1, region_2, cv2_image):
         # if region 1s start and end points are not within region 2, and

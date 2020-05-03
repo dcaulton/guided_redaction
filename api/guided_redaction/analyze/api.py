@@ -1059,9 +1059,9 @@ class AnalyzeViewSetOcrSceneAnalysis(viewsets.ViewSet):
 class AnalyzeViewSetOcrMovieAnalysis(viewsets.ViewSet):
     def create(self, request):
         request_data = request.data
-        return self.process_collect_one_frame_request(request_data)
+        return self.process_first_scan(request_data)
 
-    def process_collect_one_frame_request(self, request_data):
+    def process_first_scan_request(self, request_data):
         if not request_data.get("movies"):
             return self.error("movies is required", status_code=400)
         if not request_data.get("meta"):
@@ -1086,13 +1086,12 @@ class AnalyzeViewSetOcrMovieAnalysis(viewsets.ViewSet):
             base_url=settings.REDACT_FILE_BASE_URL,
             image_request_verify_headers=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
         )
-        analyzer = EastPlusTessGuidedAnalyzer()
+        analyzer = EastPlusTessGuidedAnalyzer(debug=request_data['meta']['debug_level'])
         nparr = np.fromstring(image, np.uint8)
         cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
         start = (0, 0)
         end = (cv2_image.shape[1], cv2_image.shape[0])
 
-        print('============ oma frameset name is {}'.format(image_url))
         raw_rtas = analyzer.analyze_text(
             cv2_image, [start, end]
         )
