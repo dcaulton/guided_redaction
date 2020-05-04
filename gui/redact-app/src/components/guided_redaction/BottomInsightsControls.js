@@ -312,6 +312,9 @@ class BottomInsightsControls extends React.Component {
           submitInsightsJob={this.props.submitInsightsJob}
           movies={this.props.movies}
           jobs={this.props.jobs}
+          handleSetMode={this.props.handleSetMode}
+          addInsightsCallback={this.props.addInsightsCallback}
+          movie_url={this.props.movie_url}
         />
 
         <FilesystemControls

@@ -595,6 +595,9 @@ class InsightsPanel extends React.Component {
       job_data['description'] = 'ocr movie analysis first scan on movie: ' + this.props.movie_url
     } else if (job_type === 'ocr_movie_analysis_all_movies') {
       job_data['request_data']['movies'] = this.props.movies
+      if ('first_scan_apps' in Object.keys(this.props.movies)) {
+        delete job_data['request_data']['movies']['first_scan_apps']
+      }
       job_data['description'] = 'ocr movie analysis first scan on all movies'
     }
     return job_data
@@ -1012,6 +1015,8 @@ class InsightsPanel extends React.Component {
       the_message = 'pick the second corner of the text area'
     } else if (the_mode === 'scan_ocr_2') {
       the_message = 'click second corner'
+    } else if (the_mode === 'oma_pick_app') {
+      the_message = 'select the app'
     }
     this.setState({
       mode: the_mode,

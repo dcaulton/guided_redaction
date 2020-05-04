@@ -20,7 +20,18 @@ class OcrMovieAnalysisControls extends React.Component {
       max_header_vertical_separation:10,
       max_header_width_difference: 10,
       first_run_job_id: '',
+      apps: {},
     }
+    this.addAppCallback=this.addAppCallback.bind(this)
+  }
+
+  componentDidMount() {
+    this.props.addInsightsCallback('oma_pick_app', this.getCurrentAnchors)
+  }
+
+  addAppCallback(clicked_coords) {
+    const app_id = 'app_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
+console.log('adding an app')
   }
 
   setLocalStateVar(var_name, var_value, when_done=(()=>{})) {
@@ -32,6 +43,9 @@ class OcrMovieAnalysisControls extends React.Component {
   }
 
   buildFirstRunButton() {
+    if (this.props.movie_url === 'first_scan_apps') {
+      return
+    }
     const job_params = {
       debug_level: this.state.debug_level,
       skip_frames: this.state.skip_frames,
@@ -224,6 +238,28 @@ class OcrMovieAnalysisControls extends React.Component {
     )
   }
 
+  buildPickAppButton() {
+    if (this.props.movie_url !== 'first_scan_apps') {
+      return
+    }
+    return (
+      <button
+          className='btn btn-primary ml-2 mt-2'
+          onClick={() => this.props.handleSetMode('oma_pick_app')}
+      >
+        Pick App
+      </button>
+    )
+  }
+
+  buildApsPanel() {
+    return (
+      <div>
+        APPS:
+      </div>
+    )
+  }
+
   buildRescanPanel() {
     const rescan_header = this.buildRescanHeader()
     const eligible_jobs = this.getEligibleRescanJobs()
@@ -247,12 +283,14 @@ class OcrMovieAnalysisControls extends React.Component {
     const max_header_height = this.buildMaxHeaderHeight()
     const max_header_vertical_separation = this.buildMaxHeaderVerticalSeparation()
     const max_header_width_difference = this.buildMaxHeaderWidthDifference()
+    const pick_app_button = this.buildPickAppButton()
+    const apps_panel = this.buildApsPanel()
     return (
       <div>
         {rescan_header}
 
         <p>
-          Rescanning will apply the following parameters, as well as what you have selected
+          Rescanning will apply the following parameters, as well as the apps you have selected
           from the frames, to the fields detected by the OCR from some OMA first run, as identified 
           by First Scan Job Id
         </p>
@@ -286,8 +324,17 @@ class OcrMovieAnalysisControls extends React.Component {
         </div>
 
         <div className='row mt-2'>
+          {apps_panel}
+        </div>
+
+        <div className='row mt-2'>
+          {pick_app_button}
+        </div>
+
+        <div className='row mt-2'>
           {rescan_button}
         </div>
+
       </div>
     )
   }

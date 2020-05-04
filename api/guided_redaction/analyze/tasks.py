@@ -938,12 +938,6 @@ def ocr_movie_analysis_condense_all_frames(job_uuid):
     job.status = 'success'
     job.save()
 
-# TODO when this works uncomment and make it so it won't just loop here
-#    if job.parent_id:
-#        parent_job = Job.objects.get(pk=job.parent_id)
-#        if parent_job.app == 'analyze' and parent_job.operation == 'ocr_movie_analysis_threaded':
-#            ocr_movie_analysis_threaded.delay(parent_job.id)
-
 @shared_task
 def oma_first_scan_threaded(job_uuid):
     if Job.objects.filter(pk=job_uuid).exists():
@@ -1013,6 +1007,13 @@ def build_and_dispatch_oma_first_scan_threaded_children(parent_job):
                 oma_first_scan_threaded.delay(parent_job.id)
         oma_first_scan_threaded.delay(parent_job.id)
 
+def get_image_url_from_request(request_obj):
+    if 'movies' in request_obj:
+        movie_url = list(request_obj['movies'].keys())[0]
+        frameset_hash = list(request_obj['movies'][movie_url]['framesets'].keys())[0]
+        image_url = request_obj['movies'][movie_url]['framesets'][frameset_hash]['images'][0]
+        return image_url
+
 def wrap_up_oma_first_scan_threaded(parent_job, children):
     aggregate_response_data = {
       'movies': {},
@@ -1026,8 +1027,10 @@ def wrap_up_oma_first_scan_threaded(parent_job, children):
     for child_counter, child in enumerate(children):
          child_response = json.loads(child.response_data)
          image_url = child_response['apps_image_url']
+         source_image_url = get_image_url_from_request(json.loads(child.request_data))
          build_frameset = {
              'images': [image_url],
+             'source_image': source_image_url,
          }
          build_movie['frames'].append(image_url)
          build_movie['framesets'][child_counter] = build_frameset
