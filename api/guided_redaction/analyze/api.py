@@ -1068,10 +1068,16 @@ class AnalyzeViewSetOcrMovieAnalysis(viewsets.ViewSet):
             return self.error("meta is required", status_code=400)
         movies = request_data['movies']
         movie_url = list(movies.keys())[0]
+        i1 = movie_url.split('/')[-1]
+        movie_uuid = i1.split('.')[0]
         frameset_hash = list(movies[movie_url]['framesets'].keys())[0]
         image_url = movies[movie_url]['framesets'][frameset_hash]['images'][0]
         i2 = image_url.split('/')[-1]
         image_name = i2.split('.')[0]
+        file_name_fields = {
+            'movie_uuid': movie_uuid,
+            'image_name': image_name,
+        }
 
         pic_response = requests.get(
           image_url,
@@ -1097,7 +1103,7 @@ class AnalyzeViewSetOcrMovieAnalysis(viewsets.ViewSet):
         )
 
         ocr_movie_analyzer = OcrMovieAnalyzer(request_data['meta'], file_writer)
-        results = ocr_movie_analyzer.collect_one_frame(raw_rtas, cv2_image, image_name)
+        results = ocr_movie_analyzer.collect_one_frame(raw_rtas, cv2_image, file_name_fields)
 
         return Response(results)
 

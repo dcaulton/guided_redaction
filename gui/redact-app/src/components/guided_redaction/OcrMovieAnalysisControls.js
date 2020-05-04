@@ -32,13 +32,6 @@ class OcrMovieAnalysisControls extends React.Component {
   }
 
   buildFirstRunButton() {
-    if (Object.keys(this.props.movies).length === 0) {
-      return (
-        <div className='h3 font-italic'>
-          no movies to analyze
-        </div>
-      )
-    }
     const job_params = {
       debug_level: this.state.debug_level,
       skip_frames: this.state.skip_frames,
@@ -90,7 +83,7 @@ class OcrMovieAnalysisControls extends React.Component {
     )
   }
 
-  buildOmaFirstRunJobSelector() {
+  getEligibleRescanJobs() {
     let eligible_jobs = []
     for (let i=0; i < this.props.jobs.length; i++) {
       const job = this.props.jobs[i]
@@ -98,6 +91,11 @@ class OcrMovieAnalysisControls extends React.Component {
         eligible_jobs.push(job)
       }
     }
+    return eligible_jobs
+  }
+
+  buildRescanJobSelector() {
+    const eligible_jobs = this.getEligibleRescanJobs()
 
     return (
       <div>
@@ -214,6 +212,118 @@ class OcrMovieAnalysisControls extends React.Component {
     )
   }
 
+  buildRescanHeader() {
+    return (
+      <div className='row border-top border-bottom mt-4 mb-2 h5'>
+        <div className='col-lg-2'>
+        </div>
+        <div className='col-lg-9 pt-2 pb-2'>
+          rescan
+        </div>
+      </div>
+    )
+  }
+
+  buildRescanPanel() {
+    const rescan_header = this.buildRescanHeader()
+    const eligible_jobs = this.getEligibleRescanJobs()
+    if (eligible_jobs.length === 0) {
+      return (
+        <div>
+          {rescan_header}
+
+          <div className='h3 font-italic'>
+            no jobs to rescan
+          </div>
+        </div>
+      )
+    }
+
+    const first_run_job_selector = this.buildRescanJobSelector()
+    const rescan_button = this.buildRescanButton()
+    const min_app_width = this.buildMinAppWidth()
+    const min_app_height = this.buildMinAppHeight()
+    const max_rta_neighborhood_area = this.buildMaxRtaNeighborhoodArea()
+    const max_header_height = this.buildMaxHeaderHeight()
+    const max_header_vertical_separation = this.buildMaxHeaderVerticalSeparation()
+    const max_header_width_difference = this.buildMaxHeaderWidthDifference()
+    return (
+      <div>
+        {rescan_header}
+
+        <p>
+          Rescanning will apply the following parameters, as well as what you have selected
+          from the frames, to the fields detected by the OCR from some OMA first run, as identified 
+          by First Scan Job Id
+        </p>
+
+        <div className='row mt-2'>
+          {min_app_width}
+        </div>
+
+        <div className='row mt-2'>
+          {min_app_height}
+        </div>
+
+        <div className='row mt-2'>
+          {max_rta_neighborhood_area}
+        </div>
+
+        <div className='row mt-2'>
+          {max_header_height}
+        </div>
+
+        <div className='row mt-2'>
+          {max_header_vertical_separation}
+        </div>
+
+        <div className='row mt-2'>
+          {max_header_width_difference}
+        </div>
+
+        <div className='row mt-2'>
+          {first_run_job_selector}
+        </div>
+
+        <div className='row mt-2'>
+          {rescan_button}
+        </div>
+      </div>
+    )
+  }
+
+  buildFirstScanPanel() {
+    if (Object.keys(this.props.movies).length === 0) {
+      return (
+        <div className='h3 font-italic'>
+          no movies to analyze
+        </div>
+      )
+    }
+    const skip_frames = this.buildSkipFrames()
+    const first_run_button = this.buildFirstRunButton()
+    return (
+      <div 
+          id='oma_first_run_div'
+          className='collapse show'
+      >
+        <p>
+          The first run processes OCR against all the (nonskipped) frames and applies 
+          the OMA rules a first time.  Due to the fact that it's OCR, it
+          will run much slower than subsequent Rescans. 
+        </p>
+
+        <div className='row mt-2'>
+          {skip_frames}
+        </div>
+
+        <div className='row mt-2'>
+          {first_run_button}
+        </div>
+      </div>
+    )
+  }
+
   render() {
     if (!this.props.visibilityFlags['ocr_movie_analysis']) {
       return([])
@@ -224,18 +334,10 @@ class OcrMovieAnalysisControls extends React.Component {
       'oma_body',
       (() => this.props.toggleShowVisibility('ocr_movie_analysis'))
     )
-    const first_run_button = this.buildFirstRunButton()
-    const rescan_button = this.buildRescanButton()
     const debug_level_dropdown = this.buildDebugLevelDropdown()
-    const skip_frames = this.buildSkipFrames()
-    const min_app_width = this.buildMinAppWidth()
-    const min_app_height = this.buildMinAppHeight()
-    const max_rta_neighborhood_area = this.buildMaxRtaNeighborhoodArea()
-    const max_header_height = this.buildMaxHeaderHeight()
-    const max_header_vertical_separation = this.buildMaxHeaderVerticalSeparation()
-    const max_header_width_difference = this.buildMaxHeaderWidthDifference()
     const show_hide_first_run = makePlusMinusRowLight('first run', 'oma_first_run_div')
-    const first_run_job_selector = this.buildOmaFirstRunJobSelector()
+    const first_scan_panel = this.buildFirstScanPanel()
+    const rescan_panel = this.buildRescanPanel()
     return (
         <div className='row bg-light rounded mt-3'>
           <div className='col'>
@@ -253,71 +355,9 @@ class OcrMovieAnalysisControls extends React.Component {
                 </div>
 
                 {show_hide_first_run}
-                <div 
-                    id='oma_first_run_div'
-                    className='collapse show'
-                >
-                  <p>
-                    The first run processes OCR against all the (nonskipped) frames and applies 
-                    the OMA rules a first time.  Due to the fact that it's OCR, it
-                    will run much slower than subsequent Rescans. 
-                  </p>
+                {first_scan_panel}
 
-                  <div className='row mt-2'>
-                    {skip_frames}
-                  </div>
-
-                  <div className='row mt-2'>
-                    {first_run_button}
-                  </div>
-
-                </div>
-
-                <div className='row border-top border-bottom mt-4 mb-2 h5'>
-                  <div className='col-lg-2'>
-                  </div>
-                  <div className='col-lg-9 pt-2 pb-2'>
-                    rescan
-                  </div>
-                </div>
-
-                <p>
-                  Rescanning will apply the following parameters, as well as what you have selected
-                  from the frames, to the fields detected by the OCR from some OMA first run, as identified 
-                  by First Scan Job Id
-                </p>
-
-                <div className='row mt-2'>
-                  {min_app_width}
-                </div>
-
-                <div className='row mt-2'>
-                  {min_app_height}
-                </div>
-
-                <div className='row mt-2'>
-                  {max_rta_neighborhood_area}
-                </div>
-
-                <div className='row mt-2'>
-                  {max_header_height}
-                </div>
-
-                <div className='row mt-2'>
-                  {max_header_vertical_separation}
-                </div>
-
-                <div className='row mt-2'>
-                  {max_header_width_difference}
-                </div>
-
-                <div className='row mt-2'>
-                  {first_run_job_selector}
-                </div>
-
-                <div className='row mt-2'>
-                  {rescan_button}
-                </div>
+                {rescan_panel}
 
               </div>
             </div>

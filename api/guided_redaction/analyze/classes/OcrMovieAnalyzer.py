@@ -35,7 +35,7 @@ class OcrMovieAnalyzer:
             self.debug_file_uuid = str(uuid.uuid4())
             self.file_writer.create_unique_directory(self.debug_file_uuid)
 
-    def collect_one_frame(self, raw_rtas, cv2_image, image_name):
+    def collect_one_frame(self, raw_rtas, cv2_image, file_name_fields):
         # put rtas into a dict for easier access
         rta_dict = {}
         for rta in raw_rtas:
@@ -71,7 +71,7 @@ class OcrMovieAnalyzer:
         # filter out singleton apps and those with small bounding boxes
         self.filter_out_weak_apps(apps)
 
-        apps_image_url = self.draw_apps(apps, rta_dict, cv2_image, image_name)
+        apps_image_url = self.draw_apps(apps, rta_dict, cv2_image, file_name_fields)
 
         return_obj = {
             'apps': apps,
@@ -347,7 +347,7 @@ class OcrMovieAnalyzer:
             comp_app['bounding_box']
         )
 
-    def draw_apps(self, apps, rta_dict, cv2_image, image_name):
+    def draw_apps(self, apps, rta_dict, cv2_image, file_name_fields):
         cv2_image_copy = cv2_image.copy()
         overlay = np.zeros(cv2_image.shape, np.uint8)
         for app_id in apps:
@@ -392,7 +392,9 @@ class OcrMovieAnalyzer:
             cv2_image_copy
         )
 
-        pic_name = image_name + '_apps.png'
+        pic_name = file_name_fields['movie_uuid'] + '_' + \
+            file_name_fields['image_name'] + '_' + \
+            '_apps.png'
         file_fullpath = self.file_writer.build_file_fullpath_for_uuid_and_filename(
             self.debug_file_uuid,
             pic_name

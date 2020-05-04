@@ -1021,7 +1021,7 @@ def wrap_up_oma_first_scan_threaded(parent_job, children):
       'sorted_rtas': {},
     }
     print('wrap_up_oma_first_scan_threaded: wrapping up parent job')
-    children = Job.objects.filter(parent=parent_job)
+    children = Job.objects.filter(parent=parent_job).order_by('created_on')
     build_movie = {'framesets':{}, 'frames': []}
     for child_counter, child in enumerate(children):
          child_response = json.loads(child.response_data)

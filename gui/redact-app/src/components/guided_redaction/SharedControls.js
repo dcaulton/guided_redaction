@@ -163,6 +163,32 @@ export function makePlusMinusRow(label, body_id) {
   )
 }
 
+export function makePlusMinusRowLight(label, body_id) {
+  const datatarget = '#' + body_id
+  return (
+    <div className='row mt-2 mb-2 border-top border-bottom'>
+      <div className='col-lg-2' />
+      <div
+        className='col-lg-9 mt-2 h5'
+      >
+        {label}
+      </div>
+      <div className='col-lg-1'>
+        <button
+            className='btn btn-link'
+            aria-expanded='true'
+            data-target={datatarget}
+            aria-controls={body_id}
+            data-toggle='collapse'
+            type='button'
+        >
+          +/-
+        </button>
+      </div>
+    </div> 
+  )
+}
+
 export function makeHeaderRow(label, body_id, show_visibility_callback=(()=>{})) {
   const datatarget = '#' + body_id
   return (
