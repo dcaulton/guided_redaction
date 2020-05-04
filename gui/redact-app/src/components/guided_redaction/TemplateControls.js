@@ -776,7 +776,7 @@ class TemplateControls extends React.Component {
     )
 
     return (
-        <div className='row bg-light rounded'>
+        <div className='row bg-light rounded mt-3'>
           <div className='col'>
 
             {header_row}

@@ -2,6 +2,7 @@ import React from 'react';
 import {
   buildLabelAndDropdown,
   buildLabelAndTextInput,
+  makePlusMinusRowLight,
   makeHeaderRow,
   } from './SharedControls'
 
@@ -18,6 +19,7 @@ class OcrMovieAnalysisControls extends React.Component {
       max_header_height: 100,
       max_header_vertical_separation:10,
       max_header_width_difference: 10,
+      first_run_job_id: '',
     }
   }
 
@@ -51,7 +53,7 @@ class OcrMovieAnalysisControls extends React.Component {
             area-haspopup='true'
             area-expanded='false'
         >
-          First Scan
+          Process First Scan
         </button>
         <div className='dropdown-menu' aria-labelledby='omaDropdownButton'>
           <button className='dropdown-item'
@@ -64,6 +66,57 @@ class OcrMovieAnalysisControls extends React.Component {
           >
             All Movies
           </button>
+        </div>
+      </div>
+    )
+  }
+
+  buildAndSubmitRescanJob() {
+    console.log('submitting rescan job')
+//              this.props.submitInsightsJob('ocr_movie_analysis_all_movies', job_params)
+  }
+
+  buildRescanButton() {
+    if (!this.state.first_run_job_id) {
+      return
+    }
+    return (
+      <button
+          className='btn btn-primary ml-2 mt-2'
+          onClick={() => this.buildAndSubmitRescanJob()}
+      >
+        Rescan
+      </button>
+    )
+  }
+
+  buildOmaFirstRunJobSelector() {
+    let eligible_jobs = []
+    for (let i=0; i < this.props.jobs.length; i++) {
+      const job = this.props.jobs[i]
+      if (job['operation'] === 'oma_first_scan_threaded') {
+        eligible_jobs.push(job)
+      }
+    }
+
+    return (
+      <div>
+        <div className='d-inline'>
+          First Scan Job Id
+        </div>
+        <div className='d-inline ml-2'>
+          <select
+              name='oma_first_scan_job'
+              value={this.state.first_run_job_id}
+              onChange={(event) => this.setLocalStateVar('first_run_job_id', event.target.value)}
+          >
+            <option value=''></option>
+            {eligible_jobs.map((job, index) => {
+              return (
+                <option value={job['id']} key={index}>{job['id']}</option>
+              )
+            })}
+          </select>
         </div>
       </div>
     )
@@ -171,7 +224,8 @@ class OcrMovieAnalysisControls extends React.Component {
       'oma_body',
       (() => this.props.toggleShowVisibility('ocr_movie_analysis'))
     )
-    const run_button = this.buildFirstRunButton()
+    const first_run_button = this.buildFirstRunButton()
+    const rescan_button = this.buildRescanButton()
     const debug_level_dropdown = this.buildDebugLevelDropdown()
     const skip_frames = this.buildSkipFrames()
     const min_app_width = this.buildMinAppWidth()
@@ -180,6 +234,8 @@ class OcrMovieAnalysisControls extends React.Component {
     const max_header_height = this.buildMaxHeaderHeight()
     const max_header_vertical_separation = this.buildMaxHeaderVerticalSeparation()
     const max_header_width_difference = this.buildMaxHeaderWidthDifference()
+    const show_hide_first_run = makePlusMinusRowLight('first run', 'oma_first_run_div')
+    const first_run_job_selector = this.buildOmaFirstRunJobSelector()
     return (
         <div className='row bg-light rounded mt-3'>
           <div className='col'>
@@ -188,7 +244,7 @@ class OcrMovieAnalysisControls extends React.Component {
 
             <div 
                 id='oma_body' 
-                className='row collapse ml-1'
+                className='row collapse ml-1 mr-1'
             >
               <div id='oma_main' className='col pb-2'>
 
@@ -196,9 +252,40 @@ class OcrMovieAnalysisControls extends React.Component {
                   {debug_level_dropdown}
                 </div>
 
-                <div className='row mt-2'>
-                  {skip_frames}
+                {show_hide_first_run}
+                <div 
+                    id='oma_first_run_div'
+                    className='collapse show'
+                >
+                  <p>
+                    The first run processes OCR against all the (nonskipped) frames and applies 
+                    the OMA rules a first time.  Due to the fact that it's OCR, it
+                    will run much slower than subsequent Rescans. 
+                  </p>
+
+                  <div className='row mt-2'>
+                    {skip_frames}
+                  </div>
+
+                  <div className='row mt-2'>
+                    {first_run_button}
+                  </div>
+
                 </div>
+
+                <div className='row border-top border-bottom mt-4 mb-2 h5'>
+                  <div className='col-lg-2'>
+                  </div>
+                  <div className='col-lg-9 pt-2 pb-2'>
+                    rescan
+                  </div>
+                </div>
+
+                <p>
+                  Rescanning will apply the following parameters, as well as what you have selected
+                  from the frames, to the fields detected by the OCR from some OMA first run, as identified 
+                  by First Scan Job Id
+                </p>
 
                 <div className='row mt-2'>
                   {min_app_width}
@@ -225,7 +312,11 @@ class OcrMovieAnalysisControls extends React.Component {
                 </div>
 
                 <div className='row mt-2'>
-                  {run_button}
+                  {first_run_job_selector}
+                </div>
+
+                <div className='row mt-2'>
+                  {rescan_button}
                 </div>
 
               </div>

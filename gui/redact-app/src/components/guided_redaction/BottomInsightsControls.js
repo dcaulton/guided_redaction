@@ -311,6 +311,7 @@ class BottomInsightsControls extends React.Component {
           toggleShowVisibility={this.props.toggleShowVisibility}
           submitInsightsJob={this.props.submitInsightsJob}
           movies={this.props.movies}
+          jobs={this.props.jobs}
         />
 
         <FilesystemControls
