@@ -315,6 +315,12 @@ class BottomInsightsControls extends React.Component {
           handleSetMode={this.props.handleSetMode}
           addInsightsCallback={this.props.addInsightsCallback}
           movie_url={this.props.movie_url}
+          insights_image={this.props.insights_image}
+          getFramesetHashForImageUrl={this.props.getFramesetHashForImageUrl}
+          setInsightsImage={this.props.setInsightsImage}
+          setGlobalStateVar={this.props.setGlobalStateVar}
+          tier_1_scanners={this.props.tier_1_scanners}
+          tier_1_scanner_current_ids={this.props.tier_1_scanner_current_ids}
         />
 
         <FilesystemControls

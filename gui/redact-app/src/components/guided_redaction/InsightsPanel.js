@@ -46,6 +46,7 @@ class InsightsPanel extends React.Component {
     }
     this.getAnnotations=this.getAnnotations.bind(this)
     this.setCurrentVideo=this.setCurrentVideo.bind(this)
+    this.setInsightsImage=this.setInsightsImage.bind(this)
     this.movieSplitDone=this.movieSplitDone.bind(this)
     this.scrubberOnChange=this.scrubberOnChange.bind(this)
     this.handleSetMode=this.handleSetMode.bind(this)
@@ -1062,6 +1063,12 @@ class InsightsPanel extends React.Component {
     this.props.setActiveMovie(video_url, this.movieSplitDone)
   }
 
+  setInsightsImage(image_url, when_done=(()=>{})) {
+    this.setState({
+      insights_image: image_url,
+    })
+  }
+
   handleImageClick = (e) => {
     const x = e.nativeEvent.offsetX
     const y = e.nativeEvent.offsetY
@@ -1451,6 +1458,7 @@ class InsightsPanel extends React.Component {
             getFramesetHashesInOrder={this.props.getFramesetHashesInOrder}
             movies={this.props.movies}
             setCurrentVideo={this.setCurrentVideo}
+            setInsightsImage={this.setInsightsImage}
             saveScannerToDatabase={this.props.saveScannerToDatabase}
             scanners={this.props.scanners}
             getScanners={this.props.getScanners}

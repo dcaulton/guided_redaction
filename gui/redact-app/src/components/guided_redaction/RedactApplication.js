@@ -66,6 +66,7 @@ class RedactApplication extends React.Component {
       tier_1_scanners: {
         'ocr': {},
         'ocr_scene_analysis': {},
+        'ocr_movie_analysis': {},
         'template': {},
         'telemetry': {},
         'selected_area': {},
@@ -73,6 +74,7 @@ class RedactApplication extends React.Component {
       tier_1_scanner_current_ids: {
         'ocr': '',
         'ocr_scene_analysis': '',
+        'ocr_movie_analysis': '',
         'template': '',
         'telemetry': '',
         'selected_area': '',
@@ -80,6 +82,7 @@ class RedactApplication extends React.Component {
       tier_1_matches: {
         'ocr': {},
         'ocr_scene_analysis': {},
+        'ocr_movie_analysis': {},
         'template': {},
         'telemetry': {},
         'selected_area': {},

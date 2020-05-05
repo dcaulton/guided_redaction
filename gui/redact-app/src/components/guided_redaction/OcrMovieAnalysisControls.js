@@ -11,6 +11,8 @@ class OcrMovieAnalysisControls extends React.Component {
   constructor(props) {
     super(props)
     this.state = {
+      id: '',
+      name: '',
       debug_level: '',
       skip_frames: 10,
       min_app_width: 100,
@@ -21,8 +23,32 @@ class OcrMovieAnalysisControls extends React.Component {
       max_header_width_difference: 10,
       first_run_job_id: '',
       apps: {},
+      attributes: {},
+      unsaved_changes: false,
     }
     this.addAppCallback=this.addAppCallback.bind(this)
+    this.setLocalStateVar=this.setLocalStateVar.bind(this)
+    this.getOcrMovieAnalysisRuleFromState=this.getOcrMovieAnalysisRuleFromState.bind(this)
+    this.setLocalStateVarNoWarning=this.setLocalStateVarNoWarning.bind(this)
+  }
+
+  getOcrMovieAnalysisRuleFromState() {
+    const oma_rule = {
+      id: this.state.id,
+      name: this.state.name,
+      debug_level: this.state.debug_level,
+      skip_frames: this.state.skip_frames,
+      min_app_width: this.state.min_app_width,
+      min_app_height: this.state.min_app_height,
+      max_rta_neighborhood_area: this.state.max_rta_neighborhood_area,
+      max_header_height: this.state.max_header_height,
+      max_header_vertical_separation: this.state.max_header_vertical_separation,
+      max_header_width_difference: this.state.max_header_width_difference,
+      first_run_job_id: this.state.first_run_job_id,
+      apps: this.state.apps,
+      attributes: this.state.attributes,
+    }
+    return oma_rule
   }
 
   componentDidMount() {
@@ -30,7 +56,7 @@ class OcrMovieAnalysisControls extends React.Component {
   }
 
   addAppCallback(clicked_coords) {
-    const app_id = 'app_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
+//    const app_id = 'app_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
 console.log('adding an app')
   }
 
@@ -38,6 +64,14 @@ console.log('adding an app')
     this.setState({
       [var_name]: var_value,
       unsaved_changes: true,
+    },
+    when_done())
+  }
+
+  setLocalStateVarNoWarning(var_name, var_value, when_done=(()=>{})) {
+    this.setState({
+      [var_name]: var_value,
+      unsaved_changes: false,
     },
     when_done())
   }
@@ -260,6 +294,25 @@ console.log('adding an app')
     )
   }
 
+  showOriginalImage() {
+    console.log('showing original image')
+    const cur_hash = this.props.getFramesetHashForImageUrl(this.props.insights_image)
+    const frameset = this.props.movies[this.props.movie_url]['framesets'][cur_hash]
+    const source_image = frameset['source_image']
+    this.props.setInsightsImage(source_image)
+  }
+
+  buildShowOriginalImageButton() {
+    return (
+      <button
+          className='btn btn-primary ml-2 mt-2'
+          onClick={() => this.showOriginalImage()}
+      >
+        Show Original Image
+      </button>
+    )
+  }
+
   buildRescanPanel() {
     const rescan_header = this.buildRescanHeader()
     const eligible_jobs = this.getEligibleRescanJobs()
@@ -285,6 +338,7 @@ console.log('adding an app')
     const max_header_width_difference = this.buildMaxHeaderWidthDifference()
     const pick_app_button = this.buildPickAppButton()
     const apps_panel = this.buildApsPanel()
+    const show_original_image_button = this.buildShowOriginalImageButton()
     return (
       <div>
         {rescan_header}
@@ -294,6 +348,10 @@ console.log('adding an app')
           from the frames, to the fields detected by the OCR from some OMA first run, as identified 
           by First Scan Job Id
         </p>
+
+        <div className='row mt-2'>
+          {show_original_image_button}
+        </div>
 
         <div className='row mt-2'>
           {min_app_width}
