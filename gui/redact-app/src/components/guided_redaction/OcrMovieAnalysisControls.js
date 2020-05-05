@@ -1,4 +1,5 @@
 import React from 'react';
+import ScannerSearchControls from './ScannerSearchControls'
 import {
   buildLabelAndDropdown,
   buildAttributesAddRow,
@@ -7,6 +8,7 @@ import {
   makePlusMinusRowLight,
   buildInlinePrimaryButton,
   doTier1Save,
+  buildIdString,
   makeHeaderRow,
   } from './SharedControls'
 
@@ -447,10 +449,27 @@ console.log('adding an app')
     )
   }
 
+  async doSaveToDatabase() {
+    this.doSave(((ocr_movie_analysis_meta) => {
+      this.props.saveScannerToDatabase(
+        'ocr_movie_analysis',
+        ocr_movie_analysis_meta,
+        (()=>{this.props.displayInsightsMessage('Ocr movie analysis meta has been saved to database')})
+      )
+    }))
+  }
+
   buildSaveButton() {
     return buildInlinePrimaryButton(
       'Save',
       (()=>{this.doSave()})
+    )
+  }
+
+  buildSaveToDatabaseButton() {
+    return buildInlinePrimaryButton(
+      'Save to DB',
+      (()=>{this.doSaveToDatabase()})
     )
   }
 
@@ -531,8 +550,10 @@ console.log('adding an app')
     const first_scan_panel = this.buildFirstScanPanel()
     const rescan_panel = this.buildRescanPanel()
     const save_button = this.buildSaveButton()
+    const save_to_db_button = this.buildSaveToDatabaseButton()
     const name_field = this.buildNameField()
     const attributes_list = this.buildAttributesList()
+    const id_string = buildIdString(this.state.id, 'ocr movie analysis', this.state.unsaved_changes)
 
     return (
         <div className='row bg-light rounded mt-3'>
@@ -548,6 +569,11 @@ console.log('adding an app')
 
                 <div className='row mt-2'>
                   {save_button}
+                  {save_to_db_button}
+                </div>
+
+                <div className='row mt-2'>
+                  {id_string}
                 </div>
 
                 <div className='row mt-2'>
@@ -556,6 +582,19 @@ console.log('adding an app')
 
                 <div className='row mt-2'>
                   {attributes_list}
+                </div>
+
+                <div className='row bg-light border-top'>
+                  <ScannerSearchControls
+                    search_attribute_name_id='ocr_movie_analysis_database_search_attribute_name'
+                    search_attribute_value_id='ocr_movie_analysis_database_search_attribute_value'
+                    getScanners={this.props.getScanners}
+                    importScanner={this.props.importScanner}
+                    deleteScanner={this.props.deleteScanner}
+                    scanners={this.props.scanners}
+                    displayInsightsMessage={this.props.displayInsightsMessage}
+                    search_type='ocr_movie_analysis'
+                  />
                 </div>
 
                 <div className='row mt-2'>
