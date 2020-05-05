@@ -7,6 +7,7 @@ import {
   buildLabelAndTextInput,
   makePlusMinusRowLight,
   buildInlinePrimaryButton,
+  buildTier1LoadButton,
   doTier1Save,
   buildIdString,
   makeHeaderRow,
@@ -55,6 +56,56 @@ class OcrMovieAnalysisControls extends React.Component {
       attributes: this.state.attributes,
     }
     return oma_rule
+  }
+
+  loadOcrMovieAnalysisMeta(ocr_movie_analysis_meta_id) {
+    if (!ocr_movie_analysis_meta_id) {
+      this.loadNewOcrMovienAnalysisMeta()
+    } else {
+      const oma = this.props.tier_1_scanners['ocr_movie_analysis'][ocr_movie_analysis_meta_id]
+      this.setState({
+        id: oma['id'],
+        name: oma['name'],
+        debug_level: oma['debug_level'],
+        skip_frames: oma['skip_frames'],
+        min_app_width: oma['min_app_width'],
+        min_app_height: oma['min_app_height'],
+        max_rta_neighborhood_area: oma['max_rta_neighborhood_area'],
+        max_header_height: oma['max_header_height'],
+        max_header_vertical_separation: oma['max_header_vertical_separation'],
+        max_header_width_difference: oma['max_header_width_difference'],
+        first_run_job_id: oma['first_run_job_id'],
+        apps: oma['apps'],
+        attributes: oma['attributes'],
+        unsaved_changes: false,
+      })
+    }
+    let deepCopyIds = JSON.parse(JSON.stringify(this.props.tier_1_scanner_current_ids))
+    deepCopyIds['ocr_movie_analysis'] = ocr_movie_analysis_meta_id
+    this.props.setGlobalStateVar('tier_1_scanner_current_ids', deepCopyIds)
+    this.props.displayInsightsMessage('Ocr movien analysis meta has been loaded')
+  }
+
+  loadNewOcrMovieAnalysisMeta() {
+    let deepCopyIds = JSON.parse(JSON.stringify(this.props.tier_1_scanner_current_ids))
+    deepCopyIds['ocr_movie_analysis'] = ''
+    this.props.setGlobalStateVar('tier_1_scanner_current_ids', deepCopyIds)
+    this.setState({
+      id: '',
+      name: '',
+      debug_level: '',
+      skip_frames: 10,
+      min_app_width: 100,
+      min_app_height: 100,
+      max_rta_neighborhood_area: 1000*1000,
+      max_header_height: 100,
+      max_header_vertical_separation: 10,
+      max_header_width_difference: 10,
+      first_run_job_id: '',
+      apps: {},
+      attributes: {},
+      unsaved_changes: false,
+    })
   }
 
   componentDidMount() {
@@ -535,6 +586,14 @@ console.log('adding an app')
     )
   }
 
+  buildLoadButton() {                                                                                                   
+    return buildTier1LoadButton(                                                                                        
+      'ocr_movie_analysis',                                                                                             
+      this.props.tier_1_scanners['ocr_movie_analysis'],                                                                 
+      ((value)=>{this.loadOcrMovieAnalysisMeta(value)})                                                                
+    )                                                                                                                   
+  }                                                                                                                     
+  
   render() {
     if (!this.props.visibilityFlags['ocr_movie_analysis']) {
       return([])
@@ -550,6 +609,7 @@ console.log('adding an app')
     const first_scan_panel = this.buildFirstScanPanel()
     const rescan_panel = this.buildRescanPanel()
     const save_button = this.buildSaveButton()
+    const load_button = this.buildLoadButton()
     const save_to_db_button = this.buildSaveToDatabaseButton()
     const name_field = this.buildNameField()
     const attributes_list = this.buildAttributesList()
@@ -568,6 +628,7 @@ console.log('adding an app')
               <div id='oma_main' className='col pb-2'>
 
                 <div className='row mt-2'>
+                  {load_button}
                   {save_button}
                   {save_to_db_button}
                 </div>
