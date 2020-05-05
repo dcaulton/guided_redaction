@@ -1,8 +1,12 @@
 import React from 'react';
 import {
   buildLabelAndDropdown,
+  buildAttributesAddRow,
+  buildAttributesAsRows,
   buildLabelAndTextInput,
   makePlusMinusRowLight,
+  buildInlinePrimaryButton,
+  doTier1Save,
   makeHeaderRow,
   } from './SharedControls'
 
@@ -429,6 +433,89 @@ console.log('adding an app')
     )
   }
 
+  doSave(when_done=(()=>{})) {
+    doTier1Save(
+      'ocr_movie_analysis',
+      this.state.name,
+      this.getOcrMovieAnalysisRuleFromState,
+      this.props.displayInsightsMessage,
+      this.props.tier_1_scanners,
+      this.props.tier_1_scanner_current_ids,
+      this.setLocalStateVarNoWarning,
+      this.props.setGlobalStateVar,
+      when_done,
+    )
+  }
+
+  buildSaveButton() {
+    return buildInlinePrimaryButton(
+      'Save',
+      (()=>{this.doSave()})
+    )
+  }
+
+  buildNameField() {
+    return buildLabelAndTextInput(
+      this.state.name,
+      'Name',
+      'ocr_movie_analysis_name',
+      'name',
+      25,
+      ((value)=>{this.setLocalStateVar('name', value)})
+    )
+  }
+
+  setAttribute(name, value) {
+    let deepCopyAttributes = JSON.parse(JSON.stringify(this.state.attributes))
+    deepCopyAttributes[name] = value
+    this.setState({
+      attributes: deepCopyAttributes,
+      unsaved_changes: true,
+    })
+    this.props.displayInsightsMessage('Attribute was added')
+  }
+
+  doAddAttribute() {
+    const value_ele = document.getElementById('ocr_movie_analysis_attribute_value')
+    const name_ele = document.getElementById('ocr_movie_analysis_attribute_name')
+    if (value_ele.value && name_ele.value) {
+      this.setAttribute(name_ele.value, value_ele.value)
+      name_ele.value = ''
+      value_ele.value = ''
+    }
+  }
+
+  deleteAttribute(name) {
+    let deepCopyAttributes = JSON.parse(JSON.stringify(this.state.attributes))
+    if (!Object.keys(this.state.attributes).includes(name)) {
+      return
+    }
+    delete deepCopyAttributes[name]
+    this.setState({
+      attributes: deepCopyAttributes,
+      unsaved_changes: true,
+    })
+    this.props.displayInsightsMessage('Attribute was deleted')
+  }
+
+  buildAttributesList() {
+    const add_attr_row = buildAttributesAddRow(
+      'ocr_movie_analysis_attribute_name',
+      'ocr_movie_analysis_attribute_value',
+      (()=>{this.doAddAttribute()})
+    )
+    const attribs_list = buildAttributesAsRows(
+      this.state.attributes,
+      ((value)=>{this.deleteAttribute(value)})
+    )
+    return (
+      <div>
+        {add_attr_row}
+        {attribs_list}
+      </div>
+    )
+  }
+
   render() {
     if (!this.props.visibilityFlags['ocr_movie_analysis']) {
       return([])
@@ -443,6 +530,10 @@ console.log('adding an app')
     const show_hide_first_run = makePlusMinusRowLight('first run', 'oma_first_run_div')
     const first_scan_panel = this.buildFirstScanPanel()
     const rescan_panel = this.buildRescanPanel()
+    const save_button = this.buildSaveButton()
+    const name_field = this.buildNameField()
+    const attributes_list = this.buildAttributesList()
+
     return (
         <div className='row bg-light rounded mt-3'>
           <div className='col'>
@@ -454,6 +545,18 @@ console.log('adding an app')
                 className='row collapse ml-1 mr-1'
             >
               <div id='oma_main' className='col pb-2'>
+
+                <div className='row mt-2'>
+                  {save_button}
+                </div>
+
+                <div className='row mt-2'>
+                  {name_field}
+                </div>
+
+                <div className='row mt-2'>
+                  {attributes_list}
+                </div>
 
                 <div className='row mt-2'>
                   {debug_level_dropdown}
