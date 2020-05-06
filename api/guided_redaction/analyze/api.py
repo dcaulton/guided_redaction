@@ -90,6 +90,42 @@ def get_frameset_hashes_in_order(frames, framesets):
             ret_arr.append(frameset_hash)
     return ret_arr
 
+def get_match_image_for_anchor(anchor):
+    if 'cropped_image_bytes' in anchor:
+        img_base64 = anchor['cropped_image_bytes']
+        img_bytes = base64.b64decode(img_base64)
+        nparr = np.fromstring(img_bytes, np.uint8)
+        cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        return cv2_image
+    else:
+        pic_response = requests.get(
+          anchor["image"],
+          verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
+        )
+        image = pic_response.content
+        if not image:
+            raise Exception("couldn't read source image data for anchor")
+
+        nparr = np.fromstring(image, np.uint8)
+        cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        start = anchor.get("start")
+        end = anchor.get("end")
+        match_image = cv2_image[start[1] : end[1], start[0] : end[0]]
+        return match_image
+
+
+def find_any_template_anchor_match_in_image(template, target_image):
+    template_matcher = TemplateMatcher(template)
+    for anchor in template['anchors']:
+        match_image = get_match_image_for_anchor(anchor)
+        match_obj = template_matcher.get_template_coords(
+            target_image, match_image
+        )
+        if match_obj['match_found']:
+            (temp_coords, temp_scale) = match_obj['match_coords']
+            return temp_coords
+
+
 class AnalyzeViewSetOcr(viewsets.ViewSet):
     def create(self, request):
         request_data = request.data
@@ -181,29 +217,6 @@ class AnalyzeViewSetScanTemplate(viewsets.ViewSet):
         request_data = request.data
         return self.process_create_request(request_data)
 
-    def get_match_image_for_anchor(self, anchor):
-        if 'cropped_image_bytes' in anchor:
-            img_base64 = anchor['cropped_image_bytes']
-            img_bytes = base64.b64decode(img_base64)
-            nparr = np.fromstring(img_bytes, np.uint8)
-            cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-            return cv2_image
-        else:
-            pic_response = requests.get(
-              anchor["image"],
-              verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
-            )
-            image = pic_response.content
-            if not image:
-                return self.error("couldn't read source image data", status_code=422)
-
-            nparr = np.fromstring(image, np.uint8)
-            cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-            start = anchor.get("start")
-            end = anchor.get("end")
-            match_image = cv2_image[start[1] : end[1], start[0] : end[0]]
-            return match_image
-
     def process_create_request(self, request_data):
         matches = {'movies': {}}
         if not request_data.get("tier_1_scanners"):
@@ -225,7 +238,7 @@ class AnalyzeViewSetScanTemplate(viewsets.ViewSet):
             match_app_id = template['attributes']['app_id']
         match_statistics = {}
         for anchor in template.get("anchors"):
-            match_image = self.get_match_image_for_anchor(anchor)
+            match_image = get_match_image_for_anchor(anchor)
             start = anchor.get("start")
             end = anchor.get("end")
             size = (end[0] - start[0], end[1] - start[1])
@@ -1102,8 +1115,20 @@ class AnalyzeViewSetOcrMovieAnalysis(viewsets.ViewSet):
             cv2_image, [start, end]
         )
 
+        template_ignore_points = []
+        for template_id in request_data['oma_rule']['ignore_templates']:
+            template = request_data['oma_rule']['ignore_templates'][template_id]
+            template_coords = find_any_template_anchor_match_in_image(template, cv2_image)
+            if template_coords:
+                template_ignore_points.append(template_coords)
+
         ocr_movie_analyzer = OcrMovieAnalyzer(request_data['oma_rule'], file_writer)
-        results = ocr_movie_analyzer.collect_one_frame(raw_rtas, cv2_image, file_name_fields)
+        results = ocr_movie_analyzer.collect_one_frame(
+            raw_rtas, 
+            cv2_image, 
+            file_name_fields, 
+            template_ignore_points
+        )
 
         return Response(results)
 

@@ -30,6 +30,7 @@ class OcrMovieAnalysisControls extends React.Component {
       max_header_width_difference: 10,
       first_run_job_id: '',
       apps: {},
+      ignore_templates: {},
       attributes: {},
       unsaved_changes: false,
     }
@@ -53,6 +54,7 @@ class OcrMovieAnalysisControls extends React.Component {
       max_header_width_difference: this.state.max_header_width_difference,
       first_run_job_id: this.state.first_run_job_id,
       apps: this.state.apps,
+      ignore_templates: this.state.ignore_templates,
       attributes: this.state.attributes,
     }
     return oma_rule
@@ -76,6 +78,7 @@ class OcrMovieAnalysisControls extends React.Component {
         max_header_width_difference: oma['max_header_width_difference'],
         first_run_job_id: oma['first_run_job_id'],
         apps: oma['apps'],
+        ignore_templates: oma['ignore_templates'],
         attributes: oma['attributes'],
         unsaved_changes: false,
       })
@@ -103,6 +106,7 @@ class OcrMovieAnalysisControls extends React.Component {
       max_header_width_difference: 10,
       first_run_job_id: '',
       apps: {},
+      ignore_templates: {},
       attributes: {},
       unsaved_changes: false,
     })
@@ -369,6 +373,83 @@ console.log('adding an app')
     )
   }
 
+  addIgnoreTemplate() {
+    let deepCopyTemplates = JSON.parse(JSON.stringify(this.state.ignore_templates))
+    const new_template_id = document.getElementById('oma_ignore_template_selector').value
+    if (!Object.keys(deepCopyTemplates).includes(new_template_id)) {
+      const template = this.props.tier_1_scanners['template'][new_template_id]
+      deepCopyTemplates[new_template_id] = template
+      this.setLocalStateVar('ignore_templates', deepCopyTemplates)
+    }
+  }
+
+  buildIgnoreTemplatesSelector() {
+    const template_ids = Object.keys(this.props.tier_1_scanners['template'])
+    return (
+      <div>
+        <div className='d-inline'>
+          add ignore template
+        </div>
+        <div className='d-inline ml-2'>
+          <select
+              id='oma_ignore_template_selector'
+          >
+            <option value=''></option>
+            {template_ids.map((template_id, index) => {
+              const template = this.props.tier_1_scanners['template'][template_id]
+              return (
+                <option value={template['id']} key={index}>{template['name']}</option>
+              )
+            })}
+          </select>
+        </div>
+        <div className='d-inline ml-2'>
+          <button
+              className='btn btn-primary ml-2 p-1'
+              onClick={() => this.addIgnoreTemplate()}
+          >
+            Add
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  removeIgnoreTemplate(template_id) {
+    let deepCopyTemplates = JSON.parse(JSON.stringify(this.state.ignore_templates))
+    delete deepCopyTemplates[template_id]
+    this.setLocalStateVar('ignore_templates', deepCopyTemplates)
+  }
+
+  buildIgnoreTemplatesList() {
+    if (!this.state.ignore_templates) {
+      return
+    }
+    const template_keys = Object.keys(this.state.ignore_templates)
+    return (
+      <div>
+        {template_keys.map((template_id, index) => {
+          const template = this.state.ignore_templates[template_id]
+          return (
+            <div>
+              <div className='d-inline'>
+                {template['name']}
+              </div>
+              <div className='d-inline'>
+                <button
+                    className='btn btn-link ml-2'
+                    onClick={() => this.removeIgnoreTemplate(template_id)}
+                >
+                  delete
+                </button>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    )
+  }
+
   buildRescanPanel() {
     const rescan_header = this.buildRescanHeader()
     const eligible_jobs = this.getEligibleRescanJobs()
@@ -396,6 +477,8 @@ console.log('adding an app')
     const apps_panel = this.buildApsPanel()
     const show_original_image_button = this.buildShowOriginalImageButton()
     const debug_level_dropdown = this.buildDebugLevelDropdown()
+    const ignore_templates_selector = this.buildIgnoreTemplatesSelector()
+    const ignore_templates_list = this.buildIgnoreTemplatesList()
     return (
       <div>
         {rescan_header}
@@ -448,6 +531,18 @@ console.log('adding an app')
 
         <div className='row mt-2'>
           {pick_app_button}
+        </div>
+
+        <div className='row ml-5 mr-5 h5 pl-5 pr-5 border-top'>
+          ignore templates:
+        </div>
+
+        <div className='row mt-2'>
+          {ignore_templates_selector}
+        </div>
+
+        <div className='row mt-2'>
+          {ignore_templates_list}
         </div>
 
         <div className='row mt-2'>

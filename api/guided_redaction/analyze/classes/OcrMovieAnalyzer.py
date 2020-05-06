@@ -35,7 +35,7 @@ class OcrMovieAnalyzer:
             self.debug_file_uuid = str(uuid.uuid4())
             self.file_writer.create_unique_directory(self.debug_file_uuid)
 
-    def collect_one_frame(self, raw_rtas, cv2_image, file_name_fields):
+    def collect_one_frame(self, raw_rtas, cv2_image, file_name_fields, template_ignore_coords):
         # put rtas into a dict for easier access
         rta_dict = {}
         for rta in raw_rtas:
@@ -67,6 +67,9 @@ class OcrMovieAnalyzer:
 
         # TODO search for and merge duplicate occurrences of the same app.
 
+
+        # knock out template matches we want to ignore
+        self.filter_out_template_ignore_coords(apps, template_ignore_coords)
 
         # filter out singleton apps and those with small bounding boxes
         self.filter_out_weak_apps(apps)
@@ -104,9 +107,19 @@ class OcrMovieAnalyzer:
 
 
 
+    def filter_out_template_ignore_coords(self, apps, template_ignore_coords):
+        keys_to_delete = []
+        for app_key in apps:
+            app = apps[app_key]
+            start = app['bounding_box'][0]
+            end = app['bounding_box'][1]
+            for ignore_coords in template_ignore_coords:
+                if start[0] <= ignore_coords[0] <= end[0]:
+                    if start[1] <= ignore_coords[1] <= end[1]:
+                        keys_to_delete.append(app_key)
 
-
-
+        for app_key in keys_to_delete:
+            del apps[app_key]
 
     def build_all_apps_from_first_job(self, job_data):
         if self.debug:
