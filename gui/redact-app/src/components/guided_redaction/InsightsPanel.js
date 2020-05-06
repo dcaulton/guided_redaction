@@ -425,7 +425,7 @@ class InsightsPanel extends React.Component {
       job_data['description'] = 'scan selected area (' + cur_selected_area['name'] + ') '
     } else if (scanner_type === 'ocr_scene_analysis') {
       if (!this.props.tier_1_scanner_current_ids['ocr_scene_analysis']) {
-        this.displayInsightsMessage('no ocr_scene_analysis_meta selected, cannot submit a job')
+        this.displayInsightsMessage('no ocr_scene_analysis rule selected, cannot submit a job')
         return
       }
       job_data['app'] = 'analyze'
@@ -438,6 +438,23 @@ class InsightsPanel extends React.Component {
       job_data['request_data']['id'] = cur_osa_id
       job_data['request_data']['scan_level'] = 'tier_1'
       job_data['description'] = 'ocr scene analysis (' + cur_osa['name'] + ') '
+    } else if (scanner_type === 'ocr_movie_analysis') {
+      if (!this.props.tier_1_scanner_current_ids['ocr_movie_analysis']) {
+        this.displayInsightsMessage('no ocr_movie_analysis rule selected, cannot submit a job')
+        return
+      }
+      const cur_oma_id = this.props.tier_1_scanner_current_ids['ocr_movie_analysis']
+      const cur_oma = this.props.tier_1_scanners['ocr_movie_analysis'][cur_oma_id]
+      job_data['app'] = 'analyze'
+      if (scope.match(/_first_scan_/)) {   
+          job_data['operation'] = 'oma_first_scan_threaded'
+          job_data['description'] = 'ocr movie analysis first scan (' + cur_oma['name'] + ') '
+      }
+      job_data['request_data']['tier_1_scanners'] = {}
+      job_data['request_data']['tier_1_scanners']['ocr_movie_analysis'] = {}
+      job_data['request_data']['tier_1_scanners']['ocr_movie_analysis'][cur_oma_id] = cur_oma
+      job_data['request_data']['id'] = cur_oma_id
+      job_data['request_data']['scan_level'] = 'tier_1'
     }
     job_data['request_data']['movies'] = {}
     if (scope.match(/_current_frame$/)) {   
@@ -579,27 +596,6 @@ class InsightsPanel extends React.Component {
     }
     job_data['request_data']['filter_parameters'] = {
       'filter_operation': 'diff',
-    }
-    return job_data
-  }
-
-  buildOmaFirstScanJobData(job_type, extra_data) {
-    let job_data = {
-      request_data: {},
-    }
-    job_data['app'] = 'analyze'
-    job_data['operation'] = 'oma_first_scan_threaded'
-    job_data['request_data']['meta'] = extra_data
-    if (job_type === 'ocr_movie_analysis_current_movie') {
-      job_data['request_data']['movies'] = {}
-      job_data['request_data']['movies'][this.props.movie_url] = this.props.movies[this.props.movie_url]
-      job_data['description'] = 'ocr movie analysis first scan on movie: ' + this.props.movie_url
-    } else if (job_type === 'ocr_movie_analysis_all_movies') {
-      job_data['request_data']['movies'] = this.props.movies
-      if ('first_scan_apps' in Object.keys(this.props.movies)) {
-        delete job_data['request_data']['movies']['first_scan_apps']
-      }
-      job_data['description'] = 'ocr movie analysis first scan on all movies'
     }
     return job_data
   }
@@ -844,10 +840,10 @@ class InsightsPanel extends React.Component {
         job_data: job_data,
       })
     } else if (
-        job_string === 'ocr_movie_analysis_current_movie' ||
-        job_string === 'ocr_movie_analysis_all_movies'
+        job_string === 'oma_first_scan_current_movie' ||
+        job_string === 'oma_first_scan_all_movies'
     ) {
-      let job_data = this.buildOmaFirstScanJobData(job_string, extra_data)
+      let job_data = this.buildTier1JobData('ocr_movie_analysis', job_string, extra_data)
       this.props.submitJob({
         job_data: job_data,
       })

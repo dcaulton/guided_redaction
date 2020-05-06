@@ -60,7 +60,7 @@ class OcrMovieAnalysisControls extends React.Component {
 
   loadOcrMovieAnalysisMeta(ocr_movie_analysis_meta_id) {
     if (!ocr_movie_analysis_meta_id) {
-      this.loadNewOcrMovienAnalysisMeta()
+      this.loadNewOcrMovieAnalysisMeta()
     } else {
       const oma = this.props.tier_1_scanners['ocr_movie_analysis'][ocr_movie_analysis_meta_id]
       this.setState({
@@ -83,7 +83,7 @@ class OcrMovieAnalysisControls extends React.Component {
     let deepCopyIds = JSON.parse(JSON.stringify(this.props.tier_1_scanner_current_ids))
     deepCopyIds['ocr_movie_analysis'] = ocr_movie_analysis_meta_id
     this.props.setGlobalStateVar('tier_1_scanner_current_ids', deepCopyIds)
-    this.props.displayInsightsMessage('Ocr movien analysis meta has been loaded')
+    this.props.displayInsightsMessage('Ocr movie analysis meta has been loaded')
   }
 
   loadNewOcrMovieAnalysisMeta() {
@@ -134,12 +134,11 @@ console.log('adding an app')
   }
 
   buildFirstRunButton() {
+    if (!this.state.id) {
+      return ''
+    }
     if (this.props.movie_url === 'first_scan_apps') {
       return
-    }
-    const job_params = {
-      debug_level: this.state.debug_level,
-      skip_frames: this.state.skip_frames,
     }
     return (
       <div className='d-inline'>
@@ -155,12 +154,12 @@ console.log('adding an app')
         </button>
         <div className='dropdown-menu' aria-labelledby='omaDropdownButton'>
           <button className='dropdown-item'
-              onClick={() => this.props.submitInsightsJob('ocr_movie_analysis_current_movie', job_params)}
+              onClick={() => this.props.submitInsightsJob('oma_first_scan_current_movie')}
           >
             Movie
           </button>
           <button className='dropdown-item'
-              onClick={() => this.props.submitInsightsJob('ocr_movie_analysis_all_movies', job_params)}
+              onClick={() => this.props.submitInsightsJob('oma_first_scan_all_movies')}
           >
             All Movies
           </button>
@@ -396,6 +395,7 @@ console.log('adding an app')
     const pick_app_button = this.buildPickAppButton()
     const apps_panel = this.buildApsPanel()
     const show_original_image_button = this.buildShowOriginalImageButton()
+    const debug_level_dropdown = this.buildDebugLevelDropdown()
     return (
       <div>
         {rescan_header}
@@ -408,6 +408,10 @@ console.log('adding an app')
 
         <div className='row mt-2'>
           {show_original_image_button}
+        </div>
+
+        <div className='row mt-3'>
+          {debug_level_dropdown}
         </div>
 
         <div className='row mt-2'>
@@ -604,8 +608,8 @@ console.log('adding an app')
       'oma_body',
       (() => this.props.toggleShowVisibility('ocr_movie_analysis'))
     )
-    const debug_level_dropdown = this.buildDebugLevelDropdown()
     const show_hide_first_run = makePlusMinusRowLight('first run', 'oma_first_run_div')
+    const show_hide_general = makePlusMinusRowLight('general', 'oma_general_div')
     const first_scan_panel = this.buildFirstScanPanel()
     const rescan_panel = this.buildRescanPanel()
     const save_button = this.buildSaveButton()
@@ -627,39 +631,41 @@ console.log('adding an app')
             >
               <div id='oma_main' className='col pb-2'>
 
-                <div className='row mt-2'>
-                  {load_button}
-                  {save_button}
-                  {save_to_db_button}
-                </div>
+                {show_hide_general}
+                <div 
+                    id='oma_general_div'
+                    className='collapse show'
+                >
+                  <div className='row mt-2'>
+                    {load_button}
+                    {save_button}
+                    {save_to_db_button}
+                  </div>
 
-                <div className='row mt-2'>
-                  {id_string}
-                </div>
+                  <div className='row mt-2'>
+                    {id_string}
+                  </div>
 
-                <div className='row mt-2'>
-                  {name_field}
-                </div>
+                  <div className='row mt-2'>
+                    {name_field}
+                  </div>
 
-                <div className='row mt-2'>
-                  {attributes_list}
-                </div>
+                  <div className='row mt-2'>
+                    {attributes_list}
+                  </div>
 
-                <div className='row bg-light border-top'>
-                  <ScannerSearchControls
-                    search_attribute_name_id='ocr_movie_analysis_database_search_attribute_name'
-                    search_attribute_value_id='ocr_movie_analysis_database_search_attribute_value'
-                    getScanners={this.props.getScanners}
-                    importScanner={this.props.importScanner}
-                    deleteScanner={this.props.deleteScanner}
-                    scanners={this.props.scanners}
-                    displayInsightsMessage={this.props.displayInsightsMessage}
-                    search_type='ocr_movie_analysis'
-                  />
-                </div>
-
-                <div className='row mt-2'>
-                  {debug_level_dropdown}
+                  <div className='row bg-light border-top'>
+                    <ScannerSearchControls
+                      search_attribute_name_id='ocr_movie_analysis_database_search_attribute_name'
+                      search_attribute_value_id='ocr_movie_analysis_database_search_attribute_value'
+                      getScanners={this.props.getScanners}
+                      importScanner={this.props.importScanner}
+                      deleteScanner={this.props.deleteScanner}
+                      scanners={this.props.scanners}
+                      displayInsightsMessage={this.props.displayInsightsMessage}
+                      search_type='ocr_movie_analysis'
+                    />
+                  </div>
                 </div>
 
                 {show_hide_first_run}

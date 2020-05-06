@@ -1064,8 +1064,8 @@ class AnalyzeViewSetOcrMovieAnalysis(viewsets.ViewSet):
     def process_first_scan_request(self, request_data):
         if not request_data.get("movies"):
             return self.error("movies is required", status_code=400)
-        if not request_data.get("meta"):
-            return self.error("meta is required", status_code=400)
+        if not request_data.get("oma_rule"):
+            return self.error("oma_rule is required", status_code=400)
         movies = request_data['movies']
         movie_url = list(movies.keys())[0]
         i1 = movie_url.split('/')[-1]
@@ -1092,7 +1092,7 @@ class AnalyzeViewSetOcrMovieAnalysis(viewsets.ViewSet):
             base_url=settings.REDACT_FILE_BASE_URL,
             image_request_verify_headers=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
         )
-        analyzer = EastPlusTessGuidedAnalyzer(debug=request_data['meta']['debug_level'])
+        analyzer = EastPlusTessGuidedAnalyzer(debug=request_data['oma_rule']['debug_level'])
         nparr = np.fromstring(image, np.uint8)
         cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
         start = (0, 0)
@@ -1102,7 +1102,7 @@ class AnalyzeViewSetOcrMovieAnalysis(viewsets.ViewSet):
             cv2_image, [start, end]
         )
 
-        ocr_movie_analyzer = OcrMovieAnalyzer(request_data['meta'], file_writer)
+        ocr_movie_analyzer = OcrMovieAnalyzer(request_data['oma_rule'], file_writer)
         results = ocr_movie_analyzer.collect_one_frame(raw_rtas, cv2_image, file_name_fields)
 
         return Response(results)

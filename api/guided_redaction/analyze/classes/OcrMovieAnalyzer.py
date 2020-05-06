@@ -8,29 +8,29 @@ from guided_redaction.analyze.classes.ExtentsFinder import ExtentsFinder
 
 class OcrMovieAnalyzer:
 
-    def __init__(self, meta, file_writer):
-        self.debug = meta['debug_level']
+    def __init__(self, oma_rule, file_writer):
+        self.debug = oma_rule['debug_level']
         self.file_writer = file_writer
         self.min_app_width = 100
-        if 'min_app_width' in meta:
-            self.min_app_width = meta['min_app_width']
+        if 'min_app_width' in oma_rule:
+            self.min_app_width = oma_rule['min_app_width']
         self.min_app_height = 100
-        if 'min_app_height' in meta:
-            self.min_app_height = meta['min_app_height']
+        if 'min_app_height' in oma_rule:
+            self.min_app_height = oma_rule['min_app_height']
         self.max_rta_neighborhood_area = 1000 * 1000
-        if 'max_rta_neighborhood_area' in meta:
-            self.max_rta_neighborhood_area = meta['max_rta_neighborhood_area']
+        if 'max_rta_neighborhood_area' in oma_rule:
+            self.max_rta_neighborhood_area = oma_rule['max_rta_neighborhood_area']
         self.max_header_height = 100
-        if 'max_header_height' in meta:
-            self.max_header_height = meta['max_header_height']
+        if 'max_header_height' in oma_rule:
+            self.max_header_height = oma_rule['max_header_height']
         self.max_header_vertical_separation = 10
-        if 'max_header_vertical_separation' in meta:
-            self.max_header_vertical_separation = meta['max_header_vertical_separation']
+        if 'max_header_vertical_separation' in oma_rule:
+            self.max_header_vertical_separation = oma_rule['max_header_vertical_separation']
         self.max_header_width_difference = 10
-        if 'max_header_width_difference' in meta:
-            self.max_header_width_difference = meta['max_header_width_difference']
-        if 'debug_directory' in meta:
-            self.debug_file_uuid = meta['debug_directory']
+        if 'max_header_width_difference' in oma_rule:
+            self.max_header_width_difference = oma_rule['max_header_width_difference']
+        if 'debug_directory' in oma_rule:
+            self.debug_file_uuid = oma_rule['debug_directory']
         else:
             self.debug_file_uuid = str(uuid.uuid4())
             self.file_writer.create_unique_directory(self.debug_file_uuid)

@@ -966,11 +966,13 @@ def build_and_dispatch_oma_first_scan_threaded_children(parent_job):
     parent_job.status = 'running'
     parent_job.save()
     request_data = json.loads(parent_job.request_data)
-    if 'skip_frames' in request_data['meta']:
-        skip_frames = int(request_data['meta']['skip_frames'])
+    oma_key = list(request_data['tier_1_scanners']['ocr_movie_analysis'].keys())[0]
+    oma_rule = request_data['tier_1_scanners']['ocr_movie_analysis'][oma_key]
+    if 'skip_frames' in oma_rule:
+        skip_frames = int(oma_rule['skip_frames'])
     else:
         skip_frames = 10
-    if request_data['meta']['debug_level'] != 'everything':
+    if oma_rule['debug_level'] != 'everything':
         file_writer = FileWriter(
             working_dir=settings.REDACT_FILE_STORAGE_DIR,
             base_url=settings.REDACT_FILE_BASE_URL,
@@ -978,7 +980,7 @@ def build_and_dispatch_oma_first_scan_threaded_children(parent_job):
         )
         the_uuid = str(uuid.uuid4())
         file_writer.create_unique_directory(the_uuid)
-        request_data['meta']['debug_directory'] = the_uuid
+        oma_rule['debug_directory'] = the_uuid
 
     for movie_url in request_data['movies']:
         for frameset_index, frameset_hash in enumerate(request_data['movies'][movie_url]['framesets']):
@@ -989,11 +991,11 @@ def build_and_dispatch_oma_first_scan_threaded_children(parent_job):
             build_request_data['movies'][movie_url]['framesets'] = {}
             build_request_data['movies'][movie_url]['framesets'][frameset_hash] = \
                 request_data['movies'][movie_url]['framesets'][frameset_hash]
-            build_request_data['meta'] = request_data['meta']
+            build_request_data['oma_rule'] = oma_rule
             job = Job(
                 request_data=json.dumps(build_request_data),
                 status='created',
-                description='oma first scan  for movie {} frameset hash {}'.format(movie_url, frameset_hash),
+                description='oma first scan for movie {} frameset hash {}'.format(movie_url, frameset_hash),
                 app='analyze',
                 operation='oma_first_scan_collect_one_frame',
                 sequence=0,
