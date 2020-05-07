@@ -70,6 +70,7 @@ class RedactApplication extends React.Component {
         'template': {},
         'telemetry': {},
         'selected_area': {},
+        'entity_finder': {},
       },
       tier_1_scanner_current_ids: {
         'ocr': '',
@@ -78,6 +79,7 @@ class RedactApplication extends React.Component {
         'template': '',
         'telemetry': '',
         'selected_area': '',
+        'entity_finder': '',
       },
       tier_1_matches: {
         'ocr': {},
@@ -86,6 +88,7 @@ class RedactApplication extends React.Component {
         'template': {},
         'telemetry': {},
         'selected_area': {},
+        'entity_finder': {},
       },
     }
 

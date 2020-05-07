@@ -5,6 +5,7 @@ import TelemetryControls from './TelemetryControls'
 import SelectedAreaControls from './SelectedAreaControls'
 import OcrControls from './OcrControls'
 import OcrSceneAnalysisControls from './OcrSceneAnalysisControls'
+import EntityFinderControls from './EntityFinderControls'
 import OcrMovieAnalysisControls from './OcrMovieAnalysisControls'
 import DiffControls from './DiffControls'
 import RedactControls from './RedactControls'
@@ -211,6 +212,21 @@ class BottomInsightsControls extends React.Component {
           displayInsightsMessage={this.props.displayInsightsMessage}
           submitInsightsJob={this.props.submitInsightsJob}
           app_codebooks={this.props.app_codebooks}
+          setGlobalStateVar={this.props.setGlobalStateVar}
+          visibilityFlags={this.props.visibilityFlags}
+          toggleShowVisibility={this.props.toggleShowVisibility}
+          tier_1_scanners={this.props.tier_1_scanners}
+          tier_1_scanner_current_ids={this.props.tier_1_scanner_current_ids}
+          scanners={this.props.scanners}
+          getScanners={this.props.getScanners}
+          deleteScanner={this.props.deleteScanner}
+          importScanner={this.props.importScanner}
+          saveScannerToDatabase={this.props.saveScannerToDatabase}
+        />
+
+        <EntityFinderControls
+          displayInsightsMessage={this.props.displayInsightsMessage}
+          submitInsightsJob={this.props.submitInsightsJob}
           setGlobalStateVar={this.props.setGlobalStateVar}
           visibilityFlags={this.props.visibilityFlags}
           toggleShowVisibility={this.props.toggleShowVisibility}

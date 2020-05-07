@@ -38,6 +38,7 @@ class InsightsPanel extends React.Component {
         'redact': true,
         'zip': true,
         'pipelines': true,
+        'entity_finder': true,
       },
       imageTypeToDisplay: '',
       callbacks: {},
