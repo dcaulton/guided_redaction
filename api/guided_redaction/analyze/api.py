@@ -91,34 +91,11 @@ def get_frameset_hashes_in_order(frames, framesets):
             ret_arr.append(frameset_hash)
     return ret_arr
 
-def get_match_image_for_anchor(anchor):
-    if 'cropped_image_bytes' in anchor:
-        img_base64 = anchor['cropped_image_bytes']
-        img_bytes = base64.b64decode(img_base64)
-        nparr = np.fromstring(img_bytes, np.uint8)
-        cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-        return cv2_image
-    else:
-        pic_response = requests.get(
-          anchor["image"],
-          verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
-        )
-        image = pic_response.content
-        if not image:
-            raise Exception("couldn't read source image data for anchor")
-
-        nparr = np.fromstring(image, np.uint8)
-        cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-        start = anchor.get("start")
-        end = anchor.get("end")
-        match_image = cv2_image[start[1] : end[1], start[0] : end[0]]
-        return match_image
-
 
 def find_any_template_anchor_match_in_image(template, target_image):
     template_matcher = TemplateMatcher(template)
     for anchor in template['anchors']:
-        match_image = get_match_image_for_anchor(anchor)
+        match_image = template_matcher.get_match_image_for_anchor(anchor)
         match_obj = template_matcher.get_template_coords(
             target_image, match_image
         )
@@ -239,7 +216,7 @@ class AnalyzeViewSetScanTemplate(viewsets.ViewSet):
             match_app_id = template['attributes']['app_id']
         match_statistics = {}
         for anchor in template.get("anchors"):
-            match_image = get_match_image_for_anchor(anchor)
+            match_image = template_matcher.get_match_image_for_anchor(anchor)
             start = anchor.get("start")
             end = anchor.get("end")
             size = (end[0] - start[0], end[1] - start[1])
@@ -1171,7 +1148,6 @@ class AnalyzeViewSetEntityFinder(viewsets.ViewSet):
         build_response_data = {'movies': {}}
         for movie_url in movies:
             build_response_data['movies'][movie_url] = {'framesets': {}}
-            build_statistics['movies'][movie_url] = {'framesets': {}}
             movie = movies[movie_url]
             frames = movie['frames']
             framesets = movie['framesets']
@@ -1198,13 +1174,30 @@ class AnalyzeViewSetEntityFinder(viewsets.ViewSet):
         cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
         
         if entity_finder_meta['entity_type'] == 'chrome_window':
-            pass
+            template_filepath = os.path.join(
+                settings.BASE_DIR, 
+                'guided_redaction/data/templates/chrome_controls.json'
+            )
+            template_text = ''.join(open(template_filepath, 'rt').readlines())
+            template_object = json.loads(template_text)
         elif entity_finder_meta['entity_type'] == 'ie_window':
-            pass
+            template_filepath = os.path.join(
+                settings.BASE_DIR, 
+                'guided_redaction/data/templates/ie_controls.json'
+            )
+            template_text = ''.join(open(template_filepath, 'rt').readlines())
+            template_object = json.loads(template_text)
         elif entity_finder_meta['entity_type'] == 'desktop':
-            template_matcher = TemplateMatcher({})
+            template_object = {}
         elif entity_finder_meta['entity_type'] == 'taskbar':
-            pass
+            template_filepath = os.path.join(
+                settings.BASE_DIR, 
+                'guided_redaction/data/templates/windows_start_button.json'
+            )
+            template_text = ''.join(open(template_filepath, 'rt').readlines())
+            template_object = json.loads(template_text)
+
+        template_matcher = TemplateMatcher(template_object)
         extents_finder = ExtentsFinder()
 
         entity_finder = EntityFinder(cv2_image, entity_finder_meta, template_matcher, extents_finder)

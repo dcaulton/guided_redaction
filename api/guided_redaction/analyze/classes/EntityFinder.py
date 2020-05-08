@@ -16,5 +16,14 @@ class EntityFinder:
         self.extents_finder = extents_finder
 
     def find_entities(self):
-        print('finding entities BABY')
-        pass
+        print('chonker is looking for entities')
+        if self.template_matcher:
+            for anchor in self.template_matcher.get_anchors():
+                match_image = self.template_matcher.get_match_image_for_anchor(anchor)
+                match_obj = self.template_matcher.get_template_coords(
+                    self.cv2_image, match_image
+                )
+                if match_obj['match_found']:
+                    (temp_coords, temp_scale) = match_obj['match_coords']
+                    print('found a match for {} at {}'.format(anchor['id'], temp_coords))
+

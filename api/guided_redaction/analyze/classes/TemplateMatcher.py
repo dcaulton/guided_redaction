@@ -1,5 +1,7 @@
+import base64
 import cv2
 import imutils
+import requests
 import numpy as np
 
 
@@ -8,6 +10,7 @@ class TemplateMatcher:
     use_grayscale_edges = False
 
     def __init__(self, template_data):
+        self.template = template_data
         self.template_match_percent = 0.9
         try:
             mp_in = int(template_data.get('match_percent'))
@@ -40,6 +43,9 @@ class TemplateMatcher:
             self.scales = np.linspace(.80, 1.2, 9)[::-1]
         else:
             self.scales = [1]
+
+    def get_anchors(self):
+        return self.template['anchors']
 
     def get_template_coords(self, source, template):
         if self.use_grayscale_edges:
@@ -97,3 +103,23 @@ class TemplateMatcher:
                 'match_coords': (),
                 'match_metadata': match_metadata,
             }
+
+    def get_match_image_for_anchor(self, anchor):
+        if 'cropped_image_bytes' in anchor:
+            img_base64 = anchor['cropped_image_bytes']
+            img_bytes = base64.b64decode(img_base64)
+            nparr = np.fromstring(img_bytes, np.uint8)
+            cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+            return cv2_image
+        else:
+            pic_response = requests.get(anchor["image"])
+            image = pic_response.content
+            if not image:
+                raise Exception("couldn't read source image data for anchor")
+
+            nparr = np.fromstring(image, np.uint8)
+            cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+            start = anchor.get("start")
+            end = anchor.get("end")
+            match_image = cv2_image[start[1] : end[1], start[0] : end[0]]
+            return match_image
