@@ -12,6 +12,7 @@ from guided_redaction.analyze.classes.TelemetryAnalyzer import TelemetryAnalyzer
 from guided_redaction.analyze.classes.TemplateMatcher import TemplateMatcher
 from guided_redaction.analyze.classes.ExtentsFinder import ExtentsFinder
 from guided_redaction.analyze.classes.ChartMaker import ChartMaker
+from guided_redaction.analyze.classes.EntityFinder import EntityFinder
 from guided_redaction.analyze.classes.OcrSceneAnalyzer import OcrSceneAnalyzer
 from guided_redaction.analyze.classes.OcrMovieAnalyzer import OcrMovieAnalyzer
 import json
@@ -1038,8 +1039,6 @@ class AnalyzeViewSetOcrSceneAnalysis(viewsets.ViewSet):
                     build_statistics['movies'][movie_url]['framesets'][frameset_hash] = statistics
 
         build_response_data['statistics'] = build_statistics
-        print('flopper hopper')
-        print(build_response_data['movies'])
         return Response(build_response_data)
 
     def analyze_one_frame(self, frameset, osa_rule):
@@ -1156,3 +1155,58 @@ class AnalyzeViewSetOcrMovieAnalysis(viewsets.ViewSet):
         results = ocr_movie_analyzer.condense_all_frames(job_data)
 
         return Response(results)
+
+class AnalyzeViewSetEntityFinder(viewsets.ViewSet):
+    def create(self, request):
+        request_data = request.data
+        return self.process_create_request(request_data)
+
+    def process_create_request(self, request_data):
+        if not request_data.get("movies"):
+            return self.error("movies is required", status_code=400)
+        if not request_data.get("entity_finder_meta"):
+            return self.error("entity_finder_meta is required", status_code=400)
+        entity_finder_meta = request_data.get("entity_finder_meta")
+        movies = request_data.get("movies")
+        build_response_data = {'movies': {}}
+        for movie_url in movies:
+            build_response_data['movies'][movie_url] = {'framesets': {}}
+            build_statistics['movies'][movie_url] = {'framesets': {}}
+            movie = movies[movie_url]
+            frames = movie['frames']
+            framesets = movie['framesets']
+            ordered_hashes = get_frameset_hashes_in_order(frames, framesets)
+            for index, frameset_hash in enumerate(ordered_hashes):
+                frameset = movie['framesets'][frameset_hash]
+                response = self.analyze_one_frame(frameset, entity_finder_meta)
+                build_response_data['movies'][movie_url]['framesets'][frameset_hash] = response
+
+        return Response(build_response_data)
+
+    def analyze_one_frame(self, frameset, entity_finder_meta):
+        if 'images' not in frameset or not frameset['images']:
+            return
+        pic_response = requests.get(
+          frameset['images'][0],
+          verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
+        )
+        image = pic_response.content
+        if not image:
+            return 
+
+        nparr = np.fromstring(image, np.uint8)
+        cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        
+        if entity_finder_meta['entity_type'] == 'chrome_window':
+            pass
+        elif entity_finder_meta['entity_type'] == 'ie_window':
+            pass
+        elif entity_finder_meta['entity_type'] == 'desktop':
+            template_matcher = TemplateMatcher({})
+        elif entity_finder_meta['entity_type'] == 'taskbar':
+            pass
+        extents_finder = ExtentsFinder()
+
+        entity_finder = EntityFinder(cv2_image, entity_finder_meta, template_matcher, extents_finder)
+
+        return entity_finder.find_entities()
