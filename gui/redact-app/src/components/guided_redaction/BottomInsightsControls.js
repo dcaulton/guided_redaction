@@ -151,6 +151,12 @@ class BottomInsightsControls extends React.Component {
           deleteScanner={this.props.deleteScanner}
           importScanner={this.props.importScanner}
           saveScannerToDatabase={this.props.saveScannerToDatabase}
+          clicked_coords={this.props.clicked_coords}
+          addInsightsCallback={this.props.addInsightsCallback}
+          insights_image={this.props.insights_image}
+          movie_url={this.props.movie_url}
+          handleSetMode={this.props.handleSetMode}
+          cropImage={this.props.cropImage}
         />
 
         <SelectedAreaControls

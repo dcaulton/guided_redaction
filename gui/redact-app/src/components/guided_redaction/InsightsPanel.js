@@ -975,6 +975,10 @@ class InsightsPanel extends React.Component {
       the_message = 'click second corner'
     } else if (the_mode === 'oma_pick_app') {
       the_message = 'select the app'
+    } else if (the_mode === 'hog_pick_training_image_1') {
+      the_message = 'pick the upper left corner of the hog image'
+    } else if (the_mode === 'hog_pick_training_image_2') {
+      the_message = 'pick the lower right corner of the hog image'
     }
     this.setState({
       mode: the_mode,
@@ -1052,6 +1056,8 @@ class InsightsPanel extends React.Component {
       this.handleSetMode('add_annotations_ocr_end') 
     } else if (this.state.mode === 'add_annotations_ocr_end') {
       this.handleSetMode('add_annotations_ocr_end') 
+    } else if (this.state.mode === 'hog_pick_training_image_1') {
+      this.handleSetMode('hog_pick_training_image_2') 
     }
   }
 
