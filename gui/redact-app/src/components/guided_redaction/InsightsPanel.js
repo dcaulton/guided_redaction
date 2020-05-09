@@ -621,6 +621,19 @@ class InsightsPanel extends React.Component {
     return job_data
   }
 
+  buildTrainHogModelJobData(extra_data) {
+    let job_data = {
+      request_data: {},
+    }
+    job_data['app'] = 'analyze'
+    job_data['operation'] = 'hog_train'
+    const hog_id = this.props.tier_1_scanner_current_ids['hog']
+    const hog_rule = this.props.tier_1_scanners['hog'][hog_id]
+    job_data['request_data']['hog_rule'] = hog_rule
+    job_data['description'] = 'train hog rule ('  + hog_id + ')'
+    return job_data
+  }
+
   buildResultsData(extra_data) {
     let job_data = {
       request_data: {},
@@ -823,6 +836,11 @@ class InsightsPanel extends React.Component {
       let job_data = this.buildZipJobData(job_string, extra_data)
       this.props.submitJob({
         job_data: job_data,
+      })
+    } else if (job_string === 'hog_train_model') {
+      let job_data = this.buildTrainHogModelJobData(extra_data)
+      this.props.submitJob({
+        job_data: job_data
       })
     } else if (job_string === 'split_and_hash_threaded') {
       let job_data = this.buildSplitAndHashJobData(extra_data)

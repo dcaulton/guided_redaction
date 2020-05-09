@@ -20,6 +20,9 @@ class HogControls extends React.Component {
     this.state = {
       id: '',
       name: '',
+      orientations: 9,
+      pixels_per_cell: 8,
+      cells_per_block: 2,
       training_images: {},
       attributes: {},
       unsaved_changes: false,
@@ -103,6 +106,9 @@ class HogControls extends React.Component {
     const hog_rule = {
       id: this.state.id,
       name: this.state.name,
+      orientations: this.state.orientations,
+      pixels_per_cell: this.state.pixels_per_cell,
+      cells_per_block: this.state.cells_per_block,
       training_images: this.state.training_images,
       attributes: this.state.attributes,
     }
@@ -144,6 +150,39 @@ class HogControls extends React.Component {
     )
   }
 
+  buildOrientationsField() {
+    return buildLabelAndTextInput(
+      this.state.orientations,
+      'Orientations',
+      'hog_orientations',
+      'orientations',
+      5,
+      ((value)=>{this.setLocalStateVar('orientations', value)})
+    )
+  }
+
+  buildPixelsPerCellField() {
+    return buildLabelAndTextInput(
+      this.state.pixels_per_cell,
+      'Pixels per cell',
+      'hog_pixels_per_cell',
+      'pixels_per_cell',
+      5,
+      ((value)=>{this.setLocalStateVar('pixels_per_cell', value)})
+    )
+  }
+
+  buildCellsPerBlockField() {
+    return buildLabelAndTextInput(
+      this.state.cells_per_block,
+      'Cells per block',
+      'hog_cells_per_block',
+      'cells_per_block',
+      5,
+      ((value)=>{this.setLocalStateVar('cells_per_block', value)})
+    )
+  }
+
   buildLoadButton() {
     return buildTier1LoadButton(
       'hog',
@@ -160,6 +199,9 @@ class HogControls extends React.Component {
       this.setState({
         id: hog['id'],
         name: hog['name'],
+        orientations: hog['orientations'],
+        pixels_per_cell: hog['pixels_per_cell'],
+        cells_per_block: hog['cells_per_block'],
         training_images: hog['training_images'],
         attributes: hog['attributes'],
         unsaved_changes: false,
@@ -178,6 +220,9 @@ class HogControls extends React.Component {
     this.setState({
       id: '',
       name: '',
+      orientations: 9,
+      pixels_per_cell: 8,
+      cells_per_block: 2,
       training_images: {},
       attributes: {},
       unsaved_changes: false,
@@ -294,6 +339,25 @@ class HogControls extends React.Component {
     )
   }
 
+  trainModel() {
+    this.doSave()
+    this.props.submitInsightsJob('hog_train_model')
+  }
+
+  buildTrainModelButton() {
+    if (!this.state.training_images) {
+      return
+    }
+    return (
+      <button
+          className='btn btn-primary ml-2 mt-2'
+          onClick={() => this.trainModel()}
+      >
+        Train Model
+      </button>
+    )
+  }
+
   buildPickTrainingImageButton() {
     if (!this.props.movie_url) {
       return
@@ -325,7 +389,7 @@ class HogControls extends React.Component {
               <div className='d-inline'>
                 {image_key}
               </div>
-              <div className='d-inline'>
+              <div className='d-inline ml-2'>
                 <img
                   alt={image_key}
                   src={the_src}
@@ -359,6 +423,9 @@ class HogControls extends React.Component {
     const save_button = this.buildSaveButton()
     const save_to_db_button = this.buildSaveToDatabaseButton()
     const name_field = this.buildNameField()
+    const orientations_field = this.buildOrientationsField()
+    const pixels_per_cell_field = this.buildPixelsPerCellField()
+    const cells_per_block_field = this.buildCellsPerBlockField()
     const load_button = this.buildLoadButton()
     const delete_button = this.buildDeleteButton()
     const run_button = this.buildRunButton()
@@ -368,6 +435,7 @@ class HogControls extends React.Component {
     const show_hide_train_model = makePlusMinusRowLight('train model', 'hog_train_model_div')
     const pick_training_image_button = this.buildPickTrainingImageButton()
     const training_image_list = this.buildTrainingImageList()
+    const train_model_button = this.buildTrainModelButton()
 
     return (
         <div className='row bg-light rounded mt-3'>
@@ -438,7 +506,22 @@ class HogControls extends React.Component {
                     id='hog_train_model_div'
                     className='collapse'
                 >
-                train model
+                  <div className='row bg-light'>
+                    {orientations_field}
+                  </div>
+
+                  <div className='row bg-light'>
+                    {pixels_per_cell_field}
+                  </div>
+
+                  <div className='row bg-light'>
+                    {cells_per_block_field}
+                  </div>
+
+                  <div className='row bg-light'>
+                    {train_model_button}
+                  </div>
+
                 </div>
 
               </div>
