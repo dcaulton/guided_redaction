@@ -25,6 +25,7 @@ class InsightsPanel extends React.Component {
       draggedId: null,
       visibilityFlags: {
         'templates': true,
+        'hog': true,
         'selectedArea': true,
         'annotate': true,
         'telemetry': true,

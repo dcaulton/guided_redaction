@@ -65,6 +65,7 @@ class RedactApplication extends React.Component {
       app_codebooks: {},
       tier_1_scanners: {
         'ocr': {},
+        'hog': {},
         'ocr_scene_analysis': {},
         'ocr_movie_analysis': {},
         'template': {},
@@ -74,6 +75,7 @@ class RedactApplication extends React.Component {
       },
       tier_1_scanner_current_ids: {
         'ocr': '',
+        'hog': '',
         'ocr_scene_analysis': '',
         'ocr_movie_analysis': '',
         'template': '',
@@ -83,6 +85,7 @@ class RedactApplication extends React.Component {
       },
       tier_1_matches: {
         'ocr': {},
+        'hog': {},
         'ocr_scene_analysis': {},
         'ocr_movie_analysis': {},
         'template': {},

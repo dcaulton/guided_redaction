@@ -1,5 +1,6 @@
 import React from 'react';
 import TemplateControls from './TemplateControls'
+import HogControls from './HogControls'
 import AnnotationControls from './AnnotationControls'
 import TelemetryControls from './TelemetryControls'
 import SelectedAreaControls from './SelectedAreaControls'
@@ -135,6 +136,21 @@ class BottomInsightsControls extends React.Component {
           importScanner={this.props.importScanner}
           tier_1_scanners={this.props.tier_1_scanners}
           tier_1_scanner_current_ids={this.props.tier_1_scanner_current_ids}
+        />
+
+        <HogControls
+          displayInsightsMessage={this.props.displayInsightsMessage}
+          submitInsightsJob={this.props.submitInsightsJob}
+          setGlobalStateVar={this.props.setGlobalStateVar}
+          visibilityFlags={this.props.visibilityFlags}
+          toggleShowVisibility={this.props.toggleShowVisibility}
+          tier_1_scanners={this.props.tier_1_scanners}
+          tier_1_scanner_current_ids={this.props.tier_1_scanner_current_ids}
+          scanners={this.props.scanners}
+          getScanners={this.props.getScanners}
+          deleteScanner={this.props.deleteScanner}
+          importScanner={this.props.importScanner}
+          saveScannerToDatabase={this.props.saveScannerToDatabase}
         />
 
         <SelectedAreaControls

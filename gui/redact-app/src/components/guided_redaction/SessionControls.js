@@ -284,6 +284,10 @@ class SessionControls extends React.Component {
     if (this.props.visibilityFlags['templates']) {
       show_templates_checked = 'checked'
     }
+    let show_hog_checked = ''
+    if (this.props.visibilityFlags['hog']) {
+      show_hog_checked = 'checked'
+    }
     let show_selected_area_checked = ''
     if (this.props.visibilityFlags['selectedArea']) {
       show_selected_area_checked = 'checked'
@@ -440,6 +444,16 @@ class SessionControls extends React.Component {
                     onChange={() => this.props.toggleShowVisibility('templates')}
                   />
                   Show Templates
+                </div>
+
+                <div className='row mt-3 bg-light rounded'>
+                  <input
+                    className='ml-2 mr-2 mt-1'
+                    checked={show_hog_checked}
+                    type='checkbox'
+                    onChange={() => this.props.toggleShowVisibility('hog')}
+                  />
+                  Show Hog
                 </div>
 
                 <div className='row mt-3 bg-light rounded'>
