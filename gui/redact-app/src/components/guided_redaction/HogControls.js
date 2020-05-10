@@ -11,6 +11,7 @@ import {
   makePlusMinusRowLight,
   buildAttributesAddRow,
   buildAttributesAsRows,
+  buildLabelAndDropdown,
 } from './SharedControls'
 
 class HogControls extends React.Component {
@@ -23,6 +24,7 @@ class HogControls extends React.Component {
       orientations: 9,
       pixels_per_cell: 8,
       cells_per_block: 2,
+      normalize: true,
       training_images: {},
       attributes: {},
       unsaved_changes: false,
@@ -109,6 +111,7 @@ class HogControls extends React.Component {
       orientations: this.state.orientations,
       pixels_per_cell: this.state.pixels_per_cell,
       cells_per_block: this.state.cells_per_block,
+      normalize: this.state.normalize,
       training_images: this.state.training_images,
       attributes: this.state.attributes,
     }
@@ -183,6 +186,20 @@ class HogControls extends React.Component {
     )
   }
 
+  buildNormalizeDropdown() {
+    const values = [
+      {1: 'yes'},
+      {0: 'no'}
+    ]
+    return buildLabelAndDropdown(
+      values,
+      'Normalize images during training',
+      this.state.normalize,
+      'hog_normalize',
+      ((value)=>{this.setLocalStateVar('normalize', value)})
+    )
+  }
+
   buildLoadButton() {
     return buildTier1LoadButton(
       'hog',
@@ -202,6 +219,7 @@ class HogControls extends React.Component {
         orientations: hog['orientations'],
         pixels_per_cell: hog['pixels_per_cell'],
         cells_per_block: hog['cells_per_block'],
+        normalize: hog['normalize'],
         training_images: hog['training_images'],
         attributes: hog['attributes'],
         unsaved_changes: false,
@@ -223,6 +241,7 @@ class HogControls extends React.Component {
       orientations: 9,
       pixels_per_cell: 8,
       cells_per_block: 2,
+      normalize: true,
       training_images: {},
       attributes: {},
       unsaved_changes: false,
@@ -426,6 +445,7 @@ class HogControls extends React.Component {
     const orientations_field = this.buildOrientationsField()
     const pixels_per_cell_field = this.buildPixelsPerCellField()
     const cells_per_block_field = this.buildCellsPerBlockField()
+    const normalize_dropdown = this.buildNormalizeDropdown()
     const load_button = this.buildLoadButton()
     const delete_button = this.buildDeleteButton()
     const run_button = this.buildRunButton()
@@ -516,6 +536,10 @@ class HogControls extends React.Component {
 
                   <div className='row bg-light'>
                     {cells_per_block_field}
+                  </div>
+
+                  <div className='row bg-light'>
+                    {normalize_dropdown}
                   </div>
 
                   <div className='row bg-light'>

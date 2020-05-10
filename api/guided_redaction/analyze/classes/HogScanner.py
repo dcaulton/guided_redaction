@@ -1,6 +1,9 @@
 import base64
 import cv2
+from skimage import feature                                                                                             
+import skimage 
 import numpy as np
+import h5py
 
 
 class HogScanner:
@@ -8,8 +11,15 @@ class HogScanner:
     def __init__(self, hog_rule):
         self.hog_rule = hog_rule
         self.orientations = int(hog_rule['orientations'])
-        self.pixels_per_cell = int(hog_rule['pixels_per_cell'])
-        self.cells_per_block = int(hog_rule['cells_per_block'])
+        self.pixels_per_cell = (
+            int(hog_rule['pixels_per_cell']),
+            int(hog_rule['pixels_per_cell'])
+        )
+        self.cells_per_block = (
+            int(hog_rule['cells_per_block']),
+            int(hog_rule['cells_per_block'])
+        )
+        self.normalize = hog_rule['normalize']
         
         widths = []
         heights = []
@@ -30,10 +40,10 @@ class HogScanner:
             self.avg_img_height = sum(heights) / len(heights)
 
         upper_limit = self.pixels_per_cell * self.cells_per_block
-        for w in range(self.avg_img_width, self.avg_img_width + upper_limit):
+        for w in range(self.avg_img_width, self.avg_img_width + upper_limit + 1):
             if w % self.pixels_per_cell == 0 and w % self.cells_per_block == 0:
                 self.window_width = w
-        for h in range(self.avg_img_height, self.avg_img_height + upper_limit):
+        for h in range(self.avg_img_height, self.avg_img_height + upper_limit + 1):
             if h % self.pixels_per_cell == 0 and h % self.cells_per_block == 0:
                 self.window_height = h
         if not self.window_width or not self.window_height:
@@ -41,6 +51,35 @@ class HogScanner:
 
 
 
+    def describe(self, cv2_image):
+        hist = feature.hog(
+            cv2_image, 
+            orientations=self.orientations, 
+            pixels_per_cell=self.pixels_per_cell,
+            cells_per_block = self.cells_per_block, 
+            transform_sqrt = self.normalize, 
+            block_norm="L1"
+        )
+
+        hist[hist < 0] = 0
+        return hist
 
     def train_model(self):
         return 'all done fool'
+
+    def dump_dataset(self, data, labels, path, datasetName, writeMethod="w"):
+        # open the database, create the dataset, write the data and labels to dataset,
+        # and then close the database
+        db = h5py.File(path, writeMethod)
+        dataset = db.create_dataset(datasetName, (len(data), len(data[0]) + 1), dtype="float")
+        dataset[0:len(data)] = np.c_[labels, data]
+        db.close()
+
+    def load_dataset(self, path, datasetName):
+        # open the database, grab the labels and data, then close the dataset
+        db = h5py.File(path, "r")
+        (labels, data) = (db[datasetName][:, 0], db[datasetName][:, 1:])
+        db.close()
+
+        # return a tuple of the data and labels
+        return (data, labels)
