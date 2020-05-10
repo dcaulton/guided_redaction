@@ -21,6 +21,7 @@ from guided_redaction.analyze.api import (
     AnalyzeViewSetOcrMatchChart,
     AnalyzeViewSetOcrSceneAnalysisChart,
     AnalyzeViewSetSelectedAreaChart,
+    AnalyzeViewSetTrainHog,
     AnalyzeViewSetOcr
 )
 
@@ -1151,4 +1152,20 @@ def wrap_up_entity_finder_threaded(job, children):
     job.elapsed_time = 1
     job.save()
 
-
+@shared_task
+def train_hog(job_uuid):
+    if not Job.objects.filter(pk=job_uuid).exists():
+        print('calling train_hog on nonexistent job: {}'.format(job_uuid))
+    job = Job.objects.get(pk=job_uuid)
+    job.status = 'running'
+    job.save()
+    print('running train_hog for job {}'.format(job_uuid))
+    worker = AnalyzeViewSetTrainHog()
+    rd = json.loads(job.request_data)
+    response = worker.process_create_request(rd)
+    if not Job.objects.filter(pk=job_uuid).exists():
+        return
+    job = Job.objects.get(pk=job_uuid)
+    job.response_data = json.dumps(response.data)
+    job.status = 'success'
+    job.save()

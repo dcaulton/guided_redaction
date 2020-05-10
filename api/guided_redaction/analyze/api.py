@@ -15,6 +15,7 @@ from guided_redaction.analyze.classes.ChartMaker import ChartMaker
 from guided_redaction.analyze.classes.EntityFinder import EntityFinder
 from guided_redaction.analyze.classes.OcrSceneAnalyzer import OcrSceneAnalyzer
 from guided_redaction.analyze.classes.OcrMovieAnalyzer import OcrMovieAnalyzer
+from guided_redaction.analyze.classes.HogScanner import HogScanner
 import json
 import base64
 import numpy as np
@@ -1203,3 +1204,17 @@ class AnalyzeViewSetEntityFinder(viewsets.ViewSet):
         entity_finder = EntityFinder(cv2_image, entity_finder_meta, template_matcher, extents_finder)
 
         return entity_finder.find_entities()
+
+class AnalyzeViewSetTrainHog(viewsets.ViewSet):
+    def create(self, request):
+        request_data = request.data
+        return self.process_create_request(request_data)
+
+    def process_create_request(self, request_data):
+        if not request_data.get("hog_rule"):
+            return self.error("hog_rule is required", status_code=400)
+        hog_rule = request_data.get('hog_rule')
+        hog_scanner = HogScanner(hog_rule)
+        results = hog_scanner.train_model()
+
+        return Response(results)

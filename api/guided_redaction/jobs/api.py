@@ -60,6 +60,8 @@ def dispatch_job(job):
         analyze_tasks.oma_first_scan_threaded.delay(job_uuid)
     if job.app == 'analyze' and job.operation == 'entity_finder_threaded':
         analyze_tasks.entity_finder_threaded.delay(job_uuid)
+    if job.app == 'analyze' and job.operation == 'hog_train':
+        analyze_tasks.train_hog.delay(job_uuid)
     if job.app == 'parse' and job.operation == 'split_and_hash_threaded':
         parse_tasks.split_and_hash_threaded.delay(job_uuid)
     if job.app == 'parse' and job.operation == 'split_threaded':
