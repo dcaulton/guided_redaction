@@ -53,6 +53,8 @@ class HogControls extends React.Component {
       id: image_id,
       movie_url: this.props.movie_url,
       image_url: this.props.insights_image,
+      start: this.props.clicked_coords,
+      end: end_coords,
     }
     let deepCopyTrainingImages = JSON.parse(JSON.stringify(this.state.training_images))
     deepCopyTrainingImages[image_id] = image_obj

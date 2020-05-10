@@ -1,14 +1,18 @@
 import base64
 import cv2
 from skimage import feature                                                                                             
+from sklearn.feature_extraction.image import extract_patches_2d
 import skimage 
 import numpy as np
+import requests
 import h5py
 
 
 class HogScanner:
 
     def __init__(self, hog_rule):
+        self.features_path = '/Users/dcaulton/Desktop/features.hdf5'
+        self.num_distractions_per_image = 20
         self.hog_rule = hog_rule
         self.orientations = int(hog_rule['orientations'])
         self.pixels_per_cell = (
@@ -21,11 +25,11 @@ class HogScanner:
         )
         self.normalize = hog_rule['normalize']
         
-        widths = []
-        heights = []
         if 'training_images' not in hog_rule or not hog_rule['training_images']:
             raise Exception('cannot have a HOG scanner without training images')
 
+        widths = []
+        heights = []
         for training_image_key in hog_rule['training_images']:
             training_image = hog_rule['training_images'][training_image_key]
             img_base64 = training_image['cropped_image_bytes']
@@ -35,20 +39,22 @@ class HogScanner:
             widths.append(cv2_image.shape[1])
             heights.append(cv2_image.shape[0])
         if widths:
-            self.avg_img_width = sum(widths) / len(widths)
+            self.avg_img_width = int(sum(widths) / len(widths))
         if heights:
-            self.avg_img_height = sum(heights) / len(heights)
+            self.avg_img_height = int(sum(heights) / len(heights))
 
-        upper_limit = self.pixels_per_cell * self.cells_per_block
+        upper_limit = self.pixels_per_cell[0] * self.cells_per_block[0]
         for w in range(self.avg_img_width, self.avg_img_width + upper_limit + 1):
-            if w % self.pixels_per_cell == 0 and w % self.cells_per_block == 0:
+            if w % self.pixels_per_cell[0] == 0 and w % self.cells_per_block[0] == 0:
                 self.window_width = w
         for h in range(self.avg_img_height, self.avg_img_height + upper_limit + 1):
-            if h % self.pixels_per_cell == 0 and h % self.cells_per_block == 0:
+            if h % self.pixels_per_cell[0] == 0 and h % self.cells_per_block[0] == 0:
                 self.window_height = h
         if not self.window_width or not self.window_height:
             raise Exception('bad match on getting HOG window sizes')
 
+        self.data = []
+        self.labels = []
 
 
     def describe(self, cv2_image):
@@ -65,6 +71,70 @@ class HogScanner:
         return hist
 
     def train_model(self):
+        # extract positive training features
+        for training_image_key in self.hog_rule['training_images']:
+            training_image = self.hog_rule['training_images'][training_image_key]
+            img_base64 = training_image['cropped_image_bytes']
+            img_bytes = base64.b64decode(img_base64)
+            nparr = np.fromstring(img_bytes, np.uint8)
+            cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+            cv2_image = cv2.cvtColor(cv2_image, cv2.COLOR_BGR2GRAY)
+            cv2_image_standard_size = cv2.resize(
+                cv2_image, 
+                (self.window_width, self.window_height), 
+                interpolation=cv2.INTER_AREA
+            )
+
+            features = self.describe(cv2_image)
+            print('adding positive feature with size {}'.format(len(features)))
+#            print('features {}'.format(len(features)))
+#            self.data.append(features)
+#            self.labels.append(1)
+
+        # extract negative training features
+        for training_image_key in self.hog_rule['training_images']:
+            training_image = self.hog_rule['training_images'][training_image_key]
+
+            pic_response = requests.get(training_image['image_url'])
+            image = pic_response.content
+            if not image:
+                raise Exception('could not load source image for negative training')
+            nparr = np.fromstring(image, np.uint8)
+            cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+            color_at_upper_left = tuple(cv2_image[training_image['start'][1], training_image['start'][0]])
+            need_to_use = (
+                int(color_at_upper_left[0]),
+                int(color_at_upper_left[1]),
+                int(color_at_upper_left[2]),
+            )
+            cv2.rectangle(
+                cv2_image, 
+                tuple(training_image['start']),
+                tuple(training_image['end']),
+                need_to_use,
+                -1
+            )
+            cv2_image = cv2.cvtColor(cv2_image, cv2.COLOR_BGR2GRAY)
+            patches = extract_patches_2d(
+                cv2_image,
+                (self.window_height, self.window_width),
+                max_patches=self.num_distractions_per_image
+            )
+            for index, patch in enumerate(patches):
+                features = self.describe(patch)
+                print('adding negative feature with size {}'.format(len(features)))
+                self.data.append(features)
+                self.labels.append(-1)
+
+            self.dump_dataset(
+                self.data, 
+                self.labels, 
+                self.features_path,
+                "features"
+            )
+            cv2.imwrite('/Users/dcaulton/Desktop/dingus.png', cv2_image)
+        
+
         return 'all done fool'
 
     def dump_dataset(self, data, labels, path, datasetName, writeMethod="w"):
