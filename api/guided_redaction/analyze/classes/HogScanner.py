@@ -85,11 +85,9 @@ class HogScanner:
                 interpolation=cv2.INTER_AREA
             )
 
-            features = self.describe(cv2_image)
-            print('adding positive feature with size {}'.format(len(features)))
-#            print('features {}'.format(len(features)))
-#            self.data.append(features)
-#            self.labels.append(1)
+            features = self.describe(cv2_image_standard_size)
+            self.data.append(features)
+            self.labels.append(1)
 
         # extract negative training features
         for training_image_key in self.hog_rule['training_images']:
@@ -122,7 +120,6 @@ class HogScanner:
             )
             for index, patch in enumerate(patches):
                 features = self.describe(patch)
-                print('adding negative feature with size {}'.format(len(features)))
                 self.data.append(features)
                 self.labels.append(-1)
 
