@@ -1214,7 +1214,15 @@ class AnalyzeViewSetTrainHog(viewsets.ViewSet):
         if not request_data.get("hog_rule"):
             return self.error("hog_rule is required", status_code=400)
         hog_rule = request_data.get('hog_rule')
-        hog_scanner = HogScanner(hog_rule)
+        file_writer = FileWriter(
+            working_dir=settings.REDACT_FILE_STORAGE_DIR,
+            base_url=settings.REDACT_FILE_BASE_URL,
+            image_request_verify_headers=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
+        )
+        hog_scanner = HogScanner(
+            hog_rule,
+            file_writer
+        )
         results = hog_scanner.train_model()
 
         return Response(results)

@@ -1,4 +1,5 @@
 import base64
+import os
 import cv2
 from skimage import feature                                                                                             
 from sklearn.feature_extraction.image import extract_patches_2d
@@ -10,10 +11,10 @@ import h5py
 
 class HogScanner:
 
-    def __init__(self, hog_rule):
-        self.features_path = '/Users/dcaulton/Desktop/features.hdf5'
-        self.num_distractions_per_image = 20
+    def __init__(self, hog_rule, file_writer):
+        self.num_distractions_per_image = 40
         self.hog_rule = hog_rule
+        self.file_writer = file_writer
         self.orientations = int(hog_rule['orientations'])
         self.pixels_per_cell = (
             int(hog_rule['pixels_per_cell']),
@@ -56,6 +57,16 @@ class HogScanner:
         self.data = []
         self.labels = []
 
+        hogdir = self.file_writer.create_unique_directory('hog_features')
+        underscore_hog_name = self.hog_rule['name'].replace(' ', '_')
+        underscore_hog_name += '-' + self.hog_rule['id']
+        underscore_hog_name += '.hdf5'
+        outfilename = os.path.join(hogdir, underscore_hog_name)
+        self.features_path = outfilename
+
+    def train_model(self):
+        self.extract_features()
+        return 'all done fool'
 
     def describe(self, cv2_image):
         hist = feature.hog(
@@ -70,7 +81,7 @@ class HogScanner:
         hist[hist < 0] = 0
         return hist
 
-    def train_model(self):
+    def extract_features(self):
         # extract positive training features
         for training_image_key in self.hog_rule['training_images']:
             training_image = self.hog_rule['training_images'][training_image_key]
@@ -129,10 +140,6 @@ class HogScanner:
                 self.features_path,
                 "features"
             )
-            cv2.imwrite('/Users/dcaulton/Desktop/dingus.png', cv2_image)
-        
-
-        return 'all done fool'
 
     def dump_dataset(self, data, labels, path, datasetName, writeMethod="w"):
         # open the database, create the dataset, write the data and labels to dataset,
