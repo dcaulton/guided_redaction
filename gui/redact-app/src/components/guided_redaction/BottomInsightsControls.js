@@ -154,9 +154,14 @@ class BottomInsightsControls extends React.Component {
           clicked_coords={this.props.clicked_coords}
           addInsightsCallback={this.props.addInsightsCallback}
           insights_image={this.props.insights_image}
+          movies={this.props.movies}
           movie_url={this.props.movie_url}
           handleSetMode={this.props.handleSetMode}
           cropImage={this.props.cropImage}
+          getFramesetHashForImageUrl={this.props.getFramesetHashForImageUrl}
+          getFramesetHashesInOrder={this.props.getFramesetHashesInOrder}
+          setScrubberToIndex={this.props.setScrubberToIndex}
+          setCurrentVideo={this.props.setCurrentVideo}
         />
 
         <SelectedAreaControls

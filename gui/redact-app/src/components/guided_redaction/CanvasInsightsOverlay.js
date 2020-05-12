@@ -12,6 +12,8 @@ class CanvasInsightsOverlay extends React.Component {
     this.selected_area_color = '#2B9'
     this.selected_area_center_color = '#9F3'
     this.selected_area_origin_location_color = '#40D'
+    this.hog_training_image_color = '#72A'
+    this.hog_testing_image_color = '#A91'
     this.ocr_origin_location_color = '#51B'
     this.annotations_color = '#5DE'
     this.ocr_color = '#CC0'
@@ -49,6 +51,30 @@ class CanvasInsightsOverlay extends React.Component {
         selected_area_min_zones,
         this.selected_area_minimum_zone_color
       )
+    }
+  }
+
+  drawHogTrainingImages() {
+    if (!this.props.currentImageIsHogTrainingImage()) {
+      return
+    }
+    const zones = this.props.getCurrentHogTrainingImageLocations()
+    if (zones) {
+      this.drawBoxesAroundStartEndRecords(
+        zones,
+        this.hog_training_image_color
+      )
+    }
+  }
+
+  drawHogTestingImages() {
+    if (!this.props.currentImageIsHogTestingImage()) {
+      return
+    }
+    const zones = this.props.getCurrentHogTestingImageLocations()
+    for (let i = 0; i < zones.length; i++) {
+      const center = zones[i]['location']
+      this.drawCrosshairsGeneric(center, this.hog_testing_image_color)
     }
   }
 
@@ -352,6 +378,8 @@ class CanvasInsightsOverlay extends React.Component {
     this.clearCanvasItems()
     this.drawSelectedAreas()
     this.drawCrosshairs('add_stuff', this.props.clicked_coords)
+    this.drawHogTrainingImages()
+    this.drawHogTestingImages()
     this.drawSelectedAreaCenters()
     this.drawSelectedAreaMinimumZones()
     this.drawSelectedAreaOriginLocation()
@@ -371,6 +399,8 @@ class CanvasInsightsOverlay extends React.Component {
     this.clearCanvasItems()
     this.drawSelectedAreas()
     this.drawCrosshairs('add_stuff', this.props.clicked_coords)
+    this.drawHogTrainingImages()
+    this.drawHogTestingImages()
     this.drawSelectedAreaCenters()
     this.drawSelectedAreaMinimumZones()
     this.drawSelectedAreaOriginLocation()

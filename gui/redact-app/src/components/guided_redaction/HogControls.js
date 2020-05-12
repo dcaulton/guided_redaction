@@ -26,6 +26,7 @@ class HogControls extends React.Component {
       cells_per_block: 2,
       normalize: true,
       training_images: {},
+      testing_images: {},
       attributes: {},
       unsaved_changes: false,
     }
@@ -33,11 +34,48 @@ class HogControls extends React.Component {
     this.getHogRuleFromState=this.getHogRuleFromState.bind(this)
     this.setLocalStateVarNoWarning=this.setLocalStateVarNoWarning.bind(this)
     this.addTrainingImage=this.addTrainingImage.bind(this)
+    this.addTestingImage=this.addTestingImage.bind(this)
     this.imageCropDone=this.imageCropDone.bind(this)
+    this.getCurrentHogTrainingImageLocations=this.getCurrentHogTrainingImageLocations.bind(this)
+    this.getCurrentHogTestingImageLocations=this.getCurrentHogTestingImageLocations.bind(this)
   }
 
   componentDidMount() {
     this.props.addInsightsCallback('hog_pick_training_image_2', this.addTrainingImage)
+    this.props.addInsightsCallback('hog_pick_testing_image_1', this.addTestingImage)
+    this.props.addInsightsCallback('getCurrentHogTrainingImageLocations', this.getCurrentHogTrainingImageLocations)
+    this.props.addInsightsCallback('getCurrentHogTestingImageLocations', this.getCurrentHogTestingImageLocations)
+  }
+
+  getCurrentHogTrainingImageLocations() {
+    let locations = []
+    for (let i=0; i < Object.keys(this.state.training_images).length; i++) {
+      const ti_key = Object.keys(this.state.training_images)[i]
+      const ti = this.state.training_images[ti_key]
+      if (ti['image_url'] === this.props.insights_image) {
+        const build_obj = {
+          start: ti['start'],
+          end: ti['end'],
+        }
+        locations.push(build_obj)
+      }
+    }
+    return locations
+  }
+
+  getCurrentHogTestingImageLocations() {
+    let locations = []
+    for (let i=0; i < Object.keys(this.state.testing_images).length; i++) {
+      const ti_key = Object.keys(this.state.testing_images)[i]
+      const ti = this.state.testing_images[ti_key]
+      if (ti['image_url'] === this.props.insights_image) {
+        const build_obj = {
+          location: ti['location'],
+        }
+        locations.push(build_obj)
+      }
+    }
+    return locations
   }
 
   imageCropDone(response) {
@@ -70,10 +108,30 @@ class HogControls extends React.Component {
     await resp
   }
 
+  addTestingImage(the_coords) {
+    const image_id = 'testing_image_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
+    let image_obj = {
+      id: image_id,
+      movie_url: this.props.movie_url,
+      image_url: this.props.insights_image,
+      location: the_coords,
+    }
+    let deepCopyTestingImages = JSON.parse(JSON.stringify(this.state.testing_images))
+    deepCopyTestingImages[image_id] = image_obj
+    this.setLocalStateVar('testing_images', deepCopyTestingImages)
+    this.props.handleSetMode('hog_pick_testing_image_1')
+  }
+
   deleteTrainingImage(image_id) {
     let deepCopyTrainingImages = JSON.parse(JSON.stringify(this.state.training_images))
     delete deepCopyTrainingImages[image_id]
     this.setLocalStateVar('training_images', deepCopyTrainingImages)
+  }
+
+  deleteTestingImage(image_id) {
+    let deepCopyTestingImages = JSON.parse(JSON.stringify(this.state.testing_images))
+    delete deepCopyTestingImages[image_id]
+    this.setLocalStateVar('testing_images', deepCopyTestingImages)
   }
 
   setLocalStateVar(var_name, var_value, when_done=(()=>{})) {
@@ -115,6 +173,7 @@ class HogControls extends React.Component {
       cells_per_block: this.state.cells_per_block,
       normalize: this.state.normalize,
       training_images: this.state.training_images,
+      testing_images: this.state.testing_images,
       attributes: this.state.attributes,
     }
     return hog_rule
@@ -223,6 +282,7 @@ class HogControls extends React.Component {
         cells_per_block: hog['cells_per_block'],
         normalize: hog['normalize'],
         training_images: hog['training_images'],
+        testing_images: hog['testing_images'],
         attributes: hog['attributes'],
         unsaved_changes: false,
       })
@@ -245,6 +305,7 @@ class HogControls extends React.Component {
       cells_per_block: 2,
       normalize: true,
       training_images: {},
+      testing_images: {},
       attributes: {},
       unsaved_changes: false,
     })
@@ -379,17 +440,78 @@ class HogControls extends React.Component {
     )
   }
 
-  buildPickTrainingImageButton() {
+  buildPickImageButton(image_type) {
+    let the_text = 'Pick Image Center'
+    if (image_type === 'training') {
+      the_text = 'Pick Image Corners'
+    }
+    const the_mode = 'hog_pick_' + image_type + '_image_1'
     if (!this.props.movie_url) {
       return
     }
     return (
       <button
           className='btn btn-primary ml-2 mt-2'
-          onClick={() => this.props.handleSetMode('hog_pick_training_image_1')}
+          onClick={() => this.props.handleSetMode(the_mode)}
       >
-        Pick Image Corners
+        {the_text}
       </button>
+    )
+  }
+
+  showSourceFrame(movie_url, image_frameset_index) {
+    if (movie_url !== this.props.movie_url) {
+      this.props.setCurrentVideo(movie_url)
+    }
+    setTimeout((() => {this.props.setScrubberToIndex(image_frameset_index)}), 1000)
+  }
+
+  buildTestingImageList() {
+    const image_keys = Object.keys(this.state.testing_images)
+    return (
+      <div>
+        {image_keys.map((image_key, index) => {
+          const image = this.state.testing_images[image_key]
+          
+        const the_movie = this.props.movies[image['movie_url']]
+        const the_frameset = this.props.getFramesetHashForImageUrl(
+          image['image_url'],
+          the_movie['framesets']
+        )
+        const movie_framesets = this.props.getFramesetHashesInOrder(the_movie['framesets'])
+        const image_frameset_index = movie_framesets.indexOf(the_frameset)
+        const image_name = image['image_url'].split('/').slice(-1)[0]
+
+          return (
+            <div
+                key={index}
+            >
+              <div className='d-inline'>
+                {image_key}
+              </div>
+              <div className='d-inline ml-2'>
+                {image_name}
+              </div>
+              <div className='d-inline ml-2'>
+                <button
+                    className='btn btn-link'
+                    onClick={() => this.showSourceFrame(image['movie_url'], image_frameset_index)}
+                >
+                  goto
+                </button>
+              </div>
+              <div className='d-inline ml-2'>
+                <button
+                    className='btn btn-link'
+                    onClick={() => this.deleteTestingImage(image_key)}
+                >
+                  delete
+                </button>
+              </div>
+            </div>
+          )
+        })}
+      </div>
     )
   }
 
@@ -399,6 +521,15 @@ class HogControls extends React.Component {
       <div>
         {image_keys.map((image_key, index) => {
           const image = this.state.training_images[image_key]
+          
+        const the_movie = this.props.movies[image['movie_url']]
+        const the_frameset = this.props.getFramesetHashForImageUrl(
+          image['image_url'],
+          the_movie['framesets']
+        )
+        const movie_framesets = this.props.getFramesetHashesInOrder(the_movie['framesets'])
+        const image_frameset_index = movie_framesets.indexOf(the_frameset)
+
           let the_src = ''
           if (Object.keys(image).includes('cropped_image_bytes')) {
             the_src = "data:image/gif;base64," + image['cropped_image_bytes']
@@ -415,6 +546,14 @@ class HogControls extends React.Component {
                   alt={image_key}
                   src={the_src}
                 />
+              </div>
+              <div className='d-inline ml-2'>
+                <button
+                    className='btn btn-link'
+                    onClick={() => this.showSourceFrame(image['movie_url'], image_frameset_index)}
+                >
+                  goto
+                </button>
               </div>
               <div className='d-inline ml-2'>
                 <button
@@ -454,9 +593,12 @@ class HogControls extends React.Component {
     const attributes_list = this.buildAttributesList()
     const show_hide_general = makePlusMinusRowLight('general', 'hog_general_div')
     const show_hide_training_images= makePlusMinusRowLight('training images', 'hog_training_images_div')
+    const show_hide_testing_images= makePlusMinusRowLight('testing images', 'hog_testing_images_div')
     const show_hide_train_model = makePlusMinusRowLight('train model', 'hog_train_model_div')
-    const pick_training_image_button = this.buildPickTrainingImageButton()
+    const pick_training_image_button = this.buildPickImageButton('training')
     const training_image_list = this.buildTrainingImageList()
+    const pick_testing_image_button = this.buildPickImageButton('testing')
+    const testing_image_list = this.buildTestingImageList()
     const train_model_button = this.buildTrainModelButton()
 
     return (
@@ -520,8 +662,20 @@ class HogControls extends React.Component {
                   </div>
                   {pick_training_image_button}
                   {training_image_list}
-
                 </div>
+
+                {show_hide_testing_images}
+                <div 
+                    id='hog_testing_images_div'
+                    className='collapse'
+                >
+                  <div className='row h5'>
+                    testing images
+                  </div>
+                  {pick_testing_image_button}
+                  {testing_image_list}
+                </div>
+
 
                 {show_hide_train_model}
                 <div 

@@ -54,6 +54,8 @@ class InsightsPanel extends React.Component {
     this.handleSetMode=this.handleSetMode.bind(this)
     this.getTier1ScannerMatches=this.getTier1ScannerMatches.bind(this)
     this.currentImageIsTemplateAnchorImage=this.currentImageIsTemplateAnchorImage.bind(this)
+    this.currentImageIsHogTrainingImage=this.currentImageIsHogTrainingImage.bind(this)
+    this.currentImageIsHogTestingImage=this.currentImageIsHogTestingImage.bind(this)
     this.currentImageIsSelectedAreaAnchorImage=this.currentImageIsSelectedAreaAnchorImage.bind(this)
     this.currentImageIsOcrAnchorImage=this.currentImageIsOcrAnchorImage.bind(this)
     this.currentImageIsOsaMatchImage=this.currentImageIsOsaMatchImage.bind(this)
@@ -81,14 +83,8 @@ class InsightsPanel extends React.Component {
     this.getCurrentOcrMatches=this.getCurrentOcrMatches.bind(this)
     this.getCurrentAreasToRedact=this.getCurrentAreasToRedact.bind(this)
     this.setScrubberToIndex=this.setScrubberToIndex.bind(this)
-    this.getCurrentTemplateAnchors=this.getCurrentTemplateAnchors.bind(this)
-    this.getCurrentSelectedAreaCenters=this.getCurrentSelectedAreaCenters.bind(this)
-    this.getCurrentSelectedAreaMinimumZones=this.getCurrentSelectedAreaMinimumZones.bind(this)
-    this.getCurrentSelectedAreaOriginLocation=this.getCurrentSelectedAreaOriginLocation.bind(this)
-    this.getCurrentOcrOriginLocation=this.getCurrentOcrOriginLocation.bind(this)
-    this.getCurrentTemplateMaskZones=this.getCurrentTemplateMaskZones.bind(this)
     this.getCurrentOcrSceneAnalysisMatches=this.getCurrentOcrSceneAnalysisMatches.bind(this)
-    this.getCurrentOcrWindow=this.getCurrentOcrWindow.bind(this)
+    this.runCallbackFunction=this.runCallbackFunction.bind(this)
   }
 
   getCurrentOcrSceneAnalysisMatches() {
@@ -146,51 +142,9 @@ class InsightsPanel extends React.Component {
     this.scrubberOnChange()
   }
 
-  getCurrentOcrWindow() {
-    if (Object.keys(this.state.callbacks).includes('getOcrWindow')) {
-      return this.state.callbacks['getOcrWindow']()
-    }
-    return []
-  }
-
-  getCurrentSelectedAreaCenters() {
-    if (Object.keys(this.state.callbacks).includes('getCurrentSelectedAreaCenters')) {
-      return this.state.callbacks['getCurrentSelectedAreaCenters']()
-    }
-    return []
-  }
-
-  getCurrentSelectedAreaMinimumZones() {
-    if (Object.keys(this.state.callbacks).includes('getCurrentSelectedAreaMinimumZones')) {
-      return this.state.callbacks['getCurrentSelectedAreaMinimumZones']()
-    }
-    return []
-  }
-
-  getCurrentSelectedAreaOriginLocation() {
-    if (Object.keys(this.state.callbacks).includes('getCurrentSelectedAreaOriginLocation')) {
-      return this.state.callbacks['getCurrentSelectedAreaOriginLocation']()
-    }
-    return []
-  }
-
-  getCurrentOcrOriginLocation() {
-    if (Object.keys(this.state.callbacks).includes('getCurrentOcrOriginLocation')) {
-      return this.state.callbacks['getCurrentOcrOriginLocation']()
-    }
-    return []
-  }
-
-  getCurrentTemplateAnchors() {
-    if (Object.keys(this.state.callbacks).includes('getCurrentTemplateAnchors')) {
-      return this.state.callbacks['getCurrentTemplateAnchors']()
-    }
-    return []
-  }
-
-  getCurrentTemplateMaskZones() {
-    if (Object.keys(this.state.callbacks).includes('getCurrentTemplateMaskZones')) {
-      return this.state.callbacks['getCurrentTemplateMaskZones']()
+  runCallbackFunction(function_name) {
+    if (Object.keys(this.state.callbacks).includes(function_name)) {
+      return this.state.callbacks[function_name]()
     }
     return []
   }
@@ -940,6 +894,40 @@ class InsightsPanel extends React.Component {
     }
   }
 
+  currentImageIsHogTestingImage() {
+    return this.currentImageIsHogWhateverImage('testing_images')
+  }
+
+  currentImageIsHogTrainingImage() {
+    return this.currentImageIsHogWhateverImage('training_images')
+  }
+
+  currentImageIsHogWhateverImage(group_key) {
+    if (this.props.tier_1_scanner_current_ids['hog']) {
+      let key = this.props.tier_1_scanner_current_ids['hog']
+      if (!Object.keys(this.props.tier_1_scanners['hog']).includes(key)) {
+        return false
+      }
+      let scanner = this.props.tier_1_scanners['hog'][key]
+      if (!Object.keys(scanner).includes(group_key)) {
+        return false
+      }
+      if (!Object.keys(scanner[group_key]).length) {
+        return false
+      }
+      for (let i=0; i < Object.keys(scanner[group_key]).length; i++) {
+        const ti_key = Object.keys(scanner[group_key])[i]
+        const ti = scanner[group_key][ti_key]
+        if (ti['image_url'] === this.state.insights_image) {
+          return true
+        }
+      }
+      return false
+    } else {
+      return true
+    }
+  }
+
   callPing() {
     this.props.doPing(this.afterPingSuccess, this.afterPingFailure)
   }
@@ -1354,6 +1342,8 @@ class InsightsPanel extends React.Component {
               currentImageIsSelectedAreaAnchorImage={this.currentImageIsSelectedAreaAnchorImage}
               currentImageIsOcrAnchorImage={this.currentImageIsOcrAnchorImage}
               currentImageIsOsaMatchImage={this.currentImageIsOsaMatchImage}
+              currentImageIsHogTrainingImage={this.currentImageIsHogTrainingImage}
+              currentImageIsHogTestingImage={this.currentImageIsHogTestingImage}
               insights_image_scale={this.state.insights_image_scale}
               getTier1ScannerMatches={this.getTier1ScannerMatches}
               getAnnotations={this.getAnnotations}
@@ -1362,13 +1352,15 @@ class InsightsPanel extends React.Component {
               getCurrentOcrMatches={this.getCurrentOcrMatches}
               getCurrentAreasToRedact={this.getCurrentAreasToRedact}
               movie_url={this.props.movie_url}
-              getCurrentTemplateAnchors={this.getCurrentTemplateAnchors}
-              getCurrentTemplateMaskZones={this.getCurrentTemplateMaskZones}
-              getCurrentOcrWindow={this.getCurrentOcrWindow}
-              getCurrentSelectedAreaCenters={this.getCurrentSelectedAreaCenters}
-              getCurrentSelectedAreaMinimumZones={this.getCurrentSelectedAreaMinimumZones}
-              getCurrentSelectedAreaOriginLocation={this.getCurrentSelectedAreaOriginLocation}
-              getCurrentOcrOriginLocation={this.getCurrentOcrOriginLocation}
+              getCurrentHogTrainingImageLocations={(()=>this.runCallbackFunction('getCurrentHogTrainingImageLocations'))}
+              getCurrentHogTestingImageLocations={(()=>this.runCallbackFunction('getCurrentHogTestingImageLocations'))}
+              getCurrentTemplateAnchors={(()=>this.runCallbackFunction('getCurrentTemplateAnchors'))}
+              getCurrentTemplateMaskZones={(()=>this.runCallbackFunction('getCurrentTemplateMaskZones'))}
+              getCurrentOcrWindow={(()=>this.runCallbackFunction('getOcrWindow'))}
+              getCurrentSelectedAreaCenters={(()=>this.runCallbackFunction('getCurrentSelectedAreaCenters'))}
+              getCurrentSelectedAreaMinimumZones={(()=>this.runCallbackFunction('getCurrentSelectedAreaMinimumZones'))}
+              getCurrentSelectedAreaOriginLocation={(()=>this.runCallbackFunction('getCurrentSelectedAreaOriginLocation'))}
+              getCurrentOcrOriginLocation={(()=>this.runCallbackFunction('getCurrentOcrOriginLocation'))}
               getCurrentOcrSceneAnalysisMatches={this.getCurrentOcrSceneAnalysisMatches}
             />
           </div>
