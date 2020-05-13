@@ -581,9 +581,39 @@ class InsightsPanel extends React.Component {
     }
     job_data['app'] = 'analyze'
     job_data['operation'] = 'hog_train'
+
     const hog_id = this.props.tier_1_scanner_current_ids['hog']
     const hog_rule = this.props.tier_1_scanners['hog'][hog_id]
-    job_data['request_data']['hog_rule'] = hog_rule
+    job_data['request_data'] = {
+      tier_1_scanners: {
+        hog: {
+        }
+      }
+    }
+    job_data['request_data']['tier_1_scanners']['hog'][hog_id] = hog_rule
+
+    let movie_ids = []
+    for (let i=0; i < Object.keys(hog_rule['training_images']).length; i++) {
+      const tim_id = Object.keys(hog_rule['training_images'])[i]
+      const tim = hog_rule['training_images'][tim_id]
+      if (!movie_ids.includes(tim['movie_url'])) {
+        movie_ids.push(tim['movie_url'])
+      }
+    }
+    for (let i=0; i < Object.keys(hog_rule['testing_images']).length; i++) {
+      const tim_id = Object.keys(hog_rule['testing_images'])[i]
+      const tim = hog_rule['testing_images'][tim_id]
+      if (!movie_ids.includes(tim['movie_url'])) {
+        movie_ids.push(tim['movie_url'])
+      }
+    }
+    job_data['request_data']['movies'] = {}
+    for (let i=0; i < movie_ids.length; i++) {
+      const movie_url = movie_ids[i]
+      const movie = this.props.movies[movie_url]
+      job_data['request_data']['movies'][movie_url] = movie
+    }
+
     job_data['description'] = 'train hog rule ('  + hog_id + ')'
     return job_data
   }
@@ -735,6 +765,11 @@ class InsightsPanel extends React.Component {
       this.props.submitJob({
         job_data: job_data,
       })
+    } else if (job_string === 'hog_train_model') {
+      let job_data = this.buildTrainHogModelJobData(extra_data)
+      this.props.submitJob({
+        job_data: job_data
+      })
     } else if (
         job_string === 'selected_area_t1_template' || 
         job_string === 'selected_area_t1_ocr' || 
@@ -790,11 +825,6 @@ class InsightsPanel extends React.Component {
       let job_data = this.buildZipJobData(job_string, extra_data)
       this.props.submitJob({
         job_data: job_data,
-      })
-    } else if (job_string === 'hog_train_model') {
-      let job_data = this.buildTrainHogModelJobData(extra_data)
-      this.props.submitJob({
-        job_data: job_data
       })
     } else if (job_string === 'split_and_hash_threaded') {
       let job_data = this.buildSplitAndHashJobData(extra_data)

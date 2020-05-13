@@ -183,7 +183,11 @@ class HogControls extends React.Component {
     return hog_rule
   }
 
-  doSave(when_done=(()=>{})) {
+  doSave(force=false, when_done=(()=>{})) {
+    if (force && !this.state.name) {
+      const hog_id = 'hog_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
+      this.setLocalStateVar('name', hog_id)
+    }
     doTier1Save(
       'hog',
       this.state.name,
@@ -441,7 +445,7 @@ class HogControls extends React.Component {
   }
 
   trainModel() {
-    this.doSave()
+    this.doSave(true)
     this.props.submitInsightsJob('hog_train_model')
   }
 

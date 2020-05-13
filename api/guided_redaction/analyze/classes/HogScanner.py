@@ -11,9 +11,10 @@ import h5py
 
 class HogScanner:
 
-    def __init__(self, hog_rule, file_writer):
+    def __init__(self, hog_rule, movies, file_writer):
         self.num_distractions_per_image = 40
         self.hog_rule = hog_rule
+        self.movies = movies
         self.file_writer = file_writer
         self.orientations = int(hog_rule['orientations'])
         self.pixels_per_cell = (
@@ -25,6 +26,7 @@ class HogScanner:
             int(hog_rule['cells_per_block'])
         )
         self.normalize = hog_rule['normalize']
+        self.c_for_svm = float(hog_rule['c_for_svm'])
         
         if 'training_images' not in hog_rule or not hog_rule['training_images']:
             raise Exception('cannot have a HOG scanner without training images')
