@@ -25,8 +25,10 @@ class HogControls extends React.Component {
       pixels_per_cell: 8,
       cells_per_block: 2,
       normalize: true,
+      c_for_svm: '.01',
       training_images: {},
       testing_images: {},
+      hard_negatives: {},
       attributes: {},
       unsaved_changes: false,
     }
@@ -172,8 +174,10 @@ class HogControls extends React.Component {
       pixels_per_cell: this.state.pixels_per_cell,
       cells_per_block: this.state.cells_per_block,
       normalize: this.state.normalize,
+      c_for_svm: this.state.c_for_svm,
       training_images: this.state.training_images,
       testing_images: this.state.testing_images,
+      hard_negatives: this.state.hard_negatives,
       attributes: this.state.attributes,
     }
     return hog_rule
@@ -247,6 +251,17 @@ class HogControls extends React.Component {
     )
   }
 
+  buildCForSvmField() {
+    return buildLabelAndTextInput(
+      this.state.c_for_svm,
+      'C for SVM',
+      'hog_c_for_svm',
+      'c_for_svm',
+      5,
+      ((value)=>{this.setLocalStateVar('c_for_svm', value)})
+    )
+  }
+
   buildNormalizeDropdown() {
     const values = [
       {1: 'yes'},
@@ -281,8 +296,10 @@ class HogControls extends React.Component {
         pixels_per_cell: hog['pixels_per_cell'],
         cells_per_block: hog['cells_per_block'],
         normalize: hog['normalize'],
+        c_for_svm: hog['c_for_svm'],
         training_images: hog['training_images'],
         testing_images: hog['testing_images'],
+        hard_negatives: hog['nard_negatives'],
         attributes: hog['attributes'],
         unsaved_changes: false,
       })
@@ -304,8 +321,10 @@ class HogControls extends React.Component {
       pixels_per_cell: 8,
       cells_per_block: 2,
       normalize: true,
+      c_for_svm: '.01',
       training_images: {},
       testing_images: {},
+      hard_negatives: {},
       attributes: {},
       unsaved_changes: false,
     })
@@ -444,6 +463,8 @@ class HogControls extends React.Component {
     let the_text = 'Pick Image Center'
     if (image_type === 'training') {
       the_text = 'Pick Image Corners'
+    } else if (image_type === 'hard_negative') {
+      the_text = 'Pick Hard Negative Center'
     }
     const the_mode = 'hog_pick_' + image_type + '_image_1'
     if (!this.props.movie_url) {
@@ -570,6 +591,62 @@ class HogControls extends React.Component {
     )
   }
 
+  buildHardNegativesList() {
+    return (
+      <div>
+      hard negative list goes here
+      </div>
+    )
+  }
+
+  buildTrainingImagesTitle() {
+    return `
+        Training images are what the detector 
+        uses to learn what you want to 
+        identify.
+
+        In selecting your training images, specify a 
+        box around the entire region of interest.  
+        Specifying a little padding is optional but 
+        it can help overall.  If the region of interest 
+        occurs multiple times in a frame, you must 
+        pick all of them.  
+    `
+  }
+
+  buildTestingImagesTitle() {
+    return `
+        Testing images are what you specify to verify 
+        the model is doing a good job with positive 
+        and negative identification of your field.
+
+        Here you specify the center of regions of 
+        interest of a page.  The system will assume 
+        all these should be matched as you train the 
+        model, any that are not will be presented to 
+        you as a potential issue in the 'run training' 
+        section after training completes.
+    `
+  }
+
+  buildHardNegativesTitle() {
+    return `
+        Here is where you actually kick off the training 
+        and retraining processes.  This workflow is 
+        iterative - the first time you just press 'train 
+        model'.  When that job finishes, you will be 
+        presented with a list of matches, and potentially 
+        misses for training images you specified that 
+        were not located using this detector.
+
+        You should review the images, mark the ones 
+        misidentified as your region as hard negatives, 
+        potentially add some more testing imates, and 
+        rerun.  When the system returns no errors, press 
+        'finalize model'.
+    `
+  }
+
   render() {
     if (!this.props.visibilityFlags['hog']) {
       return([])
@@ -586,20 +663,26 @@ class HogControls extends React.Component {
     const orientations_field = this.buildOrientationsField()
     const pixels_per_cell_field = this.buildPixelsPerCellField()
     const cells_per_block_field = this.buildCellsPerBlockField()
+    const c_for_svm_field = this.buildCForSvmField()
     const normalize_dropdown = this.buildNormalizeDropdown()
     const load_button = this.buildLoadButton()
     const delete_button = this.buildDeleteButton()
     const run_button = this.buildRunButton()
     const attributes_list = this.buildAttributesList()
     const show_hide_general = makePlusMinusRowLight('general', 'hog_general_div')
-    const show_hide_training_images= makePlusMinusRowLight('training images', 'hog_training_images_div')
-    const show_hide_testing_images= makePlusMinusRowLight('testing images', 'hog_testing_images_div')
-    const show_hide_train_model = makePlusMinusRowLight('train model', 'hog_train_model_div')
+    const show_hide_training_images = makePlusMinusRowLight('select training images', 'hog_training_images_div')
+    const show_hide_testing_images = makePlusMinusRowLight('select testing images', 'hog_testing_images_div')
+    const show_hide_hard_negatives = makePlusMinusRowLight('run training / hard negatives', 'hog_hard_negatives_div')
     const pick_training_image_button = this.buildPickImageButton('training')
     const training_image_list = this.buildTrainingImageList()
     const pick_testing_image_button = this.buildPickImageButton('testing')
     const testing_image_list = this.buildTestingImageList()
+    const pick_hard_negative_button = this.buildPickImageButton('hard_negative')
+    const hard_negatives_list = this.buildHardNegativesList()
     const train_model_button = this.buildTrainModelButton()
+    const training_images_title = this.buildTrainingImagesTitle()
+    const testing_images_title = this.buildTestingImagesTitle()
+    const hard_negatives_title = this.buildHardNegativesTitle()
 
     return (
         <div className='row bg-light rounded mt-3'>
@@ -626,19 +709,39 @@ class HogControls extends React.Component {
                     {run_button}
                   </div>
 
-                  <div className='row bg-light'>
+                  <div className='row mt-2'>
                     {id_string}
                   </div>
 
-                  <div className='row bg-light'>
+                  <div className='row mt-2'>
                     {name_field}
                   </div>
 
-                  <div className='row bg-light'>
+                  <div className='row mt-2'>
+                    {orientations_field}
+                  </div>
+
+                  <div className='row mt-2'>
+                    {pixels_per_cell_field}
+                  </div>
+
+                  <div className='row mt-2'>
+                    {cells_per_block_field}
+                  </div>
+
+                  <div className='row mt-2'>
+                    {normalize_dropdown}
+                  </div>
+
+                  <div className='row mt-2'>
+                    {c_for_svm_field}
+                  </div>
+
+                  <div className='row mt-2'>
                     {attributes_list}
                   </div>
 
-                  <div className='row bg-light border-top'>
+                  <div className='row mt-2 border-top'>
                     <ScannerSearchControls
                       search_attribute_name_id='hog_database_search_attribute_name'
                       search_attribute_value_id='hog_database_search_attribute_value'
@@ -657,7 +760,7 @@ class HogControls extends React.Component {
                     id='hog_training_images_div'
                     className='collapse'
                 >
-                  <div className='row h5'>
+                  <div className='row h5' title={training_images_title}>
                     training images
                   </div>
                   {pick_training_image_button}
@@ -669,40 +772,34 @@ class HogControls extends React.Component {
                     id='hog_testing_images_div'
                     className='collapse'
                 >
-                  <div className='row h5'>
+                  <div className='row h5' title={testing_images_title}>
                     testing images
                   </div>
                   {pick_testing_image_button}
                   {testing_image_list}
                 </div>
 
-
-                {show_hide_train_model}
+                {show_hide_hard_negatives}
                 <div 
-                    id='hog_train_model_div'
+                    id='hog_hard_negatives_div'
                     className='collapse'
                 >
-                  <div className='row bg-light'>
-                    {orientations_field}
+                  
+                  <div className='row h5' title={hard_negatives_title}>
+                    hard negatives
                   </div>
 
-                  <div className='row bg-light'>
-                    {pixels_per_cell_field}
-                  </div>
-
-                  <div className='row bg-light'>
-                    {cells_per_block_field}
-                  </div>
-
-                  <div className='row bg-light'>
-                    {normalize_dropdown}
-                  </div>
-
-                  <div className='row bg-light'>
+                  <div className='row'>
                     {train_model_button}
                   </div>
 
+                  {pick_hard_negative_button}
+                  {hard_negatives_list}
                 </div>
+
+
+
+
 
               </div>
             </div>
