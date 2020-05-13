@@ -1,8 +1,10 @@
 import base64
 import os
 import cv2
+import pickle
 from skimage import feature                                                                                             
 from sklearn.feature_extraction.image import extract_patches_2d
+from sklearn.svm import SVC
 import skimage 
 import numpy as np
 import requests
@@ -59,16 +61,56 @@ class HogScanner:
         self.data = []
         self.labels = []
 
-        hogdir = self.file_writer.create_unique_directory('hog_features')
-        underscore_hog_name = self.hog_rule['name'].replace(' ', '_')
-        underscore_hog_name += '-' + self.hog_rule['id']
-        underscore_hog_name += '.hdf5'
-        outfilename = os.path.join(hogdir, underscore_hog_name)
-        self.features_path = outfilename
+        if 'features_path' in hog_rule:
+            self.features_path = hog_rule['features_path']
+        else:
+            hogdir = self.file_writer.create_unique_directory('hog_features')
+            underscore_hog_name = 'features_'
+            underscore_hog_name += self.hog_rule['name'].replace(' ', '_')
+            underscore_hog_name += '-' + self.hog_rule['id']
+            underscore_hog_name += '.hdf5'
+            outfilename = os.path.join(hogdir, underscore_hog_name)
+            self.features_path = outfilename
+
+        if 'classifier_path' in hog_rule:
+            self.classifier_path = hog_rule['classifier_path']
+        else:
+            underscore_hog_name = 'classifier_'
+            underscore_hog_name += self.hog_rule['name'].replace(' ', '_')
+            underscore_hog_name += '-' + self.hog_rule['id']
+            underscore_hog_name += '.cpickle'
+            outfilename = os.path.join(hogdir, underscore_hog_name)
+            self.classifier_path = outfilename
 
     def train_model(self):
-        self.extract_features()
-        return 'all done fool'
+        if os.path.exists(self.features_path):
+            print('loading features from disk')
+            (self.data, self.labels) = self.load_dataset(
+                self.features_path, 
+                "features"
+            )
+        else:
+            print('creating features')
+            self.extract_features()
+
+        model = SVC(
+            kernel="linear", 
+            C=self.c_for_svm,
+            probability=True, 
+            random_state=42
+        )
+        model.fit(self.data, self.labels)
+
+        self.file_writer.write_binary_data_to_filepath(
+            pickle.dumps(model), 
+            self.classifier_path
+        )
+
+        return_obj = {
+            'features_path': self.features_path,
+            'classifier_path': self.classifier_path,
+        }
+        return return_obj
 
     def describe(self, cv2_image):
         hist = feature.hog(
@@ -112,7 +154,10 @@ class HogScanner:
                 raise Exception('could not load source image for negative training')
             nparr = np.fromstring(image, np.uint8)
             cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-            color_at_upper_left = tuple(cv2_image[training_image['start'][1], training_image['start'][0]])
+            color_at_upper_left = tuple(cv2_image[
+                training_image['start'][1], 
+                training_image['start'][0]
+            ])
             need_to_use = (
                 int(color_at_upper_left[0]),
                 int(color_at_upper_left[1]),
