@@ -15,9 +15,11 @@ import h5py
 class HogScanner:
 
     def __init__(self, hog_rule, movies, file_writer):
+        self.debug = True
         self.num_distractions_per_image = 40
         self.sliding_window_step_size = 4
         self.minimum_probability = .7
+        self.global_scale = .5
         self.hog_rule = hog_rule
         self.movies = movies
         self.file_writer = file_writer
@@ -44,6 +46,18 @@ class HogScanner:
             img_bytes = base64.b64decode(img_base64)
             nparr = np.fromstring(img_bytes, np.uint8)
             cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+
+            # deal with global scale
+            if self.global_scale != 1:
+                cv2_image = imutils.resize(cv2_image, width=int(cv2_image.shape[1] * self.global_scale))
+                cv2_bytes = cv2.imencode(".png", cv2_image)[1].tostring()
+                cv2_base64 = base64.b64encode(cv2_bytes)
+                hog_rule['training_images'][training_image_key]['cropped_image_bytes'] = cv2_base64
+                old_start = hog_rule['training_images'][training_image_key]['start']
+                old_end = hog_rule['training_images'][training_image_key]['end']
+                hog_rule['training_images'][training_image_key]['start'] = self.scale_point(old_start)
+                hog_rule['training_images'][training_image_key]['end'] = self.scale_point(old_end)
+
             widths.append(cv2_image.shape[1])
             heights.append(cv2_image.shape[0])
         if widths:
@@ -60,6 +74,16 @@ class HogScanner:
                 self.window_height = h
         if not self.window_width or not self.window_height:
             raise Exception('bad match on getting HOG window sizes')
+
+        if self.debug:
+            print('sliding window size: ({}, {})'.format(self.window_width, self.window_height))
+
+        # deal with global scale
+        if self.global_scale != 1:
+            for testing_image_key in hog_rule['testing_images']:
+                testing_image = hog_rule['testing_images'][testing_image_key]
+                old_location = hog_rule['testing_images'][testing_image_key]['location']
+                hog_rule['testing_images'][testing_image_key]['location'] = self.scale_point(old_location)
 
         self.data = []
         self.labels = []
@@ -107,6 +131,12 @@ class HogScanner:
         else:
             self.scales = [1]
 
+    def scale_point(self, point):
+        return (
+            int(point[0] * self.global_scale),
+            int(point[1] * self.global_scale)
+        )
+
     def train_model(self):
         if os.path.exists(self.features_path):
             print('loading features from disk')
@@ -143,6 +173,11 @@ class HogScanner:
             nparr = np.fromstring(image, np.uint8)
             cv2_scan_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
             gray = cv2.cvtColor(cv2_scan_image, cv2.COLOR_BGR2GRAY)
+
+            # deal with global scale
+            if self.global_scale != 1:
+                gray = imutils.resize(gray, width=int(gray.shape[1] * self.global_scale))
+
             self.detect(gray)
         return
         ###################################################################
@@ -161,6 +196,11 @@ class HogScanner:
                 nparr = np.fromstring(image, np.uint8)
                 cv2_scan_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
                 gray = cv2.cvtColor(cv2_scan_image, cv2.COLOR_BGR2GRAY)
+
+                # deal with global scale
+                if self.global_scale != 1:
+                    gray = imutils.resize(gray, width=int(gray.shape[1] * self.global_scale))
+
                 self.detect(gray)
 
 
