@@ -26,6 +26,7 @@ class HogControls extends React.Component {
       cells_per_block: 2,
       normalize: true,
       c_for_svm: '.01',
+      scale: '1:1',
       training_images: {},
       testing_images: {},
       hard_negatives: {},
@@ -175,6 +176,7 @@ class HogControls extends React.Component {
       cells_per_block: this.state.cells_per_block,
       normalize: this.state.normalize,
       c_for_svm: this.state.c_for_svm,
+      scale: this.state.scale,
       training_images: this.state.training_images,
       testing_images: this.state.testing_images,
       hard_negatives: this.state.hard_negatives,
@@ -266,6 +268,28 @@ class HogControls extends React.Component {
     )
   }
 
+  buildScaleDropdown() {
+    const scale_values = [
+      {'1:1': 'actual image scale only'},
+      {'+/-10/1': '+/- 10%, 1% increments'},
+      {'+/-20/1': '+/- 20%, 1% increments'},
+      {'+/-20/5': '+/- 20%, 5% increments'},
+      {'+/-25/1': '+/- 25%, 1% increments'},
+      {'+/-25/5': '+/- 25%, 5% increments'},
+      {'+/-40/1': '+/- 40%, 1% increments'},
+      {'+/-40/5': '+/- 40%, 5% increments'},
+      {'+/-50/1': '+/- 50%, 1% increments'},
+      {'+/-50/5': '+/- 50%, 5% increments'}
+    ]
+    return buildLabelAndDropdown(
+      scale_values,
+      'Scale',
+      this.state.scale,
+      'hog_scale',
+      ((value)=>{this.setLocalStateVar('scale', value)})
+    )
+  }
+
   buildNormalizeDropdown() {
     const values = [
       {1: 'yes'},
@@ -301,6 +325,7 @@ class HogControls extends React.Component {
         cells_per_block: hog['cells_per_block'],
         normalize: hog['normalize'],
         c_for_svm: hog['c_for_svm'],
+        scale: hog['scale'],
         training_images: hog['training_images'],
         testing_images: hog['testing_images'],
         hard_negatives: hog['nard_negatives'],
@@ -326,6 +351,7 @@ class HogControls extends React.Component {
       cells_per_block: 2,
       normalize: true,
       c_for_svm: '.01',
+      scale: '1:1',
       training_images: {},
       testing_images: {},
       hard_negatives: {},
@@ -668,6 +694,7 @@ class HogControls extends React.Component {
     const pixels_per_cell_field = this.buildPixelsPerCellField()
     const cells_per_block_field = this.buildCellsPerBlockField()
     const c_for_svm_field = this.buildCForSvmField()
+    const scale_dropdown = this.buildScaleDropdown()
     const normalize_dropdown = this.buildNormalizeDropdown()
     const load_button = this.buildLoadButton()
     const delete_button = this.buildDeleteButton()
@@ -739,6 +766,10 @@ class HogControls extends React.Component {
 
                   <div className='row mt-2'>
                     {c_for_svm_field}
+                  </div>
+
+                  <div className='row mt-2'>
+                    {scale_dropdown}
                   </div>
 
                   <div className='row mt-2'>

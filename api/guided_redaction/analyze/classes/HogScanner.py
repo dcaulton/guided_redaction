@@ -1,4 +1,5 @@
 import base64
+import imutils
 import os
 import cv2
 import pickle
@@ -15,6 +16,8 @@ class HogScanner:
 
     def __init__(self, hog_rule, movies, file_writer):
         self.num_distractions_per_image = 40
+        self.sliding_window_step_size = 4
+        self.minimum_probability = .7
         self.hog_rule = hog_rule
         self.movies = movies
         self.file_writer = file_writer
@@ -82,6 +85,28 @@ class HogScanner:
             outfilename = os.path.join(hogdir, underscore_hog_name)
             self.classifier_path = outfilename
 
+        scale = hog_rule.get('scale', '1:1')
+        if scale == '+/-25/1':
+            self.scales = np.linspace(.75, 1.25, 51)[::-1]
+        elif scale == '+/-25/5':
+            self.scales = np.linspace(.75, 1.25, 11)[::-1]
+        elif scale == '+/-40/1':
+            self.scales = np.linspace(.60, 1.40, 81)[::-1]
+        elif scale == '+/-40/5':
+            self.scales = np.linspace(.60, 1.40, 17)[::-1]
+        elif scale == '+/-50/1':
+            self.scales = np.linspace(.50, 1.50, 101)[::-1]
+        elif scale == '+/-50/5':
+            self.scales = np.linspace(.50, 1.50, 21)[::-1]
+        elif scale == '+/-10/1':
+            self.scales = np.linspace(.90, 1.1, 11)[::-1]
+        elif scale == '+/-20/1':
+            self.scales = np.linspace(.80, 1.2, 21)[::-1]
+        elif scale == '+/-20/5':
+            self.scales = np.linspace(.80, 1.2, 9)[::-1]
+        else:
+            self.scales = [1]
+
     def train_model(self):
         if os.path.exists(self.features_path):
             print('loading features from disk')
@@ -93,24 +118,80 @@ class HogScanner:
             print('creating features')
             self.extract_features()
 
-        model = SVC(
+        self.model = SVC(
             kernel="linear", 
             C=self.c_for_svm,
             probability=True, 
             random_state=42
         )
-        model.fit(self.data, self.labels)
+        self.model.fit(self.data, self.labels)
 
         self.file_writer.write_binary_data_to_filepath(
-            pickle.dumps(model), 
+            pickle.dumps(self.model), 
             self.classifier_path
         )
+
+        ###################################################################
+        # TODO REMOVE - FOR TESTING
+        for ti_key in self.hog_rule['testing_images']:
+            ti = self.hog_rule['testing_images'][ti_key]
+            pic_response = requests.get(ti['image_url'])
+            print('scanning image {}'.format(ti['image_url']))
+            image = pic_response.content
+            if not image:
+                raise Exception("couldn't read source image data for testing")
+            nparr = np.fromstring(image, np.uint8)
+            cv2_scan_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+            gray = cv2.cvtColor(cv2_scan_image, cv2.COLOR_BGR2GRAY)
+            self.detect(gray)
+        return
+        ###################################################################
+
+        for movie_url in self.movies:
+            movie = self.movies[movie_url]
+            for frameset_hash in movie['framesets']:
+                frameset = movie['framesets'][frameset_hash]
+                image_url = frameset['images'][0]
+                print('scanning image {}'.format(image_url))
+
+                pic_response = requests.get(image_url)
+                image = pic_response.content
+                if not image:
+                    raise Exception("couldn't read source image data for testing")
+                nparr = np.fromstring(image, np.uint8)
+                cv2_scan_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+                gray = cv2.cvtColor(cv2_scan_image, cv2.COLOR_BGR2GRAY)
+                self.detect(gray)
+
 
         return_obj = {
             'features_path': self.features_path,
             'classifier_path': self.classifier_path,
         }
         return return_obj
+
+    def detect(self, cv2_image):
+        counter = 0
+        for scale in self.scales:
+            resized = imutils.resize(cv2_image, width=int(cv2_image.shape[1] * scale))
+            for (x, y, window) in self.sliding_window(resized):
+                counter += 1
+                # grab the dimensions of the window
+                (winH, winW) = window.shape[:2]
+                if winH == self.window_height and winW == self.window_width:
+                    features = self.describe(window).reshape(1, -1)
+                    prob = self.model.predict_proba(features)[0][1]
+                    if prob > self.minimum_probability:
+                        print('ITS A HIT AT scan number {} - scale {} ({}, {}) - prob {}'.format(counter, scale, x, y, prob))
+
+
+
+    def sliding_window(self, image):
+        # slide a window across the image
+        for y in range(0, image.shape[0], self.sliding_window_step_size):
+            for x in range(0, image.shape[1], self.sliding_window_step_size):
+                # yield the current window
+                yield (x, y, image[y:y + self.window_height, x:x + self.window_width])
 
     def describe(self, cv2_image):
         hist = feature.hog(
