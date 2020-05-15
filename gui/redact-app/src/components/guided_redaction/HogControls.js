@@ -24,9 +24,13 @@ class HogControls extends React.Component {
       orientations: 9,
       pixels_per_cell: 8,
       cells_per_block: 2,
+      num_distractions_per_image : 40,
       normalize: true,
       c_for_svm: '.01',
+      global_scale: '.5',
+      minimum_probability: '.7',
       scale: '1:1',
+      sliding_window_step_size: 4,
       training_images: {},
       testing_images: {},
       hard_negatives: {},
@@ -174,9 +178,13 @@ class HogControls extends React.Component {
       orientations: this.state.orientations,
       pixels_per_cell: this.state.pixels_per_cell,
       cells_per_block: this.state.cells_per_block,
+      num_distractions_per_image : this.state.num_distractions_per_image,
       normalize: this.state.normalize,
       c_for_svm: this.state.c_for_svm,
+      global_scale: this.state.global_scale,
+      minimum_probability : this.state.minimum_probability,
       scale: this.state.scale,
+      sliding_window_step_size: this.state.sliding_window_step_size,
       training_images: this.state.training_images,
       testing_images: this.state.testing_images,
       hard_negatives: this.state.hard_negatives,
@@ -185,7 +193,7 @@ class HogControls extends React.Component {
     return hog_rule
   }
 
-  doSave(force=false, when_done=(()=>{})) {
+  doSave(when_done=(()=>{}), force=false) {
     if (force && !this.state.name) {
       const hog_id = 'hog_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
       this.setLocalStateVar('name', hog_id)
@@ -235,6 +243,17 @@ class HogControls extends React.Component {
     )
   }
 
+  buildSlidingWindowStepSizeField() {
+    return buildLabelAndTextInput(
+      this.state.sliding_window_step_size,
+      'Sliding window step size',
+      'hog_sliding_window_step_size',
+      'sliding_window_step_size',
+      5,
+      ((value)=>{this.setLocalStateVar('sliding_window_step_size', value)})
+    )
+  }
+
   buildPixelsPerCellField() {
     return buildLabelAndTextInput(
       this.state.pixels_per_cell,
@@ -257,6 +276,17 @@ class HogControls extends React.Component {
     )
   }
 
+  buildNumDistractionsPerImageField() {
+    return buildLabelAndTextInput(
+      this.state.num_distractions_per_image,
+      'Num distractions per image',
+      'hog_num_distractions_per_image',
+      'num_distractions_per_image',
+      5,
+      ((value)=>{this.setLocalStateVar('num_distractions_per_image', value)})
+    )
+  }
+
   buildCForSvmField() {
     return buildLabelAndTextInput(
       this.state.c_for_svm,
@@ -265,6 +295,28 @@ class HogControls extends React.Component {
       'c_for_svm',
       5,
       ((value)=>{this.setLocalStateVar('c_for_svm', value)})
+    )
+  }
+
+  buildGlobalScaleField() {
+    return buildLabelAndTextInput(
+      this.state.global_scale,
+      'Global scale',
+      'hog_global_scale',
+      'global_scale',
+      5,
+      ((value)=>{this.setLocalStateVar('global_scale', value)})
+    )
+  }
+
+  buildMinimumProbabilityField() {
+    return buildLabelAndTextInput(
+      this.state.minimum_probability,
+      'Minimum probability',
+      'hog_minimum_probability',
+      '',
+      '.7',
+      ((value)=>{this.setLocalStateVar('minimum_probability', value)})
     )
   }
 
@@ -323,9 +375,13 @@ class HogControls extends React.Component {
         orientations: hog['orientations'],
         pixels_per_cell: hog['pixels_per_cell'],
         cells_per_block: hog['cells_per_block'],
+        num_distractions_per_image: hog['num_distractions_per_image'],
         normalize: hog['normalize'],
         c_for_svm: hog['c_for_svm'],
+        global_scale: hog['global_scale'],
+        minimum_probability: hog['minimum_probability'],
         scale: hog['scale'],
+        sliding_window_step_size: hog['sliding_window_sttep_size'],
         training_images: hog['training_images'],
         testing_images: hog['testing_images'],
         hard_negatives: hog['nard_negatives'],
@@ -349,9 +405,13 @@ class HogControls extends React.Component {
       orientations: 9,
       pixels_per_cell: 8,
       cells_per_block: 2,
+      num_distractions_per_image: 40,
       normalize: true,
       c_for_svm: '.01',
+      global_scale: '.5',
+      minimum_probability: '.7',
       scale: '1:1',
+      sliding_window_step_size: '4',
       training_images: {},
       testing_images: {},
       hard_negatives: {},
@@ -471,7 +531,7 @@ class HogControls extends React.Component {
   }
 
   trainModel() {
-    this.doSave(true)
+    this.doSave((()=>{}), true)
     this.props.submitInsightsJob('hog_train_model')
   }
 
@@ -693,8 +753,12 @@ class HogControls extends React.Component {
     const orientations_field = this.buildOrientationsField()
     const pixels_per_cell_field = this.buildPixelsPerCellField()
     const cells_per_block_field = this.buildCellsPerBlockField()
+    const num_distractions_per_image_field = this.buildNumDistractionsPerImageField()
     const c_for_svm_field = this.buildCForSvmField()
+    const global_scale_field = this.buildGlobalScaleField()
+    const minimum_probability_field = this.buildMinimumProbabilityField()
     const scale_dropdown = this.buildScaleDropdown()
+    const sliding_window_step_size_field = this.buildSlidingWindowStepSizeField()
     const normalize_dropdown = this.buildNormalizeDropdown()
     const load_button = this.buildLoadButton()
     const delete_button = this.buildDeleteButton()
@@ -761,6 +825,10 @@ class HogControls extends React.Component {
                   </div>
 
                   <div className='row mt-2'>
+                    {num_distractions_per_image_field}
+                  </div>
+
+                  <div className='row mt-2'>
                     {normalize_dropdown}
                   </div>
 
@@ -769,7 +837,19 @@ class HogControls extends React.Component {
                   </div>
 
                   <div className='row mt-2'>
+                    {global_scale_field}
+                  </div>
+
+                  <div className='row mt-2'>
+                    {minimum_probability_field}
+                  </div>
+
+                  <div className='row mt-2'>
                     {scale_dropdown}
+                  </div>
+
+                  <div className='row mt-2'>
+                    {sliding_window_step_size_field}
                   </div>
 
                   <div className='row mt-2'>

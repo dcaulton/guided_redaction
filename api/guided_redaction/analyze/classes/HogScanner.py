@@ -16,10 +16,10 @@ class HogScanner:
 
     def __init__(self, hog_rule, movies, file_writer):
         self.debug = True
-        self.num_distractions_per_image = 40
-        self.sliding_window_step_size = 4
-        self.minimum_probability = .7
-        self.global_scale = .5
+        self.num_distractions_per_image = int(hog_rule['num_distractions_per_image'])
+        self.sliding_window_step_size = int(hog_rule['sliding_window_step_size'])
+        self.minimum_probability = float(hog_rule['minimum_probability'])
+        self.global_scale = float(hog_rule['global_scale'])
         self.hog_rule = hog_rule
         self.movies = movies
         self.file_writer = file_writer
@@ -222,7 +222,9 @@ class HogScanner:
                     features = self.describe(window).reshape(1, -1)
                     prob = self.model.predict_proba(features)[0][1]
                     if prob > self.minimum_probability:
-                        print('ITS A HIT AT scan number {} - scale {} ({}, {}) - prob {}'.format(counter, scale, x, y, prob))
+                        print_x = int(x / self.global_scale)
+                        print_y = int(y / self.global_scale)
+                        print('ITS A HIT AT scan number {} - scale {} ({}, {}) - prob {}'.format(counter, scale, print_x, print_y, prob))
 
 
 
