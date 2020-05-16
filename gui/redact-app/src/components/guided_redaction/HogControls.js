@@ -195,8 +195,8 @@ class HogControls extends React.Component {
 
   doSave(when_done=(()=>{}), force=false) {
     if (force && !this.state.name) {
-      const hog_id = 'hog_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
-      this.setLocalStateVar('name', hog_id)
+      const hog_name = 'hog_random_name_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
+      this.setLocalStateVar('name', hog_name)
     }
     doTier1Save(
       'hog',

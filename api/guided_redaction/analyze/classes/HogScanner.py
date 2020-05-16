@@ -163,7 +163,7 @@ class HogScanner:
 
         ###################################################################
         # TODO REMOVE - FOR TESTING
-        for ti_key in self.hog_rule['testing_images']:
+        for index, ti_key in enumerate(self.hog_rule['testing_images']):
             ti = self.hog_rule['testing_images'][ti_key]
             pic_response = requests.get(ti['image_url'])
             print('scanning image {}'.format(ti['image_url']))
@@ -178,7 +178,18 @@ class HogScanner:
             if self.global_scale != 1:
                 gray = imutils.resize(gray, width=int(gray.shape[1] * self.global_scale))
 
-            self.detect(gray)
+            boxes = self.detect(gray)
+            if self.debug:
+                debug_path = os.path.join('/Users/dcaulton/Desktop/junk', str(index)+'.png')
+                for box in boxes:
+                    cv2.rectangle(
+                        cv2_scan_image, 
+                        box['start'], 
+                        box['end'],
+                        (0, 0, 255),
+                        3
+                    )
+                cv2.imwrite(debug_path, cv2_scan_image)
         return
         ###################################################################
 
@@ -212,8 +223,10 @@ class HogScanner:
 
     def detect(self, cv2_image):
         counter = 0
+        boxes = []
+        orig_width = cv2_image.shape[1]
         for scale in self.scales:
-            resized = imutils.resize(cv2_image, width=int(cv2_image.shape[1] * scale))
+            resized = imutils.resize(cv2_image, width=int(orig_width * scale))
             for (x, y, window) in self.sliding_window(resized):
                 counter += 1
                 # grab the dimensions of the window
@@ -222,9 +235,21 @@ class HogScanner:
                     features = self.describe(window).reshape(1, -1)
                     prob = self.model.predict_proba(features)[0][1]
                     if prob > self.minimum_probability:
-                        print_x = int(x / self.global_scale)
-                        print_y = int(y / self.global_scale)
-                        print('ITS A HIT AT scan number {} - scale {} ({}, {}) - prob {}'.format(counter, scale, print_x, print_y, prob))
+                        unity_scale_start_x = int(x / (self.global_scale * scale) )
+                        unity_scale_start_y = int(y / (self.global_scale * scale) )
+                        unity_scale_end_x = int(unity_scale_start_x + self.window_width/self.global_scale)
+                        unity_scale_end_y = int(unity_scale_start_y + self.window_height/self.global_scale)
+                        if self.debug:
+                            print('ITS A HIT AT scan number {} - scale {} ({}, {}) - prob {}'.format(
+                                counter, scale, unity_scale_start_x, unity_scale_start_y, prob
+                            ))
+                        boxes.append({
+                            'start': (unity_scale_start_x, unity_scale_start_y),
+                            'end': (unity_scale_end_x, unity_scale_end_y)
+                        })
+        if self.debug:
+            print('total number of scans for image: {}'.format(counter))
+        return boxes
 
 
 

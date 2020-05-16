@@ -614,7 +614,7 @@ class InsightsPanel extends React.Component {
       job_data['request_data']['movies'][movie_url] = movie
     }
 
-    job_data['description'] = 'train hog rule ('  + hog_id + ')'
+    job_data['description'] = 'train hog rule ('  + hog_rule['name'] + ')'
     return job_data
   }
 
