@@ -1,4 +1,5 @@
 import base64
+import uuid
 import imutils
 import os
 import cv2
@@ -109,6 +110,10 @@ class HogScanner:
             outfilename = os.path.join(hogdir, underscore_hog_name)
             self.classifier_path = outfilename
 
+        if self.debug:
+            the_uuid = str(uuid.uuid4())
+            self.debug_images_dir = self.file_writer.create_unique_directory(the_uuid)
+
         scale = hog_rule.get('scale', '1:1')
         if scale == '+/-25/1':
             self.scales = np.linspace(.75, 1.25, 51)[::-1]
@@ -131,6 +136,10 @@ class HogScanner:
         else:
             self.scales = [1]
 
+        self.statistics = {
+            'movies': {}
+        }
+
     def scale_point(self, point):
         return (
             int(point[0] * self.global_scale),
@@ -139,13 +148,15 @@ class HogScanner:
 
     def train_model(self):
         if os.path.exists(self.features_path):
-            print('loading features from disk')
+            if self.debug:
+                print('loading features from disk')
             (self.data, self.labels) = self.load_dataset(
                 self.features_path, 
                 "features"
             )
         else:
-            print('creating features')
+            if self.debug:
+                print('creating features')
             self.extract_features()
 
         self.model = SVC(
@@ -163,7 +174,9 @@ class HogScanner:
 
         ###################################################################
         # TODO REMOVE - FOR TESTING
+        self.statistics['movies']['whatever_movie'] = {'framesets': {}}
         for index, ti_key in enumerate(self.hog_rule['testing_images']):
+            self.statistics['movies']['whatever_movie']['framesets'][index] = ''
             ti = self.hog_rule['testing_images'][ti_key]
             pic_response = requests.get(ti['image_url'])
             print('scanning image {}'.format(ti['image_url']))
@@ -179,23 +192,23 @@ class HogScanner:
                 gray = imutils.resize(gray, width=int(gray.shape[1] * self.global_scale))
 
             boxes = self.detect(gray)
-            if self.debug:
-                debug_path = os.path.join('/Users/dcaulton/Desktop/junk', str(index)+'.png')
-                for box in boxes:
-                    cv2.rectangle(
-                        cv2_scan_image, 
-                        box['start'], 
-                        box['end'],
-                        (0, 0, 255),
-                        3
-                    )
-                cv2.imwrite(debug_path, cv2_scan_image)
-        return
+
+            debug_image_url = self.draw_boxes_on_image(boxes, cv2_scan_image, ti['image_url'])
+            self.statistics['movies']['whatever_movie']['framesets'][index] = debug_image_url
+
+        return_obj = {
+            'features_path': self.features_path,
+            'classifier_path': self.classifier_path,
+            'statistics': self.statistics,
+        }
+        return return_obj
         ###################################################################
 
         for movie_url in self.movies:
             movie = self.movies[movie_url]
+            self.statistics['movies'][movie_url] = {'framesets': {}}
             for frameset_hash in movie['framesets']:
+                self.statistics['movies'][movie_url]['framesets'][frameset_hash] = {}
                 frameset = movie['framesets'][frameset_hash]
                 image_url = frameset['images'][0]
                 print('scanning image {}'.format(image_url))
@@ -219,7 +232,26 @@ class HogScanner:
             'features_path': self.features_path,
             'classifier_path': self.classifier_path,
         }
+        if self.debug:
+            return_obj['statistics'] = self.statistics
+
         return return_obj
+
+    def draw_boxes_on_image(self, boxes, cv2_image, image_url): 
+        image_filename = image_url.split('/')[-1]
+        image_before_dot_name  = image_filename.split('.')[0]
+        debug_fullpath = os.path.join(self.debug_images_dir, image_before_dot_name + '_detect.png')
+        for box in boxes:
+            cv2.rectangle(
+                cv2_image, 
+                box['start'], 
+                box['end'],
+                (0, 0, 255),
+                3
+            )
+        cv2.imwrite(debug_fullpath, cv2_image)
+        debug_image_url = self.file_writer.get_url_for_file_path(debug_fullpath)
+        return debug_image_url
 
     def detect(self, cv2_image):
         counter = 0
