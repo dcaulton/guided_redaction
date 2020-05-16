@@ -139,6 +139,7 @@ class HogScanner:
         self.statistics = {
             'movies': {}
         }
+        self.build_movies = {}
 
     def scale_point(self, point):
         return (
@@ -174,9 +175,11 @@ class HogScanner:
 
         ###################################################################
         # TODO REMOVE - FOR TESTING
+        self.build_movies['whatever_movie'] = {'framesets': {}}
         self.statistics['movies']['whatever_movie'] = {'framesets': {}}
         for index, ti_key in enumerate(self.hog_rule['testing_images']):
             self.statistics['movies']['whatever_movie']['framesets'][index] = ''
+            self.build_movies['whatever_movie']['framesets'][index] = {}
             ti = self.hog_rule['testing_images'][ti_key]
             pic_response = requests.get(ti['image_url'])
             print('scanning image {}'.format(ti['image_url']))
@@ -191,7 +194,20 @@ class HogScanner:
             if self.global_scale != 1:
                 gray = imutils.resize(gray, width=int(gray.shape[1] * self.global_scale))
 
-            boxes = self.detect(gray)
+            (boxes, probs) = self.detect(gray)
+
+            boxes = self.non_max_suppression(boxes, probs, .3)
+
+            for box in boxes:
+                the_id = 'hog_feature_' + str(uuid.uuid4())
+                build_feature = {
+                    'start': (int(box[0]), int(box[1])), 
+                    'end': (int(box[2]), int(box[3])),
+                    'scanner_type': 'hog',
+                    'source': self.hog_rule['id'],
+                }
+                print('build feature {}'.format(build_feature))
+                self.build_movies['whatever_movie']['framesets'][index][the_id] = build_feature
 
             debug_image_url = self.draw_boxes_on_image(boxes, cv2_scan_image, ti['image_url'])
             self.statistics['movies']['whatever_movie']['framesets'][index] = debug_image_url
@@ -200,6 +216,7 @@ class HogScanner:
             'features_path': self.features_path,
             'classifier_path': self.classifier_path,
             'statistics': self.statistics,
+            'movies': self.build_movies,
         }
         return return_obj
         ###################################################################
@@ -237,6 +254,66 @@ class HogScanner:
 
         return return_obj
 
+    def non_max_suppression(self, boxes, probs, overlapThresh=.3):
+        boxes = np.array(boxes)
+
+        if len(boxes) == 0:
+            return[]
+
+        if boxes.dtype.kind == 'i':
+            boxes = boxes.astype('float')
+
+        pick = []
+
+        # grab coords of bounding boxes
+        x1 = boxes[:, 0]
+        y1 = boxes[:, 1]
+        x2 = boxes[:, 2]
+        y2 = boxes[:, 3]
+
+        # compute the area of the bounding boxes and sort the bounding boxes by 
+        # their associated probabilities
+        area = (x2 - x1 + 1) * (y2 - y1 + 1)
+        idxs = np.argsort(probs)
+
+        # keep looping while some indexes still remain in the indexes list
+        while len(idxs) > 0:
+            # grab the last index in the indexes list and add the index value to the list of
+            # picked indexes
+            last = len(idxs) - 1
+            i = idxs[last]
+            pick.append(i)
+
+            # keep looping while some indexes still remain in the indexes list
+            while len(idxs) > 0:
+                # grab the last index in the indexes list and add the index value to the list of
+                # picked indexes
+                last = len(idxs) - 1
+                i = idxs[last]
+                pick.append(i)
+
+                # find the largest (x, y) coordinates for the start of the bounding box and the
+                # smallest (x, y) coordinates for the end of the bounding box
+                xx1 = np.maximum(x1[i], x1[idxs[:last]])
+                yy1 = np.maximum(y1[i], y1[idxs[:last]])
+                xx2 = np.minimum(x2[i], x2[idxs[:last]])
+                yy2 = np.minimum(y2[i], y2[idxs[:last]])
+
+                # compute the width and height of the bounding box
+                w = np.maximum(0, xx2 - xx1 + 1)
+                h = np.maximum(0, yy2 - yy1 + 1)
+
+                # compute the ratio of overlap
+                overlap = (w * h) / area[idxs[:last]]
+
+                # delete all indexes from the index list that have overlap greater than the
+                # provided overlap threshold
+                idxs = np.delete(idxs, np.concatenate(([last],
+                    np.where(overlap > overlapThresh)[0])))
+
+        # return only the bounding boxes that were picked
+        return boxes[pick].astype("int")
+
     def draw_boxes_on_image(self, boxes, cv2_image, image_url): 
         image_filename = image_url.split('/')[-1]
         image_before_dot_name  = image_filename.split('.')[0]
@@ -244,8 +321,8 @@ class HogScanner:
         for box in boxes:
             cv2.rectangle(
                 cv2_image, 
-                box['start'], 
-                box['end'],
+                (box[0], box[1]), 
+                (box[2], box[3]),
                 (0, 0, 255),
                 3
             )
@@ -256,6 +333,7 @@ class HogScanner:
     def detect(self, cv2_image):
         counter = 0
         boxes = []
+        probs = []
         orig_width = cv2_image.shape[1]
         for scale in self.scales:
             resized = imutils.resize(cv2_image, width=int(orig_width * scale))
@@ -275,15 +353,16 @@ class HogScanner:
                             print('ITS A HIT AT scan number {} - scale {} ({}, {}) - prob {}'.format(
                                 counter, scale, unity_scale_start_x, unity_scale_start_y, prob
                             ))
-                        boxes.append({
-                            'start': (unity_scale_start_x, unity_scale_start_y),
-                            'end': (unity_scale_end_x, unity_scale_end_y)
-                        })
+                        boxes.append((
+                            unity_scale_start_x, 
+                            unity_scale_start_y,
+                            unity_scale_end_x, 
+                            unity_scale_end_y
+                        ))
+                        probs.append(prob)
         if self.debug:
             print('total number of scans for image: {}'.format(counter))
-        return boxes
-
-
+        return (boxes, probs)
 
     def sliding_window(self, image):
         # slide a window across the image
