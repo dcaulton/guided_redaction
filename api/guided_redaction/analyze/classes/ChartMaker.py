@@ -106,7 +106,7 @@ class ChartMaker:
                     #for debugging, remove when mask offset problem is fixed
                     movie_name = movie_url.split('/')[-1]
                     movie_uuid = movie_name.split('.')[0]
-                    cv2.imwrite('/Users/dcaulton/Desktop/junk/frameset_'+movie_uuid+'__'+frameset_hash+'_debug.png', mask)
+#                    cv2.imwrite('/Users/dcaulton/Desktop/junk/frameset_'+movie_uuid+'__'+frameset_hash+'_debug.png', mask)
 
         charts = self.make_selected_area_charts_from_build_data(build_chart_data)
         return charts
