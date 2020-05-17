@@ -34,6 +34,7 @@ class HogControls extends React.Component {
       sliding_window_step_size: 4,
       training_images: {},
       testing_images: {},
+      testing_results_images: {},
       hard_negatives: {},
       attributes: {},
       unsaved_changes: false,
@@ -43,7 +44,8 @@ class HogControls extends React.Component {
     this.setLocalStateVarNoWarning=this.setLocalStateVarNoWarning.bind(this)
     this.addTrainingImage=this.addTrainingImage.bind(this)
     this.addTestingImage=this.addTestingImage.bind(this)
-    this.imageCropDone=this.imageCropDone.bind(this)
+    this.trainingImageCropDone=this.trainingImageCropDone.bind(this)
+    this.testingImageCropDone=this.testingImageCropDone.bind(this)
     this.getCurrentHogTrainingImageLocations=this.getCurrentHogTrainingImageLocations.bind(this)
     this.getCurrentHogTestingImageLocations=this.getCurrentHogTestingImageLocations.bind(this)
   }
@@ -86,11 +88,32 @@ class HogControls extends React.Component {
     return locations
   }
 
-  imageCropDone(response) {
+  trainingImageCropDone(response) {
     const image_id = response['anchor_id']
     let deepCopyTrainingImages = JSON.parse(JSON.stringify(this.state.training_images))
     deepCopyTrainingImages[image_id]['cropped_image_bytes'] = response['cropped_image_bytes']
     this.setLocalStateVar('training_images', deepCopyTrainingImages)
+  }
+
+  testingImageCropDone(response) {
+    const match_object_id = response['anchor_id']
+    const image_bytes = response['cropped_image_bytes']
+    let deepCopyTestingResultsImages = JSON.parse(JSON.stringify(this.state.testing_results_images))
+    deepCopyTestingResultsImages[match_object_id] = {
+        cropped_image_bytes: image_bytes,
+    }
+    this.setLocalStateVar('testing_results_images', deepCopyTestingResultsImages)
+  }
+
+  async addTestResponseImage(image_data) {
+    let resp = this.props.cropImage(
+      image_data['image_url'],
+      image_data['start'],
+      image_data['end'],
+      image_data['id'],
+      this.testingImageCropDone
+    )
+    await resp
   }
 
   async addTrainingImage(end_coords) {
@@ -111,7 +134,7 @@ class HogControls extends React.Component {
       this.props.clicked_coords,
       end_coords,
       image_id,
-      this.imageCropDone
+      this.trainingImageCropDone
     )
     await resp
   }
@@ -403,7 +426,7 @@ class HogControls extends React.Component {
         sliding_window_step_size: hog['sliding_window_sttep_size'],
         training_images: hog['training_images'],
         testing_images: hog['testing_images'],
-        hard_negatives: hog['nard_negatives'],
+        hard_negatives: hog['hard_negatives'],
         attributes: hog['attributes'],
         unsaved_changes: false,
       })
@@ -573,9 +596,7 @@ class HogControls extends React.Component {
     let the_text = 'Pick Image Center'
     if (image_type === 'training') {
       the_text = 'Pick Image Corners'
-    } else if (image_type === 'hard_negative') {
-      the_text = 'Pick Hard Negative Center'
-    }
+    } 
     const the_mode = 'hog_pick_' + image_type + '_image_1'
     if (!this.props.movie_url) {
       return
@@ -702,9 +723,43 @@ class HogControls extends React.Component {
   }
 
   buildHardNegativesList() {
+    if (!this.state.hard_negatives) {
+      return (
+        <div className='font-italic'>
+          none
+        </div>
+      )
+    }
     return (
       <div>
-      hard negative list goes here
+        <div className='col'>
+        {Object.keys(this.state.hard_negatives).map((match_key, index) => {
+          const img_bytes = this.state.hard_negatives[match_key]['cropped_image_bytes']
+          const the_src = "data:image/gif;base64," + img_bytes
+          return (
+            <div 
+                className='row border-top p-2'
+                key={index}
+            >
+              <div className='col-lg-6'>
+                <img
+                  alt={match_key}
+                  src={the_src}
+                />
+              </div>
+              <div className='col-lg-2'>
+                <button
+                    className='btn btn-primary ml-2 mt-2'
+                    onClick={() => this.deleteHardNegative(match_key)}
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          )
+
+        })}
+        </div>
       </div>
     )
   }
@@ -757,6 +812,99 @@ class HogControls extends React.Component {
     `
   }
 
+  loadTrainingJobImages() {
+    const matches = this.props.tier_1_matches['hog_training'][this.state.id]
+    for (let i=0; i < Object.keys(matches['movies']).length; i++) {
+      const movie_url = Object.keys(matches['movies'])[i]
+      const movie = matches['movies'][movie_url]
+      for (let j=0; j < Object.keys(movie['framesets']).length; j++) {
+        const frameset_hash = Object.keys(movie['framesets'])[j]
+        const frameset = movie['framesets'][frameset_hash]
+        for (let k=0; k < Object.keys(frameset).length; k++) {
+          const object_key = Object.keys(frameset)[k]
+          const match_object = frameset[object_key]
+          this.addTestResponseImage(match_object)
+        }
+      }
+    }
+  }
+
+  buildLoadHardNegativesDialog() {
+    return (
+      <div>
+        <div className='d-inline ml-2'>
+          <button
+              className='btn btn-primary ml-2 mt-2'
+              onClick={() => this.loadTrainingJobImages()}
+          >
+            Load Training Data
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  makeHardNegative(match_key) {
+    console.log('making a hard negative for '+match_key)
+    let deepCopyHardNegatives = JSON.parse(JSON.stringify(this.state.hard_negatives))
+    let deepCopyTestingResultsImages = JSON.parse(JSON.stringify(this.state.testing_results_images))
+    deepCopyHardNegatives[match_key] = deepCopyTestingResultsImages[match_key]
+    delete deepCopyTestingResultsImages[match_key]
+    this.setState({
+      testing_results_images: deepCopyTestingResultsImages,
+      hard_negatives: deepCopyHardNegatives,
+    })
+  }
+
+  deleteHardNegative(match_key) {
+    let deepCopyHardNegatives = JSON.parse(JSON.stringify(this.state.hard_negatives))
+    delete deepCopyHardNegatives[match_key]
+    this.setLocalStateVar('hard_negatives', deepCopyHardNegatives)
+  }
+
+  buildTestingResultsList() {
+    if (!this.state.testing_results_images) {
+      return (
+        <div className='font-italic'>
+          none
+        </div>
+      )
+    }
+    return (
+      <div>
+        <div className='col'>
+        {Object.keys(this.state.testing_results_images).map((match_key, index) => {
+          const img_bytes = this.state.testing_results_images[match_key]['cropped_image_bytes']
+          const the_src = "data:image/gif;base64," + img_bytes
+          return (
+            <div 
+                className='row border-top p-2'
+                key={index}
+            >
+              <div className='col-lg-6'>
+                <img
+                  alt={match_key}
+                  src={the_src}
+                />
+              </div>
+              <div className='col-lg-2'>
+                <button
+                    className='btn btn-primary ml-2 mt-2'
+                    onClick={() => this.makeHardNegative(match_key)}
+                >
+                  Hard Negative
+                </button>
+              </div>
+            </div>
+          )
+
+        })}
+        </div>
+      </div>
+    )
+  }
+
+
   render() {
     if (!this.props.visibilityFlags['hog']) {
       return([])
@@ -793,12 +941,13 @@ class HogControls extends React.Component {
     const training_image_list = this.buildTrainingImageList()
     const pick_testing_image_button = this.buildPickImageButton('testing')
     const testing_image_list = this.buildTestingImageList()
-    const pick_hard_negative_button = this.buildPickImageButton('hard_negative')
     const hard_negatives_list = this.buildHardNegativesList()
+    const testing_results_list = this.buildTestingResultsList()
     const train_model_button = this.buildTrainModelButton()
     const training_images_title = this.buildTrainingImagesTitle()
     const testing_images_title = this.buildTestingImagesTitle()
     const hard_negatives_title = this.buildHardNegativesTitle()
+    const load_hard_negatives_dialog = this.buildLoadHardNegativesDialog()
 
     return (
         <div className='row bg-light rounded mt-3'>
@@ -933,13 +1082,20 @@ class HogControls extends React.Component {
                     {train_model_button}
                   </div>
 
-                  {pick_hard_negative_button}
+                  <div className='row'>
+                    {load_hard_negatives_dialog}
+                  </div>
+
+                  <div className='h5 mt-3'>
+                    Testing results
+                  </div>
+                  {testing_results_list}
+
+                  <div className='h5 mt-3'>
+                    Hard Negatives
+                  </div>
                   {hard_negatives_list}
                 </div>
-
-
-
-
 
               </div>
             </div>

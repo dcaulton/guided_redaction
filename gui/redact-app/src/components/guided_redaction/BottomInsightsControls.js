@@ -112,7 +112,6 @@ class BottomInsightsControls extends React.Component {
         <TemplateControls 
           setGlobalStateVar={this.props.setGlobalStateVar}
           handleSetMode={this.props.handleSetMode}
-          tier_1_matches={this.props.tier_1_matches}
           submitInsightsJob={this.props.submitInsightsJob}
           displayInsightsMessage={this.props.displayInsightsMessage}
           cropImage={this.props.cropImage}
@@ -136,6 +135,7 @@ class BottomInsightsControls extends React.Component {
           importScanner={this.props.importScanner}
           tier_1_scanners={this.props.tier_1_scanners}
           tier_1_scanner_current_ids={this.props.tier_1_scanner_current_ids}
+          tier_1_matches={this.props.tier_1_matches}
         />
 
         <HogControls
@@ -146,6 +146,7 @@ class BottomInsightsControls extends React.Component {
           toggleShowVisibility={this.props.toggleShowVisibility}
           tier_1_scanners={this.props.tier_1_scanners}
           tier_1_scanner_current_ids={this.props.tier_1_scanner_current_ids}
+          tier_1_matches={this.props.tier_1_matches}
           scanners={this.props.scanners}
           getScanners={this.props.getScanners}
           deleteScanner={this.props.deleteScanner}
@@ -169,7 +170,6 @@ class BottomInsightsControls extends React.Component {
           buildMovieSetOptions={this.buildMovieSetOptions}
           buildTier1RunOptions={this.buildTier1RunOptions}
           handleSetMode={this.props.handleSetMode}
-          tier_1_matches={this.props.tier_1_matches}
           insights_image={this.props.insights_image}
           getFramesetHashForImageUrl={this.props.getFramesetHashForImageUrl}
           movie_url={this.props.movie_url}
@@ -192,6 +192,7 @@ class BottomInsightsControls extends React.Component {
           getFramesetHashesInOrder={this.props.getFramesetHashesInOrder}
           tier_1_scanners={this.props.tier_1_scanners}
           tier_1_scanner_current_ids={this.props.tier_1_scanner_current_ids}
+          tier_1_matches={this.props.tier_1_matches}
         />
 
         <OcrControls
@@ -212,7 +213,6 @@ class BottomInsightsControls extends React.Component {
           saveScannerToDatabase={this.props.saveScannerToDatabase}
           insights_image={this.props.insights_image}
           movie_url={this.props.movie_url}
-          tier_1_matches={this.props.tier_1_matches}
           movies={this.props.movies}
           setCurrentVideo={this.props.setCurrentVideo}
           setScrubberToIndex={this.props.setScrubberToIndex}
@@ -220,6 +220,7 @@ class BottomInsightsControls extends React.Component {
           getFramesetHashForImageUrl={this.props.getFramesetHashForImageUrl}
           tier_1_scanners={this.props.tier_1_scanners}
           tier_1_scanner_current_ids={this.props.tier_1_scanner_current_ids}
+          tier_1_matches={this.props.tier_1_matches}
         />
 
         <TelemetryControls

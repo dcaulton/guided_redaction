@@ -231,10 +231,12 @@ class HogScanner:
             for box in boxes:
                 the_id = 'hog_feature_' + str(uuid.uuid4())
                 build_feature = {
+                    'id': the_id,
                     'start': (int(box[0]), int(box[1])), 
                     'end': (int(box[2]), int(box[3])),
                     'scanner_type': 'hog',
                     'source': self.hog_rule['id'],
+                    'image_url': ti['image_url'],
                 }
                 print('build feature {}'.format(build_feature))
                 self.build_movies['whatever_movie']['framesets'][index][the_id] = build_feature
