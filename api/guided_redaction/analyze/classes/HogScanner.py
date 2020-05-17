@@ -35,6 +35,10 @@ class HogScanner:
         )
         self.normalize = hog_rule['normalize']
         self.c_for_svm = float(hog_rule['c_for_svm'])
+        if self.hog_rule['only_test_positives'] == 'true':
+            self.only_test_positives = True
+        else:
+            self.only_test_positives = False
         
         if 'training_images' not in hog_rule or not hog_rule['training_images']:
             raise Exception('cannot have a HOG scanner without training images')
@@ -147,12 +151,18 @@ class HogScanner:
             self.scales = np.linspace(.50, 1.50, 101)[::-1]
         elif scale == '+/-50/5':
             self.scales = np.linspace(.50, 1.50, 21)[::-1]
+        elif scale == '+/-50/10':
+            self.scales = np.linspace(.50, 1.50, 11)[::-1]
         elif scale == '+/-10/1':
             self.scales = np.linspace(.90, 1.1, 11)[::-1]
+        elif scale == '+/-10/5':
+            self.scales = np.linspace(.90, 1.1, 5)[::-1]
         elif scale == '+/-20/1':
             self.scales = np.linspace(.80, 1.2, 21)[::-1]
         elif scale == '+/-20/5':
             self.scales = np.linspace(.80, 1.2, 9)[::-1]
+        elif scale == '+/-20/10':
+            self.scales = np.linspace(.80, 1.2, 5)[::-1]
         else:
             self.scales = [1]
 
@@ -190,6 +200,11 @@ class HogScanner:
 
         ###################################################################
         # TODO REMOVE - FOR TESTING
+        if self.only_test_positives:
+            print('we are only testing positives')
+        else:
+            print('buckle in, were gonna test entire movies')
+
         self.build_movies['whatever_movie'] = {'framesets': {}}
         self.statistics['movies']['whatever_movie'] = {'framesets': {}}
         for index, ti_key in enumerate(self.hog_rule['testing_images']):

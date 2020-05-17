@@ -35,12 +35,18 @@ class TemplateMatcher:
             self.scales = np.linspace(.50, 1.50, 101)[::-1]
         elif scale == '+/-50/5':
             self.scales = np.linspace(.50, 1.50, 21)[::-1]
+        elif scale == '+/-50/10':
+            self.scales = np.linspace(.50, 1.50, 11)[::-1]
         elif scale == '+/-10/1':
             self.scales = np.linspace(.90, 1.1, 11)[::-1]
+        elif scale == '+/-10/5':
+            self.scales = np.linspace(.90, 1.1, 5)[::-1]
         elif scale == '+/-20/1':
             self.scales = np.linspace(.80, 1.2, 21)[::-1]
         elif scale == '+/-20/5':
             self.scales = np.linspace(.80, 1.2, 9)[::-1]
+        elif scale == '+/-20/10':
+            self.scales = np.linspace(.80, 1.2, 5)[::-1]
         else:
             self.scales = [1]
 

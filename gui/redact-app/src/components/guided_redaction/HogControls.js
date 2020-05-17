@@ -26,6 +26,7 @@ class HogControls extends React.Component {
       cells_per_block: 2,
       num_distractions_per_image : 40,
       normalize: true,
+      only_test_positives: false,
       c_for_svm: '.01',
       global_scale: '.5',
       minimum_probability: '.7',
@@ -180,6 +181,7 @@ class HogControls extends React.Component {
       cells_per_block: this.state.cells_per_block,
       num_distractions_per_image : this.state.num_distractions_per_image,
       normalize: this.state.normalize,
+      only_test_positives: this.state.only_test_positives,
       c_for_svm: this.state.c_for_svm,
       global_scale: this.state.global_scale,
       minimum_probability : this.state.minimum_probability,
@@ -324,14 +326,17 @@ class HogControls extends React.Component {
     const scale_values = [
       {'1:1': 'actual image scale only'},
       {'+/-10/1': '+/- 10%, 1% increments'},
+      {'+/-10/5': '+/- 10%, 5% increments'},
       {'+/-20/1': '+/- 20%, 1% increments'},
-      {'+/-20/5': '+/- 20%, 5% increments'},
+      {'+/-20/10': '+/- 20%, 10% increments'},
+      {'+/-20/': '+/- 20%, 5% increments'},
       {'+/-25/1': '+/- 25%, 1% increments'},
       {'+/-25/5': '+/- 25%, 5% increments'},
       {'+/-40/1': '+/- 40%, 1% increments'},
       {'+/-40/5': '+/- 40%, 5% increments'},
       {'+/-50/1': '+/- 50%, 1% increments'},
-      {'+/-50/5': '+/- 50%, 5% increments'}
+      {'+/-50/5': '+/- 50%, 5% increments'},
+      {'+/-50/10': '+/- 50%, 10% increments'}
     ]
     return buildLabelAndDropdown(
       scale_values,
@@ -344,8 +349,8 @@ class HogControls extends React.Component {
 
   buildNormalizeDropdown() {
     const values = [
-      {1: 'yes'},
-      {0: 'no'}
+      {true: 'yes'},
+      {false: 'no'}
     ]
     return buildLabelAndDropdown(
       values,
@@ -356,6 +361,19 @@ class HogControls extends React.Component {
     )
   }
 
+  buildOnlyTestPositivesDropdown() {
+    const values = [
+      {true: 'yes'},
+      {false: 'no'}
+    ]
+    return buildLabelAndDropdown(
+      values,
+      'Only test positive testing images',
+      this.state.only_test_positives,
+      'hog_only_test_positives',
+      ((value)=>{this.setLocalStateVar('only_test_positives', value)})
+    )
+  }
   buildLoadButton() {
     return buildTier1LoadButton(
       'hog',
@@ -377,6 +395,7 @@ class HogControls extends React.Component {
         cells_per_block: hog['cells_per_block'],
         num_distractions_per_image: hog['num_distractions_per_image'],
         normalize: hog['normalize'],
+        only_test_positives: hog['only_test_positives'],
         c_for_svm: hog['c_for_svm'],
         global_scale: hog['global_scale'],
         minimum_probability: hog['minimum_probability'],
@@ -407,6 +426,7 @@ class HogControls extends React.Component {
       cells_per_block: 2,
       num_distractions_per_image: 40,
       normalize: true,
+      only_test_positives: false,
       c_for_svm: '.01',
       global_scale: '.5',
       minimum_probability: '.7',
@@ -760,6 +780,7 @@ class HogControls extends React.Component {
     const scale_dropdown = this.buildScaleDropdown()
     const sliding_window_step_size_field = this.buildSlidingWindowStepSizeField()
     const normalize_dropdown = this.buildNormalizeDropdown()
+    const only_test_positives_dropdown = this.buildOnlyTestPositivesDropdown()
     const load_button = this.buildLoadButton()
     const delete_button = this.buildDeleteButton()
     const run_button = this.buildRunButton()
@@ -830,6 +851,10 @@ class HogControls extends React.Component {
 
                   <div className='row mt-2'>
                     {normalize_dropdown}
+                  </div>
+
+                  <div className='row mt-2'>
+                    {only_test_positives_dropdown}
                   </div>
 
                   <div className='row mt-2'>

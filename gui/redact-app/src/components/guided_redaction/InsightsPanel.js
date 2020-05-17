@@ -591,6 +591,8 @@ class InsightsPanel extends React.Component {
       }
     }
     job_data['request_data']['tier_1_scanners']['hog'][hog_id] = hog_rule
+    job_data['request_data']['scan_level'] = 'tier_1'
+    job_data['request_data']['id'] = hog_id
 
     let movie_ids = []
     for (let i=0; i < Object.keys(hog_rule['training_images']).length; i++) {
