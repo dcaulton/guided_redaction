@@ -39,8 +39,49 @@ class HogScanner:
         if 'training_images' not in hog_rule or not hog_rule['training_images']:
             raise Exception('cannot have a HOG scanner without training images')
 
+        self.get_average_image_size_and_scale_training_images_globally(hog_rule)
+
+        self.get_sliding_window_size(hog_rule)
+
+        self.scale_testing_image_locations_globally()
+
+        self.get_datafile_paths_and_dirs(hog_rule)
+
+        self.get_scales(hog_rule)
+
+        self.statistics = {
+            'movies': {}
+        }
+        self.build_movies = {}
+        self.data = []
+        self.labels = []
+
+    def scale_testing_image_locations_globally(self):
+        # deal with global scale
+        if self.global_scale != 1:
+            for testing_image_key in self.hog_rule['testing_images']:
+                testing_image = self.hog_rule['testing_images'][testing_image_key]
+                old_location = self.hog_rule['testing_images'][testing_image_key]['location']
+                self.hog_rule['testing_images'][testing_image_key]['location'] = self.scale_point(old_location)
+
+    def get_sliding_window_size(self, hog_rule):
+        upper_limit = self.pixels_per_cell[0] * self.cells_per_block[0]
+        for w in range(self.avg_img_width, self.avg_img_width + upper_limit + 1):
+            if w % self.pixels_per_cell[0] == 0 and w % self.cells_per_block[0] == 0:
+                self.window_width = w
+        for h in range(self.avg_img_height, self.avg_img_height + upper_limit + 1):
+            if h % self.pixels_per_cell[0] == 0 and h % self.cells_per_block[0] == 0:
+                self.window_height = h
+        if not self.window_width or not self.window_height:
+            raise Exception('bad match on getting HOG window sizes')
+        if self.debug:
+            print('sliding window size: ({}, {})'.format(self.window_width, self.window_height))
+
+    def get_average_image_size_and_scale_training_images_globally(self, hog_rule):
         widths = []
         heights = []
+        self.avg_img_width = 0
+        self.avg_img_height= 0
         for training_image_key in hog_rule['training_images']:
             training_image = hog_rule['training_images'][training_image_key]
             img_base64 = training_image['cropped_image_bytes']
@@ -66,29 +107,7 @@ class HogScanner:
         if heights:
             self.avg_img_height = int(sum(heights) / len(heights))
 
-        upper_limit = self.pixels_per_cell[0] * self.cells_per_block[0]
-        for w in range(self.avg_img_width, self.avg_img_width + upper_limit + 1):
-            if w % self.pixels_per_cell[0] == 0 and w % self.cells_per_block[0] == 0:
-                self.window_width = w
-        for h in range(self.avg_img_height, self.avg_img_height + upper_limit + 1):
-            if h % self.pixels_per_cell[0] == 0 and h % self.cells_per_block[0] == 0:
-                self.window_height = h
-        if not self.window_width or not self.window_height:
-            raise Exception('bad match on getting HOG window sizes')
-
-        if self.debug:
-            print('sliding window size: ({}, {})'.format(self.window_width, self.window_height))
-
-        # deal with global scale
-        if self.global_scale != 1:
-            for testing_image_key in hog_rule['testing_images']:
-                testing_image = hog_rule['testing_images'][testing_image_key]
-                old_location = hog_rule['testing_images'][testing_image_key]['location']
-                hog_rule['testing_images'][testing_image_key]['location'] = self.scale_point(old_location)
-
-        self.data = []
-        self.labels = []
-
+    def get_datafile_paths_and_dirs(self, hog_rule):
         if 'features_path' in hog_rule:
             self.features_path = hog_rule['features_path']
         else:
@@ -114,6 +133,7 @@ class HogScanner:
             the_uuid = str(uuid.uuid4())
             self.debug_images_dir = self.file_writer.create_unique_directory(the_uuid)
 
+    def get_scales(self, hog_rule):
         scale = hog_rule.get('scale', '1:1')
         if scale == '+/-25/1':
             self.scales = np.linspace(.75, 1.25, 51)[::-1]
@@ -135,11 +155,6 @@ class HogScanner:
             self.scales = np.linspace(.80, 1.2, 9)[::-1]
         else:
             self.scales = [1]
-
-        self.statistics = {
-            'movies': {}
-        }
-        self.build_movies = {}
 
     def scale_point(self, point):
         return (
@@ -284,32 +299,24 @@ class HogScanner:
             i = idxs[last]
             pick.append(i)
 
-            # keep looping while some indexes still remain in the indexes list
-            while len(idxs) > 0:
-                # grab the last index in the indexes list and add the index value to the list of
-                # picked indexes
-                last = len(idxs) - 1
-                i = idxs[last]
-                pick.append(i)
+            # find the largest (x, y) coordinates for the start of the bounding box and the
+            # smallest (x, y) coordinates for the end of the bounding box
+            xx1 = np.maximum(x1[i], x1[idxs[:last]])
+            yy1 = np.maximum(y1[i], y1[idxs[:last]])
+            xx2 = np.minimum(x2[i], x2[idxs[:last]])
+            yy2 = np.minimum(y2[i], y2[idxs[:last]])
 
-                # find the largest (x, y) coordinates for the start of the bounding box and the
-                # smallest (x, y) coordinates for the end of the bounding box
-                xx1 = np.maximum(x1[i], x1[idxs[:last]])
-                yy1 = np.maximum(y1[i], y1[idxs[:last]])
-                xx2 = np.minimum(x2[i], x2[idxs[:last]])
-                yy2 = np.minimum(y2[i], y2[idxs[:last]])
+            # compute the width and height of the bounding box
+            w = np.maximum(0, xx2 - xx1 + 1)
+            h = np.maximum(0, yy2 - yy1 + 1)
 
-                # compute the width and height of the bounding box
-                w = np.maximum(0, xx2 - xx1 + 1)
-                h = np.maximum(0, yy2 - yy1 + 1)
+            # compute the ratio of overlap
+            overlap = (w * h) / area[idxs[:last]]
 
-                # compute the ratio of overlap
-                overlap = (w * h) / area[idxs[:last]]
-
-                # delete all indexes from the index list that have overlap greater than the
-                # provided overlap threshold
-                idxs = np.delete(idxs, np.concatenate(([last],
-                    np.where(overlap > overlapThresh)[0])))
+            # delete all indexes from the index list that have overlap greater than the
+            # provided overlap threshold
+            idxs = np.delete(idxs, np.concatenate(([last],
+                np.where(overlap > overlapThresh)[0])))
 
         # return only the bounding boxes that were picked
         return boxes[pick].astype("int")
