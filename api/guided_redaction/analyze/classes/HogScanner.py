@@ -43,15 +43,15 @@ class HogScanner:
         if 'training_images' not in hog_rule or not hog_rule['training_images']:
             raise Exception('cannot have a HOG scanner without training images')
 
-        self.get_average_image_size_and_scale_training_images_globally(hog_rule)
+        self.get_average_image_size_and_scale_training_images_globally()
 
-        self.get_sliding_window_size(hog_rule)
+        self.get_sliding_window_size()
 
         self.scale_testing_image_locations_globally()
 
-        self.get_datafile_paths_and_dirs(hog_rule)
+        self.get_datafile_paths_and_dirs()
 
-        self.get_scales(hog_rule)
+        self.get_scales()
 
         self.statistics = {
             'movies': {}
@@ -68,7 +68,7 @@ class HogScanner:
                 old_location = self.hog_rule['testing_images'][testing_image_key]['location']
                 self.hog_rule['testing_images'][testing_image_key]['location'] = self.scale_point(old_location)
 
-    def get_sliding_window_size(self, hog_rule):
+    def get_sliding_window_size(self):
         upper_limit = self.pixels_per_cell[0] * self.cells_per_block[0]
         for w in range(self.avg_img_width, self.avg_img_width + upper_limit + 1):
             if w % self.pixels_per_cell[0] == 0 and w % self.cells_per_block[0] == 0:
@@ -81,13 +81,13 @@ class HogScanner:
         if self.debug:
             print('sliding window size: ({}, {})'.format(self.window_width, self.window_height))
 
-    def get_average_image_size_and_scale_training_images_globally(self, hog_rule):
+    def get_average_image_size_and_scale_training_images_globally(self):
         widths = []
         heights = []
         self.avg_img_width = 0
         self.avg_img_height= 0
-        for training_image_key in hog_rule['training_images']:
-            training_image = hog_rule['training_images'][training_image_key]
+        for training_image_key in self.hog_rule['training_images']:
+            training_image = self.hog_rule['training_images'][training_image_key]
             img_base64 = training_image['cropped_image_bytes']
             img_bytes = base64.b64decode(img_base64)
             nparr = np.fromstring(img_bytes, np.uint8)
@@ -98,11 +98,11 @@ class HogScanner:
                 cv2_image = imutils.resize(cv2_image, width=int(cv2_image.shape[1] * self.global_scale))
                 cv2_bytes = cv2.imencode(".png", cv2_image)[1].tostring()
                 cv2_base64 = base64.b64encode(cv2_bytes)
-                hog_rule['training_images'][training_image_key]['cropped_image_bytes'] = cv2_base64
-                old_start = hog_rule['training_images'][training_image_key]['start']
-                old_end = hog_rule['training_images'][training_image_key]['end']
-                hog_rule['training_images'][training_image_key]['start'] = self.scale_point(old_start)
-                hog_rule['training_images'][training_image_key]['end'] = self.scale_point(old_end)
+                self.hog_rule['training_images'][training_image_key]['cropped_image_bytes'] = cv2_base64
+                old_start = self.hog_rule['training_images'][training_image_key]['start']
+                old_end = self.hog_rule['training_images'][training_image_key]['end']
+                self.hog_rule['training_images'][training_image_key]['start'] = self.scale_point(old_start)
+                self.hog_rule['training_images'][training_image_key]['end'] = self.scale_point(old_end)
 
             widths.append(cv2_image.shape[1])
             heights.append(cv2_image.shape[0])
@@ -111,9 +111,9 @@ class HogScanner:
         if heights:
             self.avg_img_height = int(sum(heights) / len(heights))
 
-    def get_datafile_paths_and_dirs(self, hog_rule):
-        if 'features_path' in hog_rule:
-            self.features_path = hog_rule['features_path']
+    def get_datafile_paths_and_dirs(self):
+        if 'features_path' in self.hog_rule:
+            self.features_path = self.hog_rule['features_path']
         else:
             hogdir = self.file_writer.create_unique_directory('hog_features')
             underscore_hog_name = 'features_'
@@ -123,8 +123,8 @@ class HogScanner:
             outfilename = os.path.join(hogdir, underscore_hog_name)
             self.features_path = outfilename
 
-        if 'classifier_path' in hog_rule:
-            self.classifier_path = hog_rule['classifier_path']
+        if 'classifier_path' in self.hog_rule:
+            self.classifier_path = self.hog_rule['classifier_path']
         else:
             underscore_hog_name = 'classifier_'
             underscore_hog_name += self.hog_rule['name'].replace(' ', '_')
@@ -137,8 +137,8 @@ class HogScanner:
             the_uuid = str(uuid.uuid4())
             self.debug_images_dir = self.file_writer.create_unique_directory(the_uuid)
 
-    def get_scales(self, hog_rule):
-        scale = hog_rule.get('scale', '1:1')
+    def get_scales(self):
+        scale = self.hog_rule.get('scale', '1:1')
         if scale == '+/-25/1':
             self.scales = np.linspace(.75, 1.25, 51)[::-1]
         elif scale == '+/-25/5':
@@ -198,13 +198,82 @@ class HogScanner:
             self.classifier_path
         )
 
-        ###################################################################
-        # TODO REMOVE - FOR TESTING
         if self.only_test_positives:
-            print('we are only testing positives')
+            self.process_test_positives()
         else:
-            print('buckle in, were gonna test entire movies')
+            self.process_test_all()
 
+        return_obj = {
+            'features_path': self.features_path,
+            'classifier_path': self.classifier_path,
+            'movies': self.build_movies,
+        }
+        if self.debug:
+            return_obj['statistics'] = self.statistics
+
+        return return_obj
+
+    def get_training_image_urls(self):
+        resp_data = {}
+        for ti_key in self.hog_rule['training_images']:
+            ti = self.hog_rule['training_images'][ti_key]
+            if ti['movie_url'] not in resp_data:
+                resp_data[ti['movie_url']] = {}
+            resp_data[ti['movie_url']][ti['image_url']] = 1
+        return resp_data
+
+    def process_test_all(self):
+        if self.debug:
+            print('buckle in, were gonna test entire movies')
+        training_movies_images = self.get_training_image_urls()
+        for movie_url in self.movies:
+            movie = self.movies[movie_url]
+            self.statistics['movies'][movie_url] = {'framesets': {}}
+            self.build_movies[movie_url] = {'framesets': {}}
+            for frameset_hash in movie['framesets']:
+                self.build_movies[movie_url]['framesets'][frameset_hash] = {}
+                frameset = movie['framesets'][frameset_hash]
+                image_url = frameset['images'][0]
+                if self.debug:
+                    print('scanning image {}'.format(image_url))
+
+                pic_response = requests.get(image_url)
+                image = pic_response.content
+                if not image:
+                    raise Exception("couldn't read source image data for testing")
+                nparr = np.fromstring(image, np.uint8)
+                cv2_scan_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+                gray = cv2.cvtColor(cv2_scan_image, cv2.COLOR_BGR2GRAY)
+
+                # deal with global scale
+                if self.global_scale != 1:
+                    gray = imutils.resize(gray, width=int(gray.shape[1] * self.global_scale))
+
+                (boxes, probs) = self.detect(gray)
+
+                boxes = self.non_max_suppression(boxes, probs, .3)
+
+                for box in boxes:
+                    the_id = 'hog_feature_' + str(uuid.uuid4())
+                    build_feature = {
+                        'id': the_id,
+                        'start': (int(box[0]), int(box[1])), 
+                        'end': (int(box[2]), int(box[3])),
+                        'scanner_type': 'hog',
+                        'source': self.hog_rule['id'],
+                        'image_url': image_url,
+                    }
+                    if self.debug:
+                        print('build feature {}'.format(build_feature))
+                    self.build_movies[movie_url]['framesets'][frameset_hash][the_id] = build_feature
+
+                if self.debug:
+                    debug_image_url = self.draw_boxes_on_image(boxes, cv2_scan_image, image_url)
+                    self.statistics['movies'][movie_url]['framesets'][frameset_hash] = debug_image_url
+
+    def process_test_positives(self):
+        if self.debug:
+            print('we are only testing positives')
         self.build_movies['whatever_movie'] = {'framesets': {}}
         self.statistics['movies']['whatever_movie'] = {'framesets': {}}
         for index, ti_key in enumerate(self.hog_rule['testing_images']):
@@ -212,7 +281,8 @@ class HogScanner:
             self.build_movies['whatever_movie']['framesets'][index] = {}
             ti = self.hog_rule['testing_images'][ti_key]
             pic_response = requests.get(ti['image_url'])
-            print('scanning image {}'.format(ti['image_url']))
+            if self.debug:
+                print('scanning image {}'.format(ti['image_url']))
             image = pic_response.content
             if not image:
                 raise Exception("couldn't read source image data for testing")
@@ -238,53 +308,13 @@ class HogScanner:
                     'source': self.hog_rule['id'],
                     'image_url': ti['image_url'],
                 }
-                print('build feature {}'.format(build_feature))
+                if self.debug:
+                    print('build feature {}'.format(build_feature))
                 self.build_movies['whatever_movie']['framesets'][index][the_id] = build_feature
 
-            debug_image_url = self.draw_boxes_on_image(boxes, cv2_scan_image, ti['image_url'])
-            self.statistics['movies']['whatever_movie']['framesets'][index] = debug_image_url
-
-        return_obj = {
-            'features_path': self.features_path,
-            'classifier_path': self.classifier_path,
-            'statistics': self.statistics,
-            'movies': self.build_movies,
-        }
-        return return_obj
-        ###################################################################
-
-        for movie_url in self.movies:
-            movie = self.movies[movie_url]
-            self.statistics['movies'][movie_url] = {'framesets': {}}
-            for frameset_hash in movie['framesets']:
-                self.statistics['movies'][movie_url]['framesets'][frameset_hash] = {}
-                frameset = movie['framesets'][frameset_hash]
-                image_url = frameset['images'][0]
-                print('scanning image {}'.format(image_url))
-
-                pic_response = requests.get(image_url)
-                image = pic_response.content
-                if not image:
-                    raise Exception("couldn't read source image data for testing")
-                nparr = np.fromstring(image, np.uint8)
-                cv2_scan_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-                gray = cv2.cvtColor(cv2_scan_image, cv2.COLOR_BGR2GRAY)
-
-                # deal with global scale
-                if self.global_scale != 1:
-                    gray = imutils.resize(gray, width=int(gray.shape[1] * self.global_scale))
-
-                self.detect(gray)
-
-
-        return_obj = {
-            'features_path': self.features_path,
-            'classifier_path': self.classifier_path,
-        }
-        if self.debug:
-            return_obj['statistics'] = self.statistics
-
-        return return_obj
+            if self.debug:
+                debug_image_url = self.draw_boxes_on_image(boxes, cv2_scan_image, ti['image_url'])
+                self.statistics['movies']['whatever_movie']['framesets'][index] = debug_image_url
 
     def non_max_suppression(self, boxes, probs, overlapThresh=.3):
         boxes = np.array(boxes)
