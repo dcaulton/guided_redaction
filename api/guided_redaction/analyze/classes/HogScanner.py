@@ -17,10 +17,17 @@ class HogScanner:
 
     def __init__(self, hog_rule, movies, file_writer):
         self.debug = True
+        if self.debug:
+            print('the hog keys {}'.format(hog_rule.keys()))
         self.num_distractions_per_image = int(hog_rule['num_distractions_per_image'])
-        self.sliding_window_step_size = int(hog_rule['sliding_window_step_size'])
+        #TODO, see where this is getting dropped in the gui
+        if 'sliding_window_step_size' in hog_rule:
+            self.sliding_window_step_size = int(hog_rule['sliding_window_step_size'])
+        else:
+            self.sliding_window_step_size = 4
         self.minimum_probability = float(hog_rule['minimum_probability'])
         self.global_scale = float(hog_rule['global_scale'])
+        self.testing_image_skip_factor = hog_rule['testing_image_skip_factor']
         self.hog_rule = hog_rule
         self.movies = movies
         self.file_writer = file_writer
@@ -173,17 +180,19 @@ class HogScanner:
         )
 
     def train_model(self):
-        if os.path.exists(self.features_path):
-            if self.debug:
-                print('loading features from disk')
-            (self.data, self.labels) = self.load_dataset(
-                self.features_path, 
-                "features"
-            )
-        else:
-            if self.debug:
-                print('creating features')
-            self.extract_features()
+#        if os.path.exists(self.features_path):
+#            if self.debug:
+#                print('loading features from disk')
+#            (self.data, self.labels) = self.load_dataset(
+#                self.features_path, 
+#                "features"
+#            )
+#        else:
+#            if self.debug:
+#                print('creating features')
+#            self.extract_features()
+        # for now, create fresh training data every time
+        self.extract_features()
 
         self.model = SVC(
             kernel="linear", 
@@ -230,13 +239,20 @@ class HogScanner:
             movie = self.movies[movie_url]
             self.statistics['movies'][movie_url] = {'framesets': {}}
             self.build_movies[movie_url] = {'framesets': {}}
-            for frameset_hash in movie['framesets']:
-                self.build_movies[movie_url]['framesets'][frameset_hash] = {}
+            for frameset_index, frameset_hash in enumerate(movie['framesets']):
                 frameset = movie['framesets'][frameset_hash]
                 image_url = frameset['images'][0]
                 if self.debug:
                     print('scanning image {}'.format(image_url))
-
+                if movie_url in training_movies_images and image_url in training_movies_images[movie_url]:
+                    if self.debug:
+                        print('skipping - its a training image')
+                    continue
+                if frameset_index % self.testing_image_skip_factor != 0:
+                    if self.debug:
+                        print('skipping because of skip factor')
+                    continue
+                self.build_movies[movie_url]['framesets'][frameset_hash] = {}
                 pic_response = requests.get(image_url)
                 image = pic_response.content
                 if not image:

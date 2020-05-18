@@ -25,6 +25,7 @@ class HogControls extends React.Component {
       pixels_per_cell: 8,
       cells_per_block: 2,
       num_distractions_per_image : 40,
+      testing_image_skip_factor: 10,
       normalize: true,
       only_test_positives: false,
       c_for_svm: '.01',
@@ -203,6 +204,7 @@ class HogControls extends React.Component {
       pixels_per_cell: this.state.pixels_per_cell,
       cells_per_block: this.state.cells_per_block,
       num_distractions_per_image : this.state.num_distractions_per_image,
+      testing_image_skip_factor: this.state.testing_image_skip_factor,
       normalize: this.state.normalize,
       only_test_positives: this.state.only_test_positives,
       c_for_svm: this.state.c_for_svm,
@@ -312,6 +314,17 @@ class HogControls extends React.Component {
     )
   }
 
+  buildTestingImageSkipFactorField() {
+    return buildLabelAndTextInput(
+      this.state.testing_image_skip_factor,
+      'Testing image skip factor',
+      'hog_testing_image_skip_factor',
+      'testing_image_skip_factor',
+      5,
+      ((value)=>{this.setLocalStateVar('testing_image_skip_factor', value)})
+    )
+  }
+
   buildCForSvmField() {
     return buildLabelAndTextInput(
       this.state.c_for_svm,
@@ -417,6 +430,7 @@ class HogControls extends React.Component {
         pixels_per_cell: hog['pixels_per_cell'],
         cells_per_block: hog['cells_per_block'],
         num_distractions_per_image: hog['num_distractions_per_image'],
+        testing_image_skip_factor: hog['testing_image_skip_factor'],
         normalize: hog['normalize'],
         only_test_positives: hog['only_test_positives'],
         c_for_svm: hog['c_for_svm'],
@@ -448,6 +462,7 @@ class HogControls extends React.Component {
       pixels_per_cell: 8,
       cells_per_block: 2,
       num_distractions_per_image: 40,
+      testing_image_skip_factor: 10,
       normalize: true,
       only_test_positives: false,
       c_for_svm: '.01',
@@ -856,6 +871,12 @@ class HogControls extends React.Component {
     })
   }
 
+  dismissTestingResultsImage(match_key) {
+    let deepCopyTestingResultsImages = JSON.parse(JSON.stringify(this.state.testing_results_images))
+    delete deepCopyTestingResultsImages[match_key]
+    this.setLocalStateVar('testing_results_images', deepCopyTestingResultsImages)
+  }
+
   deleteHardNegative(match_key) {
     let deepCopyHardNegatives = JSON.parse(JSON.stringify(this.state.hard_negatives))
     delete deepCopyHardNegatives[match_key]
@@ -892,7 +913,15 @@ class HogControls extends React.Component {
                     className='btn btn-primary ml-2 mt-2'
                     onClick={() => this.makeHardNegative(match_key)}
                 >
-                  Hard Negative
+                  Add Hard Negative
+                </button>
+              </div>
+              <div className='col-lg-2'>
+                <button
+                    className='btn btn-primary ml-2 mt-2'
+                    onClick={() => this.dismissTestingResultsImage(match_key)}
+                >
+                  This Matches
                 </button>
               </div>
             </div>
@@ -922,6 +951,7 @@ class HogControls extends React.Component {
     const pixels_per_cell_field = this.buildPixelsPerCellField()
     const cells_per_block_field = this.buildCellsPerBlockField()
     const num_distractions_per_image_field = this.buildNumDistractionsPerImageField()
+    const testing_image_skip_factor_field = this.buildTestingImageSkipFactorField()
     const c_for_svm_field = this.buildCForSvmField()
     const global_scale_field = this.buildGlobalScaleField()
     const minimum_probability_field = this.buildMinimumProbabilityField()
@@ -996,6 +1026,10 @@ class HogControls extends React.Component {
 
                   <div className='row mt-2'>
                     {num_distractions_per_image_field}
+                  </div>
+
+                  <div className='row mt-2'>
+                    {testing_image_skip_factor_field}
                   </div>
 
                   <div className='row mt-2'>
