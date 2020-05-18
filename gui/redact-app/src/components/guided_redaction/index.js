@@ -13,10 +13,7 @@ const X = observer(class X extends React.Component {
   }
 
   getBaseUrl(url_name) {
-    let api_server_url = ''
-    const host = window.location.hostname
-    api_server_url = 'https://'+host+'/api/'
-    return api_server_url
+    return '/api/'
   }
 
   render() {
