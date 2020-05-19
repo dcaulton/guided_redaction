@@ -492,9 +492,7 @@ class ImagePanel extends React.Component {
   
   buildPrecisionLearningLink() {
     return (
-      <div
-          className='mt-4 mb-4'
-      >
+      <div>
         <btn
             className='btn btn-link font-weight-bold'
         >
@@ -502,6 +500,22 @@ class ImagePanel extends React.Component {
         </btn>
       </div>
     )
+  }
+
+  buildWhenDoneLink() {
+    if (this.props.getImageUrl() === '') {
+      return ''
+    }
+    if (this.props.whenDoneTarget) {
+      return (
+        <button 
+            className='btn btn-link font-weight-bold'  
+            onClick={() => this.props.gotoWhenDoneTarget()}
+        >
+          Go to Precision Learning 
+        </button>
+      )
+    }
   }
 
   buildHeaderRow() {
@@ -512,7 +526,7 @@ class ImagePanel extends React.Component {
     return (
       <div 
           id='image_header_row'
-          className='row'
+          className='row mt-3'
       >
         <div 
             id='precision_learning_link_container'
@@ -538,7 +552,7 @@ class ImagePanel extends React.Component {
         {header_row}
         <div className='row'>
           <div 
-              className='col-lg-6 bg-light'
+              className='col-lg-6'
           >
               <div 
                   id='ip_image_and_canvas'
@@ -569,7 +583,7 @@ class ImagePanel extends React.Component {
                 />
               </div>
 
-              <div className='row mt-2 border-bottom p-2'>
+              <div className='row pt-2 border-bottom p-2 bg-light'>
                 <div className='col-lg-1'>
                   {prev_button}
                 </div>
@@ -588,30 +602,26 @@ class ImagePanel extends React.Component {
                 </div>
               </div>
 
-              <div className='row'>
-                <BottomImageControls 
-                  mode={this.state.mode}
-                  templates={this.props.templates}
-                  display_mode={this.state.display_mode}
-                  submode={this.state.submode}
-                  message={this.state.message}
-                  setMode= {this.setMode}
-                  redactImage={this.redactImage}
-                  getImageUrl={this.props.getImageUrl}
-                  setMessage={this.setMessage}
-                  clearCurrentFramesetChanges={this.props.clearCurrentFramesetChanges}
-                  whenDoneTarget={this.props.whenDoneTarget}
-                  gotoWhenDoneTarget={this.props.gotoWhenDoneTarget}
-                  submitImageJob={this.submitImageJob}
-                  setIllustrateShaded={this.setIllustrateShaded}
-                  newImage={this.newImage}
-                />
-              </div>
+              <BottomImageControls 
+                mode={this.state.mode}
+                templates={this.props.templates}
+                display_mode={this.state.display_mode}
+                submode={this.state.submode}
+                message={this.state.message}
+                setMode= {this.setMode}
+                redactImage={this.redactImage}
+                getImageUrl={this.props.getImageUrl}
+                setMessage={this.setMessage}
+                clearCurrentFramesetChanges={this.props.clearCurrentFramesetChanges}
+                submitImageJob={this.submitImageJob}
+                setIllustrateShaded={this.setIllustrateShaded}
+                newImage={this.newImage}
+              />
 
           </div>
 
           <div className='col-lg-6'>
-            <div classame='row'>
+            <div className='row'>
               <div className='col-lg-12'>
                 <ImageInfoControls 
                   getImageUrl={this.props.getImageUrl}
@@ -652,7 +662,7 @@ class TemplateBuilderControls extends React.Component {
           <div className='row'>
 
             <div
-              className='col-lg-10 h3 float-left ml-2 mt-2'
+              className='col-lg-11 h3 float-left ml-2 mt-2'
             >
               Templates
             </div>
@@ -680,7 +690,7 @@ class TemplateBuilderControls extends React.Component {
             <div className='col mb-3'>
               <div className='row mt-2'>
                 <div className='d-inline font-weight-bold'>
-                  HAHAHAHA
+                  Add minimal template creation tool here
                 </div>
               </div>
             </div>
@@ -812,11 +822,10 @@ class ImageInfoControls extends React.Component {
 
         <div className='col bg-light rounded border'>
           <div className='row'>
-
             <div
-              className='col-lg-10 h3 float-left ml-2 mt-2'
+              className='col h3 float-left ml-2 mt-2'
             >
-              image info
+              Image Info
             </div>
             <div
                 className='d-inline float-right'
@@ -836,7 +845,7 @@ class ImageInfoControls extends React.Component {
 
           <div
               id='advanced_body'
-              className='row collapse border-top m-2'
+              className='row collapse border-top ml-2 mr-2'
           >
 
             <div id='advanced_main' className='col mb-3'>
@@ -930,22 +939,6 @@ class BottomImageControls extends React.Component {
 
   resetImage() {
     this.props.clearCurrentFramesetChanges(this.props.setMessage('image has been reset'))
-  }
-
-  buildWhenDoneLink() {
-    if (this.props.getImageUrl() === '') {
-      return ''
-    }
-    if (this.props.whenDoneTarget) {
-      return (
-        <button 
-            className='btn btn-primary ml-2'  
-            onClick={() => this.props.gotoWhenDoneTarget()}
-        >
-          Goto Precision Learning 
-        </button>
-      )
-    }
   }
 
   buildTemplateButton() {
@@ -1175,7 +1168,6 @@ class BottomImageControls extends React.Component {
   }
 
   render() {
-    const whenDoneLink = this.buildWhenDoneLink()
     const template_button = this.buildTemplateButton()
     const add_button = this.buildAddButton()
     const delete_button = this.buildDeleteButton()
@@ -1185,8 +1177,7 @@ class BottomImageControls extends React.Component {
     const new_image_button = this.buildNewImageButton()
 
     return (
-    <div>
-      <div className='mt-2'>
+    <div className='row pt-2 pb-2 bg-light rounded border-bottom border-left border-right'>
         <div className='col-lg-10'>
           {add_button}
 
@@ -1204,8 +1195,6 @@ class BottomImageControls extends React.Component {
         <div className='col-lg-2 float-right'>
           {redact_button}
         </div>
-      </div>
-
     </div>
     );
   }
