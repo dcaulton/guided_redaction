@@ -2382,7 +2382,7 @@ class RedactApplication extends React.Component {
           </a>
         </div>
         </nav>
-        <div id='container' className='container'>
+        <div id='container' className='col'>
           <Switch>
             <Route path='/redact/movie'>
               <MoviePanel 

@@ -1,5 +1,4 @@
 import React from 'react'
-import TopImageControls from './TopImageControls'
 import CanvasImageOverlay from './CanvasImageOverlay'
 import {getMessage, getDisplayMode} from './redact_utils.js'
 
@@ -484,46 +483,66 @@ class ImagePanel extends React.Component {
     return prev_image_link
   }
   
+  buildPrecisionLearningLink() {
+    return (
+      <div
+          className='mt-4 mb-4'
+      >
+        <btn
+            className='btn btn-link'
+        >
+          Go to Precision Learning
+        </btn>
+      </div>
+    )
+  }
+
+  buildHeaderRow() {
+    const pl_link = this.buildPrecisionLearningLink()
+    let pl_link_header_style = {
+        height: '50px',
+    }
+    return (
+      <div 
+          id='image_header_row'
+          className='row'
+      >
+        <div 
+            id='precision_learning_link_container'
+            className='col-lg-3'
+            style={pl_link_header_style}
+        >
+          {pl_link}
+        </div>
+      </div>
+    )
+  }
+
   render() {
     let next_button = this.buildGetNextButton()
     let prev_button = this.buildGetPrevButton()
+    let header_row = this.buildHeaderRow()
+    var img_src = this.props.getImageUrl()
     return (
-      <div id='redaction_panel_container'>
-        <div id='image_redactor_panel'>
-
-          <div id='controls_wrapper' className='row'>
-            <div className='col'>
-              <TopImageControls 
-                mode={this.state.mode}
-                templates={this.props.templates}
-                display_mode={this.state.display_mode}
-                submode={this.state.submode}
-                message={this.state.message}
-                setMode= {this.setMode}
-                redactImage={this.redactImage}
-                getImageUrl={this.props.getImageUrl}
-                setMessage={this.setMessage}
-                clearCurrentFramesetChanges={this.props.clearCurrentFramesetChanges}
-                whenDoneTarget={this.props.whenDoneTarget}
-                gotoWhenDoneTarget={this.props.gotoWhenDoneTarget}
-                submitImageJob={this.submitImageJob}
-                setIllustrateShaded={this.setIllustrateShaded}
-                newImage={this.newImage}
-              />
-            </div>
-          </div>
-
-          <div id='image_and_next_prev_buttons' className='row'>
-            <div id='prev_button_col' className='col-lg-1'>
-              {prev_button}
-            </div>
-            <div className='col-lg-10'>
-              <div id='image_and_canvas_wrapper' className='row'>
-                <BaseImage 
-                  getImageUrl={this.props.getImageUrl}
-                  image_file={this.props.image_file}
-                  setImageScale={this.props.setImageScale}
-                />
+      <div id='image_panel_container'
+          className='col-lg-12'
+      >
+        {header_row}
+        <div className='row'>
+          <div 
+              className='col-lg-6'
+          >
+              <div 
+                  id='ip_image_and_canvas'
+                  className='row'
+              >
+                <div id='base_image_div'>
+                  <img id='base_image_id' 
+                    alt={img_src}
+                    src={img_src}
+                    onLoad={this.props.setImageScale}
+                  />
+                </div>
                 <CanvasImageOverlay
                   mode={this.state.mode}
                   submode={this.state.submode}
@@ -541,45 +560,115 @@ class ImagePanel extends React.Component {
                   addImageToMovie={this.props.addImageToMovie}
                 />
               </div>
-            </div>
-            <div id='next_button_col' className='col-lg-1'>
-              {next_button}
-            </div>
+
+              <div className='row'>
+              prev, action and next
+              </div>
+
+              <div className='row'>
+                <BottomImageControls 
+                  mode={this.state.mode}
+                  templates={this.props.templates}
+                  display_mode={this.state.display_mode}
+                  submode={this.state.submode}
+                  message={this.state.message}
+                  setMode= {this.setMode}
+                  redactImage={this.redactImage}
+                  getImageUrl={this.props.getImageUrl}
+                  setMessage={this.setMessage}
+                  clearCurrentFramesetChanges={this.props.clearCurrentFramesetChanges}
+                  whenDoneTarget={this.props.whenDoneTarget}
+                  gotoWhenDoneTarget={this.props.gotoWhenDoneTarget}
+                  submitImageJob={this.submitImageJob}
+                  setIllustrateShaded={this.setIllustrateShaded}
+                  newImage={this.newImage}
+                />
+              </div>
+
           </div>
 
-          <AdvancedImageControls 
-            getImageUrl={this.props.getImageUrl}
-            mask_method={this.props.mask_method}
-            setGlobalStateVar={this.props.setGlobalStateVar}
-            getFramesetHashForImageUrl={this.props.getFramesetHashForImageUrl}
-            setIllustrateParameters={this.props.setIllustrateParameters}
-            illustrateParameters={this.props.illustrateParameters}
-          />
+          <div className='col-lg-6'>
+            <div classame='row'>
+              <div className='col-lg-12'>
+                <ImageInfoControls 
+                  getImageUrl={this.props.getImageUrl}
+                  mask_method={this.props.mask_method}
+                  setGlobalStateVar={this.props.setGlobalStateVar}
+                  getFramesetHashForImageUrl={this.props.getFramesetHashForImageUrl}
+                  setIllustrateParameters={this.props.setIllustrateParameters}
+                  illustrateParameters={this.props.illustrateParameters}
+                />
+              </div>
+            </div>
 
+            <div className='row mt-2'>
+              <div className='col-lg-12'>
+                <TemplateBuilderControls 
+                  getImageUrl={this.props.getImageUrl}
+                />
+              </div>
+            </div>
+
+          </div>
         </div>
       </div>
     );
   }
 }
 
-class BaseImage extends React.Component {
 
+class TemplateBuilderControls extends React.Component {
   render() {
-    var the_src = this.props.getImageUrl()
+    if (!this.props.getImageUrl()) {
+      return ''
+    }
     return (
-      <div id='base_image_div'>
-        <img id='base_image_id' 
-          alt={the_src}
-          src={the_src}
-          onLoad={this.props.setImageScale}
-        />
+      <div>
+
+        <div className='col bg-light rounded border'>
+          <div className='row'>
+
+            <div
+              className='col-lg-10 h3 float-left ml-2 mt-2'
+            >
+              Templates
+            </div>
+            <div
+                className='d-inline float-right'
+            >
+              <button
+                  className='btn btn-link'
+                  aria-expanded='false'
+                  data-target='#template_builder_body'
+                  aria-controls='template_builder_body'
+                  data-toggle='collapse'
+                  type='button'
+              >
+                +/-
+              </button>
+            </div>
+          </div>
+
+          <div
+              id='template_builder_body'
+              className='row collapse border-top m-2'
+          >
+
+            <div className='col mb-3'>
+              <div className='row mt-2'>
+                <div className='d-inline font-weight-bold'>
+                  HAHAHAHA
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     )
   }
 }
 
-
-class AdvancedImageControls extends React.Component {
+class ImageInfoControls extends React.Component {
 
   buildMaskMethodDropdown() {
     return (
@@ -686,15 +775,6 @@ class AdvancedImageControls extends React.Component {
     if (!this.props.getImageUrl()) {
       return ''
     }
-    let bottom_y = 100
-    const img_ele = document.getElementById('base_image_div')
-    if (img_ele) {
-      const rect = img_ele.getBoundingClientRect()
-      bottom_y = rect['bottom'] - 50
-    }
-    const controls_style = {
-      top: bottom_y,
-    }
     const mask_method_dropdown = this.buildMaskMethodDropdown()
     const illustrate_color_dropdown = this.buildIllustrateColorDropdown()
     const illustrate_darken_dropdown = this.buildIllustrateDarkenPercentDropdown()
@@ -705,100 +785,466 @@ class AdvancedImageControls extends React.Component {
     const image_url = this.props.getImageUrl()
 
     return (
-      <div id='bottom_image_controls' className='row' style={controls_style}>
+      <div>
 
-        <div className='col-md-1' />
-          <div className='col-md-9 m-2 pb-2 bg-light rounded'>
-            <div className='row'>
-
-              <div
-                className='col-lg-10 h3 float-left'
-              >
-                image info
-              </div>
-              <div
-                  className='d-inline float-right'
-              >
-                <button
-                    className='btn btn-link'
-                    aria-expanded='false'
-                    data-target='#advanced_body'
-                    aria-controls='advanced_body'
-                    data-toggle='collapse'
-                    type='button'
-                >
-                  +/-
-                </button>
-              </div>
-            </div>
+        <div className='col bg-light rounded border'>
+          <div className='row'>
 
             <div
-                id='advanced_body'
-                className='row collapse'
+              className='col-lg-10 h3 float-left ml-2 mt-2'
             >
-              <div id='advanced_main' className='col ml-3'>
+              image info
+            </div>
+            <div
+                className='d-inline float-right'
+            >
+              <button
+                  className='btn btn-link'
+                  aria-expanded='false'
+                  data-target='#advanced_body'
+                  aria-controls='advanced_body'
+                  data-toggle='collapse'
+                  type='button'
+              >
+                +/-
+              </button>
+            </div>
+          </div>
 
-                <div className='row'>
-                <span>Image url:</span>
-                <div className='ml-2'>
+          <div
+              id='advanced_body'
+              className='row collapse border-top m-2'
+          >
+
+            <div id='advanced_main' className='col mb-3'>
+              <div className='row mt-2'>
+                <div className='d-inline font-weight-bold'>
+                  Image Url:
+                </div>
+                <div className='d-inline ml-2'>
                   {image_url}
                 </div>
               </div>
 
-              <div className='row'>
-                <span>Frameset Hash:</span>
-                <div className='ml-2'>
+              <div className='row mt-2'>
+                <div className='d-inline font-weight-bold'>
+                  Frameset Hash:
+                </div>
+                <div className='d-inline ml-2'>
                   {frameset_hash}
                 </div>
               </div>
 
-              <div className='row'>
-                <span>Dimensions:</span>
-                <div className='ml-2'>
+              <div className='row mt-2'>
+                <div className='d-inline font-weight-bold'>
+                  Dimensions:
+                </div>
+                <div className='d-inline ml-2'>
                   {dimensions_string}
                 </div>
               </div>
 
-              <div className='row'>
-                {download_link}
+              <div className='row mt-2'>
+                <div className='d-inline font-weight-bold'>
+                  Download Image:
+                </div>
+                <div className='d-inline ml-2'>
+                  {download_link}
+                </div>
               </div>
 
               <div className='row mt-2'>
-                <span>set mask method</span>
-                <div className='ml-2'>
+                <div className='d-inline font-weight-bold'>
+                  Set Mask Method:
+                </div>
+                <div className='d-inline ml-2'>
                   {mask_method_dropdown}
                 </div>
               </div>
 
               <div className='row mt-2'>
-                <span>set illustrate color</span>
-                <div className='ml-2'>
+                <div className='d-inline font-weight-bold'>
+                  Set Illustrate Color:
+                </div>
+                <div className='d-inline ml-2'>
                   {illustrate_color_dropdown}
                 </div>
               </div>
 
               <div className='row mt-2'>
-                <span>set illustrate line width</span>
-                <div className='ml-2'>
+                <div className='d-inline font-weight-bold'>
+                  Set Illustrate Line Width:
+                </div>
+                <div className='d-inline ml-2'>
                   {illustrate_line_width_dropdown}
                 </div>
               </div>
 
               <div className='row mt-2'>
-                <span>set illustrate background darken percent</span>
-                <div className='ml-2'>
+                <div className='d-inline font-weight-bold'>
+                  Set Illustrate Background Darken Percent:
+                </div>
+                <div className='d-inline ml-2'>
                   {illustrate_darken_dropdown}
                 </div>
               </div>
-
             </div>
           </div>
 
-      </div>  
-
+        </div>
       </div>
     )
   }
 }
 
-export default ImagePanel;
+class BottomImageControls extends React.Component {
+  constructor(props) {
+    super(props)
+    this.button_style = {
+      borderColor: 'black',
+    }
+  }
+
+  resetImage() {
+    this.props.clearCurrentFramesetChanges(this.props.setMessage('image has been reset'))
+  }
+
+  buildWhenDoneLink() {
+    if (this.props.getImageUrl() === '') {
+      return ''
+    }
+    if (this.props.whenDoneTarget) {
+      return (
+        <button 
+            className='btn btn-primary ml-2'  
+            onClick={() => this.props.gotoWhenDoneTarget()}
+        >
+          Goto Precision Learning 
+        </button>
+      )
+    }
+  }
+
+  buildTemplateButton() {
+    if (this.props.getImageUrl() === '') {
+      return ''
+    }
+    const template_keys = Object.keys(this.props.templates)
+    if (!template_keys.length) {
+      return ''
+    }
+    return (
+      <div id='template_div' className='d-inline'>
+        <button 
+            className='btn btn-light dropdown-toggle ml-2' 
+            style={this.button_style}
+            type='button' 
+            id='templateDropdownButton'
+            data-toggle='dropdown' 
+            aria-haspopup='true' 
+            aria-expanded='false'
+        >
+          Template
+        </button>
+        <div className='dropdown-menu' aria-labelledby='tempateDropdownButton'>
+          {template_keys.map((value, index) => {
+            return (
+              <button className='dropdown-item'
+                  key={index}
+                  onClick={() => this.props.submitImageJob('template_match', this.props.templates[value]['id'])}
+                  href='.'
+              >
+                Run {this.props.templates[value]['name']}
+              </button>
+            )
+          })}
+          <button className='dropdown-item'
+              key='template_all'
+              onClick={() => this.props.submitImageJob('template_match_all_templates')}
+              href='.'
+          >
+            Run All
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  buildAddButton() {
+    if (this.props.getImageUrl() === '') {
+      return ''
+    }
+    return (
+      <div id='add_div' className='d-inline'>
+        <button 
+            className='btn btn-light dropdown-toggle' 
+            style={this.button_style}
+            type='button' 
+            id='addDropdownButton'
+            data-toggle='dropdown' 
+            aria-haspopup='true' 
+            aria-expanded='false'
+        >
+          Add
+        </button>
+        <div 
+            className='dropdown-menu' 
+            aria-labelledby='addDropdownButton'
+        >
+          <button 
+              className='dropdown-item' 
+              onClick={() => this.props.setMode('add_1', 'box')}
+          >
+            Box
+            {this.props.debuginfo}
+          </button>
+          <button 
+              className='dropdown-item' 
+              onClick={() => this.props.setMode('add_1', 'ocr')} 
+              href='.'
+          >
+            OCR
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  buildDeleteButton() {
+    if (this.props.getImageUrl() === '') {
+      return ''
+    }
+    return (
+      <div id='delete_div' className='d-inline'>
+        <button 
+            className='btn btn-light dropdown-toggle ml-2' 
+            style={this.button_style}
+            type='button' 
+            id='deleteDropdownButton'
+            data-toggle='dropdown' 
+            aria-haspopup='true' 
+            aria-expanded='false'
+        >
+          Delete
+        </button>
+        <div 
+            className='dropdown-menu' 
+            aria-labelledby='deleteDropdownButton'
+        >
+          <button className='dropdown-item' 
+              onClick={() => this.props.setMode('delete', 'item')} 
+              href='.'
+          >
+            Item
+          </button>
+          <button 
+              className='dropdown-item' 
+              onClick={() => this.props.setMode('delete_1', 'box_all')} 
+              href='.'
+          >
+            Box (all in)
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  buildRedactButton() {
+    if (this.props.getImageUrl() === '') {
+      return ''
+    }
+    return (
+      <button 
+          className='btn btn-primary ml-2'  
+          onClick={() => this.props.redactImage()}
+          href='./index.html' >
+        Redact
+      </button>
+    )
+  }
+
+  buildNewImageButton() {
+    return (
+      <button 
+          className='btn btn-light ml-2'  
+          style={this.button_style}
+          onClick={() => this.props.newImage()}
+          href='./index.html' >
+        New
+      </button>
+    )
+  }
+
+  buildResetButton() {
+    if (this.props.getImageUrl() === '') {
+      return ''
+    }
+    return (
+      <button 
+          className='btn btn-light ml-2' 
+          onClick={() => this.resetImage()}
+          style={this.button_style}
+          href='./index.html' >
+        Reset
+      </button>
+    )
+  }
+
+  buildMessage() {
+    if (this.props.message === '.') {
+      let style = {
+        color: '#FFFFFF',
+      }
+      return (
+        <div 
+          style={style}
+        >
+          {this.props.message}
+        </div>
+      )
+    } else {
+      return this.props.message
+    }
+  }
+
+  buildDisplayMode() {
+    if (this.props.display_mode=== '.') {
+      let style = {
+        color: '#FFFFFF',
+      }
+      return (
+        <div 
+          style={style}
+        >
+          {this.props.display_mode}
+        </div>
+      )
+    } else {
+      return this.props.display_mode
+    }
+  }
+
+  illustrateShadedOvalOne() {
+    this.props.setIllustrateShaded('true')
+    this.props.setMode('illustrate', 'ill_oval_1')
+  }
+
+  illustrateShadedBoxOne() {
+    this.props.setIllustrateShaded('true')
+    this.props.setMode('illustrate', 'ill_box_1')
+  }
+
+  buildIllustrateButton() {
+    if (this.props.getImageUrl() === '') {
+      return ''
+    }
+    return (
+      <div id='illustrate_div' className='d-inline'>
+        <button 
+            className='btn btn-light dropdown-toggle ml-2' 
+            style={this.button_style}
+            type='button' 
+            id='illustrateDropdownButton'
+            data-toggle='dropdown' 
+            aria-haspopup='true' 
+            aria-expanded='false'
+        >
+          Illustrate
+        </button>
+        <div className='dropdown-menu' aria-labelledby='illustrateDropdownButton'>
+          <button 
+              className='dropdown-item' 
+              onClick={() => this.props.setMode('illustrate', 'ill_oval_1')} 
+              href='.'
+          >
+            Oval
+          </button>
+          <button 
+              className='dropdown-item' 
+              onClick={() => this.illustrateShadedOvalOne()} 
+              href='.'
+          >
+            Oval - shaded background
+          </button>
+          <button 
+              className='dropdown-item' 
+              onClick={() => this.props.setMode('illustrate', 'ill_box_1')} 
+              href='.'
+          >
+            Box
+          </button>
+          <button 
+              className='dropdown-item' 
+              onClick={() => this.illustrateShadedBoxOne()} 
+              href='.'
+          >
+            Box - shaded background
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  render() {
+    const whenDoneLink = this.buildWhenDoneLink()
+    const template_button = this.buildTemplateButton()
+    const add_button = this.buildAddButton()
+    const delete_button = this.buildDeleteButton()
+    const redact_button = this.buildRedactButton()
+    const reset_button = this.buildResetButton()
+    const illustrate_button = this.buildIllustrateButton()
+    const new_image_button = this.buildNewImageButton()
+    const message = this.buildMessage()
+    const display_mode = this.buildDisplayMode()
+
+    return (
+      <div>
+        <div className='row mt-2'>
+          <div className='col col-lg-1' />
+          <div className='col col-lg-10'>
+
+            {add_button}
+
+            {delete_button} 
+
+            {template_button}
+
+            {illustrate_button}
+
+            {new_image_button}
+
+            {reset_button}
+          
+            {redact_button}
+
+            {whenDoneLink}
+
+          </div>
+        </div>
+
+        <div className='row d-flex justify-content-between'>
+          <div className='col-lg-1' />
+          <div id='mode_div' className='col-lg-2'>
+            <div 
+                id='mode_header' 
+                className='h3'
+            >
+              {display_mode}
+            </div>
+          </div>
+          <div id='message_divx' className='col-lg-9 mt-1 overflow-hidden'>
+          </div>
+        </div>
+
+        <div className='row'>
+          <div className='col-lg-1' />
+          <div id='message_div' className='col-lg-10 h5'>
+            {message}
+          </div>
+        </div>
+      </div>
+    );
+  }
+}
+
+export default ImagePanel

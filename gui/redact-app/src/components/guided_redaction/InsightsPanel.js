@@ -1314,6 +1314,7 @@ class InsightsPanel extends React.Component {
       display: the_display,
     }
     return (
+    <div className='container'>
       <div id='insights_panel' className='row mt-5'>
 
         {insights_modal}
@@ -1500,6 +1501,7 @@ class InsightsPanel extends React.Component {
           />
         </div>
       </div>
+    </div>
     )
   }
 }
