@@ -161,6 +161,7 @@ class RedactApplication extends React.Component {
   getUrl(url_name) {
     let api_server_url = ''
     api_server_url = this.props.getBaseUrl()
+    console.log('thuringer base url is '+api_server_url)
 
     if (url_name === 'ping_url') {
       return api_server_url + 'v1/parse/ping'

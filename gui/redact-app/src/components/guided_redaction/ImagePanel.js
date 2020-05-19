@@ -493,11 +493,11 @@ class ImagePanel extends React.Component {
   buildPrecisionLearningLink() {
     return (
       <div>
-        <btn
+        <button
             className='btn btn-link font-weight-bold'
         >
           Go to Precision Learning
-        </btn>
+        </button>
       </div>
     )
   }
