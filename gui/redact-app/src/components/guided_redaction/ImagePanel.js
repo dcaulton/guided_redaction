@@ -6,13 +6,16 @@ class ImagePanel extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      mode: '.',
+      mode: '',
       submode: null,
-      display_mode: '.',
-      message: '.',
+      display_mode: '',
+      message: '',
       last_click: null,
       oval_center: null,
       illustrate_shaded: false,
+    }
+    this.button_style = {
+      borderColor: 'black',
     }
     this.setMessage=this.setMessage.bind(this)
     this.redactImage=this.redactImage.bind(this)
@@ -453,14 +456,16 @@ class ImagePanel extends React.Component {
 
   buildGetNextButton() {
     let next_image_link = ''
-    let next_image_hash = this.props.getNextImageHash()
+    const next_image_hash = this.props.getNextImageHash()
+    const next_text = '>>'
     if (next_image_hash) {
       next_image_link = (
         <button
-          className='btn btn-primary'
+          className='btn btn-light'
+          style={this.button_style}
           onClick={() => this.props.setFramesetHash(next_image_hash)}
         >
-          Next
+          {next_text}
         </button>
       )
     }
@@ -469,14 +474,16 @@ class ImagePanel extends React.Component {
 
   buildGetPrevButton() {
     let prev_image_link = ''
-    let prev_image_hash = this.props.getPrevImageHash()
+    const prev_image_hash = this.props.getPrevImageHash()
+    const prev_text = '<<'
     if (prev_image_hash) {
       prev_image_link = (
         <button
-          className='btn btn-primary'
+          className='btn btn-light'
+          style={this.button_style}
           onClick={() => this.props.setFramesetHash(prev_image_hash)}
         >
-          Prev
+          {prev_text}
         </button>
       )
     }
@@ -489,7 +496,7 @@ class ImagePanel extends React.Component {
           className='mt-4 mb-4'
       >
         <btn
-            className='btn btn-link'
+            className='btn btn-link font-weight-bold'
         >
           Go to Precision Learning
         </btn>
@@ -523,6 +530,7 @@ class ImagePanel extends React.Component {
     let prev_button = this.buildGetPrevButton()
     let header_row = this.buildHeaderRow()
     var img_src = this.props.getImageUrl()
+
     return (
       <div id='image_panel_container'
           className='col-lg-12'
@@ -530,7 +538,7 @@ class ImagePanel extends React.Component {
         {header_row}
         <div className='row'>
           <div 
-              className='col-lg-6'
+              className='col-lg-6 bg-light'
           >
               <div 
                   id='ip_image_and_canvas'
@@ -561,8 +569,23 @@ class ImagePanel extends React.Component {
                 />
               </div>
 
-              <div className='row'>
-              prev, action and next
+              <div className='row mt-2 border-bottom p-2'>
+                <div className='col-lg-1'>
+                  {prev_button}
+                </div>
+
+                <div className='col-lg-10 text-center'>
+                  <div className='row ml-2 font-weight-bold'>
+                    {this.state.display_mode}
+                  </div>
+                  <div className='row ml-2'>
+                    {this.state.message}
+                  </div>
+                </div>
+
+                <div className='col-lg-1'>
+                  {next_button}
+                </div>
               </div>
 
               <div className='row'>
@@ -1090,40 +1113,6 @@ class BottomImageControls extends React.Component {
     )
   }
 
-  buildMessage() {
-    if (this.props.message === '.') {
-      let style = {
-        color: '#FFFFFF',
-      }
-      return (
-        <div 
-          style={style}
-        >
-          {this.props.message}
-        </div>
-      )
-    } else {
-      return this.props.message
-    }
-  }
-
-  buildDisplayMode() {
-    if (this.props.display_mode=== '.') {
-      let style = {
-        color: '#FFFFFF',
-      }
-      return (
-        <div 
-          style={style}
-        >
-          {this.props.display_mode}
-        </div>
-      )
-    } else {
-      return this.props.display_mode
-    }
-  }
-
   illustrateShadedOvalOne() {
     this.props.setIllustrateShaded('true')
     this.props.setMode('illustrate', 'ill_oval_1')
@@ -1194,55 +1183,30 @@ class BottomImageControls extends React.Component {
     const reset_button = this.buildResetButton()
     const illustrate_button = this.buildIllustrateButton()
     const new_image_button = this.buildNewImageButton()
-    const message = this.buildMessage()
-    const display_mode = this.buildDisplayMode()
 
     return (
-      <div>
-        <div className='row mt-2'>
-          <div className='col col-lg-1' />
-          <div className='col col-lg-10'>
+    <div>
+      <div className='mt-2'>
+        <div className='col-lg-10'>
+          {add_button}
 
-            {add_button}
+          {delete_button} 
 
-            {delete_button} 
+          {template_button}
 
-            {template_button}
+          {illustrate_button}
 
-            {illustrate_button}
+          {new_image_button}
 
-            {new_image_button}
-
-            {reset_button}
-          
-            {redact_button}
-
-            {whenDoneLink}
-
-          </div>
+          {reset_button}
         </div>
 
-        <div className='row d-flex justify-content-between'>
-          <div className='col-lg-1' />
-          <div id='mode_div' className='col-lg-2'>
-            <div 
-                id='mode_header' 
-                className='h3'
-            >
-              {display_mode}
-            </div>
-          </div>
-          <div id='message_divx' className='col-lg-9 mt-1 overflow-hidden'>
-          </div>
-        </div>
-
-        <div className='row'>
-          <div className='col-lg-1' />
-          <div id='message_div' className='col-lg-10 h5'>
-            {message}
-          </div>
+        <div className='col-lg-2 float-right'>
+          {redact_button}
         </div>
       </div>
+
+    </div>
     );
   }
 }
