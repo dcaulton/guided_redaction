@@ -517,6 +517,9 @@ class HogScanner:
                 "features"
             )
 
+        for training_image_key in self.hog_rule['hard_negatives']:
+            print('SHOULD BE DEALING WITH HARD NEGATIVES HERE')
+
     def dump_dataset(self, data, labels, path, datasetName, writeMethod="w"):
         # open the database, create the dataset, write the data and labels to dataset,
         # and then close the database
