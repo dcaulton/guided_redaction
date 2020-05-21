@@ -63,6 +63,24 @@ class RedactApplication extends React.Component {
       userTone: 'lfo',
       preserve_movie_audio: false,
       app_codebooks: {},
+      visibilityFlags: {
+        'templates': true,
+        'hog': true,
+        'selectedArea': true,
+        'annotate': true,
+        'telemetry': true,
+        'filesystem': true,
+        'ocr': true,
+        'ocr_scene_analysis': true,
+        'ocr_movie_analysis': true,
+        'movieSets': true,
+        'results': true,
+        'diffs': true,
+        'redact': true,
+        'zip': true,
+        'pipelines': true,
+        'entity_finder': true,
+      },
       tier_1_scanners: {
         'ocr': {},
         'hog': {},
@@ -156,12 +174,12 @@ class RedactApplication extends React.Component {
     this.importScanner=this.importScanner.bind(this)
     this.wrapUpJob=this.wrapUpJob.bind(this)
     this.readTelemetryRawData=this.readTelemetryRawData.bind(this)
+    this.toggleShowVisibility=this.toggleShowVisibility.bind(this)
   }
 
   getUrl(url_name) {
     let api_server_url = ''
     api_server_url = this.props.getBaseUrl()
-    console.log('thuringer base url is '+api_server_url)
 
     if (url_name === 'ping_url') {
       return api_server_url + 'v1/parse/ping'
@@ -190,6 +208,17 @@ class RedactApplication extends React.Component {
     } else if (url_name === 'pipelines_url') {
       return api_server_url + 'v1/pipelines'
     }
+  }
+
+  toggleShowVisibility(flag_name) {
+    let deepCopyVisibilityFlags= JSON.parse(JSON.stringify(this.state.visibilityFlags))
+    if (Object.keys(deepCopyVisibilityFlags).includes(flag_name)) {
+      const new_value = (!deepCopyVisibilityFlags[flag_name])
+      deepCopyVisibilityFlags[flag_name] = new_value
+    }
+    this.setState({
+      visibilityFlags: deepCopyVisibilityFlags,
+    })
   }
 
   setGlobalStateVar(var_name, var_value, when_done=(()=>{})) {
@@ -2526,6 +2555,8 @@ class RedactApplication extends React.Component {
                 tier_1_scanners={this.state.tier_1_scanners}
                 tier_1_scanner_current_ids={this.state.tier_1_scanner_current_ids}
                 mask_method={this.state.mask_method}
+                visibilityFlags={this.state.visibilityFlags}
+                toggleShowVisibility={this.toggleShowVisibility}
               />
             </Route>
           </Switch>

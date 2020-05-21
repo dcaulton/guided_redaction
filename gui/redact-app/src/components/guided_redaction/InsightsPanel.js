@@ -23,24 +23,6 @@ class InsightsPanel extends React.Component {
       clicked_coords: (0,0),
       selected_area_template_anchor: '',
       draggedId: null,
-      visibilityFlags: {
-        'templates': true,
-        'hog': true,
-        'selectedArea': true,
-        'annotate': true,
-        'telemetry': true,
-        'filesystem': true,
-        'ocr': true,
-        'ocr_scene_analysis': true,
-        'ocr_movie_analysis': true,
-        'movieSets': true,
-        'results': true,
-        'diffs': true,
-        'redact': true,
-        'zip': true,
-        'pipelines': true,
-        'entity_finder': true,
-      },
       imageTypeToDisplay: '',
       callbacks: {},
       modal_data: '',
@@ -72,7 +54,6 @@ class InsightsPanel extends React.Component {
     this.setKeyDownCallback=this.setKeyDownCallback.bind(this)
     this.keyDownCallbacks = {}
     this.setDraggedId=this.setDraggedId.bind(this)
-    this.toggleShowVisibility=this.toggleShowVisibility.bind(this)
     this.loadInsightsJobResults=this.loadInsightsJobResults.bind(this)
     this.afterMovieSplitInsightsJobLoaded=this.afterMovieSplitInsightsJobLoaded.bind(this)
     this.blinkDiff=this.blinkDiff.bind(this)
@@ -261,17 +242,6 @@ class InsightsPanel extends React.Component {
   afterMovieSplitInsightsJobLoaded(framesets) {
     this.displayInsightsMessage('insights job loaded')
     this.movieSplitDone(framesets)
-  }
-
-  toggleShowVisibility(flag_name) {
-    let deepCopyVisibilityFlags= JSON.parse(JSON.stringify(this.state.visibilityFlags))
-    if (Object.keys(deepCopyVisibilityFlags).includes(flag_name)) {
-      const new_value = (!deepCopyVisibilityFlags[flag_name])
-      deepCopyVisibilityFlags[flag_name] = new_value
-    }
-    this.setState({
-      visibilityFlags: deepCopyVisibilityFlags,
-    })
   }
 
   componentDidMount() {
@@ -1438,8 +1408,8 @@ class InsightsPanel extends React.Component {
             cropImage={this.props.cropImage}
             movie_sets={this.props.movie_sets}
             draggedId={this.state.draggedId}
-            visibilityFlags={this.state.visibilityFlags}
-            toggleShowVisibility={this.toggleShowVisibility}
+            visibilityFlags={this.props.visibilityFlags}
+            toggleShowVisibility={this.props.toggleShowVisibility}
             playSound={this.props.playSound}
             campaign_movies={this.props.campaign_movies}
             setCampaignMovies={this.props.setCampaignMovies}
