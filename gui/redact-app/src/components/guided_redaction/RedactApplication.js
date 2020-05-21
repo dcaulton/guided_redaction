@@ -63,6 +63,7 @@ class RedactApplication extends React.Component {
       userTone: 'lfo',
       preserve_movie_audio: false,
       app_codebooks: {},
+      user: {},
       visibilityFlags: {
         'templates': true,
         'hog': true,
@@ -175,6 +176,13 @@ class RedactApplication extends React.Component {
     this.wrapUpJob=this.wrapUpJob.bind(this)
     this.readTelemetryRawData=this.readTelemetryRawData.bind(this)
     this.toggleShowVisibility=this.toggleShowVisibility.bind(this)
+  }
+
+  getUser() {
+    const user_id = this.getCurrentUser()
+    console.log('the GR user id is '+user_id)
+    console.log('user object')
+    console.log(this.state.user_object)
   }
 
   getUrl(url_name) {
@@ -882,6 +890,7 @@ class RedactApplication extends React.Component {
   }
 
   componentDidMount() {
+    this.getUser()
     if (!this.state.showMovieParserLink) {
       document.getElementById('movie_panel_link').style.display = 'none'
     }
