@@ -517,7 +517,9 @@ class HogScanner:
                 "features"
             )
 
-        for training_image_key in self.hog_rule['hard_negatives']:
+        for hn_key in self.hog_rule['hard_negatives']:
+            hard_neg = self.hog_rule['hard_negatives'][hn_key]
+            print('one hard negative is {}'.format(hard_neg))
             print('SHOULD BE DEALING WITH HARD NEGATIVES HERE')
 
     def dump_dataset(self, data, labels, path, datasetName, writeMethod="w"):
