@@ -190,6 +190,39 @@ class RedactApplication extends React.Component {
     return user_object
   }
 
+  getUserClasses() {
+    let classes = []
+    if (!this.state.user) {
+      return []
+    }
+    if (this.state.user['id'] === 'dave.caulton@sykes.com') {
+      classes.push('davecaulton')
+    }
+    if ((this.state.user['id'] === 'michael.taylor@sykes.com') ||
+        (this.state.user['id'] === 'something.else@sykes.com') ||
+        (this.state.user['id'] === 'david.barrios@sykes.com') ||
+        (this.state.user['id'] === 'scott.devos@sykes.com') ||
+        (this.state.user['id'] === 'shelton.hook@sykes.com')) {
+      classes.push('no_sound')
+    }
+
+  }
+
+  processUserClasses() {
+    const user_classes = this.getUserClasses()
+    for (let i=0; i< user_classes.length; i++) {
+      const class_name = user_classes[i]
+      this.processUserClass(class_name)
+    }
+  }
+
+  processUserClass(class_name) {
+    console.log('processing user class ' + class_name)
+    if (class_name === 'no_sound') {
+      this.setGlobalStateVar('playSound', false)
+    }
+  }
+
   getUrl(url_name) {
     let api_server_url = ''
     api_server_url = this.props.getBaseUrl()
@@ -895,6 +928,7 @@ class RedactApplication extends React.Component {
 
   componentDidMount() {
     const user_obj = this.getUserOnMount()
+    this.processUserClasses()
     if (!this.state.showMovieParserLink) {
       document.getElementById('movie_panel_link').style.display = 'none'
     }
@@ -2064,7 +2098,7 @@ class RedactApplication extends React.Component {
     if (this.state.user) {
       the_url += '&user_id=' + this.state.user['id']
     }
-    await fetch(this.getUrl('workbooks_url'), {
+    await fetch(the_url, {
       method: 'GET',
       headers: this.buildJsonHeaders(),
     })
