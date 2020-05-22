@@ -215,7 +215,7 @@ class RedactApplication extends React.Component {
       return []
     }
     for (let i=0; i< this.state.user['classes'].length; i++) {
-      const class_name = user_classes[i]
+      const class_name = this.state.user_classes[i]
       this.processUserClass(class_name)
     }
   }
