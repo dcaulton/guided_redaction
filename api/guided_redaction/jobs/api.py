@@ -6,6 +6,7 @@ import requests
 from rest_framework.response import Response
 from base import viewsets
 from guided_redaction.jobs.models import Job
+from guided_redaction.attributes.models import Attribute
 from guided_redaction.analyze import tasks as analyze_tasks
 from guided_redaction.parse import tasks as parse_tasks
 from guided_redaction.redact import tasks as redact_tasks
@@ -161,22 +162,32 @@ class JobsViewSet(viewsets.ViewSet):
             child_ids = [child.id for child in children]
             pretty_time = self.pretty_date(job.created_on)
             wall_clock_run_time = str(job.updated - job.created_on)
-            jobs_list.append(
-                {
-                    'id': job.id,
-                    'status': job.status,
-                    'description': job.description,
-                    'created_on': job.created_on,
-                    'updated': job.updated,
-                    'pretty_created_on': pretty_time,
-                    'elapsed_time': job.elapsed_time,
-                    'wall_clock_run_time': wall_clock_run_time,
-                    'app': job.app,
-                    'operation': job.operation,
-                    'workbook_id': job.workbook_id,
-                    'children': child_ids,
-                }
-            )
+
+            owner = ''
+            if Attribute.objects.filter(job=job).exists():
+                attributes = Attribute.objects.filter(job=job)
+                for attribute in attributes:
+                    if attribute.name == 'user_id':
+                        owner = attribute.value
+
+            job_obj = {
+                'id': job.id,
+                'status': job.status,
+                'description': job.description,
+                'created_on': job.created_on,
+                'updated': job.updated,
+                'pretty_created_on': pretty_time,
+                'elapsed_time': job.elapsed_time,
+                'wall_clock_run_time': wall_clock_run_time,
+                'app': job.app,
+                'operation': job.operation,
+                'workbook_id': job.workbook_id,
+                'children': child_ids,
+            }
+            if owner:
+                job_obj['owner'] = owner
+
+            jobs_list.append(job_obj)
 
         return Response({"jobs": jobs_list})
 
@@ -203,6 +214,16 @@ class JobsViewSet(viewsets.ViewSet):
             'response_data': job.response_data,
             'children': child_ids,
         }
+
+        owner = ''
+        if Attribute.objects.filter(job=job).exists():
+            attributes = Attribute.objects.filter(job=job)
+            for attribute in attributes:
+                if attribute.name == 'user_id':
+                    owner = attribute.value
+        if owner:
+            job_data['owner'] = owner
+
         return Response({"job": job_data})
 
     def build_job(self, request):
@@ -217,6 +238,16 @@ class JobsViewSet(viewsets.ViewSet):
             workbook_id=request.data.get('workbook_id'),
         )
         job.save()
+
+        owner_id = request.data.get('owner')
+        if owner_id:
+            attribute = Attribute(
+                name='user_id',
+                value=owner_id,
+                job=job,
+            )
+            attribute.save()
+
         return job
 
     def create(self, request):

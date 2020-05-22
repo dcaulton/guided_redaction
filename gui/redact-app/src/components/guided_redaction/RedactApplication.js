@@ -2051,19 +2051,23 @@ class RedactApplication extends React.Component {
     let cancel_after_loading = hash_in.hasOwnProperty('cancel_after_loading')? hash_in['cancel_after_loading'] : false
     let when_fetched = hash_in.hasOwnProperty('after_loaded')? hash_in['after_loaded'] : (()=>{})
     let when_failed = hash_in.hasOwnProperty('when_failed')? hash_in['when_failed'] : (()=>{})
-    let current_user = this.getCurrentUser()
+    let current_user = ''
+    if (this.state.user && Object.keys(this.state.user).includes('id')) {
+      current_user = this.state.user['id']
+    }
+    let build_obj = {
+      app: the_job_data['app'],
+      operation: the_job_data['operation'],
+      request_data: the_job_data['request_data'],
+      response_data: the_job_data['response_data'],
+      owner: current_user,
+      description: the_job_data['description'],
+      workbook_id: this.state.current_workbook_id,
+    }
     await fetch(this.getUrl('jobs_url'), {
       method: 'POST',
       headers: this.buildJsonHeaders(),
-      body: JSON.stringify({
-        app: the_job_data['app'],
-        operation: the_job_data['operation'],
-        request_data: the_job_data['request_data'],
-        response_data: the_job_data['response_data'],
-        owner: current_user,
-        description: the_job_data['description'],
-        workbook_id: this.state.current_workbook_id,
-      }),
+      body: JSON.stringify(build_obj),
     })
     .then((response) => response.json())
     .then((responseJson) => {
