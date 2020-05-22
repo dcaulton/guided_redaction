@@ -339,7 +339,6 @@ class RedactApplication extends React.Component {
     }
     catch(err) {
     }
-    return 'unknown'
   }
 
   setCampaignMovies(movies) {
