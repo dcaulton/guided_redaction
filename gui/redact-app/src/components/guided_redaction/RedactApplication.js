@@ -183,8 +183,10 @@ class RedactApplication extends React.Component {
     if (!user_id) {
       return
     }
+    const user_classes = this.getUserClasses()
     let user_object = {
       id: user_id,
+      classes: user_classes,
     }
     this.setGlobalStateVar('user', user_object)
     return user_object
@@ -209,8 +211,10 @@ class RedactApplication extends React.Component {
   }
 
   processUserClasses() {
-    const user_classes = this.getUserClasses()
-    for (let i=0; i< user_classes.length; i++) {
+    if (!this.state.user) {
+      return []
+    }
+    for (let i=0; i< this.state.user['classes'].length; i++) {
       const class_name = user_classes[i]
       this.processUserClass(class_name)
     }
