@@ -183,7 +183,7 @@ class RedactApplication extends React.Component {
     if (!user_id) {
       return
     }
-    const user_classes = this.getUserClasses()
+    const user_classes = this.getUserClasses(user_id)
     let user_object = {
       id: user_id,
       classes: user_classes,
@@ -192,19 +192,16 @@ class RedactApplication extends React.Component {
     return user_object
   }
 
-  getUserClasses() {
+  getUserClasses(user_id) {
     let classes = []
-    if (!this.state.user) {
-      return []
-    }
-    if (this.state.user['id'] === 'dave.caulton@sykes.com') {
+    if (user_id === 'dave.caulton@sykes.com') {
       classes.push('davecaulton')
     }
-    if ((this.state.user['id'] === 'michael.taylor@sykes.com') ||
-        (this.state.user['id'] === 'something.else@sykes.com') ||
-        (this.state.user['id'] === 'david.barrios@sykes.com') ||
-        (this.state.user['id'] === 'scott.devos@sykes.com') ||
-        (this.state.user['id'] === 'shelton.hook@sykes.com')) {
+    if ((user_id === 'michael.taylor@sykes.com') ||
+        (user_id === 'something.else@sykes.com') ||
+        (user_id === 'david.barrios@sykes.com') ||
+        (user_id === 'scott.devos@sykes.com') ||
+        (user_id === 'shelton.hook@sykes.com')) {
       classes.push('no_sound')
     }
     return classes
@@ -225,7 +222,6 @@ class RedactApplication extends React.Component {
   }
 
   processUserClass(class_name) {
-    console.log('processing user class ' + class_name)
     if (class_name === 'no_sound') {
       this.setGlobalStateVar('playSound', false)
     }
