@@ -1847,8 +1847,9 @@ class RedactApplication extends React.Component {
 
   async getJobs() {
     let the_url = this.getUrl('jobs_url')
+    the_url += = '?x=1'
     if (this.state.current_workbook_id) {
-      the_url += '?workbook_id=' + this.state.current_workbook_id
+      the_url += '&workbook_id=' + this.state.current_workbook_id
     } 
     if (this.state.user) {
       the_url += '&user_id=' + this.state.user['id']
@@ -2060,8 +2061,9 @@ class RedactApplication extends React.Component {
 
   async getWorkbooks() {
     let the_url = this.getUrl('workbooks_url')
+    the_url += '?x=1'
     if (this.state.user) {
-      the_url += '?user_id=' + this.state.user['id']
+      the_url += '&user_id=' + this.state.user['id']
     }
     await fetch(this.getUrl('workbooks_url'), {
       method: 'GET',
