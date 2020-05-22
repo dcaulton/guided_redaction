@@ -205,7 +205,7 @@ class RedactApplication extends React.Component {
         (this.state.user['id'] === 'shelton.hook@sykes.com')) {
       classes.push('no_sound')
     }
-
+    return classes
   }
 
   processUserClasses() {
