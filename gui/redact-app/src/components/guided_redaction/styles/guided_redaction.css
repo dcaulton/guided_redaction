@@ -4,8 +4,8 @@ div#ip_and_canvas {
 
 div#canvas_div {
   position: absolute;
-  height: 500px;
-  width: 500px;
+  xheight: 500px;
+  xwidth: 500px;
 }
 
 div#redact_application_wrapper {
