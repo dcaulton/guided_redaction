@@ -178,11 +178,16 @@ class RedactApplication extends React.Component {
     this.toggleShowVisibility=this.toggleShowVisibility.bind(this)
   }
 
-  getUser() {
+  getUserOnMount() {
     const user_id = this.getCurrentUser()
-    console.log('the GR user id is '+user_id)
-    console.log('user object')
-    console.log(this.state.user_object)
+    if (!user_id) {
+      return
+    }
+    user_object = {
+      id: user_id,
+    }
+    this.setGlobalStateVar('user', user_object)
+    return user_object
   }
 
   getUrl(url_name) {
@@ -890,7 +895,7 @@ class RedactApplication extends React.Component {
   }
 
   componentDidMount() {
-    this.getUser()
+    const user_obj = this.getUserOnMount()
     if (!this.state.showMovieParserLink) {
       document.getElementById('movie_panel_link').style.display = 'none'
     }
@@ -1845,6 +1850,9 @@ class RedactApplication extends React.Component {
     if (this.state.current_workbook_id) {
       the_url += '?workbook_id=' + this.state.current_workbook_id
     } 
+    if (this.state.user) {
+      the_url += '&user_id=' + this.state.user['id']
+    }
     await fetch(the_url, {
       method: 'GET',
       headers: this.buildJsonHeaders(),
@@ -2051,6 +2059,10 @@ class RedactApplication extends React.Component {
   }
 
   async getWorkbooks() {
+    let the_url = this.getUrl('workbooks_url')
+    if (this.state.user) {
+      the_url += '?user_id=' + this.state.user['id']
+    }
     await fetch(this.getUrl('workbooks_url'), {
       method: 'GET',
       headers: this.buildJsonHeaders(),
