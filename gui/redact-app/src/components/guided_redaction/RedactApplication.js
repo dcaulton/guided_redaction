@@ -183,7 +183,7 @@ class RedactApplication extends React.Component {
     if (!user_id) {
       return
     }
-    user_object = {
+    let user_object = {
       id: user_id,
     }
     this.setGlobalStateVar('user', user_object)
