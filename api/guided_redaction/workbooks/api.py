@@ -2,19 +2,26 @@ import json
 from rest_framework.response import Response
 from base import viewsets
 from guided_redaction.workbooks.models import Workbook
+from guided_redaction.attributes.models import Attribute
 
 
 class WorkbooksViewSet(viewsets.ViewSet):
     def list(self, request):
         workbooks_list = []
         for workbook in Workbook.objects.all():
-            workbooks_list.append(
-                {
-                    'id': workbook.id,
-                    'name': workbook.name,
-                    'updated_on': workbook.updated_on,
-                }
-            )
+            workbook_obj = {
+                'id': workbook.id,
+                'name': workbook.name,
+                'updated_on': workbook.updated_on,
+            }
+            if Attribute.objects.filter(workbook=workbook).exists():
+                attributes = Attribute.objects.filter(workbook=workbook)
+                for attribute in attributes:
+                    if attribute.name == 'user_id':
+                        owner = attribute.value
+                        workbook_obj['owner'] = owner
+
+            workbooks_list.append(workbook_obj)
 
         return Response({"workbooks": workbooks_list})
 
@@ -26,6 +33,13 @@ class WorkbooksViewSet(viewsets.ViewSet):
             'updated_on': workbook.updated_on,
             'state_data': workbook.state_data,
         }
+        if Attribute.objects.filter(workbook=workbook).exists():
+            attributes = Attribute.objects.filter(workbook=workbook)
+            for attribute in attributes:
+                if attribute.name == 'user_id':
+                    owner = attribute.value
+                    wb_data['owner'] = owner
+
         return Response({"workbook": wb_data})
 
     # TODO refine this.  For now we're making it impossible for the caller to create duplicate
@@ -33,6 +47,7 @@ class WorkbooksViewSet(viewsets.ViewSet):
     #   smart enough to know if a workbook currently exists.
     def create(self, request):
         wb_exists = Workbook.objects.filter(name=request.data.get('name')).count()
+        workbook = ''
         if wb_exists:
             workbook = Workbook.objects.filter(name=request.data.get('name')).first()
             workbook.state_data=json.dumps(request.data.get('state_data'))
@@ -43,6 +58,15 @@ class WorkbooksViewSet(viewsets.ViewSet):
                 name=request.data.get('name'),
             )
             workbook.save()
+
+        owner_id = request.data.get('owner')
+        if owner_id:
+            attribute = Attribute(
+                name='user_id',
+                value=owner_id,
+                workbook=workbook,
+            )
+            attribute.save()
 
         return Response({"workbook_id": workbook.id})
 
