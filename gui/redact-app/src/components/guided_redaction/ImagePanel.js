@@ -491,6 +491,9 @@ class ImagePanel extends React.Component {
   }
   
   buildPrecisionLearningLink() {
+    if (this.props.getImageUrl() === '') {
+      return ''
+    }
     return (
       <div>
         <button
@@ -500,22 +503,6 @@ class ImagePanel extends React.Component {
         </button>
       </div>
     )
-  }
-
-  buildWhenDoneLink() {
-    if (this.props.getImageUrl() === '') {
-      return ''
-    }
-    if (this.props.whenDoneTarget) {
-      return (
-        <button 
-            className='btn btn-link font-weight-bold'  
-            onClick={() => this.props.gotoWhenDoneTarget()}
-        >
-          Go to Precision Learning 
-        </button>
-      )
-    }
   }
 
   buildHeaderRow() {
@@ -539,12 +526,48 @@ class ImagePanel extends React.Component {
     )
   }
 
-  render() {
+  buildTitleNextPrev() {
+    if (this.props.getImageUrl() === '') {
+      return ''
+    }
     let next_button = this.buildGetNextButton()
     let prev_button = this.buildGetPrevButton()
-    let header_row = this.buildHeaderRow()
-    var img_src = this.props.getImageUrl()
+    let tnp_style = {
+      'min-height': '60px',
+    }
+    return (
+      <div 
+          className='row pt-2 border-bottom p-2 bg-light'
+          style={tnp_style}
+      >
+        <div className='col-lg-1'>
+          {prev_button}
+        </div>
 
+        <div className='col-lg-10 text-center'>
+          <div className='row ml-2 font-weight-bold'>
+            {this.state.display_mode}
+          </div>
+          <div className='row ml-2'>
+            {this.state.message}
+          </div>
+        </div>
+
+        <div className='col-lg-1'>
+          {next_button}
+        </div>
+      </div>
+    )
+  }
+
+  render() {
+    let header_row = this.buildHeaderRow()
+    let img_src = this.props.getImageUrl()
+    const title_next_prev = this.buildTitleNextPrev()
+
+    const image_style = {
+      height: '500px',
+    }
     return (
       <div id='image_panel_container'
           className='col-lg-12'
@@ -558,7 +581,10 @@ class ImagePanel extends React.Component {
                   id='ip_image_and_canvas'
                   className='row'
               >
-                <div id='base_image_div'>
+                <div 
+                    id='base_image_div'
+                    style={image_style}
+                >
                   <img id='base_image_id' 
                     alt={img_src}
                     src={img_src}
@@ -583,24 +609,7 @@ class ImagePanel extends React.Component {
                 />
               </div>
 
-              <div className='row pt-2 border-bottom p-2 bg-light'>
-                <div className='col-lg-1'>
-                  {prev_button}
-                </div>
-
-                <div className='col-lg-10 text-center'>
-                  <div className='row ml-2 font-weight-bold'>
-                    {this.state.display_mode}
-                  </div>
-                  <div className='row ml-2'>
-                    {this.state.message}
-                  </div>
-                </div>
-
-                <div className='col-lg-1'>
-                  {next_button}
-                </div>
-              </div>
+              {title_next_prev}
 
               <BottomImageControls 
                 mode={this.state.mode}
@@ -1168,6 +1177,9 @@ class BottomImageControls extends React.Component {
   }
 
   render() {
+    if (this.props.getImageUrl() === '') {
+      return ''
+    }
     const template_button = this.buildTemplateButton()
     const add_button = this.buildAddButton()
     const delete_button = this.buildDeleteButton()

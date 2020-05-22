@@ -2,13 +2,10 @@ div#ip_and_canvas {
   position: relative;
 }
 
-img#base_iamge {
-width: 100%;
-}
-div#base_iamge_div , 
 div#canvas_div {
   position: absolute;
-  height: 600px;
+  height: 500px;
+  width: 500px;
 }
 
 div#redact_application_wrapper {
