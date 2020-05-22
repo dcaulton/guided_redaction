@@ -275,7 +275,7 @@ class SessionControls extends React.Component {
 
   buildSuLink() {
     return (
-      <div className='d-inline ml-2'>
+      <div className='d-inline p-0'>
         <button
             className='btn btn-link'
             onClick={() => this.props.setGlobalStateVar('user', {})}
@@ -622,9 +622,6 @@ class SessionControls extends React.Component {
 
                 <div className='row mt-3 bg-light rounded'>
                   {user_tone_selector}
-                </div>
-
-                <div className='row mt-3 bg-light rounded'>
                   {su_link}
                 </div>
 
