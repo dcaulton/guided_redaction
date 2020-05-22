@@ -273,6 +273,19 @@ class SessionControls extends React.Component {
     )
   }
 
+  buildSuLink() {
+    return (
+      <div className='d-inline ml-2'>
+        <button
+            className='btn btn-link'
+            onClick={() => this.props.setGlobalStateVar('user', {})}
+        >
+          su
+        </button>
+      </div>
+    )
+  }
+
   render() {
     let campaign_movies_box = this.buildCampaignMoviesBox()
     let update_state_box = this.buildGlobalStateBox()
@@ -280,6 +293,7 @@ class SessionControls extends React.Component {
     let workbook_delete_button = this.buildWorkbookDeleteButton()
     let workbook_name = this.buildWorkbookName()
     let workbook_id = this.buildWorkbookId()
+    const su_link = this.buildSuLink()
     let show_templates_checked = ''
     if (this.props.visibilityFlags['templates']) {
       show_templates_checked = 'checked'
@@ -610,6 +624,9 @@ class SessionControls extends React.Component {
                   {user_tone_selector}
                 </div>
 
+                <div className='row mt-3 bg-light rounded'>
+                  {su_link}
+                </div>
 
                 <div className='row mt-3 bg-light rounded'>
                   {when_done_selector}

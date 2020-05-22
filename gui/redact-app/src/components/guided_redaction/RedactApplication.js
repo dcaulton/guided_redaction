@@ -1847,7 +1847,7 @@ class RedactApplication extends React.Component {
 
   async getJobs() {
     let the_url = this.getUrl('jobs_url')
-    the_url += = '?x=1'
+    the_url += '?x=1'
     if (this.state.current_workbook_id) {
       the_url += '&workbook_id=' + this.state.current_workbook_id
     } 
