@@ -2133,7 +2133,10 @@ class RedactApplication extends React.Component {
   }
 
   async saveWorkbook(when_done=(()=>{})) {
-    const current_user = this.getCurrentUser()
+    let current_user = ''
+    if (this.state.user && Object.keys(this.state.user).includes('id')) {
+      current_user = this.state.user['id']
+    }
     await fetch(this.getUrl('workbooks_url'), {
       method: 'POST',
       headers: this.buildJsonHeaders(),
