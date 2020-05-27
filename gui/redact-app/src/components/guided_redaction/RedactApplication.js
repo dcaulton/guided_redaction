@@ -913,9 +913,8 @@ class RedactApplication extends React.Component {
   }
 
   setImageScale= () => {
-    const the_scale = (document.getElementById('base_image_id').width /
+    const the_scale = (document.getElementById('base_image_id').width / 
       document.getElementById('base_image_id').naturalWidth)
-console.log('setting image scale to '+the_scale.toString())
     this.setGlobalStateVar('image_scale', the_scale)
   }
 

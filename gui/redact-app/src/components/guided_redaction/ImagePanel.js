@@ -564,6 +564,9 @@ class ImagePanel extends React.Component {
     let header_row = this.buildHeaderRow()
     let img_src = this.props.getImageUrl()
     const title_next_prev = this.buildTitleNextPrev()
+    let imageDivStyle= {
+      width: this.props.image_width,
+    }
 
     return (
       <div id='image_panel_container'
@@ -580,6 +583,7 @@ class ImagePanel extends React.Component {
               >
                 <div 
                     id='base_image_div'
+                    style={imageDivStyle}
                 >
                   <img id='base_image_id' 
                     alt={img_src}
