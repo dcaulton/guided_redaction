@@ -245,7 +245,7 @@ class ComposePanel extends React.Component {
     const mins_offset = Math.floor(parseInt(offset_in_seconds) / 60)
     const secs_offset = parseInt(offset_in_seconds) % 60
     const secs_string = secs_offset.toString()
-    const build_string = 'position ' + mins_offset.toString() + ':' + secs_string.padStart(2, '0')
+    const build_string = mins_offset.toString() + ':' + secs_string.padStart(2, '0')
     this.setState({
       movie_offset_string: build_string,
     })
@@ -303,7 +303,8 @@ class ComposePanel extends React.Component {
   }
 
   getMaxRange() {
-    if (!this.props.movies || !this.props.movie_url) {
+    if (!this.props.movies || !this.props.movie_url || 
+        (!Object.keys(this.props.movies).includes(this.props.movie_url))) {
       return 1
     }
     const movie = this.props.movies[this.props.movie_url]
@@ -362,10 +363,10 @@ class ComposePanel extends React.Component {
     }
     return (
       <button
-          className='btn btn-primary ml-2'
+          className='btn btn-link'
           onClick={() => this.gotoRedaction()}
       >
-        Goto Redaction
+        Go to Redaction
       </button>
     )
   }
@@ -377,10 +378,10 @@ class ComposePanel extends React.Component {
     if (this.props.whenDoneTarget) {
       return (
         <button
-            className='btn btn-primary ml-2'
+            className='btn btn-link'
             onClick={() => this.props.gotoWhenDoneTarget()}
         >
-          Goto Precision Learning
+          Go to Precision Learning
         </button>
       )
     }
@@ -557,8 +558,8 @@ class ComposePanel extends React.Component {
           id='telemetry_picker'
           className='col'
       >
-        <div className='row h4'>
-          telemetry data
+        <div className='row h4 border-top border-bottom p-2 m-2'>
+          Telemetry Data
         </div>
         <div 
             className='row overflow-auto'
@@ -670,9 +671,13 @@ class ComposePanel extends React.Component {
     const view_dropdown = this.buildViewDropdown()
     const compose_message = this.buildComposeMessage()
     const telemetry_picker = this.buildTelemetryPicker() 
+    let when_done_divider = ''
+    if (when_done_link && goto_redaction_button) {
+      when_done_divider = '|'
+    }
     let imageDivStyle= {
       width: this.props.image_width,
-      height: this.props.image_height,
+      xheight: this.props.image_height,
     }
     let the_display='block'
     let image_bottom_y = this.getImageOffsetHeight()
@@ -688,96 +693,99 @@ class ComposePanel extends React.Component {
     }
     return (
       <div id='compose_panel_container'>
-        <div id='compose_panel'>
-          <div id='compose_header' className='row position-relative mt-2 mb-2' >
-            <div className='col'>
-              {not_loaded_message}
-              <div className='row' >
-                {this.state.movie_offset_string}
-                {view_dropdown}
+        <div className='row ml-4'>
+          <div className='col-lg-6'>
+            <div className='row m-2' >
+                {not_loaded_message}
+                {when_done_link}
+                {when_done_divider}
+                {goto_redaction_button}
+            </div>
+
+            <div className='row bg-light'>
+              <div className='col'>
+                <div className='row'>
+                  <img
+                      id='compose_image'
+                      className='p-0 m-0 mw-100 mh-100'
+                      src={this.state.compose_display_image}
+                      alt={this.state.compose_display_image}
+                  />
+                </div>
+
               </div>
-              <div className='row' >
-                {compose_message}
+            </div>
+
+            <div 
+                className='row bg-light rounded border'
+                style={image_offset_display_style}
+            >
+              <div className='col'>
+
+                <div className='row mt-2'>
+                  <input
+                      id='compose_scrubber'
+                      type='range'
+                      max={max_range}
+                      defaultValue='0'
+                      onChange={this.scrubberOnChange}
+                  />
+                </div>
+
+                <div className='row border-bottom m-1 pb-1'>
+                  <div className='d-inline '>
+                    Position: {this.state.movie_offset_string}
+                  </div>
+                  <div className='d-inline ml-2'>
+                    {view_dropdown}
+                  </div>
+                </div>
+
+                <div className='row m-2'>
+                  {capture_button}
+                </div>
+
               </div>
             </div>
           </div>
 
-          <div id='compose_movie_and_scrubber_div' className='row position-relative'>
-            <div className='col-lg-9 ml-0 mr-0 pl-0 pr-0'>
-              <div 
-                  id='compose_image_div' 
-                  className='row position-absolute'
-                  style={imageDivStyle}
 
-              >
-                <img
-                    id='compose_image'
-                    className='p-0 m-0 mw-100 mh-100'
-                    src={this.state.compose_display_image}
-                    alt={this.state.compose_display_image}
-                />
-              </div>
-              <div
-                  id='compose_scrubber_div'
-                  className='row position-relative mr-0 ml-0 pl-0 pr-0'
-                  style={image_offset_style}
-              >
-                <input
-                    id='compose_scrubber'
-                    type='range'
-                    max={max_range}
-                    defaultValue='0'
-                    onChange={this.scrubberOnChange}
-                />
-              </div>
-            </div>
-            <div className='col-lg-3 mh-100'>
-              <div className='row ml-2'>
-                {telemetry_picker}
-              </div>
+
+          <div className='col-lg-6 mh-100'>
+            <div className='row mt-3 ml-2'>
+              {telemetry_picker}
             </div>
           </div>
 
-          <div 
-              id='compose_movie_footer' 
-              className='row position-relative mt-2'
-              style={image_offset_display_style}
-          >
-            <div className='col' >
-              {capture_button}
-              {goto_redaction_button}
-              {when_done_link}
-            </div>
-          </div>
-
-          <div 
-              id='sequence_area' 
-              className='row position-relative'
-              style={image_offset_display_style}
-          >
-            <SequenceAndSubsequencePanel
-              sequence_movie={this.getSequence()}
-              removeSequenceFrame={this.removeSequenceFrame}
-              gotoSequenceFrame={this.gotoSequenceFrame}
-              compose_image={this.state.compose_image}
-              subsequences={this.props.subsequences}
-              setSubsequences={this.setSubsequences}
-              setDraggedItem={this.setDraggedItem}
-              handleDroppedOntoSubsequence={this.handleDroppedOntoSubsequence}
-              handleDroppedOntoSequence={this.handleDroppedOntoSequence}
-              moveSequenceFrameUp={this.moveSequenceFrameUp}
-              moveSequenceFrameDown={this.moveSequenceFrameDown}
-              deleteSubsequence={this.deleteSubsequence}
-              generateSubsequence={this.generateSubsequence}
-              previewSubsequence={this.previewSubsequence}
-              sequence_display_mode={this.state.sequence_display_mode}
-              setSequenceDisplayMode={this.setSequenceDisplayMode}
-              movies={this.props.movies}
-              movie_url={this.props.movie_url}
-            />
-          </div>
-         
         </div>
+
+        <div 
+            id='sequence_area' 
+            className='row'
+            style={image_offset_display_style}
+        >
+          <SequenceAndSubsequencePanel
+            sequence_movie={this.getSequence()}
+            removeSequenceFrame={this.removeSequenceFrame}
+            gotoSequenceFrame={this.gotoSequenceFrame}
+            compose_image={this.state.compose_image}
+            subsequences={this.props.subsequences}
+            setSubsequences={this.setSubsequences}
+            setDraggedItem={this.setDraggedItem}
+            handleDroppedOntoSubsequence={this.handleDroppedOntoSubsequence}
+            handleDroppedOntoSequence={this.handleDroppedOntoSequence}
+            moveSequenceFrameUp={this.moveSequenceFrameUp}
+            moveSequenceFrameDown={this.moveSequenceFrameDown}
+            deleteSubsequence={this.deleteSubsequence}
+            generateSubsequence={this.generateSubsequence}
+            previewSubsequence={this.previewSubsequence}
+            sequence_display_mode={this.state.sequence_display_mode}
+            setSequenceDisplayMode={this.setSequenceDisplayMode}
+            movies={this.props.movies}
+            movie_url={this.props.movie_url}
+          />
+        </div>
+         
       </div>
     );
   }
@@ -818,9 +826,6 @@ class SequenceAndSubsequencePanel extends React.Component {
     }
     return (
       <div>
-        <div className='h4'>
-          subsequences:
-        </div>
         <div id='subsequence_card_wrapper'>
           {subsequence_movie_ids.map((subsequence_id, index) => {
             const subsequence = this.props.subsequences[subsequence_id]
@@ -868,15 +873,18 @@ class SequenceAndSubsequencePanel extends React.Component {
     const subsequence_panel = this.createSubsequencePanel()
     const sequence_display_mode_picker = this.buildSequenceDisplayModePicker()
     return (
-      <div className='col border-top mt-2'>
+      <div className='col mt-2'>
         <div className='row'>
-          <div className='col-lg-8 h3'>
-              main sequence
+          <div className='col-lg-2 h5'>
+              Main Sequence
           </div>
-          <div className='col-lg-2'>
+          <div className='col-lg-5 pr-2'>
             {sequence_display_mode_picker}
           </div>
-          <div className='col-lg-2'>
+          <div className='col-lg-2 h5'>
+              Subsequences
+          </div>
+          <div className='col-lg-3'>
             {create_subsequence_link}
           </div>
         </div>
