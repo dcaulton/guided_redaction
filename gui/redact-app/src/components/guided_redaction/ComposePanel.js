@@ -294,14 +294,6 @@ class ComposePanel extends React.Component {
     })
   }
 
-  getImageOffsetHeight() {
-    let bottom_y = 0
-    if (this.state.compose_image) {
-      bottom_y += document.getElementById('compose_image').offsetHeight
-    }
-    return bottom_y
-  }
-
   getMaxRange() {
     if (!this.props.movies || !this.props.movie_url || 
         (!Object.keys(this.props.movies).includes(this.props.movie_url))) {
@@ -675,18 +667,9 @@ class ComposePanel extends React.Component {
     if (when_done_link && goto_redaction_button) {
       when_done_divider = '|'
     }
-    let imageDivStyle= {
-      width: this.props.image_width,
-      xheight: this.props.image_height,
-    }
     let the_display='block'
-    let image_bottom_y = this.getImageOffsetHeight()
     if (!this.state.compose_image) {
       the_display='none'
-    }
-    const image_offset_style = {
-      display: the_display,
-      top: image_bottom_y,
     }
     const image_offset_display_style = {
       display: the_display,
@@ -721,6 +704,10 @@ class ComposePanel extends React.Component {
                 style={image_offset_display_style}
             >
               <div className='col'>
+
+                <div className='row ml-2 mt-2'>
+                  {compose_message}
+                </div>
 
                 <div className='row mt-2'>
                   <input
@@ -807,15 +794,12 @@ class SequenceAndSubsequencePanel extends React.Component {
 
   createSubsequenceLink() {
     return (
-      <div className='pt-1'>
-        <button
-          className='border-0 text-primary'
-          onClick={() => this.createSubsequence(this.props.frame_url)}
-        >
-          create subsequence
-        </button>
-      </div>
-
+      <button
+        className='border-0 text-primary'
+        onClick={() => this.createSubsequence(this.props.frame_url)}
+      >
+        Create Subsequence
+      </button>
     )
   }
 
@@ -850,17 +834,15 @@ class SequenceAndSubsequencePanel extends React.Component {
 
   buildSequenceDisplayModePicker() {
     return (
-      <div className='mt-1'>
-        <select
-            name='compose_panel_sequence_display_mode'
-            value={this.props.sequence_display_mode}
-            onChange={(event) => this.props.setSequenceDisplayMode(event.target.value)}
-        >
-          <option value='list'>display as list</option>
-          <option value='large_card'>display as large cards</option>
-          <option value='small_card'>display as small cards</option>
-        </select>
-      </div>
+      <select
+          name='compose_panel_sequence_display_mode'
+          value={this.props.sequence_display_mode}
+          onChange={(event) => this.props.setSequenceDisplayMode(event.target.value)}
+      >
+        <option value='list'>display as list</option>
+        <option value='large_card'>display as large cards</option>
+        <option value='small_card'>display as small cards</option>
+      </select>
     )
   }
 
@@ -875,22 +857,26 @@ class SequenceAndSubsequencePanel extends React.Component {
     return (
       <div className='col mt-2'>
         <div className='row'>
-          <div className='col-lg-2 h5'>
+          <div className='col-lg-7'>
+            <div className='d-inline ml-4 h5'>
               Main Sequence
+            </div>
+            <div className='d-inline ml-2'>
+              {sequence_display_mode_picker}
+            </div>
           </div>
-          <div className='col-lg-5 pr-2'>
-            {sequence_display_mode_picker}
-          </div>
-          <div className='col-lg-2 h5'>
+          <div className='col-lg-5 h5'>
+            <div className='d-inline'>
               Subsequences
-          </div>
-          <div className='col-lg-3'>
-            {create_subsequence_link}
+            </div>
+            <div className='d-inline ml-2'>
+              {create_subsequence_link}
+            </div>
           </div>
         </div>
 
         <div className='row'>
-          <div className='col-lg-9'>
+          <div className='col-lg-7 ml-4'>
             <div id='sequence_card_wrapper'>
               {sequence_movie_frames.map((frame_url, index) => {
                 return (
@@ -1022,7 +1008,7 @@ class SequenceCard extends React.Component {
     if (this.props.sequence_display_mode === 'list')  {
     return (
       <div 
-          className='sequence-card row'
+          className='sequence-card row bg-light rounded'
           draggable='true'
           onDragStart={() => this.props.setDraggedItem('sequence', this.props.frame_url)}
           onDragOver={(event) => event.preventDefault()}
@@ -1164,7 +1150,7 @@ class SubsequenceCard extends React.Component {
     return (
       <div>
         <div className='d-inline'>
-          name:
+          Name:
         </div>
         <div className='d-inline'>
         <input
@@ -1191,7 +1177,7 @@ class SubsequenceCard extends React.Component {
     const interval_field = this.buildIntervalField()
     return (
       <div 
-          className='row mt-2 card'
+          className='row mt-2 card bg-light rounded'
           draggable='true'
           onDragStart={() => this.props.setDraggedItem('subsequence', this.props.subsequence['id'])}
           onDragOver={(event) => event.preventDefault()}

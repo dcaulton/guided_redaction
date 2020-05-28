@@ -931,7 +931,7 @@ class RedactApplication extends React.Component {
   }
 
   componentDidMount() {
-    const user_obj = this.getUserOnMount()
+    this.getUserOnMount()
     this.processUserClasses()
     if (!this.state.showMovieParserLink) {
       document.getElementById('movie_panel_link').style.display = 'none'
