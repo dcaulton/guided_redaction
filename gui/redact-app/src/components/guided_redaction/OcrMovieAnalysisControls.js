@@ -93,8 +93,10 @@ class OcrMovieAnalysisControls extends React.Component {
     let deepCopyIds = JSON.parse(JSON.stringify(this.props.tier_1_scanner_current_ids))
     deepCopyIds['ocr_movie_analysis'] = ''
     this.props.setGlobalStateVar('tier_1_scanner_current_ids', deepCopyIds)
+    const the_id = 'ocr_movie_analysis' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
+
     this.setState({
-      id: '',
+      id: the_id,
       name: '',
       debug_level: '',
       skip_frames: 10,
@@ -114,6 +116,7 @@ class OcrMovieAnalysisControls extends React.Component {
 
   componentDidMount() {
     this.props.addInsightsCallback('oma_pick_app', this.getCurrentAnchors)
+    this.loadNewOcrMovieAnalysisMeta()
   }
 
   addAppCallback(clicked_coords) {
@@ -588,12 +591,10 @@ console.log('adding an app')
   doSave(when_done=(()=>{})) {
     doTier1Save(
       'ocr_movie_analysis',
-      this.state.name,
       this.getOcrMovieAnalysisRuleFromState,
       this.props.displayInsightsMessage,
       this.props.tier_1_scanners,
       this.props.tier_1_scanner_current_ids,
-      this.setLocalStateVarNoWarning,
       this.props.setGlobalStateVar,
       when_done,
     )
@@ -749,7 +750,7 @@ console.log('adding an app')
                     {attributes_list}
                   </div>
 
-                  <div className='row bg-light border-top'>
+                  <div className='row bg-light'>
                     <ScannerSearchControls
                       search_attribute_name_id='ocr_movie_analysis_database_search_attribute_name'
                       search_attribute_value_id='ocr_movie_analysis_database_search_attribute_value'

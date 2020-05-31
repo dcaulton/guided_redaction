@@ -1,4 +1,7 @@
 import React from 'react';
+import {
+  makePlusMinusRowLight,
+} from './SharedControls'
 
 class ScannerSearchControls extends React.Component {
 
@@ -164,64 +167,69 @@ class ScannerSearchControls extends React.Component {
     )
   }
 
-  buildDatabaseSection() {
+  render() {
     const database_scanners_list = this.getDatabaseScannersList()
     const display_name_title = this.props.search_type + ' attribute name'
     const display_value_title = this.props.search_type + ' attribute value'
+    const hide_div_id = 'hide_div_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
+    const show_hide_line = makePlusMinusRowLight('database', hide_div_id)
+
+
     return (
-      <div>
-        <div className='font-weight-bold'>
-          Database
-        </div>
-        <div>
-          <div className='d-inline'>
-            Search by Attribute:
+      <div className='col'>
+        {show_hide_line}
+        <div 
+            id={hide_div_id}
+            className='collapse row'
+        >
+          <div className='row mb-2'>
+            <div className='col-lg-2'>
+              Search by Attribute:
+            </div>
+            <div className='col-lg-4'>
+              <div>
+                Name
+              </div>
+              <div>
+                <input 
+                  id={this.props.search_attribute_name_id}
+                  size='20'
+                  title={display_name_title}
+                />
+              </div>
+            </div>
+            <div className='col-lg-4'>
+              <div>
+                Value
+              </div>
+              <div>
+                <input 
+                  id={this.props.search_attribute_value_id}
+                  size='20'
+                  className='ml-2'
+                  title={display_value_title}
+                />
+              </div>
+            </div>
+            <div className='col-lg-2'>
+              <div className='ml-2 mr-2'>
+                <button
+                  className='btn btn-primary mt-4' 
+                  onClick={() => this.doGetScanners()}
+                >
+                  Go
+                </button>
+              </div>
+            </div>
           </div>
-          <div className='d-inline ml-2'>
-            Name:
+          <div>
+            {database_scanners_list}
           </div>
-          <div className='d-inline ml-2'>
-            <input 
-                id={this.props.search_attribute_name_id}
-                size='20'
-                title={display_name_title}
-            />
-          </div>
-          <div className='d-inline ml-2'>
-            Value:
-          </div>
-          <div className='d-inline ml-3'>
-            <input 
-                id={this.props.search_attribute_value_id}
-                size='20'
-                title={display_value_title}
-            />
-          </div>
-          <div className='d-inline ml-3'>
-            <button
-              className='btn btn-primary p-1'
-              onClick={() => this.doGetScanners()}
-            >
-              Go
-            </button>
-          </div>
-        </div>
-        <div>
-          {database_scanners_list}
         </div>
       </div>
     )
   }
 
-  render() {
-    const database_section = this.buildDatabaseSection()
-
-    return (
-      <div>
-        {database_section}
-      </div>
-    )
-  }
 }
 
 export default ScannerSearchControls;

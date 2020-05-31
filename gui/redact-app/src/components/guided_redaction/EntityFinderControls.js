@@ -72,12 +72,10 @@ class EntityFinderControls extends React.Component {
   doSave(when_done=(()=>{})) {
     doTier1Save(
       'entity_finder',
-      this.state.name,
       this.getEntityFinderRuleFromState,
       this.props.displayInsightsMessage,
       this.props.tier_1_scanners,
       this.props.tier_1_scanner_current_ids,
-      this.setLocalStateVarNoWarning,
       this.props.setGlobalStateVar,
       when_done,
     )
@@ -112,6 +110,10 @@ class EntityFinderControls extends React.Component {
     )
   }
 
+  componentDidMount(){
+    this.loadNewEntityFinderMeta()
+  }
+
   loadEntityFinderMeta(entity_finder_id) {
     if (!entity_finder_id) {
       this.loadNewEntityFinderMeta()
@@ -135,8 +137,10 @@ class EntityFinderControls extends React.Component {
     let deepCopyIds = JSON.parse(JSON.stringify(this.props.tier_1_scanner_current_ids))
     deepCopyIds['entity_finder'] = ''
     this.props.setGlobalStateVar('tier_1_scanner_current_ids', deepCopyIds)
+    const the_id = 'entity_finder_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
+
     this.setState({
-      id: '',
+      id: the_id,
       name: '',
       entity_type: '',
       attributes: {},
@@ -167,7 +171,7 @@ class EntityFinderControls extends React.Component {
   }
 
   buildRunButton() {
-    if (!this.state.id) {                                                       
+    if (!Object.keys(this.props.tier_1_scanners['entity_finder']).includes(this.state.id)) {
       return ''                                                                 
     }
     return (
@@ -325,7 +329,7 @@ class EntityFinderControls extends React.Component {
                   {attributes_list}
                 </div>
 
-                <div className='row bg-light border-top'>
+                <div className='row bg-light'>
                   <ScannerSearchControls
                     search_attribute_name_id='entity_finder_database_search_attribute_name'
                     search_attribute_value_id='entity_finder_database_search_attribute_value'

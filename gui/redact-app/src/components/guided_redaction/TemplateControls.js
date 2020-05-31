@@ -83,6 +83,7 @@ class TemplateControls extends React.Component {
     this.props.addInsightsCallback('getCurrentTemplateMaskZones', this.getCurrentMaskZones)
     this.props.addInsightsCallback('add_template_anchor_2', this.addAnchorCallback)
     this.props.addInsightsCallback('add_template_mask_zone_2', this.addMaskZoneCallback)
+    this.loadNewTemplate()
   }
 
   importTemplate(files) {
@@ -118,8 +119,10 @@ class TemplateControls extends React.Component {
     let deepCopyIds = JSON.parse(JSON.stringify(this.props.tier_1_scanner_current_ids))
     deepCopyIds['template'] = ''
     this.props.setGlobalStateVar('tier_1_scanner_current_ids', deepCopyIds)
+    const the_id = 'template_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
+
     this.setState({
-      id: '',
+      id: the_id,
       name: '',
       attributes: {},
       scale: '1_1',
@@ -349,12 +352,10 @@ class TemplateControls extends React.Component {
     .then(() => {
       const template = doTier1Save(
         'template',
-        this.state.name,
         this.getTemplateFromState,
         this.props.displayInsightsMessage,
         this.props.tier_1_scanners,
         this.props.tier_1_scanner_current_ids,
-        this.setLocalStateVar,
         this.props.setGlobalStateVar,
       )
       return template
@@ -437,7 +438,7 @@ class TemplateControls extends React.Component {
 
 // TODO make this a shared module 
   buildRunButton() {
-    if (!this.state.id) {
+    if (!Object.keys(this.props.tier_1_scanners['template']).includes(this.state.id)) {
       return ''
     }
     const tier_1_template_run_options = this.props.buildTier1RunOptions('template', 'template_t1_template')
@@ -870,7 +871,7 @@ class TemplateControls extends React.Component {
                   </div>
                 </div>
 
-                <div className='row mt-3 ml-1 mr-1 border-top'>
+                <div className='row mt-3 ml-1 mr-1'>
                   <ScannerSearchControls
                     search_attribute_name_id='template_database_search_attribute_name'
                     search_attribute_value_id='template_database_search_attribute_value'

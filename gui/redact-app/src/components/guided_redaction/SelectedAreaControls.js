@@ -48,6 +48,7 @@ class SelectedAreaControls extends React.Component {
     this.setLocalStateVar=this.setLocalStateVar.bind(this)
   }
 
+
   showSourceFrame(movie_url, image_frameset_index) {
     this.props.setCurrentVideo(movie_url)
     setTimeout((() => {this.props.setScrubberToIndex(image_frameset_index)}), 1000)
@@ -129,6 +130,7 @@ class SelectedAreaControls extends React.Component {
     this.props.addInsightsCallback('getCurrentSelectedAreaMinimumZones', this.getCurrentSelectedAreaMinimumZones)
     this.props.addInsightsCallback('getCurrentSelectedAreaOriginLocation', this.getCurrentSelectedAreaOriginLocation)
     this.props.addInsightsCallback('add_sa_origin_location_1', this.addOriginLocation)
+    this.loadNewSelectedAreaMeta()
   }
 
   addAreaCoordsCallback(the_coords) {
@@ -196,8 +198,10 @@ class SelectedAreaControls extends React.Component {
     let deepCopyIds = JSON.parse(JSON.stringify(this.props.tier_1_scanner_current_ids))
     deepCopyIds['selected_area'] = ''
     this.props.setGlobalStateVar('tier_1_scanner_current_ids', deepCopyIds)
+    const the_id = 'selected_area_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
+
     this.setState({
-      id: '',
+      id: the_id,
       name: '',
       select_type: 'arrow',
       scale: '1:1',
@@ -236,12 +240,10 @@ class SelectedAreaControls extends React.Component {
   doSave(when_done=(()=>{})) {
     doTier1Save(
       'selected_area',
-      this.state.name,
       this.getSelectedAreaMetaFromState,
       this.props.displayInsightsMessage,
       this.props.tier_1_scanners,
       this.props.tier_1_scanner_current_ids,
-      this.setLocalStateVar,
       this.props.setGlobalStateVar,
       when_done
     )
@@ -506,7 +508,7 @@ class SelectedAreaControls extends React.Component {
   }
 
   buildRunButton() {
-    if (!this.state.id) {
+    if (!Object.keys(this.props.tier_1_scanners['selected_area']).includes(this.state.id)) {
       return ''
     }
     const tier_1_template_run_options = this.props.buildTier1RunOptions('template', 'selected_area_t1_template')
@@ -765,7 +767,7 @@ class SelectedAreaControls extends React.Component {
                   {attributes_list}
                 </div>
 
-                <div className='row mt-3 ml-1 mr-1 border-top'>
+                <div className='row mt-3 ml-1 mr-1'>
                   <ScannerSearchControls
                     search_attribute_name_id='selected_area_database_search_attribute_name'
                     search_attribute_value_id='selected_area_database_search_attribute_value'

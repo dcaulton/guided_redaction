@@ -165,9 +165,16 @@ export function makePlusMinusRow(label, body_id) {
 
 export function makePlusMinusRowLight(label, body_id) {
   const datatarget = '#' + body_id
+  const the_style = {
+
+  }
   return (
-    <div className='row mt-2 mb-2 border-top border-bottom'>
-      <div className='col-lg-2' />
+    <div 
+        className='row mt-2 mb-2 border-top border-bottom'
+    >
+      <div className='col-lg-2'>
+      </div>
+
       <div
         className='col-lg-9 mt-2 h5'
       >
@@ -390,41 +397,23 @@ export function buildClearMatchesButton(scanner_type, clear_matches_function) {
 
 export function doTier1Save(
     scanner_type, 
-    scanner_name,
     getScannerFromStateFunction, 
     displayMessageFunction, 
     globalScannersDict, 
     globalScannerIdsDict,
-    localSetState,
     globalSetStateVar,
     when_done=(()=>{})
 ) {
-  const pretty_scanner_name = scanner_type.replace('_', ' ')
-  let updates_are_needed = false
-  if (!scanner_name) {
-    displayMessageFunction('Save aborted: Name is required for a ' + pretty_scanner_name)
-    return
-  }
-  let scanner_id = scanner_type + '_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
-  let scanner = getScannerFromStateFunction()
-  if (!scanner['id']) {
-    scanner['id'] = scanner_id
-    updates_are_needed = true
-  }
+  const scanner = getScannerFromStateFunction()
+  const scanner_id = scanner['id']
   let deepCopyScanners = JSON.parse(JSON.stringify(globalScannersDict))
   let deepCopyThisScannerType = deepCopyScanners[scanner_type]
-  deepCopyThisScannerType[scanner['id']] = scanner
+  deepCopyThisScannerType[scanner_id] = scanner
   deepCopyScanners[scanner_type] = deepCopyThisScannerType
-  if (updates_are_needed) {
-    globalSetStateVar('tier_1_scanners', deepCopyScanners)
-  }
+  globalSetStateVar('tier_1_scanners', deepCopyScanners)
   let deepCopyScannerIds = JSON.parse(JSON.stringify(globalScannerIdsDict))
   deepCopyScannerIds[scanner_type] = scanner['id']
-  if (updates_are_needed) {
-    globalSetStateVar('tier_1_scanner_current_ids', deepCopyScannerIds)
-  }
-  localSetState('id', scanner['id'])
-  localSetState('unsaved_changes', false)
+  globalSetStateVar('tier_1_scanner_current_ids', deepCopyScannerIds)
   displayMessageFunction(scanner_type + ' has been saved')
   when_done(scanner)
   return scanner

@@ -75,12 +75,10 @@ class OcrSceneAnalysisControls extends React.Component {
   doSave(when_done=(()=>{})) {
     doTier1Save(
       'ocr_scene_analysis',
-      this.state.name,
       this.getOcrSceneAnalysisRuleFromState,
       this.props.displayInsightsMessage,
       this.props.tier_1_scanners,
       this.props.tier_1_scanner_current_ids,
-      this.setLocalStateVarNoWarning,
       this.props.setGlobalStateVar,
       when_done,
     )
@@ -147,13 +145,13 @@ class OcrSceneAnalysisControls extends React.Component {
     return buildTier1LoadButton(
       'ocr_scene_analysis',
       this.props.tier_1_scanners['ocr_scene_analysis'],
-      ((value)=>{this.loadOcrScreenAnalysisMeta(value)})
+      ((value)=>{this.loadOcrSceneAnalysisMeta(value)})
     )
   }
 
-  loadOcrScreenAnalysisMeta(ocr_scene_analysis_meta_id) {
+  loadOcrSceneAnalysisMeta(ocr_scene_analysis_meta_id) {
     if (!ocr_scene_analysis_meta_id) {
-      this.loadNewOcrScreenAnalysisMeta()
+      this.loadNewOcrSceneAnalysisMeta()
     } else {
       const osa = this.props.tier_1_scanners['ocr_scene_analysis'][ocr_scene_analysis_meta_id]
       this.setState({
@@ -172,12 +170,14 @@ class OcrSceneAnalysisControls extends React.Component {
     this.props.displayInsightsMessage('Ocr screen analysis meta has been loaded')
   }
 
-  loadNewOcrScreenAnalysisMeta() {
+  loadNewOcrSceneAnalysisMeta() {
     let deepCopyIds = JSON.parse(JSON.stringify(this.props.tier_1_scanner_current_ids))
     deepCopyIds['ocr_scene_analysis'] = ''
     this.props.setGlobalStateVar('tier_1_scanner_current_ids', deepCopyIds)
+    const the_id = 'ocr_scene_analysis_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
+
     this.setState({
-      id: '',
+      id: the_id,
       name: '',
       skip_frames: 10,
       debugging_output: false,
@@ -185,6 +185,10 @@ class OcrSceneAnalysisControls extends React.Component {
       attributes: {},
       unsaved_changes: false,
     })
+  }
+
+  componentDidMount() {
+    this.loadNewOcrSceneAnalysisMeta()
   }
 
   buildDeleteButton() {
@@ -222,7 +226,7 @@ class OcrSceneAnalysisControls extends React.Component {
   }
 
   buildRunButton() {
-    if (!this.state.id) {                                                       
+    if (!Object.keys(this.props.tier_1_scanners['ocr_scene_analysis']).includes(this.state.id)) {
       return ''                                                                 
     }
     return (
@@ -411,7 +415,7 @@ class OcrSceneAnalysisControls extends React.Component {
                   {attributes_list}
                 </div>
 
-                <div className='row bg-light border-top'>
+                <div className='row bg-light'>
                   <ScannerSearchControls
                     search_attribute_name_id='ocr_scene_analysis_database_search_attribute_name'
                     search_attribute_value_id='ocr_scene_analysis_database_search_attribute_value'

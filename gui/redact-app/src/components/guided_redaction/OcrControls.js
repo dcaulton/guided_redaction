@@ -108,6 +108,7 @@ class OcrControls extends React.Component {
     this.props.addInsightsCallback('getOcrWindow', this.getOcrWindow)
     this.props.addInsightsCallback('add_ocr_origin_location_1', this.addOriginLocation)
     this.props.addInsightsCallback('getCurrentOcrOriginLocation', this.getCurrentOcrOriginLocation)
+    this.loadNewOcrRule()
   }
 
   setLocalStateVar(var_name, var_value, when_done=(()=>{})) {
@@ -235,11 +236,13 @@ class OcrControls extends React.Component {
   }
 
   loadNewOcrRule() {                                                   
-    let deepCopyIds = JSON.parse(JSON.stringify(this.state.tier_1_scanner_current_ids))
+    let deepCopyIds = JSON.parse(JSON.stringify(this.props.tier_1_scanner_current_ids))
     deepCopyIds['ocr'] = ''
     this.props.setGlobalStateVar('tier_1_scanner_current_ids', deepCopyIds)
+    const the_id = 'ocr_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
+
     this.setState({
-      id: '',
+      id: the_id,
       name: '',
       match_text: [],
       match_percent: 90,
@@ -275,7 +278,7 @@ class OcrControls extends React.Component {
 
 // TODO make this a shared module
   buildRunButton() {
-    if (!this.state.id) {
+    if (!Object.keys(this.props.tier_1_scanners['ocr']).includes(this.state.id)) {
       return ''
     }
     const tier_1_template_run_options = this.props.buildTier1RunOptions('template', 'ocr_t1_template')
@@ -450,12 +453,10 @@ class OcrControls extends React.Component {
   doSave(when_done=(()=>{})) {
     doTier1Save(
       'ocr',
-      this.state.name,
       this.getOcrMetaFromState,
       this.props.displayInsightsMessage,
       this.props.tier_1_scanners,
       this.props.tier_1_scanner_current_ids,
-      this.setLocalStateVarNoWarning,
       this.props.setGlobalStateVar,
       when_done
     )
@@ -627,7 +628,7 @@ class OcrControls extends React.Component {
                   {attributes_list}                                             
                 </div>      
 
-                <div className='row mt-3 ml-1 mr-1 border-top'>
+                <div className='row mt-3 ml-1 mr-1'>
                   <ScannerSearchControls
                     search_attribute_name_id='ocr_database_search_attribute_name'
                     search_attribute_value_id='ocr_database_search_attribute_value'

@@ -56,6 +56,7 @@ class HogControls extends React.Component {
     this.props.addInsightsCallback('hog_pick_testing_image_1', this.addTestingImage)
     this.props.addInsightsCallback('getCurrentHogTrainingImageLocations', this.getCurrentHogTrainingImageLocations)
     this.props.addInsightsCallback('getCurrentHogTestingImageLocations', this.getCurrentHogTestingImageLocations)
+    this.loadNewHogMeta()
   }
 
   getCurrentHogTrainingImageLocations() {
@@ -100,9 +101,11 @@ class HogControls extends React.Component {
     const match_object_id = response['anchor_id']
     const image_bytes = response['cropped_image_bytes']
     let deepCopyTestingResultsImages = JSON.parse(JSON.stringify(this.state.testing_results_images))
-    deepCopyTestingResultsImages[match_object_id] = {
-        cropped_image_bytes: image_bytes,
+    if (!Object.keys(deepCopyTestingResultsImages).includes(match_object_id)) {
+      console.log('was expecting to see a testing_results_images object for '+match_object_id)
+      return
     }
+    deepCopyTestingResultsImages[match_object_id]['cropped_image_bytes'] = image_bytes
     this.setLocalStateVar('testing_results_images', deepCopyTestingResultsImages)
   }
 
@@ -220,19 +223,13 @@ class HogControls extends React.Component {
     return hog_rule
   }
 
-  doSave(when_done=(()=>{}), force=false) {
-    if (force && !this.state.name) {
-      const hog_name = 'hog_random_name_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
-      this.setLocalStateVar('name', hog_name)
-    }
+  doSave(when_done=(()=>{})) {
     doTier1Save(
       'hog',
-      this.state.name,
       this.getHogRuleFromState,
       this.props.displayInsightsMessage,
       this.props.tier_1_scanners,
       this.props.tier_1_scanner_current_ids,
-      this.setLocalStateVarNoWarning,
       this.props.setGlobalStateVar,
       when_done,
     )
@@ -454,9 +451,10 @@ class HogControls extends React.Component {
   loadNewHogMeta() {
     let deepCopyIds = JSON.parse(JSON.stringify(this.props.tier_1_scanner_current_ids))
     deepCopyIds['hog'] = ''
+    const hog_id = 'hog_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
     this.props.setGlobalStateVar('tier_1_scanner_current_ids', deepCopyIds)
     this.setState({
-      id: '',
+      id: hog_id,
       name: '',
       orientations: 9,
       pixels_per_cell: 8,
@@ -501,7 +499,7 @@ class HogControls extends React.Component {
   }
 
   buildRunButton() {
-    if (!this.state.id) {                                                       
+    if (!Object.keys(this.props.tier_1_scanners['hog']).includes(this.state.id)) {
       return ''                                                                 
     }
     return (
@@ -589,7 +587,7 @@ class HogControls extends React.Component {
   }
 
   trainModel() {
-    this.doSave((()=>{}), true)
+    this.doSave((()=>{}))
     this.props.submitInsightsJob('hog_train_model')
   }
 
@@ -828,6 +826,7 @@ class HogControls extends React.Component {
   }
 
   loadTrainingJobImages() {
+    let testing_results_images = {}
     const matches = this.props.tier_1_matches['hog_training'][this.state.id]
     for (let i=0; i < Object.keys(matches['movies']).length; i++) {
       const movie_url = Object.keys(matches['movies'])[i]
@@ -838,9 +837,22 @@ class HogControls extends React.Component {
         for (let k=0; k < Object.keys(frameset).length; k++) {
           const object_key = Object.keys(frameset)[k]
           const match_object = frameset[object_key]
-          this.addTestResponseImage(match_object)
+          const new_obj = {
+            id: match_object['id'], 
+            image_url: match_object['image_url'], 
+            movie_url: match_object['movie_url'], 
+            start: match_object['start'], 
+            end: match_object['end'], 
+          }
+          testing_results_images[match_object['id']] = new_obj
         }
       }
+    }
+    this.setLocalStateVar('testing_results_images', testing_results_images)
+    for (let i=0; i < Object.keys(testing_results_images).length; i++) {
+      const object_key = Object.keys(testing_results_images)[i]
+      const match_object = testing_results_images[object_key]
+      this.addTestResponseImage(match_object)
     }
   }
 
@@ -860,7 +872,6 @@ class HogControls extends React.Component {
   }
 
   makeHardNegative(match_key) {
-    console.log('making a hard negative for '+match_key)
     let deepCopyHardNegatives = JSON.parse(JSON.stringify(this.state.hard_negatives))
     let deepCopyTestingResultsImages = JSON.parse(JSON.stringify(this.state.testing_results_images))
     deepCopyHardNegatives[match_key] = deepCopyTestingResultsImages[match_key]
@@ -895,8 +906,11 @@ class HogControls extends React.Component {
       <div>
         <div className='col'>
         {Object.keys(this.state.testing_results_images).map((match_key, index) => {
-          const img_bytes = this.state.testing_results_images[match_key]['cropped_image_bytes']
-          const the_src = "data:image/gif;base64," + img_bytes
+          let the_src = ''
+          if (Object.keys(this.state.testing_results_images[match_key]).includes('cropped_image_bytes')) {
+            const img_bytes = this.state.testing_results_images[match_key]['cropped_image_bytes']
+            the_src = "data:image/gif;base64," + img_bytes
+          }
           return (
             <div 
                 className='row border-top p-2'
@@ -1064,7 +1078,7 @@ class HogControls extends React.Component {
                     {attributes_list}
                   </div>
 
-                  <div className='row mt-2 border-top'>
+                  <div className='row mt-2'>
                     <ScannerSearchControls
                       search_attribute_name_id='hog_database_search_attribute_name'
                       search_attribute_value_id='hog_database_search_attribute_value'
