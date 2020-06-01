@@ -37,6 +37,8 @@ class HogControls extends React.Component {
       testing_images: {},
       testing_results_images: {},
       hard_negatives: {},
+      classifier_path: '',
+      features_path: '',
       attributes: {},
       unsaved_changes: false,
     }
@@ -218,6 +220,8 @@ class HogControls extends React.Component {
       training_images: this.state.training_images,
       testing_images: this.state.testing_images,
       hard_negatives: this.state.hard_negatives,
+      classifier_path: this.state.classifier_path,
+      features_path: this.state.features_path,
       attributes: this.state.attributes,
     }
     return hog_rule
@@ -438,6 +442,8 @@ class HogControls extends React.Component {
         training_images: hog['training_images'],
         testing_images: hog['testing_images'],
         hard_negatives: hog['hard_negatives'],
+        classifier_path: hog['classifier_path'],
+        features_path: hog['features_path'],
         attributes: hog['attributes'],
         unsaved_changes: false,
       })
@@ -471,6 +477,8 @@ class HogControls extends React.Component {
       training_images: {},
       testing_images: {},
       hard_negatives: {},
+      classifier_path: '',
+      features_path: '',
       attributes: {},
       unsaved_changes: false,
     })
@@ -948,6 +956,38 @@ class HogControls extends React.Component {
   }
 
 
+  buildClassifierPath() {
+    if (!this.state.classifier_path) {
+      return ''
+    }
+    return (
+      <div>
+        <div className='d-inline'>
+          Classifier Path: 
+        </div>
+        <div className='d-inline ml-2'>
+          {this.state.classifier_path}
+        </div>
+      </div>
+    )
+  }
+
+  buildFeaturesPath() {
+    if (!this.state.features_path) {
+      return ''
+    }
+    return (
+      <div>
+        <div className='d-inline'>
+          Features Path: 
+        </div>
+        <div className='d-inline ml-2'>
+          {this.state.features_path}
+        </div>
+      </div>
+    )
+  }
+
   render() {
     if (!this.props.visibilityFlags['hog']) {
       return([])
@@ -992,6 +1032,8 @@ class HogControls extends React.Component {
     const testing_images_title = this.buildTestingImagesTitle()
     const hard_negatives_title = this.buildHardNegativesTitle()
     const load_hard_negatives_dialog = this.buildLoadHardNegativesDialog()
+    const classifier_path = this.buildClassifierPath()
+    const features_path = this.buildFeaturesPath()
 
     return (
         <div className='row bg-light rounded mt-3'>
@@ -1072,6 +1114,14 @@ class HogControls extends React.Component {
 
                   <div className='row mt-2'>
                     {sliding_window_step_size_field}
+                  </div>
+
+                  <div className='row mt-2'>
+                    {classifier_path}
+                  </div>
+
+                  <div className='row mt-2'>
+                    {features_path}
                   </div>
 
                   <div className='row mt-2'>

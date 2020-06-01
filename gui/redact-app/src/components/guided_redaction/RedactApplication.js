@@ -1090,14 +1090,14 @@ class RedactApplication extends React.Component {
     }
   }
 
-  loadTier1ScannersFromTier1Request(scanner_type, request_data) {
+  loadTier1ScannersFromTier1Request(scanner_type, request_data, force_add=false) {
     let scanner_id = ''
     let something_changed = false
     let deepCopyScanners = JSON.parse(JSON.stringify(this.state.tier_1_scanners))
     let deepCopyThisScanners = deepCopyScanners[scanner_type]
     for (let i=0; i < Object.keys(request_data['tier_1_scanners'][scanner_type]).length; i++) {
       scanner_id = Object.keys(request_data['tier_1_scanners'][scanner_type])[i]
-      if (!Object.keys(deepCopyThisScanners).includes(scanner_id)) {
+      if (force_add || !Object.keys(deepCopyThisScanners).includes(scanner_id)) {
         deepCopyThisScanners[scanner_id] = request_data['tier_1_scanners'][scanner_type][scanner_id]
         something_changed = true
       }
@@ -1250,7 +1250,7 @@ class RedactApplication extends React.Component {
       return
     }
     const request_data = JSON.parse(job.request_data)
-    this.loadTier1ScannersFromTier1Request('hog', request_data)
+    this.loadTier1ScannersFromTier1Request('hog', response_data, true)
     let resp_obj = this.loadMoviesFromTier1Request(request_data)
     let movie_url = resp_obj['movie_url']
     let deepCopyMovies = resp_obj['deepCopyMovies']
