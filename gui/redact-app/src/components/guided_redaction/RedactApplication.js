@@ -1950,19 +1950,24 @@ class RedactApplication extends React.Component {
     })
   }
 
-  async dispatchPipeline(the_uuid, scope, when_done=(()=>{})) {
+  async dispatchPipeline(the_uuid, scope, extra_data, when_done=(()=>{})) {
     let the_url = this.getUrl('pipelines_url') + '/dispatch'
     let build_movies = {}
+    let specified_input = {}
     if (scope === 'all_movies') {
       for (let i=0; i < this.state.campaign_movies.length; i++) {
         build_movies[this.state.campaign_movies[i]] = {}
       }
     } else if (scope === 'current_movie') {
       build_movies[this.state.movie_url] = {}
+    } else if (scope === 'input_json') {
+      specified_input = extra_data
     }
     let build_payload = {
       pipeline_id: the_uuid,
+// TODO remove movies when we have fully cut over to using input
       movies: build_movies,
+      input: specified_input,
     }
     if (this.state.current_workbook_id) {
       build_payload['workbook_id'] = this.state.current_workbook_id
@@ -2565,6 +2570,8 @@ class RedactApplication extends React.Component {
                 submitJob={this.submitJob}
                 telemetry_data={this.state.telemetry_data}
                 readTelemetryRawData={this.readTelemetryRawData}
+                pipelines={this.state.pipelines}
+                dispatchPipeline={this.dispatchPipeline}
               />
             </Route>
             <Route path='/redact/insights'>

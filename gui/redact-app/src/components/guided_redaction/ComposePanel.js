@@ -647,7 +647,12 @@ class ComposePanel extends React.Component {
     const rec_id = document.getElementById('recording_id').value
     if (!rec_id) {
       this.setMessage('no recording id specified, not fetching')
+      return
     }
+    const input_obj = {
+      'recording_ids': [rec_id],
+    }
+    this.props.dispatchPipeline('fetch_split_hash_secure_file', 'input_json', input_obj)
     console.log('fetching recording id '+rec_id)
   }
 

@@ -168,7 +168,8 @@ class PipelineControls extends React.Component {
   }
 
   doRun(scope) {
-    this.props.dispatchPipeline(this.props.current_pipeline_id, scope)
+    const extra_data = document.getElementById('pipeline_input_json').value
+    this.props.dispatchPipeline(this.props.current_pipeline_id, scope, extra_data)
     this.props.displayInsightsMessage('pipeline was dispatched')
   }
 
@@ -286,6 +287,12 @@ class PipelineControls extends React.Component {
           >
             All Movies
           </button>
+          <button
+              className='dropdown-item'
+              onClick={() => this.doRun('input_json')}
+          >
+            Input JSON
+          </button>
         </div>
       </div>
     )
@@ -328,6 +335,23 @@ class PipelineControls extends React.Component {
           onChange={() => this.toggleUseParsedMovies()}
         />
         Use Parsed Movies
+      </div>
+    )
+  }
+
+  buildInputJson() {
+    return (
+      <div>
+        <div className='d-inline'>
+          input json
+        </div>
+        <div className='d-inline'>
+          <textarea
+            id='pipeline_input_json'
+            cols='60'
+            rows='5'
+          />
+        </div>
       </div>
     )
   }
@@ -403,6 +427,7 @@ class PipelineControls extends React.Component {
     const description_field = this.buildDescriptionField()
     const attributes_list = this.buildAttributesList()
     const use_parsed_movies_checkbox = this.buildUseParsedMoviesCheckbox()
+    const input_json_textarea = this.buildInputJson()
     const header_row = makeHeaderRow(
       'pipelines',
       'pipelines_body',
@@ -443,6 +468,10 @@ class PipelineControls extends React.Component {
 
               <div className='row mt-2'>
                 {use_parsed_movies_checkbox}
+              </div>
+
+              <div className='row mt-2'>
+                {input_json_textarea}
               </div>
 
               <div className='row mt-2'>
@@ -719,8 +748,9 @@ class NodeCard extends React.Component {
           <select
               name='step_type'
               id={edge_dropdown_id}
+              defaultValue=''
           >
-            <option key='' value='' selected></option>
+            <option key='' value=''></option>
             {Object.keys(this.props.node_metadata['node']).map((node_id, index) => {
               if (node_id === this.props.node_id) {
                 return ''
