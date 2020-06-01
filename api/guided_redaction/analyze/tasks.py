@@ -1216,7 +1216,7 @@ def train_hog_threaded(job_uuid):
           job.elapsed_time = percent_done
           job.save()
         elif next_step == 'wrap_up':
-          wrap_up_oma_first_scan_threaded(job, children)
+          wrap_up_train_hog_threaded(job, children)
         elif next_step == 'abort':
           job.status = 'failed'
           job.save()
@@ -1246,7 +1246,7 @@ def wrap_up_train_hog_threaded(job, children):
                 if movie_url not in aggregate_response_data['movies']:
                     aggregate_response_data['movies'][movie_url] = {'framesets': {}}
                 for frameset_hash in child_response_movies[movie_url]['framesets']:
-                    frameset = child_response_movies[movie_url]['framesets'][freameset_hash]
+                    frameset = child_response_movies[movie_url]['framesets'][frameset_hash]
                     aggregate_response_data['movies'][movie_url]['framesets'][frameset_hash] = frameset
                 for frameset_hash in child_stats['movies'][movie_url]['framesets']:
                     aggregate_stats['movies'][movie_url]['framesets'][frameset_hash] = \
@@ -1342,7 +1342,7 @@ def build_and_dispatch_test_hog(parent_job, children):
                 and image_url in training_movies_images[movie_url]:
                 # skip - its a training image
                 continue
-            if frameset_index % hog_rule['testing_image_skip_factor'] != 0:
+            if frameset_index % int(hog_rule['testing_image_skip_factor']) != 0:
                 # skip because of skip factor
                 continue
             build_movies = {}
