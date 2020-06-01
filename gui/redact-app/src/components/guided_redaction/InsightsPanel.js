@@ -550,7 +550,7 @@ class InsightsPanel extends React.Component {
       request_data: {},
     }
     job_data['app'] = 'analyze'
-    job_data['operation'] = 'hog_train'
+    job_data['operation'] = 'hog_train_threaded'
 
     const hog_id = this.props.tier_1_scanner_current_ids['hog']
     const hog_rule = this.props.tier_1_scanners['hog'][hog_id]

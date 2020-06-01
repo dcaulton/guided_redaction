@@ -69,6 +69,12 @@ class FileWriter():
 
         return new_url
   
+    def read_binary_data_from_filepath(self, file_fullpath):
+        fh = open(file_fullpath, 'rb')
+        ret_obj = fh.read()
+        fh.close()
+        return ret_obj
+
     def write_binary_data_to_filepath(self, binary_data, file_fullpath):
         fh = open(file_fullpath, 'wb')
         fh.write(binary_data)

@@ -840,7 +840,7 @@ class HogControls extends React.Component {
           const new_obj = {
             id: match_object['id'], 
             image_url: match_object['image_url'], 
-            movie_url: match_object['movie_url'], 
+            movie_url: movie_url,
             start: match_object['start'], 
             end: match_object['end'], 
           }

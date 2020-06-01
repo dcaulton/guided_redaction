@@ -1231,3 +1231,30 @@ class AnalyzeViewSetTrainHog(viewsets.ViewSet):
         results = hog_scanner.train_model()
 
         return Response(results)
+
+class AnalyzeViewSetTestHog(viewsets.ViewSet):
+    def create(self, request):
+        request_data = request.data
+        return self.process_create_request(request_data)
+
+    def process_create_request(self, request_data):
+        if not request_data.get("tier_1_scanners"):
+            return self.error("tier_1_scanners is required", status_code=400)
+        if not request_data.get("movies"):
+            return self.error("movies is required", status_code=400)
+        hog_rule_id = list(request_data['tier_1_scanners']['hog'].keys())[0]
+        hog_rule = request_data['tier_1_scanners']['hog'][hog_rule_id]
+        movies = request_data['movies']
+        file_writer = FileWriter(
+            working_dir=settings.REDACT_FILE_STORAGE_DIR,
+            base_url=settings.REDACT_FILE_BASE_URL,
+            image_request_verify_headers=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
+        )
+        hog_scanner = HogScanner(
+            hog_rule,
+            movies,
+            file_writer
+        )
+        results = hog_scanner.test_model()
+
+        return Response(results)

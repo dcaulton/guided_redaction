@@ -17,8 +17,6 @@ class HogScanner:
 
     def __init__(self, hog_rule, movies, file_writer):
         self.debug = True
-        if self.debug:
-            print('the hog keys {}'.format(hog_rule.keys()))
         self.num_distractions_per_image = int(hog_rule['num_distractions_per_image'])
         #TODO, see where this is getting dropped in the gui
         if 'sliding_window_step_size' in hog_rule:
@@ -131,7 +129,11 @@ class HogScanner:
             self.features_path = outfilename
 
         if 'classifier_path' in self.hog_rule:
+            if self.debug:
+                print('loading classifier from supplied path')
             self.classifier_path = self.hog_rule['classifier_path']
+            classifier_binary = self.file_writer.read_binary_data_from_filepath(self.classifier_path)
+            self.model = pickle.loads(classifier_binary)
         else:
             underscore_hog_name = 'classifier_'
             underscore_hog_name += self.hog_rule['name'].replace(' ', '_')
@@ -207,14 +209,19 @@ class HogScanner:
             self.classifier_path
         )
 
-        if self.only_test_positives:
-            self.process_test_positives()
-        else:
-            self.process_test_all()
-
         return_obj = {
             'features_path': self.features_path,
             'classifier_path': self.classifier_path,
+        }
+        if self.debug:
+            return_obj['statistics'] = self.statistics
+
+        return return_obj
+
+    def test_model(self):
+        self.process_test_single()
+
+        return_obj = {
             'movies': self.build_movies,
         }
         if self.debug:
@@ -222,19 +229,7 @@ class HogScanner:
 
         return return_obj
 
-    def get_training_image_urls(self):
-        resp_data = {}
-        for ti_key in self.hog_rule['training_images']:
-            ti = self.hog_rule['training_images'][ti_key]
-            if ti['movie_url'] not in resp_data:
-                resp_data[ti['movie_url']] = {}
-            resp_data[ti['movie_url']][ti['image_url']] = 1
-        return resp_data
-
-    def process_test_all(self):
-        if self.debug:
-            print('buckle in, were gonna test entire movies')
-        training_movies_images = self.get_training_image_urls()
+    def process_test_single(self):
         for movie_url in self.movies:
             movie = self.movies[movie_url]
             self.statistics['movies'][movie_url] = {'framesets': {}}
@@ -244,14 +239,6 @@ class HogScanner:
                 image_url = frameset['images'][0]
                 if self.debug:
                     print('scanning image {}'.format(image_url))
-                if movie_url in training_movies_images and image_url in training_movies_images[movie_url]:
-                    if self.debug:
-                        print('skipping - its a training image')
-                    continue
-                if frameset_index % self.testing_image_skip_factor != 0:
-                    if self.debug:
-                        print('skipping because of skip factor')
-                    continue
                 self.build_movies[movie_url]['framesets'][frameset_hash] = {}
                 pic_response = requests.get(image_url)
                 image = pic_response.content
@@ -286,51 +273,6 @@ class HogScanner:
                 if self.debug:
                     debug_image_url = self.draw_boxes_on_image(boxes, cv2_scan_image, image_url)
                     self.statistics['movies'][movie_url]['framesets'][frameset_hash] = debug_image_url
-
-    def process_test_positives(self):
-        if self.debug:
-            print('we are only testing positives')
-        self.build_movies['whatever_movie'] = {'framesets': {}}
-        self.statistics['movies']['whatever_movie'] = {'framesets': {}}
-        for index, ti_key in enumerate(self.hog_rule['testing_images']):
-            self.statistics['movies']['whatever_movie']['framesets'][index] = ''
-            self.build_movies['whatever_movie']['framesets'][index] = {}
-            ti = self.hog_rule['testing_images'][ti_key]
-            pic_response = requests.get(ti['image_url'])
-            if self.debug:
-                print('scanning image {}'.format(ti['image_url']))
-            image = pic_response.content
-            if not image:
-                raise Exception("couldn't read source image data for testing")
-            nparr = np.fromstring(image, np.uint8)
-            cv2_scan_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-            gray = cv2.cvtColor(cv2_scan_image, cv2.COLOR_BGR2GRAY)
-
-            # deal with global scale
-            if self.global_scale != 1:
-                gray = imutils.resize(gray, width=int(gray.shape[1] * self.global_scale))
-
-            (boxes, probs) = self.detect(gray)
-
-            boxes = self.non_max_suppression(boxes, probs, .3)
-
-            for box in boxes:
-                the_id = 'hog_feature_' + str(uuid.uuid4())
-                build_feature = {
-                    'id': the_id,
-                    'start': (int(box[0]), int(box[1])), 
-                    'end': (int(box[2]), int(box[3])),
-                    'scanner_type': 'hog',
-                    'source': self.hog_rule['id'],
-                    'image_url': ti['image_url'],
-                }
-                if self.debug:
-                    print('build feature {}'.format(build_feature))
-                self.build_movies['whatever_movie']['framesets'][index][the_id] = build_feature
-
-            if self.debug:
-                debug_image_url = self.draw_boxes_on_image(boxes, cv2_scan_image, ti['image_url'])
-                self.statistics['movies']['whatever_movie']['framesets'][index] = debug_image_url
 
     def non_max_suppression(self, boxes, probs, overlapThresh=.3):
         boxes = np.array(boxes)
@@ -510,17 +452,30 @@ class HogScanner:
                 self.data.append(features)
                 self.labels.append(-1)
 
-            self.dump_dataset(
-                self.data, 
-                self.labels, 
-                self.features_path,
-                "features"
+        # perform hard negative mining
+        for hn_key in self.hog_rule['hard_negatives']:
+            hard_negative = self.hog_rule['hard_negatives'][hn_key]
+            img_base64 = hard_negative['cropped_image_bytes']
+            img_bytes = base64.b64decode(img_base64)
+            nparr = np.fromstring(img_bytes, np.uint8)
+            cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+            cv2_image = cv2.cvtColor(cv2_image, cv2.COLOR_BGR2GRAY)
+            cv2_image_standard_size = cv2.resize(
+                cv2_image, 
+                (self.window_width, self.window_height), 
+                interpolation=cv2.INTER_AREA
             )
 
-        for hn_key in self.hog_rule['hard_negatives']:
-            hard_neg = self.hog_rule['hard_negatives'][hn_key]
-            print('one hard negative is {}'.format(hard_neg))
-            print('SHOULD BE DEALING WITH HARD NEGATIVES HERE')
+            features = self.describe(cv2_image_standard_size)
+            self.data.append(features)
+            self.labels.append(-1)
+
+        self.dump_dataset(
+            self.data, 
+            self.labels, 
+            self.features_path,
+            "features"
+        )
 
     def dump_dataset(self, data, labels, path, datasetName, writeMethod="w"):
         # open the database, create the dataset, write the data and labels to dataset,

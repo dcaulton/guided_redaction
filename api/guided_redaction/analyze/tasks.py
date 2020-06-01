@@ -22,6 +22,7 @@ from guided_redaction.analyze.api import (
     AnalyzeViewSetOcrSceneAnalysisChart,
     AnalyzeViewSetSelectedAreaChart,
     AnalyzeViewSetTrainHog,
+    AnalyzeViewSetTestHog,
     AnalyzeViewSetOcr
 )
 
@@ -1153,6 +1154,29 @@ def wrap_up_entity_finder_threaded(job, children):
     job.save()
 
 @shared_task
+def test_hog(job_uuid):
+    if not Job.objects.filter(pk=job_uuid).exists():
+        print('calling test_hog on nonexistent job: {}'.format(job_uuid))
+    job = Job.objects.get(pk=job_uuid)
+    job.status = 'running'
+    job.save()
+    print('running test_hog for job {}'.format(job_uuid))
+    worker = AnalyzeViewSetTestHog()
+    rd = json.loads(job.request_data)
+    response = worker.process_create_request(rd)
+    if not Job.objects.filter(pk=job_uuid).exists():
+        return
+    job = Job.objects.get(pk=job_uuid)
+    job.response_data = json.dumps(response.data)
+    job.status = 'success'
+    job.save()
+
+    if job.parent_id:
+        parent_job = Job.objects.get(pk=job.parent_id)
+        if parent_job.app == 'analyze' and parent_job.operation == 'hog_train_threaded':
+            train_hog_threaded.delay(parent_job.id)
+
+@shared_task
 def train_hog(job_uuid):
     if not Job.objects.filter(pk=job_uuid).exists():
         print('calling train_hog on nonexistent job: {}'.format(job_uuid))
@@ -1169,3 +1193,196 @@ def train_hog(job_uuid):
     job.response_data = json.dumps(response.data)
     job.status = 'success'
     job.save()
+
+    if job.parent_id:
+        parent_job = Job.objects.get(pk=job.parent_id)
+        if parent_job.app == 'analyze' and parent_job.operation == 'hog_train_threaded':
+            train_hog_threaded.delay(parent_job.id)
+
+@shared_task
+def train_hog_threaded(job_uuid):
+    if Job.objects.filter(pk=job_uuid).exists():
+        job = Job.objects.get(pk=job_uuid)
+        if job.status in ['success', 'failed']:
+            return
+        children = Job.objects.filter(parent=job)
+        (next_step, percent_done) = evaluate_train_hog_children(children)
+        print('next step is {}, percent done {}'.format(next_step, percent_done))
+        if next_step == 'build_train_task':
+          build_and_dispatch_train_hog(job)
+        elif next_step == 'build_test_tasks':
+          build_and_dispatch_test_hog(job, children)
+        elif next_step == 'update_percent_complete':
+          job.elapsed_time = percent_done
+          job.save()
+        elif next_step == 'wrap_up':
+          wrap_up_oma_first_scan_threaded(job, children)
+        elif next_step == 'abort':
+          job.status = 'failed'
+          job.save()
+
+def wrap_up_train_hog_threaded(job, children):
+    aggregate_response_data = {
+      'movies': {}
+    }
+    aggregate_stats = {'movies': {}}
+    hog_rule = ''
+    for child in children:
+        if child.operation == 'hog_test':
+            if not hog_rule:
+                # get the hog rule so we know classifier_path and features_path from training phase
+                child_req_data = json.loads(child.request_data)
+                hog_id = list(child_req_data['tier_1_scanners']['hog'].keys())[0]
+                hog_rule = child_req_data['tier_1_scanners']['hog'][hog_id]
+                aggregate_response_data['tier_1_scanners'] = {'hog': {}}
+                aggregate_response_data['tier_1_scanners']['hog'][hog_id] = hog_rule
+            child_response_movies = json.loads(child.response_data)['movies']
+            child_stats = json.loads(child.response_data)['statistics']
+            # iterate through all the hits and stats we have for test images
+            if len(child_response_movies.keys()) > 0:
+                movie_url = list(child_response_movies.keys())[0]
+                if movie_url not in aggregate_stats['movies']:
+                    aggregate_stats['movies'][movie_url] = {'framesets': {}}
+                if movie_url not in aggregate_response_data['movies']:
+                    aggregate_response_data['movies'][movie_url] = {'framesets': {}}
+                for frameset_hash in child_response_movies[movie_url]['framesets']:
+                    frameset = child_response_movies[movie_url]['framesets'][freameset_hash]
+                    aggregate_response_data['movies'][movie_url]['framesets'][frameset_hash] = frameset
+                for frameset_hash in child_stats['movies'][movie_url]['framesets']:
+                    aggregate_stats['movies'][movie_url]['framesets'][frameset_hash] = \
+                        child_stats['movies'][movie_url]['framesets'][frameset_hash]
+
+    aggregate_response_data['statistics'] = aggregate_stats
+    print('wrap_up_train_hog_threaded: wrapping up parent job')
+    job.status = 'success'
+    job.response_data = json.dumps(aggregate_response_data)
+    job.elapsed_time = 1
+    job.save()
+
+def evaluate_train_hog_children(children):
+    train_success = False
+    train_failed = False
+    train_running = False
+    if not children:
+        return('build_train_task', 0)
+    for child in children:
+        if child.operation == 'hog_train':
+            if child.status == 'success':
+                train_success = True
+            if child.status == 'failed':
+                train_failed = True
+            if child.status == 'running':
+                train_running = True
+    if train_running: 
+        return('update_percent_complete', 0)
+    if train_failed:
+        return('abort', 1)
+    if train_success and len(children) == 1:
+        return('build_test_tasks', .5)
+
+    test_children = 0
+    test_complete_children = 0
+    test_failed_children = 0
+
+    for child in children:
+        if child.operation == 'hog_test':
+            test_children += 1
+            if child.status == 'success':
+                test_complete_children += 1
+            elif child.status == 'failed':
+                test_failed_children += 1
+    if test_children == test_complete_children:
+        return('wrap_up', 1)
+    percent_done = .5 + (.5 * (test_complete_children / test_children))
+    return('update_percent_complete', percent_done)
+
+
+def build_and_dispatch_train_hog(parent_job):
+    parent_job.status = 'running'
+    parent_job.save()
+    job = Job(
+        request_data=parent_job.request_data,
+        status='created',
+        description='train hog subtask',
+        app='analyze',
+        operation='hog_train',
+        sequence=0,
+        elapsed_time=0.0,
+        parent=parent_job,
+    )
+    job.save()
+    print('build_and_dispatch_train_hog: dispatching job')
+    train_hog.delay(job.id)
+
+def get_hog_files(hog_rule, children):
+    for child in children:
+        if child.operation == 'hog_train':
+            child_response = json.loads(child.response_data)
+            hog_rule['features_path'] = child_response['features_path']
+            hog_rule['classifier_path'] = child_response['classifier_path']
+            return
+
+def build_and_dispatch_test_hog(parent_job, children):
+    print('building and dispatching test hog tasks')
+    parent_job.status = 'running'
+    parent_job.elapsed_time = .5
+    parent_job.save()
+    parent_request_data = json.loads(parent_job.request_data)
+    movies = parent_request_data['movies']
+    hog_id = list(parent_request_data['tier_1_scanners']['hog'].keys())[0]
+    hog_rule = parent_request_data['tier_1_scanners']['hog'][hog_id]
+    get_hog_files(hog_rule, children)
+    training_movies_images = get_training_image_urls(hog_rule)
+    for movie_url in movies:
+        movie = movies[movie_url]
+        for frameset_index, frameset_hash in enumerate(movie['framesets']):
+            frameset = movie['framesets'][frameset_hash]
+            image_url = frameset['images'][0]
+            if movie_url in training_movies_images \
+                and image_url in training_movies_images[movie_url]:
+                # skip - its a training image
+                continue
+            if frameset_index % hog_rule['testing_image_skip_factor'] != 0:
+                # skip because of skip factor
+                continue
+            build_movies = {}
+            build_movies[movie_url] = {'framesets': {}}
+            build_movies[movie_url]['framesets'][frameset_hash] = frameset
+            build_t1_scanners = {}
+            build_t1_scanners['hog'] = {}
+            build_t1_scanners['hog'][hog_id] = hog_rule
+            build_request_obj = {
+                'movies': build_movies,
+                'tier_1_scanners': build_t1_scanners,
+            }
+
+            job = Job(
+                request_data=json.dumps(build_request_obj),
+                status='created',
+                description='test hog subtask',
+                app='analyze',
+                operation='hog_test',
+                sequence=0,
+                elapsed_time=0.0,
+                parent=parent_job,
+            )
+            job.save()
+            print('build_and_dispatch_test_hog: dispatching job')
+            test_hog.delay(job.id)
+            if frameset_index % 5 == 0:
+                train_hog_threaded.delay(parent_job.id)
+        train_hog_threaded.delay(parent_job.id)
+    
+def get_training_image_urls(hog_rule):
+    resp_data = {}
+    for ti_key in hog_rule['training_images']:
+        ti = hog_rule['training_images'][ti_key]
+        if ti['movie_url'] not in resp_data:
+            resp_data[ti['movie_url']] = {}
+        resp_data[ti['movie_url']][ti['image_url']] = 1
+    for hn_key in hog_rule['hard_negatives']:
+        hn = hog_rule['hard_negatives'][hn_key]
+        if hn['movie_url'] not in resp_data:
+            resp_data[hn['movie_url']] = {}
+        resp_data[hn['movie_url']][hn['image_url']] = 1
+    return resp_data

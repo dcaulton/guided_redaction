@@ -1829,7 +1829,7 @@ class RedactApplication extends React.Component {
         this.loadGetFramesetMatchChartResults(job, when_done)
 			} else if (job.app === 'analyze' && job.operation === 'scan_ocr') {
         this.loadOcrResults(job, when_done)
-			} else if (job.app === 'analyze' && job.operation === 'hog_train') {
+			} else if (job.app === 'analyze' && job.operation === 'hog_train_threaded') {
         this.loadHogTrainResults(job, when_done)
 			} else if (job.app === 'analyze' && job.operation === 'telemetry_find_matching_frames') {
         this.loadTelemetryResults(job, when_done)

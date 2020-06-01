@@ -165,9 +165,6 @@ export function makePlusMinusRow(label, body_id) {
 
 export function makePlusMinusRowLight(label, body_id) {
   const datatarget = '#' + body_id
-  const the_style = {
-
-  }
   return (
     <div 
         className='row mt-2 mb-2 border-top border-bottom'
