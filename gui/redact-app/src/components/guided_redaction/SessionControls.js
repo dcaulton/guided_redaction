@@ -1,4 +1,7 @@
 import React from 'react';
+import {
+  makePlusMinusRowLight,
+} from './SharedControls'
 
 class SessionControls extends React.Component {
 
@@ -280,20 +283,29 @@ class SessionControls extends React.Component {
             className='btn btn-link'
             onClick={() => this.props.setGlobalStateVar('user', {})}
         >
-          su
+          shed user
         </button>
       </div>
     )
   }
 
-  render() {
-    let campaign_movies_box = this.buildCampaignMoviesBox()
-    let update_state_box = this.buildGlobalStateBox()
-    let workbook_load_button = this.buildWorkbookPickerButton()
-    let workbook_delete_button = this.buildWorkbookDeleteButton()
-    let workbook_name = this.buildWorkbookName()
-    let workbook_id = this.buildWorkbookId()
-    const su_link = this.buildSuLink()
+  buildImpersonateLink() {
+    return (
+      <div>
+        <div className='d-inline'>
+          Impersonate User
+        </div>
+        <div className='d-inline ml-2'>
+          <input 
+              size='25'
+              onChange={(event) => this.props.impersonateUser(event.target.value)}
+          />
+        </div>
+      </div>
+    )
+  }
+
+  buildPanelsCheckboxes() {
     let show_templates_checked = ''
     if (this.props.visibilityFlags['templates']) {
       show_templates_checked = 'checked'
@@ -358,6 +370,185 @@ class SessionControls extends React.Component {
     if (this.props.visibilityFlags['pipelines']) {
       show_pipelines_checked = 'checked'
     }
+
+    return (
+      <div>
+        <div className='row mt-3 bg-light rounded'>
+          <input
+            className='ml-2 mr-2 mt-1'
+            checked={show_templates_checked}
+            type='checkbox'
+            onChange={() => this.props.toggleShowVisibility('templates')}
+          />
+          Show Templates
+        </div>
+
+        <div className='row mt-3 bg-light rounded'>
+          <input
+            className='ml-2 mr-2 mt-1'
+            checked={show_hog_checked}
+            type='checkbox'
+            onChange={() => this.props.toggleShowVisibility('hog')}
+          />
+          Show Hog
+        </div>
+
+        <div className='row mt-3 bg-light rounded'>
+          <input
+            className='ml-2 mr-2 mt-1'
+            checked={show_selected_area_checked}
+            type='checkbox'
+            onChange={() => this.props.toggleShowVisibility('selectedArea')}
+          />
+          Show Selected Area
+        </div>
+
+        <div className='row mt-3 bg-light rounded'>
+          <input
+            className='ml-2 mr-2 mt-1'
+            checked={show_annotate_checked}
+            type='checkbox'
+            onChange={() => this.props.toggleShowVisibility('annotate')}
+          />
+          Show Annotate
+        </div>
+
+        <div className='row mt-3 bg-light rounded'>
+          <input
+            className='ml-2 mr-2 mt-1'
+            checked={show_telemetry_checked}
+            type='checkbox'
+            onChange={() => this.props.toggleShowVisibility('telemetry')}
+          />
+          Show Telemetry
+        </div>
+
+        <div className='row mt-3 bg-light rounded'>
+          <input
+            className='ml-2 mr-2 mt-1'
+            checked={show_ocr_checked}
+            type='checkbox'
+            onChange={() => this.props.toggleShowVisibility('ocr')}
+          />
+          Show Ocr
+        </div>
+
+        <div className='row mt-3 bg-light rounded'>
+          <input
+            className='ml-2 mr-2 mt-1'
+            checked={show_ocr_scene_analysis_checked}
+            type='checkbox'
+            onChange={() => this.props.toggleShowVisibility('ocr_scene_analysis')}
+          />
+          Show Ocr Scene Analysis
+        </div>
+
+        <div className='row mt-3 bg-light rounded'>
+          <input
+            className='ml-2 mr-2 mt-1'
+            checked={show_entity_finder_checked}
+            type='checkbox'
+            onChange={() => this.props.toggleShowVisibility('entity_finder')}
+          />
+          Show Entity Finder
+        </div>
+
+        <div className='row mt-3 bg-light rounded'>
+          <input
+            className='ml-2 mr-2 mt-1'
+            checked={show_diffs_checked}
+            type='checkbox'
+            onChange={() => this.props.toggleShowVisibility('diffs')}
+          />
+          Show Diffs
+        </div>
+
+        <div className='row mt-3 bg-light rounded'>
+          <input
+            className='ml-2 mr-2 mt-1'
+            checked={show_redact_checked}
+            type='checkbox'
+            onChange={() => this.props.toggleShowVisibility('redact')}
+          />
+          Show Redact
+        </div>
+
+        <div className='row mt-3 bg-light rounded'>
+          <input
+            className='ml-2 mr-2 mt-1'
+            checked={show_zip_checked}
+            type='checkbox'
+            onChange={() => this.props.toggleShowVisibility('zip')}
+          />
+          Show Zip
+        </div>
+
+        <div className='row mt-3 bg-light rounded'>
+          <input
+            className='ml-2 mr-2 mt-1'
+            checked={show_movie_sets_checked}
+            type='checkbox'
+            onChange={() => this.props.toggleShowVisibility('movieSets')}
+          />
+          Show Movie Sets
+        </div>
+
+        <div className='row mt-3 bg-light rounded'>
+          <input
+            className='ml-2 mr-2 mt-1'
+            checked={show_results_checked}
+            type='checkbox'
+            onChange={() => this.props.toggleShowVisibility('results')}
+          />
+          Show Results
+        </div>
+
+        <div className='row mt-3 bg-light rounded'>
+          <input
+            className='ml-2 mr-2 mt-1'
+            checked={show_ocr_movie_analysis_checked}
+            type='checkbox'
+            onChange={() => this.props.toggleShowVisibility('ocr_movie_analysis')}
+          />
+          Show Ocr Movie Analysis
+        </div>
+
+        <div className='row mt-3 bg-light rounded'>
+          <input
+            className='ml-2 mr-2 mt-1'
+            checked={show_filesystem_checked}
+            type='checkbox'
+            onChange={() => this.props.toggleShowVisibility('filesystem')}
+          />
+          Show Filesystem
+        </div>
+
+        <div className='row mt-3 bg-light rounded'>
+          <input
+            className='ml-2 mr-2 mt-1'
+            checked={show_pipelines_checked}
+            type='checkbox'
+            onChange={() => this.props.toggleShowVisibility('pipelines')}
+          />
+          Show Pipelines
+        </div>
+      </div>
+    )
+  }
+
+  render() {
+    const campaign_movies_box = this.buildCampaignMoviesBox()
+    const update_state_box = this.buildGlobalStateBox()
+    const workbook_load_button = this.buildWorkbookPickerButton()
+    const workbook_delete_button = this.buildWorkbookDeleteButton()
+    const workbook_name = this.buildWorkbookName()
+    const workbook_id = this.buildWorkbookId()
+    const show_hide_user = makePlusMinusRowLight('user', 'session_user_div')
+    const show_hide_panels = makePlusMinusRowLight('panels', 'session_panels_div')
+    const su_link = this.buildSuLink()
+    const impersonate_link = this.buildImpersonateLink()
+    const panels_checkboxes = this.buildPanelsCheckboxes() 
+
     let play_sound_checked = ''
     if (this.props.playSound) {
       play_sound_checked = 'checked'
@@ -370,12 +561,12 @@ class SessionControls extends React.Component {
     if (this.props.preserve_movie_audio) {
       preserve_movie_audio_checked = 'checked'
     }
-    let when_done_selector = this.buildWhenDoneSelector()
-    let user_tone_selector = this.buildUserToneSelector()
-    let ping_button = this.buildPingButton() 
-    let workbook_save_button = this.buildWorkbookSaveButton()
-    let rebase_movies_button = this.buildRebaseMoviesButton()
-    let rebase_jobs_button = this.buildRebaseJobsButton()
+    const when_done_selector = this.buildWhenDoneSelector()
+    const user_tone_selector = this.buildUserToneSelector()
+    const ping_button = this.buildPingButton() 
+    const workbook_save_button = this.buildWorkbookSaveButton()
+    const rebase_movies_button = this.buildRebaseMoviesButton()
+    const rebase_jobs_button = this.buildRebaseJobsButton()
 
     return (
         <div className='row bg-light rounded mt-3'>
@@ -449,167 +640,6 @@ class SessionControls extends React.Component {
                   </div>
                 </div>
 
-
-                <div className='row mt-3 bg-light rounded'>
-                  <input
-                    className='ml-2 mr-2 mt-1'
-                    checked={show_templates_checked}
-                    type='checkbox'
-                    onChange={() => this.props.toggleShowVisibility('templates')}
-                  />
-                  Show Templates
-                </div>
-
-                <div className='row mt-3 bg-light rounded'>
-                  <input
-                    className='ml-2 mr-2 mt-1'
-                    checked={show_hog_checked}
-                    type='checkbox'
-                    onChange={() => this.props.toggleShowVisibility('hog')}
-                  />
-                  Show Hog
-                </div>
-
-                <div className='row mt-3 bg-light rounded'>
-                  <input
-                    className='ml-2 mr-2 mt-1'
-                    checked={show_selected_area_checked}
-                    type='checkbox'
-                    onChange={() => this.props.toggleShowVisibility('selectedArea')}
-                  />
-                  Show Selected Area
-                </div>
-
-                <div className='row mt-3 bg-light rounded'>
-                  <input
-                    className='ml-2 mr-2 mt-1'
-                    checked={show_annotate_checked}
-                    type='checkbox'
-                    onChange={() => this.props.toggleShowVisibility('annotate')}
-                  />
-                  Show Annotate
-                </div>
-
-                <div className='row mt-3 bg-light rounded'>
-                  <input
-                    className='ml-2 mr-2 mt-1'
-                    checked={show_telemetry_checked}
-                    type='checkbox'
-                    onChange={() => this.props.toggleShowVisibility('telemetry')}
-                  />
-                  Show Telemetry
-                </div>
-
-                <div className='row mt-3 bg-light rounded'>
-                  <input
-                    className='ml-2 mr-2 mt-1'
-                    checked={show_ocr_checked}
-                    type='checkbox'
-                    onChange={() => this.props.toggleShowVisibility('ocr')}
-                  />
-                  Show Ocr
-                </div>
-
-                <div className='row mt-3 bg-light rounded'>
-                  <input
-                    className='ml-2 mr-2 mt-1'
-                    checked={show_ocr_scene_analysis_checked}
-                    type='checkbox'
-                    onChange={() => this.props.toggleShowVisibility('ocr_scene_analysis')}
-                  />
-                  Show Ocr Scene Analysis
-                </div>
-
-                <div className='row mt-3 bg-light rounded'>
-                  <input
-                    className='ml-2 mr-2 mt-1'
-                    checked={show_entity_finder_checked}
-                    type='checkbox'
-                    onChange={() => this.props.toggleShowVisibility('entity_finder')}
-                  />
-                  Show Entity Finder
-                </div>
-
-                <div className='row mt-3 bg-light rounded'>
-                  <input
-                    className='ml-2 mr-2 mt-1'
-                    checked={show_diffs_checked}
-                    type='checkbox'
-                    onChange={() => this.props.toggleShowVisibility('diffs')}
-                  />
-                  Show Diffs
-                </div>
-
-                <div className='row mt-3 bg-light rounded'>
-                  <input
-                    className='ml-2 mr-2 mt-1'
-                    checked={show_redact_checked}
-                    type='checkbox'
-                    onChange={() => this.props.toggleShowVisibility('redact')}
-                  />
-                  Show Redact
-                </div>
-
-                <div className='row mt-3 bg-light rounded'>
-                  <input
-                    className='ml-2 mr-2 mt-1'
-                    checked={show_zip_checked}
-                    type='checkbox'
-                    onChange={() => this.props.toggleShowVisibility('zip')}
-                  />
-                  Show Zip
-                </div>
-
-                <div className='row mt-3 bg-light rounded'>
-                  <input
-                    className='ml-2 mr-2 mt-1'
-                    checked={show_movie_sets_checked}
-                    type='checkbox'
-                    onChange={() => this.props.toggleShowVisibility('movieSets')}
-                  />
-                  Show Movie Sets
-                </div>
-
-                <div className='row mt-3 bg-light rounded'>
-                  <input
-                    className='ml-2 mr-2 mt-1'
-                    checked={show_results_checked}
-                    type='checkbox'
-                    onChange={() => this.props.toggleShowVisibility('results')}
-                  />
-                  Show Results
-                </div>
-
-                <div className='row mt-3 bg-light rounded'>
-                  <input
-                    className='ml-2 mr-2 mt-1'
-                    checked={show_ocr_movie_analysis_checked}
-                    type='checkbox'
-                    onChange={() => this.props.toggleShowVisibility('ocr_movie_analysis')}
-                  />
-                  Show Ocr Movie Analysis
-                </div>
-
-                <div className='row mt-3 bg-light rounded'>
-                  <input
-                    className='ml-2 mr-2 mt-1'
-                    checked={show_filesystem_checked}
-                    type='checkbox'
-                    onChange={() => this.props.toggleShowVisibility('filesystem')}
-                  />
-                  Show Filesystem
-                </div>
-
-                <div className='row mt-3 bg-light rounded'>
-                  <input
-                    className='ml-2 mr-2 mt-1'
-                    checked={show_pipelines_checked}
-                    type='checkbox'
-                    onChange={() => this.props.toggleShowVisibility('pipelines')}
-                  />
-                  Show Pipelines
-                </div>
-
                 <div className='row mt-3 bg-light rounded'>
                   <input
                     className='ml-2 mr-2 mt-1'
@@ -622,7 +652,6 @@ class SessionControls extends React.Component {
 
                 <div className='row mt-3 bg-light rounded'>
                   {user_tone_selector}
-                  {su_link}
                 </div>
 
                 <div className='row mt-3 bg-light rounded'>
@@ -663,6 +692,27 @@ class SessionControls extends React.Component {
                     <span className='h5'>Update Global State (paste json below)</span>
                     {update_state_box}
                   </div>
+                </div>
+
+                {show_hide_user}
+                <div
+                    id='session_user_div'
+                    className='collapse'
+                >
+                  <div>
+                    {su_link}
+                  </div>
+                  <div>
+                    {impersonate_link}
+                  </div>
+                </div>
+
+                {show_hide_panels}
+                <div
+                    id='session_panels_div'
+                    className='collapse'
+                >
+                  {panels_checkboxes}
                 </div>
 
               </div>

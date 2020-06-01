@@ -1455,6 +1455,7 @@ class InsightsPanel extends React.Component {
             tier_1_scanner_current_ids={this.props.tier_1_scanner_current_ids}
             setModalImage={this.setModalImage}
             mask_method={this.props.mask_method}
+            impersonateUser={this.props.impersonateUser}
           />
         </div>
 

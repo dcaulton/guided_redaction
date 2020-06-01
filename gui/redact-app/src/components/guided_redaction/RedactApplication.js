@@ -176,6 +176,14 @@ class RedactApplication extends React.Component {
     this.wrapUpJob=this.wrapUpJob.bind(this)
     this.readTelemetryRawData=this.readTelemetryRawData.bind(this)
     this.toggleShowVisibility=this.toggleShowVisibility.bind(this)
+    this.impersonateUser=this.impersonateUser.bind(this)
+  }
+
+  impersonateUser(new_user_id) {
+    let deepCopyUser = JSON.parse(JSON.stringify(this.state.user))
+    deepCopyUser['id'] = new_user_id
+    this.setGlobalStateVar('user', deepCopyUser)
+    this.processUserClasses()
   }
 
   getUserOnMount() {
@@ -2624,6 +2632,7 @@ class RedactApplication extends React.Component {
                 mask_method={this.state.mask_method}
                 visibilityFlags={this.state.visibilityFlags}
                 toggleShowVisibility={this.toggleShowVisibility}
+                impersonateUser={this.impersonateUser}
               />
             </Route>
           </Switch>
