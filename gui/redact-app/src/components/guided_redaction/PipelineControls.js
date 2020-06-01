@@ -28,6 +28,7 @@ class PipelineControls extends React.Component {
         'telemetry': {},
         'redact': {},
         'split_and_hash': {},
+        'secure_files_import': {},
         'zip': {},
       },
       movie_urls: [],
@@ -677,6 +678,7 @@ class NodeCard extends React.Component {
               }
           >
             <option value=''></option>
+            <option value='secure_files_import'>secure files import</option>
             <option value='split_and_hash'>split and hash</option>
             <option value='template'>template</option>
             <option value='selected_area'>selected area</option>
@@ -718,6 +720,7 @@ class NodeCard extends React.Component {
               name='step_type'
               id={edge_dropdown_id}
           >
+            <option key='' value='' selected></option>
             {Object.keys(this.props.node_metadata['node']).map((node_id, index) => {
               if (node_id === this.props.node_id) {
                 return ''

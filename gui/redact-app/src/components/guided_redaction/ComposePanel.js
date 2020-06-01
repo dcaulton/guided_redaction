@@ -403,17 +403,6 @@ class ComposePanel extends React.Component {
                    if you go back to the Compose tab and wait, the movie will appear when it is ready
                  </li>
                  <li>
-                   If you don't see the Movie and Job cards, then expand the file system section towards the bottom
-                   of the page
-                 </li>
-                 <li>
-                   In the 'Import from secure files' section, specify your recording Id and press Go
-                 </li>
-                 <li>
-                   You will soon see a new card in the Videos column on the left.  Press the 'split' link on 
-                   that card.  It may take a minute or two to split
-                 </li>
-                 <li>
                    Then return to this page by pressing the Compose tab on top
                  </li>
                </ul>
@@ -654,9 +643,42 @@ class ComposePanel extends React.Component {
     )
   }
 
+  doFetchAndSplit() {
+    const rec_id = document.getElementById('recording_id').value
+    if (!rec_id) {
+      this.setMessage('no recording id specified, not fetching')
+    }
+    console.log('fetching recording id '+rec_id)
+  }
+
+
+  buildFetchAndSplit() {
+    return (
+      <div>
+        <div className='d-inline ml-4'>
+          fetch recording id
+        </div>
+        <div className='d-inline ml-2'>
+          <input
+            id='recording_id'
+          />
+        </div>
+        <div className='d-inline ml-2'>
+          <button
+              className='btn btn-primary p-0'
+              onClick={()=>this.doFetchAndSplit()}
+          >
+            Go
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   render() {
     const not_loaded_message = this.buildNotLoadedMessage()
     const capture_button = this.buildCaptureButton()
+    const fetch_and_split_input = this.buildFetchAndSplit()
     const goto_redaction_button = this.buildGotoRedactionButton()
     const when_done_link = this.buildWhenDoneLink()
     const max_range = this.getMaxRange()
@@ -730,6 +752,7 @@ class ComposePanel extends React.Component {
 
                 <div className='row m-2'>
                   {capture_button}
+                  {fetch_and_split_input}
                 </div>
 
               </div>
