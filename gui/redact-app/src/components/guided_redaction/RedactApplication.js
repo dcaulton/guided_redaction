@@ -1958,15 +1958,15 @@ class RedactApplication extends React.Component {
       for (let i=0; i < this.state.campaign_movies.length; i++) {
         build_movies[this.state.campaign_movies[i]] = {}
       }
+      specified_input['movies'] = build_movies
     } else if (scope === 'current_movie') {
       build_movies[this.state.movie_url] = {}
-    } else if (scope === 'input_json') {
+      specified_input['movies'] = build_movies
+    } else if (scope === 'json_obj') {
       specified_input = extra_data
     }
     let build_payload = {
       pipeline_id: the_uuid,
-// TODO remove movies when we have fully cut over to using input
-      movies: build_movies,
       input: specified_input,
     }
     if (this.state.current_workbook_id) {

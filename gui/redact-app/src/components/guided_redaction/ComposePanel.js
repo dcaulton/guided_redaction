@@ -652,10 +652,20 @@ class ComposePanel extends React.Component {
     const input_obj = {
       'recording_ids': [rec_id],
     }
-    this.props.dispatchPipeline('fetch_split_hash_secure_file', 'input_json', input_obj)
-    console.log('fetching recording id '+rec_id)
+    let fetch_split_pipeline_id = ''
+    for (let i=0; i < Object.keys(this.props.pipelines).length; i++) {
+      const pipeline_id = Object.keys(this.props.pipelines)[i]
+      const pipeline = this.props.pipelines[pipeline_id]
+      if (pipeline['name'] === 'fetch_split_hash_secure_file') {
+        fetch_split_pipeline_id = pipeline_id
+      }
+    }
+    if (!fetch_split_pipeline_id) {
+      this.setMessage('no fetch and split pipeline found, aborting')
+      return
+    }
+    this.props.dispatchPipeline(fetch_split_pipeline_id, 'json_obj', input_obj)
   }
-
 
   buildFetchAndSplit() {
     return (
