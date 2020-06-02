@@ -1383,13 +1383,13 @@ class RedactApplication extends React.Component {
     }
   }
 
-  loadSplitAndHashResults(job, when_done=(()=>{})) {
+  loadMoviesFromJobResults(job, when_done=(()=>{})) {
     const response_data = JSON.parse(job.response_data)
     const request_data = JSON.parse(job.request_data)
     let deepCopyMovies = JSON.parse(JSON.stringify(this.state.movies))
     let movie_url = ''
-    for (let i=0; i < request_data['movie_urls'].length; i++) {
-      movie_url = request_data['movie_urls'][i]
+    for (let i=0; i < Object.keys(response_data['movies']).length; i++) {
+      movie_url = Object.keys(response_data['movies'])[i]
       deepCopyMovies[movie_url] = response_data['movies'][movie_url]
       deepCopyMovies[movie_url]['nickname'] = this.getMovieNicknameFromUrl(movie_url)
     }
@@ -1848,7 +1848,11 @@ class RedactApplication extends React.Component {
 			} else if (job.app === 'analyze' && job.operation === 'selected_area_threaded') {
         this.loadSelectedAreaResults(job, when_done)
 			} else if ((job.app === 'parse' && job.operation === 'split_and_hash_threaded')) {
-        this.loadSplitAndHashResults(job, when_done)
+        this.loadMoviesFromJobResults(job, when_done)
+			} else if (job.app === 'pipeline'  && 
+          job.operation === 'pipeline' && 
+          job.description === 'top level job for pipeline fetch_split_hash_secure_file') {
+        this.loadMoviesFromJobResults(job, when_done)
 			} else if (job.app === 'parse' && job.operation === 'split_threaded') {
         this.loadSplitResults(job, when_done)
 			} else if (job.app === 'parse' && job.operation === 'hash_movie') {
