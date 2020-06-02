@@ -27,19 +27,11 @@ def get_secure_file(job_uuid):
     job.save()
     print('running get_secure_file for job {}'.format(job_uuid))
     worker = FilesViewSetDownloadSecureFile()
-# TODO uncomment when fixed
-#    response = worker.process_create_request(json.loads(job.request_data))
-    response = {
-        'movies': {
-            'http://localhost:8080/088712d1-76c4-4905-a903-57325d53d83a/0d0b8fd4-75cb-4793-8740-ec78e46d06da.mp4': {},
-        }
-    }
+    response = worker.process_create_request(json.loads(job.request_data))
     if not Job.objects.filter(pk=job_uuid).exists():
         return
     job = Job.objects.get(pk=job_uuid)
-# TODO uncomment when fixed
-#    job.response_data = json.dumps(response.data)
-    job.response_data = json.dumps(response)
+    job.response_data = json.dumps(response.data)
     job.status = 'success'
     job.save()
 
