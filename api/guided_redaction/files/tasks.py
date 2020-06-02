@@ -27,12 +27,19 @@ def get_secure_file(job_uuid):
     job.save()
     print('running get_secure_file for job {}'.format(job_uuid))
     worker = FilesViewSetDownloadSecureFile()
-    rd = json.loads(job.request_data)
-    response = worker.process_create_request(json.loads(job.request_data))
+# TODO uncomment when fixed
+#    response = worker.process_create_request(json.loads(job.request_data))
+    response = {
+        'movies': {
+            'http://localhost:8080/088712d1-76c4-4905-a903-57325d53d83a/0d0b8fd4-75cb-4793-8740-ec78e46d06da.mp4': {},
+        }
+    }
     if not Job.objects.filter(pk=job_uuid).exists():
         return
     job = Job.objects.get(pk=job_uuid)
-    job.response_data = json.dumps(response.data)
+# TODO uncomment when fixed
+#    job.response_data = json.dumps(response.data)
+    job.response_data = json.dumps(response)
     job.status = 'success'
     job.save()
 
@@ -51,7 +58,6 @@ def save_movie_metadata(job_uuid):
     job.save()
     print('running save_movie_metadata for job {}'.format(job_uuid))
     worker = FilesViewSetMovieMetadata()
-    rd = json.loads(job.request_data)
     response = worker.process_create_request(json.loads(job.request_data))
     if not Job.objects.filter(pk=job_uuid).exists():
         return
@@ -70,7 +76,6 @@ def load_movie_metadata(job_uuid):
     job.save()
     print('running load_movie_metadata for job {}'.format(job_uuid))
     worker = FilesViewSetMovieMetadata()
-    rd = json.loads(job.request_data)
     response = worker.process_retrieve_request(json.loads(job.request_data))
     if not Job.objects.filter(pk=job_uuid).exists():
         return

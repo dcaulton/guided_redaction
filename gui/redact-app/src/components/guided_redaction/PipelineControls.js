@@ -748,7 +748,6 @@ class NodeCard extends React.Component {
           <select
               name='step_type'
               id={edge_dropdown_id}
-              defaultValue=''
           >
             <option key='' value=''></option>
             {Object.keys(this.props.node_metadata['node']).map((node_id, index) => {

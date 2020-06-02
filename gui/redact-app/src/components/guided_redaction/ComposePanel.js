@@ -441,9 +441,6 @@ class ComposePanel extends React.Component {
   }
 
   buildComposeMessage() {
-    if (!this.props.movie_url) {
-      return ''
-    }
     if (!this.state.message) {
       return '.'
     }
@@ -653,6 +650,33 @@ class ComposePanel extends React.Component {
     )
   }
 
+  buildComposeImage() {
+    if (this.state.compose_display_image) {
+      return (
+        <img
+            id='compose_image'
+            className='p-0 m-0 mw-100 mh-100'
+            src={this.state.compose_display_image}
+            alt={this.state.compose_display_image}
+        />
+      )
+    } else {
+      const the_style = {
+        'height': '500px',
+        'width': '800px',
+        'paddingTop': '200px',
+      }
+      return (
+        <div
+            className='h1 text-center'
+            style={the_style}
+        >
+          No movie loaded yet
+        </div>
+      )
+    }
+  }
+
   render() {
     const capture_button = this.buildCaptureButton()
     const fetch_and_split_input = this.buildFetchAndSplit()
@@ -661,6 +685,7 @@ class ComposePanel extends React.Component {
     const max_range = this.getMaxRange()
     const view_dropdown = this.buildViewDropdown()
     const compose_message = this.buildComposeMessage()
+    const compose_image = this.buildComposeImage()
     const telemetry_picker = this.buildTelemetryPicker() 
     let when_done_divider = ''
     if (when_done_link && goto_redaction_button) {
@@ -679,12 +704,7 @@ class ComposePanel extends React.Component {
             <div className='row bg-light'>
               <div className='col'>
                 <div className='row'>
-                  <img
-                      id='compose_image'
-                      className='p-0 m-0 mw-100 mh-100'
-                      src={this.state.compose_display_image}
-                      alt={this.state.compose_display_image}
-                  />
+                  {compose_image}
                 </div>
 
               </div>

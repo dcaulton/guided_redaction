@@ -16,3 +16,12 @@ class Job(models.Model):
     parent = models.ForeignKey('Job', on_delete=models.CASCADE, null=True)
     workbook = models.ForeignKey('workbooks.Workbook', on_delete=models.CASCADE, null=True)
 
+    def __str__(self):
+        disp_hash = {
+            'id': str(self.id),
+            'status': self.status,
+            'app': self.app,
+            'operation': self.operation,
+            'parent_id': str(self.parent_id),
+        }
+        return disp_hash.__str__()

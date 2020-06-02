@@ -120,7 +120,6 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
 
         
     def build_parent_job(self, pipeline, build_request_data, content, workbook_id):
-        print('BUILDING PARENT JOB FOR {}'.format(pipeline))
         job = Job(
             status='created',
             description='top level job for pipeline '+pipeline.name,
@@ -247,7 +246,7 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
         job = Job(
             status='created',
             description='secure files import for pipeline',
-            app='parse',
+            app='files',
             operation='get_secure_file',
             sequence=0,
             elapsed_time=0.0,
@@ -423,6 +422,9 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
             for movie_url in response_data['movies']:
                 parent_job_request_data['movies'][movie_url] = response_data['movies'][movie_url]
             parent_job.request_data = json.dumps(parent_job_request_data)
+            return True
+        elif job.operation == 'get_secure_file':
+            parent_job.request_data = job.response_data
             return True
         elif job.operation == 'redact':
             source_movies = json.loads(parent_job.request_data)['movies']
