@@ -672,7 +672,7 @@ class InsightsPanel extends React.Component {
     job_data['app'] = 'files'
     job_data['operation'] = 'get_secure_file'
     job_data['description'] = 'get secure file: ' + extra_data
-    job_data['request_data']['recording_id'] = extra_data
+    job_data['request_data']['recording_ids'] = [extra_data]
     return job_data
   }
 

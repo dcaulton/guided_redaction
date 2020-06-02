@@ -123,7 +123,7 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
         print('BUILDING PARENT JOB FOR {}'.format(pipeline))
         job = Job(
             status='created',
-            description='top level job for pipeline '+pipeline,
+            description='top level job for pipeline '+pipeline.name,
             app='pipeline',
             operation='pipeline',
             sequence=0,
@@ -151,6 +151,8 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
             return self.build_tier_1_scanner_job('ocr', content, node, parent_job, previous_job)
         elif node['type'] == 'split_and_hash':
             return self.build_split_and_hash_job(content, node, parent_job)
+        elif node['type'] == 'secure_files_import':
+            return self.build_secure_files_import_job(content, node, parent_job)
         elif node['type'] == 'redact':
             return self.build_redact_job(content, node, parent_job, previous_job)
         elif node['type'] == 'zip':
@@ -224,6 +226,29 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
             description='split and hash threaded for pipeline',
             app='parse',
             operation='split_and_hash_threaded',
+            sequence=0,
+            elapsed_time=0.0,
+            request_data=json.dumps(request_data),
+            parent=parent_job,
+        )
+        job.save()
+        Attribute(
+            name='node_id',
+            value=node['id'],
+            job=job,
+        ).save()
+        return job
+
+    def build_secure_files_import_job(self, content, node, parent_job):
+        parent_request_data = json.loads(parent_job.request_data)
+        request_data = {
+          'recording_ids': parent_request_data['recording_ids'],
+        }
+        job = Job(
+            status='created',
+            description='secure files import for pipeline',
+            app='parse',
+            operation='get_secure_file',
             sequence=0,
             elapsed_time=0.0,
             request_data=json.dumps(request_data),

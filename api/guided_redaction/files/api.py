@@ -50,22 +50,25 @@ class FilesViewSet(viewsets.ViewSet):
         except Exception as e:
             return self.error(e, status_code=400)
 
-            
+
 class FilesViewSetDownloadSecureFile(viewsets.ViewSet):
     def create(self, request):
         request_data = request.data
         return self.process_create_request(request_data)
 
     def process_create_request(self, request_data):
-        if not request_data.get("recording_id"):
-            return self.error("recording_id is required")
+        if not request_data.get("recording_ids"):
+            return self.error("recording_ids is required")
 
         try:
             from secure_files.controller import get_file
-            data = get_file(request_data.get('recording_id'))
-            filename = request_data.get('recording_id') + '.mp4'
-            file_url = make_url_from_file(filename, data['content'])
-            return Response({"url": file_url})
+            build_urls = {}
+            for recording_id in request_data.get('recording_ids'):
+                data = get_file(recording_id)
+                filename = recording_id + '.mp4'
+                file_url = make_url_from_file(filename, data['content'])
+                build_urls[file_url] = {}
+            return Response({"movies": build_urls})
         except Exception as e:
             return self.error(e, status_code=400)
 
