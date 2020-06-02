@@ -364,9 +364,6 @@ class ComposePanel extends React.Component {
   }
 
   buildWhenDoneLink() {
-    if (this.state.compose_image === '') {
-      return ''
-    }
     if (this.props.whenDoneTarget) {
       return (
         <button
@@ -375,40 +372,6 @@ class ComposePanel extends React.Component {
         >
           Go to Precision Learning
         </button>
-      )
-    }
-  }
-
-  buildNotLoadedMessage() {
-    if (!this.props.movie_url) {
-      return (
-        <div>
-          <div className='col-lg-9'>
-            <div className='h1 mt-5 text-center'>
-              movie not loaded
-            </div>
-            <div className='ml-5 mr-5'>
-               <div className='h4'>
-                 Your movie may still be unzipping or there may have been a problem
-                 retrieving it.  To fetch a movie from secure files on your own: 
-               </div>
-               <ul>
-                 <li>
-                   Go to the Insights tab on the top of this page
-                 </li>
-                 <li>
-                   If you see a new card in the Videos column on the left with the name of your movie, 
-                   and you see a card in the Jobs column on the right which says 'split and hash threaded', 
-                   and the job card has has a big label that says 'running', then your movie is still being split, 
-                   if you go back to the Compose tab and wait, the movie will appear when it is ready
-                 </li>
-                 <li>
-                   Then return to this page by pressing the Compose tab on top
-                 </li>
-               </ul>
-            </div>
-          </div>
-        </div>
       )
     }
   }
@@ -691,7 +654,6 @@ class ComposePanel extends React.Component {
   }
 
   render() {
-    const not_loaded_message = this.buildNotLoadedMessage()
     const capture_button = this.buildCaptureButton()
     const fetch_and_split_input = this.buildFetchAndSplit()
     const goto_redaction_button = this.buildGotoRedactionButton()
@@ -704,19 +666,11 @@ class ComposePanel extends React.Component {
     if (when_done_link && goto_redaction_button) {
       when_done_divider = '|'
     }
-    let the_display='block'
-    if (!this.state.compose_image) {
-      the_display='none'
-    }
-    const image_offset_display_style = {
-      display: the_display,
-    }
     return (
       <div id='compose_panel_container'>
         <div className='row ml-4'>
           <div className='col-lg-6'>
             <div className='row m-2' >
-                {not_loaded_message}
                 {when_done_link}
                 {when_done_divider}
                 {goto_redaction_button}
@@ -738,7 +692,6 @@ class ComposePanel extends React.Component {
 
             <div 
                 className='row bg-light rounded border'
-                style={image_offset_display_style}
             >
               <div className='col'>
 
@@ -787,7 +740,6 @@ class ComposePanel extends React.Component {
         <div 
             id='sequence_area' 
             className='row'
-            style={image_offset_display_style}
         >
           <SequenceAndSubsequencePanel
             sequence_movie={this.getSequence()}
