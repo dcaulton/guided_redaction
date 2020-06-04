@@ -19,9 +19,7 @@ class LinkViewSetLearnDev(viewsets.ViewSet):
         learn_dev_url = request.data.get(
             'learn_dev_url', 
             'https://osmae2lnxs117.amer.sykes.com//microlearning/mixer/create/6956de85-d9b5-4fd2-a8b2-45e2f06a4daa/7412597f-794b-4245-8289-4e92a1845a9a/'
-#            'https://osmae2lnxs117.amer.sykes.com/microlearning/mixer/create/1435f669-773a-4e1e-ae0a-c43f46995178/d6ed106c-f662-4dcd-83e5-c82be77eae8d/'
         )
-#        auth_token = request.data.get('learn_dev_auth_token', '1579c82fcaeff643bc1a8a01540fc2696ce4332d')
         data_uris = []
         image_urls = request.data.get('image_urls')
         for image_url in image_urls:
@@ -43,18 +41,10 @@ class LinkViewSetLearnDev(viewsets.ViewSet):
             data=form_data,
             headers={
               'Content-Type': content_type,
-#              'Authorization': 'Token ' + auth_token,
             },
             verify=False,
             allow_redirects=False
         )
-        # DEBUGGING
-        print('nugget')
-        print(learn_response.status_code)
-        print(learn_response.reason)
-        print(learn_response.headers)
-        print(learn_response.raw.read())
-
         landing_page = learn_response.headers.get('Location')
         if not landing_page:
             return self.error(['could not get edit url from learn response'], status_code=400)
