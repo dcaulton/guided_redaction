@@ -176,3 +176,7 @@ def make_url_from_file(filename, file_binary_data, the_uuid=''):
     file_url = file_writer.get_url_for_file_path(file_fullpath)
     file_writer.write_binary_data_to_filepath(file_binary_data, file_fullpath)
     return file_url
+
+class FilesViewSetGetVersion(viewsets.ViewSet):
+    def list(self, request):
+        return Response({"version": '1.0.0'})

@@ -43,7 +43,10 @@ class InsightsPanel extends React.Component {
     this.currentImageIsOsaMatchImage=this.currentImageIsOsaMatchImage.bind(this)
     this.afterPingSuccess=this.afterPingSuccess.bind(this)
     this.afterPingFailure=this.afterPingFailure.bind(this)
+    this.afterGetVersionSuccess=this.afterGetVersionSuccess.bind(this)
+    this.afterGetVersionFailure=this.afterGetVersionFailure.bind(this)
     this.callPing=this.callPing.bind(this)
+    this.callGetVersion=this.callGetVersion.bind(this)
     this.submitInsightsJob=this.submitInsightsJob.bind(this)
     this.setSelectedAreaTemplateAnchor=this.setSelectedAreaTemplateAnchor.bind(this)
     this.getCurrentSelectedAreaMeta=this.getCurrentSelectedAreaMeta.bind(this)
@@ -947,6 +950,20 @@ class InsightsPanel extends React.Component {
     this.displayInsightsMessage('ping failed')
   }
 
+  callGetVersion() {
+    this.props.doGetVersion(this.afterGetVersionSuccess, this.afterGetVersionFailure)
+  }
+
+  afterGetVersionSuccess(responseJson) {
+    const version = responseJson.version
+    this.displayInsightsMessage('version is '+version)
+  }
+
+  afterGetVersionFailure(error) {
+    console.error(error);
+    this.displayInsightsMessage('get version failed')
+  }
+
   changeCampaign = (newCampaignName) => {
     console.log('campaign is now '+newCampaignName)
   }
@@ -1389,6 +1406,7 @@ class InsightsPanel extends React.Component {
             insights_image={this.state.insights_image}
             movie_url={this.props.movie_url}
             callPing={this.callPing}
+            callGetVersion={this.callGetVersion}
             submitInsightsJob={this.submitInsightsJob}
             saveWorkbook={this.props.saveWorkbook}
             saveWorkbookName={this.props.saveWorkbookName}

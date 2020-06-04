@@ -46,6 +46,12 @@ class LinkViewSetLearnDev(viewsets.ViewSet):
             verify=False,
             allow_redirects=False
         )
+        # DEBUGGING
+        print('nugget')
+        print(learn_response.status_code)
+        print(learn_response.reason)
+        print(learn_response.headers)
+        print(learn_response.raw.read())
 
         landing_page = learn_response.headers.get('Location')
         if not landing_page:

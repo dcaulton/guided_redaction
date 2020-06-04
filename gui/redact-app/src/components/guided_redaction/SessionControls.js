@@ -233,6 +233,19 @@ class SessionControls extends React.Component {
     )
   }
 
+  buildGetVersionButton() {
+    return (
+      <div className='d-inline'>
+        <button
+            className='btn btn-primary mt-2 ml-2'
+            onClick={() => this.props.callGetVersion()}
+        >
+          Get Api Version
+        </button>
+      </div>
+    )
+  }
+
   buildWorkbookSaveButton() {
     return (
       <div className='d-inline'>
@@ -564,6 +577,7 @@ class SessionControls extends React.Component {
     const when_done_selector = this.buildWhenDoneSelector()
     const user_tone_selector = this.buildUserToneSelector()
     const ping_button = this.buildPingButton() 
+    const get_version_button = this.buildGetVersionButton() 
     const workbook_save_button = this.buildWorkbookSaveButton()
     const rebase_movies_button = this.buildRebaseMoviesButton()
     const rebase_jobs_button = this.buildRebaseJobsButton()
@@ -599,6 +613,7 @@ class SessionControls extends React.Component {
 
                 <div className='row mt-3 bg-light rounded'>
                   {ping_button}
+                  {get_version_button}
 
                   <div className='d-inline'>
                       {workbook_load_button}

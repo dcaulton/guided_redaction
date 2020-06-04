@@ -393,6 +393,7 @@ class BottomInsightsControls extends React.Component {
           playSound={this.props.playSound}
           displayInsightsMessage={this.props.displayInsightsMessage}
           callPing={this.props.callPing}
+          callGetVersion={this.props.callGetVersion}
           workbooks={this.props.workbooks}
           deleteWorkbook={this.props.deleteWorkbook}
           loadWorkbook={this.props.loadWorkbook}

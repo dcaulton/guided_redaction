@@ -120,6 +120,7 @@ class RedactApplication extends React.Component {
     this.handleMergeFramesets=this.handleMergeFramesets.bind(this)
     this.setImageScale=this.setImageScale.bind(this)
     this.doPing=this.doPing.bind(this)
+    this.doGetVersion=this.doGetVersion.bind(this)
     this.cancelJob=this.cancelJob.bind(this)
     this.submitJob=this.submitJob.bind(this)
     this.getJobs=this.getJobs.bind(this)
@@ -265,6 +266,8 @@ class RedactApplication extends React.Component {
       return api_server_url + 'v1/files'
     } else if (url_name === 'pipelines_url') {
       return api_server_url + 'v1/pipelines'
+    } else if (url_name === 'version_url') {
+      return api_server_url + 'v1/files/get-version'
     }
   }
 
@@ -1006,22 +1009,40 @@ class RedactApplication extends React.Component {
     return file_name_before_dot
   }
 
-  async doPing(when_done_success, when_done_failure) {                                                              
-    await fetch(this.getUrl('ping_url'), {                                          
-      method: 'GET',                                                            
+  async doPing(when_done_success, when_done_failure) {
+    await fetch(this.getUrl('ping_url'), {
+      method: 'GET',
       headers: this.buildJsonHeaders(),
-    })                                                                          
-    .then((response) => response.json())                                        
-    .then((responseJson) => {                                                   
+    })
+    .then((response) => response.json())
+    .then((responseJson) => {
       if (Object.keys(responseJson).includes('response') && responseJson['response'] === 'pong') {
         when_done_success(responseJson)
       } else {
         when_done_failure()
       }
-    })                                                                          
-    .catch((error) => {                                                         
+    })
+    .catch((error) => {
       when_done_failure()
-    })                                                                          
+    })
+  }
+
+  async doGetVersion(when_done_success, when_done_failure) {
+    await fetch(this.getUrl('version_url'), {
+      method: 'GET',
+      headers: this.buildJsonHeaders(),
+    })
+    .then((response) => response.json())
+    .then((responseJson) => {
+      if (Object.keys(responseJson).includes('version')) {
+        when_done_success(responseJson)
+      } else {
+        when_done_failure()
+      }
+    })
+    .catch((error) => {
+      when_done_failure()
+    })
   }
 
   getMaskZonesForAnchor(template, anchor_id) {
@@ -1385,7 +1406,6 @@ class RedactApplication extends React.Component {
 
   loadMoviesFromJobResults(job, when_done=(()=>{})) {
     const response_data = JSON.parse(job.response_data)
-    const request_data = JSON.parse(job.request_data)
     let deepCopyMovies = JSON.parse(JSON.stringify(this.state.movies))
     let movie_url = ''
     for (let i=0; i < Object.keys(response_data['movies']).length; i++) {
@@ -2589,6 +2609,7 @@ class RedactApplication extends React.Component {
                 movies={this.state.movies}
                 getCurrentFramesets={this.getCurrentFramesets}
                 doPing={this.doPing}
+                doGetVersion={this.doGetVersion}
                 cancelJob={this.cancelJob}
                 submitJob={this.submitJob}
                 getJobs={this.getJobs}
