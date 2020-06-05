@@ -210,6 +210,7 @@ class RedactApplication extends React.Component {
         (user_id === 'something.else@sykes.com') ||
         (user_id === 'david.barrios@sykes.com') ||
         (user_id === 'scott.devos@sykes.com') ||
+        (user_id === 'ryan.cannon@sykes.com') ||
         (user_id === 'shelton.hook@sykes.com')) {
       classes.push('no_sound')
     }
@@ -964,6 +965,7 @@ class RedactApplication extends React.Component {
     }
     this.checkForJobs()
     this.checkForInboundGetParameters()
+    this.gotoDesiredPanel()
   }
 
   setActiveMovie(the_url, theCallback=(()=>{})) {
@@ -2315,6 +2317,19 @@ class RedactApplication extends React.Component {
         }
       }
     }
+  }
+
+  gotoDesiredPanel() {
+    if (window.location.href.indexOf('redact/image') > -1) {
+      document.getElementById('image_panel_link').click()
+    } else if (window.location.href.indexOf('redact/movies') > -1) {
+      document.getElementById('movie_panel_link').click()
+    } else if (window.location.href.indexOf('redact/compose') > -1) {
+      document.getElementById('compose_link').click()
+    } else if (window.location.href.indexOf('redact/insights') > -1) {
+      document.getElementById('insights_link').click()
+    } 
+    document.getElementById('image_panel_link').click()
   }
 
   checkForInboundGetParameters() {
