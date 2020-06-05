@@ -2332,6 +2332,26 @@ class RedactApplication extends React.Component {
     document.getElementById('image_panel_link').click()
   }
 
+
+  dispatchFetchSplitAndHash(recording_id) {
+    const input_obj = {
+      'recording_ids': [recording_id],
+    }
+    let fetch_split_pipeline_id = ''
+    for (let i=0; i < Object.keys(this.state.pipelines).length; i++) {
+      const pipeline_id = Object.keys(this.state.pipelines)[i]
+      const pipeline = this.state.pipelines[pipeline_id]
+      if (pipeline['name'] === 'fetch_split_hash_secure_file') {
+        fetch_split_pipeline_id = pipeline_id
+      }
+    }
+    if (!fetch_split_pipeline_id) {
+      console.log('no fetch and split pipeline found, aborting')
+      return
+    }
+    this.dispatchPipeline(fetch_split_pipeline_id, 'json_obj', input_obj) 
+  }
+
   checkForInboundGetParameters() {
     let vars = getUrlVars()
     if (Object.keys(vars).includes('when_done')) {
@@ -2339,6 +2359,10 @@ class RedactApplication extends React.Component {
     } 
     if (Object.keys(vars).includes('workbook_id')) {
       this.loadWorkbook(vars['workbook_id'])
+    }
+    if (Object.keys(vars).includes('recording-id')) {
+      this.dispatchFetchSplitAndHash(vars['recording-id']) 
+      this.setGlobalStateVar('whenDoneTarget', 'learn_dev')
     }
     if (Object.keys(vars).includes('movie_url')) {
         this.handleSetMovieUrl(vars['movie_url'])
