@@ -2317,7 +2317,7 @@ class RedactApplication extends React.Component {
     }
   }
 
-  dispatchFetchSplitAndHash(recording_id) {
+  async dispatchFetchSplitAndHash(recording_id) {
     await this.getPipelines();
     const input_obj = {
       'recording_ids': [recording_id],
