@@ -704,7 +704,14 @@ class RedactApplication extends React.Component {
   async gotoWhenDoneTarget(when_done=(()=>{})) {
     const the_url = this.getUrl('link_url')
     let image_urls = []
-    let framesets = this.getCurrentFramesets()
+    if (!Object.keys(this.state.movies).includes('sequence')) {
+      // TODO use the page messaging line for this eventually
+      //   for now we do this from two pages, so this needs to be figured out
+      alert('No sequence movie found, cannot submit')
+      return
+    }
+    const sequence_movie = this.state.movies['sequence']
+    const framesets = sequence_movie['framesets']
     for (let i=0; i < Object.keys(framesets).length; i++) {
       const frameset_hash = Object.keys(framesets)[i]
       const frameset = framesets[frameset_hash]
@@ -728,6 +735,8 @@ class RedactApplication extends React.Component {
       if (Object.keys(responseJson).includes('learn_edit_url')) {
         window.location.replace(responseJson['learn_edit_url'])
       } else {
+      // TODO use the page messaging line for this eventually
+      //   for now we do this from two pages, so this needs to be figured out
         alert('no url in learn response, there must be a problem')
       }
     })
