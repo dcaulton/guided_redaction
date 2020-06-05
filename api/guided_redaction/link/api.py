@@ -46,7 +46,6 @@ class LinkViewSetLearnDev(viewsets.ViewSet):
             allow_redirects=False
         )
         landing_page = learn_response.headers.get('Location')
-        landing_page = 'https://osmae2lnxs117.amer.sykes.com' + landing_page
         if not landing_page:
             return self.error(['could not get edit url from learn response'], status_code=400)
 

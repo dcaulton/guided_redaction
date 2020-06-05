@@ -8,7 +8,6 @@ import CompositeTone from './Tones.js'
 import './styles/guided_redaction.css';
 import { fetch } from '../../utils'; 
 import {
-  BrowserRouter as Router,
   Switch,
   Route,
   Link
@@ -965,7 +964,6 @@ class RedactApplication extends React.Component {
     }
     this.checkForJobs()
     this.checkForInboundGetParameters()
-    this.gotoDesiredPanel()
   }
 
   setActiveMovie(the_url, theCallback=(()=>{})) {
@@ -2319,21 +2317,8 @@ class RedactApplication extends React.Component {
     }
   }
 
-  gotoDesiredPanel() {
-    if (window.location.href.indexOf('redact/image') > -1) {
-      document.getElementById('image_panel_link').click()
-    } else if (window.location.href.indexOf('redact/movies') > -1) {
-      document.getElementById('movie_panel_link').click()
-    } else if (window.location.href.indexOf('redact/compose') > -1) {
-      document.getElementById('compose_link').click()
-    } else if (window.location.href.indexOf('redact/insights') > -1) {
-      document.getElementById('insights_link').click()
-    } 
-    document.getElementById('image_panel_link').click()
-  }
-
-
   dispatchFetchSplitAndHash(recording_id) {
+    await this.getPipelines();
     const input_obj = {
       'recording_ids': [recording_id],
     }
@@ -2542,7 +2527,7 @@ class RedactApplication extends React.Component {
       document.getElementById('movie_panel_link').style.display = 'block'
     }
     return (
-      <Router>
+      <div>
         <nav className="navbar navbar-expand-lg navbar-dark bg-dark">
         <ul className="navbar-nav mr-auto mt-2 mt-lg-0">
           <li className="nav-item">
@@ -2717,7 +2702,7 @@ class RedactApplication extends React.Component {
             </Route>
           </Switch>
         </div>
-      </Router>
+      </div>
     );
   }
 }

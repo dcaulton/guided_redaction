@@ -1,5 +1,8 @@
 import React from 'react';
 import RedactApplication from './components/guided_redaction/RedactApplication';
+import {
+  BrowserRouter as Router,
+} from "react-router-dom";
 
 class App extends React.Component {
   constructor(props) {
@@ -21,9 +24,11 @@ class App extends React.Component {
 
   render() {
     return (
-      <RedactApplication 
-        getBaseUrl={this.getBaseUrl}
-      />
+      <Router>
+        <RedactApplication 
+          getBaseUrl={this.getBaseUrl}
+        />
+      </Router>
     )
   }
 }
