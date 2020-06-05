@@ -18,7 +18,7 @@ class LinkViewSetLearnDev(viewsets.ViewSet):
             return self.error(["image_urls is required"], status_code=400)
         learn_dev_url = request.data.get(
             'learn_dev_url', 
-            'https://osmae2lnxs117.amer.sykes.com//microlearning/mixer/create/6956de85-d9b5-4fd2-a8b2-45e2f06a4daa/7412597f-794b-4245-8289-4e92a1845a9a/'
+            'https://osmae2lnxs117.amer.sykes.com//microlearning/mixer/create/6956de85-d9b5-4fd2-a8b2-45e2f06a4daa/7412597f-794b-4245-8289-4e92a1845a9a'
         )
         data_uris = []
         image_urls = request.data.get('image_urls')
