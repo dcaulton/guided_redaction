@@ -770,7 +770,7 @@ class NodeCard extends React.Component {
                 className='btn btn-primary p-1'
                 onClick={() => this.doAddNodeEdge()}
             >
-              Go
+              Add
             </button>
           
         </div>

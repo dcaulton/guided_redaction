@@ -1225,7 +1225,7 @@ class InsightsPanel extends React.Component {
     if (this.state.insights_image) {
       bottom_y += document.getElementById('insights_image_div').offsetHeight
     } else if (this.props.movie_url) {
-      bottom_y += 360
+      bottom_y += 385
     }
     return bottom_y
   }
@@ -1305,7 +1305,7 @@ class InsightsPanel extends React.Component {
       const the_style = {
         'height': '350px',
         'width': '650px',
-        'paddingTop': '200px',
+        'paddingTop': '150px',
       }
       return (
         <div

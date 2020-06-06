@@ -28,6 +28,7 @@ class HogControls extends React.Component {
       testing_image_skip_factor: 10,
       normalize: true,
       only_test_positives: false,
+      is_frozen: false,
       c_for_svm: '.01',
       global_scale: '.5',
       minimum_probability: '.7',
@@ -212,6 +213,7 @@ class HogControls extends React.Component {
       testing_image_skip_factor: this.state.testing_image_skip_factor,
       normalize: this.state.normalize,
       only_test_positives: this.state.only_test_positives,
+      is_frozen: this.state.is_frozen,
       c_for_svm: this.state.c_for_svm,
       global_scale: this.state.global_scale,
       minimum_probability : this.state.minimum_probability,
@@ -434,6 +436,7 @@ class HogControls extends React.Component {
         testing_image_skip_factor: hog['testing_image_skip_factor'],
         normalize: hog['normalize'],
         only_test_positives: hog['only_test_positives'],
+        is_frozen: hog['is_frozen'],
         c_for_svm: hog['c_for_svm'],
         global_scale: hog['global_scale'],
         minimum_probability: hog['minimum_probability'],
@@ -469,6 +472,7 @@ class HogControls extends React.Component {
       testing_image_skip_factor: 10,
       normalize: true,
       only_test_positives: false,
+      is_frozen: false,
       c_for_svm: '.01',
       global_scale: '.5',
       minimum_probability: '.7',
@@ -489,6 +493,20 @@ class HogControls extends React.Component {
       'hog',
       this.props.tier_1_scanners['hog'],
       ((value)=>{this.deleteHogMeta(value)})
+    )
+  }
+
+  buildFreezeButton() {
+    if (this.state.is_frozen) {
+      return ''
+    }
+    return (
+      <button
+          className='btn btn-primary ml-2 mt-2'
+          onClick={() => this.freezeModel()}
+      >
+        Freeze
+      </button>
     )
   }
 
@@ -599,8 +617,42 @@ class HogControls extends React.Component {
     this.props.submitInsightsJob('hog_train_model')
   }
 
+  freezeModel() {
+  //MAMA
+    let tis = {}
+    const parent_id = this.state.id
+
+    let deepCopyAttributes = JSON.parse(JSON.stringify(this.state.attributes))
+    deepCopyAttributes['parent_id'] = parent_id
+    const datetime_str = new Date().toLocaleString()
+    deepCopyAttributes['freeze_date'] = datetime_str
+    
+    const hog_id = 'hog_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
+    const new_name = this.state.name + '_frozen'
+    const ti_keys = Object.keys(this.state.training_images)
+    if (ti_keys.length > 0) {
+      const one_ti = this.state.training_images[ti_keys[0]]
+      tis[ti_keys[0]] = one_ti
+    }
+    this.setState({
+      id: hog_id,
+      name: new_name,
+      training_images: tis,
+      testing_images: {},
+      testing_results_images: {},
+      hard_negatives: {},
+      attributes: deepCopyAttributes,
+      is_frozen: true,
+      unsaved_changes: true,
+    })
+    this.props.displayInsightsMessage('Model has been frozen')
+  }
+
   buildTrainModelButton() {
     if (!this.state.training_images) {
+      return
+    }
+    if (this.state.is_frozen) {
       return
     }
     return (
@@ -645,15 +697,19 @@ class HogControls extends React.Component {
       <div>
         {image_keys.map((image_key, index) => {
           const image = this.state.testing_images[image_key]
+          const image_name = image['image_url'].split('/').slice(-1)[0]
           
-        const the_movie = this.props.movies[image['movie_url']]
-        const the_frameset = this.props.getFramesetHashForImageUrl(
-          image['image_url'],
-          the_movie['framesets']
-        )
-        const movie_framesets = this.props.getFramesetHashesInOrder(the_movie['framesets'])
-        const image_frameset_index = movie_framesets.indexOf(the_frameset)
-        const image_name = image['image_url'].split('/').slice(-1)[0]
+          let goto_onclick = (()=>{})
+          if (Object.keys(this.props.movies).includes(image['movie_url'])) {
+            const the_movie = this.props.movies[image['movie_url']]
+            const the_frameset = this.props.getFramesetHashForImageUrl(
+              image['image_url'],
+              the_movie['framesets']
+            )
+            const movie_framesets = this.props.getFramesetHashesInOrder(the_movie['framesets'])
+            const image_frameset_index = movie_framesets.indexOf(the_frameset)
+            goto_onclick = (() => this.showSourceFrame(image['movie_url'], image_frameset_index))
+          }
 
           return (
             <div
@@ -668,7 +724,7 @@ class HogControls extends React.Component {
               <div className='d-inline ml-2'>
                 <button
                     className='btn btn-link'
-                    onClick={() => this.showSourceFrame(image['movie_url'], image_frameset_index)}
+                    onClick={goto_onclick}
                 >
                   goto
                 </button>
@@ -695,13 +751,17 @@ class HogControls extends React.Component {
         {image_keys.map((image_key, index) => {
           const image = this.state.training_images[image_key]
           
-        const the_movie = this.props.movies[image['movie_url']]
-        const the_frameset = this.props.getFramesetHashForImageUrl(
-          image['image_url'],
-          the_movie['framesets']
-        )
-        const movie_framesets = this.props.getFramesetHashesInOrder(the_movie['framesets'])
-        const image_frameset_index = movie_framesets.indexOf(the_frameset)
+        let goto_onclick = (()=>{})
+        if (Object.keys(this.props.movies).includes(image['movie_url'])) {
+          const the_movie = this.props.movies[image['movie_url']]
+          const the_frameset = this.props.getFramesetHashForImageUrl(
+            image['image_url'],
+            the_movie['framesets']
+          )
+          const movie_framesets = this.props.getFramesetHashesInOrder(the_movie['framesets'])
+          const image_frameset_index = movie_framesets.indexOf(the_frameset)
+          goto_onclick = (() => this.showSourceFrame(image['movie_url'], image_frameset_index))
+        }
 
           let the_src = ''
           if (Object.keys(image).includes('cropped_image_bytes')) {
@@ -723,7 +783,7 @@ class HogControls extends React.Component {
               <div className='d-inline ml-2'>
                 <button
                     className='btn btn-link'
-                    onClick={() => this.showSourceFrame(image['movie_url'], image_frameset_index)}
+                    onClick={goto_onclick}
                 >
                   goto
                 </button>
@@ -865,6 +925,9 @@ class HogControls extends React.Component {
   }
 
   buildLoadHardNegativesDialog() {
+    if (this.state.is_frozen) {
+      return
+    }
     return (
       <div>
         <div className='d-inline ml-2'>
@@ -988,6 +1051,20 @@ class HogControls extends React.Component {
     )
   }
 
+  buildIsFrozenBanner() {
+    if (this.state.is_frozen) {
+      return (
+        <div 
+            className='h3 col-lg-12 text-white bg-dark'
+        >
+          
+          FROZEN
+        </div>
+      )
+    } 
+    return ''
+  }
+
   render() {
     if (!this.props.visibilityFlags['hog']) {
       return([])
@@ -1013,9 +1090,11 @@ class HogControls extends React.Component {
     const sliding_window_step_size_field = this.buildSlidingWindowStepSizeField()
     const normalize_dropdown = this.buildNormalizeDropdown()
     const only_test_positives_dropdown = this.buildOnlyTestPositivesDropdown()
+    const is_frozen_banner = this.buildIsFrozenBanner()
     const load_button = this.buildLoadButton()
     const delete_button = this.buildDeleteButton()
     const run_button = this.buildRunButton()
+    const freeze_button = this.buildFreezeButton()
     const attributes_list = this.buildAttributesList()
     const show_hide_general = makePlusMinusRowLight('general', 'hog_general_div')
     const show_hide_training_images = makePlusMinusRowLight('select training images', 'hog_training_images_div')
@@ -1062,6 +1141,10 @@ class HogControls extends React.Component {
 
                   <div className='row mt-2'>
                     {id_string}
+                  </div>
+
+                  <div className='row mt-2'>
+                    {is_frozen_banner}
                   </div>
 
                   <div className='row mt-2'>
@@ -1178,6 +1261,10 @@ class HogControls extends React.Component {
 
                   <div className='row'>
                     {train_model_button}
+                  </div>
+
+                  <div className='row'>
+                    {freeze_button}
                   </div>
 
                   <div className='row'>

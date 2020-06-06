@@ -217,7 +217,7 @@ class ScannerSearchControls extends React.Component {
                   className='btn btn-primary mt-4' 
                   onClick={() => this.doGetScanners()}
                 >
-                  Go
+                  Search
                 </button>
               </div>
             </div>
