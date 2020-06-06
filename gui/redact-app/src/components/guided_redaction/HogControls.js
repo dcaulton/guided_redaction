@@ -618,7 +618,6 @@ class HogControls extends React.Component {
   }
 
   freezeModel() {
-  //MAMA
     let tis = {}
     const parent_id = this.state.id
 
