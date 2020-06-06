@@ -2621,6 +2621,7 @@ class RedactApplication extends React.Component {
                 gotoWhenDoneTarget={this.gotoWhenDoneTarget}
                 setFramesetHash={this.setFramesetHash}
                 getFramesetHashForImageUrl={this.getFramesetHashForImageUrl}
+                getFramesetHashesInOrder={this.getFramesetHashesInOrder}
                 getImageFromFrameset={this.getImageFromFrameset}
                 getImageUrl={this.getImageUrl}
                 subsequences={this.state.subsequences}

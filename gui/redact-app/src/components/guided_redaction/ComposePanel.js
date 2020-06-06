@@ -650,14 +650,28 @@ class ComposePanel extends React.Component {
     )
   }
 
-  buildComposeImage() {
+  getComposeDisplayImage() {
     if (this.state.compose_display_image) {
+      return this.state.compose_display_image
+    } else if (this.props.movie_url) {
+      // movie has been loaded but in the background, not by activity on this page
+      //   that means load job results at present
+      const frameset_hashes = this.props.getFramesetHashesInOrder()
+      const movie = this.props.movies[this.props.movie_url]
+      const image_url = movie['framesets'][frameset_hashes[0]]['images'][0]
+      return image_url
+    }
+  }
+
+  buildComposeImage() {
+    const compose_display_image = this.getComposeDisplayImage()
+    if (compose_display_image) {
       return (
         <img
             id='compose_image'
             className='p-0 m-0 mw-100 mh-100'
-            src={this.state.compose_display_image}
-            alt={this.state.compose_display_image}
+            src={compose_display_image}
+            alt={compose_display_image}
         />
       )
     } else {
