@@ -18,7 +18,7 @@ class InsightsPanel extends React.Component {
       image_height: 1000,
       insights_image_scale: 1,
       insights_title: 'Insights, load a movie to get started',
-      insights_message: '',
+      insights_message: '.',
       prev_coords: (0,0),
       clicked_coords: (0,0),
       selected_area_template_anchor: '',
@@ -1041,7 +1041,7 @@ class InsightsPanel extends React.Component {
     this.setState({
       insights_image: first_image,
       insights_title: first_image,
-      insights_message: 'Movie splitting completed.',
+      insights_message: '.',
     }, this.setImageSize(first_image))
   }
 
@@ -1224,6 +1224,8 @@ class InsightsPanel extends React.Component {
     let bottom_y = 80
     if (this.state.insights_image) {
       bottom_y += document.getElementById('insights_image_div').offsetHeight
+    } else if (this.props.movie_url) {
+      bottom_y += 360
     }
     return bottom_y
   }
@@ -1279,26 +1281,83 @@ class InsightsPanel extends React.Component {
     }
   }
 
+  getInsightsImage() {
+    if (this.state.insights_image) {
+      return this.state.insights_image
+    } else if (this.props.movie_url) {
+      const frameset_hashes = this.props.getFramesetHashesInOrder()
+      const movie = this.props.movies[this.props.movie_url]
+      const image_url = movie['framesets'][frameset_hashes[0]]['images'][0]
+      return image_url
+    }
+  }
+
+  buildImageElement(insights_image) {
+    if (insights_image) {
+      return (
+        <img 
+            id='insights_image' 
+            src={insights_image}
+            alt={insights_image}
+        />
+      )
+    } else {
+      const the_style = {
+        'height': '350px',
+        'width': '650px',
+        'paddingTop': '200px',
+      }
+      return (
+        <div
+            className='h1 text-center'
+            style={the_style}
+        >
+          No movie loaded yet
+        </div>
+      )
+    }
+  }
+
+  buildScrubberDiv(insights_image) {
+    let display_attr = 'block'
+    if (!insights_image) {
+      display_attr = 'none'
+    }
+    let bottom_y = this.getScrubberHeight()
+    const scrubber_style = {
+      top: bottom_y,
+      display: display_attr,
+    }
+    return (
+      <div 
+          id='insights_scrubber_div' 
+          className='row'
+          style={scrubber_style}
+      >
+        <input 
+            id='movie_scrubber' 
+            type='range' 
+            defaultValue='0'
+            onChange={this.scrubberOnChange}
+        />
+      </div>
+    )
+  }
+
   render() {
     const insights_modal = this.buildInsightsModal()
 
     document.body.onkeydown = this.handleKeyDown
     let workbook_name = this.props.current_workbook_name
+    const insights_image = this.getInsightsImage()
+    const image_element = this.buildImageElement(insights_image)
+    const scrubber_div = this.buildScrubberDiv(insights_image)
     if (!this.props.current_workbook_id) {
       workbook_name += ' (unsaved)'
     }
     let imageDivStyle= {
       width: this.props.image_width,
       height: this.props.image_height,
-    }
-    let bottom_y = this.getScrubberHeight()
-    let the_display='block'
-    if (!this.state.insights_image) {
-      the_display='none'
-    }
-    const scrubber_style = {
-      top: bottom_y,
-      display: the_display,
     }
     return (
     <div className='container'>
@@ -1320,7 +1379,7 @@ class InsightsPanel extends React.Component {
             getFramesetHashForImageUrl={this.props.getFramesetHashForImageUrl}
             getFramesetHashesInOrder={this.props.getFramesetHashesInOrder}
             setScrubberToIndex={this.setScrubberToIndex}
-            insights_image={this.state.insights_image}
+            insights_image={insights_image}
             setGlobalStateVar={this.props.setGlobalStateVar}
             displayInsightsMessage={this.displayInsightsMessage}
           />
@@ -1349,11 +1408,7 @@ class InsightsPanel extends React.Component {
               className='row'
               style={imageDivStyle}
           >
-            <img 
-                id='insights_image' 
-                src={this.state.insights_image}
-                alt={this.state.insights_image}
-            />
+            {image_element}
             <CanvasInsightsOverlay 
               width={this.state.image_width}
               height={this.state.image_height}
@@ -1385,25 +1440,14 @@ class InsightsPanel extends React.Component {
             />
           </div>
 
-          <div 
-              id='insights_scrubber_div' 
-              className='row'
-              style={scrubber_style}
-          >
-            <input 
-                id='movie_scrubber' 
-                type='range' 
-                defaultValue='0'
-                onChange={this.scrubberOnChange}
-            />
-          </div>
+          {scrubber_div}
 
           <BottomInsightsControls 
             setGlobalStateVar={this.props.setGlobalStateVar}
             toggleGlobalStateVar={this.props.toggleGlobalStateVar}
             handleSetMode={this.handleSetMode}
             tier_1_matches={this.props.tier_1_matches}
-            insights_image={this.state.insights_image}
+            insights_image={insights_image}
             movie_url={this.props.movie_url}
             callPing={this.callPing}
             callGetVersion={this.callGetVersion}
