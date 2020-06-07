@@ -366,8 +366,10 @@ class HogControls extends React.Component {
       {'1:1': 'actual image scale only'},
       {'+/-10/1': '+/- 10%, 1% increments'},
       {'+/-10/5': '+/- 10%, 5% increments'},
+      {'+/-10/10': '+/- 10%, 10% increments'},
       {'+/-20/1': '+/- 20%, 1% increments'},
       {'+/-20/10': '+/- 20%, 10% increments'},
+      {'+/-20/20': '+/- 20%, 20% increments'},
       {'+/-20/': '+/- 20%, 5% increments'},
       {'+/-25/1': '+/- 25%, 1% increments'},
       {'+/-25/5': '+/- 25%, 5% increments'},
@@ -952,6 +954,17 @@ class HogControls extends React.Component {
     })
   }
 
+  addTestingResultsImageToTraining(match_key) {
+    let deepCopyTrainingImages = JSON.parse(JSON.stringify(this.state.training_images))
+    let deepCopyTestingResultsImages = JSON.parse(JSON.stringify(this.state.testing_results_images))
+    deepCopyTrainingImages[match_key] = deepCopyTestingResultsImages[match_key]
+    delete deepCopyTestingResultsImages[match_key]
+    this.setState({
+      testing_results_images: deepCopyTestingResultsImages,
+      training_images: deepCopyTrainingImages,
+    })
+  }
+
   dismissTestingResultsImage(match_key) {
     let deepCopyTestingResultsImages = JSON.parse(JSON.stringify(this.state.testing_results_images))
     delete deepCopyTestingResultsImages[match_key]
@@ -997,7 +1010,7 @@ class HogControls extends React.Component {
                     className='btn btn-primary ml-2 mt-2'
                     onClick={() => this.makeHardNegative(match_key)}
                 >
-                  Add Hard Negative
+                  Add Hard Negative Training Image
                 </button>
               </div>
               <div className='col-lg-2'>
@@ -1005,7 +1018,15 @@ class HogControls extends React.Component {
                     className='btn btn-primary ml-2 mt-2'
                     onClick={() => this.dismissTestingResultsImage(match_key)}
                 >
-                  This Matches
+                  Dismiss
+                </button>
+              </div>
+              <div className='col-lg-2'>
+                <button
+                    className='btn btn-primary ml-2 mt-2'
+                    onClick={() => this.addTestingResultsImageToTraining(match_key)}
+                >
+                  Add Positive Training Image
                 </button>
               </div>
             </div>

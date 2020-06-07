@@ -1,4 +1,6 @@
 from celery import shared_task
+import random
+import time
 import uuid
 from django.conf import settings
 from guided_redaction.utils.classes.FileWriter import FileWriter
@@ -1166,6 +1168,8 @@ def test_hog(job_uuid):
     response = worker.process_create_request(rd)
     if not Job.objects.filter(pk=job_uuid).exists():
         return
+        return
+    print('test_hog is complete')
     job = Job.objects.get(pk=job_uuid)
     job.response_data = json.dumps(response.data)
     job.status = 'success'
@@ -1189,6 +1193,7 @@ def train_hog(job_uuid):
     response = worker.process_create_request(rd)
     if not Job.objects.filter(pk=job_uuid).exists():
         return
+    print('train_hog is complete')
     job = Job.objects.get(pk=job_uuid)
     job.response_data = json.dumps(response.data)
     job.status = 'success'
@@ -1333,6 +1338,8 @@ def build_and_dispatch_test_hog(parent_job, children):
     hog_rule = parent_request_data['tier_1_scanners']['hog'][hog_id]
     get_hog_files(hog_rule, children)
     training_movies_images = get_training_image_urls(hog_rule)
+    random_offset = random.randrange(0, int(hog_rule['testing_image_skip_factor']))
+    print('random offset for training frames is {}'.format(random_offset))
     for movie_url in movies:
         movie = movies[movie_url]
         for frameset_index, frameset_hash in enumerate(movie['framesets']):
@@ -1342,7 +1349,7 @@ def build_and_dispatch_test_hog(parent_job, children):
                 and image_url in training_movies_images[movie_url]:
                 # skip - its a training image
                 continue
-            if frameset_index % int(hog_rule['testing_image_skip_factor']) != 0:
+            if (frameset_index + random_offset) % int(hog_rule['testing_image_skip_factor']) != 0:
                 # skip because of skip factor
                 continue
             build_movies = {}
@@ -1369,9 +1376,7 @@ def build_and_dispatch_test_hog(parent_job, children):
             job.save()
             print('build_and_dispatch_test_hog: dispatching job')
             test_hog.delay(job.id)
-            if frameset_index % 5 == 0:
-                train_hog_threaded.delay(parent_job.id)
-        train_hog_threaded.delay(parent_job.id)
+    print('build and dispatch test hog is complete')
     
 def get_training_image_urls(hog_rule):
     resp_data = {}

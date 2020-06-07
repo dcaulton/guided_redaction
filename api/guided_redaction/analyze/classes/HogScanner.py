@@ -117,7 +117,8 @@ class HogScanner:
             self.avg_img_height = int(sum(heights) / len(heights))
 
     def get_datafile_paths_and_dirs(self):
-        if 'features_path' in self.hog_rule:
+        hogdir = ''
+        if 'features_path' in self.hog_rule and self.hog_rule['features_path']:
             self.features_path = self.hog_rule['features_path']
         else:
             hogdir = self.file_writer.create_unique_directory('hog_features')
@@ -128,13 +129,15 @@ class HogScanner:
             outfilename = os.path.join(hogdir, underscore_hog_name)
             self.features_path = outfilename
 
-        if 'classifier_path' in self.hog_rule:
+        if 'classifier_path' in self.hog_rule and self.hog_rule['classifier_path']:
             if self.debug:
                 print('loading classifier from supplied path')
             self.classifier_path = self.hog_rule['classifier_path']
             classifier_binary = self.file_writer.read_binary_data_from_filepath(self.classifier_path)
             self.model = pickle.loads(classifier_binary)
         else:
+            if not hogdir:
+                hogdir = self.file_writer.create_unique_directory('hog_features')
             underscore_hog_name = 'classifier_'
             underscore_hog_name += self.hog_rule['name'].replace(' ', '_')
             underscore_hog_name += '-' + self.hog_rule['id']
@@ -166,12 +169,16 @@ class HogScanner:
             self.scales = np.linspace(.90, 1.1, 11)[::-1]
         elif scale == '+/-10/5':
             self.scales = np.linspace(.90, 1.1, 5)[::-1]
+        elif scale == '+/-10/10':
+            self.scales = np.linspace(.90, 1.1, 3)[::-1]
         elif scale == '+/-20/1':
             self.scales = np.linspace(.80, 1.2, 21)[::-1]
         elif scale == '+/-20/5':
             self.scales = np.linspace(.80, 1.2, 9)[::-1]
         elif scale == '+/-20/10':
             self.scales = np.linspace(.80, 1.2, 5)[::-1]
+        elif scale == '+/-20/20':
+            self.scales = np.linspace(.80, 1.2, 3)[::-1]
         else:
             self.scales = [1]
 

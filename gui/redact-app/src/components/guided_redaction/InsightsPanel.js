@@ -1285,8 +1285,14 @@ class InsightsPanel extends React.Component {
     if (this.state.insights_image) {
       return this.state.insights_image
     } else if (this.props.movie_url) {
+      if (!Object.keys(this.props.movies).includes(this.props.movie_url)) {
+        return
+      }
       const frameset_hashes = this.props.getFramesetHashesInOrder()
       const movie = this.props.movies[this.props.movie_url]
+      if (!Object.keys(movie).includes('framesets')) {
+        return
+      }
       const image_url = movie['framesets'][frameset_hashes[0]]['images'][0]
       return image_url
     }
