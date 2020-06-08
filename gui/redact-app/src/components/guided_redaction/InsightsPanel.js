@@ -1296,6 +1296,9 @@ class InsightsPanel extends React.Component {
       return this.state.insights_image
     } else if (this.props.movie_url) {
       const frameset_hashes = this.props.getFramesetHashesInOrder()
+      if (!Object.keys(this.props.movies).includes(this.props.movie_url)) {
+        return
+      }
       const movie = this.props.movies[this.props.movie_url]
       const image_url = movie['framesets'][frameset_hashes[0]]['images'][0]
       return image_url
@@ -1541,6 +1544,7 @@ class InsightsPanel extends React.Component {
             getJobResultData={this.props.getJobResultData}
             setModalData={this.setModalData}
             wrapUpJob={this.props.wrapUpJob}
+            attachToJob={this.props.attachToJob}
           />
         </div>
       </div>

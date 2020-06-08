@@ -603,7 +603,7 @@ class ComposePanel extends React.Component {
     )
   }
 
-  doFetchAndSplit() {
+  async doFetchAndSplit() {
     const rec_id = document.getElementById('recording_id').value
     if (!rec_id) {
       this.setMessage('no recording id specified, not fetching')
@@ -624,7 +624,12 @@ class ComposePanel extends React.Component {
       this.setMessage('no fetch and split pipeline found, aborting')
       return
     }
-    this.props.dispatchPipeline(fetch_split_pipeline_id, 'json_obj', input_obj)
+    let when_done_fun = ((response) => {
+      if (Object.keys(response).includes("job_id")) {
+        this.props.attachToJob(response['job_id'])
+      }
+    })
+    this.props.dispatchPipeline(fetch_split_pipeline_id, 'json_obj', input_obj, when_done_fun)
   }
 
   buildFetchAndSplit() {
