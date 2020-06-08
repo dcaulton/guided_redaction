@@ -51,6 +51,13 @@ class RedactApplication extends React.Component {
         backgroundDarkenPercent: .5,
         lineWidth: 5,
       },
+      attached_job: {
+        id: '',
+        status: '',
+        percent_done: '',
+        voices: [],
+        voice_to_use: '',
+      },
       preserveAllJobs: false,
       telemetry_data: {
         raw_data_url: '',
@@ -174,6 +181,7 @@ class RedactApplication extends React.Component {
     this.deleteScanner=this.deleteScanner.bind(this)
     this.importScanner=this.importScanner.bind(this)
     this.wrapUpJob=this.wrapUpJob.bind(this)
+    this.attachToJob=this.attachToJob.bind(this)
     this.readTelemetryRawData=this.readTelemetryRawData.bind(this)
     this.toggleShowVisibility=this.toggleShowVisibility.bind(this)
     this.impersonateUser=this.impersonateUser.bind(this)
@@ -662,12 +670,56 @@ class RedactApplication extends React.Component {
     this.setGlobalStateVar('whenJobLoaded', deepCopyCallbacks)
   }
 
+  isAttachedJob(job) {
+    if (this.state.attached_job['id'] && this.state.attached_job['id'] === job['id']) {
+      return true
+    }
+  }
+
+  getAttachedJobMessage(job) {
+    if (this.state.attached_job['status'] === 'running' && job['status'] === 'success') {
+      return 'job has completed'
+    }
+    if (this.state.attached_job['status'] === 'running') {
+      if (this.state.attached_job['percent_done'] !== job['elapsed_time']) {
+        const et_number = job['elapsed_time'].toString().substring(1, 4) * 100
+        console.log(job['elapsed_time'])
+        console.log(this.state.attached_job['percent_complete'])
+        console.log(et_number)
+        return et_number.toString() + ' percent complete'
+      }
+    } 
+  }
+
+  handleAttachedJobUpdate(job) {
+    let deepCopyAJ = JSON.parse(JSON.stringify(this.state.attached_job))
+    let aj_message_text = this.getAttachedJobMessage(job)
+    deepCopyAJ['status'] = job['status']
+    deepCopyAJ['percent_done'] = job['elapsed_time']
+//    var app_this = this
+//    if (!this.state.attached_job['voices']) {
+//      window.speechSynthesis.onvoiceschanged = function() {
+//        deepCopyAJ['voices'] = window.speechSynthesis.getVoices()
+//        let msg = new SpeechSynthesisUtterance(aj_message_text)
+//        window.speechSynthesis.speak(msg);
+//        app_this.setGlobalStateVar('attached_job', deepCopyAJ)
+//      };
+//    } else {
+//    }
+      let msg = new SpeechSynthesisUtterance(aj_message_text)
+      window.speechSynthesis.speak(msg);
+      this.setGlobalStateVar('attached_job', deepCopyAJ)
+  }
+
   checkForJobs() {
     const jobIdsToCheckFor = Object.keys(this.state.whenJobLoaded)
     if (jobIdsToCheckFor.length) {
       this.getJobs()
       for (let index in this.state.jobs) {
         const job = this.state.jobs[index]
+        if (this.isAttachedJob(job)) {
+          this.handleAttachedJobUpdate(job)
+        }
         if (jobIdsToCheckFor.includes(job['id'])) {
           if (job['status'] === 'success') {
             const callback = this.state.whenJobLoaded[job['id']]['callback']
@@ -1989,6 +2041,25 @@ class RedactApplication extends React.Component {
     })
   }
 
+  attachToJob(job_id) {
+    let job_status = ''
+    let job_percent_done = ''
+    for (let i=0; i < this.state.jobs.length; i++) {
+      const job = this.state.jobs[i]
+      if (job['id'] === job_id) {
+        job_status = job['status']
+        job_percent_done = job['elapsed_time']
+      }
+    }
+    const attached_job = {
+      id: job_id,
+      status: job_status,
+      percent_done: job_percent_done,
+    }
+    this.watchForJob(job_id)
+    this.setGlobalStateVar('attached_job', attached_job)
+  }
+
   async getPipelines() {
     let the_url = this.getUrl('pipelines_url')
     await fetch(the_url, {
@@ -2042,7 +2113,7 @@ class RedactApplication extends React.Component {
     .then((responseJson) => {
       this.watchForJob(responseJson['job_id'], (()=>{}), false)
       this.getPipelines()
-      when_done()
+      when_done(responseJson)
     })
     .catch((error) => {
       console.error(error);
@@ -2362,7 +2433,12 @@ class RedactApplication extends React.Component {
       console.log('no fetch and split pipeline found, aborting')
       return
     }
-    this.dispatchPipeline(fetch_split_pipeline_id, 'json_obj', input_obj) 
+    let when_done_fun = ((response) => {
+      if (Object.keys(response).includes("job_id")) {
+        this.props.attachToJob(response['job_id'])
+      }
+    })
+    this.props.dispatchPipeline(fetch_split_pipeline_id, 'json_obj', input_obj, when_done_fun)
   }
 
   checkForInboundGetParameters() {
@@ -2658,6 +2734,7 @@ class RedactApplication extends React.Component {
                 readTelemetryRawData={this.readTelemetryRawData}
                 pipelines={this.state.pipelines}
                 dispatchPipeline={this.dispatchPipeline}
+                attachToJob={this.attachToJob}
               />
             </Route>
             <Route path='/redact/insights'>
@@ -2712,6 +2789,7 @@ class RedactApplication extends React.Component {
                 deleteScanner={this.deleteScanner}
                 importScanner={this.importScanner}
                 wrapUpJob={this.wrapUpJob}
+                attachToJob={this.attachToJob}
                 preserve_movie_audio={this.state.preserve_movie_audio}
                 pipelines={this.state.pipelines}
                 current_pipeline_id={this.state.current_pipeline_id}
