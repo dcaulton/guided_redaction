@@ -310,6 +310,7 @@ class InsightsPanel extends React.Component {
 
     const scanner_operations = {
       template: 'scan_template_threaded',
+      hog: 'hog_test',
       ocr: 'scan_ocr',
       selected_area: 'selected_area_threaded',
       ocr_scene_analysis: 'ocr_scene_analysis_threaded',
@@ -744,6 +745,15 @@ class InsightsPanel extends React.Component {
       let job_data = this.buildTrainHogModelJobData(extra_data)
       this.props.submitJob({
         job_data: job_data
+      })
+    } else if (
+        job_string === 'hog_current_frame' || 
+        job_string === 'hog_current_movie' || 
+        job_string === 'hog_all_movies'
+    ) {
+      let job_data = this.buildTier1JobData('hog', job_string, extra_data)
+      this.props.submitJob({
+        job_data: job_data,
       })
     } else if (
         job_string === 'selected_area_t1_template' || 
