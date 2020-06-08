@@ -1271,6 +1271,32 @@ class RedactApplication extends React.Component {
     }
   }
 
+  async loadHogTestResults(job, when_done=(()=>{})) {
+    const response_data = JSON.parse(job.response_data)
+    if (!response_data) {
+      return
+    }
+    if (!Object.keys(response_data).includes('movies')) {
+      return
+    }
+    const request_data = JSON.parse(job.request_data)
+    this.loadTier1ScannersFromTier1Request('hog', request_data)
+    let resp_obj = this.loadMoviesFromTier1Request(request_data)
+    let movie_url = resp_obj['movie_url']
+    let deepCopyMovies = resp_obj['deepCopyMovies']
+    this.setState({
+      movies: deepCopyMovies,
+      movie_url: movie_url,
+    })
+    if (request_data['scan_level'] === 'tier_1') {
+      let deepCopyTier1Matches = JSON.parse(JSON.stringify(this.state.tier_1_matches))
+      let deepCopyHogMatches = deepCopyTier1Matches['hog']
+      deepCopyHogMatches[request_data['id']] = response_data
+      deepCopyTier1Matches['hog'] = deepCopyHogMatches
+      this.setGlobalStateVar('tier_1_matches', deepCopyTier1Matches)
+    }
+  }
+
   async loadHogTrainResults(job, when_done=(()=>{})) {
     const response_data = JSON.parse(job.response_data)
     if (!response_data) {
@@ -1866,6 +1892,8 @@ class RedactApplication extends React.Component {
         this.loadGetFramesetMatchChartResults(job, when_done)
 			} else if (job.app === 'analyze' && job.operation === 'scan_ocr') {
         this.loadOcrResults(job, when_done)
+			} else if (job.app === 'analyze' && job.operation === 'hog_test') {
+        this.loadHogTestResults(job, when_done)
 			} else if (job.app === 'analyze' && job.operation === 'hog_train_threaded') {
         this.loadHogTrainResults(job, when_done)
 			} else if (job.app === 'analyze' && job.operation === 'telemetry_find_matching_frames') {

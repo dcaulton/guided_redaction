@@ -10,6 +10,7 @@ class CanvasInsightsOverlay extends React.Component {
     this.crosshairs_color = '#F33'
     this.template_match_color = '#3F3'
     this.selected_area_color = '#2B9'
+    this.hog_color = '#BEA'
     this.selected_area_center_color = '#9F3'
     this.selected_area_origin_location_color = '#40D'
     this.hog_training_image_color = '#72A'
@@ -276,11 +277,26 @@ class CanvasInsightsOverlay extends React.Component {
       let anchor_id = Object.keys(matches)[i]
       let match = matches[anchor_id]
       let start = match['location']
-      let template_scale = parseFloat(match['scale'])
+      if (Object.keys(match).includes('start')) {
+        start = match['start']
+      }
+      let template_scale = 1
+      if (Object.keys(match).includes('scale')) {
+        template_scale = parseFloat(match['scale'])
+      }
+      let size=[500,800]
+      if (Object.keys(match).includes('size')) {
+        size = match['size']
+      } else if (Object.keys(match).includes('start')) {
+        const x = match['end'][0] - match['start'][0]
+        const y = match['end'][1] - match['start'][1]
+        size = [x, y]
+      }
+      
       const start_x_scaled = start[0] * this.props.insights_image_scale 
       const start_y_scaled = start[1] * this.props.insights_image_scale
-      const width_scaled = match['size'][0] * this.props.insights_image_scale / template_scale
-      const height_scaled = match['size'][1] * this.props.insights_image_scale / template_scale
+      const width_scaled = size[0] * this.props.insights_image_scale / template_scale
+      const height_scaled = size[1] * this.props.insights_image_scale / template_scale
       ctx.fillStyle = fill_color
       ctx.globalAlpha = 0.4
       ctx.fillRect(start_x_scaled, start_y_scaled, width_scaled, height_scaled)
@@ -314,6 +330,10 @@ class CanvasInsightsOverlay extends React.Component {
 
   drawOcrMatches() {
     this.drawTier1Matches('ocr', this.ocr_color, this.red_color) 
+  }
+
+  drawHogMatches() {
+    this.drawTier1Matches('hog', this.hog_color, this.red_color) 
   }
 
   drawAnnotations() {
@@ -390,6 +410,7 @@ class CanvasInsightsOverlay extends React.Component {
     this.drawScannerOrigins()
     this.drawAnnotations()
     this.drawOcrMatches()
+    this.drawHogMatches()
     this.drawOcrWindow()
     this.drawOsaMatches()
     this.drawAreasToRedact()
@@ -411,6 +432,7 @@ class CanvasInsightsOverlay extends React.Component {
     this.drawScannerOrigins()
     this.drawAnnotations()
     this.drawOcrMatches()
+    this.drawHogMatches()
     this.drawOcrWindow()
     this.drawOsaMatches()
     this.drawAreasToRedact()
