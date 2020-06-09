@@ -2801,6 +2801,7 @@ class RedactApplication extends React.Component {
                 visibilityFlags={this.state.visibilityFlags}
                 toggleShowVisibility={this.toggleShowVisibility}
                 impersonateUser={this.impersonateUser}
+                attached_job={this.state.attached_job}
               />
             </Route>
           </Switch>

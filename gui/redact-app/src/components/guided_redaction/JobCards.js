@@ -71,6 +71,7 @@ class JobCardList extends React.Component {
               setModalData={this.props.setModalData}
               wrapUpJob={this.props.wrapUpJob}
               attachToJob={this.props.attachToJob}
+              attached_job={this.props.attached_job}
             />
             )
           })}
@@ -380,6 +381,13 @@ class JobCard extends React.Component {
   buildAttachLink() {
     if (this.props.job_data['status'] !== 'running') {
       return ''
+    }
+    if (this.props.job_data['id'] === this.props.attached_job['id']) {
+      return (
+        <div className='d-inline ml-4 h5 text-success'>
+          attached
+        </div>
+      )
     }
     return (
       <div className='d-inline ml-4'>
