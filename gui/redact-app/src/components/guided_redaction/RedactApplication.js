@@ -683,9 +683,6 @@ class RedactApplication extends React.Component {
     if (this.state.attached_job['status'] === 'running') {
       if (this.state.attached_job['percent_done'] !== job['elapsed_time']) {
         const et_number = job['elapsed_time'].toString().substring(1, 4) * 100
-        console.log(job['elapsed_time'])
-        console.log(this.state.attached_job['percent_complete'])
-        console.log(et_number)
         return et_number.toString() + ' percent complete'
       }
     } 
@@ -696,16 +693,6 @@ class RedactApplication extends React.Component {
     let aj_message_text = this.getAttachedJobMessage(job)
     deepCopyAJ['status'] = job['status']
     deepCopyAJ['percent_done'] = job['elapsed_time']
-//    var app_this = this
-//    if (!this.state.attached_job['voices']) {
-//      window.speechSynthesis.onvoiceschanged = function() {
-//        deepCopyAJ['voices'] = window.speechSynthesis.getVoices()
-//        let msg = new SpeechSynthesisUtterance(aj_message_text)
-//        window.speechSynthesis.speak(msg);
-//        app_this.setGlobalStateVar('attached_job', deepCopyAJ)
-//      };
-//    } else {
-//    }
       let msg = new SpeechSynthesisUtterance(aj_message_text)
       window.speechSynthesis.speak(msg);
       this.setGlobalStateVar('attached_job', deepCopyAJ)
