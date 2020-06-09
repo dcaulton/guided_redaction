@@ -76,6 +76,29 @@ Snare.prototype.trigger = function(time) {
   this.noise.stop(time + 0.2);
 };
 
+
+
+
+function Blip(context) {
+  this.context = context;
+};
+
+Blip.prototype.setup = function() {
+  this.oscillator = this.context.createOscillator()
+  this.final_gain = this.context.createGain()
+  this.final_gain.connect(this.context.destination)
+  this.oscillator.connect(this.context.destination)
+};
+
+Blip.prototype.trigger = function(time) {
+  this.setup();
+  this.oscillator.start(0)
+  this.final_gain.gain.setValueAtTime(.1, 0)
+  this.oscillator.frequency.setValueAtTime(800, 0);
+  this.oscillator.frequency.exponentialRampToValueAtTime(1, time + .1)
+}
+
+
 function LFO(context) {
   this.context = context;
 };
@@ -120,6 +143,9 @@ CompositeTone.prototype.makeSnare= function(context) {
 }
 CompositeTone.prototype.makeLFO= function(context) {
   return new LFO(context)
+}
+CompositeTone.prototype.makeBlip= function(context) {
+  return new Blip(context)
 }
 
 export default CompositeTone
