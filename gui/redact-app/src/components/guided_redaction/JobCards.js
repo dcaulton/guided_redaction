@@ -71,6 +71,7 @@ class JobCardList extends React.Component {
               setModalData={this.props.setModalData}
               wrapUpJob={this.props.wrapUpJob}
               attachToJob={this.props.attachToJob}
+              attached_job={this.props.attached_job}
             />
             )
           })}
@@ -366,7 +367,7 @@ class JobCard extends React.Component {
       return ''
     }
     return (
-      <div>
+      <div className='d-inline'>
         <button 
             className='btn btn-link border-none p-0 mt-0'
             onClick={() => this.props.wrapUpJob(this.props.job_data['id'])}
@@ -381,8 +382,15 @@ class JobCard extends React.Component {
     if (this.props.job_data['status'] !== 'running') {
       return ''
     }
+    if (this.props.job_data['id'] === this.props.attached_job['id']) {
+      return (
+        <div className='d-inline ml-4 h5 text-success'>
+          attached
+        </div>
+      )
+    }
     return (
-      <div>
+      <div className='d-inline ml-4'>
         <button 
             className='btn btn-link border-none p-0 mt-0'
             onClick={() => this.props.attachToJob(this.props.job_data['id'])}
@@ -443,6 +451,12 @@ class JobCard extends React.Component {
               {wall_clock_run_time_data}
               {job_percent_done}
               {job_workbook_block}
+            </div>
+
+            <div 
+                className='row mt-1'
+                style={small_style}
+            >
               {wrap_up_link}
               {attach_link}
             </div>

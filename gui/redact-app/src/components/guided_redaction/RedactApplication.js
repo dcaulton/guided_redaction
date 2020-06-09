@@ -55,8 +55,11 @@ class RedactApplication extends React.Component {
         id: '',
         status: '',
         percent_done: '',
-        voices: [],
-        voice_to_use: '',
+      },
+      voice: {
+        index: '',
+        pitch: '',
+        rate: '',
       },
       preserveAllJobs: false,
       telemetry_data: {
@@ -694,6 +697,12 @@ class RedactApplication extends React.Component {
     deepCopyAJ['status'] = job['status']
     deepCopyAJ['percent_done'] = job['elapsed_time']
       let msg = new SpeechSynthesisUtterance(aj_message_text)
+      if (this.state.voice['pitch']) {
+        msg.pitch = this.state.voice['pitch']
+      }
+      if (this.state.voice['rate']) {
+        msg.pitch = this.state.voice['rate']
+      }
       window.speechSynthesis.speak(msg);
       this.setGlobalStateVar('attached_job', deepCopyAJ)
   }
@@ -2792,6 +2801,7 @@ class RedactApplication extends React.Component {
                 visibilityFlags={this.state.visibilityFlags}
                 toggleShowVisibility={this.toggleShowVisibility}
                 impersonateUser={this.impersonateUser}
+                attached_job={this.state.attached_job}
               />
             </Route>
           </Switch>
