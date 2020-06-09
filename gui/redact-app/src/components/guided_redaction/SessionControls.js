@@ -169,6 +169,7 @@ class SessionControls extends React.Component {
             value={this.props.userTone}
         >
           <option value=''>--none--</option>
+          <option value='blip'>Blip</option>
           <option value='lfo'>LFO</option>
           <option value='kick_snare'>Kick+Snare</option>
         </select>
@@ -581,10 +582,9 @@ class SessionControls extends React.Component {
 
   startSpeechRecognition() {
     let grammar_list = new window.webkitSpeechGrammarList();
-    grammar_list.addFromString('Caulton', 1)
-    grammar_list.addFromString('DeVos', 1)
-    grammar_list.addFromString('Cannonball', 1)
-    grammar_list.addFromString('Flubber', 1)
+    var colors = ['Caulton', 'DeVos', 'Cannonball', 'Flubber']
+    var grammar = '#JSGF V1.0; grammar colors; public <color> = ' + colors.join(' | ') + ' ;'
+    grammar_list.addFromString(grammar, 1)
 
     this.recognizer = new window.webkitSpeechRecognition();
     this.recognizer.continuous = true;

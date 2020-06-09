@@ -69,7 +69,7 @@ class RedactApplication extends React.Component {
       pipelines: {},
       results: {},
       current_pipeline_id: '',
-      userTone: 'lfo',
+      userTone: 'blip',
       preserve_movie_audio: false,
       app_codebooks: {},
       user: {},
@@ -652,6 +652,9 @@ class RedactApplication extends React.Component {
     } else if (this.state.userTone === 'lfo') {
       var lfo = ct.makeLFO(context)
       lfo.trigger(now + .75)
+    } else if (this.state.userTone === 'blip') {
+      var blip = ct.makeBlip(context)
+      blip.trigger(now + .75)
     }
   }
 
