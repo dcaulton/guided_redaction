@@ -62,6 +62,7 @@ class RedactApplication extends React.Component {
       },
       pipelines: {},
       results: {},
+      maximize: false,
       current_pipeline_id: '',
       preserve_movie_audio: false,
       app_codebooks: {},
@@ -2647,8 +2648,18 @@ class RedactApplication extends React.Component {
     if (document.getElementById('movie_panel_link') && this.state.showMovieParserLink) {
       document.getElementById('movie_panel_link').style.display = 'block'
     }
+    let top_level_style = {}
+    if (this.state.maximize) {
+      top_level_style = {
+        position: 'absolute',
+        width: '100%',
+        left: 0,
+      }
+    }
     return (
-      <div>
+      <div
+          style={top_level_style}
+      >
         <nav className="navbar navbar-expand-lg navbar-dark bg-dark">
         <ul className="navbar-nav mr-auto mt-2 mt-lg-0">
           <li className="nav-item">
@@ -2826,6 +2837,7 @@ class RedactApplication extends React.Component {
                 impersonateUser={this.impersonateUser}
                 attached_job={this.state.attached_job}
                 message={this.state.message}
+                maximize={this.state.maximize}
               />
             </Route>
           </Switch>
