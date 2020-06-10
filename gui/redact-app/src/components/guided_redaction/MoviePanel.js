@@ -8,7 +8,6 @@ class MoviePanel extends React.Component {
     this.state = {
       draggedId: null,
       zoom_image_url: '',
-      message: '.',
       uploadMove: false,
       movie_resolution_new: '',
       frameset_offset_seconds: '0',
@@ -327,9 +326,7 @@ class MoviePanel extends React.Component {
   }
 
   setMessage(the_message) {
-    this.setState({
-      message: the_message,
-    })
+    this.props.setGlobalStateVar('message', the_message)
   }
 
   setDraggedId = (the_id) => {
@@ -529,7 +526,7 @@ class MoviePanel extends React.Component {
           <div id='video_meta_div' className='col-md-12'>
             <MoviePanelHeader
               callMovieSplit={this.callMovieSplit}
-              message={this.state.message}
+              message={this.props.message}
               submitMovieJob={this.submitMovieJob}
               movie_url={this.props.movie_url}
               templates={this.props.templates}

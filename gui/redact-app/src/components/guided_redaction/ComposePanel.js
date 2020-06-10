@@ -12,7 +12,6 @@ class ComposePanel extends React.Component {
       movie_offset_string: '',
       dragged_type: '',
       dragged_id: '',
-      message: '',
       telemetry_section_is_built: false,
       telemetry_lines: '',
       sequence_display_mode: 'large_card',
@@ -45,9 +44,7 @@ class ComposePanel extends React.Component {
   }
 
   setMessage(the_message) {
-    this.setState({
-      message: the_message,
-    })
+    this.props.setGlobalStateVar('message', the_message)
   }
 
   setSequenceDisplayMode(the_mode) {
@@ -441,10 +438,11 @@ class ComposePanel extends React.Component {
   }
 
   buildComposeMessage() {
-    if (!this.state.message) {
+    // just a hack because I can't get min-height working for the message field
+    if (!this.props.message) {
       return '.'
     }
-    return this.state.message
+    return this.props.message
   }
 
   gotoScrubberOffset(the_offset) {
@@ -662,6 +660,9 @@ class ComposePanel extends React.Component {
       // movie has been loaded but in the background, not by activity on this page
       //   that means load job results at present
       const frameset_hashes = this.props.getFramesetHashesInOrder()
+      if (!Object.keys(this.props.movies).includes(this.props.movie_url)) {
+        return
+      }
       const movie = this.props.movies[this.props.movie_url]
       const image_url = movie['framesets'][frameset_hashes[0]]['images'][0]
       return image_url

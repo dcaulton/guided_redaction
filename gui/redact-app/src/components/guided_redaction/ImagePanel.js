@@ -9,7 +9,6 @@ class ImagePanel extends React.Component {
       mode: '',
       submode: null,
       display_mode: '',
-      message: '',
       last_click: null,
       oval_center: null,
       illustrate_shaded: false,
@@ -265,23 +264,19 @@ class ImagePanel extends React.Component {
   }
 
   setMessage(the_message)  {
-    this.setState({
-      message: the_message,
-    })
+    this.props.setGlobalStateVar('message', the_message)
   }
 
-  //TODO THIS whole method can go away now
   setMode = (mode='', submode='') => {
     const message = getMessage(mode, submode);
     const display_mode = getDisplayMode(mode, submode);
+    this.setMessage(message)
     this.setState({
       mode: mode,
       submode: submode,
       display_mode: display_mode,
-      message: message,
     })
   }
-
 
   handleImageClick = (e) => {
     if (this.props.getImageUrl() === '') {
@@ -549,7 +544,7 @@ class ImagePanel extends React.Component {
             {this.state.display_mode}
           </div>
           <div className='row ml-2'>
-            {this.state.message}
+            {this.props.message}
           </div>
         </div>
 
@@ -616,7 +611,7 @@ class ImagePanel extends React.Component {
                 templates={this.props.templates}
                 display_mode={this.state.display_mode}
                 submode={this.state.submode}
-                message={this.state.message}
+                message={this.props.message}
                 setMode= {this.setMode}
                 redactImage={this.redactImage}
                 getImageUrl={this.props.getImageUrl}

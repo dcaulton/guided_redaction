@@ -73,6 +73,7 @@ class RedactApplication extends React.Component {
       preserve_movie_audio: false,
       app_codebooks: {},
       user: {},
+      message: '',
       visibilityFlags: {
         'templates': true,
         'hog': true,
@@ -714,7 +715,10 @@ class RedactApplication extends React.Component {
         msg.pitch = this.state.voice['rate']
       }
       window.speechSynthesis.speak(msg);
-      this.setGlobalStateVar('attached_job', deepCopyAJ)
+      this.setState({
+        attached_job: deepCopyAJ,
+        message: aj_message_text,
+      })
   }
 
   checkForJobs() {
@@ -2687,6 +2691,7 @@ class RedactApplication extends React.Component {
                 postMakeUrlCall={this.postMakeUrlCall}
                 establishNewMovie={this.establishNewMovie}
                 preserve_movie_audio={this.state.preserve_movie_audio}
+                message={this.state.message}
               />
             </Route>
             <Route path='/redact/image'>
@@ -2717,6 +2722,7 @@ class RedactApplication extends React.Component {
                 addImageToMovie={this.addImageToMovie}
                 illustrateParameters={this.state.illustrateParameters}
                 setIllustrateParameters={this.setIllustrateParameters}
+                message={this.state.message}
               />
             </Route>
             <Route path='/redact/compose'>
@@ -2741,6 +2747,7 @@ class RedactApplication extends React.Component {
                 pipelines={this.state.pipelines}
                 dispatchPipeline={this.dispatchPipeline}
                 attachToJob={this.attachToJob}
+                message={this.state.message}
               />
             </Route>
             <Route path='/redact/insights'>
@@ -2812,6 +2819,7 @@ class RedactApplication extends React.Component {
                 toggleShowVisibility={this.toggleShowVisibility}
                 impersonateUser={this.impersonateUser}
                 attached_job={this.state.attached_job}
+                message={this.state.message}
               />
             </Route>
           </Switch>
