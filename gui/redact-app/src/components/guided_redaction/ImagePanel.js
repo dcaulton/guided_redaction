@@ -688,6 +688,7 @@ class TemplateBuilderControls extends React.Component {
 
   componentDidMount() {
     this.loadNewTemplate()
+    this.props.getAndSaveUser()
   }
 
   loadNewTemplate() {

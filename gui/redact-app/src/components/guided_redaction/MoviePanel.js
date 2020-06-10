@@ -46,6 +46,7 @@ class MoviePanel extends React.Component {
     if (!this.props.movie_url) {
       this.showMovieUploadTarget()
     }
+    this.props.getAndSaveUser()
   }
 
   showMovieUploadTarget() {
