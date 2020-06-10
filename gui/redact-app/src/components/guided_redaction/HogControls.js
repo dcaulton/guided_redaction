@@ -477,7 +477,7 @@ class HogControls extends React.Component {
       global_scale: '.5',
       minimum_probability: '.7',
       scale: '1:1',
-      sliding_window_step_size: '4',
+      sliding_window_step_size: 4,
       training_images: {},
       testing_images: {},
       hard_negatives: {},
@@ -1086,7 +1086,8 @@ class HogControls extends React.Component {
     const global_scale_field = this.buildGlobalScaleField()
     const minimum_probability_field = this.buildMinimumProbabilityField()
     const scale_dropdown = this.buildScaleDropdown()
-    const sliding_window_step_size_field = this.buildSlidingWindowStepSizeField()
+//    const sliding_window_step_size_field = this.buildSlidingWindowStepSizeField()
+    const sliding_window_step_size_field = 'sliding window step size field is broken'
     const normalize_dropdown = this.buildNormalizeDropdown()
     const only_test_positives_dropdown = this.buildOnlyTestPositivesDropdown()
     const is_frozen_banner = this.buildIsFrozenBanner()
