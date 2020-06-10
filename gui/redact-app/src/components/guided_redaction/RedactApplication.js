@@ -2651,9 +2651,9 @@ class RedactApplication extends React.Component {
     let top_level_style = {}
     if (this.state.maximize) {
       top_level_style = {
-        position: 'absolute',
-        width: '100%',
-        left: 0,
+        position: 'absolute !important',
+        width: '100% !important',
+        left: '0 !important',
       }
     }
     return (
