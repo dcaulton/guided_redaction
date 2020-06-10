@@ -42,7 +42,7 @@ class ImagePanel extends React.Component {
     })
   }
 
-  submitImageJob(job_string, extra_data = '') {                                                                         
+  submitImageJob(job_string, extra_data = '') {
     if (job_string === 'template_match') {
       const job_data = this.buildTemplateMatchJobdata(extra_data)
       this.props.submitJob({
@@ -297,13 +297,17 @@ class ImagePanel extends React.Component {
     if (x_scaled > this.props.image_width || y_scaled > this.props.image_height) {
       return
     }
+    this.setState({
+      last_click: [x_scaled, y_scaled],
+    })
 
     if (this.state.mode === 'add_1') {
       this.setState({
         mode: 'add_2',
-        last_click: [x_scaled, y_scaled],
       })
       this.setMessage(getMessage('add_2', this.state.submode))
+    } else if (this.state.mode === 'add_template_anchor_1') {
+      this.setMode('add_template_anchor_2')
     } else if (this.state.mode === 'add_2') {
       this.handleAddSecond(x_scaled, y_scaled)
     } else if (this.state.mode === 'delete') {
@@ -311,7 +315,6 @@ class ImagePanel extends React.Component {
     } else if (this.state.mode === 'delete_1') {
       this.setState({
         mode: 'delete_2',
-        last_click: [x_scaled, y_scaled],
       })
       this.setMessage(getMessage('delete_2', this.state.submode))
     } else if (this.state.mode === 'delete_2') {
@@ -325,7 +328,6 @@ class ImagePanel extends React.Component {
     } else if (this.state.submode=== 'ill_oval_2') {
       this.setState({
         submode: 'ill_oval_3',
-        last_click: [x_scaled, y_scaled],
       })
       this.setMessage(getMessage('illustrate', 'ill_oval_3'))
     } else if (this.state.submode=== 'ill_oval_3') {
@@ -333,7 +335,6 @@ class ImagePanel extends React.Component {
     } else if (this.state.submode === 'ill_box_1') {
       this.setState({
         submode: 'ill_box_2',
-        last_click: [x_scaled, y_scaled],
       })
       this.setMessage(getMessage('illustrate', 'ill_box_2'))
     } else if (this.state.submode=== 'ill_box_2') {
@@ -345,7 +346,6 @@ class ImagePanel extends React.Component {
     this.setState({
       mode: '.',
       submode: '',
-      last_click: [],
     })
     this.submitImageJob(
       'illustrate_box', 
@@ -357,8 +357,6 @@ class ImagePanel extends React.Component {
     this.setState({
       mode: '.',
       submode: '',
-      last_click: [],
-      oval_center: [],
     })
     this.submitImageJob(
       'illustrate_oval', 
@@ -380,7 +378,6 @@ class ImagePanel extends React.Component {
 
       this.setState({
         mode: 'add_1',
-        last_click: null,
       })
       this.setMessage('region was successfully added, select another region to add, press cancel when done')
       this.props.addRedactionToFrameset(deepCopyAreasToRedact)
@@ -391,7 +388,6 @@ class ImagePanel extends React.Component {
       )
       this.setState({
         mode: 'add_1',
-        last_click: null,
       })
     }
   }
@@ -655,6 +651,7 @@ class ImagePanel extends React.Component {
                   setGlobalStateVar={this.props.setGlobalStateVar}
                   cropImage={this.props.cropImage}
                   setMessage={this.setMessage}
+                  setMode={this.setMode}
                 />
               </div>
             </div>
@@ -866,13 +863,27 @@ class TemplateBuilderControls extends React.Component {
     setTimeout((() => {this.props.setGlobalStateVar('message', 'Template was deleted')}), 500)
   }
 
-  buildDeleteButton() {                                                         
-    return buildTier1DeleteButton(                                              
-      'template',                                                               
-      this.props.tier_1_scanners['template'],                                   
-      ((value)=>{this.deleteTemplate(value)})                                   
-    )                                                                           
-  }  
+  buildDeleteButton() {
+    return buildTier1DeleteButton(
+      'template',
+      this.props.tier_1_scanners['template'],
+      ((value)=>{this.deleteTemplate(value)})
+    )
+  }
+
+  buildAddAnchorButton() {
+    return buildInlinePrimaryButton(
+      'Add Anchor',
+      (()=>{this.addTemplateAnchor()})
+    )
+  }
+
+  addTemplateAnchor() {
+    this.setState({
+      unsaved_changes: true,
+    })
+    this.props.setMode('add_template_anchor_1')
+  }
 
   render() {
     if (!this.props.getImageUrl()) {
@@ -882,6 +893,7 @@ class TemplateBuilderControls extends React.Component {
     const load_button = this.buildLoadButton()
     const save_button = this.buildSaveButton()
     const delete_button = this.buildDeleteButton()
+    const add_anchor_button = this.buildAddAnchorButton()
     const id_string = buildIdString(this.state.id, 'template', this.state.unsaved_changes)
 
     return (
@@ -921,6 +933,7 @@ class TemplateBuilderControls extends React.Component {
                 {load_button}
                 {save_button}
                 {delete_button}
+                {add_anchor_button}
               </div>
 
               <div className='row mt-2'>

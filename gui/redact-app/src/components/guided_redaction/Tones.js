@@ -94,7 +94,7 @@ Blip.prototype.trigger = function(time) {
   this.setup();
   this.oscillator.start(0)
   this.final_gain.gain.setValueAtTime(.1, 0)
-  this.oscillator.frequency.setValueAtTime(800, 0);
+  this.oscillator.frequency.setValueAtTime(300, 0);
   this.oscillator.frequency.exponentialRampToValueAtTime(1, time + .1)
 }
 

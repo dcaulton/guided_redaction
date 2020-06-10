@@ -11,6 +11,7 @@ class CanvasImageOverlay extends React.Component {
     // the add_2 croosshairs need to be divided by image scale, the oval ones need to be multiplied by the same
     // looks like one is getting the unscaled coords, the other gets the scaled maybe?  
     if (this.props.mode === 'add_2' || this.props.mode === 'delete_2' || 
+        this.props.mode === 'add_template_anchor_2' || 
         this.props.submode === 'ill_box_2' || this.props.mode === 'add_ocr_2') {
       let crosshair_length = 2000
       let start_x = (this.props.last_click[0] - crosshair_length/2) / this.props.image_scale

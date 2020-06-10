@@ -28,6 +28,10 @@ export const getMessage = function (mode, submode) {
       msg = 'redacting selected areas'
     } else if (mode === 'reset') {
       msg = 'image has been reset'
+    } else if (mode === 'add_template_anchor_1') {
+      msg = 'Select the first corner of the Region of Interest'
+    } else if (mode === 'add_template_anchor_2') {
+      msg = 'Select the second corner of the Region of Interest'
     } else if (mode === 'clear') {
       msg = 'operation cancelled'
     } else {
