@@ -179,4 +179,4 @@ def make_url_from_file(filename, file_binary_data, the_uuid=''):
 
 class FilesViewSetGetVersion(viewsets.ViewSet):
     def list(self, request):
-        return Response({"version": '1.0.1'})
+        return Response({"version": '1.0.2'})
