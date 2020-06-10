@@ -8,18 +8,36 @@ from guided_redaction.attributes.models import Attribute
 class WorkbooksViewSet(viewsets.ViewSet):
     def list(self, request):
         workbooks_list = []
+
+        user_id = ''
+        if 'user_id' in request.GET.keys():
+            if request.GET['user_id'] and \
+                request.GET['user_id'] != 'undefined' and \
+                request.GET['user_id'] != 'all':
+                user_id = request.GET['user_id']
+
         for workbook in Workbook.objects.all():
             workbook_obj = {
                 'id': workbook.id,
                 'name': workbook.name,
                 'updated_on': workbook.updated_on,
             }
+
+            owner = ''
+            attrs = {}
             if Attribute.objects.filter(workbook=workbook).exists():
                 attributes = Attribute.objects.filter(workbook=workbook)
                 for attribute in attributes:
                     if attribute.name == 'user_id':
                         owner = attribute.value
                         workbook_obj['owner'] = owner
+                    else:
+                        attrs[attribute.name] = attribute.value
+            if attrs:
+                workbook_obj['attributes'] = attrs
+
+            if user_id and owner != user_id:
+                continue
 
             workbooks_list.append(workbook_obj)
 
