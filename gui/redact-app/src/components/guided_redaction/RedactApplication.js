@@ -192,6 +192,7 @@ class RedactApplication extends React.Component {
     this.readTelemetryRawData=this.readTelemetryRawData.bind(this)
     this.toggleShowVisibility=this.toggleShowVisibility.bind(this)
     this.impersonateUser=this.impersonateUser.bind(this)
+    this.getAndSaveUser=this.getAndSaveUser.bind(this)
   }
 
   impersonateUser(new_user_id) {
@@ -201,7 +202,7 @@ class RedactApplication extends React.Component {
     this.processUserClasses()
   }
 
-  getUserOnMount() {
+  getAndSaveUser() {
     const user_id = this.getCurrentUser()
     if (!user_id) {
       return
@@ -1021,7 +1022,7 @@ class RedactApplication extends React.Component {
   }
 
   componentDidMount() {
-    this.getUserOnMount()
+    this.getAndSaveUser()
     this.processUserClasses()
     if (!this.state.showMovieParserLink) {
       document.getElementById('movie_panel_link').style.display = 'none'
@@ -2651,9 +2652,9 @@ class RedactApplication extends React.Component {
     let top_level_style = {}
     if (this.state.maximize) {
       top_level_style = {
-        position: 'absolute',
-        width: '100%',
-        left: 0,
+        position: 'absolute !important',
+        width: '100% !important',
+        left: '0 !important',
       }
     }
     return (
@@ -2710,6 +2711,7 @@ class RedactApplication extends React.Component {
                 establishNewMovie={this.establishNewMovie}
                 preserve_movie_audio={this.state.preserve_movie_audio}
                 message={this.state.message}
+                getAndSaveUser={this.getAndSaveUser}
               />
             </Route>
             <Route path='/redact/image'>
@@ -2729,7 +2731,6 @@ class RedactApplication extends React.Component {
                 getNextImageHash={this.getNextImageHash}
                 getPrevImageHash={this.getPrevImageHash}
                 setImageScale={this.setImageScale}
-                templates={this.state.tier_1_scanners['template']}
                 clearCurrentFramesetChanges={this.clearCurrentFramesetChanges}
                 whenDoneTarget={this.state.whenDoneTarget}
                 gotoWhenDoneTarget={this.gotoWhenDoneTarget}
@@ -2741,6 +2742,10 @@ class RedactApplication extends React.Component {
                 illustrateParameters={this.state.illustrateParameters}
                 setIllustrateParameters={this.setIllustrateParameters}
                 message={this.state.message}
+                tier_1_scanners={this.state.tier_1_scanners}
+                tier_1_scanner_current_ids={this.state.tier_1_scanner_current_ids}
+                cropImage={this.cropImage}
+                getAndSaveUser={this.getAndSaveUser}
               />
             </Route>
             <Route path='/redact/compose'>
@@ -2766,6 +2771,7 @@ class RedactApplication extends React.Component {
                 dispatchPipeline={this.dispatchPipeline}
                 attachToJob={this.attachToJob}
                 message={this.state.message}
+                getAndSaveUser={this.getAndSaveUser}
               />
             </Route>
             <Route path='/redact/insights'>
@@ -2838,6 +2844,7 @@ class RedactApplication extends React.Component {
                 attached_job={this.state.attached_job}
                 message={this.state.message}
                 maximize={this.state.maximize}
+                getAndSaveUser={this.getAndSaveUser}
               />
             </Route>
           </Switch>
