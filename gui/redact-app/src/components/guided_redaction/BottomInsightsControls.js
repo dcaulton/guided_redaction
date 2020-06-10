@@ -409,6 +409,7 @@ class BottomInsightsControls extends React.Component {
           preserve_movie_audio={this.props.preserve_movie_audio}
           getPipelines={this.props.getPipelines}
           impersonateUser={this.props.impersonateUser}
+          maximize={this.props.maximize}
         />
 
       </div>

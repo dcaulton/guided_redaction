@@ -827,6 +827,10 @@ class SessionControls extends React.Component {
     if (this.props.preserve_movie_audio) {
       preserve_movie_audio_checked = 'checked'
     }
+    let maximize_checked = ''
+    if (this.props.maximize) {
+      maximize_checked = 'checked'
+    }
     const when_done_selector = this.buildWhenDoneSelector()
     const user_tone_selector = this.buildUserToneSelector()
     const ping_button = this.buildPingButton() 
@@ -913,6 +917,16 @@ class SessionControls extends React.Component {
                     onChange={(event) => this.props.toggleGlobalStateVar('preserve_movie_audio')}
                   />
                   Preserve Movie Audio
+                </div>
+
+                <div className='row mt-3 bg-light rounded'>
+                  <input
+                    className='ml-2 mr-2 mt-1'
+                    checked={maximize_checked}
+                    type='checkbox'
+                    onChange={(event) => this.props.toggleGlobalStateVar('maximize')}
+                  />
+                  Maximize
                 </div>
 
                 {show_hide_user}

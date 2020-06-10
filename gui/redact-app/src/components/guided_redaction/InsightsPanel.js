@@ -1533,6 +1533,7 @@ class InsightsPanel extends React.Component {
             setModalImage={this.setModalImage}
             mask_method={this.props.mask_method}
             impersonateUser={this.props.impersonateUser}
+            maximize={this.props.maximize}
           />
         </div>
 
