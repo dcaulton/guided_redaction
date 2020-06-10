@@ -159,6 +159,13 @@ class JobsViewSet(viewsets.ViewSet):
             jobs = Job.objects.filter(workbook_id=request.GET['workbook_id'])
         else:
             jobs = Job.objects.filter(parent_id__isnull=True)
+        user_id = ''
+        if 'user_id' in request.GET.keys():
+            if request.GET['user_id'] and \
+                request.GET['user_id'] != 'undefined' and \
+                request.GET['user_id'] != 'all':
+                user_id = request.GET['user_id']
+
         for job in jobs:
             children = Job.objects.filter(parent_id=job.id).order_by('sequence')
             child_ids = [child.id for child in children]
@@ -166,11 +173,19 @@ class JobsViewSet(viewsets.ViewSet):
             wall_clock_run_time = str(job.updated - job.created_on)
 
             owner = ''
+            attrs = {}
             if Attribute.objects.filter(job=job).exists():
                 attributes = Attribute.objects.filter(job=job)
                 for attribute in attributes:
                     if attribute.name == 'user_id':
                         owner = attribute.value
+                    else:
+                        attrs[attribute.name] = attribute.value
+            if attrs:
+                job_obj['attributes'] = attrs
+
+            if user_id and owner != user_id:
+                continue
 
             job_obj = {
                 'id': job.id,
@@ -184,6 +199,7 @@ class JobsViewSet(viewsets.ViewSet):
                 'app': job.app,
                 'operation': job.operation,
                 'workbook_id': job.workbook_id,
+                'owner': owner,
                 'children': child_ids,
             }
             if owner:
@@ -199,6 +215,7 @@ class JobsViewSet(viewsets.ViewSet):
         child_ids = [child.id for child in children]
         pretty_time = self.pretty_date(job.created_on)
         wall_clock_run_time = str(job.updated - job.created_on)
+
         job_data = {
             'id': job.id,
             'status': job.status,
@@ -218,13 +235,18 @@ class JobsViewSet(viewsets.ViewSet):
         }
 
         owner = ''
+        attrs = {}
         if Attribute.objects.filter(job=job).exists():
             attributes = Attribute.objects.filter(job=job)
             for attribute in attributes:
                 if attribute.name == 'user_id':
                     owner = attribute.value
+                else:
+                    attrs[attribute.name] = attribute.value
         if owner:
             job_data['owner'] = owner
+        if attrs:
+            job_data['attributes'] = attrs
 
         return Response({"job": job_data})
 
