@@ -1,6 +1,14 @@
 import React from 'react'
 import CanvasImageOverlay from './CanvasImageOverlay'
 import {getMessage, getDisplayMode} from './redact_utils.js'
+import {
+  buildLabelAndTextInput,
+  buildInlinePrimaryButton,
+  buildTier1LoadButton,
+  buildTier1DeleteButton,
+  buildIdString,
+  doTier1Save,
+} from './SharedControls'
 
 class ImagePanel extends React.Component {
   constructor(props) {
@@ -229,14 +237,14 @@ class ImagePanel extends React.Component {
       job_data['operation'] = 'scan_template_multi'
       job_data['description'] = 'multiple templates single image match from ImagePanel: '
       job_data['description'] += 'image ' + this.props.getImageUrl()
-      templates_wrap = this.props.templates
+      templates_wrap = this.props.tier_1_scanners['template']
       const temp_group_id = 'template_group_' + Math.floor(Math.random(10000, 99999)*100000).toString()
       job_data['request_data']['id'] = temp_group_id
     } else {
       job_data['operation'] = 'scan_template'
       job_data['description'] = 'single template single image match from ImagePanel: '
       job_data['description'] += 'image ' + this.props.getImageUrl()
-      templates_wrap[extra_data] = this.props.templates[extra_data]
+      templates_wrap[extra_data] = this.props.tier_1_scanners['template'][extra_data]
       job_data['request_data']['id'] = extra_data
       job_data['request_data']['template_id'] = extra_data
     }
@@ -528,7 +536,7 @@ class ImagePanel extends React.Component {
     let next_button = this.buildGetNextButton()
     let prev_button = this.buildGetPrevButton()
     let tnp_style = {
-      'min-height': '60px',
+      'minHeight': '60px',
     }
     return (
       <div 
@@ -608,7 +616,7 @@ class ImagePanel extends React.Component {
 
               <BottomImageControls 
                 mode={this.state.mode}
-                templates={this.props.templates}
+                templates={this.props.tier_1_scanners['template']}
                 display_mode={this.state.display_mode}
                 submode={this.state.submode}
                 message={this.props.message}
@@ -642,6 +650,11 @@ class ImagePanel extends React.Component {
               <div className='col-lg-12'>
                 <TemplateBuilderControls 
                   getImageUrl={this.props.getImageUrl}
+                  tier_1_scanners={this.props.tier_1_scanners}
+                  tier_1_scanner_current_ids={this.props.tier_1_scanner_current_ids}
+                  setGlobalStateVar={this.props.setGlobalStateVar}
+                  cropImage={this.props.cropImage}
+                  setMessage={this.setMessage}
                 />
               </div>
             </div>
@@ -655,10 +668,222 @@ class ImagePanel extends React.Component {
 
 
 class TemplateBuilderControls extends React.Component {
+
+  constructor(props) {
+    super(props)
+    this.state = {
+      id: '',
+      name: '',
+      attributes: {},
+      scale: '1_1',
+      match_percent: 90,
+      match_method: 'any',
+      scan_level: 'tier_2',
+      anchors: [],
+      mask_zones: [],
+      download_link: '',
+      unsaved_changes: false,
+      attribute_search_name: '',
+      attribute_search_value: '',
+    }
+    this.getTemplateFromState=this.getTemplateFromState.bind(this)
+  }
+
+  componentDidMount() {
+    this.loadNewTemplate()
+  }
+
+  loadNewTemplate() {
+    let deepCopyIds = JSON.parse(JSON.stringify(this.props.tier_1_scanner_current_ids))
+    deepCopyIds['template'] = ''
+    this.props.setGlobalStateVar('tier_1_scanner_current_ids', deepCopyIds)
+    const the_id = 'template_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
+
+    this.setState({
+      id: the_id,
+      name: '',
+      attributes: {},
+      scale: '1_1',
+      match_percent: 90,
+      match_method: 'any',
+      scan_level: 'tier_2',
+      anchors: [],
+      mask_zones: [],
+      download_link: '',
+      unsaved_changes: false,
+    })
+  }
+
+  loadTemplate(template_id) {
+    if (!template_id) {
+      this.loadNewTemplate()
+    } else {
+      const template = this.props.tier_1_scanners['template'][template_id]
+      this.setState({
+        id: template_id,
+        name: template['name'],
+        attributes: template['attributes'],
+        scale: template['scale'],
+        match_percent: template['match_percent'],
+        match_method: template['match_method'],
+        scan_level: template['scan_level'],
+        anchors: template['anchors'],
+        mask_zones: template['mask_zones'],
+        download_link: '',
+        unsaved_changes: false,
+      })
+    }
+    let deepCopyIds = JSON.parse(JSON.stringify(this.props.tier_1_scanner_current_ids))
+    deepCopyIds['template'] = template_id
+    this.props.setGlobalStateVar('tier_1_scanner_current_ids', deepCopyIds)
+  }
+
+  buildNameField() {
+    return buildLabelAndTextInput(
+      this.state.name,
+      'Name',
+      'mini_template_name',
+      'name',
+      25,
+      ((value)=>{this.setLocalStateVar('name', value)})
+    )
+  }
+
+  setLocalStateVar(var_name, var_value, when_done=(()=>{})) {
+    this.setState({
+      [var_name]: var_value,
+      unsaved_changes: true,
+    },
+    when_done())
+  }
+
+  getTemplateFromState() {
+    const template = {
+      id: this.state.id,
+      name: this.state.name,
+      attributes: this.state.attributes,
+      scale: this.state.scale,
+      match_percent: this.state.match_percent,
+      match_method: this.state.match_method,
+      scan_level: this.state.scan_level,
+      anchors: this.state.anchors,
+      mask_zones: this.state.mask_zones,
+    }
+    return template
+  }
+
+  async exportCurrentAnchors() {
+    for (let i=0; i < this.state.anchors.length; i++) {
+      let the_anchor = this.state.anchors[i]
+      let resp = this.props.cropImage(
+        the_anchor['image'],
+        the_anchor['start'],
+        the_anchor['end'],
+        the_anchor['id'],
+        this.anchorSliceDone
+      )
+      await resp
+    }
+  }
+
+  async anchorSliceDone(response) {                                             
+    const anchor_id = response['anchor_id']                                     
+    const cropped_image_bytes = response['cropped_image_bytes']                 
+    let deepCopyAnchors = JSON.parse(JSON.stringify(this.state.anchors))        
+    let something_changed = false                                               
+    for (let i=0; i < deepCopyAnchors.length; i++) {                            
+      let anchor = deepCopyAnchors[i]                                           
+      if (anchor['id'] === anchor_id) {                                         
+        if (Object.keys(anchor).includes('cropped_image_bytes')) {              
+          if (anchor['cropped_image_bytes'] === cropped_image_bytes) {          
+            continue                                                            
+          } else {                                                              
+            anchor['cropped_image_bytes'] = cropped_image_bytes                 
+            something_changed = true                                            
+          }                                                                     
+        } else {                                                                
+          anchor['cropped_image_bytes'] = cropped_image_bytes                   
+          something_changed = true                                              
+        }                                                                       
+      }                                                                         
+    }                                                                           
+    if (something_changed) {                                                    
+      this.setState({                                                           
+        anchors: deepCopyAnchors,                                               
+        unsaved_changes: true,                                                  
+      })                                                                        
+    } 
+  }
+
+  async doSave(when_done=(()=>{})) {
+    let eca_response = this.exportCurrentAnchors()
+    .then(() => {
+      const template = doTier1Save(
+        'template',
+        this.getTemplateFromState,
+        this.props.setMessage,
+        this.props.tier_1_scanners,
+        this.props.tier_1_scanner_current_ids,
+        this.props.setGlobalStateVar,
+      )
+      return template
+    })
+    .then((template) => {
+      this.setState({
+        unsaved_changes: false,
+      })
+      when_done(template)
+    })
+    await eca_response
+  }
+
+  buildLoadButton() {
+    return buildTier1LoadButton(
+      'template',
+      this.props.tier_1_scanners['template'],
+      ((value)=>{this.loadTemplate(value)})
+    )
+  }
+
+  buildSaveButton() {
+    return buildInlinePrimaryButton(
+      'Save',
+      (()=>{this.doSave()})
+    )
+  }
+
+  deleteTemplate(template_id) {
+    let deepCopyScanners = JSON.parse(JSON.stringify(this.props.tier_1_scanners))
+    let deepCopyTemplates = deepCopyScanners['template']
+    delete deepCopyTemplates[template_id]
+    deepCopyScanners['template'] = deepCopyTemplates
+    this.props.setGlobalStateVar('tier_1_scanners', deepCopyScanners)
+    if (template_id === this.props.tier_1_scanner_current_ids['template']) {
+      let deepCopyIds = JSON.parse(JSON.stringify(this.props.tier_1_scanner_current_ids))
+      deepCopyIds['template'] = ''
+      this.props.setGlobalStateVar('tier_1_scanner_current_ids', deepCopyIds)
+    }
+    setTimeout((() => {this.props.setGlobalStateVar('message', 'Template was deleted')}), 500)
+  }
+
+  buildDeleteButton() {                                                         
+    return buildTier1DeleteButton(                                              
+      'template',                                                               
+      this.props.tier_1_scanners['template'],                                   
+      ((value)=>{this.deleteTemplate(value)})                                   
+    )                                                                           
+  }  
+
   render() {
     if (!this.props.getImageUrl()) {
       return ''
     }
+    const name_field = this.buildNameField()
+    const load_button = this.buildLoadButton()
+    const save_button = this.buildSaveButton()
+    const delete_button = this.buildDeleteButton()
+    const id_string = buildIdString(this.state.id, 'template', this.state.unsaved_changes)
+
     return (
       <div>
 
@@ -693,10 +918,20 @@ class TemplateBuilderControls extends React.Component {
 
             <div className='col mb-3'>
               <div className='row mt-2'>
-                <div className='d-inline font-weight-bold'>
-                  Add minimal template creation tool here
-                </div>
+                {load_button}
+                {save_button}
+                {delete_button}
               </div>
+
+              <div className='row mt-2'>
+                {id_string}
+              </div>
+
+              <div className='row mt-2'>
+                {name_field}
+              </div>
+
+
             </div>
           </div>
         </div>

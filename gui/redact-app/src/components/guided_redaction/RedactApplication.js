@@ -2729,7 +2729,6 @@ class RedactApplication extends React.Component {
                 getNextImageHash={this.getNextImageHash}
                 getPrevImageHash={this.getPrevImageHash}
                 setImageScale={this.setImageScale}
-                templates={this.state.tier_1_scanners['template']}
                 clearCurrentFramesetChanges={this.clearCurrentFramesetChanges}
                 whenDoneTarget={this.state.whenDoneTarget}
                 gotoWhenDoneTarget={this.gotoWhenDoneTarget}
@@ -2741,6 +2740,9 @@ class RedactApplication extends React.Component {
                 illustrateParameters={this.state.illustrateParameters}
                 setIllustrateParameters={this.setIllustrateParameters}
                 message={this.state.message}
+                tier_1_scanners={this.state.tier_1_scanners}
+                tier_1_scanner_current_ids={this.state.tier_1_scanner_current_ids}
+                cropImage={this.cropImage}
               />
             </Route>
             <Route path='/redact/compose'>
