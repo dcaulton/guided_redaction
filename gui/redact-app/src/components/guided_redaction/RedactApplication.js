@@ -701,24 +701,27 @@ class RedactApplication extends React.Component {
     let aj_message_text = this.getAttachedJobMessage(job)
     deepCopyAJ['status'] = job['status']
     deepCopyAJ['percent_done'] = job['elapsed_time']
-      let msg = new SpeechSynthesisUtterance(aj_message_text)
-      if (this.state.voice['index']) {
-        const int_index = parseInt(this.state.voice['index'])
-        if (window.speechSynthesis.getVoices()) {
-          msg.voice = window.speechSynthesis.getVoices()[int_index]
-        }
+    let msg = new SpeechSynthesisUtterance(aj_message_text)
+    this.setState({
+      attached_job: deepCopyAJ,
+      message: aj_message_text,
+    })
+    if (!this.state.playSound) {
+      return
+    }
+    if (this.state.voice['index']) {
+      const int_index = parseInt(this.state.voice['index'])
+      if (window.speechSynthesis.getVoices()) {
+        msg.voice = window.speechSynthesis.getVoices()[int_index]
       }
-      if (this.state.voice['pitch']) {
-        msg.pitch = this.state.voice['pitch']
-      }
-      if (this.state.voice['rate']) {
-        msg.pitch = this.state.voice['rate']
-      }
-      window.speechSynthesis.speak(msg);
-      this.setState({
-        attached_job: deepCopyAJ,
-        message: aj_message_text,
-      })
+    }
+    if (this.state.voice['pitch']) {
+      msg.pitch = this.state.voice['pitch']
+    }
+    if (this.state.voice['rate']) {
+      msg.pitch = this.state.voice['rate']
+    }
+    window.speechSynthesis.speak(msg);
   }
 
   checkForJobs() {
