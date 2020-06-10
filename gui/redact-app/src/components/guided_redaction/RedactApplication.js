@@ -30,7 +30,6 @@ class RedactApplication extends React.Component {
       image_height: 0,
       image_scale: 1,
       current_workbook_name: 'workbook 1',
-      playSound: true,
       current_workbook_id: '',
       workbooks: [],
       movies: {},
@@ -56,11 +55,6 @@ class RedactApplication extends React.Component {
         status: '',
         percent_done: '',
       },
-      voice: {
-        index: '',
-        pitch: '',
-        rate: '',
-      },
       preserveAllJobs: false,
       telemetry_data: {
         raw_data_url: '',
@@ -69,10 +63,18 @@ class RedactApplication extends React.Component {
       pipelines: {},
       results: {},
       current_pipeline_id: '',
-      userTone: 'blip',
       preserve_movie_audio: false,
       app_codebooks: {},
       user: {},
+      session_audio: {
+        playSound: true,
+        userTone: 'blip',
+        voice: {
+          index: '',
+          pitch: '',
+          rate: '',
+        },
+      },
       message: '',
       visibilityFlags: {
         'templates': true,
@@ -244,7 +246,9 @@ class RedactApplication extends React.Component {
 
   processUserClass(class_name) {
     if (class_name === 'no_sound') {
-      this.setGlobalStateVar('playSound', false)
+      let deepCopySessionAudio = JSON.parse(JSON.stringify(this.state.session_audio))
+      deepCopySessionAudio['playSound']  = false
+      this.setGlobalStateVar('session_audio', deepCopySessionAudio)
     }
   }
 
@@ -635,13 +639,13 @@ class RedactApplication extends React.Component {
   }
 
   playTone() {
-    if (!this.state.playSound) {
+    if (!this.state.session_audio['playSound']) {
       return
     }
     let context = new AudioContext()
     var now = context.currentTime;
     var ct = new CompositeTone()
-    if (this.state.userTone === 'kick_snare') {
+    if (this.state.session_audio['userTone'] === 'kick_snare') {
       var kick = ct.makeKick(context);
       var snare = ct.makeSnare(context);
       for (let i=0; i < 16; i++) {
@@ -650,10 +654,10 @@ class RedactApplication extends React.Component {
         kick.trigger(offset + 0.13);
         snare.trigger(offset + 0.25);
       }
-    } else if (this.state.userTone === 'lfo') {
+    } else if (this.state.session_audio['userTone'] === 'lfo') {
       var lfo = ct.makeLFO(context)
       lfo.trigger(now + .75)
-    } else if (this.state.userTone === 'blip') {
+    } else if (this.state.session_audio['userTone'] === 'blip') {
       var blip = ct.makeBlip(context)
       blip.trigger(now + .75)
     }
@@ -706,20 +710,20 @@ class RedactApplication extends React.Component {
       attached_job: deepCopyAJ,
       message: aj_message_text,
     })
-    if (!this.state.playSound) {
+    if (!this.state.session_audio['playSound']) {
       return
     }
-    if (this.state.voice['index']) {
-      const int_index = parseInt(this.state.voice['index'])
+    if (this.state.session_audio['voice']['index']) {
+      const int_index = parseInt(this.state.session_audio['voice']['index'])
       if (window.speechSynthesis.getVoices()) {
         msg.voice = window.speechSynthesis.getVoices()[int_index]
       }
     }
-    if (this.state.voice['pitch']) {
-      msg.pitch = this.state.voice['pitch']
+    if (this.state.session_audio['voice']['pitch']) {
+      msg.pitch = this.state.session_audio['voice']['pitch']
     }
-    if (this.state.voice['rate']) {
-      msg.pitch = this.state.voice['rate']
+    if (this.state.session_audio['voice']['rate']) {
+      msg.pitch = this.state.session_audio['voice']['rate']
     }
     window.speechSynthesis.speak(msg);
   }
@@ -2773,7 +2777,7 @@ class RedactApplication extends React.Component {
                 getWorkbooks={this.getWorkbooks}
                 saveWorkbook={this.saveWorkbook}
                 saveWorkbookName={this.saveWorkbookName}
-                playSound={this.state.playSound}
+                session_audio={this.state.session_audio}
                 loadWorkbook={this.loadWorkbook}
                 deleteWorkbook={this.deleteWorkbook}
                 workbooks={this.state.workbooks}
@@ -2798,7 +2802,6 @@ class RedactApplication extends React.Component {
                 telemetry_data={this.state.telemetry_data}
                 setTelemetryData={this.setTelemetryData}
                 getJobResultData={this.getJobResultData}
-                userTone={this.state.userTone}
                 saveScannerToDatabase={this.saveScannerToDatabase}
                 scanners={this.state.scanners}
                 getScanners={this.getScanners}

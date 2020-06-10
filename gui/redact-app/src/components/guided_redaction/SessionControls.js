@@ -165,8 +165,8 @@ class SessionControls extends React.Component {
       <div>
         <select
             name='when_done_selector'
-            onChange={(event) => this.props.setGlobalStateVar('userTone', event.target.value)}
-            value={this.props.userTone}
+            onChange={(event) => this.setUserTone(event.target.value)}
+            value={this.props.session_audio['userTone']}
         >
           <option value=''>--none--</option>
           <option value='blip'>Blip</option>
@@ -648,7 +648,9 @@ class SessionControls extends React.Component {
       pitch: pitch,
       rate: rate,
     }
-    this.props.setGlobalStateVar('voice', voice_obj)
+    let deepCopySessionAudio = JSON.parse(JSON.stringify(this.props.session_audio))
+    deepCopySessionAudio['voice'] = voice_obj
+    this.props.setGlobalStateVar('session_audio', deepCopySessionAudio)
   }
 
   getVoiceIndex() {
@@ -783,6 +785,19 @@ class SessionControls extends React.Component {
     }
   }
 
+  togglePlaySound() {
+    const new_val = !this.props.session_audio['playSound']
+    let deepCopySessionAudio = JSON.parse(JSON.stringify(this.props.session_audio))
+    deepCopySessionAudio['playSound'] = new_val
+    this.props.setGlobalStateVar('session_audio', deepCopySessionAudio)
+  }
+
+  setUserTone(new_val) {
+    let deepCopySessionAudio = JSON.parse(JSON.stringify(this.props.session_audio))
+    deepCopySessionAudio['userTone'] = new_val
+    this.props.setGlobalStateVar('session_audio', deepCopySessionAudio)
+  }
+
   render() {
     const campaign_movies_box = this.buildCampaignMoviesBox()
     const recognition_button = this.buildSpeechRecognitionButton()
@@ -801,7 +816,7 @@ class SessionControls extends React.Component {
     const panels_checkboxes = this.buildPanelsCheckboxes() 
 
     let play_sound_checked = ''
-    if (this.props.playSound) {
+    if (this.props.session_audio['playSound']) {
       play_sound_checked = 'checked'
     }
     let preserve_all_jobs_checked = ''
@@ -923,7 +938,7 @@ class SessionControls extends React.Component {
                       className='ml-2 mr-2 mt-1'
                       checked={play_sound_checked}
                       type='checkbox'
-                      onChange={() => this.props.toggleGlobalStateVar('playSound')}
+                      onChange={() => this.togglePlaySound()}
                     />
                     Play Sound
                   </div>

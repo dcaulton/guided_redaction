@@ -390,7 +390,7 @@ class BottomInsightsControls extends React.Component {
           current_workbook_id={this.props.current_workbook_id}
           saveWorkbook={this.props.saveWorkbook}
           saveWorkbookName={this.props.saveWorkbookName}
-          playSound={this.props.playSound}
+          session_audio={this.props.session_audio}
           displayInsightsMessage={this.props.displayInsightsMessage}
           callPing={this.props.callPing}
           callGetVersion={this.props.callGetVersion}
@@ -405,7 +405,6 @@ class BottomInsightsControls extends React.Component {
           whenDoneTarget={this.props.whenDoneTarget}
           frameset_discriminator={this.props.frameset_discriminator}
           preserveAllJobs={this.props.preserveAllJobs}
-          userTone={this.props.userTone}
           submitInsightsJob={this.props.submitInsightsJob}
           preserve_movie_audio={this.props.preserve_movie_audio}
           getPipelines={this.props.getPipelines}

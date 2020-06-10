@@ -1488,7 +1488,7 @@ class InsightsPanel extends React.Component {
             draggedId={this.state.draggedId}
             visibilityFlags={this.props.visibilityFlags}
             toggleShowVisibility={this.props.toggleShowVisibility}
-            playSound={this.props.playSound}
+            session_audio={this.props.session_audio}
             campaign_movies={this.props.campaign_movies}
             setCampaignMovies={this.props.setCampaignMovies}
             updateGlobalState={this.props.updateGlobalState}
@@ -1506,7 +1506,6 @@ class InsightsPanel extends React.Component {
             setTelemetryRules={this.props.setTelemetryRules}
             addInsightsCallback={this.addInsightsCallback}
             clicked_coords={this.state.clicked_coords}
-            userTone={this.props.userTone}
             setScrubberToIndex={this.setScrubberToIndex}
             getFramesetHashForImageUrl={this.props.getFramesetHashForImageUrl}
             getFramesetHashesInOrder={this.props.getFramesetHashesInOrder}
