@@ -2507,6 +2507,14 @@ class RedactApplication extends React.Component {
     return ''
   }
 
+  handleMaximize() {
+    if (this.state.maximize) {
+      if (document.getElementById('App-whoami')) {
+        document.getElementById('App-whoami').parentNode.parentNode.style.display='none'
+      }
+    }
+  }
+
   makeNewFrameFrameset(the_url) {
     if (!Object.keys(this.state.movies).length) {
       let new_frameset_hash = '1'
@@ -2646,21 +2654,12 @@ class RedactApplication extends React.Component {
   }
 
   render() {
+    this.handleMaximize()
     if (document.getElementById('movie_panel_link') && this.state.showMovieParserLink) {
       document.getElementById('movie_panel_link').style.display = 'block'
     }
-    let top_level_style = {}
-    if (this.state.maximize) {
-      top_level_style = {
-        position: 'absolute !important',
-        width: '100% !important',
-        left: '0 !important',
-      }
-    }
     return (
-      <div
-          style={top_level_style}
-      >
+      <div>
         <nav className="navbar navbar-expand-lg navbar-dark bg-dark">
         <ul className="navbar-nav mr-auto mt-2 mt-lg-0">
           <li className="nav-item">
