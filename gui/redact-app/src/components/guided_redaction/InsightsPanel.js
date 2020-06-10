@@ -18,7 +18,6 @@ class InsightsPanel extends React.Component {
       image_height: 1000,
       insights_image_scale: 1,
       insights_title: 'Insights, load a movie to get started',
-      insights_message: '.',
       prev_coords: (0,0),
       clicked_coords: (0,0),
       selected_area_template_anchor: '',
@@ -1015,9 +1014,9 @@ class InsightsPanel extends React.Component {
     } else if (the_mode === 'hog_pick_training_image_2') {
       the_message = 'pick the lower right corner of the hog image'
     }
+    this.props.setGlobalStateVar('message', the_message)
     this.setState({
       mode: the_mode,
-      insights_message: the_message,
     })
   }
 
@@ -1038,9 +1037,7 @@ class InsightsPanel extends React.Component {
   }
   
   displayInsightsMessage(the_message) {
-    this.setState({
-      insights_message: the_message
-    })
+    this.props.setGlobalStateVar('message', the_message)
   }
 
   movieSplitDone(new_framesets) {
@@ -1048,10 +1045,10 @@ class InsightsPanel extends React.Component {
     document.getElementById('movie_scrubber').max = len-1
     const first_key = this.props.getFramesetHashesInOrder(new_framesets)[0]
     const first_image = new_framesets[first_key]['images'][0]
+    this.props.setGlobalStateVar('message', '.')
     this.setState({
       insights_image: first_image,
       insights_title: first_image,
-      insights_message: '.',
     }, this.setImageSize(first_image))
   }
 
@@ -1410,8 +1407,8 @@ class InsightsPanel extends React.Component {
               <div className='row' id='insights_title'>
                 {this.state.insights_title}
               </div>
-              <div className='row' id='insights_message'>
-                {this.state.insights_message}
+              <div className='row' id='message'>
+                {this.props.message}
               </div>
             </div>
           </div>
