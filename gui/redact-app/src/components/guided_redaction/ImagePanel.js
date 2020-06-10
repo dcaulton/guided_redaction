@@ -20,6 +20,7 @@ class ImagePanel extends React.Component {
       last_click: null,
       oval_center: null,
       illustrate_shaded: false,
+      callbacks: {},
     }
     this.button_style = {
       borderColor: 'black',
@@ -29,6 +30,15 @@ class ImagePanel extends React.Component {
     this.submitImageJob=this.submitImageJob.bind(this)
     this.setIllustrateShaded=this.setIllustrateShaded.bind(this)
     this.newImage=this.newImage.bind(this)
+    this.addImageCallback=this.addImageCallback.bind(this)
+  }
+
+  addImageCallback(the_key, the_callback) {
+    let new_callbacks = this.state.callbacks
+    new_callbacks[the_key] = the_callback
+    this.setState({
+      callbacks: new_callbacks,
+    })
   }
 
   newImage() {
@@ -306,6 +316,9 @@ class ImagePanel extends React.Component {
         mode: 'add_2',
       })
       this.setMessage(getMessage('add_2', this.state.submode))
+
+    } else if (Object.keys(this.state.callbacks).includes(this.state.mode)) {
+      this.state.callbacks[this.state.mode]([x_scaled, y_scaled])
     } else if (this.state.mode === 'add_template_anchor_1') {
       this.setMode('add_template_anchor_2')
     } else if (this.state.mode === 'add_2') {
@@ -646,12 +659,16 @@ class ImagePanel extends React.Component {
               <div className='col-lg-12'>
                 <TemplateBuilderControls 
                   getImageUrl={this.props.getImageUrl}
+                  getAndSaveUser={this.props.getAndSaveUser}
                   tier_1_scanners={this.props.tier_1_scanners}
                   tier_1_scanner_current_ids={this.props.tier_1_scanner_current_ids}
                   setGlobalStateVar={this.props.setGlobalStateVar}
                   cropImage={this.props.cropImage}
                   setMessage={this.setMessage}
                   setMode={this.setMode}
+                  addImageCallback={this.addImageCallback}
+                  last_click={this.state.last_click}
+                  movie_url={this.props.movie_url}
                 />
               </div>
             </div>
@@ -684,11 +701,37 @@ class TemplateBuilderControls extends React.Component {
       attribute_search_value: '',
     }
     this.getTemplateFromState=this.getTemplateFromState.bind(this)
+    this.addAnchorCallback=this.addAnchorCallback.bind(this)
+    this.anchorSliceDone=this.anchorSliceDone.bind(this)
   }
 
   componentDidMount() {
     this.loadNewTemplate()
     this.props.getAndSaveUser()
+    this.props.addImageCallback('add_template_anchor_2', this.addAnchorCallback)
+  }
+
+  addAnchorCallback(end_coords) {
+    const start_coords = this.props.last_click
+    const anchor_id = 'anchor_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
+    const image_url = this.props.getImageUrl()
+    const the_anchor = {
+        'id': anchor_id,
+        'start': start_coords,
+        'end': end_coords,
+        'image': image_url,
+        'movie': this.props.movie_url,
+    }
+    let deepCopyAnchors = JSON.parse(JSON.stringify(this.state.anchors))
+    deepCopyAnchors.push(the_anchor)
+    this.setState({
+      anchors: deepCopyAnchors,
+      unsaved_changes: true,
+    },
+    (() => {this.exportCurrentAnchors()}),
+    )
+    this.props.setMode('view')
+    this.props.setMessage('anchor was successfully added')
   }
 
   loadNewTemplate() {
@@ -873,6 +916,9 @@ class TemplateBuilderControls extends React.Component {
   }
 
   buildAddAnchorButton() {
+    if (this.state.anchors.length) {
+      return ''
+    }
     return buildInlinePrimaryButton(
       'Add Anchor',
       (()=>{this.addTemplateAnchor()})
@@ -886,6 +932,77 @@ class TemplateBuilderControls extends React.Component {
     this.props.setMode('add_template_anchor_1')
   }
 
+  deleteAnchor(anchor_id) {
+    let new_anchors = []
+    for (let i=0; i < this.state.anchors.length; i++) {
+      const anchor = this.state.anchors[i]
+      if (anchor['id'] !== anchor_id) {
+        new_anchors.push(anchor)
+      }
+    }
+    this.setState({
+      anchors: new_anchors,
+    })
+  }
+
+  buildAnchorPics() {
+    if (!this.state.anchors.length) {
+      return (
+        <div
+            className='font-italic'
+        >
+          (none)
+        </div>
+      )
+    }
+    let return_arr = []
+    let anchor_images = []
+    for (let i=0; i < this.state.anchors.length; i++) {
+      let anchor = this.state.anchors[i]
+      if (Object.keys(anchor).includes('cropped_image_bytes')) {
+        anchor_images[anchor['id']] = anchor['cropped_image_bytes']
+      }
+    }
+    for (let i=0; i < Object.keys(anchor_images).length; i++) {
+      const anchor_id = Object.keys(anchor_images)[i]
+      const the_src = "data:image/gif;base64," + anchor_images[anchor_id]
+      return_arr.push(
+        <div
+          key={'hey' + i}
+          className='p-2 border-bottom'
+        >
+          <div className='d-inline'>
+            <div className='d-inline'>
+              id:
+            </div>
+            <div className='d-inline ml-2'>
+              {anchor_id}
+            </div>
+          </div>
+          <div className='d-inline ml-2'>
+            <img
+              max-height='100'
+              max-width='100'
+              key={'dapper' + i}
+              alt={anchor_id}
+              title={anchor_id}
+              src={the_src}
+            />
+          </div>
+          <div className='d-inline ml-2'>
+            <button
+                className='btn btn-link'
+                onClick={() => this.deleteAnchor(anchor_id)}
+            >
+              delete
+            </button>
+          </div>
+        </div>
+      )
+    }
+    return return_arr
+  }
+
   render() {
     if (!this.props.getImageUrl()) {
       return ''
@@ -895,6 +1012,7 @@ class TemplateBuilderControls extends React.Component {
     const save_button = this.buildSaveButton()
     const delete_button = this.buildDeleteButton()
     const add_anchor_button = this.buildAddAnchorButton()
+    const anchor_list = this.buildAnchorPics()
     const id_string = buildIdString(this.state.id, 'template', this.state.unsaved_changes)
 
     return (
@@ -943,6 +1061,15 @@ class TemplateBuilderControls extends React.Component {
 
               <div className='row mt-2'>
                 {name_field}
+              </div>
+
+              <div className='row mt-2'>
+                <div className='col-lg-12 h5 border-top border-bottom p-4'>
+                  Anchors
+                </div>
+                <div className='col-lg-12'>
+                  {anchor_list}
+                </div>
               </div>
 
 
