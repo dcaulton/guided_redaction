@@ -139,7 +139,7 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
             pipeline=pipeline
         )
         attribute.save()
-        if owner:
+        if owner_id:
             attribute = Attribute(
                 name='user_id',
                 value=owner_id,
