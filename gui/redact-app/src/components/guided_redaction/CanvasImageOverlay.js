@@ -2,6 +2,12 @@ import React from 'react';
 
 class CanvasImageOverlay extends React.Component {
 
+  constructor (props) {
+    super(props)
+    this.anchor_color = '#33F'
+    this.mask_zone_color = '#B6B'
+  }
+
   drawCrosshairs() {
     let canvas = this.refs.canvas
     let ctx = canvas.getContext("2d")
@@ -12,6 +18,7 @@ class CanvasImageOverlay extends React.Component {
     // looks like one is getting the unscaled coords, the other gets the scaled maybe?  
     if (this.props.mode === 'add_2' || this.props.mode === 'delete_2' || 
         this.props.mode === 'add_template_anchor_2' || 
+        this.props.mode === 'add_template_mask_zone_2' || 
         this.props.submode === 'ill_box_2' || this.props.mode === 'add_ocr_2') {
       let crosshair_length = 2000
       let start_x = (this.props.last_click[0] - crosshair_length/2) / this.props.image_scale
@@ -77,6 +84,53 @@ class CanvasImageOverlay extends React.Component {
     ctx.clearRect(0, 0, canvas.width, canvas.height)
   }
 
+  drawBoxesAroundStartEndRecords(records, outline_color) {
+    const canvas = this.refs.canvas
+    let ctx = canvas.getContext('2d')
+    ctx.strokeStyle = outline_color
+    ctx.lineWidth = 3
+    ctx.globalAlpha = 1
+
+    for (let i=0; i < records.length; i++) {
+      let record = records[i]
+      if (Object.keys(record).includes('start')) {
+        let start = record['start']
+        let end = record['end']
+        const start_x_scaled = start[0] * this.props.image_scale
+        const start_y_scaled = start[1] * this.props.image_scale
+        const width = (end[0] - start[0]) * this.props.image_scale
+        const height = (end[1] - start[1]) * this.props.image_scale
+        ctx.strokeRect(start_x_scaled, start_y_scaled, width, height)
+      }
+    }
+  }
+
+  drawTemplateMaskZones() {
+    if (!this.props.currentImageIsTemplateAnchorImage()) {
+      return
+    }
+    const mask_zones = this.props.getCurrentTemplateMaskZones()
+    if (mask_zones) {
+      this.drawBoxesAroundStartEndRecords(
+        mask_zones,
+        this.mask_zone_color
+      )
+    }
+  }
+
+  drawTemplateAnchors() {
+    if (!this.props.currentImageIsTemplateAnchorImage()) {
+      return
+    }
+    const anchors = this.props.getCurrentTemplateAnchors()
+    if (anchors) {
+      this.drawBoxesAroundStartEndRecords(
+        anchors,
+        this.anchor_color
+      )
+    }
+  }
+
   drawRectangles() {
     const canvas = this.refs.canvas
     let ctx = canvas.getContext("2d")
@@ -130,6 +184,8 @@ class CanvasImageOverlay extends React.Component {
     this.clearCanvasItems()
     this.drawDragDropTarget()
     this.drawRectangles()
+    this.drawTemplateMaskZones()
+    this.drawTemplateAnchors()
     this.drawCrosshairs()
   }
 
@@ -137,6 +193,8 @@ class CanvasImageOverlay extends React.Component {
     this.clearCanvasItems()
     this.drawDragDropTarget()
     this.drawRectangles()
+    this.drawTemplateMaskZones()
+    this.drawTemplateAnchors()
     this.drawCrosshairs()
   }
 

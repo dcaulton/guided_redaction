@@ -31,6 +31,47 @@ class ImagePanel extends React.Component {
     this.setIllustrateShaded=this.setIllustrateShaded.bind(this)
     this.newImage=this.newImage.bind(this)
     this.addImageCallback=this.addImageCallback.bind(this)
+    this.currentImageIsTemplateAnchorImage=this.currentImageIsTemplateAnchorImage.bind(this)
+    this.getCurrentTemplateMaskZones=this.getCurrentTemplateMaskZones.bind(this)
+    this.getCurrentTemplateAnchors=this.getCurrentTemplateAnchors.bind(this)
+  }
+
+  getCurrentTemplateMaskZones() {
+    const template_id = this.props.tier_1_scanner_current_ids['template']
+    const template = this.props.tier_1_scanners['template'][template_id]
+    if (template) {
+      return template['mask_zones']
+    }
+    return []
+  }
+
+  getCurrentTemplateAnchors() {
+    const template_id = this.props.tier_1_scanner_current_ids['template']
+    const template = this.props.tier_1_scanners['template'][template_id]
+    if (template) {
+      return template['anchors']
+    }
+    return []
+  }
+
+  currentImageIsTemplateAnchorImage() {
+    if (this.props.tier_1_scanner_current_ids['template']) {
+      let key = this.props.tier_1_scanner_current_ids['template']
+      if (!Object.keys(this.props.tier_1_scanners['template']).includes(key)) {
+        return false
+      }
+      let template = this.props.tier_1_scanners['template'][key]
+      if (!Object.keys(template).includes('anchors')) {
+        return false
+      }
+      if (!template['anchors'].length) {
+        return false
+      }
+      let cur_template_anchor_image_name = template['anchors'][0]['image']
+      return (cur_template_anchor_image_name === this.props.getImageUrl())
+    } else {
+      return true
+    }
   }
 
   addImageCallback(the_key, the_callback) {
@@ -321,6 +362,8 @@ class ImagePanel extends React.Component {
       this.state.callbacks[this.state.mode]([x_scaled, y_scaled])
     } else if (this.state.mode === 'add_template_anchor_1') {
       this.setMode('add_template_anchor_2')
+    } else if (this.state.mode === 'add_template_mask_zone_1') {
+      this.setMode('add_template_mask_zone_2')
     } else if (this.state.mode === 'add_2') {
       this.handleAddSecond(x_scaled, y_scaled)
     } else if (this.state.mode === 'delete') {
@@ -618,6 +661,9 @@ class ImagePanel extends React.Component {
                   setMessage={this.setMessage}
                   establishNewEmptyMovie={this.props.establishNewEmptyMovie}
                   addImageToMovie={this.props.addImageToMovie}
+                  currentImageIsTemplateAnchorImage={this.currentImageIsTemplateAnchorImage}
+                  getCurrentTemplateMaskZones={this.getCurrentTemplateMaskZones}
+                  getCurrentTemplateAnchors={this.getCurrentTemplateAnchors}
                 />
               </div>
 
@@ -702,6 +748,7 @@ class TemplateBuilderControls extends React.Component {
     }
     this.getTemplateFromState=this.getTemplateFromState.bind(this)
     this.addAnchorCallback=this.addAnchorCallback.bind(this)
+    this.addMaskZoneCallback=this.addMaskZoneCallback.bind(this)
     this.anchorSliceDone=this.anchorSliceDone.bind(this)
   }
 
@@ -709,6 +756,28 @@ class TemplateBuilderControls extends React.Component {
     this.loadNewTemplate()
     this.props.getAndSaveUser()
     this.props.addImageCallback('add_template_anchor_2', this.addAnchorCallback)
+    this.props.addImageCallback('add_template_mask_zone_2', this.addMaskZoneCallback)
+  }
+
+  addMaskZoneCallback(end_coords) {
+    const start_coords = this.props.last_click
+    const mask_zone_id = 'mask_zone_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
+    const image_url = this.props.getImageUrl()
+    const the_mask_zone = {
+        'id': mask_zone_id,
+        'start': start_coords,
+        'end': end_coords,
+        'image': image_url,
+        'movie': this.props.movie_url,
+    }
+    let deepCopyMaskZones = JSON.parse(JSON.stringify(this.state.mask_zones))
+    deepCopyMaskZones.push(the_mask_zone)
+    this.setState({
+      mask_zones: deepCopyMaskZones,
+      unsaved_changes: true,
+    })
+    this.doSave()
+    this.props.setMode('add_template_mask_zone_1')
   }
 
   addAnchorCallback(end_coords) {
@@ -853,6 +922,7 @@ class TemplateBuilderControls extends React.Component {
         anchors: deepCopyAnchors,                                               
         unsaved_changes: true,                                                  
       })                                                                        
+      this.doSave()
     } 
   }
 
@@ -925,11 +995,25 @@ class TemplateBuilderControls extends React.Component {
     )
   }
 
+  buildAddMaskZoneButton() {
+    return buildInlinePrimaryButton(
+      'Add Mask Zone',
+      (()=>{this.addTemplateMaskZone()})
+    )
+  }
+
   addTemplateAnchor() {
     this.setState({
       unsaved_changes: true,
     })
     this.props.setMode('add_template_anchor_1')
+  }
+
+  addTemplateMaskZone() {
+    this.setState({
+      unsaved_changes: true,
+    })
+    this.props.setMode('add_template_mask_zone_1')
   }
 
   deleteAnchor(anchor_id) {
@@ -943,6 +1027,7 @@ class TemplateBuilderControls extends React.Component {
     this.setState({
       anchors: new_anchors,
     })
+    this.doSave()
   }
 
   buildAnchorPics() {
@@ -1012,6 +1097,7 @@ class TemplateBuilderControls extends React.Component {
     const save_button = this.buildSaveButton()
     const delete_button = this.buildDeleteButton()
     const add_anchor_button = this.buildAddAnchorButton()
+    const add_mask_zone_button = this.buildAddMaskZoneButton()
     const anchor_list = this.buildAnchorPics()
     const id_string = buildIdString(this.state.id, 'template', this.state.unsaved_changes)
 
@@ -1053,6 +1139,7 @@ class TemplateBuilderControls extends React.Component {
                 {save_button}
                 {delete_button}
                 {add_anchor_button}
+                {add_mask_zone_button}
               </div>
 
               <div className='row mt-2'>
