@@ -271,7 +271,7 @@ class RedactApplication extends React.Component {
     } else if (url_name === 'workbooks_url') {
       return api_server_url + 'v1/workbooks'
     } else if (url_name === 'link_url') {
-      return api_server_url + 'v1/link/learn-dev'
+      return api_server_url + 'v1/link/learn'
     } else if (url_name === 'can_see_url') {
       return api_server_url + 'v1/link/can-reach'
     } else if (url_name === 'make_url_url') {
@@ -2460,6 +2460,14 @@ class RedactApplication extends React.Component {
     this.props.dispatchPipeline(fetch_split_pipeline_id, 'json_obj', input_obj, when_done_fun)
   }
 
+  iAmWorkOrDev() {
+    if (window.location.substring('step-work.dev.sykes.com') > -1 || 
+        window.location.substring('step.dev.sykes.com') > -1) {
+      return true
+    }
+    return false
+  }
+
   checkForInboundGetParameters() {
     let vars = getUrlVars()
     if (Object.keys(vars).includes('when_done')) {
@@ -2470,7 +2478,11 @@ class RedactApplication extends React.Component {
     }
     if (Object.keys(vars).includes('recording-id')) {
       this.dispatchFetchSplitAndHash(vars['recording-id']) 
-      this.setGlobalStateVar('whenDoneTarget', 'learn_dev')
+      if (this.iAmWorkOrDev()) {
+        this.setGlobalStateVar('whenDoneTarget', 'learn_dev')
+      } else {
+        this.setGlobalStateVar('whenDoneTarget', 'learn_prod')
+      }
     }
     if (Object.keys(vars).includes('movie_url')) {
         this.handleSetMovieUrl(vars['movie_url'])
