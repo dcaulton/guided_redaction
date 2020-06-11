@@ -64,8 +64,15 @@ class ImagePanel extends React.Component {
       if (!Object.keys(template).includes('anchors')) {
         return false
       }
-      if (!template['anchors'].length) {
+      if (!template['anchors'].length && !template['mask_zones'].length) {
         return false
+      }
+      if (!template['anchors'].length) { 
+        // all we have are mask zones, be generous, at this point any image
+        // could be our 'anchor image'.  Though it doesn't make much sense to 
+        // have any permanently saved template whith mask zones but no anchors,
+        // it makes the interface more humane to the casual user
+        return true
       }
       let cur_template_anchor_image_name = template['anchors'][0]['image']
       return (cur_template_anchor_image_name === this.props.getImageUrl())
@@ -549,15 +556,18 @@ class ImagePanel extends React.Component {
     if (this.props.getImageUrl() === '') {
       return ''
     }
-    return (
-      <div>
-        <button
-            className='btn btn-link font-weight-bold'
-        >
-          Go to Precision Learning
-        </button>
-      </div>
-    )
+    if (this.props.whenDoneTarget) {
+      return (
+        <div>
+          <button
+              className='btn btn-link font-weight-bold'
+              onClick={() => this.props.gotoWhenDoneTarget()}
+          >
+            Go to Precision Learning
+          </button>
+        </div>
+      )
+    }
   }
 
   buildHeaderRow() {
@@ -1290,7 +1300,7 @@ class ImageInfoControls extends React.Component {
         <div className='col bg-light rounded border'>
           <div className='row'>
             <div
-              className='col h3 float-left ml-2 mt-2'
+              className='col-lg-11 h3 float-left ml-2 mt-2'
             >
               Image Info
             </div>

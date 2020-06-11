@@ -150,6 +150,7 @@ class SessionControls extends React.Component {
         >
           <option value=''>--none--</option>
           <option value='learn_dev'>Learn Dev</option>
+          <option value='learn_prod'>Learn Prod</option>
         </select>
         <span
           className='ml-2'

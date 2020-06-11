@@ -12,7 +12,7 @@ import ssl
 import re
 
 
-class LinkViewSetLearnDev(viewsets.ViewSet):
+class LinkViewSetLearn(viewsets.ViewSet):
     def create(self, request):
         if not request.data.get("image_urls"):
             return self.error(["image_urls is required"], status_code=400)
