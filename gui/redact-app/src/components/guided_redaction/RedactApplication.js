@@ -66,7 +66,9 @@ class RedactApplication extends React.Component {
       current_pipeline_id: '',
       preserve_movie_audio: false,
       app_codebooks: {},
-      user: {},
+      user: {
+        id: '',
+      },
       session_audio: {
         playSound: true,
         userTone: 'blip',
@@ -2119,6 +2121,7 @@ class RedactApplication extends React.Component {
     let build_payload = {
       pipeline_id: the_uuid,
       input: specified_input,
+      owner: this.state.user['id'],
     }
     if (this.state.current_workbook_id) {
       build_payload['workbook_id'] = this.state.current_workbook_id

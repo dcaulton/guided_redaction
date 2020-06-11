@@ -92,12 +92,13 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
         if not request_data.get("input"):
             return self.error("input is required", status_code=400)
         workbook_id = request_data.get("workbook_id")
+        owner = request_data.get("owner")
         if not Pipeline.objects.filter(id=request_data['pipeline_id']).exists():
             return self.error("invalid pipeline id specified", status_code=400)
         pipeline = Pipeline.objects.get(pk=request_data['pipeline_id'])
         content = json.loads(pipeline.content)
 
-        parent_job = self.build_parent_job(pipeline, request_data['input'], content, workbook_id)
+        parent_job = self.build_parent_job(pipeline, request_data['input'], content, workbook_id, owner)
         first_node_id = self.get_first_node_id(content)
         if first_node_id:
             child_job = self.build_job(content, first_node_id, parent_job)
@@ -119,7 +120,7 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
             return nodes_without_inbound[0]
 
         
-    def build_parent_job(self, pipeline, build_request_data, content, workbook_id):
+    def build_parent_job(self, pipeline, build_request_data, content, workbook_id, owner_id):
         job = Job(
             status='created',
             description='top level job for pipeline '+pipeline.name,
@@ -138,6 +139,14 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
             pipeline=pipeline
         )
         attribute.save()
+        if owner:
+            attribute = Attribute(
+                name='user_id',
+                value=owner_id,
+                job=job,
+            )
+            attribute.save()
+
         return job
 
     def build_job(self, content, node_id, parent_job, previous_job=None):
