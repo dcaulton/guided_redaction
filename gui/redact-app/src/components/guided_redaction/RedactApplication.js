@@ -43,7 +43,7 @@ class RedactApplication extends React.Component {
       showInsightsLink: true,
       showComposeLink: true,
       whenJobLoaded: {},
-      whenDoneTarget: '',
+      whenDoneTarget: 'learn_dev',
       campaign_movies: [],
       illustrateParameters: {
         color: '#CCCC00',
