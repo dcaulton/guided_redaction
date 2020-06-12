@@ -126,7 +126,7 @@ class JobCard extends React.Component {
           owner:
         </div>
         <div className='d-inline'>
-          this.props.job_data['owner']
+          {this.props.job_data['owner']}
         </div>
       </div>
     )
