@@ -1544,6 +1544,7 @@ class InsightsPanel extends React.Component {
             wrapUpJob={this.props.wrapUpJob}
             attachToJob={this.props.attachToJob}
             attached_job={this.props.attached_job}
+            user={this.props.user}
           />
         </div>
       </div>

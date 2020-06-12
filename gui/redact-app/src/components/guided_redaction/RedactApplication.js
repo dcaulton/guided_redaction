@@ -68,6 +68,7 @@ class RedactApplication extends React.Component {
       app_codebooks: {},
       user: {
         id: '',
+        is_superuser: false,
       },
       session_audio: {
         playSound: true,
@@ -210,9 +211,14 @@ class RedactApplication extends React.Component {
       return
     }
     const user_classes = this.getUserClasses(user_id)
+    let is_superuser = false
+    if (user_classes.includes('superuser')) {
+      is_superuser = true
+    }
     let user_object = {
       id: user_id,
       classes: user_classes,
+      is_superuser: is_superuser,
     }
     this.setGlobalStateVar('user', user_object)
     return user_object
@@ -221,7 +227,7 @@ class RedactApplication extends React.Component {
   getUserClasses(user_id) {
     let classes = []
     if (user_id === 'dave.caulton@sykes.com') {
-      classes.push('davecaulton')
+      classes.push('superuser')
     }
     if ((user_id === 'michael.taylor@sykes.com') ||
         (user_id === 'something.else@sykes.com') ||
@@ -2825,6 +2831,7 @@ class RedactApplication extends React.Component {
                 attached_job={this.state.attached_job}
                 message={this.state.message}
                 maximize={this.state.maximize}
+                user={this.state.user}
                 getAndSaveUser={this.getAndSaveUser}
               />
             </Route>
