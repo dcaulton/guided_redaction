@@ -73,6 +73,7 @@ class JobCardList extends React.Component {
               wrapUpJob={this.props.wrapUpJob}
               attachToJob={this.props.attachToJob}
               attached_job={this.props.attached_job}
+              user={this.props.user}
             />
             )
           })}
@@ -104,6 +105,32 @@ class JobCard extends React.Component {
         return this.props.workbooks[i]['name']
       }
     }
+  }
+
+  buildJobOwnerBlock() {
+    if (!Object.keys(this.props.job_data).includes('owner')) {
+      return ''
+    }
+    if (this.props.user['id'] === this.props.job_data['owner']) {
+      return ''
+    }
+    let style = {
+      'fontSize': 'small',
+      'padding': 0,
+    }
+    return (
+      <div 
+          style={style}
+      >
+        <div className='d-inline'>
+          owner:
+        </div>
+        <div className='d-inline'>
+          this.props.job_data['owner']
+        </div>
+      </div>
+    )
+
   }
 
   buildJobWorkbookBlock(job_data) {
@@ -412,6 +439,7 @@ class JobCard extends React.Component {
     const job_body_id = 'job_card_' + this.props.index
     const job_header = this.buildJobHeader(this.props.job_data, job_body_id)
     const job_workbook_block = this.buildJobWorkbookBlock(this.props.job_data)
+    const job_owner_block = this.buildJobOwnerBlock()
     const job_desc_data = this.buildJobDescriptionData(this.props.job_data)
     const job_created_on_data = this.buildCreatedOnData(this.props.job_data)
     const wall_clock_run_time_data = this.buildWallClockRunTimeData(this.props.job_data)
@@ -452,6 +480,7 @@ class JobCard extends React.Component {
               {wall_clock_run_time_data}
               {job_percent_done}
               {job_workbook_block}
+              {job_owner_block}
             </div>
 
             <div 
