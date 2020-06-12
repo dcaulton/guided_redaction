@@ -630,6 +630,7 @@ class ComposePanel extends React.Component {
       }
     })
     this.props.dispatchPipeline(fetch_split_pipeline_id, 'json_obj', input_obj, when_done_fun)
+    this.setMessage('fetch split and hash job was submitted')
   }
 
   buildFetchAndSplit() {
