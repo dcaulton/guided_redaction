@@ -181,9 +181,6 @@ class JobsViewSet(viewsets.ViewSet):
                         owner = attribute.value
                     else:
                         attrs[attribute.name] = attribute.value
-            if attrs:
-                job_obj['attributes'] = attrs
-
             if user_id and owner != user_id:
                 continue
 
@@ -204,6 +201,8 @@ class JobsViewSet(viewsets.ViewSet):
             }
             if owner:
                 job_obj['owner'] = owner
+            if attrs:
+                job_obj['attributes'] = attrs
 
             jobs_list.append(job_obj)
 
