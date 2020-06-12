@@ -42,6 +42,7 @@ class ComposePanel extends React.Component {
       }))
     }
     this.props.getAndSaveUser()
+    this.props.getPipelines()
   }
 
   setMessage(the_message) {

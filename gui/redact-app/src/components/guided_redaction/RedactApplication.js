@@ -2786,6 +2786,7 @@ class RedactApplication extends React.Component {
                 attachToJob={this.attachToJob}
                 message={this.state.message}
                 getAndSaveUser={this.getAndSaveUser}
+                getPipelines={this.getPipelines}
               />
             </Route>
             <Route path='/redact/insights'>
