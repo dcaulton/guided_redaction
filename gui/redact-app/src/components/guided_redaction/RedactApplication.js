@@ -2728,40 +2728,6 @@ class RedactApplication extends React.Component {
                 getAndSaveUser={this.getAndSaveUser}
               />
             </Route>
-            <Route path='/redact/image'>
-              <ImagePanel 
-                setGlobalStateVar={this.setGlobalStateVar}
-                mask_method={this.state.mask_method}
-                movies={this.state.movies}
-                movie_url = {this.state.movie_url}
-                getImageUrl={this.getImageUrl}
-                image_width={this.state.image_width}
-                image_height={this.state.image_height}
-                image_scale={this.state.image_scale}
-                addRedactionToFrameset={this.addRedactionToFrameset}
-                getRedactionFromFrameset={this.getRedactionFromFrameset}
-                setFramesetHash={this.setFramesetHash}
-                getFramesetHashForImageUrl={this.getFramesetHashForImageUrl}
-                getNextImageHash={this.getNextImageHash}
-                getPrevImageHash={this.getPrevImageHash}
-                setImageScale={this.setImageScale}
-                clearCurrentFramesetChanges={this.clearCurrentFramesetChanges}
-                whenDoneTarget={this.state.whenDoneTarget}
-                gotoWhenDoneTarget={this.gotoWhenDoneTarget}
-                submitJob={this.submitJob}
-                playTone={this.playTone}
-                postMakeUrlCall={this.postMakeUrlCall}
-                establishNewEmptyMovie={this.establishNewEmptyMovie}
-                addImageToMovie={this.addImageToMovie}
-                illustrateParameters={this.state.illustrateParameters}
-                setIllustrateParameters={this.setIllustrateParameters}
-                message={this.state.message}
-                tier_1_scanners={this.state.tier_1_scanners}
-                tier_1_scanner_current_ids={this.state.tier_1_scanner_current_ids}
-                cropImage={this.cropImage}
-                getAndSaveUser={this.getAndSaveUser}
-              />
-            </Route>
             <Route path='/redact/compose'>
               <ComposePanel 
                 setGlobalStateVar={this.setGlobalStateVar}
@@ -2859,6 +2825,40 @@ class RedactApplication extends React.Component {
                 attached_job={this.state.attached_job}
                 message={this.state.message}
                 maximize={this.state.maximize}
+                getAndSaveUser={this.getAndSaveUser}
+              />
+            </Route>
+            <Route path={['/redact/image', '/redact']}>
+              <ImagePanel 
+                setGlobalStateVar={this.setGlobalStateVar}
+                mask_method={this.state.mask_method}
+                movies={this.state.movies}
+                movie_url = {this.state.movie_url}
+                getImageUrl={this.getImageUrl}
+                image_width={this.state.image_width}
+                image_height={this.state.image_height}
+                image_scale={this.state.image_scale}
+                addRedactionToFrameset={this.addRedactionToFrameset}
+                getRedactionFromFrameset={this.getRedactionFromFrameset}
+                setFramesetHash={this.setFramesetHash}
+                getFramesetHashForImageUrl={this.getFramesetHashForImageUrl}
+                getNextImageHash={this.getNextImageHash}
+                getPrevImageHash={this.getPrevImageHash}
+                setImageScale={this.setImageScale}
+                clearCurrentFramesetChanges={this.clearCurrentFramesetChanges}
+                whenDoneTarget={this.state.whenDoneTarget}
+                gotoWhenDoneTarget={this.gotoWhenDoneTarget}
+                submitJob={this.submitJob}
+                playTone={this.playTone}
+                postMakeUrlCall={this.postMakeUrlCall}
+                establishNewEmptyMovie={this.establishNewEmptyMovie}
+                addImageToMovie={this.addImageToMovie}
+                illustrateParameters={this.state.illustrateParameters}
+                setIllustrateParameters={this.setIllustrateParameters}
+                message={this.state.message}
+                tier_1_scanners={this.state.tier_1_scanners}
+                tier_1_scanner_current_ids={this.state.tier_1_scanner_current_ids}
+                cropImage={this.cropImage}
                 getAndSaveUser={this.getAndSaveUser}
               />
             </Route>
