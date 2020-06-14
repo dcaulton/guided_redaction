@@ -2,6 +2,10 @@ import json
 from rest_framework.response import Response
 from base import viewsets
 from guided_redaction.pipelines.models import Pipeline
+from guided_redaction.utils.task_shared import (
+    job_has_anticipated_operation_count_attribute,
+    make_anticipated_operation_count_attribute_for_job
+)
 from guided_redaction.attributes.models import Attribute
 from guided_redaction.jobs.models import Job
 import guided_redaction.jobs.api as jobs_api
@@ -95,10 +99,13 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
         owner = request_data.get("owner")
         if not Pipeline.objects.filter(id=request_data['pipeline_id']).exists():
             return self.error("invalid pipeline id specified", status_code=400)
+
         pipeline = Pipeline.objects.get(pk=request_data['pipeline_id'])
         content = json.loads(pipeline.content)
-
+        child_job_count = self.get_number_of_child_jobs(content) 
         parent_job = self.build_parent_job(pipeline, request_data['input'], content, workbook_id, owner)
+        make_anticipated_operation_count_attribute_for_job(parent_job, child_job_count)
+
         first_node_id = self.get_first_node_id(content)
         if first_node_id:
             child_job = self.build_job(content, first_node_id, parent_job)
@@ -107,6 +114,10 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
                 parent_job.status = 'running'
                 parent_job.save()
         return Response({'job_id': parent_job.id})
+
+    def get_number_of_child_jobs(self, content): 
+        simplified_answer = len(content['node_metadata']['node'])
+        return simplified_answer
 
     def get_first_node_id(self, content):
         inbound_counts = {}
