@@ -152,7 +152,7 @@ def get_timestamp_threaded(job_uuid):
         if next_step == 'build_child_tasks':
           build_and_dispatch_get_timestamp_threaded_children(job)
         elif next_step == 'update_percent_complete':
-          job.elapsed_time = percent_done
+          job.update_percent_complete(percent_done)
           job.save()
         elif next_step == 'wrap_up':
           wrap_up_get_timestamp_threaded(job, children)
@@ -201,7 +201,7 @@ def wrap_up_get_timestamp_threaded(job, children):
     print('wrap_up_get_timestamp_threaded: wrapping up parent job')
     job.status = 'success'
     job.response_data = json.dumps(aggregate_response_data)
-    job.elapsed_time = 1
+    job.update_percent_complete(1)
     job.save()
 
 
@@ -218,7 +218,7 @@ def scan_template_multi(job_uuid):
         if next_step == 'build_child_tasks':
           build_and_dispatch_scan_template_multi_children(job)
         elif next_step == 'update_percent_complete':
-          job.elapsed_time = percent_done
+          job.update_percent_complete(percent_done)
           job.save()
         elif next_step == 'wrap_up':
           wrap_up_scan_template_multi(job, children)
@@ -288,7 +288,7 @@ def wrap_up_scan_template_multi(job, children):
     print('wrap_up_scan_template_multi: wrapping up parent job')
     job.status = 'success'
     job.response_data = json.dumps(aggregate_response_data)
-    job.elapsed_time = 1
+    job.update_percent_complete(1)
     job.save()
 
 @shared_task
@@ -305,7 +305,7 @@ def scan_template_threaded(job_uuid):
         if next_step == 'build_child_tasks':
           build_and_dispatch_scan_template_threaded_children(job)
         elif next_step == 'update_percent_complete':
-          job.elapsed_time = percent_done
+          job.update_percent_complete(percent_done)
           job.save()
         elif next_step == 'wrap_up':
           wrap_up_scan_template_threaded(job, children)
@@ -394,7 +394,7 @@ def wrap_up_scan_template_threaded(job, children):
     print('wrap_up_scan_template_threaded: wrapping up parent job')
     job.status = 'success'
     job.response_data = json.dumps(aggregate_response_data)
-    job.elapsed_time = 1
+    job.update_percent_complete(1)
     job.save()
 
 @shared_task
@@ -446,7 +446,7 @@ def scan_ocr_movie(job_uuid):
         if next_step == 'build_child_tasks':
           build_and_dispatch_scan_ocr_movie_children(job)
         elif next_step == 'update_percent_complete':
-          job.elapsed_time = percent_done
+          job.update_percent_complete(percent_done)
           job.save()
         elif next_step == 'wrap_up':
           wrap_up_scan_ocr_movie(job, children)
@@ -540,7 +540,7 @@ def wrap_up_scan_ocr_movie(parent_job, children):
     print('wrap_up_scan_template_threaded: wrapping up parent job')
     parent_job.status = 'success'
     parent_job.response_data = json.dumps(aggregate_response_data)
-    parent_job.elapsed_time = 1
+    parent_job.update_percent_complete(1)
     parent_job.save()
 
 def find_relevant_areas_from_response(match_strings, match_percent, areas_to_redact):
@@ -554,7 +554,7 @@ def find_relevant_areas_from_response(match_strings, match_percent, areas_to_red
                 match_percentages[pattern] = {'percent': 0}
             pattern_length = len(pattern)
             subject_string_length = len(subject_string)
-            num_compares = subject_string_length - pattern_length + 1
+            num_compares = subject_string_length - pattern_length + 1)
             if pattern_length > subject_string_length:
                 ratio = fuzz.ratio(pattern, subject_string)
                 if ratio > match_percentages[pattern]['percent']:
@@ -605,7 +605,7 @@ def selected_area_threaded(job_uuid):
         if next_step == 'build_child_tasks':
           build_and_dispatch_selected_area_threaded_children(job)
         elif next_step == 'update_percent_complete':
-          job.elapsed_time = percent_done
+          job.update_percent_complete(percent_done)
           job.save()
         elif next_step == 'wrap_up':
           wrap_up_selected_area_threaded(job, children)
@@ -666,7 +666,7 @@ def wrap_up_selected_area_threaded(job, children):
     print('wrap_up_selected_area_threaded: wrapping up parent job')
     job.status = 'success'
     job.response_data = json.dumps(aggregate_response_data)
-    job.elapsed_time = 1
+    job.update_percent_complete(1)
     job.save()
 
 @shared_task
@@ -828,7 +828,7 @@ def ocr_scene_analysis_threaded(job_uuid):
         if next_step == 'build_child_tasks':
           build_and_dispatch_ocr_scene_analysis_threaded_children(job)
         elif next_step == 'update_percent_complete':
-          job.elapsed_time = percent_done
+          job.update_percent_complete(percent_done)
           job.save()
         elif next_step == 'wrap_up':
           wrap_up_ocr_scene_analysis_threaded(job, children)
@@ -897,7 +897,7 @@ def wrap_up_ocr_scene_analysis_threaded(job, children):
     print('wrap_up_ocr_scene_analysis_threaded: wrapping up parent job')
     job.status = 'success'
     job.response_data = json.dumps(aggregate_response_data)
-    job.elapsed_time = 1
+    job.update_percent_complete(1)
     job.save()
 
 
@@ -961,7 +961,7 @@ def oma_first_scan_threaded(job_uuid):
         if next_step == 'build_child_tasks':
           build_and_dispatch_oma_first_scan_threaded_children(job)
         elif next_step == 'update_percent_complete':
-          job.elapsed_time = percent_done
+          job.update_percent_complete(percent_done)
           job.save()
         elif next_step == 'wrap_up':
           wrap_up_oma_first_scan_threaded(job, children)
@@ -1045,7 +1045,7 @@ def wrap_up_oma_first_scan_threaded(parent_job, children):
          build_movie['framesets'][child_counter] = build_frameset
     aggregate_response_data['movies']['first_scan_apps'] = build_movie
     parent_job.status = 'success'
-    parent_job.elapsed_time = 1
+    parent_job.update_percent_complete(1)
     parent_job.response_data = json.dumps(aggregate_response_data)
     parent_job.save()
 
@@ -1085,7 +1085,7 @@ def entity_finder_threaded(job_uuid):
         if next_step == 'build_child_tasks':
           build_and_dispatch_entity_finder_threaded_children(job)
         elif next_step == 'update_percent_complete':
-          job.elapsed_time = percent_done
+          job.update_percent_complete(percent_done)
           job.save()
         elif next_step == 'wrap_up':
           wrap_up_entity_finder_threaded(job, children)
@@ -1150,7 +1150,7 @@ def wrap_up_entity_finder_threaded(job, children):
     print('wrap_up_entity_finder_threaded: wrapping up parent job')
     job.status = 'success'
     job.response_data = json.dumps(aggregate_response_data)
-    job.elapsed_time = 1
+    job.update_percent_complete(1)
     job.save()
 
 @shared_task
@@ -1213,7 +1213,7 @@ def train_hog_threaded(job_uuid):
         elif next_step == 'build_test_tasks':
           build_and_dispatch_test_hog(job, children)
         elif next_step == 'update_percent_complete':
-          job.elapsed_time = percent_done
+          job.update_percent_complete(percent_done)
           job.save()
         elif next_step == 'wrap_up':
           wrap_up_train_hog_threaded(job, children)
@@ -1256,7 +1256,7 @@ def wrap_up_train_hog_threaded(job, children):
     print('wrap_up_train_hog_threaded: wrapping up parent job')
     job.status = 'success'
     job.response_data = json.dumps(aggregate_response_data)
-    job.elapsed_time = 1
+    job.update_percent_complete(1)
     job.save()
 
 def evaluate_train_hog_children(children):
@@ -1325,7 +1325,7 @@ def get_hog_files(hog_rule, children):
 def build_and_dispatch_test_hog(parent_job, children):
     print('building and dispatching test hog tasks')
     parent_job.status = 'running'
-    parent_job.elapsed_time = .5
+    parent_job.update_percent_complete(.5)
     parent_job.save()
     parent_request_data = json.loads(parent_job.request_data)
     movies = parent_request_data['movies']

@@ -16,6 +16,12 @@ class Job(models.Model):
     parent = models.ForeignKey('Job', on_delete=models.CASCADE, null=True)
     workbook = models.ForeignKey('workbooks.Workbook', on_delete=models.CASCADE, null=True)
 
+    segment_time_fractions = {
+      'split_and_hash_threaded': {},
+      '': {},
+      '': {},
+      '': {},
+    }
     def __str__(self):
         disp_hash = {
             'id': str(self.id),
@@ -26,8 +32,5 @@ class Job(models.Model):
         }
         return disp_hash.__str__()
 
-    def update_percent_complete(self):
-        pass
-
-    def set_child_percentages(self):
-        pass
+    def update_percent_complete(self, percent_complete):
+        self.elapsed_time = percent_complete
