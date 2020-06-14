@@ -121,7 +121,6 @@ def build_and_dispatch_zip_movie_tasks(parent_job):
             app='parse',
             operation='zip_movie',
             sequence=0,
-            elapsed_time=0.0,
             parent=parent_job,
         )
         job.save()
@@ -435,7 +434,6 @@ def make_and_dispatch_hash_tasks(parent_job, split_tasks):
                 app='parse',
                 operation='hash_movie',
                 sequence=i,
-                elapsed_time=0.0,
                 parent=parent_job,
             )
             job.save()
@@ -464,7 +462,6 @@ def make_and_dispatch_split_tasks(parent_job):
                 app='parse',
                 operation='split_movie',
                 sequence=0,
-                elapsed_time=0.0,
                 parent=parent_job,
             )
             job.save()
@@ -494,7 +491,6 @@ def build_and_dispatch_split_tasks_multithreaded(parent_job, movie_url, movie_le
             app='parse',
             operation='split_movie',
             sequence=0,
-            elapsed_time=0.0,
             parent=parent_job,
         )
         job.save()
@@ -518,7 +514,6 @@ def build_and_dispatch_split_tasks_multithreaded(parent_job, movie_url, movie_le
             app='parse',
             operation='split_movie',
             sequence=0,
-            elapsed_time=0.0,
             parent=parent_job,
         )
         job.save()

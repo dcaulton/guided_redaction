@@ -179,7 +179,6 @@ def build_and_dispatch_get_timestamp_threaded_children(parent_job):
             app='analyze',
             operation='get_timestamp',
             sequence=0,
-            elapsed_time=0.0,
             parent=parent_job,
         )
         job.save()
@@ -254,7 +253,6 @@ def build_and_dispatch_scan_template_multi_children(parent_job):
                 app='analyze',
                 operation='scan_template',
                 sequence=0,
-                elapsed_time=0.0,
                 parent=parent_job,
             )
             job.save()
@@ -350,7 +348,6 @@ def build_and_dispatch_scan_template_threaded_children(parent_job):
             app='analyze',
             operation='scan_template',
             sequence=0,
-            elapsed_time=0.0,
             parent=parent_job,
         )
         job.save()
@@ -491,7 +488,6 @@ def build_and_dispatch_scan_ocr_movie_children(parent_job):
                 app='analyze',
                 operation='scan_ocr_image',
                 sequence=0,
-                elapsed_time=0.0,
                 parent=parent_job,
             )
             job.save()
@@ -554,7 +550,7 @@ def find_relevant_areas_from_response(match_strings, match_percent, areas_to_red
                 match_percentages[pattern] = {'percent': 0}
             pattern_length = len(pattern)
             subject_string_length = len(subject_string)
-            num_compares = subject_string_length - pattern_length + 1)
+            num_compares = subject_string_length - pattern_length + 1
             if pattern_length > subject_string_length:
                 ratio = fuzz.ratio(pattern, subject_string)
                 if ratio > match_percentages[pattern]['percent']:
@@ -646,7 +642,6 @@ def build_and_dispatch_selected_area_threaded_children(parent_job):
                 app='analyze',
                 operation='selected_area',
                 sequence=0,
-                elapsed_time=0.0,
                 parent=parent_job,
             )
             job.save()
@@ -869,7 +864,6 @@ def build_and_dispatch_ocr_scene_analysis_threaded_children(parent_job):
                 app='analyze',
                 operation='ocr_scene_analysis',
                 sequence=0,
-                elapsed_time=0.0,
                 parent=parent_job,
             )
             job.save()
@@ -1006,7 +1000,6 @@ def build_and_dispatch_oma_first_scan_threaded_children(parent_job):
                 app='analyze',
                 operation='oma_first_scan_collect_one_frame',
                 sequence=0,
-                elapsed_time=0.0,
                 parent=parent_job,
             )
             job.save()
@@ -1122,7 +1115,6 @@ def build_and_dispatch_entity_finder_threaded_children(parent_job):
                 app='analyze',
                 operation='entity_finder',
                 sequence=0,
-                elapsed_time=0.0,
                 parent=parent_job,
             )
             job.save()
@@ -1307,7 +1299,6 @@ def build_and_dispatch_train_hog(parent_job):
         app='analyze',
         operation='hog_train',
         sequence=0,
-        elapsed_time=0.0,
         parent=parent_job,
     )
     job.save()
@@ -1363,7 +1354,6 @@ def build_and_dispatch_test_hog(parent_job, children):
                 app='analyze',
                 operation='hog_test',
                 sequence=0,
-                elapsed_time=0.0,
                 parent=parent_job,
             )
             job.save()

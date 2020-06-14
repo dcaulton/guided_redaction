@@ -318,13 +318,13 @@ class JobCard extends React.Component {
   }
 
   buildPercentDone(job_data) {
-    if (job_data['elapsed_time'] === 0) {
+    if (job_data['percent_done'] === 0) {
       return ''
     }
-    if (job_data['elapsed_time'] === 1) {
+    if (job_data['percent_done'] === 1) {
       return ''
     }
-    const elapsed_percent = parseInt(job_data['elapsed_time'] * 100).toString() + '% done'
+    const elapsed_percent = parseInt(job_data['percent_done'] * 100).toString() + '% done'
     return (
       <div>
         {elapsed_percent}

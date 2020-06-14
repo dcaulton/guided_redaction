@@ -127,7 +127,6 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
             app='pipeline',
             operation='pipeline',
             sequence=0,
-            elapsed_time=0.0,
             workbook_id=workbook_id,
             request_data=json.dumps(build_request_data),
         )
@@ -187,7 +186,6 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
             app='pipelines',
             operation='t1_sum',
             sequence=0,
-            elapsed_time=0.0,
             request_data=json.dumps(build_request_data),
             parent=parent_job,
         )
@@ -210,7 +208,6 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
             app='parse',
             operation='zip_movie_threaded',
             sequence=0,
-            elapsed_time=0.0,
             request_data=json.dumps(build_request_data),
             parent=parent_job,
         )
@@ -235,7 +232,6 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
             app='parse',
             operation='split_and_hash_threaded',
             sequence=0,
-            elapsed_time=0.0,
             request_data=json.dumps(request_data),
             parent=parent_job,
         )
@@ -258,7 +254,6 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
             app='files',
             operation='get_secure_file',
             sequence=0,
-            elapsed_time=0.0,
             request_data=json.dumps(request_data),
             parent=parent_job,
         )
@@ -323,7 +318,6 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
             app='redact',
             operation='redact',
             sequence=0,
-            elapsed_time=0.0,
             request_data=json.dumps(build_request_data),
             parent=parent_job,
         )
@@ -382,7 +376,6 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
             app='analyze',
             operation=operation,
             sequence=0,
-            elapsed_time=0.0,
             request_data=request_data,
             parent=parent_job,
         )

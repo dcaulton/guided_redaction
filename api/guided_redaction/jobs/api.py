@@ -191,7 +191,7 @@ class JobsViewSet(viewsets.ViewSet):
                 'created_on': job.created_on,
                 'updated': job.updated,
                 'pretty_created_on': pretty_time,
-                'elapsed_time': job.elapsed_time,
+                'percent_done': job.percent_done,
                 'wall_clock_run_time': wall_clock_run_time,
                 'app': job.app,
                 'operation': job.operation,
@@ -222,7 +222,7 @@ class JobsViewSet(viewsets.ViewSet):
             'created_on': job.created_on,
             'updated': job.updated,
             'pretty_created_on': pretty_time,
-            'elapsed_time': job.elapsed_time,
+            'percent_done': job.percent_done,
             'wall_clock_run_time': wall_clock_run_time,
             'app': job.app,
             'operation': job.operation,
@@ -257,7 +257,6 @@ class JobsViewSet(viewsets.ViewSet):
             app=request.data.get('app', 'bridezilla'),
             operation=request.data.get('operation', 'chucky'),
             sequence=0,
-            elapsed_time=0.0,
             workbook_id=request.data.get('workbook_id'),
         )
         job.save()
