@@ -53,7 +53,7 @@ class RedactApplication extends React.Component {
       attached_job: {
         id: '',
         status: '',
-        percent_done: '',
+        percent_complete: '',
       },
       preserveAllJobs: false,
       telemetry_data: {
@@ -702,8 +702,8 @@ class RedactApplication extends React.Component {
       return 'job has completed'
     }
     if (this.state.attached_job['status'] === 'running') {
-      if (this.state.attached_job['percent_done'] !== job['percent_done']) {
-        let et_number = job['percent_done'].toString().substring(1, 4) * 100
+      if (this.state.attached_job['percent_complete'] !== job['percent_complete']) {
+        let et_number = job['percent_complete'].toString().substring(1, 4) * 100
         et_number = Math.floor(et_number)
         return et_number.toString() + ' percent complete'
       }
@@ -714,7 +714,7 @@ class RedactApplication extends React.Component {
     let deepCopyAJ = JSON.parse(JSON.stringify(this.state.attached_job))
     let aj_message_text = this.getAttachedJobMessage(job)
     deepCopyAJ['status'] = job['status']
-    deepCopyAJ['percent_done'] = job['percent_done']
+    deepCopyAJ['percent_complete'] = job['percent_complete']
     let msg = new SpeechSynthesisUtterance(aj_message_text)
     this.setState({
       attached_job: deepCopyAJ,
@@ -2070,18 +2070,18 @@ class RedactApplication extends React.Component {
 
   attachToJob(job_id) {
     let job_status = ''
-    let job_percent_done = ''
+    let job_percent_complete = ''
     for (let i=0; i < this.state.jobs.length; i++) {
       const job = this.state.jobs[i]
       if (job['id'] === job_id) {
         job_status = job['status']
-        job_percent_done = job['percent_done']
+        job_percent_complete = job['percent_complete']
       }
     }
     const attached_job = {
       id: job_id,
       status: job_status,
-      percent_done: job_percent_done,
+      percent_complete: job_percent_complete,
     }
     this.watchForJob(job_id)
     this.setGlobalStateVar('attached_job', attached_job)
