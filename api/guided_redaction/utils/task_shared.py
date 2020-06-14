@@ -24,10 +24,10 @@ def evaluate_children(operation, child_operation, children):
         return 'build_child_tasks'
     elif all_children == completed_children:
         return 'wrap_up'
-    elif all_children > 0:
-        return 'noop'
     elif failed_children > 0:
         return 'abort'
+    elif all_children > 0:
+        return 'noop'
 
 def job_has_anticipated_operation_count_attribute(job):
     if Attribute.objects.filter(job=job).filter(name='anticipated_operation_count').exists():

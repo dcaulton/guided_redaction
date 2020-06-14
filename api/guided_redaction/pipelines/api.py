@@ -451,6 +451,11 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
             return True
 
     def handle_job_finished(self, job, pipeline):
+        if job.status == 'failed':
+            parent_job.response_data = job.response_data
+            parent_job.status = 'failed'
+            parent_job.save()
+            return
         response_data = json.loads(job.response_data)
         content = json.loads(pipeline.content)
         parent_job = job.parent

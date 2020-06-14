@@ -133,6 +133,13 @@ class MovieCard extends React.Component {
   }
 
   buildMakeActiveButton(this_cards_movie_url) {
+    if (!Object.keys(this.props.movies).includes(this_cards_movie_url)) {
+      return (
+        <div className='text-white' >
+          (not ready)
+        </div>
+      )
+    }
     let make_active_button = ''
     if (Object.keys(this.props.movies).includes(this_cards_movie_url)) {
       make_active_button = (
