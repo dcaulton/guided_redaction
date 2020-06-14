@@ -6,6 +6,12 @@ import json
 import os
 from fuzzywuzzy import fuzz
 from guided_redaction.jobs.models import Job
+from guided_redaction.utils.task_shared import (
+    evaluate_children,
+    job_has_anticipated_operation_count_attribute,
+    make_anticipated_operation_count_attribute_for_job,
+    get_pipeline_for_job
+)
 from guided_redaction.attributes.models import Attribute
 from guided_redaction.pipelines.api import PipelinesViewSetDispatch
 from guided_redaction.analyze.api import (
@@ -26,36 +32,6 @@ from guided_redaction.analyze.api import (
     AnalyzeViewSetOcr
 )
 
-
-def get_pipeline_for_job(job):
-    if not job:
-        return
-    if Attribute.objects.filter(job=job, name='pipeline_job_link').exists():
-        return Attribute.objects.filter(job=job, name='pipeline_job_link').first().pipeline
-
-def evaluate_children(operation, child_operation, children):
-    all_children = 0
-    completed_children = 0
-    failed_children = 0
-    for child in children:
-        if child.operation == child_operation:
-            all_children += 1
-            if child.status == 'success':
-                completed_children += 1
-            elif child.status == 'failed':
-                failed_children += 1
-    print('CHILDREN FOR {}: {} COMPLETE: {} FAILED: {}'.format(
-        operation, all_children, completed_children, failed_children
-    ))
-    if all_children == 0:
-        return ('build_child_tasks', 0)
-    elif all_children == completed_children:
-        return ('wrap_up', 1)
-    elif all_children > 0:
-        complete_percent = completed_children/all_children
-        return ('update_percent_complete', complete_percent)
-    elif failed_children > 0:
-        return ('abort', 0)
 
 @shared_task
 def scan_template(job_uuid):
@@ -151,9 +127,8 @@ def get_timestamp_threaded(job_uuid):
         print('next step is {}, percent done {}'.format(next_step, percent_done))
         if next_step == 'build_child_tasks':
           build_and_dispatch_get_timestamp_threaded_children(job)
-        elif next_step == 'update_percent_complete':
-          job.update_percent_complete(percent_done)
-          job.save()
+        elif next_step == 'noop':
+          pass
         elif next_step == 'wrap_up':
           wrap_up_get_timestamp_threaded(job, children)
         elif next_step == 'abort':
@@ -200,7 +175,6 @@ def wrap_up_get_timestamp_threaded(job, children):
     print('wrap_up_get_timestamp_threaded: wrapping up parent job')
     job.status = 'success'
     job.response_data = json.dumps(aggregate_response_data)
-    job.update_percent_complete(1)
     job.save()
 
 
@@ -216,9 +190,8 @@ def scan_template_multi(job_uuid):
         print('next step is {}, percent done {}'.format(next_step, percent_done))
         if next_step == 'build_child_tasks':
           build_and_dispatch_scan_template_multi_children(job)
-        elif next_step == 'update_percent_complete':
-          job.update_percent_complete(percent_done)
-          job.save()
+        elif next_step == 'noop':
+          pass
         elif next_step == 'wrap_up':
           wrap_up_scan_template_multi(job, children)
         elif next_step == 'abort':
@@ -286,7 +259,6 @@ def wrap_up_scan_template_multi(job, children):
     print('wrap_up_scan_template_multi: wrapping up parent job')
     job.status = 'success'
     job.response_data = json.dumps(aggregate_response_data)
-    job.update_percent_complete(1)
     job.save()
 
 @shared_task
@@ -302,9 +274,8 @@ def scan_template_threaded(job_uuid):
         print('next step is {}, percent done {}'.format(next_step, percent_done))
         if next_step == 'build_child_tasks':
           build_and_dispatch_scan_template_threaded_children(job)
-        elif next_step == 'update_percent_complete':
-          job.update_percent_complete(percent_done)
-          job.save()
+        elif next_step == 'noop':
+          pass
         elif next_step == 'wrap_up':
           wrap_up_scan_template_threaded(job, children)
           pipeline = get_pipeline_for_job(job.parent)
@@ -391,7 +362,6 @@ def wrap_up_scan_template_threaded(job, children):
     print('wrap_up_scan_template_threaded: wrapping up parent job')
     job.status = 'success'
     job.response_data = json.dumps(aggregate_response_data)
-    job.update_percent_complete(1)
     job.save()
 
 @shared_task
@@ -442,9 +412,8 @@ def scan_ocr_movie(job_uuid):
         print('next step is {}, percent done {}'.format(next_step, percent_done))
         if next_step == 'build_child_tasks':
           build_and_dispatch_scan_ocr_movie_children(job)
-        elif next_step == 'update_percent_complete':
-          job.update_percent_complete(percent_done)
-          job.save()
+        elif next_step == 'noop':
+          pass
         elif next_step == 'wrap_up':
           wrap_up_scan_ocr_movie(job, children)
           pipeline = get_pipeline_for_job(job.parent)
@@ -536,7 +505,6 @@ def wrap_up_scan_ocr_movie(parent_job, children):
     print('wrap_up_scan_template_threaded: wrapping up parent job')
     parent_job.status = 'success'
     parent_job.response_data = json.dumps(aggregate_response_data)
-    parent_job.update_percent_complete(1)
     parent_job.save()
 
 def find_relevant_areas_from_response(match_strings, match_percent, areas_to_redact):
@@ -600,9 +568,8 @@ def selected_area_threaded(job_uuid):
         print('next step is {}, percent done {}'.format(next_step, percent_done))
         if next_step == 'build_child_tasks':
           build_and_dispatch_selected_area_threaded_children(job)
-        elif next_step == 'update_percent_complete':
-          job.update_percent_complete(percent_done)
-          job.save()
+        elif next_step == 'noop':
+          pass
         elif next_step == 'wrap_up':
           wrap_up_selected_area_threaded(job, children)
           pipeline = get_pipeline_for_job(job.parent)
@@ -661,7 +628,6 @@ def wrap_up_selected_area_threaded(job, children):
     print('wrap_up_selected_area_threaded: wrapping up parent job')
     job.status = 'success'
     job.response_data = json.dumps(aggregate_response_data)
-    job.update_percent_complete(1)
     job.save()
 
 @shared_task
@@ -822,9 +788,8 @@ def ocr_scene_analysis_threaded(job_uuid):
         print('next step is {}, percent done {}'.format(next_step, percent_done))
         if next_step == 'build_child_tasks':
           build_and_dispatch_ocr_scene_analysis_threaded_children(job)
-        elif next_step == 'update_percent_complete':
-          job.update_percent_complete(percent_done)
-          job.save()
+        elif next_step == 'noop':
+          pass
         elif next_step == 'wrap_up':
           wrap_up_ocr_scene_analysis_threaded(job, children)
           pipeline = get_pipeline_for_job(job.parent)
@@ -891,12 +856,7 @@ def wrap_up_ocr_scene_analysis_threaded(job, children):
     print('wrap_up_ocr_scene_analysis_threaded: wrapping up parent job')
     job.status = 'success'
     job.response_data = json.dumps(aggregate_response_data)
-    job.update_percent_complete(1)
     job.save()
-
-
-
-
 
 @shared_task
 def oma_first_scan_collect_one_frame(job_uuid):
@@ -954,9 +914,8 @@ def oma_first_scan_threaded(job_uuid):
         print('next step is {}, percent done {}'.format(next_step, percent_done))
         if next_step == 'build_child_tasks':
           build_and_dispatch_oma_first_scan_threaded_children(job)
-        elif next_step == 'update_percent_complete':
-          job.update_percent_complete(percent_done)
-          job.save()
+        elif next_step == 'noop':
+          pass
         elif next_step == 'wrap_up':
           wrap_up_oma_first_scan_threaded(job, children)
         elif next_step == 'abort':
@@ -1038,7 +997,6 @@ def wrap_up_oma_first_scan_threaded(parent_job, children):
          build_movie['framesets'][child_counter] = build_frameset
     aggregate_response_data['movies']['first_scan_apps'] = build_movie
     parent_job.status = 'success'
-    parent_job.update_percent_complete(1)
     parent_job.response_data = json.dumps(aggregate_response_data)
     parent_job.save()
 
@@ -1077,9 +1035,8 @@ def entity_finder_threaded(job_uuid):
         print('next step is {}, percent done {}'.format(next_step, percent_done))
         if next_step == 'build_child_tasks':
           build_and_dispatch_entity_finder_threaded_children(job)
-        elif next_step == 'update_percent_complete':
-          job.update_percent_complete(percent_done)
-          job.save()
+        elif next_step == 'noop':
+          pass
         elif next_step == 'wrap_up':
           wrap_up_entity_finder_threaded(job, children)
         elif next_step == 'abort':
@@ -1142,7 +1099,6 @@ def wrap_up_entity_finder_threaded(job, children):
     print('wrap_up_entity_finder_threaded: wrapping up parent job')
     job.status = 'success'
     job.response_data = json.dumps(aggregate_response_data)
-    job.update_percent_complete(1)
     job.save()
 
 @shared_task
@@ -1195,6 +1151,8 @@ def train_hog(job_uuid):
 def train_hog_threaded(job_uuid):
     if Job.objects.filter(pk=job_uuid).exists():
         job = Job.objects.get(pk=job_uuid)
+        if not job_has_anticipated_operation_count_attribute(job):
+            make_anticipated_operation_count_attribute_for_job(job, 2)
         if job.status in ['success', 'failed']:
             return
         children = Job.objects.filter(parent=job)
@@ -1204,9 +1162,8 @@ def train_hog_threaded(job_uuid):
           build_and_dispatch_train_hog(job)
         elif next_step == 'build_test_tasks':
           build_and_dispatch_test_hog(job, children)
-        elif next_step == 'update_percent_complete':
-          job.update_percent_complete(percent_done)
-          job.save()
+        elif next_step == 'noop':
+          pass
         elif next_step == 'wrap_up':
           wrap_up_train_hog_threaded(job, children)
         elif next_step == 'abort':
@@ -1248,7 +1205,6 @@ def wrap_up_train_hog_threaded(job, children):
     print('wrap_up_train_hog_threaded: wrapping up parent job')
     job.status = 'success'
     job.response_data = json.dumps(aggregate_response_data)
-    job.update_percent_complete(1)
     job.save()
 
 def evaluate_train_hog_children(children):
