@@ -10,7 +10,7 @@ class Job(models.Model):
     app = models.CharField(max_length=255)
     operation = models.CharField(max_length=255)
     sequence = models.IntegerField()
-    elapsed_time = models.FloatField()
+    percent_complete = models.FloatField(default=0)
     request_data = models.TextField(null=True)
     response_data = models.TextField(null=True)
     parent = models.ForeignKey('Job', on_delete=models.CASCADE, null=True)
@@ -32,5 +32,5 @@ class Job(models.Model):
         }
         return disp_hash.__str__()
 
-    def update_percent_complete(self, percent_complete):
-        self.elapsed_time = percent_complete
+    def update_percent_complete(self, percent_complete=None):
+        self.percent_complete = percent_complete

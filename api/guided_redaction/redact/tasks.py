@@ -81,7 +81,6 @@ def build_and_dispatch_redact_threaded_children(parent_job):
                     app='redact',
                     operation='redact',
                     sequence=0,
-                    elapsed_time=0.0,
                     parent=parent_job,
                 )
                 job.save()
