@@ -50,6 +50,7 @@ def zip_movie_threaded(job_uuid):
                 worker.handle_job_finished(job, pipeline)
         elif next_step == 'abort':
             job.status = 'failed'
+            job.harvest_failed_child_job_errors(children)
             job.save()
 
 def get_frameset_hash_for_image_url(framesets, image_url):
@@ -168,6 +169,7 @@ def split_threaded(job_uuid):
             job.save()
         elif next_step == 'abort':
             job.status = 'failed'
+            job.harvest_failed_child_job_errors(children)
             job.save()
 
 @shared_task
@@ -175,6 +177,7 @@ def split_movie(job_uuid):
     if not Job.objects.filter(pk=job_uuid).exists():
         print('calling split_movie on nonexistent job: '+ job_uuid) 
         return
+
     job = Job.objects.get(pk=job_uuid)
     if job:
         job.status = 'running'
@@ -186,7 +189,10 @@ def split_movie(job_uuid):
             return
         job = Job.objects.get(pk=job_uuid)
         job.response_data = json.dumps(response.data)
-        job.status = 'success'
+        if 'errors' in job.response_data:
+            job.status = 'failed'
+        else:
+            job.status = 'success'
         job.save()
 
         if job.parent_id:
@@ -203,68 +209,72 @@ def hash_frames(job_uuid):
         print('calling hash_frames on nonexistent job: '+ job_uuid) 
         return
     job = Job.objects.get(pk=job_uuid)
-    if job:
-        job.status = 'running'
-        job.save()
-        request_data = json.loads(job.request_data)
-        pvssahm = ParseViewSetHashFrames()
-        response = pvssahm.process_create_request(request_data)
-        if not Job.objects.filter(pk=job_uuid).exists():
-            return
-        job = Job.objects.get(pk=job_uuid)
-        response_data = response.data
+    job.status = 'running'
+    job.save()
+
+    request_data = json.loads(job.request_data)
+    pvssahm = ParseViewSetHashFrames()
+    response = pvssahm.process_create_request(request_data)
+
+    if not Job.objects.filter(pk=job_uuid).exists():
+        return
+    job = Job.objects.get(pk=job_uuid)
+
+    if 'errors' in response.data:
+        job.response_data = json.dumps(response.data)
+        job.status = 'failed'
+    else:
         movie_url = list(request_data['movies'].keys())[0]
         movie_obj = request_data
-        movie_obj['movies'][movie_url]['framesets'] = response_data['framesets']
+        movie_obj['movies'][movie_url]['framesets'] = response.data['framesets']
         job.response_data = json.dumps(movie_obj)
         job.status = 'success'
-        job.save()
+    job.save()
 
-        if job.parent_id:
-            parent_job = Job.objects.get(pk=job.parent_id)
-            if parent_job.app == 'parse' and parent_job.operation == 'split_and_hash_threaded':
-                split_and_hash_threaded.delay(parent_job.id)
-    else:
-        print('calling hash_frames on nonexistent job: '+ job_uuid) 
+    if job.parent_id:
+        parent_job = Job.objects.get(pk=job.parent_id)
+        if parent_job.app == 'parse' and parent_job.operation == 'split_and_hash_threaded':
+            split_and_hash_threaded.delay(parent_job.id)
 
 @shared_task
 def split_and_hash_threaded(job_uuid):
     print('split and hash threaded, job id is '+str(job_uuid))
     job = Job.objects.get(pk=job_uuid)
-    if job:
-        if not job_has_anticipated_operation_count_attribute(job):
-            make_anticipated_operation_count_attribute_for_job(job, 2)
-        if job.status in ['success', 'failed']:
-            return
-        children = Job.objects.filter(parent=job)
-        next_step = evaluate_split_and_hash_threaded_children(children)
-        if next_step:
-            print('split and hash threaded next step is '+ next_step)
-        else:
-            print('split and hash threaded next step is null')
-        if next_step == 'make_and_dispatch_split_tasks':
-            make_and_dispatch_split_tasks(job)
-            return
-        elif next_step == 'make_and_dispatch_hash_tasks':
-            make_and_dispatch_hash_tasks(job, children)
-        elif next_step == 'abort':
-            print('aborting split and hash threaded, some child tasks have failed')
-            job.status = 'failed'
-            job.save()
-            return
-        elif next_step == 'wrap_up':
+    if not job:
+        print('calling split_and_hash_threaded on nonexistent job: '+ job_uuid) 
+
+    if not job_has_anticipated_operation_count_attribute(job):
+        make_anticipated_operation_count_attribute_for_job(job, 2)
+    if job.status in ['success', 'failed']:
+        return
+    children = Job.objects.filter(parent=job)
+
+    if children.filter(operation='hash_movie').exists():
+        next_step = evaluate_children('SPLIT HASH THREADED - HASH', 'hash_movie', children)
+        print('next post split step is {}'.format(next_step))
+        if next_step == 'wrap_up':
             wrap_up_split_and_hash_threaded(job, children)
             pipeline = get_pipeline_for_job(job.parent)
             if pipeline:
                 worker = PipelinesViewSetDispatch()
                 worker.handle_job_finished(job, pipeline)
-        elif next_step == 'noop':
-            pass
-        else:
-            print('some subtasks arent complete or failed, let them finish')
-            return
+        elif next_step == 'abort':
+            job.status = 'failed'
+            job.harvest_failed_child_job_errors(children)
+            job.save()
+        return
     else:
-        print('calling split_and_hash_threaded on nonexistent job: '+ job_uuid) 
+        next_step = evaluate_children('SPLIT HASH THREADED - SPLIT', 'split_movie', children)
+        print('next step is {}'.format(next_step))
+        if next_step == 'build_child_tasks':
+            make_and_dispatch_split_tasks(job)
+        elif next_step == 'wrap_up':
+            make_and_dispatch_hash_tasks(job, children)
+        elif next_step == 'abort':
+            job.status = 'failed'
+            job.harvest_failed_child_job_errors(children)
+            job.save()
+        return
 
 def wrap_up_split_and_hash_threaded(parent_job, children):
     framesets = {}
@@ -299,48 +309,6 @@ def wrap_up_split_and_hash_threaded(parent_job, children):
     parent_job.status = 'success'
     parent_job.save()
     print('wrapping up split and hash threaded')
-
-def evaluate_split_and_hash_threaded_children(children):
-    types = set()
-    split_movie_children = 0
-    split_movie_completed_children = 0
-    split_movie_failed_children = 0
-    hash_frames_children = 0
-    hash_frames_completed_children = 0
-    hash_frames_failed_children = 0
-    for child in children:
-        if child.operation == 'split_movie':
-            split_movie_children += 1
-            if child.status == 'success': 
-                split_movie_completed_children += 1
-            elif child.status == 'failed':
-                split_movie_failed_children += 1
-        elif child.operation == 'hash_movie':
-            hash_frames_children += 1
-            if child.status == 'success': 
-                hash_frames_completed_children += 1
-            elif child.status == 'failed':
-                hash_frames_failed_children += 1
-    def print_totals():
-        print('SPLIT MOVIE CHILDREN: {} COMPLETE: {} FAILED: {}'.format(
-            split_movie_children, split_movie_completed_children, split_movie_failed_children))
-        print('HASH FRAMES CHILDREN: {} COMPLETE: {} FAILED: {}'.format(
-            hash_frames_children, hash_frames_completed_children, hash_frames_failed_children))
-    print_totals()
-    if split_movie_children == 0:
-        return 'make_and_dispatch_split_tasks'
-    elif hash_frames_children > 0 and hash_frames_children == hash_frames_completed_children:
-        return 'wrap_up'
-    elif hash_frames_children > 0 and hash_frames_failed_children > 0:
-        return 'abort'
-    elif hash_frames_children > 0:
-        return 'noop'
-    elif split_movie_children > split_movie_completed_children and hash_frames_children == 0:
-        return 'noop'
-    elif split_movie_children == split_movie_completed_children and hash_frames_children == 0:
-        return 'make_and_dispatch_hash_tasks'
-    elif split_movie_failed_children > 0:
-        return 'abort'
 
 def gather_split_threaded_data(split_tasks):
     frames = {}

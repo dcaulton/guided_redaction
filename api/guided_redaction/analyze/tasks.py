@@ -125,16 +125,15 @@ def get_timestamp_threaded(job_uuid):
         if job.status in ['success', 'failed']:
             return
         children = Job.objects.filter(parent=job)
-        (next_step, percent_done) = evaluate_children('GET TIMESTAMP THREADED', 'get_timestamp', children)
-        print('next step is {}, percent done {}'.format(next_step, percent_done))
+        next_step = evaluate_children('GET TIMESTAMP THREADED', 'get_timestamp', children)
+        print('next step is {}'.format(next_step))
         if next_step == 'build_child_tasks':
           build_and_dispatch_get_timestamp_threaded_children(job)
-        elif next_step == 'noop':
-          pass
         elif next_step == 'wrap_up':
           wrap_up_get_timestamp_threaded(job, children)
         elif next_step == 'abort':
           job.status = 'failed'
+          job.harvest_failed_child_job_errors(children)
           job.save()
 
 def build_and_dispatch_get_timestamp_threaded_children(parent_job):
@@ -188,16 +187,15 @@ def scan_template_multi(job_uuid):
         if job.status in ['success', 'failed']:
             return
         children = Job.objects.filter(parent=job)
-        (next_step, percent_done) = evaluate_children('SCAN TEMPLATE MULTI', 'scan_template', children)
-        print('next step is {}, percent done {}'.format(next_step, percent_done))
+        next_step = evaluate_children('SCAN TEMPLATE MULTI', 'scan_template', children)
+        print('next step is {}'.format(next_step))
         if next_step == 'build_child_tasks':
           build_and_dispatch_scan_template_multi_children(job)
-        elif next_step == 'noop':
-          pass
         elif next_step == 'wrap_up':
           wrap_up_scan_template_multi(job, children)
         elif next_step == 'abort':
           job.status = 'failed'
+          job.harvest_failed_child_job_errors(children)
           job.save()
 
 def build_and_dispatch_scan_template_multi_children(parent_job):
@@ -272,12 +270,10 @@ def scan_template_threaded(job_uuid):
         if job.status in ['success', 'failed']:
             return
         children = Job.objects.filter(parent=job)
-        (next_step, percent_done) = evaluate_children('SCAN TEMPLATE THREADED', 'scan_template', children)
-        print('next step is {}, percent done {}'.format(next_step, percent_done))
+        next_step = evaluate_children('SCAN TEMPLATE THREADED', 'scan_template', children)
+        print('next step is {}'.format(next_step))
         if next_step == 'build_child_tasks':
           build_and_dispatch_scan_template_threaded_children(job)
-        elif next_step == 'noop':
-          pass
         elif next_step == 'wrap_up':
           wrap_up_scan_template_threaded(job, children)
           pipeline = get_pipeline_for_job(job.parent)
@@ -286,6 +282,7 @@ def scan_template_threaded(job_uuid):
               worker.handle_job_finished(job, pipeline)
         elif next_step == 'abort':
           job.status = 'failed'
+          job.harvest_failed_child_job_errors(children)
           job.save()
 
 def build_and_dispatch_scan_template_threaded_children(parent_job):
@@ -410,12 +407,10 @@ def scan_ocr_movie(job_uuid):
         if job.status in ['success', 'failed']:
             return
         children = Job.objects.filter(parent=job)
-        (next_step, percent_done) = evaluate_children('SCAN OCR MOVIE', 'scan_ocr_image', children)
-        print('next step is {}, percent done {}'.format(next_step, percent_done))
+        next_step = evaluate_children('SCAN OCR MOVIE', 'scan_ocr_image', children)
+        print('next step is {}'.format(next_step))
         if next_step == 'build_child_tasks':
           build_and_dispatch_scan_ocr_movie_children(job)
-        elif next_step == 'noop':
-          pass
         elif next_step == 'wrap_up':
           wrap_up_scan_ocr_movie(job, children)
           pipeline = get_pipeline_for_job(job.parent)
@@ -424,6 +419,7 @@ def scan_ocr_movie(job_uuid):
               worker.handle_job_finished(job, pipeline)
         elif next_step == 'abort':
           job.status = 'failed'
+          job.harvest_failed_child_job_errors(children)
           job.save()
 
 def build_and_dispatch_scan_ocr_movie_children(parent_job):
@@ -566,12 +562,10 @@ def selected_area_threaded(job_uuid):
         if job.status in ['success', 'failed']:
             return
         children = Job.objects.filter(parent=job)
-        (next_step, percent_done) = evaluate_children('SELECTED AREA THREADED', 'selected_area', children)
-        print('next step is {}, percent done {}'.format(next_step, percent_done))
+        next_step = evaluate_children('SELECTED AREA THREADED', 'selected_area', children)
+        print('next step is {}'.format(next_step))
         if next_step == 'build_child_tasks':
           build_and_dispatch_selected_area_threaded_children(job)
-        elif next_step == 'noop':
-          pass
         elif next_step == 'wrap_up':
           wrap_up_selected_area_threaded(job, children)
           pipeline = get_pipeline_for_job(job.parent)
@@ -580,6 +574,7 @@ def selected_area_threaded(job_uuid):
               worker.handle_job_finished(job, pipeline)
         elif next_step == 'abort':
           job.status = 'failed'
+          job.harvest_failed_child_job_errors(children)
           job.save()
 
 def build_and_dispatch_selected_area_threaded_children(parent_job):
@@ -786,12 +781,10 @@ def ocr_scene_analysis_threaded(job_uuid):
         if job.status in ['success', 'failed']:
             return
         children = Job.objects.filter(parent=job)
-        (next_step, percent_done) = evaluate_children('OCR SCENE ANALYSIS THREADED', 'ocr_scene_analysis', children)
-        print('next step is {}, percent done {}'.format(next_step, percent_done))
+        next_step = evaluate_children('OCR SCENE ANALYSIS THREADED', 'ocr_scene_analysis', children)
+        print('next step is {}'.format(next_step))
         if next_step == 'build_child_tasks':
           build_and_dispatch_ocr_scene_analysis_threaded_children(job)
-        elif next_step == 'noop':
-          pass
         elif next_step == 'wrap_up':
           wrap_up_ocr_scene_analysis_threaded(job, children)
           pipeline = get_pipeline_for_job(job.parent)
@@ -800,6 +793,7 @@ def ocr_scene_analysis_threaded(job_uuid):
               worker.handle_job_finished(job, pipeline)
         elif next_step == 'abort':
           job.status = 'failed'
+          job.harvest_failed_child_job_errors(children)
           job.save()
 
 def build_and_dispatch_ocr_scene_analysis_threaded_children(parent_job):
@@ -908,20 +902,19 @@ def oma_first_scan_threaded(job_uuid):
         if job.status in ['success', 'failed']:
             return
         children = Job.objects.filter(parent=job)
-        (next_step, percent_done) = evaluate_children(
+        next_step = evaluate_children(
             'OCR MOVIE ANALYSIS FIRST SCAN THREADED', 
             'oma_first_scan_collect_one_frame', 
             children
         )
-        print('next step is {}, percent done {}'.format(next_step, percent_done))
+        print('next step is {}'.format(next_step))
         if next_step == 'build_child_tasks':
           build_and_dispatch_oma_first_scan_threaded_children(job)
-        elif next_step == 'noop':
-          pass
         elif next_step == 'wrap_up':
           wrap_up_oma_first_scan_threaded(job, children)
         elif next_step == 'abort':
           job.status = 'failed'
+          job.harvest_failed_child_job_errors(children)
           job.save()
 
 def build_and_dispatch_oma_first_scan_threaded_children(parent_job):
@@ -1033,16 +1026,15 @@ def entity_finder_threaded(job_uuid):
         if job.status in ['success', 'failed']:
             return
         children = Job.objects.filter(parent=job)
-        (next_step, percent_done) = evaluate_children('ENTITY FINDER THREADED', 'entity_finder', children)
-        print('next step is {}, percent done {}'.format(next_step, percent_done))
+        next_step = evaluate_children('ENTITY FINDER THREADED', 'entity_finder', children)
+        print('next step is {}'.format(next_step))
         if next_step == 'build_child_tasks':
           build_and_dispatch_entity_finder_threaded_children(job)
-        elif next_step == 'noop':
-          pass
         elif next_step == 'wrap_up':
           wrap_up_entity_finder_threaded(job, children)
         elif next_step == 'abort':
           job.status = 'failed'
+          job.harvest_failed_child_job_errors(children)
           job.save()
 
 def build_and_dispatch_entity_finder_threaded_children(parent_job):
@@ -1167,12 +1159,11 @@ def train_hog_threaded(job_uuid):
           build_and_dispatch_train_hog(job)
         elif next_step == 'build_test_tasks':
           build_and_dispatch_test_hog(job, children)
-        elif next_step == 'noop':
-          pass
         elif next_step == 'wrap_up':
           wrap_up_train_hog_threaded(job, children)
         elif next_step == 'abort':
           job.status = 'failed'
+          job.harvest_failed_child_job_errors(children)
           job.save()
 
 def wrap_up_train_hog_threaded(job, children):

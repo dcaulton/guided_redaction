@@ -109,3 +109,14 @@ class Job(models.Model):
             if child.status in ['success', 'failed']:
                 operations[child.operation]['complete'] += 1
         return operations
+
+    def harvest_failed_child_job_errors(self, children):
+        all_errors = []
+        for child in children:
+            if not child.response_data:
+                continue
+            child_response = json.loads(child.response_data)
+            if 'errors' in child_response:
+                all_errors += child_response['errors']
+        self.response_data = json.dumps(all_errors)
+
