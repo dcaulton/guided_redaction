@@ -25,3 +25,9 @@ class Job(models.Model):
             'parent_id': str(self.parent_id),
         }
         return disp_hash.__str__()
+
+    def update_percent_complete(self):
+        pass
+
+    def set_child_percentages(self):
+        pass
