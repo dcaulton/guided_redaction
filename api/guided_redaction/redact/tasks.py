@@ -2,16 +2,14 @@ from celery import shared_task
 import json
 import os
 from guided_redaction.jobs.models import Job
+from guided_redaction.utils.task_shared import (
+    evaluate_children,
+    get_pipeline_for_job
+)
 from guided_redaction.redact.api import RedactViewSetRedactImage, RedactViewSetIllustrateImage
 from guided_redaction.attributes.models import Attribute
 from guided_redaction.pipelines.api import PipelinesViewSetDispatch
 
-
-def get_pipeline_for_job(job):
-    if not job:
-        return
-    if Attribute.objects.filter(job=job, name='pipeline_job_link').exists():
-        return Attribute.objects.filter(job=job, name='pipeline_job_link').first().pipeline
 
 @shared_task
 def redact_single(job_uuid):
@@ -29,31 +27,6 @@ def redact_single(job_uuid):
             parent_job = Job.objects.get(pk=job.parent_id)
             if parent_job.app == 'redact' and parent_job.operation == 'redact':
                 redact_threaded.delay(parent_job.id)
-
-def evaluate_redact_threaded_children(children):
-    children_count = 0
-    completed_children_count = 0
-    failed_children_count = 0
-    for child in children:
-        if child.operation == 'redact':
-            children_count += 1
-            if child.status == 'success':
-                completed_children_count += 1
-            elif child.status == 'failed':
-                failed_children_count += 1
-    def print_totals():
-        print('REDACT CHILDREN: {} COMPLETE: {} FAILED: {}'.format(
-            children_count, completed_children_count, failed_children_count))
-    print_totals()
-    if children_count == 0:
-        return ('build_child_tasks', 0)
-    elif children_count == completed_children_count:
-        return ('wrap_up', 1)
-    elif children_count > 0:
-        complete_percent = completed_children_count / children_count
-        return ('update_percent_complete', complete_percent)
-    elif failed_children_count > 0:
-        return ('abort', 0)
 
 def build_and_dispatch_redact_threaded_children(parent_job):                                                     
     parent_job.status = 'running'
@@ -85,10 +58,6 @@ def build_and_dispatch_redact_threaded_children(parent_job):
                 )
                 job.save()
                 redact_single.delay(job.id)
-                # intersperse these evenly in the job stack so we get regular updates
-                if job_counter% 5 == 0:
-                    redact_threaded.delay(parent_job.id)
-        redact_threaded.delay(parent_job.id)
 
 def wrap_up_redact_threaded(job, children):
     aggregate_response_data = {
@@ -109,7 +78,6 @@ def wrap_up_redact_threaded(job, children):
         agg_resp_data_framesets[frameset_hash]['redacted_image'] = redacted_image_url
     job.status = 'success'
     job.response_data = json.dumps(aggregate_response_data)
-    job.update_percent_complete(1)
     job.save()
 
 @shared_task
@@ -119,13 +87,13 @@ def redact_threaded(job_uuid):
         if job.status in ['success', 'failed']:
             return
         children = Job.objects.filter(parent=job)
-        (next_step, percent_done) = evaluate_redact_threaded_children(children)
-        print('next step is {}, percent done {}'.format(next_step, percent_done))
+        next_step = evaluate_children('REDACT', 'redact', children)
+
+        print('next step is {}'.format(next_step))
         if next_step == 'build_child_tasks':
             build_and_dispatch_redact_threaded_children(job)
-        elif next_step == 'update_percent_complete':
-            job.update_percent_complete(percent_done)
-            job.save()
+        elif next_step == 'noop':
+            pass
         elif next_step == 'wrap_up':
             wrap_up_redact_threaded(job, children)
             pipeline = get_pipeline_for_job(job.parent)

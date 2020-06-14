@@ -449,7 +449,6 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
         node_id = Attribute.objects.filter(job=job, name='node_id').first().value
         if node_id not in content['edges']: # no nodes left to dispatch, wrap up
             parent_job.response_data = job.response_data
-            parent_job.update_percent_complete(1)
             parent_job.status = 'success'
             parent_job.save()
             return
