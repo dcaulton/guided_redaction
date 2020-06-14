@@ -29,6 +29,12 @@ class Job(models.Model):
         }
         return disp_hash.__str__()
 
+    def save(self, *args, **kwargs):
+        if self.status in ['success', 'failed']: 
+            self.percent_complete = 1
+        super(Job, self).save(*args, **kwargs)
+        self.update_parent_percent_complete()
+
     def update_parent_percent_complete(self):
         if not self.parent:
             return
@@ -52,11 +58,18 @@ class Job(models.Model):
             return
 
         children = self.__class__.objects.filter(parent=self)
+        if children.count() == 0 and propogate:
+            self.update_parent_percent_complete()
+            return
 
         child_time_fractions = {}
         ctf_attr = Attribute.objects.filter(job=self).filter(name='child_time_fractions').first()
         if ctf_attr:
             child_time_fractions = json.loads(ctf_attr.value)
+        anticipated_operation_count = 1
+        aoc_attr = Attribute.objects.filter(job=self).filter(name='anticipated_operation_count').first()
+        if aoc_attr:
+            anticipated_operation_count = int(aoc_attr.value)
 
         if child_time_fractions:
             build_percent = 0.0
@@ -73,8 +86,12 @@ class Job(models.Model):
             self.percent_complete = percent_complete
             self.save()
         else:
-            completed_children_count = children.filter(status__in=['success', 'failed']).count()
-            percent_complete = float(completed_children_count / children.count())
+            coc = self.get_completed_operation_count(children)
+            percent_complete = 0
+            for operation_name in coc:
+                op_percent_complete = coc[operation_name]['complete'] / coc[operation_name]['total']
+                percent_complete += op_percent_complete / anticipated_operation_count
+
             if not self.change_is_big_enough(percent_complete, min_step):
                 return
             self.percent_complete = percent_complete
@@ -82,3 +99,13 @@ class Job(models.Model):
 
         if propogate:
             self.update_parent_percent_complete()
+
+    def get_completed_operation_count(self, children):
+        operations = {}
+        for child in children:
+            if child.operation not in operations:
+                operations[child.operation] = {'total': 0, 'complete': 0}
+            operations[child.operation]['total'] += 1
+            if child.status in ['success', 'failed']:
+                operations[child.operation]['complete'] += 1
+        return operations

@@ -5,6 +5,12 @@ import math
 import os
 import json                                                                     
 from guided_redaction.jobs.models import Job                                    
+from guided_redaction.utils.task_shared import (
+    evaluate_children,
+    job_has_anticipated_operation_count_attribute,
+    make_anticipated_operation_count_attribute_for_job,
+    get_pipeline_for_job
+)
 from guided_redaction.attributes.models import Attribute
 from guided_redaction.pipelines.api import PipelinesViewSetDispatch
 from guided_redaction.parse.api import (
@@ -22,38 +28,6 @@ hash_frames_batch_size = 50
 split_frames_multithreaded_threshold = 200
 split_frames_chunk_size = 100
 
-def get_pipeline_for_job(job):
-    if not job:
-        return
-    if Attribute.objects.filter(job=job, name='pipeline_job_link').exists():
-        return Attribute.objects.filter(job=job, name='pipeline_job_link').first().pipeline
-
-# TODO this is a cut and past from analyze/tasks.py.  Find a better way to share it soon
-# also, get it working for split_and_hash_threaded
-def evaluate_children(operation, child_operation, children):
-    all_children = 0
-    completed_children = 0
-    failed_children = 0
-    for child in children:
-        if child.operation == child_operation:
-            all_children += 1
-            if child.status == 'success':
-                completed_children += 1
-            elif child.status == 'failed':
-                failed_children += 1
-    print('CHILDREN FOR {}: {} COMPLETE: {} FAILED: {}'.format(
-        operation, all_children, completed_children, failed_children
-    ))
-    if all_children == 0:
-        return ('build_child_tasks', 0)
-    elif all_children == completed_children:
-        return ('wrap_up', 1)
-    elif all_children > 0:
-        complete_percent = completed_children/all_children
-        return ('update_percent_complete', complete_percent)
-    elif failed_children > 0:
-        return ('abort', 0)
-
 @shared_task
 def zip_movie_threaded(job_uuid):
     if Job.objects.filter(pk=job_uuid).exists():
@@ -61,14 +35,13 @@ def zip_movie_threaded(job_uuid):
         if job.status in ['success', 'failed']:
             return
         children = Job.objects.filter(parent=job)
-        (next_step, percent_done) = evaluate_children('ZIP MOVIE THREADED', 'zip_movie', children)
-        print('next step is {}, percent done {}'.format(next_step, percent_done))
+        next_step = evaluate_children('ZIP MOVIE THREADED', 'zip_movie', children)
+        print('next step is {}'.format(next_step))
         request_data = json.loads(job.request_data)
         if next_step == 'build_child_tasks':
             build_and_dispatch_zip_movie_tasks(job)
-        elif next_step == 'update_percent_complete':
-            job.update_percent_complete(percent_done)
-            job.save()
+        elif next_step == 'noop':
+            pass
         elif next_step == 'wrap_up':
             movies_obj = wrap_up_zip_movie_threaded(children, job)
             pipeline = get_pipeline_for_job(job.parent)
@@ -142,7 +115,6 @@ def wrap_up_zip_movie_threaded(zip_tasks, parent_job):
         }
     parent_job.response_data = json.dumps(movies)
     parent_job.status = 'success'
-    parent_job.update_percent_complete(1)
     parent_job.save()
 
     return movies
@@ -178,16 +150,15 @@ def split_threaded(job_uuid):
         if job.status in ['success', 'failed']:
             return
         children = Job.objects.filter(parent=job)
-        (next_step, percent_done) = evaluate_children('SPLIT THREADED', 'split_movie', children)
-        print('next step is {}, percent done {}'.format(next_step, percent_done))
+        next_step = evaluate_children('SPLIT THREADED', 'split_movie', children)
+        print('next step is {}'.format(next_step))
         request_data = json.loads(job.request_data)
         movie_url = request_data['movie_url']
         if next_step == 'build_child_tasks':
             movie_length_seconds = get_movie_length_in_seconds(movie_url)
             build_and_dispatch_split_tasks_multithreaded(job, movie_url, movie_length_seconds)
-        elif next_step == 'update_percent_complete':
-            job.update_percent_complete(percent_done)
-            job.save()
+        elif next_step == 'noop':
+            pass
         elif next_step == 'wrap_up':
             movies_obj = gather_split_threaded_data(children)
             movies_obj['movies'][movie_url]['framesets'] = {}
@@ -261,10 +232,12 @@ def split_and_hash_threaded(job_uuid):
     print('split and hash threaded, job id is '+str(job_uuid))
     job = Job.objects.get(pk=job_uuid)
     if job:
+        if not job_has_anticipated_operation_count_attribute(job):
+            make_anticipated_operation_count_attribute_for_job(job, 2)
         if job.status in ['success', 'failed']:
             return
         children = Job.objects.filter(parent=job)
-        (next_step, percent_done) = evaluate_split_and_hash_threaded_children(children)
+        next_step = evaluate_split_and_hash_threaded_children(children)
         if next_step:
             print('split and hash threaded next step is '+ next_step)
         else:
@@ -274,8 +247,6 @@ def split_and_hash_threaded(job_uuid):
             return
         elif next_step == 'make_and_dispatch_hash_tasks':
             make_and_dispatch_hash_tasks(job, children)
-            job.update_percent_complete(percent_done)
-            job.save()
         elif next_step == 'abort':
             print('aborting split and hash threaded, some child tasks have failed')
             job.status = 'failed'
@@ -287,9 +258,8 @@ def split_and_hash_threaded(job_uuid):
             if pipeline:
                 worker = PipelinesViewSetDispatch()
                 worker.handle_job_finished(job, pipeline)
-        elif next_step == 'update_percent_complete':
-            job.update_percent_complete(percent_done)
-            job.save()
+        elif next_step == 'noop':
+            pass
         else:
             print('some subtasks arent complete or failed, let them finish')
             return
@@ -327,7 +297,6 @@ def wrap_up_split_and_hash_threaded(parent_job, children):
         resp_data['movies'][movie_url]['frameset_discriminator'] = frameset_discriminators[movie_url]
     parent_job.response_data = json.dumps(resp_data)
     parent_job.status = 'success'
-    parent_job.update_percent_complete(1)
     parent_job.save()
     print('wrapping up split and hash threaded')
 
@@ -359,21 +328,19 @@ def evaluate_split_and_hash_threaded_children(children):
             hash_frames_children, hash_frames_completed_children, hash_frames_failed_children))
     print_totals()
     if split_movie_children == 0:
-        return ('make_and_dispatch_split_tasks', 0)
+        return 'make_and_dispatch_split_tasks'
     elif hash_frames_children > 0 and hash_frames_children == hash_frames_completed_children:
-        return ('wrap_up', 1)
+        return 'wrap_up'
     elif hash_frames_children > 0 and hash_frames_failed_children > 0:
-        return ('abort', 0)
+        return 'abort'
     elif hash_frames_children > 0:
-        complete_percent = .5 + .5*(hash_frames_completed_children/hash_frames_children)
-        return ('update_percent_complete', complete_percent)
+        return 'noop'
     elif split_movie_children > split_movie_completed_children and hash_frames_children == 0:
-        complete_percent = .5*(split_movie_completed_children/split_movie_children)
-        return ('update_percent_complete', complete_percent)
+        return 'noop'
     elif split_movie_children == split_movie_completed_children and hash_frames_children == 0:
-        return ('make_and_dispatch_hash_tasks', .5)
+        return 'make_and_dispatch_hash_tasks'
     elif split_movie_failed_children > 0:
-        return ('abort', 0)
+        return 'abort'
 
 def gather_split_threaded_data(split_tasks):
     frames = {}
