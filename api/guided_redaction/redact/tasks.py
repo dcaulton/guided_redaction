@@ -110,7 +110,7 @@ def wrap_up_redact_threaded(job, children):
         agg_resp_data_framesets[frameset_hash]['redacted_image'] = redacted_image_url
     job.status = 'success'
     job.response_data = json.dumps(aggregate_response_data)
-    job.elapsed_time = 1
+    job.update_percent_complete(1)
     job.save()
 
 @shared_task
@@ -125,7 +125,7 @@ def redact_threaded(job_uuid):
         if next_step == 'build_child_tasks':
             build_and_dispatch_redact_threaded_children(job)
         elif next_step == 'update_percent_complete':
-            job.elapsed_time = percent_done
+            job.update_percent_complete(percent_done)
             job.save()
         elif next_step == 'wrap_up':
             wrap_up_redact_threaded(job, children)
