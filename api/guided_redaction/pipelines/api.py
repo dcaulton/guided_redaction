@@ -451,14 +451,19 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
             return True
 
     def handle_job_finished(self, job, pipeline):
+        parent_job = job.parent
         if job.status == 'failed':
             parent_job.response_data = job.response_data
             parent_job.status = 'failed'
             parent_job.save()
             return
         response_data = json.loads(job.response_data)
+        if 'errors' in response_data:
+            parent_job.response_data = job.response_data
+            parent_job.status = 'failed'
+            parent_job.save()
+            return
         content = json.loads(pipeline.content)
-        parent_job = job.parent
         something_changed = self.load_split_and_redact_results(job, response_data, parent_job)
         if something_changed:
             parent_job.save()
