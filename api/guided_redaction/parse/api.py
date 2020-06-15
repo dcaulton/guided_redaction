@@ -91,14 +91,18 @@ def add_movie_audio(file_writer, movie_url, audio_url):
 def split_movie_partial(file_writer, movie_url, start_seconds_offset, num_frames):
     movie_filepath = file_writer.get_file_path_for_url(movie_url)
     file_pattern_fullpath = file_writer.get_file_pattern_fullpath_for_movie_split(movie_url, 'frame_%05d.png')
-    (
-        ffmpeg
-        .input(movie_filepath, ss=start_seconds_offset)
-        .filter('fps', fps=1)
-        .output(file_pattern_fullpath, start_number=start_seconds_offset, frames=num_frames)
-        .overwrite_output()
-        .run(quiet=True)
-    )
+    try:
+        (
+            ffmpeg
+            .input(movie_filepath, ss=start_seconds_offset)
+            .filter('fps', fps=1)
+            .output(file_pattern_fullpath, start_number=start_seconds_offset, frames=num_frames)
+            .overwrite_output()
+            .run(quiet=True)
+        )
+    except Exception as err:
+        print('exception in split movie partial: {}'.format(err))
+        return []
     files_created = []
     for i in range(start_seconds_offset,start_seconds_offset+num_frames):
         index_as_string = '{:05d}'.format(i)
