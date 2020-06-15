@@ -234,7 +234,9 @@ class RedactApplication extends React.Component {
         (user_id === 'david.barrios@sykes.com') ||
         (user_id === 'scott.devos@sykes.com') ||
         (user_id === 'ryan.cannon@sykes.com') ||
-        (user_id === 'shelton.hook@sykes.com')) {
+        (user_id === 'shelton.hook@sykes.com') ||
+        (user_id === 'scott.devos@sykes.com')
+    ) {
       classes.push('no_sound')
     }
     return classes
@@ -1076,7 +1078,11 @@ class RedactApplication extends React.Component {
   addMovieAndSetActive(movie_url, movies, theCallback=(()=>{})) {
     this.addToCampaignMovies(movie_url)
     let deepCopyMovies = movies
-    if (movies[movie_url]['frames'].length > 0) {
+    if (
+      movies[movie_url] &&
+      movies[movie_url].frames &&
+      movies[movie_url]['frames'].length > 0
+    ) {
       deepCopyMovies = JSON.parse(JSON.stringify(movies))
       const hashes = this.getFramesetHashesInOrder()
       this.setFramesetHash(hashes[0])
@@ -2463,15 +2469,15 @@ class RedactApplication extends React.Component {
     }
     let when_done_fun = ((response) => {
       if (Object.keys(response).includes("job_id")) {
-        this.props.attachToJob(response['job_id'])
+        this.attachToJob(response['job_id'])
       }
     })
-    this.props.dispatchPipeline(fetch_split_pipeline_id, 'json_obj', input_obj, when_done_fun)
+    this.dispatchPipeline(fetch_split_pipeline_id, 'json_obj', input_obj, when_done_fun)
   }
 
   iAmWorkOrDev() {
-    if (window.location.substring('step-work.dev.sykes.com') > -1 || 
-        window.location.substring('step.dev.sykes.com') > -1) {
+    if (window.location.href.substring('step-work.dev.sykes.com') > -1 || 
+        window.location.href.substring('step.dev.sykes.com') > -1) {
       return true
     }
     return false
