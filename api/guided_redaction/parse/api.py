@@ -43,9 +43,12 @@ def get_movie_frame_dimensions(frames):
   )
   img_binary = pic_response.content
   if img_binary:
-      nparr = np.fromstring(img_binary, np.uint8)
-      cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-      return (cv2_image.shape[1], cv2_image.shape[0])
+      try:
+          nparr = np.fromstring(img_binary, np.uint8)
+          cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+          return (cv2_image.shape[1], cv2_image.shape[0])
+      except:
+          return (0, 0)
 
 def get_url_as_cv2_image(the_url):
     pic_response = requests.get(
