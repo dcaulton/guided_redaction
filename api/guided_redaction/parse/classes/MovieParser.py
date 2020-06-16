@@ -92,9 +92,10 @@ class MovieParser:
             if img_binary:
                 nparr = np.fromstring(img_binary, np.uint8)
                 cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-                if cv2_image and cv2_image.any():
-                    self.advance_one_frame(cv2_image, input_url, unique_frames)
-                else:
+                try:
+                    if cv2_image.any():
+                        self.advance_one_frame(cv2_image, input_url, unique_frames)
+                except:
                     print('MovieParser.load_and_hash: error decoding an image')
         return unique_frames
 
