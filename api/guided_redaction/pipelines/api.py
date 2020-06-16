@@ -232,6 +232,7 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
 
     def build_split_and_hash_job(self, content, node, parent_job):
         parent_request_data = json.loads(parent_job.request_data)
+        make_anticipated_operation_count_attribute_for_job(parent_job, 2)
         request_data = {
           'movie_urls': list(parent_request_data['movies'].keys()),
           'frameset_discriminator': 'gray8',
