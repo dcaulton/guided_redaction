@@ -457,7 +457,13 @@ class ComposePanel extends React.Component {
     if (!this.props.telemetry_data || !Object.keys(this.props.telemetry_data).includes('movie_mappings')) {
       return
     }
+    if (!movie_url) {
+      return
+    }
     let recording_id = movie_url.split('/').slice(-1)[0]
+    if (!recording_id) {
+      return
+    }
     recording_id = recording_id.split('.')[0]
     let transaction_id = ''
     if (Object.keys(this.props.telemetry_data['movie_mappings']).includes(recording_id)) {
@@ -1012,7 +1018,9 @@ class SequenceCard extends React.Component {
   }
 
   buildFrameName() {
-    return this.props.frame_url.split('/').slice(-1)[0]
+    if (this.props.frame_url) {
+      return this.props.frame_url.split('/').slice(-1)[0]
+    }
   }
 
   buildLinks() {
