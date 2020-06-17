@@ -16,10 +16,17 @@ class LinkViewSetLearn(viewsets.ViewSet):
     def create(self, request):
         if not request.data.get("image_urls"):
             return self.error(["image_urls is required"], status_code=400)
-        learn_dev_url = request.data.get(
-            'learn_dev_url', 
+            
+        learn_url = request.data.get(
+            'learn_url', 
             'https://osmae2lnxs117.amer.sykes.com/microlearning/mixer/create/6956de85-d9b5-4fd2-a8b2-45e2f06a4daa/7412597f-794b-4245-8289-4e92a1845a9a/'
         )
+        if request.data.get('target_instance') == 'learn_prod':
+            learn_url = request.data.get(
+                'learn_url', 
+                'https://onelearn.sykes.com/microlearning/mixer/create/b875eab9-c486-40ae-9b86-13027d0d7e90/494c2b08-112c-472f-8b71-d0a2e4f55939/'
+            )
+
         data_uris = []
         image_urls = request.data.get('image_urls')
         for image_url in image_urls:
@@ -37,7 +44,7 @@ class LinkViewSetLearn(viewsets.ViewSet):
             getattr(ssl, '_create_unverified_context', None)):
             ssl._create_default_https_context = ssl._create_unverified_context
         learn_response = requests.post(
-            learn_dev_url, 
+            learn_url, 
             data=form_data,
             headers={
               'Content-Type': content_type,
