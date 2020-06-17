@@ -817,6 +817,7 @@ class RedactApplication extends React.Component {
       headers: this.buildJsonHeaders(),
       body: JSON.stringify({
         image_urls: image_urls,
+        target_instance: this.state.whenDoneTarget,
       }),
     })
     .then((response) => response.json())
