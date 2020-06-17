@@ -71,7 +71,7 @@ class RedactApplication extends React.Component {
         is_superuser: false,
       },
       session_audio: {
-        playSound: true,
+        playSound: false,
         userTone: 'blip',
         voice: {
           index: '',
@@ -700,6 +700,15 @@ class RedactApplication extends React.Component {
   }
 
   getAttachedJobMessage(job) {
+    if (
+      this.state.attached_job['status'] === 'success' ||
+      this.state.attached_job['status'] === 'failed'
+    ) {
+      return ''
+    }
+    if (this.state.attached_job['status'] === 'running' && job['status'] === 'failed') {
+      return 'job has failed'
+    }
     if (this.state.attached_job['status'] === 'running' && job['status'] === 'success') {
       return 'job has completed'
     }
@@ -2762,6 +2771,7 @@ class RedactApplication extends React.Component {
                 pipelines={this.state.pipelines}
                 dispatchPipeline={this.dispatchPipeline}
                 attachToJob={this.attachToJob}
+                attached_job={this.state.attached_job}
                 message={this.state.message}
                 getAndSaveUser={this.getAndSaveUser}
                 getPipelines={this.getPipelines}
