@@ -674,6 +674,11 @@ class ComposePanel extends React.Component {
 
   buildComposeImage() {
     const compose_display_image = this.getComposeDisplayImage()
+    const the_style = {
+      'height': '500px',
+      'width': '800px',
+      'paddingTop': '200px',
+    }
     if (compose_display_image) {
       return (
         <img
@@ -683,12 +688,16 @@ class ComposePanel extends React.Component {
             alt={compose_display_image}
         />
       )
+    } else if (this.state.attached_job.id and this.state.attached_job.status === 'running'){
+      return (
+        <div
+            className='h1 text-center'
+            style={the_style}
+        >
+          <div className='spinner-border' role='status' />
+        </div>
+      )
     } else {
-      const the_style = {
-        'height': '500px',
-        'width': '800px',
-        'paddingTop': '200px',
-      }
       return (
         <div
             className='h1 text-center'
