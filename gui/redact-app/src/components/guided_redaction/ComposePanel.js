@@ -688,7 +688,10 @@ class ComposePanel extends React.Component {
             alt={compose_display_image}
         />
       )
-    } else if (this.state.attached_job.id and this.state.attached_job.status === 'running'){
+    } else if (
+        this.props.attached_job['id'] && 
+        this.props.attached_job['status'] === 'running'
+    ) {
       return (
         <div
             className='h1 text-center'
