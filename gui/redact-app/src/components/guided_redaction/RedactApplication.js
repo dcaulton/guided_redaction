@@ -802,6 +802,12 @@ class RedactApplication extends React.Component {
     }
     const sequence_movie = this.state.movies['sequence']
     const framesets = sequence_movie['framesets']
+    if (Object.keys(framesets).length !== 3) {
+      // TODO use the page messaging line for this eventually
+      //   for now we do this from two pages, so this needs to be figured out
+      alert('Learn requires three and only three captured images, cannot submit')
+      return
+    }
     for (let i=0; i < Object.keys(framesets).length; i++) {
       const frameset_hash = Object.keys(framesets)[i]
       const frameset = framesets[frameset_hash]
