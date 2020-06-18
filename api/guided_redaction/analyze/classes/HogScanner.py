@@ -165,6 +165,8 @@ class HogScanner:
             self.scales = np.linspace(.50, 1.50, 21)[::-1]
         elif scale == '+/-50/10':
             self.scales = np.linspace(.50, 1.50, 11)[::-1]
+        elif scale == '+/-50/25':
+            self.scales = np.linspace(.50, 1.50, 5)[::-1]
         elif scale == '+/-10/1':
             self.scales = np.linspace(.90, 1.1, 11)[::-1]
         elif scale == '+/-10/5':

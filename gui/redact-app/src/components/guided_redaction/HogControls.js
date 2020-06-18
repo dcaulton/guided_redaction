@@ -368,16 +368,17 @@ class HogControls extends React.Component {
       {'+/-10/5': '+/- 10%, 5% increments'},
       {'+/-10/10': '+/- 10%, 10% increments'},
       {'+/-20/1': '+/- 20%, 1% increments'},
-      {'+/-20/10': '+/- 20%, 10% increments'},
       {'+/-20/20': '+/- 20%, 20% increments'},
-      {'+/-20/': '+/- 20%, 5% increments'},
+      {'+/-20/10': '+/- 20%, 10% increments'},
+      {'+/-20/5': '+/- 20%, 5% increments'},
       {'+/-25/1': '+/- 25%, 1% increments'},
       {'+/-25/5': '+/- 25%, 5% increments'},
       {'+/-40/1': '+/- 40%, 1% increments'},
       {'+/-40/5': '+/- 40%, 5% increments'},
       {'+/-50/1': '+/- 50%, 1% increments'},
       {'+/-50/5': '+/- 50%, 5% increments'},
-      {'+/-50/10': '+/- 50%, 10% increments'}
+      {'+/-50/10': '+/- 50%, 10% increments'},
+      {'+/-50/25': '+/- 50%, 25% increments'}
     ]
     return buildLabelAndDropdown(
       scale_values,
