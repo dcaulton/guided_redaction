@@ -117,7 +117,7 @@ class HogScanner:
             self.avg_img_height = int(sum(heights) / len(heights))
 
     def get_datafile_paths_and_dirs(self):
-        if 'features_path' in self.hog_rule:
+        if 'features_path' in self.hog_rule and self.hog_rule['features_path']:
             self.features_path = self.hog_rule['features_path']
         else:
             hogdir = self.file_writer.create_unique_directory('hog_features')
@@ -128,7 +128,7 @@ class HogScanner:
             outfilename = os.path.join(hogdir, underscore_hog_name)
             self.features_path = outfilename
 
-        if 'classifier_path' in self.hog_rule:
+        if 'classifier_path' in self.hog_rule and self.hog_rule['classifier_path']:
             if self.debug:
                 print('loading classifier from supplied path')
             self.classifier_path = self.hog_rule['classifier_path']
@@ -162,6 +162,8 @@ class HogScanner:
             self.scales = np.linspace(.50, 1.50, 21)[::-1]
         elif scale == '+/-50/10':
             self.scales = np.linspace(.50, 1.50, 11)[::-1]
+        elif scale == '+/-50/25':
+            self.scales = np.linspace(.50, 1.50, 5)[::-1]
         elif scale == '+/-10/1':
             self.scales = np.linspace(.90, 1.1, 11)[::-1]
         elif scale == '+/-10/5':
@@ -172,6 +174,8 @@ class HogScanner:
             self.scales = np.linspace(.80, 1.2, 9)[::-1]
         elif scale == '+/-20/10':
             self.scales = np.linspace(.80, 1.2, 5)[::-1]
+        elif scale == '+/-20/20':
+            self.scales = np.linspace(.80, 1.2, 3)[::-1]
         else:
             self.scales = [1]
 
