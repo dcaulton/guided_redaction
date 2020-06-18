@@ -24,11 +24,21 @@ class App extends React.Component {
 
   render() {
     return (
-      <Router>
-        <RedactApplication 
-          getBaseUrl={this.getBaseUrl}
-        />
-      </Router>
+      <div>
+        <div id='App-whoami'>
+          <div>
+            <div />
+            <span className='d-none'>
+              ;dave.caulton@sykes.com
+            </span>
+          </div>
+        </div>
+        <Router>
+          <RedactApplication 
+            getBaseUrl={this.getBaseUrl}
+          />
+        </Router>
+      </div>
     )
   }
 }
