@@ -70,7 +70,7 @@ def split_movie_audio(file_writer, movie_url):
         .input(movie_filepath)
         .output(audio_filepath)
         .overwrite_output()
-        .run(quiet=True)
+        .run()
     )
     return audio_url
 
@@ -87,7 +87,7 @@ def add_movie_audio(file_writer, movie_url, audio_url):
         .filter((audio_input, audio_input), 'join', inputs=2, channel_layout='stereo')
         .output(video_input.video, new_movie_filepath, vcodec='copy')
         .overwrite_output()
-        .run(quiet=True)
+        .run()
     )
     return new_movie_url
 
@@ -101,7 +101,7 @@ def split_movie_partial(file_writer, movie_url, start_seconds_offset, num_frames
             .filter('fps', fps=1)
             .output(file_pattern_fullpath, start_number=start_seconds_offset, frames=num_frames)
             .overwrite_output()
-            .run(quiet=True)
+            .run()
         )
     except Exception as err:
         print('exception in split movie partial: {}'.format(err))
@@ -500,7 +500,7 @@ class ParseViewSetRenderSubsequence(viewsets.ViewSet):
             ffmpeg
             .input(input_files_wildcard, pattern_type='glob', framerate=output_framerate)
             .output(output_file_fullpath)
-            .run(quiet=True)
+            .run()
         )
         #add the rendered image name to output['rendered_image']
         subsequence['rendered_image'] = fw.get_url_for_file_path(output_file_fullpath)
