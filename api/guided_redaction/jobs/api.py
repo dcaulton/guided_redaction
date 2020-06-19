@@ -25,9 +25,11 @@ def dispatch_job_wrapper(job, restart_unfinished_children=True):
                 grandchildren = Job.objects.filter(parent=child_to_restart)
                 for grandchild in grandchildren:
                     if grandchild.status not in ['success', 'failed']:
+                        print('re-displatching grandchild job {}'.format(grandchild))
                         dispatch_job(grandchild)
             else:
                 if child_to_restart.status not in ['success', 'failed']:
+                    print('re-displatching child job {}'.format(child_to_restart))
                     dispatch_job(child_to_restart)
     dispatch_job(job)
 
