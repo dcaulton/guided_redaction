@@ -9,7 +9,7 @@ from guided_redaction.scanners.models import Scanner
 class AttributesViewSet(viewsets.ViewSet):
     def list(self, request):
         attributes_list = []
-        for attribute in Attributes.objects.all():
+        for attribute in Attribute.objects.all():
             attributes_list.append(
                 {
                     'id': attribute.id,

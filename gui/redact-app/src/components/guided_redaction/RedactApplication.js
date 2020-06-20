@@ -80,6 +80,7 @@ class RedactApplication extends React.Component {
         },
       },
       message: '',
+      cv_workers: {},
       visibilityFlags: {
         'templates': true,
         'hog': true,
@@ -2855,6 +2856,7 @@ class RedactApplication extends React.Component {
                 message={this.state.message}
                 maximize={this.state.maximize}
                 user={this.state.user}
+                cv_workers={this.state.cv_workers}
                 getAndSaveUser={this.getAndSaveUser}
               />
             </Route>

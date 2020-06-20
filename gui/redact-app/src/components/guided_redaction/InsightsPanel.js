@@ -1535,6 +1535,7 @@ class InsightsPanel extends React.Component {
             mask_method={this.props.mask_method}
             impersonateUser={this.props.impersonateUser}
             maximize={this.props.maximize}
+            cv_workers={this.props.cv_workers}
           />
         </div>
 

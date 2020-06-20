@@ -799,11 +799,81 @@ class SessionControls extends React.Component {
     this.props.setGlobalStateVar('session_audio', deepCopySessionAudio)
   }
 
+  addCvWorker() {
+    console.log('adding cv worker')
+    const new_value = document.getElementById('session_cv_worker').value
+    const new_obj = {
+      'url': new_value,
+      'status': 'ok',
+    }
+    let deepCopyCvWorkers = JSON.parse(JSON.stringify(this.props.cv_workers))
+    deepCopyCvWorkers[new_value] = new_obj
+    this.props.setGlobalStateVar('cv_workers', deepCopyCvWorkers)
+    document.getElementById('session_cv_worker').value = ''
+    this.props.displayInsightsMessage('cv_worker has been added')
+  }
+
+  deleteCvWorker(worker_key) {
+    let deepCopyCvWorkers = JSON.parse(JSON.stringify(this.props.cv_workers))
+    delete deepCopyCvWorkers[worker_key]
+    this.props.setGlobalStateVar('cv_workers', deepCopyCvWorkers)
+    this.props.displayInsightsMessage('cv_worker has been deleted')
+  }
+
+  buildCvWorkersArea() {
+    return (
+      <div className='col'>
+        <div className='row'>
+          <div className='d-inline'>
+            Add CV Worker
+          </div>
+          <div className='d-inline'>
+            <input 
+                id='session_cv_worker'
+                size='25'
+            />
+          </div>
+          <div className='d-inline'>
+            <button
+                className='btn btn-primary'
+                onClick={()=>this.addCvWorker()}
+            >
+              Add
+            </button>
+          </div>
+        </div>
+        <div className='row'>
+          <div className='col'>
+            {Object.keys(this.props.cv_workers).map((worker_key, index) => {
+              const cv_worker = this.props.cv_workers[worker_key]
+              return (
+                <div className='row' key={index}>
+                  <div className='d-inline'>
+                    {cv_worker['url']}
+                  </div>
+                  <div className='d-inline'>
+                    <button
+                        onClick={()=>this.deleteCvWorker(worker_key)}
+                        className='ml-2 btn btn-link'
+                    >
+                      delete
+                    </button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   render() {
     const campaign_movies_box = this.buildCampaignMoviesBox()
     const recognition_button = this.buildSpeechRecognitionButton()
     const voice_selector = this.buildVoiceSelector()
     const update_state_box = this.buildGlobalStateBox()
+    const cv_workers_area = this.buildCvWorkersArea()
     const workbook_load_button = this.buildWorkbookPickerButton()
     const workbook_delete_button = this.buildWorkbookDeleteButton()
     const workbook_name = this.buildWorkbookName()
@@ -988,6 +1058,13 @@ class SessionControls extends React.Component {
                     <div className='d-inline'>
                       <span className='h5'>Campaign Movies</span>
                       {campaign_movies_box}
+                    </div>
+                  </div>
+
+                  <div className='row mt-4'>
+                    <div className='d-inline'>
+                      <span className='h5'>CV workers</span>
+                      {cv_workers_area}
                     </div>
                   </div>
 

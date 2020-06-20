@@ -410,6 +410,7 @@ class BottomInsightsControls extends React.Component {
           getPipelines={this.props.getPipelines}
           impersonateUser={this.props.impersonateUser}
           maximize={this.props.maximize}
+          cv_workers={this.props.cv_workers}
         />
 
       </div>
