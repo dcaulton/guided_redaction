@@ -268,7 +268,6 @@ class JobsViewSet(viewsets.ViewSet):
             workbook_id=request.data.get('workbook_id'),
         )
         job.save()
-        print('POKEY 00 {}'.format(request.data))
 
         owner_id = request.data.get('owner')
         if owner_id:
@@ -279,23 +278,49 @@ class JobsViewSet(viewsets.ViewSet):
             )
             attribute.save()
         if request.data.get('routing_data'):
-            print('POKEY 01')
             routing_data = request.data.get('routing_data')
             if 'cv_worker_url' in routing_data and routing_data['cv_worker_url']:
-                print('POKEY 02')
                 attribute = Attribute(
                     name='cv_worker_url',
                     value=routing_data['cv_worker_url'],
                     job=job,
                 )
-            attribute.save()
+                attribute.save()
         return job
+
+    def dispatch_cv_worker_job(self, job):
+        print('dispatching cv worker job')
+        build_payload = {
+          'operation': job.operation,
+          'request_data': job.request_data,
+          'job_update_url': 'api/v1/jobs/' + str(job.id),
+        }
+        worker_url = job.get_cv_worker_url()
+        worker_url = worker_url.replace('operations', 'tasks')
+
+        response = requests.post(
+            worker_url,
+            data=build_payload,
+        )
+        resp_data = json.loads(response.content)
+        if response.status_code == 200 and 'task_id' in resp_data:
+            task_id = resp_data['task_id']
+            attribute = Attribute(
+                name='cv_task_id',
+                value=task_id,
+                job=job,
+            )
+            attribute.save()
+        else:
+            job.status = 'failed'
+            job.response_data = json.dumps(['unhappy response from cv worker job dispatch'])
+            job.save()
 
     def create(self, request):
         job = self.build_job(request)
 
         if job.is_cv_worker_task():
-            print('INTERESTING, we actually have a worker task to dispatch')
+            self.dispatch_cv_worker_job(job)
         else:
             self.schedule_job(job)
 
