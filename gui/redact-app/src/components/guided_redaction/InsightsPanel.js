@@ -1536,6 +1536,7 @@ class InsightsPanel extends React.Component {
             impersonateUser={this.props.impersonateUser}
             maximize={this.props.maximize}
             cv_workers={this.props.cv_workers}
+            queryCvWorker={this.props.queryCvWorker}
           />
         </div>
 

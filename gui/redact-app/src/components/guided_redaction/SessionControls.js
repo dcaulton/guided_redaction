@@ -802,15 +802,8 @@ class SessionControls extends React.Component {
   addCvWorker() {
     console.log('adding cv worker')
     const new_value = document.getElementById('session_cv_worker').value
-    const new_obj = {
-      'url': new_value,
-      'status': 'ok',
-    }
-    let deepCopyCvWorkers = JSON.parse(JSON.stringify(this.props.cv_workers))
-    deepCopyCvWorkers[new_value] = new_obj
-    this.props.setGlobalStateVar('cv_workers', deepCopyCvWorkers)
     document.getElementById('session_cv_worker').value = ''
-    this.props.displayInsightsMessage('cv_worker has been added')
+    this.props.queryCvWorker(new_value)
   }
 
   deleteCvWorker(worker_key) {
@@ -818,6 +811,53 @@ class SessionControls extends React.Component {
     delete deepCopyCvWorkers[worker_key]
     this.props.setGlobalStateVar('cv_workers', deepCopyCvWorkers)
     this.props.displayInsightsMessage('cv_worker has been deleted')
+  }
+
+  buildOneCvWorkerData(worker_url, index) {
+    const cv_worker = this.props.cv_workers[worker_url]
+    let operations = {}
+    if (Object.keys(cv_worker).includes('operations')) {
+      operations = cv_worker['operations']
+    }
+    return (
+      <div className='col border-bottom' key={index}>
+        <div className='row' key={index}>
+          <div className='d-inline'>
+            {worker_url}
+          </div>
+          <div className='d-inline'>
+            <button
+                onClick={()=>this.deleteCvWorker(worker_url)}
+                className='ml-2 btn btn-link'
+            >
+              delete
+            </button>
+          </div>
+        </div>
+        <div className='row'>
+          <div className='d-inline font-weight-bold'>
+            Operations:
+          </div>
+          <div className='d-inline ml-2'>
+            <ul>
+              {Object.keys(operations).map((operation_name, op_index) => {
+                const operation = operations[operation_name]
+                return (
+                  <ul key={op_index}>
+                    <div className='d-inline' key={op_index}>
+                      {operation_name}
+                    </div>
+                    <div className='d-inline ml-2'>
+                      {operation.status}
+                    </div>
+                  </ul>
+                )
+              })}
+            </ul>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   buildCvWorkersArea() {
@@ -843,26 +883,9 @@ class SessionControls extends React.Component {
           </div>
         </div>
         <div className='row'>
-          <div className='col'>
-            {Object.keys(this.props.cv_workers).map((worker_key, index) => {
-              const cv_worker = this.props.cv_workers[worker_key]
-              return (
-                <div className='row' key={index}>
-                  <div className='d-inline'>
-                    {cv_worker['url']}
-                  </div>
-                  <div className='d-inline'>
-                    <button
-                        onClick={()=>this.deleteCvWorker(worker_key)}
-                        className='ml-2 btn btn-link'
-                    >
-                      delete
-                    </button>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
+          {Object.keys(this.props.cv_workers).map((worker_url, index) => {
+            return this.buildOneCvWorkerData(worker_url, index)
+          })}
         </div>
       </div>
     )

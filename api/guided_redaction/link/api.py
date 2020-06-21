@@ -146,3 +146,20 @@ class LinkViewSetGetTelemetryRows(viewsets.ViewSet):
         except Exception as e:
             print('get telemetry data exception: ', e)
             return Response({"lines": []})
+
+class LinkViewSetProxy(viewsets.ViewSet):
+    def create(self, request):
+        if not request.data.get("method"):
+            return self.error(["method is required"], status_code=400)
+        if not request.data.get("url"):
+            return self.error(["url is required"], status_code=400)
+        the_url = request.data.get('url')
+
+        if request.data.get('method') == 'GET': 
+            response = requests.get(
+                the_url,
+                verify=False,
+            )
+            if response.status_code == 200:
+                return Response({"response": response.content})
+        return self.error(response.content, status_code=400)

@@ -197,6 +197,34 @@ class RedactApplication extends React.Component {
     this.toggleShowVisibility=this.toggleShowVisibility.bind(this)
     this.impersonateUser=this.impersonateUser.bind(this)
     this.getAndSaveUser=this.getAndSaveUser.bind(this)
+    this.queryCvWorker=this.queryCvWorker.bind(this)
+  }
+
+  async queryCvWorker(cv_worker_url, when_done=(()=>{})) {
+    let the_url = this.getUrl('link_proxy')
+    await fetch(the_url, {
+      method: 'POST',
+      headers: this.buildJsonHeaders(),
+      body: JSON.stringify({
+        method: 'GET',
+        url: cv_worker_url,
+      }),
+    })
+    .then((response) => response.json())
+    .then((responseJson) => {
+      if (!Object.keys(responseJson).includes('response')) {
+        this.setGlobalStateVar('message', 'unexpected response from cv worker')
+        return
+      }
+      const operations = JSON.parse(responseJson['response'])
+      let deepCopyCvWorkers = JSON.parse(JSON.stringify(this.state.cv_workers))
+      deepCopyCvWorkers[cv_worker_url] = operations
+      this.setGlobalStateVar('cv_workers', deepCopyCvWorkers)
+      when_done(responseJson)
+    })
+    .catch((error) => {
+      console.error(error);
+    })
   }
 
   impersonateUser(new_user_id) {
@@ -283,6 +311,8 @@ class RedactApplication extends React.Component {
       return api_server_url + 'v1/workbooks'
     } else if (url_name === 'link_url') {
       return api_server_url + 'v1/link/learn'
+    } else if (url_name === 'link_proxy') {
+      return api_server_url + 'v1/link/proxy'
     } else if (url_name === 'can_see_url') {
       return api_server_url + 'v1/link/can-reach'
     } else if (url_name === 'make_url_url') {
@@ -2858,6 +2888,7 @@ class RedactApplication extends React.Component {
                 user={this.state.user}
                 cv_workers={this.state.cv_workers}
                 getAndSaveUser={this.getAndSaveUser}
+                queryCvWorker={this.queryCvWorker}
               />
             </Route>
             <Route path={['/redact/image', '/redact']}>
