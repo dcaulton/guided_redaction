@@ -2271,6 +2271,22 @@ class RedactApplication extends React.Component {
     })
   }
 
+  getJobRoutingData(job) {
+    for (let i=0; i < Object.keys(this.state.cv_workers).length; i++) {
+      const worker_url = Object.keys(this.state.cv_workers)[i]
+      const worker = this.state.cv_workers[worker_url]
+      if (!Object.keys(worker).includes('operations')) {
+        continue
+      }
+      for (let j=0; j < Object.keys(worker['operations']).length; j++) {
+        const operation_name = Object.keys(worker['operations'])[j]
+        if ( operation_name === job['operation'] && job['status'] === 'ACTIVE') {
+          return {'cv_worker_url': worker_url}
+        }
+      }
+    }
+  }
+
   async submitJob(hash_in) {
     let the_job_data = hash_in.hasOwnProperty('job_data')? hash_in['job_data'] : {}
     let when_submit_complete = hash_in.hasOwnProperty('after_submit')? hash_in['after_submit'] : (()=>{})
@@ -2289,6 +2305,10 @@ class RedactApplication extends React.Component {
       owner: current_user,
       description: the_job_data['description'],
       workbook_id: this.state.current_workbook_id,
+    }
+    const routing_data = this.getJobRoutingData(build_obj)
+    if (routing_data) {
+      build_obj['routing_data'] = routing_data
     }
     await fetch(this.getUrl('jobs_url'), {
       method: 'POST',
