@@ -268,6 +268,7 @@ class JobsViewSet(viewsets.ViewSet):
             workbook_id=request.data.get('workbook_id'),
         )
         job.save()
+        print('POKEY 00 {}'.format(request.data))
 
         owner_id = request.data.get('owner')
         if owner_id:
@@ -277,12 +278,27 @@ class JobsViewSet(viewsets.ViewSet):
                 job=job,
             )
             attribute.save()
-
+        if request.data.get('routing_data'):
+            print('POKEY 01')
+            routing_data = request.data.get('routing_data')
+            if 'cv_worker_url' in routing_data and routing_data['cv_worker_url']:
+                print('POKEY 02')
+                attribute = Attribute(
+                    name='cv_worker_url',
+                    value=routing_data['cv_worker_url'],
+                    job=job,
+                )
+            attribute.save()
         return job
 
     def create(self, request):
         job = self.build_job(request)
-        self.schedule_job(job)
+
+        if job.is_cv_worker_task():
+            print('INTERESTING, we actually have a worker task to dispatch')
+        else:
+            self.schedule_job(job)
+
         return Response({"job_id": job.id})
 
     def delete(self, request, pk, format=None):

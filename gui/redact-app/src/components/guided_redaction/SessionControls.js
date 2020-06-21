@@ -296,6 +296,22 @@ class SessionControls extends React.Component {
     )
   }
 
+  buildPingCvWorkerButton() {
+    if (Object.keys(this.props.cv_workers).length === 0) {
+      return ''
+    }
+    return (
+      <div className='d-inline'>
+        <button
+            className='btn btn-primary ml-2 mt-2'
+            onClick={() => this.props.submitInsightsJob('ping_cv_worker')}
+        >
+          Ping CV Worker
+        </button>
+      </div>
+    )
+  }
+
   buildSuLink() {
     return (
       <div className='d-inline p-0'>
@@ -932,6 +948,7 @@ class SessionControls extends React.Component {
     const workbook_save_button = this.buildWorkbookSaveButton()
     const rebase_movies_button = this.buildRebaseMoviesButton()
     const rebase_jobs_button = this.buildRebaseJobsButton()
+    const ping_cv_worker_button = this.buildPingCvWorkerButton()
     const frameset_discriminator = this.buildFramesetDiscriminator()
 
     return (
@@ -966,6 +983,7 @@ class SessionControls extends React.Component {
                 <div className='row mt-3 bg-light rounded'>
                   {ping_button}
                   {get_version_button}
+                  {ping_cv_worker_button}
 
                   <div className='d-inline'>
                       {workbook_load_button}

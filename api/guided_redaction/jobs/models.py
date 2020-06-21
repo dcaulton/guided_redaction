@@ -47,6 +47,14 @@ class Job(models.Model):
             return True
         return False
 
+    def is_cv_worker_task(self):
+        if Attribute.objects.filter(job=self).exists():
+            attributes = Attribute.objects.filter(job=self)
+            for attribute in attributes:
+                if attribute.name == 'cv_worker_url':
+                    return True
+        return False
+
     def update_percent_complete(self, percent_complete=None, propogate=True, min_step=.01):
         if percent_complete:
             if not self.change_is_big_enough(percent_complete, min_step):

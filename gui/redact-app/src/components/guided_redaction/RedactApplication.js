@@ -2280,7 +2280,8 @@ class RedactApplication extends React.Component {
       }
       for (let j=0; j < Object.keys(worker['operations']).length; j++) {
         const operation_name = Object.keys(worker['operations'])[j]
-        if ( operation_name === job['operation'] && job['status'] === 'ACTIVE') {
+        const operation = worker['operations'][operation_name]
+        if ( operation_name === job['operation'] && operation['status'] === 'ACTIVE') {
           return {'cv_worker_url': worker_url}
         }
       }

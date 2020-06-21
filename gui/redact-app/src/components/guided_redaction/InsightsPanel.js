@@ -622,6 +622,14 @@ class InsightsPanel extends React.Component {
     return job_data
   }
 
+  buildPingCvWorkerJobData(extra_data) {
+    let job_data = {}
+    job_data['app'] = 'parse'
+    job_data['operation'] = 'ping_cv_worker'
+    job_data['description'] = 'ping cv worker'
+    return job_data
+  }
+
   buildSaveMovieMetadataJobData(extra_data) {
     let job_data = {
       request_data: {},
@@ -707,6 +715,11 @@ class InsightsPanel extends React.Component {
       let job_data = this.buildResultsData(extra_data)
       this.props.submitJob({
         job_data: job_data,
+      })
+    } else if (job_string === 'ping_cv_worker') {
+      let job_data = this.buildPingCvWorkerJobData(extra_data)
+      this.props.submitJob({
+        job_data: job_data
       })
     }
     if (!this.props.movie_url) {
