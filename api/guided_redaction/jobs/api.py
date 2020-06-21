@@ -154,12 +154,20 @@ class JobsViewSet(viewsets.ViewSet):
 
     def partial_update(self, request, pk=None):
         job = Job.objects.get(pk=pk)
-        make_failed = request.data.get('make_failed')
-        if make_failed:
-            job.status = 'failed'
+        job_updated = False
+        if request.data.get('status'):
+            job.status = request.data.get('status')
+            job_updated = True
+        if request.data.get('response_data'):
+            job.response_data = request.data.get('response_data')
+            job_updated = True
+        if request.data.get('percent_complete'):
+            pct_complete = float(request.data.get('percent_complete'))
+            job.update_percent_complete(pct_complete)
+            job_updated = True
+        if job_updated:
             job.save()
-            return Response({"job_updated": True})
-        return Response({"job_updated": False})
+        return Response({"job_updated": job_updated})
 
     def list(self, request):
         jobs_list = []
@@ -293,7 +301,7 @@ class JobsViewSet(viewsets.ViewSet):
         build_payload = {
           'operation': job.operation,
           'request_data': job.request_data,
-          'job_update_url': 'api/v1/jobs/' + str(job.id),
+          'job_update_url': 'http://localhost:8000/api/v1/jobs/' + str(job.id),
         }
         worker_url = job.get_cv_worker_url()
         worker_url = worker_url.replace('operations', 'tasks')
