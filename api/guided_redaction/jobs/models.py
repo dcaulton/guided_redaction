@@ -88,7 +88,8 @@ class Job(models.Model):
         file_dirs = []
         if Attribute.objects.filter(job=self).filter(name='file_dir_user').exists():
             for attr in Attribute.objects.filter(job=self).filter(name='file_dir_user'):
-                file_dirs.append(attr.value)
+                dirname = attr.value.split(':')[-2]
+                file_dirs.append(dirname)
         return file_dirs
 
     def update_percent_complete(self, percent_complete=None, propogate=True, min_step=.01):
