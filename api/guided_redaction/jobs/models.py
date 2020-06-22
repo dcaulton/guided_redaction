@@ -35,6 +35,14 @@ class Job(models.Model):
         super(Job, self).save(*args, **kwargs)
         self.update_parent_percent_complete()
 
+    def delete(self):
+        keep_attrs = Attribute.objects.filter(name='file_dir_user').filter(job=self)
+        if keep_attrs:
+            for keep_attr in keep_attr:
+                keep_attr.job = None
+                keep_attr.save()
+        super(Job, self).delete()
+
     def update_parent_percent_complete(self):
         if not self.parent:
             return
