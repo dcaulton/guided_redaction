@@ -13,7 +13,7 @@ class AttributesViewSet(viewsets.ViewSet):
             attributes_list.append(
                 {
                     'id': attribute.id,
-                    'type': attribute.type,
+                    'name': attribute.name,
                     'value': attribute.value,
                     'created_on': attribute.created_on,
                     'updated_on': attribute.updated_on,
@@ -30,7 +30,7 @@ class AttributesViewSet(viewsets.ViewSet):
         attribute = Attribute.objects.get(pk=pk)
         a_data = {
             'id': attribute.id,
-            'type': attribute.type,
+            'name': attribute.name,
             'value': attribute.value,
             'created_on': attribute.created_on,
             'updated_on': attribute.updated_on,
@@ -43,7 +43,7 @@ class AttributesViewSet(viewsets.ViewSet):
 
     def create(self, request):
         attribute = Attribute(
-            type=request.data.get('type'),
+            name=request.data.get('name'),
             value=request.data.get('value'),
             description=request.data.get('description'),
             content=json.dumps(request.data.get('content')),
