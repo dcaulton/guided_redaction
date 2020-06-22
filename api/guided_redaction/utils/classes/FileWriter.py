@@ -125,44 +125,47 @@ class FileWriter():
         return unique_working_dir
 
     def write_video(self, image_url_list, output_file_name):
-        if image_url_list:
-            (x_part, file_part) = os.path.split(image_url_list[0])
+        try:
+            if image_url_list:
+                (x_part, file_part) = os.path.split(image_url_list[0])
+                (y_part, uuid_part) = os.path.split(x_part)
+
+                pic_response = requests.get(
+                  image_url_list[0],
+                  verify=self.image_request_verify_headers,
+                )
+                img_binary = pic_response.content
+                if img_binary:
+                    nparr = np.fromstring(img_binary, np.uint8)
+                    cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+                    cap_size = (cv2_image.shape[1], cv2_image.shape[0])
+            fps = 1
+            fourcc = cv2.VideoWriter_fourcc('a', 'v', 'c', '1')
+
+            output_fullpath = os.path.join(self.working_dir, uuid_part, output_file_name)
+            writer = cv2.VideoWriter(output_fullpath, fourcc, fps, cap_size, True)
+            num_frames = len(image_url_list)
+            for count, output_frame_url in enumerate(image_url_list):
+                percent_done = str(count+1) + '/' + str(num_frames)
+                pic_response = requests.get(
+                  output_frame_url,
+                  verify=self.image_request_verify_headers,
+                )
+                img_binary = pic_response.content
+                if img_binary:
+                    nparr = np.fromstring(img_binary, np.uint8)
+                    frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+                    success = writer.write(frame)
+            writer.release()
+            print('writer done at '+ output_fullpath)
+
+            (x_part, file_part) = os.path.split(output_fullpath)
             (y_part, uuid_part) = os.path.split(x_part)
-
-            pic_response = requests.get(
-              image_url_list[0],
-              verify=self.image_request_verify_headers,
-            )
-            img_binary = pic_response.content
-            if img_binary:
-                nparr = np.fromstring(img_binary, np.uint8)
-                cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-                cap_size = (cv2_image.shape[1], cv2_image.shape[0])
-        fps = 1
-        fourcc = cv2.VideoWriter_fourcc('a', 'v', 'c', '1')
-
-        output_fullpath = os.path.join(self.working_dir, uuid_part, output_file_name)
-        writer = cv2.VideoWriter(output_fullpath, fourcc, fps, cap_size, True)
-        num_frames = len(image_url_list)
-        for count, output_frame_url in enumerate(image_url_list):
-            percent_done = str(count+1) + '/' + str(num_frames)
-            pic_response = requests.get(
-              output_frame_url,
-              verify=self.image_request_verify_headers,
-            )
-            img_binary = pic_response.content
-            if img_binary:
-                nparr = np.fromstring(img_binary, np.uint8)
-                frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-                success = writer.write(frame)
-        writer.release()
-        print('writer done at '+ output_fullpath)
-
-        (x_part, file_part) = os.path.split(output_fullpath)
-        (y_part, uuid_part) = os.path.split(x_part)
-        output_url = '/'.join([self.base_url, uuid_part, file_part])
-
-        return output_url
+            output_url = '/'.join([self.base_url, uuid_part, file_part])
+            return output_url
+        except Exception as err:
+            print('exception encountered in FileWriter.write_video: {}'.format(err))
+            return ''
 
     def find_dir_with_files(self, filenames_in):
         for (dirpath, dirnames, filenames) in os.walk(self.working_dir):

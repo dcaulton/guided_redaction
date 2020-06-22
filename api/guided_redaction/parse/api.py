@@ -34,32 +34,42 @@ def collate_image_urls(frames, unique_frames):
     return (new_frames, new_unique_frames)
 
 def get_movie_frame_dimensions(frames):
-  if not frames:
-      return []
-  input_url = frames[0]
-  pic_response = requests.get(
-    input_url,
-    verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
-  )
-  img_binary = pic_response.content
-  if img_binary:
-      try:
-          nparr = np.fromstring(img_binary, np.uint8)
-          cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-          return (cv2_image.shape[1], cv2_image.shape[0])
-      except:
-          return (0, 0)
+    if not frames:
+        return []
+    input_url = frames[0]
+    try:
+        pic_response = requests.get(
+          input_url,
+          verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
+        )
+        img_binary = pic_response.content
+        if img_binary:
+            nparr = np.fromstring(img_binary, np.uint8)
+            cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+            return (cv2_image.shape[1], cv2_image.shape[0])
+        else:
+            return (0, 0)
+    except Exception as err:
+        print('exception getting movie frame dimensions: {}'.format(err))
+        return (0, 0)
 
 def get_url_as_cv2_image(the_url):
-    pic_response = requests.get(
-      the_url,
-      verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
-    )
-    img_binary = pic_response.content
-    if img_binary:
-        nparr = np.fromstring(img_binary, np.uint8)
-        cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-        return cv2_image
+    empty_image = np.zeros((5, 5, 3), dtype='uint8')
+    try:
+        pic_response = requests.get(
+          the_url,
+          verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
+        )
+        img_binary = pic_response.content
+        if img_binary:
+            nparr = np.fromstring(img_binary, np.uint8)
+            cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+            return cv2_image
+        else:
+            return empty_image
+    except Exception as err:
+        print('exception getting url as cv2 image: {}'.format(err))
+        return empty_image
 
 def split_movie_audio(file_writer, movie_url):
     movie_filepath = file_writer.get_file_path_for_url(movie_url)
@@ -390,11 +400,13 @@ class ParseViewSetCropImage(viewsets.ViewSet):
             return self.error("start is required")
         if not request.data.get("end"):
             return self.error("end is required")
-        image = requests.get(
-          request.data["image_url"],
-          verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
-        ).content
-        if image:
+        try:
+            image = requests.get(
+              request.data["image_url"],
+              verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
+            ).content
+            if not image:
+                return self.error('could not read image', status_code=422)
             nparr = np.fromstring(image, np.uint8)
             cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
             start = request.data.get('start')
@@ -406,8 +418,9 @@ class ParseViewSetCropImage(viewsets.ViewSet):
               'anchor_id': request.data.get('anchor_id'),
               'cropped_image_bytes': cropped_base64,
             })
-        else:
-            return self.error('could not read image', status_code=422)
+        except Exception as err:
+            print('exception creating a cropped image: {}'.format(err))
+            return self.error('could not crop image', status_code=400)
 
 
 class ParseViewSetRebaseMovies(viewsets.ViewSet):

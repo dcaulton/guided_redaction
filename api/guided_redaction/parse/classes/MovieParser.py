@@ -84,19 +84,24 @@ class MovieParser:
     def load_and_hash_frames(self, input_url_list):
         unique_frames = {}
         for input_url in input_url_list:
-            pic_response = requests.get(
-              input_url,
-              verify=self.image_request_verify_headers,
-            )
-            img_binary = pic_response.content
-            if img_binary:
-                nparr = np.fromstring(img_binary, np.uint8)
-                cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-                try:
-                    if cv2_image.any():
-                        self.advance_one_frame(cv2_image, input_url, unique_frames)
-                except:
-                    print('MovieParser.load_and_hash: error decoding an image')
+            try: 
+                pic_response = requests.get(
+                  input_url,
+                  verify=self.image_request_verify_headers,
+                )
+                img_binary = pic_response.content
+                if img_binary:
+                    nparr = np.fromstring(img_binary, np.uint8)
+                    cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+                    try:
+                        if cv2_image.any():
+                            self.advance_one_frame(cv2_image, input_url, unique_frames)
+                    except:
+                        print('MovieParser.load_and_hash_frames: empty or invalid cv2 image')
+            except Exception as err:
+                print('MovieParser.load_and_hash_frames DIED TRYING TO READ A FRAME: {}'.format(input_url))
+                print(error)
+
         return unique_frames
 
     def advance_one_frame(self, image, image_url, unique_frames):

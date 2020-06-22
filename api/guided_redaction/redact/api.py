@@ -41,74 +41,78 @@ class RedactViewSetRedactImage(viewsets.ViewSet):
             return self.error("areas_to_redact is required")
         if not request_data.get("mask_method"):
             return self.error("mask_method is required")
-        pic_response = requests.get(
-          request_data["image_url"],
-          verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
-        )
-        image = pic_response.content
-        if not image:
-            return self.error(
-                'Upload an image as formdata, use key name of "image"', status_code=422
+        try:
+            pic_response = requests.get(
+              request_data["image_url"],
+              verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
             )
-        nparr = np.fromstring(image, np.uint8)
-        cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+            image = pic_response.content
+            if not image:
+                return self.error(
+                    'Upload an image as formdata, use key name of "image"', status_code=422
+                )
+            nparr = np.fromstring(image, np.uint8)
+            cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 
-        areas_to_redact_inbound = request_data['areas_to_redact']
-        mask_method = request_data.get("mask_method", "blur_7x7")
-        blur_foreground_background = request_data.get(
-            "blur_foreground_background", "foreground"
-        )
-
-        areas_to_redact = []
-        for a2r in areas_to_redact_inbound:
-            if 'start' in a2r and 'end' in a2r:
-                coords_dict = {
-                    "start": tuple(a2r['start']), 
-                    "end": tuple(a2r['end']),
-                }
-            elif 'location' in a2r and 'size' in a2r:
-                coords_dict = {
-                    "start": tuple(a2r['location']), 
-                    "end": tuple((
-                        a2r['location'][0] + a2r['size'][0],
-                        a2r['location'][1] + a2r['size'][1]
-                    ))
-                }
-            areas_to_redact.append(coords_dict)
-
-        image_masker = ImageMasker()
-        masked_image = image_masker.mask_all_regions(
-            cv2_image, areas_to_redact, mask_method, blur_foreground_background
-        )
-
-        if 'return_type' in request_data['meta']:
-            return_type = request_data['meta']['return_type']
-        else:
-            return_type = 'inline'
-        if return_type == "inline":
-            image_bytes = cv2.imencode(".png", masked_image)[1].tostring()
-            #TODO FIX THIS WHEN THE REST OF THE API IS STABLE AND WE CAN RESEARCH
-            response = HttpResponse(content_type="image/png")
-            new_name = "image_" + str(uuid.uuid4()) + ".png"
-            response["Content-Disposition"] = "attachment; filename=" + new_name
-            response.write(image_bytes)
-            return response
-        else:
-            image_hash = str(uuid.uuid4())
-            if ('preserve_working_dir_across_batch' in request_data['meta'] and
-                    request_data['meta']['preserve_working_dir_across_batch']):
-                image_hash = get_uuid_from_url(request_data['image_url'])
-            inbound_image_url = request_data["image_url"]
-            inbound_filename = (urlsplit(inbound_image_url)[2]).split("/")[-1]
-            (file_basename, file_extension) = os.path.splitext(inbound_filename)
-            new_filename = file_basename + "_redacted" + file_extension
-            the_url = save_image_to_disk(
-                masked_image, new_filename, image_hash
+            areas_to_redact_inbound = request_data['areas_to_redact']
+            mask_method = request_data.get("mask_method", "blur_7x7")
+            blur_foreground_background = request_data.get(
+                "blur_foreground_background", "foreground"
             )
-            return Response({
-                "redacted_image_url": the_url,
-                "original_image_url": request_data["image_url"],
-            })
+
+            areas_to_redact = []
+            for a2r in areas_to_redact_inbound:
+                if 'start' in a2r and 'end' in a2r:
+                    coords_dict = {
+                        "start": tuple(a2r['start']), 
+                        "end": tuple(a2r['end']),
+                    }
+                elif 'location' in a2r and 'size' in a2r:
+                    coords_dict = {
+                        "start": tuple(a2r['location']), 
+                        "end": tuple((
+                            a2r['location'][0] + a2r['size'][0],
+                            a2r['location'][1] + a2r['size'][1]
+                        ))
+                    }
+                areas_to_redact.append(coords_dict)
+
+            image_masker = ImageMasker()
+            masked_image = image_masker.mask_all_regions(
+                cv2_image, areas_to_redact, mask_method, blur_foreground_background
+            )
+
+            if 'return_type' in request_data['meta']:
+                return_type = request_data['meta']['return_type']
+            else:
+                return_type = 'inline'
+            if return_type == "inline":
+                image_bytes = cv2.imencode(".png", masked_image)[1].tostring()
+                #TODO FIX THIS WHEN THE REST OF THE API IS STABLE AND WE CAN RESEARCH
+                response = HttpResponse(content_type="image/png")
+                new_name = "image_" + str(uuid.uuid4()) + ".png"
+                response["Content-Disposition"] = "attachment; filename=" + new_name
+                response.write(image_bytes)
+                return response
+            else:
+                image_hash = str(uuid.uuid4())
+                if ('preserve_working_dir_across_batch' in request_data['meta'] and
+                        request_data['meta']['preserve_working_dir_across_batch']):
+                    image_hash = get_uuid_from_url(request_data['image_url'])
+                inbound_image_url = request_data["image_url"]
+                inbound_filename = (urlsplit(inbound_image_url)[2]).split("/")[-1]
+                (file_basename, file_extension) = os.path.splitext(inbound_filename)
+                new_filename = file_basename + "_redacted" + file_extension
+                the_url = save_image_to_disk(
+                    masked_image, new_filename, image_hash
+                )
+                return Response({
+                    "redacted_image_url": the_url,
+                    "original_image_url": request_data["image_url"],
+                })
+        except Exception as err:
+            print('exception in redacting image: {}'.format(err))
+            return self.error('exception occurred while redacting image')
 
 
 class RedactViewSetIllustrateImage(viewsets.ViewSet):
@@ -122,46 +126,50 @@ class RedactViewSetIllustrateImage(viewsets.ViewSet):
         if not request_data.get("illustration_data"):
             return self.error("illustration_data is required")
         inbound_image_url = request_data["image_url"]
-        pic_response = requests.get(
-          request_data["image_url"],
-          verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
-        )
-        image = pic_response.content
-        if image:
-            nparr = np.fromstring(image, np.uint8)
-            cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-
-            ill_data = request_data.get('illustration_data')
-            image_illustrator = ImageIllustrator()
-            illustrated_image = image_illustrator.illustrate(
-                cv2_image, ill_data
+        try:
+            pic_response = requests.get(
+              request_data["image_url"],
+              verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
             )
+            image = pic_response.content
+            if image:
+                nparr = np.fromstring(image, np.uint8)
+                cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 
-            return_type = request_data.get("return_type", "not_inline")
-            if return_type == "inline":
-                image_bytes = cv2.imencode(".png", illustrated_image)[1].tostring()
-                #TODO FIX THIS WHEN THE REST OF THE API IS STABLE AND WE CAN RESEARCH
-                response = HttpResponse(content_type="image/png")
-                new_name = "image_" + str(uuid.uuid4()) + ".png"
-                response["Content-Disposition"] = "attachment; filename=" + new_name
-                response.write(image_bytes)
-                return response
+                ill_data = request_data.get('illustration_data')
+                image_illustrator = ImageIllustrator()
+                illustrated_image = image_illustrator.illustrate(
+                    cv2_image, ill_data
+                )
+
+                return_type = request_data.get("return_type", "not_inline")
+                if return_type == "inline":
+                    image_bytes = cv2.imencode(".png", illustrated_image)[1].tostring()
+                    #TODO FIX THIS WHEN THE REST OF THE API IS STABLE AND WE CAN RESEARCH
+                    response = HttpResponse(content_type="image/png")
+                    new_name = "image_" + str(uuid.uuid4()) + ".png"
+                    response["Content-Disposition"] = "attachment; filename=" + new_name
+                    response.write(image_bytes)
+                    return response
+                else:
+                    image_hash = str(uuid.uuid4())
+                    if ('preserve_working_dir_across_batch' in request_data and
+                            request_data['preserve_working_dir_across_batch'] == 'true' and
+                            request_data['working_dir']):
+                        image_hash = request_data['working_dir']
+                    inbound_filename = (urlsplit(inbound_image_url)[2]).split("/")[-1]
+                    (file_basename, file_extension) = os.path.splitext(inbound_filename)
+                    new_filename = file_basename + "_illustrated" + file_extension
+                    the_url = save_image_to_disk(illustrated_image, new_filename, image_hash)
+                    return Response({
+                        "illustrated_image_url": the_url,
+                        "original_image_url": request_data["image_url"],
+                    })
             else:
-                image_hash = str(uuid.uuid4())
-                if ('preserve_working_dir_across_batch' in request_data and
-                        request_data['preserve_working_dir_across_batch'] == 'true' and
-                        request_data['working_dir']):
-                    image_hash = request_data['working_dir']
-                inbound_filename = (urlsplit(inbound_image_url)[2]).split("/")[-1]
-                (file_basename, file_extension) = os.path.splitext(inbound_filename)
-                new_filename = file_basename + "_illustrated" + file_extension
-                the_url = save_image_to_disk(illustrated_image, new_filename, image_hash)
-                return Response({
-                    "illustrated_image_url": the_url,
-                    "original_image_url": request_data["image_url"],
-                })
-        else:
-            return self.error(
-                'unable to retrieve image specified by inbound image_url', 
-                status_code=422
-            )
+                return self.error(
+                    'unable to retrieve image specified by inbound image_url', 
+                    status_code=422
+                )
+        except Exception as err:
+            print('exception while illustrating an image: {}'.format(err))
+            return self.error('exception occurred while illustrating image')
