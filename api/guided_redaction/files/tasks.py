@@ -9,6 +9,9 @@ from guided_redaction.files.api import (
     FilesViewSetMovieMetadata,
     FilesViewSetDownloadSecureFile
 )
+from guided_redaction.utils.task_shared import (
+    build_file_directory_user_attributes_from_movies
+)
 
 
 def get_pipeline_for_job(job):
@@ -34,6 +37,8 @@ def get_secure_file(job_uuid):
     job.response_data = json.dumps(response.data)
     job.status = 'success'
     job.save()
+
+    build_file_directory_user_attributes_from_movies(job, response.data)
 
     pipeline = get_pipeline_for_job(job.parent)
     if pipeline:

@@ -1,5 +1,23 @@
 from guided_redaction.attributes.models import Attribute
 
+def build_file_directory_user_attributes_from_movies(job, response_data):
+    owner = job.owner
+    if not owner:
+        owner = ''
+    documented_directories = [attr.value.split('/')[-2] for attr in Attribute.objects.filter(name='file_dir_user')]
+
+    if 'movies' in response_data:
+        for movie_url in response_data:
+            movie_uuid = movie_url.split('/')[-2]
+            if movie_uuid in documented_directories:
+                continue
+            value_string = movie_uuid + ':' + owner
+            Attribute(
+                job=job,
+                name='file_dir_user',
+                value=value_string,
+            ).save()
+
 def get_pipeline_for_job(job):
     if not job:
         return

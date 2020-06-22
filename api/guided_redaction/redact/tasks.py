@@ -4,6 +4,7 @@ import os
 from guided_redaction.jobs.models import Job
 from guided_redaction.utils.task_shared import (
     evaluate_children,
+    build_file_directory_user_attributes_from_movies,
     get_pipeline_for_job
 )
 from guided_redaction.redact.api import RedactViewSetRedactImage, RedactViewSetIllustrateImage
@@ -22,6 +23,8 @@ def redact_single(job_uuid):
         job.response_data = json.dumps(response.data)
         job.status = 'success'
         job.save()
+
+        build_file_directory_user_attributes_from_movies(job, response.data)
 
         if job.parent_id:
             parent_job = Job.objects.get(pk=job.parent_id)
@@ -116,3 +119,4 @@ def illustrate(job_uuid):
         job.response_data = json.dumps(response.data)
         job.status = 'success'
         job.save()
+        build_file_directory_user_attributes_from_movies(job, response.data)

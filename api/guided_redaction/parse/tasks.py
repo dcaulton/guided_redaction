@@ -9,6 +9,7 @@ from guided_redaction.utils.task_shared import (
     evaluate_children,
     job_has_anticipated_operation_count_attribute,
     make_anticipated_operation_count_attribute_for_job,
+    build_file_directory_user_attributes_from_movies,
     get_pipeline_for_job
 )
 from guided_redaction.attributes.models import Attribute
@@ -194,6 +195,8 @@ def split_movie(job_uuid):
         else:
             job.status = 'success'
         job.save()
+
+        build_file_directory_user_attributes_from_movies(job, response.data) 
 
         if job.parent_id:
             parent_job = Job.objects.get(pk=job.parent_id)
