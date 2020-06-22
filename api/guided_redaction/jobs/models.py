@@ -43,6 +43,19 @@ class Job(models.Model):
                 keep_attr.save()
         super(Job, self).delete()
 
+    def get_owner(self):
+        if Attribute.objects.filter(job=self).filter(name='user_id').exists():
+            attribute = Attribute.objects.filter(job=self).filter(name='user_id').first()
+            return attribute.value
+        return ''
+
+    def add_owner(self, owner_id):
+        Attribute(
+            name='user_id',
+            value=owner_id,
+            job=self,
+        ).save()
+
     def update_parent_percent_complete(self):
         if not self.parent:
             return
@@ -70,6 +83,13 @@ class Job(models.Model):
                 if attribute.name == 'cv_worker_url':
                     return attribute.value
         return False
+
+    def get_file_dirs(self):
+        file_dirs = []
+        if Attribute.objects.filter(job=self).filter(name='file_dir_user').exists():
+            for attr in Attribute.objects.filter(job=self).filter(name='file_dir_user'):
+                file_dirs.append(attr.value)
+        return file_dirs
 
     def update_percent_complete(self, percent_complete=None, propogate=True, min_step=.01):
         if percent_complete:

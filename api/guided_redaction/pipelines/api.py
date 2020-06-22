@@ -154,12 +154,7 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
         )
         attribute.save()
         if owner_id:
-            attribute = Attribute(
-                name='user_id',
-                value=owner_id,
-                job=job,
-            )
-            attribute.save()
+            job.add_owner(owner_id)
 
         return job
 

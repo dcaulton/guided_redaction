@@ -17,6 +17,17 @@ import pytz
 import math
 
 
+def get_job_file_dirs_recursive(job):
+    file_dirs = job.get_file_dirs()
+    if Job.objects.filter(parent=job).exists():
+        children = Job.objects.filter(parent=job)
+        for child in children:
+            job_file_dirs = get_job_file_dirs_recursive(child)
+            for fd in job_file_dirs:
+                if fd not in file_dirs:
+                    file_dirs.append(fd)
+    return file_dirs
+
 def dispatch_job_wrapper(job, restart_unfinished_children=True):
     if restart_unfinished_children:
         children = Job.objects.filter(parent=job)
@@ -169,6 +180,7 @@ class JobsViewSet(viewsets.ViewSet):
             job.save()
         return Response({"job_updated": job_updated})
 
+
     def list(self, request):
         jobs_list = []
         if 'workbook_id' in request.GET.keys():
@@ -188,17 +200,15 @@ class JobsViewSet(viewsets.ViewSet):
             pretty_time = self.pretty_date(job.created_on)
             wall_clock_run_time = str(job.updated - job.created_on)
 
-            owner = ''
+            owner = job.get_owner()
+            if user_id and owner != user_id:
+                continue
             attrs = {}
             if Attribute.objects.filter(job=job).exists():
                 attributes = Attribute.objects.filter(job=job)
                 for attribute in attributes:
-                    if attribute.name == 'user_id':
-                        owner = attribute.value
-                    else:
+                    if attribute.name not in ['user_id', 'file_dir_user']:
                         attrs[attribute.name] = attribute.value
-            if user_id and owner != user_id:
-                continue
 
             job_obj = {
                 'id': job.id,
@@ -215,6 +225,9 @@ class JobsViewSet(viewsets.ViewSet):
                 'owner': owner,
                 'children': child_ids,
             }
+            file_dirs = get_job_file_dirs_recursive(job)
+            if file_dirs:
+                job_obj['file_dirs'] = file_dirs
             if owner:
                 job_obj['owner'] = owner
             if attrs:
@@ -249,19 +262,20 @@ class JobsViewSet(viewsets.ViewSet):
             'children': child_ids,
         }
 
-        owner = ''
+        owner = job.get_owner()
         attrs = {}
         if Attribute.objects.filter(job=job).exists():
             attributes = Attribute.objects.filter(job=job)
             for attribute in attributes:
-                if attribute.name == 'user_id':
-                    owner = attribute.value
-                else:
+                if attribute.name not in ['user_id', 'file_dir_user']:
                     attrs[attribute.name] = attribute.value
         if owner:
             job_data['owner'] = owner
         if attrs:
             job_data['attributes'] = attrs
+        file_dirs = get_job_file_dirs_recursive(job)
+        if file_dirs:
+            job_data['file_dirs'] = file_dirs
 
         return Response({"job": job_data})
 
@@ -279,12 +293,7 @@ class JobsViewSet(viewsets.ViewSet):
 
         owner_id = request.data.get('owner')
         if owner_id:
-            attribute = Attribute(
-                name='user_id',
-                value=owner_id,
-                job=job,
-            )
-            attribute.save()
+            job.add_owner(owner_id)
         if request.data.get('routing_data'):
             routing_data = request.data.get('routing_data')
             if 'cv_worker_url' in routing_data and routing_data['cv_worker_url']:
@@ -297,7 +306,6 @@ class JobsViewSet(viewsets.ViewSet):
         return job
 
     def dispatch_cv_worker_job(self, job):
-        print('dispatching cv worker job')
         build_payload = {
           'operation': job.operation,
           'request_data': job.request_data,
