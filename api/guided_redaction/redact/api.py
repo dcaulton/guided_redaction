@@ -13,6 +13,8 @@ import requests
 import uuid
 
 
+requests.packages.urllib3.disable_warnings()
+
 def save_image_to_disk(cv2_image, image_name, the_uuid):
     fw = FileWriter(
         working_dir=settings.REDACT_FILE_STORAGE_DIR,

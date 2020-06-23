@@ -1,9 +1,11 @@
-from azure.storage.blob import BlobClient, ContentSettings
 import cv2
 import numpy as np
 import requests
 import os
 import shutil
+
+
+requests.packages.urllib3.disable_warnings()
 
 class FileWriter():
 

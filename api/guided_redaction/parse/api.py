@@ -10,13 +10,15 @@ from rest_framework.response import Response
 import cv2
 import numpy as np
 import ffmpeg
+import requests
 
 from guided_redaction.parse.classes.MovieParser import MovieParser
 from guided_redaction.utils.classes.FileWriter import FileWriter
 from django.shortcuts import render
 from django.conf import settings
-import requests
 
+
+requests.packages.urllib3.disable_warnings()
 
 def collate_image_urls(frames, unique_frames):
     new_frames = []

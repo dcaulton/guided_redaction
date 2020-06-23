@@ -29,6 +29,8 @@ from guided_redaction.jobs.models import Job
 from guided_redaction.utils.classes.FileWriter import FileWriter
 
 
+requests.packages.urllib3.disable_warnings()
+
 def adjust_start_end_origin_for_t1(coords_in, tier_1_frameset, ocr_rule):
     adjusted_coords = {}
     adjusted_coords['start'] = coords_in['start']

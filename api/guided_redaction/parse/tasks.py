@@ -28,6 +28,7 @@ from guided_redaction.parse.api import (
 hash_frames_batch_size = 50
 split_frames_multithreaded_threshold = 200
 split_frames_chunk_size = 100
+max_retry_count = 10
 
 @shared_task
 def zip_movie_threaded(job_uuid):
@@ -124,7 +125,7 @@ def wrap_up_zip_movie_threaded(zip_tasks, parent_job):
 @shared_task
 def zip_movie(job_uuid):
     if not Job.objects.filter(pk=job_uuid).exists():
-        print('calling zip_movie on nonexistent job: '+ job_uuid) 
+        print('calling zip_movie on nonexistent job: {}'.format(job_uuid))
         return
     job = Job.objects.get(pk=job_uuid)
     if job:
@@ -175,8 +176,9 @@ def split_threaded(job_uuid):
 
 @shared_task
 def split_movie(job_uuid):
+    print('split movie, job id is {}'.format(job_uuid))
     if not Job.objects.filter(pk=job_uuid).exists():
-        print('calling split_movie on nonexistent job: '+ job_uuid) 
+        print('calling split_movie on nonexistent job: {}'.format(job_uuid))
         return
 
     job = Job.objects.get(pk=job_uuid)
@@ -185,16 +187,23 @@ def split_movie(job_uuid):
         job.save()
         request_data = json.loads(job.request_data)
         worker = ParseViewSetSplitMovie()
-        response = worker.process_create_request(request_data)
-        if not Job.objects.filter(pk=job_uuid).exists():
-            return
-        job = Job.objects.get(pk=job_uuid)
-        job.response_data = json.dumps(response.data)
-        if 'errors' in job.response_data:
-            job.status = 'failed'
-        else:
-            job.status = 'success'
-        job.save()
+
+        for i in range(max_retry_count):
+            response = worker.process_create_request(request_data)
+            if not Job.objects.filter(pk=job_uuid).exists():
+                return
+            job = Job.objects.get(pk=job_uuid)
+            job.response_data = json.dumps(response.data)
+            if 'errors' in job.response_data:
+                if i < max_retry_count - 1:
+                    print('split movie failed, retrying number {}'.format(i))
+                    continue
+                job.status = 'failed'
+                job.save()
+            else:
+                job.status = 'success'
+                job.save()
+                break
 
         build_file_directory_user_attributes_from_movies(job, response.data) 
 
@@ -207,32 +216,39 @@ def split_movie(job_uuid):
 
 @shared_task
 def hash_frames(job_uuid):
-    # TODO make this threading aware
+    print('hash frames, job id is {}'.format(job_uuid))
     if not Job.objects.filter(pk=job_uuid).exists():
-        print('calling hash_frames on nonexistent job: '+ job_uuid) 
+        print('calling hash_frames on nonexistent job: {}'.format(job_uuid))
         return
     job = Job.objects.get(pk=job_uuid)
     job.status = 'running'
     job.save()
 
     request_data = json.loads(job.request_data)
-    pvssahm = ParseViewSetHashFrames()
-    response = pvssahm.process_create_request(request_data)
+    worker = ParseViewSetHashFrames()
 
-    if not Job.objects.filter(pk=job_uuid).exists():
-        return
-    job = Job.objects.get(pk=job_uuid)
 
-    if 'errors' in response.data:
-        job.response_data = json.dumps(response.data)
-        job.status = 'failed'
-    else:
-        movie_url = list(request_data['movies'].keys())[0]
-        movie_obj = request_data
-        movie_obj['movies'][movie_url]['framesets'] = response.data['framesets']
-        job.response_data = json.dumps(movie_obj)
-        job.status = 'success'
-    job.save()
+    for i in range(max_retry_count):
+        response = worker.process_create_request(request_data)
+        if not Job.objects.filter(pk=job_uuid).exists():
+            return
+        job = Job.objects.get(pk=job_uuid)
+
+        if 'errors' in response.data:
+            if i < max_retry_count - 1:
+                print('hash movie failed, retrying number {}'.format(i))
+                continue
+            job.response_data = json.dumps(response.data)
+            job.status = 'failed'
+            job.save()
+        else:
+            movie_url = list(request_data['movies'].keys())[0]
+            movie_obj = request_data
+            movie_obj['movies'][movie_url]['framesets'] = response.data['framesets']
+            job.response_data = json.dumps(movie_obj)
+            job.status = 'success'
+            job.save()
+            break
 
     if job.parent_id:
         parent_job = Job.objects.get(pk=job.parent_id)
@@ -241,10 +257,10 @@ def hash_frames(job_uuid):
 
 @shared_task
 def split_and_hash_threaded(job_uuid):
-    print('split and hash threaded, job id is '+str(job_uuid))
+    print('split and hash threaded, job id is {}'.format(job_uuid))
     job = Job.objects.get(pk=job_uuid)
     if not job:
-        print('calling split_and_hash_threaded on nonexistent job: '+ job_uuid) 
+        print('calling split_and_hash_threaded on nonexistent job: {}'.format(job_uuid))
 
     if not job_has_anticipated_operation_count_attribute(job):
         make_anticipated_operation_count_attribute_for_job(job, 2)
