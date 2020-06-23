@@ -7,7 +7,7 @@ import {
 
 class WhoAmI {
   async getUser() {
-    return 'papa.roach@gmail.com'
+    return 'dave.caulton@sykes.com'
   }
 }
 

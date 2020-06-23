@@ -198,6 +198,7 @@ class RedactApplication extends React.Component {
     this.impersonateUser=this.impersonateUser.bind(this)
     this.getAndSaveUser=this.getAndSaveUser.bind(this)
     this.queryCvWorker=this.queryCvWorker.bind(this)
+    this.afterIdFetched=this.afterIdFetched.bind(this)
   }
 
   async queryCvWorker(cv_worker_url, when_done=(()=>{})) {
@@ -234,8 +235,7 @@ class RedactApplication extends React.Component {
     this.processUserClasses()
   }
 
-  getAndSaveUser() {
-    const user_id = this.getCurrentUser()
+  afterIdFetched(user_id) {
     if (!user_id) {
       return
     }
@@ -250,7 +250,13 @@ class RedactApplication extends React.Component {
       is_superuser: is_superuser,
     }
     this.setGlobalStateVar('user', user_object)
+    this.processUserClasses(user_classes)
+    this.checkForJobs(user_id)
     return user_object
+  }
+
+  async getAndSaveUser() {
+    this.getCurrentUser(this.afterIdFetched) 
   }
 
   getUserClasses(user_id) {
@@ -271,16 +277,21 @@ class RedactApplication extends React.Component {
     return classes
   }
 
-  processUserClasses() {
-    if (!this.state.user) {
-      return []
-    }
-    if (!this.state.user['classes']) {
-      return []
+  processUserClasses(classes=null) {
+    let classes_to_use = classes
+    if (!classes_to_use) {
+      if (!this.state.user) {
+        return []
+      }
+      if (!this.state.user['classes']) {
+        return []
+      } else {
+        classes_to_use = this.state.user['classes']
+      }
     }
 
-    for (let i=0; i< this.state.user['classes'].length; i++) {
-      const class_name = this.state.user['classes'][i]
+    for (let i=0; i< classes_to_use.length; i++) {
+      const class_name = classes_to_use[i]
       this.processUserClass(class_name)
     }
   }
@@ -435,20 +446,12 @@ class RedactApplication extends React.Component {
     img.src = the_url
   }
 
-  async getCurrentUser() {
+  async getCurrentUser(when_done=(()=>{})) {
     try {
-//MAMA
-console.log('buggy')
-console.log(this.props.whoAmI.getUser())
-await(this.props.whoAmI.getUser())
-.then((user_id) => {return user_id})
-
-      if (document.getElementById('App-whoami')) {
-        var name= document.getElementById('App-whoami').children[0].children[1].innerHTML.split(';')[1]
-        if (name) {
-          return name 
-        }
-      }
+      await(this.props.whoAmI.getUser())
+      .then((user_id) => {
+        when_done(user_id)
+      })
     }
     catch(err) {
     }
@@ -786,10 +789,10 @@ await(this.props.whoAmI.getUser())
     window.speechSynthesis.speak(msg);
   }
 
-  checkForJobs() {
+  checkForJobs(user_id=null) {
     const jobIdsToCheckFor = Object.keys(this.state.whenJobLoaded)
     if (jobIdsToCheckFor.length) {
-      this.getJobs()
+      this.getJobs(user_id)
       for (let index in this.state.jobs) {
         const job = this.state.jobs[index]
         if (this.isAttachedJob(job)) {
@@ -1089,7 +1092,6 @@ await(this.props.whoAmI.getUser())
 
   componentDidMount() {
     this.getAndSaveUser()
-    this.processUserClasses()
     if (!this.state.showMovieParserLink) {
       document.getElementById('movie_panel_link').style.display = 'none'
     }
@@ -1099,7 +1101,6 @@ await(this.props.whoAmI.getUser())
     if (!this.state.showComposeLink) {
       document.getElementById('compose_link').style.display = 'none'
     }
-    this.checkForJobs()
     this.checkForInboundGetParameters()
   }
 
@@ -2092,14 +2093,18 @@ await(this.props.whoAmI.getUser())
     })
   }
 
-  async getJobs() {
+  async getJobs(user_id=null) {
     let the_url = this.getUrl('jobs_url')
     the_url += '?x=1'
     if (this.state.current_workbook_id) {
       the_url += '&workbook_id=' + this.state.current_workbook_id
     } 
-    if (this.state.user) {
-      the_url += '&user_id=' + this.state.user['id']
+    if (user_id) {
+        the_url += '&user_id=' + user_id
+    } else {
+      if (this.state.user) {
+        the_url += '&user_id=' + this.state.user['id']
+      }
     }
     await fetch(the_url, {
       method: 'GET',
