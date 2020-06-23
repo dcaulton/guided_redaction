@@ -336,7 +336,7 @@ class JobCard extends React.Component {
     if (this.props.job_data['status'] === 'success') {
       return (
         <button 
-            className='btn btn-primary m-2'
+            className='btn btn-primary'
             onClick={() => this.props.loadInsightsJobResults(
               this.props.job_data['id']
             )}
@@ -351,7 +351,7 @@ class JobCard extends React.Component {
   buildDeleteJobButton() {
     return (
       <button 
-          className='btn btn-primary m-2'
+          className='btn btn-primary ml-2'
           onClick={() => this.props.cancelJob(this.props.job_data['id'])}
       >
         Delete
@@ -374,7 +374,7 @@ class JobCard extends React.Component {
         >
           <button
               type="button"
-              className="border-0"
+              className="border-0 bg-white"
               onClick={() => this.showJobResultsInModal(this.props.job_data['id'])}
               data-toggle="modal"
               data-target="#insightsPanelModal"
@@ -491,7 +491,7 @@ class JobCard extends React.Component {
               {attach_link}
             </div>
 
-            <div className='row mt-1'>
+            <div className='row mt-1 mb-1'>
               {get_job_button}
               {delete_job_button}
             </div>

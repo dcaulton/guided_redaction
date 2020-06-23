@@ -1290,9 +1290,7 @@ class ImageInfoControls extends React.Component {
     const illustrate_darken_dropdown = this.buildIllustrateDarkenPercentDropdown()
     const illustrate_line_width_dropdown = this.buildIllustrateLineWidthDropdown()
     const dimensions_string = this.getImageDimensions()
-    const frameset_hash = this.props.getFramesetHashForImageUrl(this.props.getImageUrl())
     const download_link = this.buildDownloadLink()
-    const image_url = this.props.getImageUrl()
 
     return (
       <div>
@@ -1302,7 +1300,7 @@ class ImageInfoControls extends React.Component {
             <div
               className='col-lg-11 h3 float-left ml-2 mt-2'
             >
-              Image Info
+              Redaction Options
             </div>
             <div
                 className='d-inline float-right'
@@ -1326,23 +1324,6 @@ class ImageInfoControls extends React.Component {
           >
 
             <div id='advanced_main' className='col mb-3'>
-              <div className='row mt-2'>
-                <div className='d-inline font-weight-bold'>
-                  Image Url:
-                </div>
-                <div className='d-inline ml-2'>
-                  {image_url}
-                </div>
-              </div>
-
-              <div className='row mt-2'>
-                <div className='d-inline font-weight-bold'>
-                  Frameset Hash:
-                </div>
-                <div className='d-inline ml-2'>
-                  {frameset_hash}
-                </div>
-              </div>
 
               <div className='row mt-2'>
                 <div className='d-inline font-weight-bold'>

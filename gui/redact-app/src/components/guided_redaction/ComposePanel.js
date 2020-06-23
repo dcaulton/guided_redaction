@@ -12,9 +12,7 @@ class ComposePanel extends React.Component {
       movie_offset_string: '',
       dragged_type: '',
       dragged_id: '',
-      telemetry_section_is_built: false,
-      telemetry_lines: '',
-      sequence_display_mode: 'large_card',
+      sequence_display_mode: 'small_card',
     }
     this.scrubberOnChange=this.scrubberOnChange.bind(this)
     this.removeSequenceFrame=this.removeSequenceFrame.bind(this)
@@ -33,14 +31,6 @@ class ComposePanel extends React.Component {
 
   componentDidMount() {
     this.scrubberOnChange()
-    const transaction_id = this.getTransactionId()
-    if (transaction_id) {
-      this.props.readTelemetryRawData(transaction_id, ((telemetry_lines)=> {
-        this.setState({
-          telemetry_lines: telemetry_lines,
-        })
-      }))
-    }
     this.props.getAndSaveUser()
     this.props.getPipelines()
   }
@@ -383,14 +373,6 @@ class ComposePanel extends React.Component {
       this.setScrubberMax(num_frames)
       this.setScrubberValue(0)
       this.scrubberOnChange()
-      const transaction_id = this.getTransactionId(movie_url)
-      if (transaction_id) {
-        this.props.readTelemetryRawData(transaction_id, ((telemetry_lines)=> {
-          this.setState({
-            telemetry_lines: telemetry_lines,
-          })
-        }))
-      }
     } else {
       this.setScrubberValue(0)
       this.scrubberOnChange()
@@ -450,163 +432,6 @@ class ComposePanel extends React.Component {
   gotoScrubberOffset(the_offset) {
     this.setScrubberValue(the_offset)
     this.scrubberOnChange()
-  }
-
-  getTransactionId(movie_url) {
-    movie_url = movie_url || this.props.movie_url
-    if (!this.props.telemetry_data || !Object.keys(this.props.telemetry_data).includes('movie_mappings')) {
-      return
-    }
-    if (!movie_url) {
-      return
-    }
-    let recording_id = movie_url.split('/').slice(-1)[0]
-    if (!recording_id) {
-      return
-    }
-    recording_id = recording_id.split('.')[0]
-    let transaction_id = ''
-    if (Object.keys(this.props.telemetry_data['movie_mappings']).includes(recording_id)) {
-      transaction_id = this.props.telemetry_data['movie_mappings'][recording_id]
-      return transaction_id
-    } else {
-      return
-    }
-  }
-
-  getFirstTelemetryMinSec() {
-    if (!this.state.telemetry_lines.length) {
-      return 0
-    }
-    const datetime_regex = /\d\d\d\d-\d\d-\d\dT(\d\d):(\d\d):(\d\d)/
-    const text = this.state.telemetry_lines[0]
-    if (text) {
-      if (text.match(datetime_regex)) {
-        let mo = text.match(datetime_regex)
-        return {
-          minute: parseInt(mo[2]),
-          second: parseInt(mo[3]),
-        }
-      }
-    }
-    return 0
-  }
-
-  buildTelemetryPicker() {
-    if (!this.props.movie_url) {
-      return ''
-    }
-    if (!this.state.telemetry_lines.length) {
-      let telemetry_line_style = {
-        height: "500px",
-      }
-      return (
-      <div 
-          id='telemetry_picker'
-          className='col'
-      >
-        <div className='row h4 border-top border-bottom p-2 m-2'>
-          Telemetry Data
-        </div>
-        <div 
-            className='row overflow-auto'
-            style={telemetry_line_style}
-        >
-        </div> 
-      </div> 
-      )
-    }
-
-    const telemetry_line_style = {
-      'fontSize': 'small',
-      'height': '500px',
-    }
-    const datetime_regex = /\d\d\d\d-\d\d-\d\dT(\d\d):(\d\d):(\d\d)/
-    const first_telemetry = this.getFirstTelemetryMinSec()
-    const movie_length_seconds = this.props.movies[this.props.movie_url]['frames'].length
-    if (Object.keys(this.props.movies[this.props.movie_url]).includes('start_timestamp')) {
-      const movie_timestamp = this.props.movies[this.props.movie_url]['start_timestamp']
-      let mins_diff = parseInt(movie_timestamp['minute']) - first_telemetry['minute']
-      if (mins_diff < 0) { 
-        mins_diff += 60
-      }
-      let secs_diff = parseInt(movie_timestamp['second']) - first_telemetry['second']
-      if (secs_diff < 0) { 
-        secs_diff += 60
-        mins_diff -= 1
-      }
-    }
-    return (
-      <div 
-          id='telemetry_picker'
-          className='col'
-      >
-        <div className='row h4'>
-          telemetry data
-        </div>
-        <div 
-            className='row overflow-auto'
-            style={telemetry_line_style}
-        >
-          <div className='col'>
-            {this.state.telemetry_lines.map((text, index) => {
-              const eventtype_regex = /([a-f0-9-]*),([a-f0-9-]*),([a-f0-9-]*),([^,]*)/
-              let line1 = ''
-              if (text.match(eventtype_regex)) {
-                line1 = text.match(eventtype_regex)[4]
-              }
-              let this_frames_offset = 0
-              if (text.match(datetime_regex)) {
-                let mo = text.match(datetime_regex)
-                const this_frame_timestamp = {
-                  minute: parseInt(mo[2]),
-                  second: parseInt(mo[3]),
-                }
-                const this_frames_offset_timestamp = {
-                  minute: this_frame_timestamp['minute'] - first_telemetry['minute'],
-                  second: this_frame_timestamp['second'] - first_telemetry['second'],
-                }
-                if (this_frames_offset_timestamp['second'] < 0) {
-                  this_frames_offset_timestamp['second'] += 60
-                  this_frames_offset_timestamp['minute'] -= 1
-                }
-                this_frames_offset = this_frames_offset_timestamp['second'] +  60 * this_frames_offset_timestamp['minute']
-              }
-              const offset_message= 'offset seconds: ' + this_frames_offset.toString()
-              if (this_frames_offset > movie_length_seconds) {
-                return ''
-              } else {
-                return (
-                  <div 
-                      className='row border-bottom pb-2'
-                      key={index}
-                      title={text}
-                  >
-                    <div className='col'>
-                      <div className='row'>
-                        {line1}
-                      </div>
-                      <div className='row'>
-                        {offset_message}
-                      </div>
-                      <div className='row'>
-                        <button
-                          className='border-0 text-primary'
-                          onClick={() => this.gotoScrubberOffset(this_frames_offset)}
-                        >
-                          {text}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )
-              }
-            })}
-          </div>
-        </div>
-
-      </div>
-    )
   }
 
   async doFetchAndSplit() {
@@ -727,7 +552,6 @@ class ComposePanel extends React.Component {
     const view_dropdown = this.buildViewDropdown()
     const compose_message = this.buildComposeMessage()
     const compose_image = this.buildComposeImage()
-    const telemetry_picker = this.buildTelemetryPicker() 
     let when_done_divider = ''
     if (when_done_link && goto_redaction_button) {
       when_done_divider = '|'
@@ -735,7 +559,7 @@ class ComposePanel extends React.Component {
     return (
       <div id='compose_panel_container'>
         <div className='row ml-4'>
-          <div className='col-lg-6'>
+          <div className='col-lg-9'>
             <div className='row m-2' >
                 {when_done_link}
                 {when_done_divider}
@@ -788,11 +612,9 @@ class ComposePanel extends React.Component {
             </div>
           </div>
 
-
-
-          <div className='col-lg-6 mh-100'>
+          <div className='col-lg-3 mh-100'>
             <div className='row mt-3 ml-2'>
-              {telemetry_picker}
+              USED TO BE TELEMETRY STUFF
             </div>
           </div>
 
@@ -846,10 +668,10 @@ class SequenceAndSubsequencePanel extends React.Component {
   createSubsequenceLink() {
     return (
       <button
-        className='border-0 text-primary'
+        className='border-0 text-primary bg-white'
         onClick={() => this.createSubsequence(this.props.frame_url)}
       >
-        Create Subsequence
+        Create Animated Image
       </button>
     )
   }
@@ -918,7 +740,7 @@ class SequenceAndSubsequencePanel extends React.Component {
           </div>
           <div className='col-lg-5 h5'>
             <div className='d-inline'>
-              Subsequences
+              Animated Images
             </div>
             <div className='d-inline ml-2'>
               {create_subsequence_link}
