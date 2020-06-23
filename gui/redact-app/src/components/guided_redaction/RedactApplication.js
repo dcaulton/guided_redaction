@@ -435,8 +435,14 @@ class RedactApplication extends React.Component {
     img.src = the_url
   }
 
-  getCurrentUser() {
+  async getCurrentUser() {
     try {
+//MAMA
+console.log('buggy')
+console.log(this.props.whoAmI.getUser())
+await(this.props.whoAmI.getUser())
+.then((user_id) => {return user_id})
+
       if (document.getElementById('App-whoami')) {
         var name= document.getElementById('App-whoami').children[0].children[1].innerHTML.split(';')[1]
         if (name) {

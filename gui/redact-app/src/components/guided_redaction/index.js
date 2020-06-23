@@ -3,7 +3,7 @@ import React from 'react';
 
 import './styles/guided_redaction.css';
 import RedactApplication from './RedactApplication';
-
+import whoAmI from '../../stores/whoami'
 
 const X = observer(class X extends React.Component {
 
@@ -21,6 +21,7 @@ const X = observer(class X extends React.Component {
       <div id="redact_application_wrapper">
         <RedactApplication 
           getBaseUrl={this.getBaseUrl}
+          whoAmI={whoAmI}
         />
       </div>
     )

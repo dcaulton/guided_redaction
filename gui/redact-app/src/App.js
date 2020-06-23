@@ -4,6 +4,13 @@ import {
   BrowserRouter as Router,
 } from "react-router-dom";
 
+
+class WhoAmI {
+  async getUser() {
+    return 'papa.roach@gmail.com'
+  }
+}
+
 class App extends React.Component {
   constructor(props) {
     super(props)
@@ -23,6 +30,8 @@ class App extends React.Component {
   }
 
   render() {
+    let whoAmI = new WhoAmI()
+
     return (
       <div>
         <div id='App-whoami'>
@@ -36,6 +45,7 @@ class App extends React.Component {
         <Router>
           <RedactApplication 
             getBaseUrl={this.getBaseUrl}
+            whoAmI={whoAmI}
           />
         </Router>
       </div>
