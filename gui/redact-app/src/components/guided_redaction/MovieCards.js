@@ -181,7 +181,12 @@ class MovieCard extends React.Component {
   }
 
   getMovieDimensions(movie_url, movies) {
-    if (Object.keys(movies).includes(movie_url) && movies[movie_url]['frame_dimensions']) {
+    if (
+        Object.keys(movies).includes(movie_url) && 
+        Object.keys(movies[movie_url]).includes('frame_dimensions') && 
+        movies[movie_url]['frame_dimensions'] && 
+        movies[movie_url]['frame_dimensions'].length > 1
+    ) {
       const dims = movies[movie_url]['frame_dimensions']
       let ts = dims[0].toString() + 'x' + dims[1].toString()
       ts += ' - ' + movies[movie_url]['frameset_discriminator']

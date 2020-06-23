@@ -1120,7 +1120,7 @@ class TemplateBuilderControls extends React.Component {
             <div
               className='col-lg-11 h3 float-left ml-2 mt-2'
             >
-              Templates
+              Manage Templates
             </div>
             <div
                 className='d-inline float-right'
@@ -1556,18 +1556,6 @@ class BottomImageControls extends React.Component {
     )
   }
 
-  buildNewImageButton() {
-    return (
-      <button 
-          className='btn btn-light ml-2'  
-          style={this.button_style}
-          onClick={() => this.props.newImage()}
-          href='./index.html' >
-        New
-      </button>
-    )
-  }
-
   buildResetButton() {
     if (this.props.getImageUrl() === '') {
       return ''
@@ -1594,7 +1582,11 @@ class BottomImageControls extends React.Component {
   }
 
   buildIllustrateButton() {
-    if (this.props.getImageUrl() === '') {
+    const image_url = this.props.getImageUrl()
+    if (image_url === '') {
+      return ''
+    }
+    if (image_url.indexOf('redacted') === -1) {
       return ''
     }
     return (
@@ -1654,22 +1646,15 @@ class BottomImageControls extends React.Component {
     const redact_button = this.buildRedactButton()
     const reset_button = this.buildResetButton()
     const illustrate_button = this.buildIllustrateButton()
-    const new_image_button = this.buildNewImageButton()
 
     return (
     <div className='row pt-2 pb-2 bg-light rounded border-bottom border-left border-right'>
         <div className='col-lg-10'>
           {add_button}
-
           {delete_button} 
-
           {template_button}
-
-          {illustrate_button}
-
-          {new_image_button}
-
           {reset_button}
+          {illustrate_button}
         </div>
 
         <div className='col-lg-2 float-right'>
