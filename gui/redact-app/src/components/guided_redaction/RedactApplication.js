@@ -83,21 +83,21 @@ class RedactApplication extends React.Component {
       cv_workers: {},
       visibilityFlags: {
         'templates': true,
-        'hog': true,
+        'hog': false,
         'selectedArea': true,
-        'annotate': true,
-        'telemetry': true,
+        'annotate': false,
+        'telemetry': false,
         'filesystem': true,
         'ocr': true,
         'ocr_scene_analysis': true,
-        'ocr_movie_analysis': true,
-        'movieSets': true,
+        'ocr_movie_analysis': false,
+        'movieSets': false,
         'results': true,
-        'diffs': true,
+        'diffs': false,
         'redact': true,
         'zip': true,
         'pipelines': true,
-        'entity_finder': true,
+        'entity_finder': false,
       },
       tier_1_scanners: {
         'ocr': {},
@@ -833,6 +833,17 @@ class RedactApplication extends React.Component {
     }
   }
 
+  async deleteAttachedJobAndForwardToWhenDoneTarget(the_url) {
+    if (this.state.attached_job['id']) {
+      await this.cancelJob(this.state.attached_job['id'])
+      .then(() => {
+          window.location.replace(the_url)
+      })
+    } else {
+        window.location.replace(the_url)
+    }
+  }
+
   async gotoWhenDoneTarget(when_done=(()=>{})) {
     const the_url = this.getUrl('link_url')
     let image_urls = []
@@ -873,13 +884,13 @@ class RedactApplication extends React.Component {
     })
     .then((response) => response.json())
     .then((responseJson) => {
-      when_done(responseJson)
       if (Object.keys(responseJson).includes('learn_edit_url')) {
-        window.location.replace(responseJson['learn_edit_url'])
+        this.deleteAttachedJobAndForwardToWhenDoneTarget(responseJson['learn_edit_url'])
       } else {
       // TODO use the page messaging line for this eventually
       //   for now we do this from two pages, so this needs to be figured out
         alert('no url in learn response, there must be a problem')
+        return
       }
     })
     .catch((error) => {
