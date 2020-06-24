@@ -72,15 +72,23 @@ class Job(models.Model):
         if Attribute.objects.filter(job=self).exists():
             attributes = Attribute.objects.filter(job=self)
             for attribute in attributes:
-                if attribute.name == 'cv_worker_url':
+                if attribute.name == 'cv_worker_id':
                     return True
         return False
 
-    def get_cv_worker_url(self):
+    def get_cv_worker_id(self):
         if Attribute.objects.filter(job=self).exists():
             attributes = Attribute.objects.filter(job=self)
             for attribute in attributes:
-                if attribute.name == 'cv_worker_url':
+                if attribute.name == 'cv_worker_id':
+                    return attribute.value
+        return False
+
+    def get_cv_worker_type(self):
+        if Attribute.objects.filter(job=self).exists():
+            attributes = Attribute.objects.filter(job=self)
+            for attribute in attributes:
+                if attribute.name == 'cv_worker_type':
                     return attribute.value
         return False
 

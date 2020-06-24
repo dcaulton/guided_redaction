@@ -296,10 +296,21 @@ class JobsViewSet(viewsets.ViewSet):
             job.add_owner(owner_id)
         if request.data.get('routing_data'):
             routing_data = request.data.get('routing_data')
-            if 'cv_worker_url' in routing_data and routing_data['cv_worker_url']:
+            if (
+                'cv_worker_id' in routing_data and 
+                routing_data['cv_worker_id'] and
+                'cv_worker_type' in routing_data and 
+                routing_data['cv_worker_type']
+            ):
                 attribute = Attribute(
-                    name='cv_worker_url',
-                    value=routing_data['cv_worker_url'],
+                    name='cv_worker_id',
+                    value=routing_data['cv_worker_id'],
+                    job=job,
+                )
+                attribute.save()
+                attribute = Attribute(
+                    name='cv_worker_type',
+                    value=routing_data['cv_worker_type'],
                     job=job,
                 )
                 attribute.save()
@@ -311,7 +322,7 @@ class JobsViewSet(viewsets.ViewSet):
           'request_data': job.request_data,
           'job_update_url': 'http://localhost:8000/api/v1/jobs/' + str(job.id),
         }
-        worker_url = job.get_cv_worker_url()
+        worker_url = job.get_cv_worker_id()
         worker_url = worker_url.replace('operations', 'tasks')
 
         response = requests.post(
@@ -336,7 +347,8 @@ class JobsViewSet(viewsets.ViewSet):
         job = self.build_job(request)
 
         if job.is_cv_worker_task():
-            self.dispatch_cv_worker_job(job)
+            if job.get_cv_worker_type() == 'accepts_calls':
+                self.dispatch_cv_worker_job(job)
         else:
             self.schedule_job(job)
 

@@ -833,9 +833,16 @@ class SessionControls extends React.Component {
       this.props.displayInsightsMessage('cv_worker needs a unique id')
       return
     }
+    let build_supported_operations = {}
+    for (let i=0; i < this.state.cv_worker_supported_operations.length; i++) {
+      const operation_key = this.state.cv_worker_supported_operations[i]
+      build_supported_operations[operation_key] = {
+        status: 'ACTIVE',
+      }
+    }
     const cv_worker_obj = {
       type: this.state.cv_worker_type,
-      supported_operations: this.state.cv_worker_supported_operations,
+      supported_operations: build_supported_operations,
     }
     let deepCopyCvWorkers = JSON.parse(JSON.stringify(this.props.cv_workers))
     deepCopyCvWorkers[this.state.cv_worker_id] = cv_worker_obj

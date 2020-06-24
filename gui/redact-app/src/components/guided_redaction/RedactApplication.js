@@ -219,7 +219,9 @@ class RedactApplication extends React.Component {
       }
       const operations = JSON.parse(responseJson['response'])
       let deepCopyCvWorkers = JSON.parse(JSON.stringify(this.state.cv_workers))
-      deepCopyCvWorkers[cv_worker_url] = operations
+      let deepCopyCvWorker = deepCopyCvWorkers(cv_worker_url)
+      deepCopyCvWorker['supported_operations'] = operations
+      deepCopyCvWorkers[cv_worker_url] = deepCopyCvWorker
       this.setGlobalStateVar('cv_workers', deepCopyCvWorkers)
       when_done(responseJson)
     })
@@ -2287,17 +2289,17 @@ class RedactApplication extends React.Component {
 
   getJobRoutingData(job) {
     for (let i=0; i < Object.keys(this.state.cv_workers).length; i++) {
-      const worker_url = Object.keys(this.state.cv_workers)[i]
-      const worker = this.state.cv_workers[worker_url]
-      if (!Object.keys(worker).includes('operations')) {
+      const worker_id = Object.keys(this.state.cv_workers)[i]
+      const worker = this.state.cv_workers[worker_id]
+      if (!Object.keys(worker).includes('supported_operations')) {
         continue
       }
-      for (let j=0; j < Object.keys(worker['operations']).length; j++) {
-        const operation_name = Object.keys(worker['operations'])[j]
-        const operation = worker['operations'][operation_name]
+      for (let j=0; j < Object.keys(worker['supported_operations']).length; j++) {
+        const operation_name = Object.keys(worker['supported_operations'])[j]
+        const operation = worker['supported_operations'][operation_name]
         if ( operation_name === job['operation'] && operation['status'] === 'ACTIVE') {
           return {
-            'cv_worker_url': worker_url,
+            'cv_worker_id': worker_id,
             'cv_worker_type': worker['type'],
           }
         }
