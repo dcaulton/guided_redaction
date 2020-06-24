@@ -3,6 +3,7 @@ import json
 import os
 from django.conf import settings
 import requests
+import shutil
 from rest_framework.response import Response
 from base import viewsets
 from guided_redaction.jobs.models import Job
@@ -323,6 +324,22 @@ class JobsViewSet(viewsets.ViewSet):
                     job=job,
                 )
                 attribute.save()
+        if request.data.get('lifecycle_data'):
+            lifecycle_data = request.data.get('lifecycle_data')
+            if 'delete_files_with_job' in lifecycle_data and lifecycle_data['delete_files_with_job']:
+                attribute = Attribute(
+                    name='delete_files_with_job',
+                    value=lifecycle_data['delete_files_with_job'],
+                    job=job,
+                )
+                attribute.save()
+            if 'auto_delete_age' in lifecycle_data and lifecycle_data['auto_delete_age']:
+                attribute = Attribute(
+                    name='auto_delete_age',
+                    value=lifecycle_data['auto_delete_age'],
+                    job=job,
+                )
+                attribute.save()
         return job
 
     def dispatch_cv_worker_job(self, job):
@@ -365,6 +382,16 @@ class JobsViewSet(viewsets.ViewSet):
 
     def delete(self, request, pk, format=None):
         job = Job.objects.get(pk=pk)
+
+        if Attribute.objects.filter(job=job).filter(name='delete_files_with_job').exists():
+            attributes = Attribute.objects.filter(job=job).filter(name='file_dir_user')
+            for attribute in attributes:
+                print('deleting the files in directory {}'.format(attribute.value))
+                dirpath = os.path.join(settings.REDACT_FILE_STORAGE_DIR, attribute.value)
+                try:
+                    shutil.rmtree(dirpath)
+                except Exception as err:
+                    print('error deleting directory {} with job'.format(attribute.value))
         job.delete()
         return Response('', status=204)
 
