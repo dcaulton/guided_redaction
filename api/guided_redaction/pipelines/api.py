@@ -160,7 +160,7 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
 
         if 'lifecycle_data' in build_request_data:
             if (
-                'delete_files_with_job' in build_request_data['lifecycke_data'] and 
+                'delete_files_with_job' in build_request_data['lifecycle_data'] and 
                 build_request_data['lifecycle_data']['delete_files_with_job']
             ):
                 Attribute(
@@ -169,7 +169,7 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
                     job=job,
                 ).save()
             if (
-                'auto_delete_age' in build_request_data['lifecycke_data'] and 
+                'auto_delete_age' in build_request_data['lifecycle_data'] and 
                 build_request_data['lifecycle_data']['auto_delete_age']
             ):
                 Attribute(
