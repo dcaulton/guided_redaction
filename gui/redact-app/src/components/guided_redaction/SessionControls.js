@@ -7,7 +7,20 @@ class SessionControls extends React.Component {
 
   constructor(props) {
     super(props)
+    this.state = {
+      cv_worker_id: '',
+      cv_worker_type: 'call_back',
+      cv_worker_supported_operations: [],
+    }
     this.recognizer = {}
+  }
+
+  setLocalStateVar(var_name, var_value, when_done=(()=>{})) {
+    this.setState({
+      [var_name]: var_value,
+      unsaved_changes: true,
+    },
+    when_done())
   }
 
   buildWorkbookPickerButton() {
@@ -816,10 +829,20 @@ class SessionControls extends React.Component {
   }
 
   addCvWorker() {
-    console.log('adding cv worker')
-    const new_value = document.getElementById('session_cv_worker').value
-    document.getElementById('session_cv_worker').value = ''
-    this.props.queryCvWorker(new_value)
+    if (!this.state.cv_worker_id) {
+      this.props.displayInsightsMessage('cv_worker needs a unique id')
+      return
+    }
+    const cv_worker_obj = {
+      type: this.state.cv_worker_type,
+      supported_operations: this.state.cv_worker_supported_operations,
+    }
+    let deepCopyCvWorkers = JSON.parse(JSON.stringify(this.props.cv_workers))
+    deepCopyCvWorkers[this.state.cv_worker_id] = cv_worker_obj
+    this.props.setGlobalStateVar('cv_workers', deepCopyCvWorkers)
+    if (this.state.cv_worker_type === 'accepts_calls') {
+      this.props.queryCvWorker(this.state.cv_worker_id)
+    } 
   }
 
   deleteCvWorker(worker_key) {
@@ -827,6 +850,32 @@ class SessionControls extends React.Component {
     delete deepCopyCvWorkers[worker_key]
     this.props.setGlobalStateVar('cv_workers', deepCopyCvWorkers)
     this.props.displayInsightsMessage('cv_worker has been deleted')
+  }
+
+  updateCvWorkerSupportedOperations(value) {
+    if (typeof value === 'string' || value instanceof String) {
+      value = value.split('\n')
+    }
+    this.setLocalStateVar('cv_worker_supported_operations', value)
+  }
+
+  buildSupportedOperationsInput() {
+    const supported_operations_string = this.state.cv_worker_supported_operations.join('\n')
+    return (
+      <div>
+        <div className='d-inline'>
+          Supported Operations
+        </div>
+        <div className='d-inline ml-2'>
+          <textarea
+             cols='80'
+             rows='4'
+             value={supported_operations_string}
+             onChange={(event) => this.updateCvWorkerSupportedOperations(event.target.value)}
+          />
+        </div>
+      </div>
+    )
   }
 
   buildOneCvWorkerData(worker_url, index) {
@@ -877,16 +926,22 @@ class SessionControls extends React.Component {
   }
 
   buildCvWorkersArea() {
+    const supported_operations_input = this.buildSupportedOperationsInput()
     return (
       <div className='col'>
         <div className='row'>
           <div className='d-inline'>
             Add CV Worker
           </div>
+        </div>
+
+        <div className='row'>
           <div className='d-inline'>
             <input 
                 id='session_cv_worker'
-                size='25'
+                value={this.state.cv_worker_id}
+                onChange={(event) => this.setLocalStateVar('cv_worker_id', event.target.value)}
+                size='50'
             />
           </div>
           <div className='d-inline'>
@@ -898,6 +953,28 @@ class SessionControls extends React.Component {
             </button>
           </div>
         </div>
+
+        <div className='row'>
+          <div className='d-inline'>
+            worker type
+          </div>
+          <div
+              className='d-inline ml-2'
+          >   
+             <select
+                value={this.state.cv_worker_type}
+                onChange={(event) => this.setLocalStateVar('cv_worker_type', event.target.value)}
+             >
+              <option value='call_back'>call back</option>
+              <option value='accepts_calls'>accepts calls from this system</option>
+            </select>
+          </div>
+        </div>
+
+        <div className='row'>
+          {supported_operations_input}
+        </div>
+
         <div className='row'>
           {Object.keys(this.props.cv_workers).map((worker_url, index) => {
             return this.buildOneCvWorkerData(worker_url, index)

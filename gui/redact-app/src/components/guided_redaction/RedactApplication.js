@@ -2296,7 +2296,10 @@ class RedactApplication extends React.Component {
         const operation_name = Object.keys(worker['operations'])[j]
         const operation = worker['operations'][operation_name]
         if ( operation_name === job['operation'] && operation['status'] === 'ACTIVE') {
-          return {'cv_worker_url': worker_url}
+          return {
+            'cv_worker_url': worker_url,
+            'cv_worker_type': worker['type'],
+          }
         }
       }
     }
