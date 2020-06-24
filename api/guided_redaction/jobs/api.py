@@ -187,6 +187,11 @@ class JobsViewSet(viewsets.ViewSet):
             jobs = Job.objects.filter(workbook_id=request.GET['workbook_id'])
         else:
             jobs = Job.objects.filter(parent_id__isnull=True)
+ 
+        desired_cv_worker_id = ''
+        if 'pick-up-for' in request.GET.keys():
+            desired_cv_worker_id = request.GET['pick-up-for']
+
         user_id = ''
         if 'user_id' in request.GET.keys():
             if request.GET['user_id'] and \
@@ -203,6 +208,10 @@ class JobsViewSet(viewsets.ViewSet):
             owner = job.get_owner()
             if user_id and owner != user_id:
                 continue
+            if desired_cv_worker_id:
+                if job.get_cv_worker_id() != desired_cv_worker_id:
+                    continue
+
             attrs = {}
             if Attribute.objects.filter(job=job).exists():
                 attributes = Attribute.objects.filter(job=job)
