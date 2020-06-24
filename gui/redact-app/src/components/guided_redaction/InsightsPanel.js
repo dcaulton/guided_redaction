@@ -1550,6 +1550,7 @@ class InsightsPanel extends React.Component {
             maximize={this.props.maximize}
             cv_workers={this.props.cv_workers}
             queryCvWorker={this.props.queryCvWorker}
+            dispatchFetchSplitAndHash={this.props.dispatchFetchSplitAndHash}
           />
         </div>
 

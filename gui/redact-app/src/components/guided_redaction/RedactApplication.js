@@ -199,6 +199,7 @@ class RedactApplication extends React.Component {
     this.getAndSaveUser=this.getAndSaveUser.bind(this)
     this.queryCvWorker=this.queryCvWorker.bind(this)
     this.afterIdFetched=this.afterIdFetched.bind(this)
+    this.dispatchFetchSplitAndHash=this.dispatchFetchSplitAndHash.bind(this)
   }
 
   async queryCvWorker(cv_worker_url, when_done=(()=>{})) {
@@ -2209,6 +2210,10 @@ class RedactApplication extends React.Component {
       input: specified_input,
       owner: this.state.user['id'],
     }
+    if (Object.keys(extra_data).includes['lifecycle_data']) {
+      build_payload['lifecycle_data'] = extra_data['lifecycle_data']
+    }
+
     if (this.state.current_workbook_id) {
       build_payload['workbook_id'] = this.state.current_workbook_id
     } 
@@ -2298,6 +2303,13 @@ class RedactApplication extends React.Component {
     })
   }
 
+  getJobLifecycleData(job) {
+    return {
+      delete_files_with_job: true,
+      auto_delete_age: '7days',
+    }
+  }
+
   getJobRoutingData(job) {
     for (let i=0; i < Object.keys(this.state.cv_workers).length; i++) {
       const worker_id = Object.keys(this.state.cv_workers)[i]
@@ -2324,6 +2336,7 @@ class RedactApplication extends React.Component {
     let cancel_after_loading = hash_in.hasOwnProperty('cancel_after_loading')? hash_in['cancel_after_loading'] : false
     let when_fetched = hash_in.hasOwnProperty('after_loaded')? hash_in['after_loaded'] : (()=>{})
     let when_failed = hash_in.hasOwnProperty('when_failed')? hash_in['when_failed'] : (()=>{})
+    let enforce_lifecycle = hash_in.hasOwnProperty('enforce_lifecycle')? hash_in['enforce_lifecycle'] : false
     let current_user = ''
     if (this.state.user && Object.keys(this.state.user).includes('id')) {
       current_user = this.state.user['id']
@@ -2337,10 +2350,19 @@ class RedactApplication extends React.Component {
       description: the_job_data['description'],
       workbook_id: this.state.current_workbook_id,
     }
+
     const routing_data = this.getJobRoutingData(build_obj)
     if (routing_data) {
       build_obj['routing_data'] = routing_data
     }
+
+    if (enforce_lifecycle) {
+      const lifecycle_data = this.getJobLifecycleData(build_obj)
+      if (lifecycle_data) {
+        build_obj['lifecycle_data'] = lifecycle_data
+      }
+    }
+
     await fetch(this.getUrl('jobs_url'), {
       method: 'POST',
       headers: this.buildJsonHeaders(),
@@ -2548,29 +2570,40 @@ class RedactApplication extends React.Component {
     }
   }
 
-  async dispatchFetchSplitAndHash(recording_id) {
-    await this.getPipelines();
-    const input_obj = {
-      'recording_ids': [recording_id],
-    }
-    let fetch_split_pipeline_id = ''
-    for (let i=0; i < Object.keys(this.state.pipelines).length; i++) {
-      const pipeline_id = Object.keys(this.state.pipelines)[i]
-      const pipeline = this.state.pipelines[pipeline_id]
-      if (pipeline['name'] === 'fetch_split_hash_secure_file') {
-        fetch_split_pipeline_id = pipeline_id
-      }
-    }
-    if (!fetch_split_pipeline_id) {
-      console.log('no fetch and split pipeline found, aborting')
+  async dispatchFetchSplitAndHash(recording_id, use_lifecycle_data=false) {
+    if (!recording_id) {
+      this.setGlobalStateVar('message', 'no recording id specified, not fetching')
       return
     }
-    let when_done_fun = ((response) => {
-      if (Object.keys(response).includes("job_id")) {
-        this.attachToJob(response['job_id'])
+    await this.getPipelines()
+    .then(() => {
+      const input_obj = {
+        'recording_ids': [recording_id],
       }
+      let fetch_split_pipeline_id = ''
+      for (let i=0; i < Object.keys(this.state.pipelines).length; i++) {
+        const pipeline_id = Object.keys(this.state.pipelines)[i]
+        const pipeline = this.state.pipelines[pipeline_id]
+        if (pipeline['name'] === 'fetch_split_hash_secure_file') {
+          fetch_split_pipeline_id = pipeline_id
+        }
+      }
+      if (!fetch_split_pipeline_id) {
+        this.setGlobalStateVar('message', 'no fetch and split pipeline found, aborting')
+        return
+      }
+      let when_done_fun = ((response) => {
+        if (Object.keys(response).includes("job_id")) {
+          this.attachToJob(response['job_id'])
+        }
+      })
+      if (use_lifecycle_data) {
+        const lifecycle_data = this.getJobLifecycleData({})
+        input_obj['lifecycle_data'] = lifecycle_data
+      }
+      this.dispatchPipeline(fetch_split_pipeline_id, 'json_obj', input_obj, when_done_fun)
+      this.setGlobalStateVar('message', 'fetch split and hash job was submitted')
     })
-    this.dispatchPipeline(fetch_split_pipeline_id, 'json_obj', input_obj, when_done_fun)
   }
 
   iAmWorkOrDev() {
@@ -2590,7 +2623,7 @@ class RedactApplication extends React.Component {
       this.loadWorkbook(vars['workbook_id'])
     }
     if (Object.keys(vars).includes('recording-id')) {
-      this.dispatchFetchSplitAndHash(vars['recording-id']) 
+      this.dispatchFetchSplitAndHash(vars['recording-id'], true) 
       if (this.iAmWorkOrDev()) {
         this.setGlobalStateVar('whenDoneTarget', 'learn_dev')
       } else {
@@ -2857,13 +2890,12 @@ class RedactApplication extends React.Component {
                 submitJob={this.submitJob}
                 telemetry_data={this.state.telemetry_data}
                 readTelemetryRawData={this.readTelemetryRawData}
-                pipelines={this.state.pipelines}
-                dispatchPipeline={this.dispatchPipeline}
                 attachToJob={this.attachToJob}
                 attached_job={this.state.attached_job}
                 message={this.state.message}
                 getAndSaveUser={this.getAndSaveUser}
                 getPipelines={this.getPipelines}
+                dispatchFetchSplitAndHash={this.dispatchFetchSplitAndHash}
               />
             </Route>
             <Route path='/redact/insights'>
@@ -2940,6 +2972,7 @@ class RedactApplication extends React.Component {
                 cv_workers={this.state.cv_workers}
                 getAndSaveUser={this.getAndSaveUser}
                 queryCvWorker={this.queryCvWorker}
+                dispatchFetchSplitAndHash={this.dispatchFetchSplitAndHash}
               />
             </Route>
             <Route path={['/redact/image', '/redact']}>

@@ -206,7 +206,7 @@ class FilesystemControls extends React.Component {
         <div className='d-inline ml-3'>
           <input
               id='import_secure_file_recording_id'
-              size='50'
+              size='30'
               onChange={(event) => this.setSecureFileRecordingId(event.target.value)}
               title='recording id'
           />
@@ -216,7 +216,17 @@ class FilesystemControls extends React.Component {
             className='btn btn-primary p-1'
             onClick={() => this.props.submitInsightsJob('get_secure_file', this.state.secure_file_recording_id)}
           >
-            Go
+            Fetch
+          </button>
+        </div>
+        <div className='d-inline ml-3'>
+          <button
+            className='btn btn-primary p-1'
+            onClick={() => 
+              this.props.dispatchFetchSplitAndHash(this.state.secure_file_recording_id)
+            }
+          >
+            Fetch, Split and Hash
           </button>
         </div>
       </div>

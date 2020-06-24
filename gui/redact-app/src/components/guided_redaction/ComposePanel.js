@@ -434,36 +434,6 @@ class ComposePanel extends React.Component {
     this.scrubberOnChange()
   }
 
-  async doFetchAndSplit() {
-    const rec_id = document.getElementById('recording_id').value
-    if (!rec_id) {
-      this.setMessage('no recording id specified, not fetching')
-      return
-    }
-    const input_obj = {
-      'recording_ids': [rec_id],
-    }
-    let fetch_split_pipeline_id = ''
-    for (let i=0; i < Object.keys(this.props.pipelines).length; i++) {
-      const pipeline_id = Object.keys(this.props.pipelines)[i]
-      const pipeline = this.props.pipelines[pipeline_id]
-      if (pipeline['name'] === 'fetch_split_hash_secure_file') {
-        fetch_split_pipeline_id = pipeline_id
-      }
-    }
-    if (!fetch_split_pipeline_id) {
-      this.setMessage('no fetch and split pipeline found, aborting')
-      return
-    }
-    let when_done_fun = ((response) => {
-      if (Object.keys(response).includes("job_id")) {
-        this.props.attachToJob(response['job_id'])
-      }
-    })
-    this.props.dispatchPipeline(fetch_split_pipeline_id, 'json_obj', input_obj, when_done_fun)
-    this.setMessage('fetch split and hash job was submitted')
-  }
-
   buildFetchAndSplit() {
     return (
       <div>
@@ -478,7 +448,9 @@ class ComposePanel extends React.Component {
         <div className='d-inline ml-2'>
           <button
               className='btn btn-primary p-0'
-              onClick={()=>this.doFetchAndSplit()}
+              onClick={()=>
+                this.props.dispatchFetchSplitAndHash(document.getElementById('recording_id').value, true)
+              }
           >
             Go
           </button>

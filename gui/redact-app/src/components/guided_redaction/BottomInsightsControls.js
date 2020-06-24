@@ -381,6 +381,7 @@ class BottomInsightsControls extends React.Component {
           displayInsightsMessage={this.props.displayInsightsMessage}
           submitInsightsJob={this.props.submitInsightsJob}
           buildMovieMetadata={this.buildMovieMetadata}
+          dispatchFetchSplitAndHash={this.props.dispatchFetchSplitAndHash}
         />
 
         <SessionControls
