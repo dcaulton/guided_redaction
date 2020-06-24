@@ -146,6 +146,7 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
             request_data=json.dumps(build_request_data),
         )
         job.save()
+
         attribute = Attribute(
             name='pipeline_job_link',
             value='pipeline_job_link',
@@ -153,8 +154,29 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
             pipeline=pipeline
         )
         attribute.save()
+
         if owner_id:
             job.add_owner(owner_id)
+
+        if 'lifecycle_data' in build_request_data:
+            if (
+                'delete_files_with_job' in build_request_data['lifecycke_data'] and 
+                build_request_data['lifecycle_data']['delete_files_with_job']
+            ):
+                Attribute(
+                    name='delete_files_with_job',
+                    value=build_request_data['lifecycle_data']['delete_files_with_job'],
+                    job=job,
+                ).save()
+            if (
+                'auto_delete_age' in build_request_data['lifecycke_data'] and 
+                build_request_data['lifecycle_data']['auto_delete_age']
+            ):
+                Attribute(
+                    name='auto_delete_age',
+                    value=build_request_data['lifecycle_data']['auto_delete_age'],
+                    job=job,
+                ).save()
 
         return job
 
