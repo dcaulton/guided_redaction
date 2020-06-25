@@ -289,9 +289,6 @@ def build_and_dispatch_scan_template_threaded_children(parent_job):
     parent_job.status = 'running'
     parent_job.save()
     request_data = json.loads(parent_job.request_data)
-    print('gabba gooey {}'.format(request_data))
-    print('mango')
-    print(request_data.keys())
     template_id = list(request_data['tier_1_scanners']['template'].keys())[0]
     template = request_data['tier_1_scanners']['template'][template_id]
     movies = request_data['movies']

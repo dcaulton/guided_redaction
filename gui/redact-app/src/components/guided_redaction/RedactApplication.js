@@ -1595,14 +1595,19 @@ class RedactApplication extends React.Component {
     }
   }
 
-  loadMoviesFromJobResults(job, when_done=(()=>{})) {
-    const response_data = JSON.parse(job.response_data)
+  loadMoviesFromJob(job, use='results', when_done=(()=>{})) {
+    let job_data = JSON.parse(job.response_data)
+    if (use === 'request') {
+      job_data = JSON.parse(job.request_data)
+    }
     let deepCopyMovies = JSON.parse(JSON.stringify(this.state.movies))
     let movie_url = ''
-    for (let i=0; i < Object.keys(response_data['movies']).length; i++) {
-      movie_url = Object.keys(response_data['movies'])[i]
-      deepCopyMovies[movie_url] = response_data['movies'][movie_url]
-      deepCopyMovies[movie_url]['nickname'] = this.getMovieNicknameFromUrl(movie_url)
+    for (let i=0; i < Object.keys(job_data['movies']).length; i++) {
+      movie_url = Object.keys(job_data['movies'])[i]
+      if (!Object.keys(deepCopyMovies).includes(movie_url)) {
+        deepCopyMovies[movie_url] = job_data['movies'][movie_url]
+        deepCopyMovies[movie_url]['nickname'] = this.getMovieNicknameFromUrl(movie_url)
+      }
     }
     this.addMovieAndSetActive(
       movie_url,
@@ -1746,20 +1751,6 @@ class RedactApplication extends React.Component {
       movie_url: movie_url,
     })
     this.setFramesetHash(frameset_hash)
-  }
-
-  async loadRedactSingleResults(job, when_done=(()=>{})) {
-    const resp_data = JSON.parse(job.response_data)
-    const req_data = JSON.parse(job.request_data)
-    const movie_url = req_data['movie_url']
-    const frameset_hash = req_data['frameset_hash']
-    let deepCopyMovies = JSON.parse(JSON.stringify(this.state.movies))
-    const redacted_image = resp_data['redacted_image_url']
-    deepCopyMovies[movie_url]['framesets'][frameset_hash]['redacted_image'] = redacted_image
-    this.setState({
-      movies: deepCopyMovies,
-      movie_url: movie_url,
-    })
   }
 
   async loadIllustrateResults(job, when_done=(()=>{})) {
@@ -2032,8 +2023,7 @@ class RedactApplication extends React.Component {
     .then((response) => response.json())
     .then((responseJson) => {
 			const job = responseJson['job']
-			if ((job.app === 'analyze' && job.operation === 'scan_template')
-			   || (job.app === 'analyze' && job.operation === 'scan_template_multi')
+			if ((job.app === 'analyze' && job.operation === 'scan_template_multi')
 			   || (job.app === 'analyze' && job.operation === 'scan_template_threaded')) {
         this.loadTemplateResults(job, when_done)
 			} else if (job.app === 'analyze' && job.operation === 'filter') {
@@ -2061,11 +2051,17 @@ class RedactApplication extends React.Component {
 			} else if (job.app === 'analyze' && job.operation === 'selected_area_threaded') {
         this.loadSelectedAreaResults(job, when_done)
 			} else if ((job.app === 'parse' && job.operation === 'split_and_hash_threaded')) {
-        this.loadMoviesFromJobResults(job, when_done)
+        this.loadMoviesFromJob(job, 'results', when_done)
 			} else if (job.app === 'pipeline'  && 
           job.operation === 'pipeline' && 
           job.description === 'top level job for pipeline fetch_split_hash_secure_file') {
-        this.loadMoviesFromJobResults(job, when_done)
+        this.loadMoviesFromJob(job, 'results', when_done)
+			} else if (job.app === 'pipeline'  && 
+          job.operation === 'pipeline' && 
+          job.description.indexOf('scan_template_and_redact') > -1) {
+        this.loadRedactResults(job, when_done)
+        // TODO load the tier_1_scanners from the nested request too, but it's not in the top level job
+        this.loadMoviesFromJob(job, 'request', when_done)
 			} else if (job.app === 'parse' && job.operation === 'split_threaded') {
         this.loadSplitResults(job, when_done)
 			} else if (job.app === 'parse' && job.operation === 'hash_movie') {
@@ -2082,8 +2078,6 @@ class RedactApplication extends React.Component {
         this.loadRenderSubsequenceResults(job, when_done)
 			} else if (job.app === 'redact' && job.operation === 'redact') {
         this.loadRedactResults(job, when_done)
-			} else if (job.app === 'redact' && job.operation === 'redact_single') {
-        this.loadRedactSingleResults(job, when_done)
 			} else if (job.app === 'parse' && job.operation === 'zip_movie') {
         this.loadZipMovieResults(job, when_done)
 			} else if (job.app === 'redact' && job.operation === 'illustrate') {

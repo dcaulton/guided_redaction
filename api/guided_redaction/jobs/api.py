@@ -47,8 +47,6 @@ def dispatch_job_wrapper(job, restart_unfinished_children=True):
 
 def dispatch_job(job):
     job_uuid = job.id
-    if job.app == 'analyze' and job.operation == 'scan_template':
-        analyze_tasks.scan_template.delay(job_uuid)
     if job.app == 'analyze' and job.operation == 'scan_template_threaded':
         analyze_tasks.scan_template_threaded.delay(job_uuid)
     if job.app == 'analyze' and job.operation == 'scan_template_multi':
@@ -101,8 +99,6 @@ def dispatch_job(job):
         parse_tasks.render_subsequence.delay(job_uuid)
     if job.app == 'redact' and job.operation == 'redact':
         redact_tasks.redact_threaded.delay(job_uuid)
-    if job.app == 'redact' and job.operation == 'redact_single':
-        redact_tasks.redact_single.delay(job_uuid)
     if job.app == 'redact' and job.operation == 'illustrate':
         redact_tasks.illustrate.delay(job_uuid)
     if job.app == 'parse' and job.operation == 'zip_movie':

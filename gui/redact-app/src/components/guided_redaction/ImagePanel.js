@@ -26,7 +26,6 @@ class ImagePanel extends React.Component {
       borderColor: 'black',
     }
     this.setMessage=this.setMessage.bind(this)
-    this.redactImage=this.redactImage.bind(this)
     this.submitImageJob=this.submitImageJob.bind(this)
     this.setIllustrateShaded=this.setIllustrateShaded.bind(this)
     this.newImage=this.newImage.bind(this)
@@ -39,11 +38,16 @@ class ImagePanel extends React.Component {
 
   buildTemplateRedactPipelineObject(template_id, pipeline_name) {
     let node_metadata = {
-      'template': {}, 
+      'tier_1_scanners': {
+        'template': {}, 
+        'selected_area': {}, 
+        'ocr': {}, 
+        'telemetry': {}, 
+      },
       'node': {},
     }
     const template = this.props.tier_1_scanners['template'][template_id]
-    node_metadata['template'][template_id] = template
+    node_metadata['tier_1_scanners']['template'][template_id] = template
     const node_1 = {
       id: '1',
       name: 'template node',
@@ -84,7 +88,6 @@ class ImagePanel extends React.Component {
     }
   }
 
-//MAMA
   runTemplateRedactPipelineJob(template_id) {
     if (!Object.keys(this.props.tier_1_scanners['template']).includes(template_id)) {
       this.setMessage('no template found for the specified id')
@@ -177,16 +180,7 @@ class ImagePanel extends React.Component {
   }
 
   submitImageJob(job_string, extra_data = '') {
-    if (job_string === 'template_match') {
-      const job_data = this.buildTemplateMatchJobdata(extra_data)
-      this.props.submitJob({
-        job_data: job_data, 
-        after_submit: () => {this.setMessage('template match job was submitted')}, 
-        cancel_after_loading: true, 
-        after_loaded: () => {this.setMessage('template match completed')},
-        when_failed: () => {this.setMessage('template match failed')},
-      })
-    } else if (job_string === 'scan_ocr') {
+    if (job_string === 'scan_ocr') {
       const job_data = this.buildOcrJobdata(extra_data)
       this.props.submitJob({
         job_data: job_data, 
@@ -194,15 +188,6 @@ class ImagePanel extends React.Component {
         cancel_after_loading: true, 
         after_loaded: () => {this.setMessage('ocr scan completed')},
         when_failed: () => {this.setMessage('ocr scan failed')},
-      })
-    } else if (job_string === 'redact') {
-      const job_data = this.buildRedactJobdata(extra_data)
-      this.props.submitJob({
-        job_data: job_data, 
-        after_submit: () => {this.setMessage('redact job was submitted')}, 
-        cancel_after_loading: true, 
-        after_loaded: () => {this.setMessage('redaction completed')},
-        when_failed: () => {this.setMessage('redaction failed')},
       })
     } else if (job_string === 'illustrate_box') {
       const job_data = this.buildIllustrateBoxJobdata(extra_data)
@@ -221,15 +206,6 @@ class ImagePanel extends React.Component {
         cancel_after_loading: true, 
         after_loaded: () => {this.setMessage('illustration completed')},
         when_failed: () => {this.setMessage('illustration failed')},
-      })
-    } else if (job_string === 'template_match_all_templates') {
-      const job_data = this.buildTemplateMatchJobdata({scope: 'all_templates'})
-      this.props.submitJob({
-        job_data: job_data, 
-        after_submit: () => {this.setMessage('template match job was submitted')}, 
-        cancel_after_loading: true, 
-        after_loaded: () => {this.setMessage('template match completed')},
-        when_failed: () => {this.setMessage('template match failed')},
       })
     } 
   }  
@@ -254,9 +230,13 @@ class ImagePanel extends React.Component {
     const image_url = this.props.getImageUrl()
     const frameset_hash = this.props.getFramesetHashForImageUrl(image_url)
     let movies = {}
-    movies[this.props.movie_url] = {framesets: {}}
+    movies[this.props.movie_url] = {
+      framesets: {},
+      frames: [],
+    }
     movies[this.props.movie_url]['framesets'][frameset_hash] = {images: []}
     movies[this.props.movie_url]['framesets'][frameset_hash]['images'].push(image_url)
+    movies[this.props.movie_url]['frames'].push(image_url)
     return movies
   }
 
@@ -276,37 +256,6 @@ class ImagePanel extends React.Component {
     job_data['request_data']['tier_1_scanners']['ocr'] = ocr_rules
     job_data['request_data']['scan_level'] = 'tier_2'
     job_data['request_data']['id'] = ocr_rule['id']
-    return job_data
-  }
-
-  buildRedactJobdata(extra_data) {
-    let job_data = {
-      request_data: {},
-    }
-    job_data['app'] = 'redact'
-    job_data['operation'] = 'redact_single'
-    job_data['description'] = 'redact image'
-    job_data['request_data']['movie_url'] = this.props.movie_url
-    let frameset_hash = this.props.getFramesetHashForImageUrl(this.props.getImageUrl())
-    job_data['request_data']['frameset_hash'] = frameset_hash
-    const image_url = this.props.getImageUrl()
-    job_data['request_data']['image_url'] = image_url
-    // I'd like to use true here, even coded it up.  Had to scrap it because, if we 
-    //   rredact, then reset, then redact, the image comes through with the same
-    //   url.  That means the system doesn't know to display a new version of the image
-    job_data['request_data']['meta'] = {
-      preserve_working_dir_across_batch: false,
-      return_type: 'url',
-    }
-    job_data['request_data']['mask_method'] = this.props.mask_method
-
-    let frameset = this.props.movies[this.props.movie_url]['framesets'][frameset_hash]
-    let pass_arr = []
-    for (let i=0; i < frameset['areas_to_redact'].length; i++) {
-      let a2r = frameset['areas_to_redact'][i]
-      pass_arr.push(a2r)
-    }
-    job_data['request_data']['areas_to_redact'] = pass_arr
     return job_data
   }
 
@@ -358,39 +307,6 @@ class ImagePanel extends React.Component {
       background_darken_ratio: parseFloat(this.props.illustrateParameters['backgroundDarkenPercent']),
     }
     job_data['request_data']['illustration_data'] = illustration_data
-    return job_data
-  }
-
-  buildTemplateMatchJobdata(extra_data) {
-    let job_data = {
-      request_data: {},
-    }
-    job_data['app'] = 'analyze'
-    let templates_wrap = {}
-    if (extra_data['scope'] === 'all_templates') {
-      job_data['operation'] = 'scan_template_multi'
-      job_data['description'] = 'multiple templates single image match from ImagePanel: '
-      job_data['description'] += 'image ' + this.props.getImageUrl()
-      templates_wrap = this.props.tier_1_scanners['template']
-      const temp_group_id = 'template_group_' + Math.floor(Math.random(10000, 99999)*100000).toString()
-      job_data['request_data']['id'] = temp_group_id
-    } else {
-      job_data['operation'] = 'scan_template'
-      job_data['description'] = 'single template single image match from ImagePanel: '
-      job_data['description'] += 'image ' + this.props.getImageUrl()
-      templates_wrap[extra_data] = this.props.tier_1_scanners['template'][extra_data]
-      job_data['request_data']['id'] = extra_data
-      job_data['request_data']['template_id'] = extra_data
-    }
-    job_data['request_data']['tier_1_scanners'] = {}
-    job_data['request_data']['tier_1_scanners']['template'] = templates_wrap
-    job_data['request_data']['scan_level'] = 'tier_2'
-    const movies_wrap = {}
-
-    const fake_movie = this.buildCustomOneImageMovie()
-    movies_wrap[this.props.movie_url] = fake_movie
-    job_data['request_data']['movies'] = movies_wrap
-
     return job_data
   }
 
@@ -583,15 +499,6 @@ class ImagePanel extends React.Component {
     }
   }
 
-  redactImage()  {
-    const areas_to_redact = this.props.getRedactionFromFrameset()
-    if (areas_to_redact.length > 0) {
-      this.submitImageJob('redact') 
-    } else {
-      this.setMessage('Nothing to redact has been specified')
-    }
-  }
-
   buildGetNextButton() {
     let next_image_link = ''
     const next_image_hash = this.props.getNextImageHash()
@@ -762,7 +669,6 @@ class ImagePanel extends React.Component {
                 submode={this.state.submode}
                 message={this.props.message}
                 setMode= {this.setMode}
-                redactImage={this.redactImage}
                 getImageUrl={this.props.getImageUrl}
                 setMessage={this.setMessage}
                 clearCurrentFramesetChanges={this.props.clearCurrentFramesetChanges}
@@ -1502,7 +1408,6 @@ class BottomImageControls extends React.Component {
             return (
               <button className='dropdown-item'
                   key={index}
-//                  onClick={() => this.props.submitImageJob('template_match', this.props.templates[value]['id'])}
                   onClick={() => this.props.runTemplateRedactPipelineJob(this.props.templates[value]['id'])}
                   href='.'
               >
@@ -1510,13 +1415,6 @@ class BottomImageControls extends React.Component {
               </button>
             )
           })}
-          <button className='dropdown-item'
-              key='template_all'
-              onClick={() => this.props.submitImageJob('template_match_all_templates')}
-              href='.'
-          >
-            Run All
-          </button>
         </div>
       </div>
     )
@@ -1598,20 +1496,6 @@ class BottomImageControls extends React.Component {
           </button>
         </div>
       </div>
-    )
-  }
-
-  buildRedactButton() {
-    if (this.props.getImageUrl() === '') {
-      return ''
-    }
-    return (
-      <button 
-          className='btn btn-primary ml-2'  
-          onClick={() => this.props.redactImage()}
-          href='./index.html' >
-        Redact
-      </button>
     )
   }
 
@@ -1702,7 +1586,6 @@ class BottomImageControls extends React.Component {
     const template_button = this.buildTemplateButton()
     const add_button = this.buildAddButton()
     const delete_button = this.buildDeleteButton()
-    const redact_button = this.buildRedactButton()
     const reset_button = this.buildResetButton()
     const illustrate_button = this.buildIllustrateButton()
 
@@ -1714,10 +1597,6 @@ class BottomImageControls extends React.Component {
           {template_button}
           {reset_button}
           {illustrate_button}
-        </div>
-
-        <div className='col-lg-2 float-right'>
-          {redact_button}
         </div>
     </div>
     );
