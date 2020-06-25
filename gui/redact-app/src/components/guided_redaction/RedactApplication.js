@@ -428,7 +428,7 @@ class RedactApplication extends React.Component {
     this.setGlobalStateVar('illustrateParameters', deepCopyIllustrateParameters)
   }
 
-  setFramesetHash(frameset_hash, framesets='') {
+  setFramesetHash(frameset_hash, framesets='', when_done=(()=>{})) {
     const the_url = this.getImageFromFrameset(frameset_hash, framesets)
     if (the_url === '') {
       this.setGlobalStateVar('frameset_hash', '')
@@ -445,6 +445,7 @@ class RedactApplication extends React.Component {
         image_height: this.height,
         frameset_hash: frameset_hash,
       })
+      when_done()
     }
     img.src = the_url
   }
@@ -1148,6 +1149,7 @@ class RedactApplication extends React.Component {
 
   addMovieAndSetActive(movie_url, movies, theCallback=(()=>{})) {
     this.addToCampaignMovies(movie_url)
+    let frameset_hash = ''
     let deepCopyMovies = movies
     if (
       movies[movie_url] &&
@@ -1155,15 +1157,18 @@ class RedactApplication extends React.Component {
       movies[movie_url]['frames'].length > 0
     ) {
       deepCopyMovies = JSON.parse(JSON.stringify(movies))
-      const hashes = this.getFramesetHashesInOrder()
-      this.setFramesetHash(hashes[0])
+      const hashes = this.getFramesetHashesInOrder(movies[movie_url]['framesets'])
+      frameset_hash = hashes[0]
       deepCopyMovies[movie_url]['frameset_hashes_in_order'] = hashes
     } 
     this.setState({
       movie_url: movie_url, 
       movies: movies,
     },
-    theCallback(movies[movie_url]['framesets'])
+      (() => {
+        this.setFramesetHash(frameset_hash)
+        theCallback(movies[movie_url]['framesets'])
+      })
     )
   }
 
@@ -1959,6 +1964,20 @@ class RedactApplication extends React.Component {
     }
   }
 
+  async loadRedactSingleResults(job, when_done=(()=>{})) {
+    const resp_data = JSON.parse(job.response_data)
+    const req_data = JSON.parse(job.request_data)
+    const movie_url = req_data['movie_url']
+    const frameset_hash = req_data['frameset_hash']
+    let deepCopyMovies = JSON.parse(JSON.stringify(this.state.movies))
+    const redacted_image = resp_data['redacted_image_url']
+    deepCopyMovies[movie_url]['framesets'][frameset_hash]['redacted_image'] = redacted_image
+    this.setState({
+      movies: deepCopyMovies,
+      movie_url: movie_url,
+    })
+  }
+
   async loadTelemetryResults(job, when_done=(()=>{})) {
     const responseJson = JSON.parse(job.response_data)
     const req_data = JSON.parse(job.request_data)
@@ -2078,6 +2097,8 @@ class RedactApplication extends React.Component {
         this.loadRenderSubsequenceResults(job, when_done)
 			} else if (job.app === 'redact' && job.operation === 'redact') {
         this.loadRedactResults(job, when_done)
+      } else if (job.app === 'redact' && job.operation === 'redact_single') {
+        this.loadRedactSingleResults(job, when_done)
 			} else if (job.app === 'parse' && job.operation === 'zip_movie') {
         this.loadZipMovieResults(job, when_done)
 			} else if (job.app === 'redact' && job.operation === 'illustrate') {

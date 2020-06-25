@@ -34,6 +34,7 @@ class ImagePanel extends React.Component {
     this.getCurrentTemplateMaskZones=this.getCurrentTemplateMaskZones.bind(this)
     this.getCurrentTemplateAnchors=this.getCurrentTemplateAnchors.bind(this)
     this.runTemplateRedactPipelineJob=this.runTemplateRedactPipelineJob.bind(this)
+    this.redactImage=this.redactImage.bind(this)
   }
 
   buildTemplateRedactPipelineObject(template_id, pipeline_name) {
@@ -189,6 +190,16 @@ class ImagePanel extends React.Component {
         after_loaded: () => {this.setMessage('ocr scan completed')},
         when_failed: () => {this.setMessage('ocr scan failed')},
       })
+
+    } else if (job_string === 'redact') {
+      const job_data = this.buildRedactJobdata(extra_data)
+      this.props.submitJob({
+        job_data: job_data, 
+        after_submit: () => {this.setMessage('redact job was submitted')}, 
+        cancel_after_loading: true, 
+        after_loaded: () => {this.setMessage('redaction completed')},
+        when_failed: () => {this.setMessage('redaction failed')},
+      })
     } else if (job_string === 'illustrate_box') {
       const job_data = this.buildIllustrateBoxJobdata(extra_data)
       this.props.submitJob({
@@ -209,6 +220,46 @@ class ImagePanel extends React.Component {
       })
     } 
   }  
+
+  redactImage()  {
+    const areas_to_redact = this.props.getRedactionFromFrameset()
+    if (areas_to_redact.length > 0) {
+      this.submitImageJob('redact')
+    } else {
+      this.setMessage('Nothing to redact has been specified')
+    }
+  }
+
+  buildRedactJobdata(extra_data) {
+    let job_data = {
+      request_data: {},
+    }
+    job_data['app'] = 'redact'
+    job_data['operation'] = 'redact_single'
+    job_data['description'] = 'redact image'
+    job_data['request_data']['movie_url'] = this.props.movie_url
+    let frameset_hash = this.props.getFramesetHashForImageUrl(this.props.getImageUrl())
+    job_data['request_data']['frameset_hash'] = frameset_hash
+    const image_url = this.props.getImageUrl()
+    job_data['request_data']['image_url'] = image_url
+    // I'd like to use true here, even coded it up.  Had to scrap it because, if we
+    //   rredact, then reset, then redact, the image comes through with the same
+    //   url.  That means the system doesn't know to display a new version of the image
+    job_data['request_data']['meta'] = {
+      preserve_working_dir_across_batch: false,
+      return_type: 'url',
+    }
+    job_data['request_data']['mask_method'] = this.props.mask_method
+
+    let frameset = this.props.movies[this.props.movie_url]['framesets'][frameset_hash]
+    let pass_arr = []
+    for (let i=0; i < frameset['areas_to_redact'].length; i++) {
+      let a2r = frameset['areas_to_redact'][i]
+      pass_arr.push(a2r)
+    }
+    job_data['request_data']['areas_to_redact'] = pass_arr
+    return job_data
+  }
 
   buildSingleUseOcrRule(last_click, current_click) {
     let ocr_rule = {}
@@ -670,6 +721,7 @@ class ImagePanel extends React.Component {
                 message={this.props.message}
                 setMode= {this.setMode}
                 getImageUrl={this.props.getImageUrl}
+                redactImage={this.redactImage}
                 setMessage={this.setMessage}
                 clearCurrentFramesetChanges={this.props.clearCurrentFramesetChanges}
                 submitImageJob={this.submitImageJob}
@@ -1524,6 +1576,20 @@ class BottomImageControls extends React.Component {
     this.props.setMode('illustrate', 'ill_box_1')
   }
 
+  buildRedactButton() {
+    if (this.props.getImageUrl() === '') {
+      return ''
+    }
+    return (
+      <button
+          className='btn btn-primary ml-2'
+          onClick={() => this.props.redactImage()}
+          href='./index.html' >
+        Redact
+      </button>
+    )
+  }
+
   buildIllustrateButton() {
     const image_url = this.props.getImageUrl()
     if (image_url === '') {
@@ -1588,6 +1654,7 @@ class BottomImageControls extends React.Component {
     const delete_button = this.buildDeleteButton()
     const reset_button = this.buildResetButton()
     const illustrate_button = this.buildIllustrateButton()
+    const redact_button = this.buildRedactButton()
 
     return (
     <div className='row pt-2 pb-2 bg-light rounded border-bottom border-left border-right'>
@@ -1597,6 +1664,10 @@ class BottomImageControls extends React.Component {
           {template_button}
           {reset_button}
           {illustrate_button}
+        </div>
+
+        <div className='col-lg-2 float-right'>
+          {redact_button}
         </div>
     </div>
     );
