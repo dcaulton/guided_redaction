@@ -34,6 +34,82 @@ class ImagePanel extends React.Component {
     this.currentImageIsTemplateAnchorImage=this.currentImageIsTemplateAnchorImage.bind(this)
     this.getCurrentTemplateMaskZones=this.getCurrentTemplateMaskZones.bind(this)
     this.getCurrentTemplateAnchors=this.getCurrentTemplateAnchors.bind(this)
+    this.runTemplateRedactPipelineJob=this.runTemplateRedactPipelineJob.bind(this)
+  }
+
+  buildTemplateRedactPipelineObject(template_id, pipeline_name) {
+    let node_metadata = {
+      'template': {}, 
+      'node': {},
+    }
+    const template = this.props.tier_1_scanners['template'][template_id]
+    node_metadata['template'][template_id] = template
+    const node_1 = {
+      id: '1',
+      name: 'template node',
+      type: 'template', 
+      entity_id: template_id,
+      scope: '',
+    }
+    const node_2 = {
+      id: '2',
+      name: 'redact node',
+      type: 'redact', 
+      entity_id: '',
+      scope: '',
+    }
+    node_metadata['node']['1'] = node_1
+    node_metadata['node']['2'] = node_2
+    const edges = {
+      '1': ['2'],
+    }
+    const pipeline = {
+      name: pipeline_name,
+      description: 'scan template and redact for template ' + template['name'],
+      attributes: {},
+      edges: edges,
+      node_metadata: node_metadata,
+      movies: {},
+    }
+    return pipeline
+  }
+
+  getPipelineForName(the_name) {
+    for (let i=0; i < Object.keys(this.props.pipelines).length; i++) {
+      const pipeline_id = Object.keys(this.props.pipelines)[i]
+      const pipeline = this.props.pipelines[pipeline_id]
+      if (pipeline['name'] === the_name) {
+        return pipeline
+      }
+    }
+  }
+
+//MAMA
+  runTemplateRedactPipelineJob(template_id) {
+    if (!Object.keys(this.props.tier_1_scanners['template']).includes(template_id)) {
+      this.setMessage('no template found for the specified id')
+      return
+    }
+    const one_frame_movies = this.buildMoviesForSingleFrame()
+    const input_obj = {
+      movies: one_frame_movies,
+    }
+
+    const pipeline_name = 'scan_template_and_redact_' + template_id.toString()
+    const pipeline = this.getPipelineForName(pipeline_name)
+    if (pipeline) {
+      console.log('found the pipeline')
+      this.props.dispatchPipeline(pipeline['id'], 'json_obj', input_obj)
+    } else {
+      console.log('no scan_template_and_redact pipeline found, making one')
+      const pipeline_obj = this.buildTemplateRedactPipelineObject(template_id, pipeline_name)
+      console.log('built pipeline obj')
+      console.log(pipeline_obj)
+      this.props.savePipelineToDatabase(
+        pipeline_obj,
+        ((response) => {this.props.dispatchPipeline(response['pipeline_id'], 'json_obj', input_obj)})
+      )
+    }
   }
 
   getCurrentTemplateMaskZones() {
@@ -693,6 +769,7 @@ class ImagePanel extends React.Component {
                 submitImageJob={this.submitImageJob}
                 setIllustrateShaded={this.setIllustrateShaded}
                 newImage={this.newImage}
+                runTemplateRedactPipelineJob={this.runTemplateRedactPipelineJob}
               />
 
           </div>
@@ -1425,7 +1502,8 @@ class BottomImageControls extends React.Component {
             return (
               <button className='dropdown-item'
                   key={index}
-                  onClick={() => this.props.submitImageJob('template_match', this.props.templates[value]['id'])}
+//                  onClick={() => this.props.submitImageJob('template_match', this.props.templates[value]['id'])}
+                  onClick={() => this.props.runTemplateRedactPipelineJob(this.props.templates[value]['id'])}
                   href='.'
               >
                 Run {this.props.templates[value]['name']}

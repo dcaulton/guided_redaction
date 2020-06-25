@@ -2190,7 +2190,7 @@ class RedactApplication extends React.Component {
     })
   }
 
-  async dispatchPipeline(the_uuid, scope, extra_data, when_done=(()=>{})) {
+  async dispatchPipeline(the_uuid, scope='json_obj', extra_data={}, when_done=(()=>{})) {
     let the_url = this.getUrl('pipelines_url') + '/dispatch'
     let build_movies = {}
     let specified_input = {}
@@ -2201,6 +2201,9 @@ class RedactApplication extends React.Component {
       specified_input['movies'] = build_movies
     } else if (scope === 'current_movie') {
       build_movies[this.state.movie_url] = {}
+      specified_input['movies'] = build_movies
+    } else if (scope === 'current_movie_as_frames') {
+      build_movies[this.state.movie_url] = this.state.movies[this.state.movie_url]
       specified_input['movies'] = build_movies
     } else if (scope === 'json_obj') {
       specified_input = extra_data
@@ -3007,6 +3010,9 @@ class RedactApplication extends React.Component {
                 tier_1_scanner_current_ids={this.state.tier_1_scanner_current_ids}
                 cropImage={this.cropImage}
                 getAndSaveUser={this.getAndSaveUser}
+                dispatchPipeline={this.dispatchPipeline}
+                pipelines={this.state.pipelines}
+                savePipelineToDatabase={this.savePipelineToDatabase}
               />
             </Route>
           </Switch>

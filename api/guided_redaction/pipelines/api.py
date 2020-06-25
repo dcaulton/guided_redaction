@@ -366,7 +366,7 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
         parent_request_data = json.loads(parent_job.request_data)
         desc_string = 'scan ' + scanner_type + ' threaded '
         build_scanners = {}
-        scanner = content['node_metadata'][scanner_type][node['entity_id']]
+        scanner = content['node_metadata']['tier_1_scanners'][scanner_type][node['entity_id']]
         build_scanners[node['entity_id']] = scanner
         build_movies = {}
 
@@ -390,9 +390,9 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
             'movies': build_movies,
             'scan_level': scanner['scan_level'],
             'id': scanner['id'],
-            'tier_one_scanners': {},
+            'tier_1_scanners': {},
         }
-        build_request_data['tier_one_scanners'][scanner_type] = build_scanners
+        build_request_data['tier_1_scanners'][scanner_type] = build_scanners
         if scanner_type == 'template':
             operation = 'scan_template_threaded'
         elif scanner_type == 'selected_area':

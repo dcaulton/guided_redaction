@@ -22,10 +22,12 @@ class PipelineControls extends React.Component {
       edges: {},
       node_metadata: {
         'node': {},
-        'template': {},
-        'selected_area': {},
-        'ocr': {},
-        'telemetry': {},
+        'tier_1_scanners': {
+          'template': {},
+          'selected_area': {},
+          'ocr': {},
+          'telemetry': {},
+        },
         'redact': {},
         'split_and_hash': {},
         'secure_files_import': {},
@@ -98,13 +100,13 @@ class PipelineControls extends React.Component {
     const node = deepCopyNodeMetadata['node'][node_id]
     // TODO can this become a two liner now?
     if (node['type'] === 'template') {
-      deepCopyNodeMetadata['template'][value] = this.props.tier_1_scanners['template'][value]
+      deepCopyNodeMetadata['tier_1_scanners']['template'][value] = this.props.tier_1_scanners['template'][value]
     } else if (node['type'] === 'selected_area') {
-      deepCopyNodeMetadata['selected_area'][value] = this.props.tier_1_scanners['selected_area'][value]
+      deepCopyNodeMetadata['tier_1_scanners']['selected_area'][value] = this.props.tier_1_scanners['selected_area'][value]
     } else if (node['type'] === 'ocr') {
-      deepCopyNodeMetadata['ocr'][value] = this.props.tier_1_scanners['ocr'][value]
+      deepCopyNodeMetadata['tier_1_scanners']['ocr'][value] = this.props.tier_1_scanners['ocr'][value]
     } else if (node['type'] === 'telemetry') {
-      deepCopyNodeMetadata['telemetry'][value] = this.props.tier_1_scanners['telemetry'][value]
+      deepCopyNodeMetadata['tier_1_scanners']['telemetry'][value] = this.props.tier_1_scanners['telemetry'][value]
     }
   }
 
@@ -151,6 +153,7 @@ class PipelineControls extends React.Component {
         id: pipeline_id,
         unsaved_changes: false,
       })
+      this.props.setGlobalStateVar('current_pipeline_id', pipeline_id)
       this.props.displayInsightsMessage('pipeline was successfully saved')
     }
   }
@@ -216,6 +219,18 @@ class PipelineControls extends React.Component {
         node_metadata: content['node_metadata'],
         unsaved_changes: false,
       })
+      if (Object.keys(content['node_metadata']).includes('tier_1_scanners')) {
+        let deepCopyT1Scanners = JSON.parse(JSON.stringify(this.props.tier_1_scanners))
+        for (let i=0; i < Object.keys(content['node_metadata']['tier_1_scanners']).length; i++) {
+          const scanner_type = Object.keys(content['node_metadata']['tier_1_scanners'])[i]
+          const these_scanners = content['node_metadata']['tier_1_scanners'][scanner_type]
+          for (let j=0; j < Object.keys(these_scanners).length; j++) {
+            const scanner_id = Object.keys(these_scanners)[j]
+            deepCopyT1Scanners[scanner_type][scanner_id] = these_scanners[scanner_id]
+          }
+        }
+        this.props.setGlobalStateVar('tier_1_scanners', deepCopyT1Scanners) 
+      }
     }
     this.props.setGlobalStateVar('current_pipeline_id', pipeline_id)
     this.props.displayInsightsMessage('pipeline has been loaded')
@@ -286,6 +301,12 @@ class PipelineControls extends React.Component {
               onClick={() => this.doRun('all_movies')}
           >
             All Movies
+          </button>
+          <button
+              className='dropdown-item'
+              onClick={() => this.doRun('current_movie_as_frames')}
+          >
+            Selected Movie as Frames
           </button>
           <button
               className='dropdown-item'
@@ -591,9 +612,9 @@ class NodeCard extends React.Component {
         )
         added_ids.push(scanner_id)
       }
-      for (let i=0; i < Object.keys(this.props.node_metadata['template']).length; i++) {
-        const scanner_id = Object.keys(this.props.node_metadata['template'])[i]
-        const scanner= this.props.node_metadata['template'][scanner_id]
+      for (let i=0; i < Object.keys(this.props.node_metadata['tier_1_scanners']['template']).length; i++) {
+        const scanner_id = Object.keys(this.props.node_metadata['tier_1_scanners']['template'])[i]
+        const scanner= this.props.node_metadata['tier_1_scanners']['template'][scanner_id]
         if (!added_ids.includes(scanner_id)) {
           options.push(
             <option value={scanner_id} key={scanner_id}>{scanner['name']}</option>
@@ -609,9 +630,9 @@ class NodeCard extends React.Component {
         )
         added_ids.push(scanner_id)
       }
-      for (let i=0; i < Object.keys(this.props.node_metadata['selected_area']).length; i++) {
-        const scanner_id = Object.keys(this.props.node_metadata['selected_area'])[i]
-        const scanner= this.props.node_metadata['selected_area'][scanner_id]
+      for (let i=0; i < Object.keys(this.props.node_metadata['tier_1_scanners']['selected_area']).length; i++) {
+        const scanner_id = Object.keys(this.props.node_metadata['tier_1_scanners']['selected_area'])[i]
+        const scanner= this.props.node_metadata['tier_1_scanners']['selected_area'][scanner_id]
         if (!added_ids.includes(scanner_id)) {
           options.push(
             <option value={scanner_id} key={scanner_id}>{scanner['name']}</option>
@@ -627,9 +648,9 @@ class NodeCard extends React.Component {
         )
         added_ids.push(scanner_id)
       }
-      for (let i=0; i < Object.keys(this.props.node_metadata['ocr']).length; i++) {
-        const scanner_id = Object.keys(this.props.node_metadata['ocr'])[i]
-        const scanner= this.props.node_metadata['ocr'][scanner_id]
+      for (let i=0; i < Object.keys(this.props.node_metadata['tier_1_scanners']['ocr']).length; i++) {
+        const scanner_id = Object.keys(this.props.node_metadata['tier_1_scanners']['ocr'])[i]
+        const scanner= this.props.node_metadata['tier_1_scanners']['ocr'][scanner_id]
         if (!added_ids.includes(scanner_id)) {
           options.push(
             <option value={scanner_id} key={scanner_id}>{scanner['name']}</option>
@@ -645,9 +666,9 @@ class NodeCard extends React.Component {
         )
         added_ids.push(scanner_id)
       }
-      for (let i=0; i < Object.keys(this.props.node_metadata['telemetry']).length; i++) {
-        const scanner_id = Object.keys(this.props.node_metadata['telemetry'])[i]
-        const scanner= this.props.node_metadata['telemetry'][scanner_id]
+      for (let i=0; i < Object.keys(this.props.node_metadata['tier_1_scanners']['telemetry']).length; i++) {
+        const scanner_id = Object.keys(this.props.node_metadata['tier_1_scanners']['telemetry'])[i]
+        const scanner= this.props.node_metadata['tier_1_scanners']['telemetry'][scanner_id]
         if (!added_ids.includes(scanner_id)) {
           options.push(
             <option value={scanner_id} key={scanner_id}>{scanner['name']}</option>
