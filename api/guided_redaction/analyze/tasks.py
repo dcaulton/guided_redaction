@@ -35,6 +35,59 @@ from guided_redaction.analyze.api import (
 )
 
 
+def get_area_to_redact_from_template_match(mask_zone, anchor_id, template, anchor_found_coords, anchor_found_scale):
+    for x in template['anchors']:
+        if x['id'] == anchor_id:
+            anchor = x
+    if not anchor: 
+        print('cant find anchor in template match')
+        return
+    anchor_spec_coords = anchor['start']
+    mz_size = (
+        int((mask_zone['end'][0] - mask_zone['start'][0]) / anchor_found_scale),
+        int((mask_zone['end'][1] - mask_zone['start'][1]) / anchor_found_scale)
+    )
+    mz_spec_offset = [
+        mask_zone['start'][0] - anchor_spec_coords[0],
+        mask_zone['start'][1] - anchor_spec_coords[1]
+    ]
+    mz_spec_offset_scaled = [
+        mz_spec_offset[0] / anchor_found_scale,
+        mz_spec_offset[1] / anchor_found_scale
+    ]
+    new_start = (
+        int(anchor_found_coords[0] + mz_spec_offset_scaled[0]),
+        int(anchor_found_coords[1] + mz_spec_offset_scaled[1])
+    )
+    return (new_start, mz_size)
+
+def convert_to_tier_2(response_data, template):
+    print('converting to tier 2')
+    for movie_url in response_data['movies']:
+        for frameset_hash in response_data['movies'][movie_url]['framesets']:
+            frameset = response_data['movies'][movie_url]['framesets'][frameset_hash]
+            for anchor_id in frameset:
+                match_obj = frameset[anchor_id]
+                anchor_found_scale = match_obj['scale']
+                anchor_found_coords = match_obj['location']
+                mask_zones = get_mask_zones_for_anchor(template, anchor_id)
+                for mask_zone in mask_zones:
+                    (new_location, new_size) = get_area_to_redact_from_template_match(
+                        mask_zone, anchor_id, template, anchor_found_coords, anchor_found_scale
+                    )
+                    match_obj['location'] = new_location
+                    match_obj['size'] = new_size
+
+def get_mask_zones_for_anchor(template, anchor_id):
+    mask_zones = []
+    for mask_zone in template['mask_zones']:
+        if 'anchor_id' in mask_zone:
+            if mask_zone['anchor_id'] == anchor_id:
+                mask_zones.append(mask_zone)
+        else:
+            mask_zones.append(mask_zone)
+    return mask_zones
+
 @shared_task
 def scan_template(job_uuid):
     if Job.objects.filter(pk=job_uuid).exists():
@@ -49,12 +102,12 @@ def scan_template(job_uuid):
         job = Job.objects.get(pk=job_uuid)
         request = json.loads(job.request_data)
         template_id = list(request['tier_1_scanners']['template'].keys())[0]
-        if ('match_method' not in request['tier_1_scanners']['template'][template_id] or
-            request['tier_1_scanners']['template'][template_id]['match_method'] == 'any'):
-            job.response_data = json.dumps(response.data)
-        elif request['tier_1_scanners']['template'][template_id]['match_method'] == 'all':
+        template = request['tier_1_scanners']['template'][template_id]
+        if 'match_method' not in template or template['match_method'] == 'any':
+            jrd = response.data
+        elif template['match_method'] == 'all':
             built_response_data = {}
-            all_anchor_keys = set([x['id'] for x in request['tier_1_scanners']['template'][template_id]['anchors']])
+            all_anchor_keys = set([x['id'] for x in template['anchors']])
             raw_response = response.data
             for movie_url in raw_response.keys():
                 built_response_data[movie_url] = {}
@@ -65,7 +118,10 @@ def scan_template(job_uuid):
                         built_response_data[movie_url][frameset_hash] = \
                             raw_response[movie_url][frameset_hash]
             # TODO get this to respect save_match_statistics
-            job.response_data = json.dumps(built_response_data)
+            jrd = built_response_data
+        if template['scan_level'] == 'tier_2':
+            convert_to_tier_2(jrd, template)
+        job.response_data = json.dumps(jrd)
         job.status = 'success'
         job.save()
 

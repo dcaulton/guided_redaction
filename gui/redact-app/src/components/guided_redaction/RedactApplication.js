@@ -434,6 +434,9 @@ class RedactApplication extends React.Component {
       this.setGlobalStateVar('frameset_hash', '')
       return
     }
+    if (!this.state.movies) {
+      return
+    }
     if (!frameset_hash) {
       frameset_hash = this.makeNewFrameFrameset(the_url) 
     }
@@ -1230,57 +1233,6 @@ class RedactApplication extends React.Component {
     return mask_zones
   }
 
-  getAreaToRedactFromTemplateMatch(mask_zone, anchor_id, template, anchor_found_coords, anchor_found_scale) {
-    let anchor = ''
-    for (let i=0; i < template['anchors'].length; i++) {
-      if (template['anchors'][i]['id'] === anchor_id) {
-        anchor = template['anchors'][i]
-      }
-    }
-    const anchor_spec_coords = anchor['start']
-
-    const mz_size = [
-        (mask_zone['end'][0] - mask_zone['start'][0]) / anchor_found_scale,
-        (mask_zone['end'][1] - mask_zone['start'][1]) / anchor_found_scale,
-    ]
-    let mz_spec_offset = [
-        mask_zone['start'][0] - anchor_spec_coords[0],
-        mask_zone['start'][1] - anchor_spec_coords[1],
-    ]
-    let mz_spec_offset_scaled = [
-        mz_spec_offset[0] / anchor_found_scale,
-        mz_spec_offset[1] / anchor_found_scale
-    ]
-
-    const new_start = [
-        anchor_found_coords[0] + mz_spec_offset_scaled[0],
-        anchor_found_coords[1] + mz_spec_offset_scaled[1],
-    ]
-
-    const new_end = [
-        new_start[0] + mz_size[0],
-        new_start[1] + mz_size[1]
-    ]
-    const new_area_to_redact = {
-      'start': new_start,
-      'end': new_end,
-      'source': 'template: '+template['id'],
-    }
-    return new_area_to_redact
-  }
-
-  getTemplateForAnchor(templates, anchor_id) {
-    for (let i=0; i < Object.keys(templates).length; i++) {
-      const template_id = Object.keys(templates)[i]
-      const template = templates[template_id]
-      for (let j=0; j < template['anchors'].length; j++) {
-        if (template['anchors'][j].id === anchor_id) {
-          return templates[template_id]
-        }
-      }
-    }
-  }
-
   loadTier1ScannersFromTier1Request(scanner_type, request_data, force_add=false) {
     let scanner_id = ''
     let something_changed = false
@@ -1512,24 +1464,21 @@ class RedactApplication extends React.Component {
       for (let j = 0; j < Object.keys(response_data['movies'][movie_url]['framesets']).length; j++) {
         const frameset_hash = Object.keys(response_data['movies'][movie_url]['framesets'])[j]
         const frameset = response_data['movies'][movie_url]['framesets'][frameset_hash]
-        for (let k = 0; k < Object.keys(frameset).length; k++) {
+        let deepCopyFrameset = deepCopyMovies[movie_url]['framesets'][frameset_hash]
+        if (!Object.keys(deepCopyFrameset).includes('areas_to_redact')) {
+          deepCopyFrameset['areas_to_redact'] = []
+        }
+        for (let k=0; k < Object.keys(frameset).length; k++) {
           const anchor_id = Object.keys(frameset)[k]
-          const anchor_found_coords = frameset[anchor_id]['location']
-          const anchor_found_scale = frameset[anchor_id]['scale']
-          const template = this.getTemplateForAnchor(request_data['tier_1_scanners']['template'], anchor_id) 
-          const mask_zones = this.getMaskZonesForAnchor(template, anchor_id)
-          for (let m=0; m < mask_zones.length; m++) {
-            const mask_zone = mask_zones[m]
-            const area_to_redact = this.getAreaToRedactFromTemplateMatch(
-                mask_zone, anchor_id, template, anchor_found_coords, anchor_found_scale
-            ) 
-            let deepCopyFrameset = deepCopyMovies[movie_url]['framesets'][frameset_hash]
-            if (!Object.keys(deepCopyFrameset).includes('areas_to_redact')) {
-              deepCopyFrameset['areas_to_redact'] = []
-            }
-            deepCopyFrameset['areas_to_redact'].push(area_to_redact)
-            something_changed = true
+          const match_obj = frameset[anchor_id]
+          const area_to_redact = {
+            start: match_obj['start'],
+            end: match_obj['end'],
+            source: 'template',
+            id: anchor_id,
           }
+          deepCopyFrameset['areas_to_redact'].push(area_to_redact)
+          something_changed = true
         }
       }
     }
