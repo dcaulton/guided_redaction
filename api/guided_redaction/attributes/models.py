@@ -11,3 +11,12 @@ class Attribute(models.Model):
     job = models.ForeignKey('jobs.Job', on_delete=models.CASCADE, null=True)
     workbook = models.ForeignKey('workbooks.Workbook', on_delete=models.CASCADE, null=True)
     pipeline = models.ForeignKey('pipelines.Pipeline', on_delete=models.CASCADE, null=True)
+
+    def __str__(self):
+        disp_hash = {
+            'id': str(self.id),
+            'name': self.name,
+            'value': self.value,
+            'job_id': self.job.id,
+        }
+        return disp_hash.__str__()

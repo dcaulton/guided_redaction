@@ -16,6 +16,9 @@ from guided_redaction.pipelines import tasks as pipelines_tasks
 import json
 import pytz
 import math
+from guided_redaction.utils.task_shared import (
+    get_job_owner,
+)
 
 
 def get_job_file_dirs_recursive(job):
@@ -204,7 +207,7 @@ class JobsViewSet(viewsets.ViewSet):
             pretty_time = self.pretty_date(job.created_on)
             wall_clock_run_time = str(job.updated - job.created_on)
 
-            owner = job.get_owner()
+            owner = get_job_owner(job)
             if user_id and owner != user_id:
                 continue
             if desired_cv_worker_id:
@@ -270,7 +273,7 @@ class JobsViewSet(viewsets.ViewSet):
             'children': child_ids,
         }
 
-        owner = job.get_owner()
+        owner = get_job_owner(job)
         attrs = {}
         if Attribute.objects.filter(job=job).exists():
             attributes = Attribute.objects.filter(job=job)

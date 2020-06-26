@@ -1,7 +1,21 @@
 from guided_redaction.attributes.models import Attribute
 
+def get_job_ancestor_ids(job):
+    ancestor_ids = [str(job.id)]
+    while job.parent:
+        ancestor_ids.append(str(job.parent.id))
+        job = job.parent
+    return ancestor_ids
+
+def get_job_owner(job):
+    ancestor_ids = get_job_ancestor_ids(job)
+    for a in Attribute.objects.filter(name='user_id'):
+        if str(a.job_id) in ancestor_ids:
+            return a.value
+    return ''
+
 def build_file_directory_user_attributes_from_movies(job, response_data):
-    owner = job.get_owner()
+    owner = get_job_owner(job)
     documented_directories = [a.value for a in Attribute.objects.filter(name='file_dir_user')]
 
     if 'movies' in response_data:

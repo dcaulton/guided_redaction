@@ -102,12 +102,9 @@ class ImagePanel extends React.Component {
     const pipeline_name = 'scan_template_and_redact_' + template_id.toString()
     const pipeline = this.getPipelineForName(pipeline_name)
     if (pipeline) {
-      console.log('found the pipeline')
       this.props.dispatchPipeline(pipeline['id'], 'json_obj', input_obj)
     } else {
       const pipeline_obj = this.buildTemplateRedactPipelineObject(template_id, pipeline_name)
-      console.log('built pipeline obj')
-      console.log(pipeline_obj)
       this.props.savePipelineToDatabase(
         pipeline_obj,
         ((response) => {this.props.dispatchPipeline(response['pipeline_id'], 'json_obj', input_obj)})

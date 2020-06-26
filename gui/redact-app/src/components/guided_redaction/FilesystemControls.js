@@ -24,7 +24,7 @@ class FilesystemControls extends React.Component {
     return (
       <div key='99999' className='row font-weight-bold'>
         <div className='col-lg-4'>
-          directory name
+          directory name / owner
         </div>
         <div className='col-lg-3'>
           files
@@ -94,12 +94,20 @@ class FilesystemControls extends React.Component {
           const parts = value.split('/')
           const file_uuid = parts[parts.length-1]
           let files_count= this.props.files['files'][value]['files'].length
+          let owner = ''
+          if (Object.keys(this.props.files['files'][value]).includes('owner')) {
+            owner = this.props.files['files'][value]['owner']
+          }
+
           let files_count_message = files_count.toString() + ' files'
 
           return (
             <div key={index} className='row border-top mt-2'>
               <div className='col-lg-4'>
                 {file_uuid}
+                <br />
+                <br />
+                {owner}
               </div>
               <div className='col-lg-3'>
                 {files_count_message}

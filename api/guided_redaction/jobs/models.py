@@ -43,12 +43,6 @@ class Job(models.Model):
                 keep_attr.save()
         super(Job, self).delete()
 
-    def get_owner(self):
-        if Attribute.objects.filter(job=self).filter(name='user_id').exists():
-            attribute = Attribute.objects.filter(job=self).filter(name='user_id').first()
-            return attribute.value
-        return ''
-
     def add_owner(self, owner_id):
         Attribute(
             name='user_id',

@@ -339,6 +339,8 @@ class RedactApplication extends React.Component {
       return api_server_url + 'v1/files'
     } else if (url_name === 'pipelines_url') {
       return api_server_url + 'v1/pipelines'
+    } else if (url_name === 'attributes_url') {
+      return api_server_url + 'v1/attributes'
     } else if (url_name === 'version_url') {
       return api_server_url + 'v1/files/get-version'
     }
@@ -2154,6 +2156,47 @@ class RedactApplication extends React.Component {
     })
   }
 
+  async getAttributes() {
+    let the_url = this.getUrl('attributes_url')
+    the_url += '?name=file_dir_user'
+    await fetch(the_url, {
+      method: 'GET',
+      headers: this.buildJsonHeaders(),
+    })
+    .then((response) => response.json())
+    .then((responseJson) => {
+      if (Object.keys(responseJson).includes('attributes')) {
+        let there_were_changes = false
+        let already_considered_dirs = []
+        let deepCopyFiles= JSON.parse(JSON.stringify(this.state.files))
+        for (let i=0; i < responseJson['attributes'].length; i++) {
+          const attribute = responseJson['attributes'][i]
+
+          const dirname_uuid = attribute['value'].split(':')[0]
+          const username = attribute['value'].split(':')[1]
+          if (already_considered_dirs.includes(dirname_uuid)) {
+            continue
+          }
+          already_considered_dirs.push(dirname_uuid)
+          for (let j=0; j < Object.keys(this.state.files['files']).length; j++) {
+            const file_path = Object.keys(this.state.files['files'])[j]
+            if (file_path.indexOf(dirname_uuid) > -1) {
+              deepCopyFiles['files'][file_path]['owner'] = username
+              there_were_changes = true
+            } 
+          }
+        }
+        if (there_were_changes) {
+          this.setGlobalStateVar('files', deepCopyFiles)
+        }
+
+      }
+    })
+    .catch((error) => {
+      console.error(error);
+    })
+  }
+
   async dispatchPipeline(the_uuid, scope='json_obj', extra_data={}, when_done=(()=>{})) {
     let the_url = this.getUrl('pipelines_url') + '/dispatch'
     let build_movies = {}
@@ -2249,6 +2292,7 @@ class RedactApplication extends React.Component {
     .then((response) => response.json())
     .then((responseJson) => {
       this.setGlobalStateVar('files', responseJson)
+      this.getAttributes()
     })
     .catch((error) => {
       console.error(error);
