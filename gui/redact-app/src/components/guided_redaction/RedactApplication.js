@@ -36,6 +36,7 @@ class RedactApplication extends React.Component {
       movie_sets: {},
       annotations: {},
       jobs: [],
+      jobs_last_checked: '',
       scanners: [],
       files: {},
       subsequences: {},
@@ -239,9 +240,6 @@ class RedactApplication extends React.Component {
   }
 
   afterIdFetched(user_id) {
-    if (!user_id) {
-      return
-    }
     const user_classes = this.getUserClasses(user_id)
     let is_superuser = false
     if (user_classes.includes('superuser')) {
@@ -459,10 +457,13 @@ class RedactApplication extends React.Component {
     try {
       await(this.props.whoAmI.getUser())
       .then((user_id) => {
+        console.log('guided redaction: whoami call returned, user id is ', user_id)
         when_done(user_id)
       })
     }
     catch(err) {
+      console.log('gr abend while running whoAmI')
+      when_done('')
     }
   }
 
@@ -799,25 +800,36 @@ class RedactApplication extends React.Component {
   }
 
   checkForJobs(user_id=null) {
+    let last_checked = new Date(1990, 1, 1, 12, 30, 0)
+    if (this.state.jobs_last_checked) {
+      last_checked = this.state.jobs_last_checked
+    }
+    const now = new Date()
+    const secs_since_last_check = (now - last_checked) / 1000
+    if (secs_since_last_check < 2) {
+      console.log('checking jobs too soon')
+      return
+    }
+
+    this.getJobs(user_id)
     const jobIdsToCheckFor = Object.keys(this.state.whenJobLoaded)
-    if (jobIdsToCheckFor.length) {
-      this.getJobs(user_id)
-      for (let index in this.state.jobs) {
-        const job = this.state.jobs[index]
-        if (this.isAttachedJob(job)) {
-          this.handleAttachedJobUpdate(job)
-        }
-        if (jobIdsToCheckFor.includes(job['id'])) {
-          if (job['status'] === 'success') {
-            const callback = this.state.whenJobLoaded[job['id']]['callback']
-            this.loadJobResults(job['id'], callback)
-            if (callback) {
-              callback()
-            }
+
+    for (let index in this.state.jobs) {
+      const job = this.state.jobs[index]
+      if (this.isAttachedJob(job)) {
+        this.handleAttachedJobUpdate(job)
+      }
+      if (jobIdsToCheckFor.includes(job['id'])) {
+        if (job['status'] === 'success') {
+          const callback = this.state.whenJobLoaded[job['id']]['callback']
+          this.loadJobResults(job['id'], callback)
+          if (callback) {
+            callback()
           }
         }
       }
     }
+    this.setGlobalStateVar('jobs_last_checked', now)
     setTimeout(this.checkForJobs, 2000);
   }
 
@@ -2073,7 +2085,7 @@ class RedactApplication extends React.Component {
     })
   }
 
-  async getJobs(user_id=null) {
+  async getJobs(user_id='') {
     let the_url = this.getUrl('jobs_url')
     the_url += '?x=1'
     if (this.state.current_workbook_id) {
@@ -2082,9 +2094,9 @@ class RedactApplication extends React.Component {
     if (user_id) {
         the_url += '&user_id=' + user_id
     } else {
-      if (this.state.user) {
+      if (this.state.user.id != null) {
         the_url += '&user_id=' + this.state.user['id']
-      }
+      } 
     }
     await fetch(the_url, {
       method: 'GET',

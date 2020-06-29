@@ -503,6 +503,30 @@ class ComposePanel extends React.Component {
           <div className='spinner-border' role='status' />
         </div>
       )
+    } else if (
+        this.props.attached_job['id'] && 
+        this.props.attached_job['status'] === 'success'
+    ) {
+      return (
+        <div
+            className='h1 text-center'
+            style={the_style}
+        >
+          Movie split completed, loading...
+        </div>
+      )
+    } else if (
+        this.props.attached_job['id'] && 
+        this.props.attached_job['status'] === 'failed'
+    ) {
+      return (
+        <div
+            className='h1 text-center'
+            style={the_style}
+        >
+          Movie split failed
+        </div>
+      )
     } else {
       return (
         <div
@@ -586,7 +610,7 @@ class ComposePanel extends React.Component {
 
           <div className='col-lg-3 mh-100'>
             <div className='row mt-3 ml-2'>
-              USED TO BE TELEMETRY STUFF
+              .
             </div>
           </div>
 
