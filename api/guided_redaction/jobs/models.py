@@ -38,7 +38,7 @@ class Job(models.Model):
     def delete(self):
         keep_attrs = Attribute.objects.filter(name='file_dir_user').filter(job=self)
         if keep_attrs:
-            for keep_attr in keep_attr:
+            for keep_attr in keep_attrs:
                 keep_attr.job = None
                 keep_attr.save()
         super(Job, self).delete()
