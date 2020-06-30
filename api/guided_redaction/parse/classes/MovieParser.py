@@ -17,6 +17,7 @@ class MovieParser:
     scan_method = ""
     image_hash_size = 8
     frameset_discriminator = 'gray8'
+    hash_to_grayscale = True
 
     def __init__(self, args):
         self.output_frames_per_second = args.get("ofps", 1)
@@ -30,6 +31,8 @@ class MovieParser:
         self.use_same_directory= args.get('use_same_directory', False)
         self.frameset_discriminator= args.get("frameset_discriminator")
         self.image_request_verify_headers = args.get("image_request_verify_headers")
+        if 'hash_to_grayscale' in args: 
+            self.hash_to_grayscale = args.get("hash_to_grayscale")
 
         if not self.frameset_discriminator:
           self.frameset_discriminator = 'gray8'
@@ -105,7 +108,9 @@ class MovieParser:
         return unique_frames
 
     def advance_one_frame(self, image, image_url, unique_frames):
-        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        gray = image
+        if self.hash_to_grayscale:
+            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         current_hash = self.get_hash(gray)
         if current_hash in unique_frames.keys():
             unique_frames[current_hash].append(image_url)

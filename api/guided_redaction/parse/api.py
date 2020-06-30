@@ -324,6 +324,9 @@ class ParseViewSetHashFrames(viewsets.ViewSet):
         movie_url = list(request_data['movies'].keys())[0]
         frames = request_data['movies'][movie_url]['frames']
         disc = request_data['movies'][movie_url]['frameset_discriminator']
+        hash_to_grayscale = True
+        if settings.HASH_IMAGES_IN_COLOR:
+            hash_to_grayscale = False
         parser = MovieParser(
             {
                 "debug": False,
@@ -334,6 +337,7 @@ class ParseViewSetHashFrames(viewsets.ViewSet):
                 "file_writer": {},
                 "frameset_discriminator": disc,
                 "image_request_verify_headers": settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
+                'hash_to_grayscale': hash_to_grayscale,
             }
         )
         
