@@ -1017,6 +1017,10 @@ class SessionControls extends React.Component {
     if (this.props.preserveAllJobs) {
       preserve_all_jobs_checked = 'checked'
     }
+    let suppress_job_polling_checked = ''
+    if (this.props.suppress_job_polling) {
+      suppress_job_polling_checked = 'checked'
+    }
     let preserve_movie_audio_checked = ''
     if (this.props.preserve_movie_audio) {
       preserve_movie_audio_checked = 'checked'
@@ -1102,6 +1106,31 @@ class SessionControls extends React.Component {
                     onChange={() => this.props.toggleGlobalStateVar('preserveAllJobs')}
                   />
                   Preserve All Jobs (typically for troubleshooting)
+                </div>
+
+                <div className='row mt-3 bg-light rounded'>
+                  <input
+                    className='ml-2 mr-2 mt-1'
+                    id='toggle_suppress_job_polling'
+                    checked={suppress_job_polling_checked}
+                    type='checkbox'
+                    onChange={() => this.props.toggleGlobalStateVar('suppress_job_polling')}
+                  />
+                  Suppress Job Polling
+                </div>
+
+                <div className='row mt-3 bg-light rounded'>
+                  <div className='d-inline'>
+                    Job Polling Interval (seconds): 
+                  </div>
+                  <div className='d-inline ml-2'>
+                    <input 
+                        id='session_job_polling_interval_seconds'
+                        value={this.props.job_polling_interval_seconds}
+                        onChange={(event) => this.props.setGlobalStateVar('job_polling_interval_seconds', event.target.value)}
+                        size='5'
+                    />
+                  </div>
                 </div>
 
                 <div className='row mt-3 bg-light rounded'>

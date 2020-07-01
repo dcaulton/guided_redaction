@@ -413,6 +413,8 @@ class BottomInsightsControls extends React.Component {
           maximize={this.props.maximize}
           cv_workers={this.props.cv_workers}
           queryCvWorker={this.props.queryCvWorker}
+          suppress_job_polling={this.props.suppress_job_polling}
+          job_polling_interval_seconds={this.props.job_polling_interval_seconds}
         />
 
       </div>

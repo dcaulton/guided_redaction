@@ -37,6 +37,8 @@ class RedactApplication extends React.Component {
       annotations: {},
       jobs: [],
       jobs_last_checked: '',
+      suppress_job_polling: false,
+      job_polling_interval_seconds: 2,
       scanners: [],
       files: {},
       subsequences: {},
@@ -800,6 +802,9 @@ class RedactApplication extends React.Component {
   }
 
   checkForJobs(user_id=null) {
+    if (this.state.suppress_job_polling) {
+      return
+    }
     let last_checked = new Date(1990, 1, 1, 12, 30, 0)
     if (this.state.jobs_last_checked) {
       last_checked = this.state.jobs_last_checked
@@ -830,7 +835,7 @@ class RedactApplication extends React.Component {
       }
     }
     this.setGlobalStateVar('jobs_last_checked', now)
-    setTimeout(this.checkForJobs, 2000);
+    setTimeout(this.checkForJobs, this.state.job_polling_interval_seconds * 1000);
   }
 
   updateGlobalState(the_data) {
@@ -2425,7 +2430,7 @@ class RedactApplication extends React.Component {
   async getWorkbooks() {
     let the_url = this.getUrl('workbooks_url')
     the_url += '?x=1'
-    if (this.state.user) {
+    if (this.state.user['id']) {
       the_url += '&user_id=' + this.state.user['id']
     }
     await fetch(the_url, {
@@ -2456,7 +2461,7 @@ class RedactApplication extends React.Component {
 
   async saveWorkbook(when_done=(()=>{})) {
     let current_user = ''
-    if (this.state.user && Object.keys(this.state.user).includes('id')) {
+    if (this.state.user['id']) {
       current_user = this.state.user['id']
     }
     await fetch(this.getUrl('workbooks_url'), {
@@ -2996,6 +3001,8 @@ class RedactApplication extends React.Component {
                 getAndSaveUser={this.getAndSaveUser}
                 queryCvWorker={this.queryCvWorker}
                 dispatchFetchSplitAndHash={this.dispatchFetchSplitAndHash}
+                suppress_job_polling={this.state.suppress_job_polling}
+                job_polling_interval_seconds={this.state.job_polling_interval_seconds}
               />
             </Route>
             <Route path={['/redact/image', '/redact']}>

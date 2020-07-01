@@ -1551,6 +1551,8 @@ class InsightsPanel extends React.Component {
             cv_workers={this.props.cv_workers}
             queryCvWorker={this.props.queryCvWorker}
             dispatchFetchSplitAndHash={this.props.dispatchFetchSplitAndHash}
+            suppress_job_polling={this.props.suppress_job_polling}
+            job_polling_interval_seconds={this.props.job_polling_interval_seconds}
           />
         </div>
 
