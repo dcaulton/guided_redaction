@@ -83,6 +83,7 @@ class FilesViewSetMakeUrl(viewsets.ViewSet):
         )
         file_base_url = settings.REDACT_FILE_BASE_URL
         if request.method == "POST" and "file" in request.FILES:
+            # TODO I don't think this is getting used any more, if so, delete  6.30.20
             try:
                 file_obj = request.FILES["file"]
                 file_basename = request.FILES.get("file").name
@@ -106,9 +107,14 @@ class FilesViewSetMakeUrl(viewsets.ViewSet):
         elif request.method == "POST" and request.data.get("data_uri") and request.data.get('filename'):
             filename = request.data.get("filename")
             data_uri = request.data.get('data_uri')
+
+            the_uuid = str(uuid.uuid4())
+            if request.data.get('storage_uuid'):
+                the_uuid = request.data.get('storage_uuid')
+
             header, image_data= data_uri.split(",", 1)
             image_binary = base64.b64decode(image_data)
-            file_url = make_url_from_file(filename, image_binary)
+            file_url = make_url_from_file(filename, image_binary, the_uuid)
             return Response({"url": file_url})
         else:
             return self.error(
@@ -129,7 +135,6 @@ class FilesViewSetMovieMetadata(viewsets.ViewSet):
         if not movies:
             return
         movie_url = list(movies.keys())[0]
-        print(movie_url)
         (x_part, file_part) = os.path.split(movie_url)
         (y_part, uuid_part) = os.path.split(x_part)
         file_writer = FileWriter(
