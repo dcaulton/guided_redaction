@@ -6,6 +6,36 @@ class ImageMasker:
     def __init__(self):
         pass
 
+    def get_horizontal_line_mask(self, image_in):
+        gX = cv2.Sobel(image_in, ddepth=cv2.CV_64F, dx=1, dy=0)
+        gY = cv2.Sobel(image_in, ddepth=cv2.CV_64F, dx=0, dy=1)
+        gX = cv2.convertScaleAbs(gX)
+        gY = cv2.convertScaleAbs(gY)
+        sobelCombined = cv2.addWeighted(gX, 0.5, gY, 0.5, 0)
+
+        x_kernel = np.zeros((3,3), np.uint8)
+        x_kernel[1] = [1,1,1]
+        y_kernel = np.zeros((3,3), np.uint8)
+        y_kernel[0][1] = 1
+        y_kernel[1][1] = 1
+        y_kernel[2][1] = 1
+        hlines = cv2.erode(sobelCombined, x_kernel, iterations=13)
+        hlines = cv2.dilate(hlines, y_kernel, iterations=1)
+        (T, hlines_thresh) = \
+            cv2.threshold(hlines, 100, 255, cv2.THRESH_BINARY_INV)
+        return hlines_thresh
+
+    def process_text_eraser(self, output, masking_region):
+        print('in process TEXT ERASER')
+        big_region = output[
+          masking_region['start'][1]:masking_region['end'][1],
+          masking_region['start'][0]:masking_region['end'][0]
+        ]
+
+        hlines_thresh = self.get_horizontal_line_mask(big_region)
+        cv2.imwrite('/Users/dcaulton/Desktop/thresholded.png', hlines_thresh)
+
+
     def mask_all_regions(
         self, source, regions_to_mask, mask_method, blur_foreground_background
     ):
@@ -37,6 +67,8 @@ class ImageMasker:
                         green_mask_color,
                         2,
                     )
+                elif mask_method == "text_eraser":
+                    self.process_text_eraser(output, masking_region)
                 elif mask_method in ("blur_7x7", "blur_21x21", "blur_median"):
                     combine_via_mask = True
                     cv2.rectangle(

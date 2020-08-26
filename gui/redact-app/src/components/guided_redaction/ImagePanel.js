@@ -1223,6 +1223,7 @@ class ImageInfoControls extends React.Component {
         <option value='blur_median'>Median Blur</option>
         <option value='black_rectangle'>Black Rectangle</option>
         <option value='green_outline'>Green Outline</option>
+        <option value='text_eraser'>Text Eraser</option>
       </select>
     )
   }
