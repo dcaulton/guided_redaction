@@ -4,6 +4,7 @@ import os
 from django.conf import settings
 from guided_redaction.utils.classes.FileWriter import FileWriter
 from guided_redaction.redact.classes.ImageMasker import ImageMasker
+from guided_redaction.redact.classes.TextEraser import TextEraser
 from guided_redaction.redact.classes.ImageIllustrator import ImageIllustrator
 import numpy as np
 from base import viewsets
@@ -79,10 +80,16 @@ class RedactViewSetRedactImage(viewsets.ViewSet):
                     }
                 areas_to_redact.append(coords_dict)
 
-            image_masker = ImageMasker()
-            masked_image = image_masker.mask_all_regions(
-                cv2_image, areas_to_redact, mask_method, blur_foreground_background
-            )
+            if request_data['mask_method'] == 'text_eraser':
+                image_masker = TextEraser()
+                masked_image = image_masker.mask_all_regions(
+                    cv2_image, areas_to_redact
+                )
+            else:
+                image_masker = ImageMasker()
+                masked_image = image_masker.mask_all_regions(
+                    cv2_image, areas_to_redact, mask_method, blur_foreground_background
+                )
 
             if 'return_type' in request_data['meta']:
                 return_type = request_data['meta']['return_type']
