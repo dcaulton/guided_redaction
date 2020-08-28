@@ -1,6 +1,8 @@
 import cv2
 import imutils
 import numpy as np
+import sys
+np.set_printoptions(threshold=sys.maxsize)
 import math
 
 
@@ -17,7 +19,8 @@ class TextEraser:
         if spec and \
             'redact_rule' in spec and \
             'replace_with' in spec['redact_rule'] and \
-            spec['redact_rule']['replace_with'] in ['eroded', 'partitioned']:
+            spec['redact_rule']['replace_with'] in \
+                ['eroded', 'edge_partitioned', 'color_partitioned']:
             self.replace_with = spec['redact_rule']['replace_with']
         else:
             self.replace_with = 'eroded'
@@ -44,8 +47,10 @@ class TextEraser:
         bg_color = self.get_background_color(roi_copy)
         if self.replace_with == 'eroded': 
             zoned_source = self.build_eroded_source_image(roi_copy, bg_color, debug=False)
-        else:
-            zoned_source = self.build_partitioned_source_image(roi_copy, bg_color)
+        elif self.replace_with == 'edge_partitioned': 
+            zoned_source = self.build_edge_partitioned_source_image(roi_copy, bg_color)
+        elif self.replace_with == 'color_partitioned': 
+            zoned_source = self.build_color_partitioned_source_image(roi_copy)
 
         hlines_thresh = self.get_horizontal_line_mask(roi_copy)
         hlines_thresh = cv2.cvtColor(hlines_thresh, cv2.COLOR_BGR2GRAY)
@@ -66,10 +71,52 @@ class TextEraser:
           masking_region['start'][0]:masking_region['end'][0]
         ] = zoned_source
 
-    def build_partitioned_source_image(self, source, bg_color):
+    def build_color_partitioned_source_image(self, source):
+        print('building color partioned source BABY')
+        top_5 = self.get_top_5_colors(source)
+
+    def get_top_5_colors(self, image):
+        return_value = None
+        hist = cv2.calcHist(
+            [image],
+            [0, 1, 2],
+            None,
+            [32, 32, 32],
+            [0, 256, 0, 256, 0, 256]
+        )
+
+        max_offset = np.argmax(hist)
+        z = math.floor(max_offset / 1024)
+        x_plus_y = max_offset - (z * 1024)
+        y = x_plus_y % 32
+        x = math.floor(x_plus_y / 32)
+        blue = int((z * 8) + 4)
+        green = int((x * 8) + 4)
+        red = int((y * 8) + 4)
+
+        return_value = (blue, green, red)
+        print('bg color the old way is {}'.format(return_value))
+
+#        print(hist)
+
+        indices =  np.argpartition(hist.flatten(), -5)[-5:]
+        x = np.vstack(np.unravel_index(indices, hist.shape)).T
+        # what these are is an array of 5 things, the last is the biggest
+        # each thing has the three buckets, so 
+        # [22 25 12] = COLOR [(21*8+4), (24*4+4), (11*8+4)]
+        #   = [172 196 92], and it's plus or minus 4 on all three of those
+
+        print(x)
+
+
+
+
+
+        return return_value
+
+    def build_edge_partitioned_source_image(self, source, bg_color):
         # TODO We need to be smarter about bg color here.  We should use all
         #   the pixels that are NOT covered by a contour
-        print('building partioned source BABY')
         scan_img = source.copy()
 
         cv2.GaussianBlur(scan_img, (13, 13), 0)
@@ -84,7 +131,7 @@ class TextEraser:
         )
         partition_contours = imutils.grab_contours(partition_contours)
         enclosed_partition_contours, contours_touching_edge = \
-            self.filter_partition_contours(
+            self.filter_edge_partition_contours(
                 partition_contours, 
                 scan_img.shape, 
                 debug=True)
@@ -116,7 +163,12 @@ class TextEraser:
 #        cv2.imwrite('/Users/dcaulton/Desktop/binky.png', build_img)
         return build_img
 
-    def filter_partition_contours(self, partition_contours, build_image_shape, debug):
+    def filter_edge_partition_contours(
+        self, 
+        partition_contours, 
+        build_image_shape, 
+        debug
+    ):
         # TODO these might be good input parameters, or maybe autotuning is better
         min_partition_area = 400
         min_line_length = 10
@@ -140,6 +192,8 @@ class TextEraser:
                 if debug:
                     print('NOT LONG ENOUGH, SKIP')
                 continue
+            # TODO do a convex hull here, see if it's smaller than the bounding rect.
+            #  if so it's some non-rectilinear shape and we're gonna ignore it.
             if self.contour_touches_edge_twice(contour, roi_width, roi_height):
                 contours_touching_edge.append(contour)
                 if debug:
@@ -179,37 +233,6 @@ class TextEraser:
                 touch_count += 1
                 continue
         return touch_count >= 2
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        assert False
 
     def draw_contours_with_color(self, target_image, contours, source_image, bg_color):
         for contour in contours:

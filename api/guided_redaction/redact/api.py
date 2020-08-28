@@ -102,10 +102,20 @@ class RedactViewSetRedactImage(viewsets.ViewSet):
                 masked_image = masker.mask_all_regions(
                     cv2_image, areas_to_redact
                 )
-            elif request_data['mask_method'] == 'text_eraser_partitioned':
+            elif request_data['mask_method'] == 'text_eraser_edge_partitioned':
                 spec = {
                   'redact_rule': {
-                      'replace_with': 'partitioned', 
+                      'replace_with': 'edge_partitioned', 
+                  },
+                }
+                masker = TextEraser(spec)
+                masked_image = masker.mask_all_regions(
+                    cv2_image, areas_to_redact
+                )
+            elif request_data['mask_method'] == 'text_eraser_color_partitioned':
+                spec = {
+                  'redact_rule': {
+                      'replace_with': 'color_partitioned', 
                   },
                 }
                 masker = TextEraser(spec)

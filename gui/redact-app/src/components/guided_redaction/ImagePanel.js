@@ -1225,7 +1225,8 @@ class ImageInfoControls extends React.Component {
         <option value='green_outline'>Green Outline</option>
         <option value='text_eraser_eroded_7'>Text Eraser eroded 7</option>
         <option value='text_eraser_eroded_13'>Text Eraser eroded 13</option>
-        <option value='text_eraser_partitioned'>Text Eraser partitioned</option>
+        <option value='text_eraser_edge_partitioned'>Text Eraser edge partitioned</option>
+        <option value='text_eraser_color_partitioned'>Text Eraser color partitioned</option>
       </select>
     )
   }
