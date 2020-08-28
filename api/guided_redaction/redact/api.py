@@ -80,9 +80,36 @@ class RedactViewSetRedactImage(viewsets.ViewSet):
                     }
                 areas_to_redact.append(coords_dict)
 
-            if request_data['mask_method'] == 'text_eraser':
-                image_masker = TextEraser()
-                masked_image = image_masker.mask_all_regions(
+            if request_data['mask_method'] == 'text_eraser_eroded_7':
+                spec = {
+                  'redact_rule': {
+                      'replace_with': 'eroded', 
+                      'erode_iterations': 7,
+                  },
+                }
+                masker = TextEraser(spec)
+                masked_image = masker.mask_all_regions(
+                    cv2_image, areas_to_redact
+                )
+            elif request_data['mask_method'] == 'text_eraser_eroded_13':
+                spec = {
+                  'redact_rule': {
+                      'replace_with': 'eroded', 
+                      'erode_iterations': 7,
+                  },
+                }
+                masker = TextEraser(spec)
+                masked_image = masker.mask_all_regions(
+                    cv2_image, areas_to_redact
+                )
+            elif request_data['mask_method'] == 'text_eraser_partitioned':
+                spec = {
+                  'redact_rule': {
+                      'replace_with': 'partitioned', 
+                  },
+                }
+                masker = TextEraser(spec)
+                masked_image = masker.mask_all_regions(
                     cv2_image, areas_to_redact
                 )
             else:

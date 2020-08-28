@@ -935,7 +935,9 @@ class MoviePanelAdvancedControls extends React.Component {
                   <option value='blur_median'>Median Blur</option>
                   <option value='black_rectangle'>Black Rectangle</option>
                   <option value='green_outline'>Green Outline</option>
-                  <option value='text_eraser'>Text Eraser</option>
+                  <option value='text_eraser_eroded_7'>Text Eraser eroded 7</option>
+                  <option value='text_eraser_eroded_13'>Text Eraser eroded 13</option>
+                  <option value='text_eraser_partitioned'>Text Eraser partitioned</option>
                 </select>
               </div>
               <div className='mt-2'>

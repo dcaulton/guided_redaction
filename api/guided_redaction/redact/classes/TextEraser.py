@@ -5,7 +5,7 @@ import math
 
 
 class TextEraser:
-    def __init__(self):
+    def __init__(self, spec):
         self.x_kernel = np.zeros((3,3), np.uint8)
         self.x_kernel[1] = [1,1,1]
         self.y_kernel = np.zeros((3,3), np.uint8)
@@ -14,20 +14,38 @@ class TextEraser:
         self.y_kernel[2][1] = 1
         self.xy_kernel = np.ones((3,3), np.uint8)
 
+        if spec and \
+            'redact_rule' in spec and \
+            'replace_with' in spec['redact_rule'] and \
+            spec['redact_rule']['replace_with'] in ['eroded', 'partitioned']:
+            self.replace_with = spec['redact_rule']['replace_with']
+        else:
+            self.replace_with = 'eroded'
+        if spec and \
+            'redact_rule' in spec and \
+            'erode_iterations' in spec['redact_rule']:
+            self.erode_iterations = int(spec['redact_rule']['erode_iterations'])
+        else:
+            self.erode_iterations = 13
+        print('replace with is {}'.format(self.replace_with))
+        print('erode iterations is {}'.format(self.erode_iterations))
+
     def mask_all_regions(self, source, regions_to_mask):
         output = source.copy()
         for masking_region in regions_to_mask:
             self.process_one_region(output, masking_region)
         return output
 
-    def process_one_region(self, output, masking_region, replace_with='eroded'):
+    def process_one_region(self, output, masking_region):
         roi_copy = output.copy()[
           masking_region['start'][1]:masking_region['end'][1],
           masking_region['start'][0]:masking_region['end'][0]
         ]
         bg_color = self.get_background_color(roi_copy)
-        if replace_with == 'eroded': 
-            zoned_source= self.build_eroded_source_image(roi_copy, bg_color, debug=False)
+        if self.replace_with == 'eroded': 
+            zoned_source = self.build_eroded_source_image(roi_copy, bg_color, debug=False)
+        else:
+            zoned_source = self.build_partitioned_source_image(roi_copy, bg_color)
 
         hlines_thresh = self.get_horizontal_line_mask(roi_copy)
         hlines_thresh = cv2.cvtColor(hlines_thresh, cv2.COLOR_BGR2GRAY)
@@ -41,14 +59,159 @@ class TextEraser:
             self.filter_hline_contours(hlines_contours, masking_region, debug=False)
 
 #        cv2.imwrite('/Users/dcaulton/Desktop/before_contours.png', roi_copy)
-        self.draw_contours(zoned_source, hlines_contours, roi_copy, bg_color)
+        self.draw_contours_with_color(zoned_source, hlines_contours, roi_copy, bg_color)
 #        cv2.imwrite('/Users/dcaulton/Desktop/after_contours.png', zoned_source)
         output[
           masking_region['start'][1]:masking_region['end'][1],
           masking_region['start'][0]:masking_region['end'][0]
         ] = zoned_source
 
-    def draw_contours(self, target_image, contours, source_image, bg_color):
+    def build_partitioned_source_image(self, source, bg_color):
+        # TODO We need to be smarter about bg color here.  We should use all
+        #   the pixels that are NOT covered by a contour
+        print('building partioned source BABY')
+        scan_img = source.copy()
+
+        cv2.GaussianBlur(scan_img, (13, 13), 0)
+        cv2.imwrite('/Users/dcaulton/Desktop/blessy.png', scan_img)
+        s2 = imutils.auto_canny(scan_img)
+        cv2.imwrite('/Users/dcaulton/Desktop/tommy.png', s2)
+
+        partition_contours = cv2.findContours(
+            s2,
+            cv2.RETR_LIST,
+            cv2.CHAIN_APPROX_SIMPLE
+        )
+        partition_contours = imutils.grab_contours(partition_contours)
+        enclosed_partition_contours, contours_touching_edge = \
+            self.filter_partition_contours(
+                partition_contours, 
+                scan_img.shape, 
+                debug=True)
+
+        build_img = source.copy()
+        cv2.rectangle(
+            build_img,
+            (0, 0),
+            (build_img.shape[1], build_img.shape[0]),
+            bg_color,
+            -1
+        )
+
+        cv2.drawContours(build_img, enclosed_partition_contours, -1, (0, 255, 0), 2)
+        for contour in contours_touching_edge:
+            bounding_box = cv2.boundingRect(contour)
+            contour_image = source.copy()[
+                bounding_box[1]:bounding_box[1]+bounding_box[3],
+                bounding_box[0]:bounding_box[0]+bounding_box[2],
+            ]
+            contour_bg_color = self.get_background_color(contour_image)
+            cv2.rectangle(
+                build_img,
+                (bounding_box[0], bounding_box[1]),
+                (bounding_box[0]+bounding_box[2], bounding_box[1]+bounding_box[3]),
+                contour_bg_color,
+                -1
+            )
+#        cv2.imwrite('/Users/dcaulton/Desktop/binky.png', build_img)
+        return build_img
+
+    def filter_partition_contours(self, partition_contours, build_image_shape, debug):
+        # TODO these might be good input parameters, or maybe autotuning is better
+        min_partition_area = 400
+        min_line_length = 10
+        roi_width = build_image_shape[1]
+        roi_height = build_image_shape[0]
+        enclosed_partition_contours = []
+        contours_touching_edge = []
+        for contour in partition_contours:
+            bounding_box = cv2.boundingRect(contour)
+            bb_area = int(bounding_box[2]) * int(bounding_box[3])
+            if debug:
+                print(' NEW PARTITION CONTOUR')
+                print('   area: {}'.format(bb_area))
+                print('   bounding box: {}'.format(bounding_box))
+            if bb_area < min_partition_area:
+                if debug:
+                    print('TOO LITTLE AREA, SKIP')
+                continue
+            if bounding_box[2] < min_line_length and \
+                not self.bb_touches_edge(bounding_box, roi_width, roi_height):
+                if debug:
+                    print('NOT LONG ENOUGH, SKIP')
+                continue
+            if self.contour_touches_edge_twice(contour, roi_width, roi_height):
+                contours_touching_edge.append(contour)
+                if debug:
+                    print('========= ADDING EDGE TOUCHER')
+            else:
+                enclosed_partition_contours.append(contour)
+                if debug:
+                    print('========= ADDING ENCLOSED')
+                
+        return enclosed_partition_contours, contours_touching_edge
+
+    def bb_touches_edge(self, bounding_box, roi_width, roi_height):
+        if bounding_box[0] == 0:
+            return True
+        if bounding_box[0] + bounding_box[2] == roi_width - 1:
+            return True 
+        if bounding_box[1] == 0:
+            return True
+        if bounding_box[1] + bounding_box[3] == roi_height - 1:
+            return True 
+        return False
+
+    def contour_touches_edge_twice(self, contour, roi_width, roi_height):
+        touch_count = 0
+        print(len(contour))
+        for point in contour:
+            if point[0][0] == 0:
+                touch_count += 1
+                continue
+            if point[0][0] == roi_width - 1:
+                touch_count += 1
+                continue
+            if point[0][1] == 0:
+                touch_count += 1
+                continue
+            if point[0][1]  == roi_height - 1:
+                touch_count += 1
+                continue
+        return touch_count >= 2
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        assert False
+
+    def draw_contours_with_color(self, target_image, contours, source_image, bg_color):
         for contour in contours:
             bounding_box = cv2.boundingRect(contour)
             center_x = math.floor(bounding_box[0] + bounding_box[2]/2)
@@ -92,7 +255,12 @@ class TextEraser:
         gY = cv2.convertScaleAbs(gY)
         sobelCombined = cv2.addWeighted(gX, 0.5, gY, 0.5, 0)
 
-        hlines = cv2.erode(sobelCombined, self.x_kernel, iterations=13)
+        hlines = cv2.erode(
+            sobelCombined, 
+            self.x_kernel, 
+            iterations=self.erode_iterations
+        )
+
         # this helps for very narrow lines
         hlines = cv2.dilate(hlines, self.y_kernel, iterations=1)
 
