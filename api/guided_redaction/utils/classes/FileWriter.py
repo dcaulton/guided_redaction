@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+import ffmpeg
 import requests
 import os
 import shutil
@@ -15,6 +16,10 @@ class FileWriter():
         self.working_dir = working_dir
         self.base_url = base_url
         self.image_request_verify_headers = image_request_verify_headers
+
+    def delete_directory(self, the_uuid):
+        dirpath = os.path.join(self.working_dir, the_uuid)
+        shutil.rmtree(dirpath)
 
     def get_images_from_uuid(self, the_uuid):
         the_path = os.path.join(self.working_dir, the_uuid)
@@ -95,11 +100,14 @@ class FileWriter():
         fh.close()
         return text_data
 
-    def copy_file(self, source_url, new_uuid):
+    def copy_file(self, source_url, new_uuid, new_filename=None):
         (x_part, file_part) = os.path.split(source_url)
         (y_part, uuid_part) = os.path.split(x_part)
         old_path = os.path.join(self.working_dir, uuid_part, file_part)
-        new_path = os.path.join(self.working_dir, new_uuid, file_part)
+        if new_filename:
+            new_path = os.path.join(self.working_dir, new_uuid, new_filename)
+        else:
+            new_path = os.path.join(self.working_dir, new_uuid, file_part)
         new_url = '/'.join([self.base_url, new_uuid, file_part])
         shutil.copy(old_path, new_path)
 
@@ -127,46 +135,35 @@ class FileWriter():
         return unique_working_dir
 
     def write_video(self, image_url_list, output_file_name):
+        # get the directory/uuid from the first image
+        if not image_url_list:
+            return ''
+        (x_part, file_part) = os.path.split(image_url_list[0])
+        (y_part, uuid_part) = os.path.split(x_part)
+        # make a new subdirectory
+        new_subdir = os.path.join(uuid_part, 'build')
+        print('new subdir is {}'.format(new_subdir))
+        self.create_unique_directory(new_subdir)
+        # copy images to a new directory, give them sequential numbers
+        for image_index, image_url in enumerate(image_url_list):
+            build_image_filename = 'frame_{:05d}.png'.format(image_index)
+            print('build image filename {}'.format(build_image_filename))
+            self.copy_file(image_url, new_subdir, build_image_filename)
+        # run ffmpeg against the new directory
+        input_filepath = self.build_file_fullpath_for_uuid_and_filename(new_subdir, 'frame_%05d.png')
+        output_filepath = self.build_file_fullpath_for_uuid_and_filename(new_subdir, output_file_name)
         try:
-            if image_url_list:
-                (x_part, file_part) = os.path.split(image_url_list[0])
-                (y_part, uuid_part) = os.path.split(x_part)
-
-                pic_response = requests.get(
-                  image_url_list[0],
-                  verify=self.image_request_verify_headers,
-                )
-                img_binary = pic_response.content
-                if img_binary:
-                    nparr = np.fromstring(img_binary, np.uint8)
-                    cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-                    cap_size = (cv2_image.shape[1], cv2_image.shape[0])
-            fps = 1
-            fourcc = cv2.VideoWriter_fourcc('a', 'v', 'c', '1')
-
-            output_fullpath = os.path.join(self.working_dir, uuid_part, output_file_name)
-            writer = cv2.VideoWriter(output_fullpath, fourcc, fps, cap_size, True)
-            num_frames = len(image_url_list)
-            for count, output_frame_url in enumerate(image_url_list):
-                percent_done = str(count+1) + '/' + str(num_frames)
-                pic_response = requests.get(
-                  output_frame_url,
-                  verify=self.image_request_verify_headers,
-                )
-                img_binary = pic_response.content
-                if img_binary:
-                    nparr = np.fromstring(img_binary, np.uint8)
-                    frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-                    success = writer.write(frame)
-            writer.release()
-            print('writer done at '+ output_fullpath)
-
-            (x_part, file_part) = os.path.split(output_fullpath)
-            (y_part, uuid_part) = os.path.split(x_part)
-            output_url = '/'.join([self.base_url, uuid_part, file_part])
+            (
+                ffmpeg
+                .input(input_filepath, framerate=1)
+                .output(output_filepath)
+                .overwrite_output()
+                .run()
+            )
+            output_url = '/'.join([self.base_url, new_subdir, output_file_name])
             return output_url
         except Exception as err:
-            print('exception encountered in FileWriter.write_video: {}'.format(err))
+            print('exception in write video: {}'.format(err))
             return ''
 
     def find_dir_with_files(self, filenames_in):
@@ -180,8 +177,3 @@ class FileWriter():
             if files_found == len(filenames_in):
                 the_uuid = os.path.split(dirpath)[-1]
                 return the_uuid
-
-
-
-
-

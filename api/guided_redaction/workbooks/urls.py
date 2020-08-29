@@ -7,3 +7,6 @@ router = get_router()
 router.register(
     r"v1/workbooks", api.WorkbooksViewSet, basename="MikeMeyers"
 )
+router.register(
+    r"v1/delete-old-workbooks", api.WorkbooksViewSetDeleteOld, basename="KyleBrovlovsky"
+)

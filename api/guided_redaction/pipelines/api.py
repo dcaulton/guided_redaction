@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from base import viewsets
 from guided_redaction.pipelines.models import Pipeline
 from guided_redaction.utils.task_shared import (
-    job_has_anticipated_operation_count_attribute,
+    make_child_time_fractions_attribute_for_job,
     make_anticipated_operation_count_attribute_for_job
 )
 from guided_redaction.attributes.models import Attribute
@@ -21,8 +21,13 @@ class PipelinesViewSet(viewsets.ViewSet):
                 for attribute in attributes:
                     build_attributes[attribute.name] = attribute.value
             job_ids = []
-            if Attribute.objects.filter(pipeline=pipeline, name='pipeline_job_link').exists():
-                attributes = Attribute.objects.filter(pipeline=pipeline, name='pipeline_job_link')
+            if Attribute.objects.filter(
+                pipeline=pipeline, name='pipeline_job_link'
+            ).exists():
+                attributes = Attribute.objects.filter(
+                    pipeline=pipeline, 
+                    name='pipeline_job_link'
+                )
                 for attribute in attributes:
                     if attribute.job:
                         job_ids.append(attribute.job.id)
@@ -107,8 +112,15 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
         pipeline = Pipeline.objects.get(pk=request_data['pipeline_id'])
         content = json.loads(pipeline.content)
         child_job_count = self.get_number_of_child_jobs(content) 
-        parent_job = self.build_parent_job(pipeline, request_data['input'], content, workbook_id, owner)
+        parent_job = self.build_parent_job(
+          pipeline, 
+          request_data['input'], 
+          content, 
+          workbook_id, 
+          owner
+        )
         make_anticipated_operation_count_attribute_for_job(parent_job, child_job_count)
+        self.try_to_make_child_time_fractions_attribute(parent_job, pipeline)
 
         first_node_id = self.get_first_node_id(content)
         if first_node_id:
@@ -118,6 +130,14 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
                 parent_job.status = 'running'
                 parent_job.save()
         return Response({'job_id': parent_job.id})
+
+    def try_to_make_child_time_fractions_attribute(self, parent_job, pipeline):
+        if pipeline.name == 'fetch_split_hash_secure_file':
+            fractions_obj = {
+                'get_secure_file': .4,
+                'split_and_hash_threaded': 1.6,
+            }
+            make_child_time_fractions_attribute_for_job(parent_job, fractions_obj)
 
     def get_number_of_child_jobs(self, content): 
         simplified_answer = len(content['node_metadata']['node'])
@@ -130,12 +150,20 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
         for source_node_id in content['edges']:
             for target_node_id in content['edges'][source_node_id]:
                 inbound_counts[target_node_id] += 1
-        nodes_without_inbound = [x for x in inbound_counts.keys() if inbound_counts[x] == 0]
+        nodes_without_inbound = \
+          [x for x in inbound_counts.keys() if inbound_counts[x] == 0]
         if nodes_without_inbound:
             return nodes_without_inbound[0]
 
         
-    def build_parent_job(self, pipeline, build_request_data, content, workbook_id, owner_id):
+    def build_parent_job(
+        self, 
+        pipeline, 
+        build_request_data, 
+        content, 
+        workbook_id, 
+        owner_id
+    ):
         job = Job(
             status='created',
             description='top level job for pipeline '+pipeline.name,
@@ -183,11 +211,29 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
     def build_job(self, content, node_id, parent_job, previous_job=None):
         node = content['node_metadata']['node'][node_id]
         if node['type'] == 'template':
-            return self.build_tier_1_scanner_job('template', content, node, parent_job, previous_job)
+            return self.build_tier_1_scanner_job(
+                'template', 
+                content, 
+                node, 
+                parent_job, 
+                previous_job
+            )
         elif node['type'] == 'selected_area':
-            return self.build_tier_1_scanner_job('selected_area', content, node, parent_job, previous_job)
+            return self.build_tier_1_scanner_job(
+                'selected_area', 
+                content, 
+                node, 
+                parent_job, 
+                previous_job
+            )
         elif node['type'] == 'ocr':
-            return self.build_tier_1_scanner_job('ocr', content, node, parent_job, previous_job)
+            return self.build_tier_1_scanner_job(
+                'ocr', 
+                content, 
+                node, 
+                parent_job, 
+                previous_job
+            )
         elif node['type'] == 'split_and_hash':
             return self.build_split_and_hash_job(content, node, parent_job)
         elif node['type'] == 'secure_files_import':
@@ -326,6 +372,11 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
     def build_redact_job(self, content, node, parent_job, previous_job):
         parent_request_data = json.loads(parent_job.request_data)
         movie_url = list(parent_request_data['movies'].keys())[0]
+        mask_method = 'black_rectangle'
+        if 'redact_rule' in parent_request_data and \
+            'mask_method' in parent_request_data['redact_rule']:
+            mask_method = parent_request_data['redact_rule']['mask_method']
+
         build_movies = {}
         parent_request_data = json.loads(parent_job.request_data)
         t1_output = json.loads(previous_job.response_data)
@@ -339,7 +390,7 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
         build_movies[movie_url] = merged_movie
         build_request_data = {
             "movies": build_movies,
-            'mask_method': 'black_rectangle',
+            'mask_method': mask_method,
             'meta': {
                 'return_type': 'url',
                 'preserve_working_dir_across_batch': True,
@@ -362,7 +413,14 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
         ).save()
         return job
 
-    def build_tier_1_scanner_job(self, scanner_type, content, node, parent_job, previous_job):
+    def build_tier_1_scanner_job(
+        self, 
+        scanner_type, 
+        content, 
+        node, 
+        parent_job, 
+        previous_job
+    ):
         parent_request_data = json.loads(parent_job.request_data)
         desc_string = 'scan ' + scanner_type + ' threaded '
         build_scanners = {}
@@ -440,7 +498,12 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
                 inbound_nodes.append(node_id)
         return inbound_nodes
 
-    def all_other_inbound_edges_are_complete(self, next_node_id, content, parent_job):
+    def all_other_inbound_edges_are_complete(
+        self, 
+        next_node_id, 
+        content, 
+        parent_job
+    ):
         inbound_node_ids = self.get_node_ids_with_inbound_edges(next_node_id, content)
         for inbound_node_id in inbound_node_ids:
             job = self.get_job_for_node(inbound_node_id, parent_job)
@@ -486,7 +549,11 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
             parent_job.save()
             return
         content = json.loads(pipeline.content)
-        something_changed = self.load_split_and_redact_results(job, response_data, parent_job)
+        something_changed = self.load_split_and_redact_results(
+            job, 
+            response_data, 
+            parent_job
+        )
         if something_changed:
             parent_job.save()
         node_id = Attribute.objects.filter(job=job, name='node_id').first().value
@@ -497,7 +564,11 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
             return
         for next_node_id in content['edges'][node_id]:
             if self.node_has_no_job_yet(next_node_id, parent_job):
-                if self.all_other_inbound_edges_are_complete(next_node_id, content, parent_job):
+                if self.all_other_inbound_edges_are_complete(
+                    next_node_id, 
+                    content, 
+                    parent_job
+                ):
                     child_job = self.build_job(content, next_node_id, parent_job, job)
                     if child_job:
                         jobs_api.dispatch_job(child_job)

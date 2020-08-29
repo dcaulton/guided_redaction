@@ -109,7 +109,7 @@ class MovieParser:
 
     def advance_one_frame(self, image, image_url, unique_frames):
         gray = image
-        if self.hash_to_grayscale:
+        if not self.hash_to_grayscale:
             gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         current_hash = self.get_hash(gray)
         if current_hash in unique_frames.keys():
@@ -132,3 +132,4 @@ class MovieParser:
         output_url = self.file_writer.write_video(image_urls, movie_name)
         print("output_url is "+ output_url)
         return output_url
+

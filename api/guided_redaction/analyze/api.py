@@ -855,7 +855,7 @@ class AnalyzeViewSetTimestamp(viewsets.ViewSet):
         time_result = {}
         date_result = {}
         found_datetime = None
-        time_regex = re.compile('(\d+):(\d+):(\d+) ([A|P])M')
+        time_regex = re.compile('(\d+):(\d+):(\d+) ([A|P])')
         date_regex = re.compile('(\d+)/(\d+)/(\d+)\s* ')
         for rta in recognized_text_areas:
             text = rta['text']
@@ -883,8 +883,10 @@ class AnalyzeViewSetTimestamp(viewsets.ViewSet):
                     'year': int(the_year),
                 }
         if date_result and time_result:
-            if time_result['am_pm'] == 'PM':
+            if time_result['am_pm'] == 'PM' and time_result['hour'] < 12:
                 time_result['hour'] += 12
+            if time_result['am_pm'] == 'AM' and time_result['hour'] == 12:
+                time_result['hours'] = 0
             found_datetime = datetime.datetime(
                 date_result['year'],
                 date_result['month'],

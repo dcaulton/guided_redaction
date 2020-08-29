@@ -1,6 +1,8 @@
 import json
+from datetime import datetime, timedelta
 from rest_framework.response import Response
 from base import viewsets
+
 from guided_redaction.workbooks.models import Workbook
 from guided_redaction.attributes.models import Attribute
 
@@ -86,8 +88,36 @@ class WorkbooksViewSet(viewsets.ViewSet):
             )
             attribute.save()
 
+        auto_delete_age = request.data.get('auto_delete_age')
+        if auto_delete_age:
+            attribute = Attribute(
+                name='auto_delete_age',
+                value=auto_delete_age,
+                workbook=workbook,
+            )
+            attribute.save()
+
         return Response({"workbook_id": workbook.id})
 
     def delete(self, request, pk, format=None):
         Workbook.objects.get(pk=pk).delete()
         return Response('', status=204)
+
+class WorkbooksViewSetDeleteOld(viewsets.ViewSet):
+    def list(self, request):
+        wb_ids_to_delete = []
+        for workbook in Workbook.objects.all():
+            if Attribute.objects.filter(workbook=workbook).exists():
+                attributes = Attribute.objects.filter(workbook=workbook)
+                for attribute in attributes:
+                    if attribute.name == 'auto_delete_age':
+                        workbook_age = datetime.now() - workbook.updated_on.replace(tzinfo=None)
+                        print('workbook age is {}'.format(workbook_age))
+                        if attribute.value == '1hours':
+                            if workbook_age > timedelta(hours=1):
+                                wb_ids_to_delete.append(workbook.id)
+        for wb_id in wb_ids_to_delete:
+            Workbook.objects.get(pk=wb_id).delete()
+
+        resp_msg = '{} workbooks deleted'.format(len(wb_ids_to_delete))
+        return Response({'message': resp_msg})

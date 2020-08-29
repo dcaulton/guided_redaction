@@ -10,3 +10,6 @@ router.register(
 router.register(
     r"v1/wrap-up-jobs", api.JobsViewSetWrapUp, basename="MichaelJFox"
 )
+router.register(
+    r"v1/delete-old-jobs", api.JobsViewSetDeleteOld, basename="BillBurr"
+)

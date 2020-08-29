@@ -4,7 +4,6 @@ import os
 from django.conf import settings
 from guided_redaction.utils.classes.FileWriter import FileWriter
 from guided_redaction.redact.classes.ImageMasker import ImageMasker
-from guided_redaction.redact.classes.TextEraser import TextEraser
 from guided_redaction.redact.classes.ImageIllustrator import ImageIllustrator
 import numpy as np
 from base import viewsets
@@ -52,17 +51,14 @@ class RedactViewSetRedactImage(viewsets.ViewSet):
             image = pic_response.content
             if not image:
                 return self.error(
-                    'Upload an image as formdata, use key name of "image"', status_code=422
+                    'Upload an image as formdata, use key name of "image"', 
+                    status_code=422
                 )
             nparr = np.fromstring(image, np.uint8)
             cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 
             areas_to_redact_inbound = request_data['areas_to_redact']
             mask_method = request_data.get("mask_method", "blur_7x7")
-            blur_foreground_background = request_data.get(
-                "blur_foreground_background", "foreground"
-            )
-
             areas_to_redact = []
             for a2r in areas_to_redact_inbound:
                 if 'start' in a2r and 'end' in a2r:
@@ -79,6 +75,7 @@ class RedactViewSetRedactImage(viewsets.ViewSet):
                         ))
                     }
                 areas_to_redact.append(coords_dict)
+
 
             if request_data['mask_method'] == 'text_eraser_eroded_7':
                 spec = {
@@ -125,7 +122,7 @@ class RedactViewSetRedactImage(viewsets.ViewSet):
             else:
                 image_masker = ImageMasker()
                 masked_image = image_masker.mask_all_regions(
-                    cv2_image, areas_to_redact, mask_method, blur_foreground_background
+                    cv2_image, areas_to_redact, mask_method
                 )
 
             if 'return_type' in request_data['meta']:
@@ -206,7 +203,11 @@ class RedactViewSetIllustrateImage(viewsets.ViewSet):
                     inbound_filename = (urlsplit(inbound_image_url)[2]).split("/")[-1]
                     (file_basename, file_extension) = os.path.splitext(inbound_filename)
                     new_filename = file_basename + "_illustrated" + file_extension
-                    the_url = save_image_to_disk(illustrated_image, new_filename, image_hash)
+                    the_url = save_image_to_disk(
+                        illustrated_image, 
+                        new_filename, 
+                        image_hash
+                    )
                     return Response({
                         "illustrated_image_url": the_url,
                         "original_image_url": request_data["image_url"],

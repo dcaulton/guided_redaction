@@ -1,11 +1,17 @@
-import uuid
 import json
+import logging
+import math
 import os
-from django.conf import settings
-import requests
 import shutil
+import uuid
+from datetime import datetime, timedelta
+
+import pytz
+import requests
+from django.conf import settings
 from rest_framework.response import Response
-from base import viewsets
+
+from base import viewsets, utils
 from guided_redaction.jobs.models import Job
 from guided_redaction.attributes.models import Attribute
 from guided_redaction.analyze import tasks as analyze_tasks
@@ -13,24 +19,93 @@ from guided_redaction.parse import tasks as parse_tasks
 from guided_redaction.redact import tasks as redact_tasks
 from guided_redaction.files import tasks as files_tasks
 from guided_redaction.pipelines import tasks as pipelines_tasks
-import json
-import pytz
-import math
-from guided_redaction.utils.task_shared import (
-    get_job_owner,
-)
+from guided_redaction.utils.task_shared import get_job_owner, query_profiler
+from guided_redaction.utils.classes.FileWriter import FileWriter
 
+
+log = logging.getLogger(__name__)
+
+
+def get_top_parent(job_id, parent_data):
+    while True:
+        if job_id in parent_data and parent_data[job_id]:
+            job_id = parent_data[job_id]
+        else:
+            break
+    return job_id
+
+def get_jobs_info():
+    # dict of child_id:parent_id for all child jobs
+    jobs_list = list(Job.objects.select_related("parent").values("id", "parent_id"))
+    parent_data = { str(j["id"]):str(j["parent_id"] or "") for j in jobs_list }
+    file_dir_attrs = (Attribute.objects
+            .filter(name="file_dir_user")
+            .exclude(job=None)
+            .select_related("job")
+    )
+    owner_attrs = (Attribute.objects
+            .filter(name="user_id")
+            .exclude(job=None)
+            .select_related("job")
+    )
+    info_data = {"file_dirs": {}, "owners": {}}
+    file_dir_data = info_data["file_dirs"]
+    owner_data = info_data["owners"]
+    info = {}
+    for key, attr_var in (("file_dirs", file_dir_attrs), ("owners", owner_attrs)):
+        sub_data = info_data[key]
+        for attr in attr_var:
+            if attr.job.id in sub_data:
+                if key == "file_dirs":
+                    sub_data[str(attr.job.id)].add(attr.value.split(":")[-2])
+                else:
+                    sub_data[str(attr.job.id)].add(attr.value)
+            else:
+                if key == "file_dirs":
+                    sub_data[str(attr.job.id)] = set([attr.value.split(":")[-2]])
+                else:
+                    sub_data[str(attr.job.id)] = set([attr.value])
+        info[key] = {}
+        for job_id in parent_data.keys():
+            top_parent_id = get_top_parent(job_id, parent_data)
+            if job_id in sub_data:
+                if top_parent_id in info[key]:
+                    info[key][top_parent_id] = \
+                        info[key][top_parent_id].union(sub_data[job_id])
+                else:
+                    info[key][top_parent_id] = sub_data[job_id]
+    return info
+
+def get_job_file_dirs(job):
+    return get_job_file_dirs_recursive(job)
 
 def get_job_file_dirs_recursive(job):
     file_dirs = job.get_file_dirs()
-    if Job.objects.filter(parent=job).exists():
-        children = Job.objects.filter(parent=job)
-        for child in children:
-            job_file_dirs = get_job_file_dirs_recursive(child)
-            for fd in job_file_dirs:
-                if fd not in file_dirs:
-                    file_dirs.append(fd)
+    for child in job.children.all():
+        job_file_dirs = get_job_file_dirs_recursive(child)
+        for fd in job_file_dirs:
+            if fd not in file_dirs:
+                file_dirs.append(fd)
     return file_dirs
+
+def handle_delete_job(pk):
+    job = Job.objects.get(pk=pk)
+    file_dirs = get_job_file_dirs(job)
+    job_attrs = Attribute.objects.filter(job=job)
+    if (job_attrs.filter(name='delete_files_with_job').exists() and
+            job_attrs.filter(name='delete_files_with_job').first().value == 'True'):
+        try:
+            fw = FileWriter(
+                working_dir=settings.REDACT_FILE_STORAGE_DIR,
+                base_url=settings.REDACT_FILE_BASE_URL,
+                image_request_verify_headers=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
+            )
+            for file_dir_uuid in file_dirs:
+                log.info('deleting the files in directory {}'.format(file_dir_uuid))
+                fw.delete_directory(file_dir_uuid)
+        except Exception as err:
+            log.info('error deleting directory {} with job'.format(job.id))
+    job.delete()
 
 def dispatch_job_wrapper(job, restart_unfinished_children=True):
     if restart_unfinished_children:
@@ -40,11 +115,13 @@ def dispatch_job_wrapper(job, restart_unfinished_children=True):
                 grandchildren = Job.objects.filter(parent=child_to_restart)
                 for grandchild in grandchildren:
                     if grandchild.status not in ['success', 'failed']:
-                        print('re-displatching grandchild job {}'.format(grandchild))
+                        log.info(
+                            're-displatching grandchild job {}'.format(grandchild)
+                        )
                         dispatch_job(grandchild)
             else:
                 if child_to_restart.status not in ['success', 'failed']:
-                    print('re-displatching child job {}'.format(child_to_restart))
+                    log.info('re-displatching child job {}'.format(child_to_restart))
                     dispatch_job(child_to_restart)
     dispatch_job(job)
 
@@ -60,32 +137,14 @@ def dispatch_job(job):
         analyze_tasks.scan_ocr_movie.delay(job_uuid)
     if job.app == 'analyze' and job.operation == 'scan_ocr':
         analyze_tasks.scan_ocr_movie.delay(job_uuid)
-    if job.app == 'analyze' and job.operation == 'telemetry_find_matching_frames':
-        analyze_tasks.telemetry_find_matching_frames.delay(job_uuid)
     if job.app == 'analyze' and job.operation == 'get_timestamp':
         analyze_tasks.get_timestamp.delay(job_uuid)
     if job.app == 'analyze' and job.operation == 'get_timestamp_threaded':
         analyze_tasks.get_timestamp_threaded.delay(job_uuid)
-    if job.app == 'analyze' and job.operation == 'selected_area_threaded':
-        analyze_tasks.selected_area_threaded.delay(job_uuid)
     if job.app == 'analyze' and job.operation == 'template_match_chart':
         analyze_tasks.template_match_chart.delay(job_uuid)
     if job.app == 'analyze' and job.operation == 'ocr_match_chart':
         analyze_tasks.ocr_match_chart.delay(job_uuid)
-    if job.app == 'analyze' and job.operation == 'ocr_scene_analysis_chart':
-        analyze_tasks.ocr_scene_analysis_chart.delay(job_uuid)
-    if job.app == 'analyze' and job.operation == 'selected_area_chart':
-        analyze_tasks.selected_area_chart.delay(job_uuid)
-    if job.app == 'analyze' and job.operation == 'ocr_scene_analysis_threaded':
-        analyze_tasks.ocr_scene_analysis_threaded.delay(job_uuid)
-    if job.app == 'analyze' and job.operation == 'oma_first_scan_threaded':
-        analyze_tasks.oma_first_scan_threaded.delay(job_uuid)
-    if job.app == 'analyze' and job.operation == 'entity_finder_threaded':
-        analyze_tasks.entity_finder_threaded.delay(job_uuid)
-    if job.app == 'analyze' and job.operation == 'hog_train_threaded':
-        analyze_tasks.train_hog_threaded.delay(job_uuid)
-    if job.app == 'analyze' and job.operation == 'hog_test':
-        analyze_tasks.test_hog.delay(job_uuid)
     if job.app == 'parse' and job.operation == 'split_and_hash_threaded':
         parse_tasks.split_and_hash_threaded.delay(job_uuid)
     if job.app == 'parse' and job.operation == 'split_threaded':
@@ -127,7 +186,6 @@ class JobsViewSet(viewsets.ViewSet):
         pretty string like 'an hour ago', 'Yesterday', '3 months ago',
         'just now', etc
         """
-        from datetime import datetime
         now = datetime.utcnow()
         now = now.replace(tzinfo=pytz.utc)
         if type(time) is int:
@@ -175,15 +233,73 @@ class JobsViewSet(viewsets.ViewSet):
             job.response_data = request.data.get('response_data')
             job_updated = True
         if request.data.get('percent_complete'):
-            pct_complete = float(request.data.get('percent_complete'))
-            job.update_percent_complete(pct_complete)
+            job.percent_complete = float(request.data.get('percent_complete'))
             job_updated = True
         if job_updated:
             job.save()
+            if job.parent:
+                job.parent.percent_complete = job.parent.get_percent_complete()
+                job.parent.save()
+
         return Response({"job_updated": job_updated})
 
-
     def list(self, request):
+        jobs_list = []
+        if 'workbook_id' in request.GET.keys():
+            jobs = Job.objects.filter(workbook_id=request.GET['workbook_id'])
+        else:
+            jobs = Job.objects.filter(parent_id=None)
+        jobs = jobs.prefetch_related("children", "attributes")
+        desired_cv_worker_id = ''
+        if 'pick-up-for' in request.GET.keys():
+            desired_cv_worker_id = request.GET['pick-up-for']
+        user_id = ''
+        if 'user_id' in request.GET.keys():
+            if request.GET['user_id'] and \
+                request.GET['user_id'] != 'undefined' and \
+                request.GET['user_id'] != 'all':
+                user_id = request.GET['user_id']
+        info = get_jobs_info()
+        file_dirs = info["file_dirs"]
+        owners = info["owners"]
+        for job in jobs:
+            job_id = str(job.id)
+            child_ids = [child.id for child in job.children.all()]
+            pretty_time = self.pretty_date(job.created_on)
+            wall_clock_run_time = str(job.updated - job.created_on)
+            owner = owners[job_id] if job_id in owners else ""
+            if user_id and owner != user_id:
+                continue
+            if desired_cv_worker_id:
+                if job.get_cv_worker_id() != desired_cv_worker_id:
+                    continue
+            attrs = {}
+            for attribute in job.attributes.all():
+                if attribute.name not in ['user_id', 'file_dir_user']:
+                    attrs[attribute.name] = attribute.value
+            job_obj = {
+                'id': job_id,
+                'status': job.status,
+                'description': job.description,
+                'created_on': job.created_on,
+                'updated': job.updated,
+                'pretty_created_on': pretty_time,
+                'percent_complete': job.percent_complete,
+                'wall_clock_run_time': wall_clock_run_time,
+                'app': job.app,
+                'operation': job.operation,
+                'workbook_id': job.workbook_id,
+                'owner': owner,
+                'children': child_ids,
+            }
+            if job_id in file_dirs:
+                job_obj['file_dirs'] = file_dirs[job_id]
+            if attrs:
+                job_obj['attributes'] = attrs
+            jobs_list.append(job_obj)
+        return Response({"jobs": jobs_list})
+
+    def list_slowly(self, request):
         jobs_list = []
         if 'workbook_id' in request.GET.keys():
             jobs = Job.objects.filter(workbook_id=request.GET['workbook_id'])
@@ -236,7 +352,7 @@ class JobsViewSet(viewsets.ViewSet):
                 'owner': owner,
                 'children': child_ids,
             }
-            file_dirs = get_job_file_dirs_recursive(job)
+            file_dirs = get_job_file_dirs(job)
             if file_dirs:
                 job_obj['file_dirs'] = file_dirs
             if owner:
@@ -284,7 +400,7 @@ class JobsViewSet(viewsets.ViewSet):
             job_data['owner'] = owner
         if attrs:
             job_data['attributes'] = attrs
-        file_dirs = get_job_file_dirs_recursive(job)
+        file_dirs = get_job_file_dirs(job)
         if file_dirs:
             job_data['file_dirs'] = file_dirs
 
@@ -382,18 +498,7 @@ class JobsViewSet(viewsets.ViewSet):
         return Response({"job_id": job.id})
 
     def delete(self, request, pk, format=None):
-        job = Job.objects.get(pk=pk)
-
-        if Attribute.objects.filter(job=job).filter(name='delete_files_with_job').exists():
-            attributes = Attribute.objects.filter(job=job).filter(name='file_dir_user')
-            for attribute in attributes:
-                print('deleting the files in directory {}'.format(attribute.value))
-                dirpath = os.path.join(settings.REDACT_FILE_STORAGE_DIR, attribute.value)
-                try:
-                    shutil.rmtree(dirpath)
-                except Exception as err:
-                    print('error deleting directory {} with job'.format(attribute.value))
-        job.delete()
+        handle_delete_job(pk)
         return Response('', status=204)
 
     def replace_movie_uuids(self, movies_obj, movie_mappings):
@@ -450,7 +555,7 @@ class JobsViewSet(viewsets.ViewSet):
                 something_changed = True
                 job_response_data['movies'] = self.replace_movie_uuids(job_response_data['movies'], movie_mappings)
             if something_changed:
-                print('rebasing job {}'.format(job.id))
+                log.info('rebasing job {}'.format(job.id))
                 job.request_data = json.dumps(job_request_data)
                 job.response_data = json.dumps(job_response_data)
                 job.save()
@@ -479,3 +584,22 @@ class JobsViewSetWrapUp(viewsets.ViewSet):
             dispatch_job(job)
             
         return Response({'job_id': job.id})
+
+class JobsViewSetDeleteOld(viewsets.ViewSet):
+    def list(self, request):
+        job_ids_to_delete = []
+        for job in Job.objects.all().filter(parent=None):
+            if Attribute.objects.filter(job=job).exists():
+                attributes = Attribute.objects.filter(job=job)
+                for attribute in attributes:
+                    if attribute.name == 'auto_delete_age':
+                        job_age = datetime.now() - job.created_on.replace(tzinfo=None)
+                        log.info('job age is {}'.format(job_age))
+                        if attribute.value == '7days':
+                            if job_age > timedelta(days=7):
+                                job_ids_to_delete.append(job.id)
+        for job_id in job_ids_to_delete:
+            handle_delete_job(job_id)
+
+        resp_msg = '{} jobs deleted'.format(len(job_ids_to_delete))
+        return Response({'message': resp_msg})

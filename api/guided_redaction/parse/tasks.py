@@ -262,14 +262,16 @@ def split_and_hash_threaded(job_uuid):
     if not job:
         print('calling split_and_hash_threaded on nonexistent job: {}'.format(job_uuid))
 
-    if not job_has_anticipated_operation_count_attribute(job):
-        make_anticipated_operation_count_attribute_for_job(job, 2)
     if job.status in ['success', 'failed']:
         return
     children = Job.objects.filter(parent=job)
 
     if children.filter(operation='hash_movie').exists():
-        next_step = evaluate_children('SPLIT HASH THREADED - HASH', 'hash_movie', children)
+        next_step = evaluate_children(
+            'SPLIT HASH THREADED - HASH', 
+            'hash_movie', 
+            children
+        )
         print('next post split step is {}'.format(next_step))
         if next_step == 'wrap_up':
             wrap_up_split_and_hash_threaded(job, children)
@@ -283,10 +285,17 @@ def split_and_hash_threaded(job_uuid):
             job.save()
         return
     else:
-        next_step = evaluate_children('SPLIT HASH THREADED - SPLIT', 'split_movie', children)
+        next_step = evaluate_children(
+            'SPLIT HASH THREADED - SPLIT', 
+            'split_movie', 
+            children
+        )
         print('next step is {}'.format(next_step))
         if next_step == 'build_child_tasks':
-            make_and_dispatch_split_tasks(job)
+            num_tasks = make_and_dispatch_split_tasks(job)
+            if not job_has_anticipated_operation_count_attribute(job):
+                # assume twice as many hash tasks as split tasks
+                make_anticipated_operation_count_attribute_for_job(job, num_tasks * 3)
         elif next_step == 'wrap_up':
             make_and_dispatch_hash_tasks(job, children)
         elif next_step == 'abort':
@@ -422,9 +431,19 @@ def make_and_dispatch_split_tasks(parent_job):
             print('make and dispatch split tasks, dispatching job {}'.format(job.id))
             split_movie.delay(job.id)
         else: 
-            build_and_dispatch_split_tasks_multithreaded(parent_job, movie_url, movie_length_seconds)
+            num_tasks = build_and_dispatch_split_tasks_multithreaded(
+                parent_job, 
+                movie_url, 
+                movie_length_seconds
+            )
+        return num_tasks
 
-def build_and_dispatch_split_tasks_multithreaded(parent_job, movie_url, movie_length_seconds):
+def build_and_dispatch_split_tasks_multithreaded(
+        parent_job, 
+        movie_url, 
+        movie_length_seconds
+    ):
+    number_of_tasks_created = 0
     parent_job.status = 'running'
     parent_job.save()
     request_data = json.loads(parent_job.request_data)
@@ -437,7 +456,8 @@ def build_and_dispatch_split_tasks_multithreaded(parent_job, movie_url, movie_le
         if i < num_jobs - 1:
             build_request_data['num_frames'] = split_frames_chunk_size
         else:
-            build_request_data['num_frames'] = movie_length_seconds % split_frames_chunk_size
+            build_request_data['num_frames'] = \
+                movie_length_seconds % split_frames_chunk_size
         job = Job(
             request_data=json.dumps(build_request_data),
             status='created',
@@ -448,6 +468,7 @@ def build_and_dispatch_split_tasks_multithreaded(parent_job, movie_url, movie_le
             parent=parent_job,
         )
         job.save()
+        number_of_tasks_created += 1
         print('build and dispatch split tasks multithreaded, dispatching job {}'.format(job.id))
         split_movie.delay(job.id)
         if i % 5 == 0:
@@ -477,6 +498,7 @@ def build_and_dispatch_split_tasks_multithreaded(parent_job, movie_url, movie_le
         split_and_hash_threaded.delay(parent_job.id)
     elif parent_job.operation == 'split_threaded': 
         split_threaded.delay(parent_job.id)
+    return number_of_tasks_created
 
 @shared_task
 def copy_movie(job_uuid):
