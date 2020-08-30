@@ -15,6 +15,7 @@ class TextEraser:
         self.y_kernel[1][1] = 1
         self.y_kernel[2][1] = 1
         self.xy_kernel = np.ones((3,3), np.uint8)
+        self.bucket_closeness_threshold = 50
 
         if redact_rule and \
             'replace_with' in redact_rule and \
@@ -28,8 +29,6 @@ class TextEraser:
             self.erode_iterations = int(redact_rule['erode_iterations'])
         else:
             self.erode_iterations = 13
-        print('replace with is {}'.format(self.replace_with))
-        print('erode iterations is {}'.format(self.erode_iterations))
 
     def mask_all_regions(self, source, regions_to_mask):
         output = source.copy()
@@ -71,46 +70,131 @@ class TextEraser:
 
     def build_color_partitioned_source_image(self, source):
         print('building color partioned source BABY')
-        top_5 = self.get_top_5_colors(source)
-
-    def get_top_5_colors(self, image):
-        return_value = None
         hist = cv2.calcHist(
-            [image],
+            [source],
             [0, 1, 2],
             None,
             [32, 32, 32],
             [0, 256, 0, 256, 0, 256]
         )
+        source_num_pixels = source.shape[0] * source.shape[1]
+        popular_colors = self.group_colors(hist, source_num_pixels)
 
-        max_offset = np.argmax(hist)
-        z = math.floor(max_offset / 1024)
-        x_plus_y = max_offset - (z * 1024)
+        print('dying now ')
+        assert False
+        return return_value
+
+    def group_colors(self, hist, source_num_pixels):
+        min_num_pixels = math.floor(source_num_pixels * .01)
+        flat_hist = hist.flatten()
+        indices = np.argpartition(flat_hist, -10)[-10:]
+        big_enough_indices = [i for i in indices if flat_hist[i] > min_num_pixels]
+        histogram_winners = np.vstack(np.unravel_index(big_enough_indices, hist.shape)).T
+        # what these are is an array of 5 things, the last is the biggest
+        # each thing has the three buckets, so 
+        # [22 25 12] = COLOR [(21*8+4), (24*4+4), (11*8+4)]
+        #   = [172 196 92], and it's plus or minus 4 on all three of those
+
+        reduced = {}
+        for rank, bucket_loc in enumerate(histogram_winners):
+            hist_val = hist[bucket_loc[0]][bucket_loc[1]][bucket_loc[2]]
+            bucket_key = '{}-{}-{}'.format(bucket_loc[0], bucket_loc[1], bucket_loc[2])
+            print('{} - {} - {} : {}'.format(rank, bucket_key, bucket_loc, hist_val))
+
+            if rank == 0:
+                build_obj = {
+                    'bucket_locs': [bucket_loc],
+                    'avg_loc': bucket_loc,
+                }
+                reduced[bucket_key] = build_obj
+                continue
+            added_to_existing_key = False
+            for tk in reduced.keys():
+                if self.buckets_are_close_enough(bucket_loc, reduced[tk]['avg_loc']):
+                    reduced[tk]['bucket_locs'].append(bucket_loc)
+                    reduced[tk]['avg_loc'] = \
+                        self.calc_average_bucket_loc(reduced[tk]['bucket_locs'])
+                    added_to_existing_key = True
+                    break
+            if not added_to_existing_key:
+                build_obj = {
+                    'bucket_locs': [bucket_loc],
+                    'avg_loc': bucket_loc,
+                }
+                reduced[bucket_key] = build_obj
+
+        for bucket_key in reduced:
+            reduced[bucket_key]['avg_bgr_color'] = \
+                self.get_color_for_bucket_coords(reduced[bucket_key]['avg_loc'])
+            reduced[bucket_key]['color_range'] = \
+                self.get_color_range_for_buckets(reduced[bucket_key])
+
+        print('zekey reduced', reduced)
+        return reduced
+
+    def calc_average_bucket_loc(self, bucket_locs):
+        tt = [0,0,0]
+        for bucket_loc in bucket_locs:
+            tt[0] += bucket_loc[0]
+            tt[1] += bucket_loc[1]
+            tt[2] += bucket_loc[2]
+        final = [
+            tt[0]/len(bucket_locs), 
+            tt[1]/len(bucket_locs), 
+            tt[2]/len(bucket_locs)
+        ]
+        return final
+
+    def get_color_for_bucket_coords(self, bucket_coords):
+        red = int((bucket_coords[2] * 8) + 4)
+        green = int((bucket_coords[1] * 8) + 4)
+        blue = int((bucket_coords[0] * 8) + 4)
+
+        bgr = (blue, green, red)
+        return bgr
+
+    def get_color_for_bucket_offset(self, bucket_offset):
+        z = math.floor(bucket_offset / 1024)
+        x_plus_y = bucket_offset - (z * 1024)
         y = x_plus_y % 32
         x = math.floor(x_plus_y / 32)
         blue = int((z * 8) + 4)
         green = int((x * 8) + 4)
         red = int((y * 8) + 4)
 
-        return_value = (blue, green, red)
-        print('bg color the old way is {}'.format(return_value))
+        bgr = (blue, green, red)
+        return bgr
 
-#        print(hist)
+    def get_color_range_for_buckets(self, reduced_group):
+        if len(reduced_group['bucket_locs']) == 1:
+            return (0, 0, 0)
+        max_x_var = 0
+        max_y_var = 0
+        max_z_var = 0
+        for bucket_loc in reduced_group['bucket_locs']:
+            x_diff = abs(bucket_loc[0] - reduced_group['avg_loc'][0])
+            if x_diff > max_x_var:
+                max_x_var = x_diff
+            y_diff = abs(bucket_loc[1] - reduced_group['avg_loc'][1])
+            if y_diff > max_y_var:
+                max_y_var = y_diff
+            z_diff = abs(bucket_loc[2] - reduced_group['avg_loc'][2])
+            if z_diff > max_z_var:
+                max_z_var = z_diff
+        bucket_range = (max_x_var, max_y_var, max_z_var)
+        # x, y, z = b, g, r
+        color_ranges = (
+            math.ceil(bucket_range[0] * 8),
+            math.ceil(bucket_range[1] * 8),
+            math.ceil(bucket_range[2] * 8),
+        )
+        return color_ranges
 
-        indices =  np.argpartition(hist.flatten(), -5)[-5:]
-        x = np.vstack(np.unravel_index(indices, hist.shape)).T
-        # what these are is an array of 5 things, the last is the biggest
-        # each thing has the three buckets, so 
-        # [22 25 12] = COLOR [(21*8+4), (24*4+4), (11*8+4)]
-        #   = [172 196 92], and it's plus or minus 4 on all three of those
-
-        print(x)
-
-
-
-
-
-        return return_value
+    def buckets_are_close_enough(self, bucket1, bucket2):
+        dist = (bucket1[0] - bucket2[0])**2 + \
+            (bucket1[1] - bucket2[1])**2 + \
+            (bucket1[2] - bucket2[2])**2
+        return dist <= self.bucket_closeness_threshold
 
     def build_edge_partitioned_source_image(self, source, bg_color):
         # TODO We need to be smarter about bg color here.  We should use all
