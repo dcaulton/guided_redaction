@@ -444,7 +444,7 @@ class InsightsPanel extends React.Component {
     }
     job_data['app'] = 'redact'
     job_data['operation'] = 'redact'
-    job_data['request_data']['mask_method'] = this.props.redact_rule.mask_method
+    job_data['request_data']['redact_rule'] = this.props.redact_rule
     job_data['request_data']['meta'] = {
       return_type: 'url',
       preserve_working_dir_across_batch: true,

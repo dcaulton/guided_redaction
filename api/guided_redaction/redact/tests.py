@@ -29,7 +29,7 @@ class ImageMaskerTestCase(TestCase):
         masked_image = image_masker.mask_all_regions(
             cv2_image,
             areas_to_redact,
-            mask_method='black_rectangle'
+            {mask_method='black_rectangle'}
         )
 
         green_pixels = np.all(masked_image == (0, 123,0), axis=-1)

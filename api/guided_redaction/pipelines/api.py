@@ -372,10 +372,6 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
     def build_redact_job(self, content, node, parent_job, previous_job):
         parent_request_data = json.loads(parent_job.request_data)
         movie_url = list(parent_request_data['movies'].keys())[0]
-        mask_method = 'black_rectangle'
-        if 'redact_rule' in parent_request_data and \
-            'mask_method' in parent_request_data['redact_rule']:
-            mask_method = parent_request_data['redact_rule']['mask_method']
 
         build_movies = {}
         parent_request_data = json.loads(parent_job.request_data)
@@ -390,7 +386,7 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
         build_movies[movie_url] = merged_movie
         build_request_data = {
             "movies": build_movies,
-            'mask_method': mask_method,
+            'redact_rule': parent_request_data['redact_rule'],
             'meta': {
                 'return_type': 'url',
                 'preserve_working_dir_across_batch': True,

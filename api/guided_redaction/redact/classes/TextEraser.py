@@ -7,7 +7,7 @@ import math
 
 
 class TextEraser:
-    def __init__(self, spec):
+    def __init__(self, redact_rule):
         self.x_kernel = np.zeros((3,3), np.uint8)
         self.x_kernel[1] = [1,1,1]
         self.y_kernel = np.zeros((3,3), np.uint8)
@@ -16,18 +16,16 @@ class TextEraser:
         self.y_kernel[2][1] = 1
         self.xy_kernel = np.ones((3,3), np.uint8)
 
-        if spec and \
-            'redact_rule' in spec and \
-            'replace_with' in spec['redact_rule'] and \
-            spec['redact_rule']['replace_with'] in \
+        if redact_rule and \
+            'replace_with' in redact_rule and \
+            redact_rule['replace_with'] in \
                 ['eroded', 'edge_partitioned', 'color_partitioned']:
-            self.replace_with = spec['redact_rule']['replace_with']
+            self.replace_with = redact_rule['replace_with']
         else:
             self.replace_with = 'eroded'
-        if spec and \
-            'redact_rule' in spec and \
-            'erode_iterations' in spec['redact_rule']:
-            self.erode_iterations = int(spec['redact_rule']['erode_iterations'])
+        if redact_rule and \
+            'erode_iterations' in redact_rule:
+            self.erode_iterations = int(redact_rule['erode_iterations'])
         else:
             self.erode_iterations = 13
         print('replace with is {}'.format(self.replace_with))

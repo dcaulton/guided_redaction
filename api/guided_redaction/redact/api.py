@@ -4,6 +4,7 @@ import os
 from django.conf import settings
 from guided_redaction.utils.classes.FileWriter import FileWriter
 from guided_redaction.redact.classes.ImageMasker import ImageMasker
+from guided_redaction.redact.classes.TextEraser import TextEraser
 from guided_redaction.redact.classes.ImageIllustrator import ImageIllustrator
 import numpy as np
 from base import viewsets
@@ -41,9 +42,12 @@ class RedactViewSetRedactImage(viewsets.ViewSet):
             return self.error("image_url is required")
         if not request_data.get("areas_to_redact"):
             return self.error("areas_to_redact is required")
-        if not request_data.get("mask_method"):
+        if not request_data.get("redact_rule"):
+            return self.error("redact_rule is required")
+        if 'mask_method' not in request_data['redact_rule']:
             return self.error("mask_method is required")
         try:
+            print('benny 01')
             pic_response = requests.get(
               request_data["image_url"],
               verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
@@ -58,7 +62,6 @@ class RedactViewSetRedactImage(viewsets.ViewSet):
             cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 
             areas_to_redact_inbound = request_data['areas_to_redact']
-            mask_method = request_data.get("mask_method", "blur_7x7")
             areas_to_redact = []
             for a2r in areas_to_redact_inbound:
                 if 'start' in a2r and 'end' in a2r:
@@ -77,52 +80,15 @@ class RedactViewSetRedactImage(viewsets.ViewSet):
                 areas_to_redact.append(coords_dict)
 
 
-            if request_data['mask_method'] == 'text_eraser_eroded_7':
-                spec = {
-                  'redact_rule': {
-                      'replace_with': 'eroded', 
-                      'erode_iterations': 7,
-                  },
-                }
-                masker = TextEraser(spec)
-                masked_image = masker.mask_all_regions(
-                    cv2_image, areas_to_redact
-                )
-            elif request_data['mask_method'] == 'text_eraser_eroded_13':
-                spec = {
-                  'redact_rule': {
-                      'replace_with': 'eroded', 
-                      'erode_iterations': 7,
-                  },
-                }
-                masker = TextEraser(spec)
-                masked_image = masker.mask_all_regions(
-                    cv2_image, areas_to_redact
-                )
-            elif request_data['mask_method'] == 'text_eraser_edge_partitioned':
-                spec = {
-                  'redact_rule': {
-                      'replace_with': 'edge_partitioned', 
-                  },
-                }
-                masker = TextEraser(spec)
-                masked_image = masker.mask_all_regions(
-                    cv2_image, areas_to_redact
-                )
-            elif request_data['mask_method'] == 'text_eraser_color_partitioned':
-                spec = {
-                  'redact_rule': {
-                      'replace_with': 'color_partitioned', 
-                  },
-                }
-                masker = TextEraser(spec)
+            if request_data['redact_rule']['mask_method'] == 'text_eraser':
+                masker = TextEraser(request_data['redact_rule'])
                 masked_image = masker.mask_all_regions(
                     cv2_image, areas_to_redact
                 )
             else:
                 image_masker = ImageMasker()
                 masked_image = image_masker.mask_all_regions(
-                    cv2_image, areas_to_redact, mask_method
+                    cv2_image, areas_to_redact, request_data['redact_rule']['mask_method']
                 )
 
             if 'return_type' in request_data['meta']:

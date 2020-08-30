@@ -31,14 +31,14 @@ def redact_single(job_uuid):
             if parent_job.app == 'redact' and parent_job.operation == 'redact':
                 redact_threaded.delay(parent_job.id)
 
-def build_and_dispatch_redact_threaded_children(parent_job):                                                     
+def build_and_dispatch_redact_threaded_children(parent_job):
     parent_job.status = 'running'
     parent_job.save()
     job_counter = 0
     request_data = json.loads(parent_job.request_data)
     movies = request_data['movies']
     for movie_url in movies:
-        movie = movies[movie_url]                                                                                       
+        movie = movies[movie_url]
         for frameset_hash in movie['framesets']:
             if 'areas_to_redact' in movie['framesets'][frameset_hash].keys():
                 job_counter += 1
@@ -47,7 +47,7 @@ def build_and_dispatch_redact_threaded_children(parent_job):
                     'frameset_hash': frameset_hash,
                     'image_url': movie['framesets'][frameset_hash]['images'][0],
                     'areas_to_redact': movie['framesets'][frameset_hash]['areas_to_redact'],
-                    'mask_method': request_data['mask_method'],
+                    'redact_rule': request_data['redact_rule'],
                     'meta': request_data['meta'],
                 }
                 job = Job(

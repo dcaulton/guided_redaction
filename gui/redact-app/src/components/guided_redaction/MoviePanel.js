@@ -487,7 +487,7 @@ class MoviePanel extends React.Component {
     job_data['description'] = 'redact images for movie: ' + this.props.movie_url
     job_data['request_data']['movies'] = {}
     job_data['request_data']['movies'][this.props.movie_url] = this.props.movies[this.props.movie_url]
-    job_data['request_data']['mask_method'] = this.props.redact_rule.mask_method
+    job_data['request_data']['redact_rule'] = this.props.redact_rule
     job_data['request_data']['meta'] = {
       return_type: 'url',
       preserve_working_dir_across_batch: true,
@@ -514,7 +514,7 @@ class MoviePanel extends React.Component {
     }
     job_data['request_data']['movies'][this.props.movie_url] = build_movie
 
-    job_data['request_data']['mask_method'] = this.props.redact_rule.mask_method
+    job_data['request_data']['redact_rule'] = this.props.redact_rule
     job_data['request_data']['meta'] = {
       return_type: 'url',
       preserve_working_dir_across_batch: true,
@@ -653,7 +653,7 @@ class MoviePanel extends React.Component {
       preserve_working_dir_across_batch: false,
       return_type: 'url',
     }
-    job_data['request_data']['mask_method'] = this.props.redact_rule.mask_method
+    job_data['request_data']['redact_rule'] = this.props.redact_rule
 
     if (Object.keys(extra_data).includes('areas_to_redact')) {
       job_data['request_data']['areas_to_redact'] = extra_data['areas_to_redact']

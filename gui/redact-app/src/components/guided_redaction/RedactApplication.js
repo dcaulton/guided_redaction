@@ -221,10 +221,7 @@ class RedactApplication extends React.Component {
     let input_obj = {
       movies: movies_to_process
     }
-    let redact_rule = {
-      mask_method: this.state.redact_rule.mask_method,
-    }
-    input_obj['redact_rule'] = redact_rule
+    input_obj['redact_rule'] = this.state.redact_rule
 
     const pipeline_name = 'scan_ocr_and_redact_' + ocr_rule['id'].toString()
     const pipeline = this.getPipelineForName(pipeline_name)
@@ -268,13 +265,10 @@ class RedactApplication extends React.Component {
     } else if (scope === 'all') {
       the_build_movie = this.buildMoviesForAllFrames()
     }
-    let redact_rule = {
-      mask_method: this.state.redact_rule.mask_method,
-    }
     let input_obj = {
       movies: the_build_movie,
     }
-    input_obj['redact_rule'] = redact_rule
+    input_obj['redact_rule'] = this.state.redact_rule
 
     const pipeline_name = 'scan_template_and_redact_' + template_id.toString()
     const pipeline = this.getPipelineForName(pipeline_name)
