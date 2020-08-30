@@ -1,14 +1,6 @@
 import React from 'react';
 import TemplateControls from './TemplateControls'
-import HogControls from './HogControls'
-import AnnotationControls from './AnnotationControls'
-import TelemetryControls from './TelemetryControls'
-import SelectedAreaControls from './SelectedAreaControls'
 import OcrControls from './OcrControls'
-import OcrSceneAnalysisControls from './OcrSceneAnalysisControls'
-import EntityFinderControls from './EntityFinderControls'
-import OcrMovieAnalysisControls from './OcrMovieAnalysisControls'
-import DiffControls from './DiffControls'
 import RedactControls from './RedactControls'
 import ZipControls from './ZipControls'
 import MovieSetsControls from './MovieSetsControls'
@@ -16,6 +8,10 @@ import ResultsControls from './ResultsControls'
 import FilesystemControls from './FilesystemControls'
 import PipelineControls from './PipelineControls'
 import SessionControls from './SessionControls'
+import HogControls from './HogControls'
+import SelectedAreaControls from './SelectedAreaControls'
+import TelemetryControls from './TelemetryControls'
+import OcrSceneAnalysisControls from './OcrSceneAnalysisControls'
 
 class BottomInsightsControls extends React.Component {
 
@@ -252,21 +248,6 @@ class BottomInsightsControls extends React.Component {
           saveScannerToDatabase={this.props.saveScannerToDatabase}
         />
 
-        <EntityFinderControls
-          displayInsightsMessage={this.props.displayInsightsMessage}
-          submitInsightsJob={this.props.submitInsightsJob}
-          setGlobalStateVar={this.props.setGlobalStateVar}
-          visibilityFlags={this.props.visibilityFlags}
-          toggleShowVisibility={this.props.toggleShowVisibility}
-          tier_1_scanners={this.props.tier_1_scanners}
-          tier_1_scanner_current_ids={this.props.tier_1_scanner_current_ids}
-          scanners={this.props.scanners}
-          getScanners={this.props.getScanners}
-          deleteScanner={this.props.deleteScanner}
-          importScanner={this.props.importScanner}
-          saveScannerToDatabase={this.props.saveScannerToDatabase}
-        />
-
         <PipelineControls
           visibilityFlags={this.props.visibilityFlags}
           toggleShowVisibility={this.props.toggleShowVisibility}
@@ -280,30 +261,6 @@ class BottomInsightsControls extends React.Component {
           setGlobalStateVar={this.props.setGlobalStateVar}
           movies={this.props.movies}
           tier_1_scanners={this.props.tier_1_scanners}
-        />
-
-        <AnnotationControls
-          displayInsightsMessage={this.props.displayInsightsMessage}
-          saveAnnotation={this.props.saveAnnotation}
-          deleteAnnotation={this.props.deleteAnnotation}
-          annotations={this.props.annotations}
-          handleSetMode={this.props.handleSetMode}
-          setKeyDownCallback={this.props.setKeyDownCallback}
-          getAnnotations={this.props.getAnnotations}
-          visibilityFlags={this.props.visibilityFlags}
-          toggleShowVisibility={this.props.toggleShowVisibility}
-          tier_1_scanners={this.props.tier_1_scanners}
-        />
-
-        <DiffControls
-          displayInsightsMessage={this.props.displayInsightsMessage}
-          visibilityFlags={this.props.visibilityFlags}
-          toggleShowVisibility={this.props.toggleShowVisibility}
-          movie_sets={this.props.movie_sets}
-          submitInsightsJob={this.props.submitInsightsJob}
-          blinkDiff={this.props.blinkDiff}
-          setImageTypeToDisplay={this.props.setImageTypeToDisplay}
-          imageTypeToDisplay={this.props.imageTypeToDisplay}
         />
 
         <RedactControls
@@ -349,29 +306,6 @@ class BottomInsightsControls extends React.Component {
 
         />
 
-        <OcrMovieAnalysisControls
-          displayInsightsMessage={this.props.displayInsightsMessage}
-          visibilityFlags={this.props.visibilityFlags}
-          toggleShowVisibility={this.props.toggleShowVisibility}
-          submitInsightsJob={this.props.submitInsightsJob}
-          movies={this.props.movies}
-          jobs={this.props.jobs}
-          handleSetMode={this.props.handleSetMode}
-          addInsightsCallback={this.props.addInsightsCallback}
-          movie_url={this.props.movie_url}
-          insights_image={this.props.insights_image}
-          getFramesetHashForImageUrl={this.props.getFramesetHashForImageUrl}
-          setInsightsImage={this.props.setInsightsImage}
-          setGlobalStateVar={this.props.setGlobalStateVar}
-          tier_1_scanners={this.props.tier_1_scanners}
-          tier_1_scanner_current_ids={this.props.tier_1_scanner_current_ids}
-          scanners={this.props.scanners}
-          getScanners={this.props.getScanners}
-          deleteScanner={this.props.deleteScanner}
-          importScanner={this.props.importScanner}
-          saveScannerToDatabase={this.props.saveScannerToDatabase}
-        />
-
         <FilesystemControls
           visibilityFlags={this.props.visibilityFlags}
           toggleShowVisibility={this.props.toggleShowVisibility}
@@ -391,7 +325,6 @@ class BottomInsightsControls extends React.Component {
           current_workbook_id={this.props.current_workbook_id}
           saveWorkbook={this.props.saveWorkbook}
           saveWorkbookName={this.props.saveWorkbookName}
-          session_audio={this.props.session_audio}
           displayInsightsMessage={this.props.displayInsightsMessage}
           callPing={this.props.callPing}
           callGetVersion={this.props.callGetVersion}
@@ -410,10 +343,9 @@ class BottomInsightsControls extends React.Component {
           preserve_movie_audio={this.props.preserve_movie_audio}
           getPipelines={this.props.getPipelines}
           impersonateUser={this.props.impersonateUser}
-          maximize={this.props.maximize}
           cv_workers={this.props.cv_workers}
           queryCvWorker={this.props.queryCvWorker}
-          suppress_job_polling={this.props.suppress_job_polling}
+          deleteOldJobs={this.props.deleteOldJobs}
           job_polling_interval_seconds={this.props.job_polling_interval_seconds}
         />
 

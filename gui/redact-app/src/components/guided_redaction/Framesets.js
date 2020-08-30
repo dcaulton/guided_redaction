@@ -17,6 +17,12 @@ class FramesetCard extends React.Component {
     return hash_data
   }
 
+  buildEditedIndicator(image_url) {
+    if (image_url.includes('redacted')) {
+      return 'edited'
+    }
+  }
+
   render() {
     const hash_span = this.buildFramesetHashData(this.props.frame_hash)
     let top_div_classname = 'col-md-3 frameCard m-3 p-3 bg-light'
@@ -24,6 +30,7 @@ class FramesetCard extends React.Component {
       top_div_classname = 'col-md-3 frameCard m-3 p-3 bg-light active_card'
     }
     let display_image = this.props.getImageFromFrameset(this.props.frame_hash)
+    const edited_indicator = this.buildEditedIndicator(display_image)
     return (
       <div 
           id={this.props.frame_hash}
@@ -41,7 +48,6 @@ class FramesetCard extends React.Component {
             className='zoomable-image'
             src={display_image}
             alt={display_image}
-            onClick={() => this.props.setZoomImageUrl(display_image)}
         />
 
         <div className='card-body'>
@@ -49,27 +55,17 @@ class FramesetCard extends React.Component {
         </div>
 
         <div>
-          <p>{this.props.redactionDesc}</p>
-        </div>
-
-        <div className='d-inline'>
-          <button
-            className='btn btn-primary'
-            onClick={() => this.props.redactFramesetCallback(this.props.frame_hash)}
-          >
-            Edit
-          </button>
-        </div>
-
-        <div className='d-inline ml-2'>
-          <button
-              type="button"
-              className="btn btn-primary"
-              data-toggle="modal"
-              onClick={() => this.props.setZoomImageUrl(display_image)}
-              data-target="#moviePanelModal">
-            View
-          </button>
+          <div className='d-inline'>
+            {edited_indicator}
+          </div>
+          <div className='d-inline ml-2'>
+            <button
+              className='btn btn-primary'
+              onClick={() => this.props.gotoFramesetHash(this.props.frame_hash)}
+            >
+              Goto 
+            </button>
+          </div>
         </div>
 
       </div>
@@ -89,39 +85,74 @@ class FramesetCardList extends React.Component {
     return name_elements
   }
 
-  getRedactionDesc(hash_key) {
-    const areas_to_redact = this.props.getRedactionFromFrameset(hash_key)
-    if (areas_to_redact.length > 0) {
-        const redacted_image = this.props.getRedactedImageFromFrameset(hash_key)
-        if (redacted_image) {
-          return 'redaction complete'
-        } else {
-          return 'redaction specified but not yet run'
-        }
-    }  else  {
-        return ''
+  buildFramesetCards(ordered_frame_hashes, framesets) {
+    if (!this.props.show_story_board) {
+      return ''
     }
+    return (
+      <div id='cards_row' className='row m-2'>
+        <div className='col-12 h4 m-2 font-italic'>
+          drag and drop to merge frames
+        </div>
+
+        {ordered_frame_hashes.map((key, index) => {
+          return (
+            <FramesetCard
+              setDraggedId={this.props.setDraggedId}
+              handleDroppedFrameset={this.props.handleDroppedFrameset}
+              frame_hash={key}
+              image_names={this.getImageNamesList(framesets[key]['images'])}
+              key={key}
+              redactFramesetCallback={this.props.redactFramesetCallback}
+              getImageFromFrameset={this.props.getImageFromFrameset}
+              getRedactedImageFromFrameset={this.props.getRedactedImageFromFrameset}
+              highlighted_frameset_hash={this.props.highlighted_frameset_hash}
+              gotoFramesetHash={this.props.gotoFramesetHash}
+            />
+          )
+        })}
+      </div>
+    )
   }
 
   render() {
+    let show_sb_checked = ''
+    if (this.props.show_story_board) {
+      show_sb_checked = 'checked'
+    }
+
     const framesets = this.props.getCurrentFramesets()
     let ordered_frame_hashes = this.props.getFramesetHashesInOrder()
-    let items = ordered_frame_hashes.map((key) =>
-      <FramesetCard
-        setDraggedId={this.props.setDraggedId}
-        handleDroppedFrameset={this.props.handleDroppedFrameset}
-        frame_hash={key}
-        image_names={this.getImageNamesList(framesets[key]['images'])}
-        key={key}
-        redactFramesetCallback={this.props.redactFramesetCallback}
-        redactionDesc={this.getRedactionDesc(key)}
-        setZoomImageUrl={this.props.setZoomImageUrl}
-        getImageFromFrameset={this.props.getImageFromFrameset}
-        getRedactedImageFromFrameset={this.props.getRedactedImageFromFrameset}
-        highlighted_frameset_hash={this.props.highlighted_frameset_hash}
-      />
-    );
-    return items
+    if (ordered_frame_hashes.length === 0) {
+      return ''
+    }
+    const frameset_cards = this.buildFramesetCards(ordered_frame_hashes, framesets)
+    return (
+      <div 
+        id='frameset_cards' 
+        className='col border'
+      >
+        <div className='row pt-2 pb-2'>
+          <div
+            className='col-10 h3 float-left'
+          >
+            Story Board
+          </div>
+          <div 
+              className='d-inline float-right'
+          >
+            <input
+              className='ml-2 mr-2 mt-1'
+              checked={show_sb_checked}
+              type='checkbox'
+              onChange={() => this.props.toggleShowStoryBoardVisibility()}
+            />
+          </div>
+        </div>
+
+        {frameset_cards}
+      </div>
+    )
   }
 }
 

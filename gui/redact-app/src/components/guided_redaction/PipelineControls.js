@@ -172,7 +172,13 @@ class PipelineControls extends React.Component {
 
   doRun(scope) {
     const extra_data = document.getElementById('pipeline_input_json').value
-    this.props.dispatchPipeline(this.props.current_pipeline_id, scope, extra_data)
+    this.props.dispatchPipeline(
+      {
+        pipeline_id: this.props.current_pipeline_id, 
+        scope: scope, 
+        extra_data: extra_data,
+      }
+    )
     this.props.displayInsightsMessage('pipeline was dispatched')
   }
 

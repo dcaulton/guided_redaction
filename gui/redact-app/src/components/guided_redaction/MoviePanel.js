@@ -1,13 +1,29 @@
 import React from 'react';
+import {
+  getMessage, 
+  buildFramesetDiscriminatorSelect,
+  buildRedactionTypeSelect
+} from './redact_utils.js'
+import MovieImageControls from './MovieImageControls.js'
 import FramesetCardList from './Framesets'
+import CanvasMovieOverlay from './CanvasMovieOverlay'
+import SimpleTemplateBuilderControls from './SimpleTemplateBuilderControls'
 
 class MoviePanel extends React.Component {
 
   constructor(props) {
     super(props)
     this.state = {
+      mode: '',
+      last_click: null,
+      oval_center: null,
+      callbacks: {},
+      movie_offset_string: '',
+      movie_offset_seconds: 0,
+      processing_end_seconds: 0,
+      processing_end_minutes: 0,
+      show_story_board: false,
       draggedId: null,
-      zoom_image_url: '',
       uploadMove: false,
       movie_resolution_new: '',
       frameset_offset_seconds: '0',
@@ -17,15 +33,373 @@ class MoviePanel extends React.Component {
     this.getNameFor=this.getNameFor.bind(this)
     this.redactFramesetCallback=this.redactFramesetCallback.bind(this)
     this.setDraggedId=this.setDraggedId.bind(this)
-    this.setZoomImageUrl=this.setZoomImageUrl.bind(this)
     this.handleDroppedFrameset=this.handleDroppedFrameset.bind(this)
     this.setMessage=this.setMessage.bind(this)
     this.submitMovieJob=this.submitMovieJob.bind(this)
-    this.showMovieUploadTarget=this.showMovieUploadTarget.bind(this)
+    this.showMovieUploadOptions=this.showMovieUploadOptions.bind(this)
     this.changeMovieResolutionNew=this.changeMovieResolutionNew.bind(this)
     this.changeFramesetOffsetSeconds=this.changeFramesetOffsetSeconds.bind(this)
     this.changeFramesetOffsetMinutes=this.changeFramesetOffsetMinutes.bind(this)
+    this.handleImageClick=this.handleImageClick.bind(this)                      
     this.findFramesetAtOffset=this.findFramesetAtOffset.bind(this)
+    this.scrubberOnChange=this.scrubberOnChange.bind(this)
+    this.addCallback=this.addCallback.bind(this)
+    this.do_add_1_box=this.do_add_1_box.bind(this)
+    this.do_add_1_box_through_pet=this.do_add_1_box_through_pet.bind(this)
+    this.do_add_2_box=this.do_add_2_box.bind(this)
+    this.do_add_2_box_through_pet=this.do_add_2_box_through_pet.bind(this)
+    this.do_add_1_ocr=this.do_add_1_ocr.bind(this)
+    this.do_add_1_ocr_through_pet=this.do_add_1_ocr_through_pet.bind(this)
+    this.do_add_2_ocr=this.do_add_2_ocr.bind(this)
+    this.do_add_2_ocr_through_pet=this.do_add_2_ocr_through_pet.bind(this)
+    this.setMode=this.setMode.bind(this)
+    this.getRedactionsFromCurrentFrameset=this.getRedactionsFromCurrentFrameset.bind(this)
+    this.setProcessingEndSeconds=this.setProcessingEndSeconds.bind(this)
+    this.setProcessingEndMinutes=this.setProcessingEndMinutes.bind(this)
+    this.getCurrentTemplateAnchors=this.getCurrentTemplateAnchors.bind(this)
+    this.getCurrentTemplateMaskZones=this.getCurrentTemplateMaskZones.bind(this)
+    this.currentImageIsTemplateAnchorImage=this.currentImageIsTemplateAnchorImage.bind(this)
+    this.gotoFramesetHash=this.gotoFramesetHash.bind(this)
+    this.setScrubberValue=this.setScrubberValue.bind(this)
+    this.afterMovieFetched=this.afterMovieFetched.bind(this)
+    this.toggleShowStoryBoardVisibility=this.toggleShowStoryBoardVisibility.bind(this)
+  }
+
+  componentDidMount() {
+    if (!this.props.movie_url) {
+      this.showMovieUploadOptions()
+    }
+    document.getElementById('movie_panel_link').classList.add('active')
+    document.getElementById('movie_panel_link').classList.add('border-bottom')
+    document.getElementById('movie_panel_link').classList.add('pb-0')
+    this.scrubberOnChange()                                                     
+    this.props.setActiveWorkflow('')
+    this.addCallback({
+      'add_1_box': this.do_add_1_box,
+      'add_1_box_through_pet': this.do_add_1_box_through_pet,
+      'add_2_box': this.do_add_2_box,
+      'add_2_box_through_pet': this.do_add_2_box_through_pet,
+      'add_1_ocr': this.do_add_1_ocr,
+      'add_1_ocr_through_pet': this.do_add_1_ocr_through_pet,
+      'add_2_ocr': this.do_add_2_ocr,
+      'add_2_ocr_through_pet': this.do_add_2_ocr_through_pet,
+    })
+  }
+
+  toggleShowStoryBoardVisibility() {
+    const new_value = (!this.state.show_story_board)
+    this.setState({
+      show_story_board: new_value,
+    })
+  }
+
+  afterMovieFetched() {
+    this.scrubberOnChange()
+  }
+
+  setScrubberValue(the_number) {
+    document.getElementById('movie_scrubber').value = the_number
+    this.scrubberOnChange()
+  }
+
+  gotoFramesetHash(the_hash) {
+    const frameset = this.props.movies[this.props.movie_url]['framesets'][the_hash]
+    const image_url = frameset['images'][0]
+    const nummy_as_string = image_url.split('_').slice(-1)[0]
+    const frame_num = parseInt(nummy_as_string)
+    this.setScrubberValue(frame_num)
+  }
+
+  currentImageIsTemplateAnchorImage() {
+    if (this.props.tier_1_scanner_current_ids['template']) {
+      let key = this.props.tier_1_scanner_current_ids['template']
+      if (!Object.keys(this.props.tier_1_scanners['template']).includes(key)) {
+        return false
+      }
+      let template = this.props.tier_1_scanners['template'][key]
+      if (!Object.keys(template).includes('anchors')) {
+        return false
+      }
+      if (!template['anchors'].length && !template['mask_zones'].length) {
+        return false
+      }
+      if (!template['anchors'].length) {
+        // all we have are mask zones, be generous, at this point any image
+        // could be our 'anchor image'.  Though it doesn't make much sense to
+        // have any permanently saved template whith mask zones but no anchors,
+        // it makes the interface more humane to the casual user
+        return true
+      }
+      let cur_template_anchor_image_name = template['anchors'][0]['image']
+      return (cur_template_anchor_image_name === this.props.getImageUrl())
+    } else {
+      return true
+    }
+  }
+
+  getCurrentTemplateAnchors() {
+    const template_id = this.props.tier_1_scanner_current_ids['template']
+    const template = this.props.tier_1_scanners['template'][template_id]
+    if (template) {
+      return template['anchors']
+    }
+    return []
+  }
+
+  getCurrentTemplateMaskZones() {
+    const template_id = this.props.tier_1_scanner_current_ids['template']
+    const template = this.props.tier_1_scanners['template'][template_id]
+    if (template) {
+      return template['mask_zones']
+    }
+    return []
+  }
+
+  setProcessingEndSeconds(the_value) {
+    this.setState({
+      processing_end_seconds: the_value,
+    })
+  }
+
+  setProcessingEndMinutes(the_value) {
+    this.setState({
+      processing_end_minutes: the_value,
+    })
+  }
+
+  updateMovieOffsetMessage(offset_in_seconds) {
+    if (!this.props.movie_url) {
+      return
+    }
+    const mins_offset = Math.floor(parseInt(offset_in_seconds) / 60)
+    const secs_offset = parseInt(offset_in_seconds) % 60
+    const secs_string = secs_offset.toString()
+    const build_string = mins_offset.toString() + ':' + secs_string.padStart(2, '0')
+    this.setState({
+      movie_offset_string: build_string,
+      movie_offset_seconds: offset_in_seconds,
+    })
+  }
+
+  redactImage(areas_to_redact=null)  {
+    if (!areas_to_redact) {
+      areas_to_redact = this.getRedactionsFromCurrentFrameset()
+    }
+    if (areas_to_redact.length > 0) {
+      this.submitMovieJob(
+        'redact',
+        {areas_to_redact: areas_to_redact}
+      )
+    } else {
+      this.setMessage('Nothing to redact has been specified')
+    }
+  }
+
+  getRedactionsFromCurrentFrameset() {
+    const framesets = this.props.getCurrentFramesets()
+    if (!framesets || !this.props.getImageUrl()) {
+        return []
+    }
+    let frameset = framesets[this.props.active_frameset_hash]
+    if (frameset) {
+      if (Object.keys(frameset).indexOf('areas_to_redact') > -1) {
+          return frameset['areas_to_redact']
+      } else {
+          return []
+      }
+    } else {
+      return []
+    }
+  }
+
+  addRedactionToFrameset(areas_to_redact) {
+    let deepCopyFramesets = JSON.parse(JSON.stringify(this.props.getCurrentFramesets()))
+    deepCopyFramesets[this.props.active_frameset_hash]['areas_to_redact'] = areas_to_redact
+    let deepCopyMovies = JSON.parse(JSON.stringify(this.props.movies))
+    let cur_movie = deepCopyMovies[this.props.movie_url]
+    cur_movie['framesets'] = deepCopyFramesets
+    deepCopyMovies[this.props.movie_url] = cur_movie
+    this.props.setGlobalStateVar('movies', deepCopyMovies)
+  }
+
+  setMode(the_mode) {
+    const message = getMessage(the_mode)
+    this.setMessage(message)
+    this.setState({mode: the_mode})
+  }
+
+  do_add_1_box(cur_click) {
+    this.setMode('add_2_box')
+  }
+
+  do_add_1_ocr(cur_click) {
+    this.setMode('add_2_ocr')
+  }
+
+  do_add_1_box_through_pet(cur_click) {
+    this.setMode('add_2_box_through_pet')
+  }
+
+  do_add_1_ocr_through_pet(cur_click) {
+    this.setMode('add_2_ocr_through_pet')
+  }
+
+  do_add_2_box(cur_click) {
+//    let deepCopyAreasToRedact = this.getRedactionsFromCurrentFrameset()
+    const new_a2r = {
+      start: [this.state.last_click[0], this.state.last_click[1]],
+      end: cur_click,
+      text: 'you got it hombre',
+      source: 'manual',
+      id: Math.floor(Math.random() * 1950960),
+    }
+//    deepCopyAreasToRedact.push(new_a2r)
+    this.setMessage('region was successfully added, select another region to add')
+//    this.addRedactionToFrameset(deepCopyAreasToRedact)
+    this.redactImage([new_a2r])
+    this.setState({mode: 'add_1_box'})
+  }
+
+  do_add_2_ocr(cur_click) {
+    const ocr_rule = this.buildSingleUseOcrRule(this.state.last_click, cur_click)
+    const movies = this.buildMoviesForSingleFrame()
+    this.props.runOcrRedactPipelineJob(ocr_rule, movies)
+    this.setState({mode: ''})
+  }
+
+  do_add_2_box_through_pet(cur_click) {
+    let deepCopyMovies = JSON.parse(JSON.stringify(this.props.movies))
+    let cur_movie = deepCopyMovies[this.props.movie_url]
+
+    const start_offset_seconds = parseInt(this.state.movie_offset_seconds)
+    const end_offset_seconds = (
+      parseInt(this.state.processing_end_seconds)
+      + 60*parseInt(this.state.processing_end_minutes)
+    )
+
+    if (start_offset_seconds >= end_offset_seconds) {
+      this.setMessage('zero or negative time range selected, no redactions will be added')
+      this.setState({
+        mode: '',
+      })
+      return
+    }
+
+    let frameset_hashes_to_redact = []
+    let cur_frame_url = ''
+    let the_frameset_hash = ''
+    for (let i=start_offset_seconds; i <= end_offset_seconds; i++) {
+      if (i > cur_movie['frames'].length - 1) {
+        break
+      }
+      cur_frame_url = cur_movie['frames'][i]
+      the_frameset_hash = this.props.getFramesetHashForImageUrl(cur_frame_url)
+      if (!frameset_hashes_to_redact.includes(the_frameset_hash)) {
+        if (!Object.keys(cur_movie['framesets'][the_frameset_hash]).includes('areas_to_redact')) {
+          cur_movie['framesets'][the_frameset_hash]['areas_to_redact'] = []
+        }
+        const new_a2r = {
+          start: [this.state.last_click[0], this.state.last_click[1]],
+          end: cur_click,
+          text: 'you got it hombre',
+          source: 'manual',
+          id: Math.floor(Math.random() * 1950960),
+        }
+        cur_movie['framesets'][the_frameset_hash]['areas_to_redact'].push(new_a2r)
+        frameset_hashes_to_redact.push(the_frameset_hash)
+      }
+    }
+
+    this.props.setGlobalStateVar('movies', deepCopyMovies)
+
+    this.submitMovieJob(
+      'redact_box_multi_frameset',
+      {
+        movie: cur_movie,
+        frameset_hashes: frameset_hashes_to_redact,
+      },
+    )
+    this.setState({mode: ''})
+  }
+
+  do_add_2_ocr_through_pet(cur_click) {
+    this.submitMovieJob(
+      'scan_ocr',
+      {current_click: cur_click},
+    )
+    this.setState({mode: ''})
+  }
+
+  addCallback(the_dict) {
+    let deepCopyCallbacks = this.state.callbacks
+    for (let i=0; i < Object.keys(the_dict).length; i++) {
+      const the_key = Object.keys(the_dict)[i]
+      const the_func = the_dict[the_key]
+      deepCopyCallbacks[the_key] = the_func
+    }
+    this.setState({
+      'callbacks': deepCopyCallbacks,
+    })
+  }
+
+  scrubberOnChange(the_frameset_hash='', framesets='', frame_url='') {          
+    const value = document.getElementById('movie_scrubber').value
+    if (
+      typeof the_frameset_hash === 'object'  // manually moving the scrubber yields an event 
+      || (!the_frameset_hash && !framesets && !frame_url) // calling this method with empty parms
+    ) {
+      const frames = this.props.getCurrentFrames()
+      framesets = this.props.getCurrentFramesets()
+      frame_url = frames[value]
+      the_frameset_hash = this.props.getFramesetHashForImageUrl(frame_url)
+    }
+    this.props.setFramesetHash(the_frameset_hash, framesets, (()=>{this.setImageSize(frame_url)}) )
+    this.updateMovieOffsetMessage(value)
+  } 
+
+  setImageSize(the_image) {
+    var app_this = this
+    if (the_image) {
+      let img = new Image()
+      img.src = the_image
+      img.onload = function() {
+        app_this.props.setGlobalStateVar(
+          {
+            image_width: this.width,
+            image_height: this.height,
+          },
+          app_this.setImageScale()
+        )
+      }
+    }
+  }
+
+  setImageScale() {
+    if (!document.getElementById('movie_image')) {
+      return
+    }
+    const scale = (document.getElementById('movie_image').width /
+        document.getElementById('movie_image').naturalWidth)
+    this.props.setGlobalStateVar('image_scale', scale)
+  }
+
+  handleImageClick = (e) => {
+    if (!this.props.getImageUrl()) {
+      return
+    }
+    let x = e.nativeEvent.offsetX
+    let y = e.nativeEvent.offsetY
+    const x_scaled = parseInt(x / this.props.image_scale)
+    const y_scaled = parseInt(y / this.props.image_scale)
+    if (x_scaled > this.props.image_width || y_scaled > this.props.image_height) {
+      return
+    }
+    if (Object.keys(this.state.callbacks).includes(this.state.mode)) {
+      this.state.callbacks[this.state.mode]([x_scaled, y_scaled])
+    }
+    this.setState({
+      last_click: [x_scaled, y_scaled],
+    })
   }
 
   findFramesetAtOffset(offset) {
@@ -42,18 +416,14 @@ class MoviePanel extends React.Component {
     })
   }
 
-  componentDidMount() {
-    if (!this.props.movie_url) {
-      this.showMovieUploadTarget()
-    }
-    this.props.getAndSaveUser()
+  componentWillUnmount() {                                                      
+    document.getElementById('movie_panel_link').classList.remove('active')          
+    document.getElementById('movie_panel_link').classList.add('border-0')           
+    document.getElementById('movie_panel_link').classList.remove('pb-0')            
   }
 
-  showMovieUploadTarget() {
-    const value = !this.state.uploadMovie
-    this.setState({
-      uploadMovie: value,
-    })
+  showMovieUploadOptions() {
+    this.props.setGlobalStateVar('movie_url', '')
   }
 
   changeMovieResolutionNew(value) {
@@ -115,6 +485,33 @@ class MoviePanel extends React.Component {
     job_data['description'] = 'redact images for movie: ' + this.props.movie_url
     job_data['request_data']['movies'] = {}
     job_data['request_data']['movies'][this.props.movie_url] = this.props.movies[this.props.movie_url]
+    job_data['request_data']['mask_method'] = this.props.mask_method
+    job_data['request_data']['meta'] = {
+      return_type: 'url',
+      preserve_working_dir_across_batch: true,
+    }
+    return job_data
+  }
+
+  buildRedactBoxMultiFramesetJobdata(extra_data) {
+    let job_data = {
+      request_data: {},
+    }
+    job_data['app'] = 'redact'
+    job_data['operation'] = 'redact'
+    job_data['description'] = 'redact images for movie: ' + this.props.movie_url
+    job_data['request_data']['movies'] = {}
+
+    const cur_movie = extra_data['movie']
+    let build_movie = JSON.parse(JSON.stringify(cur_movie))
+    delete build_movie['framesets']
+    build_movie['framesets'] = {}
+    for (let i=0; i < extra_data['frameset_hashes'].length; i++) {
+      const frameset_hash = extra_data['frameset_hashes'][i]
+      build_movie['framesets'][frameset_hash] = cur_movie['framesets'][frameset_hash]
+    }
+    job_data['request_data']['movies'][this.props.movie_url] = build_movie
+
     job_data['request_data']['mask_method'] = this.props.mask_method
     job_data['request_data']['meta'] = {
       return_type: 'url',
@@ -235,13 +632,78 @@ class MoviePanel extends React.Component {
     return job_data
   }
 
+  buildRedactJobData(extra_data) {
+    let job_data = {
+      request_data: {},
+    }
+    job_data['app'] = 'redact'
+    job_data['operation'] = 'redact_single'
+    job_data['description'] = 'redact image'
+    job_data['request_data']['movie_url'] = this.props.movie_url
+    let frameset_hash = this.props.getFramesetHashForImageUrl(this.props.getImageUrl())
+    job_data['request_data']['frameset_hash'] = frameset_hash
+    const image_url = this.props.getImageUrl()
+    job_data['request_data']['image_url'] = image_url
+    // I'd like to use true here, even coded it up.  Had to scrap it because, if we
+    //   rredact, then reset, then redact, the image comes through with the same
+    //   url.  That means the system doesn't know to display a new version of the image
+    job_data['request_data']['meta'] = {
+      preserve_working_dir_across_batch: false,
+      return_type: 'url',
+    }
+    job_data['request_data']['mask_method'] = this.props.mask_method
+
+    if (Object.keys(extra_data).includes('areas_to_redact')) {
+      job_data['request_data']['areas_to_redact'] = extra_data['areas_to_redact']
+    } else {
+      let frameset = this.props.movies[this.props.movie_url]['framesets'][frameset_hash]
+      let pass_arr = []
+      for (let i=0; i < frameset['areas_to_redact'].length; i++) {
+        let a2r = frameset['areas_to_redact'][i]
+        pass_arr.push(a2r)
+      }
+      job_data['request_data']['areas_to_redact'] = pass_arr
+    }
+    return job_data
+  }
+
+  buildSingleUseOcrRule(last_click, current_click) {
+    let ocr_rule = {}
+    ocr_rule['id'] = 'ocr_rule_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
+    ocr_rule['name'] = 'single use'
+    ocr_rule['start'] = last_click
+    ocr_rule['end'] = current_click
+    ocr_rule['image'] = ''
+    ocr_rule['movie'] = ''
+    ocr_rule['match_text'] = []
+    ocr_rule['match_percent'] = 0
+    ocr_rule['skip_east'] = false
+    ocr_rule['scan_level'] = 'tier_2'
+    ocr_rule['origin_entity_location'] = [0, 0]
+    return ocr_rule
+  }
+
+  buildMoviesForSingleFrame() {
+    const image_url = this.props.getImageUrl()
+    const frameset_hash = this.props.getFramesetHashForImageUrl(image_url)
+    let movies = {}
+    movies[this.props.movie_url] = {
+      framesets: {},
+      frames: [],
+    }
+    movies[this.props.movie_url]['framesets'][frameset_hash] = {images: []}
+    movies[this.props.movie_url]['framesets'][frameset_hash]['images'].push(image_url)
+    movies[this.props.movie_url]['frames'].push(image_url)
+    return movies
+  }
+
   submitMovieJob(job_string, extra_data = '') {
     if (job_string === 'split_and_hash_video') {
       const job_data = this.buildSplitAndHashJobData(extra_data)
       this.props.submitJob({
         job_data:job_data, 
         after_submit: () => {this.setMessage('movie split job was submitted')}, 
-        cancel_after_loading: true, 
+        delete_job_after_loading: true, 
         after_loaded: () => {this.setMessage('movie split completed')}, 
         when_failed: () => {this.setMessage('movie split failed')},
       })
@@ -250,7 +712,7 @@ class MoviePanel extends React.Component {
       this.props.submitJob({
         job_data:job_data, 
         after_submit: () => {this.setMessage('movie split job was submitted')}, 
-        cancel_after_loading: true, 
+        delete_job_after_loading: true, 
         after_loaded: () => {this.setMessage('movie split completed')}, 
         when_failed: () => {this.setMessage('movie split failed')},
       })
@@ -259,7 +721,7 @@ class MoviePanel extends React.Component {
       this.props.submitJob({
         job_data:job_data, 
         after_submit: () => {this.setMessage('movie hash job was submitted')}, 
-        cancel_after_loading: true, 
+        delete_job_after_loading: true, 
         after_loaded: () => {this.setMessage('movie hash completed')}, 
         when_failed: () => {this.setMessage('movie hash failed')},
       })
@@ -268,7 +730,7 @@ class MoviePanel extends React.Component {
       this.props.submitJob({
         job_data:job_data, 
         after_submit: () => {this.setMessage('movie copy job was submitted')}, 
-        cancel_after_loading: true, 
+        delete_job_after_loading: true, 
         after_loaded: () => {this.setMessage('movie copy completed')}, 
         when_failed: () => {this.setMessage('movie copy failed')},
       })
@@ -281,7 +743,7 @@ class MoviePanel extends React.Component {
       this.props.submitJob({
         job_data:job_data, 
         after_submit: () => {this.setMessage('movie change resolution was submitted')}, 
-        cancel_after_loading: true, 
+        delete_job_after_loading: true, 
         after_loaded: () => {this.setMessage('movie change resolution completed')}, 
         when_failed: () => {this.setMessage('movie change resolution failed')},
       })
@@ -290,7 +752,7 @@ class MoviePanel extends React.Component {
       this.props.submitJob({
         job_data: job_data, 
         after_submit: () => {this.setMessage('redact frames job was submitted')}, 
-        cancel_after_loading: true, 
+        delete_job_after_loading: true, 
         after_loaded: () => {this.setMessage('frameset redactions completed')}, 
         when_failed: () => {this.setMessage('redact frames job failed')},
       })
@@ -299,7 +761,7 @@ class MoviePanel extends React.Component {
       this.props.submitJob({
         job_data: job_data, 
         after_submit: () => {this.setMessage('template match job was submitted')}, 
-        cancel_after_loading: true, 
+        delete_job_after_loading: true, 
         after_loaded: () => {this.setMessage('template match completed')}, 
         when_failed: () => {this.setMessage('template match job failed')},
       })
@@ -308,7 +770,7 @@ class MoviePanel extends React.Component {
       this.props.submitJob({
         job_data: job_data, 
         after_submit: () => {this.setMessage('template match job was submitted')}, 
-        cancel_after_loading: true, 
+        delete_job_after_loading: true, 
         after_loaded: () => {this.setMessage('template match completed')}, 
         when_failed: () => {this.setMessage('template match job failed')},
       })
@@ -317,10 +779,28 @@ class MoviePanel extends React.Component {
       this.props.submitJob({
         job_data: job_data, 
         after_submit: () => {this.setMessage('zip movie job was submitted')}, 
-        cancel_after_loading: true, 
+        delete_job_after_loading: true, 
         after_loaded: () => {this.setMessage('movie zip completed')}, 
         when_failed: () => {this.setMessage('zip movie job failed')},
       })
+    } else if (job_string === 'redact') {
+      const job_data = this.buildRedactJobData(extra_data)
+      this.props.submitJob({
+        job_data:job_data,
+        after_submit: () => {this.setMessage('redact job was submitted')},
+        delete_job_after_loading: true,
+        after_loaded: () => {this.setMessage('redact completed')},
+        when_failed: () => {this.setMessage('redact failed')},
+      })
+    } else if (job_string === 'redact_box_multi_frameset') {
+      const job_data = this.buildRedactBoxMultiFramesetJobdata(extra_data)
+      this.props.submitJob({
+        job_data: job_data,
+        after_submit: () => {this.setMessage('redact job was submitted')},
+        delete_job_after_loading: true,
+        after_loaded: () => {this.setMessage('redact completed')},
+        when_failed: () => {this.setMessage('redact failed')},
+      }) 
     } else if (job_string === 'movie_panel_redact_and_reassemble_video') {
       console.log('redact and reassemble called - NOT SUPPORTED YET')
     }
@@ -361,100 +841,10 @@ class MoviePanel extends React.Component {
     return s
   }
 
-  setZoomImageUrl = (the_url) => {
-    this.setState({
-      zoom_image_url: the_url,
-    })
-  }
-
   get_filename(the_url) {
     if (this.props.movie_url) {
       const parts = this.props.movie_url.split('/')
       return parts[parts.length-1]
-    }
-  }
-
-  buildImageZoomModal() {
-    return (
-      <div className="modal" id='moviePanelModal' tabIndex="-1" role="dialog">
-        <div className="modal-dialog modal-xl" id='moviePanelModalInner' role="document">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h5 className="modal-title">Viewing Image</h5>
-              <button type="button" className="close" data-dismiss="modal" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-              </button>
-            </div>
-            <div className="modal-body">
-                <img 
-                    id='movie_zoom_image'
-                    src={this.state.zoom_image_url}
-                    alt='whatever'
-                />
-            </div>
-            <div className="modal-footer">
-              <button type="button" className="btn btn-secondary" data-dismiss="modal">Close</button>
-            </div>
-          </div>
-        </div>
-      </div>    
-    )
-  }
-
-  buildVideoDiv() {
-    if (this.state.uploadMovie) {
-      return
-    }
-    return (
-      <div id='video_div' className='col-md-6'>
-        <video id='video_id' controls >
-          <source 
-              src={this.props.movie_url}
-              type="video/mp4" 
-          />
-          Your browser does not support the video tag.
-        </video>
-      </div>
-    )
-  }
-
-  buildRedactedVideoDiv() {
-    let redacted_video_element = <div />
-    const red_mov_url = this.props.getRedactedMovieUrl()
-    if (red_mov_url) {
-      redacted_video_element = (
-        <div>
-          <div id='redacted_video_url'></div>
-          <video id='redacted_video_id' controls >
-            <source 
-                id='redacted_video_source'
-                src={red_mov_url}
-                type="video/mp4" 
-            />
-            Your browser does not support the video tag.
-          </video>
-          <h3>Redacted Video</h3>
-        </div>
-      )
-    }
-
-    return (
-      <div 
-          id='redacted_video_div' 
-          className='col-md-6'
-      >
-        {redacted_video_element}
-      </div>
-    )
-  }
-
-  buildFramesetsTitle() {
-    if (Object.keys(this.props.getCurrentFramesets()).length > 0) {
-      return (
-          <div className='col col-lg-10 p-2 border-bottom border-top'>
-          <span className='mt-2 h5'>Framesets - drag and drop to merge</span>
-          </div>
-      )
     }
   }
 
@@ -485,60 +875,182 @@ class MoviePanel extends React.Component {
     })
   }
 
-  buildMovieUploadTarget() {
-    if (this.state.uploadMovie) {
-      let top_style = {
-        height: '270px',
-        'borderStyle': 'dashed',
-        'borderColor': '#CCCCCC',
-        'color': '#888888',
-        'textAlign': 'center',
-        'paddingTop': '90px',
-        'fontSize': '36px',
+  buildImageDiv() {
+    const image_url = this.props.getImageUrl()
+    if (!image_url) {
+      const the_style = {
+        'height': '500px',
+        'width': '1000px',
+        'top': '100px',
+        'paddingTop': '200px',
       }
       return (
-        <div 
-          className='col-md-6'
-          style={top_style}
-          draggable='true'
-          onDragOver={(event) => event.preventDefault()}
-          onDrop={(event) => this.handleDroppedMovie(event)}
+        <div
+            className='h1 text-center'
+            style={the_style}
         >
-          Drag movies here to begin work
+          No movie loaded yet
         </div>
       )
     }
+
+    return (
+      <div>
+        <img
+            id='movie_image'
+            className='p-0 m-0 mw-100'
+            src={image_url}
+            alt={image_url}
+        />
+      </div>
+    )
+  }
+
+  getMaxRange() {
+    if (
+      !this.props.movies 
+      || !this.props.movie_url 
+      || (!Object.keys(this.props.movies).includes(this.props.movie_url))
+    ) {
+      return 1
+    }
+    const movie = this.props.movies[this.props.movie_url]
+    const max_len = movie['frames'].length - 1
+    return max_len
+  }
+
+  buildMovieScrubber() {
+    const max_range = this.getMaxRange()
+    let the_style = {
+      width: '100%',
+    }
+    if (!this.props.getImageUrl()) {
+      the_style['display'] = 'none'
+    }
+    return (
+      <div>
+      <input
+        id='movie_scrubber'
+        type='range'
+        style={the_style}
+        max={max_range}
+        defaultValue='0'
+        onChange={this.scrubberOnChange}
+      />
+      </div>
+    )
+  }
+
+  buildPositionLabel() {
+    if (!this.props.movie_url) {
+      return ''
+    }
+    const position_string = 'Position: ' + this.state.movie_offset_string
+    return (
+      <div>
+        {position_string}
+      </div>
+    )
+  }
+
+  buildFetchAndSplit() {
+    if (this.props.movie_url) {
+      return ''
+    }
+    return (
+      <div>
+        <div className='d-inline ml-4'>
+          fetch recording id
+        </div>
+        <div className='d-inline ml-2'>
+          <input
+            id='recording_id'
+            size='40'
+          />
+        </div>
+        <div className='d-inline ml-2'>
+          <button
+              className='btn btn-primary'
+              onClick={()=>
+                this.props.dispatchFetchSplitAndHash(
+                  document.getElementById('recording_id').value, 
+                  true,
+                  this.afterMovieFetched
+                )
+              }
+          >
+            Go
+          </button>
+        </div>
+      </div>
+    )
   }
 
   render() {
-    const image_zoom_modal = this.buildImageZoomModal()
-    const video_div = this.buildVideoDiv()
-    const redacted_video_div = this.buildRedactedVideoDiv()
-    const framesets_title = this.buildFramesetsTitle()
-    const movie_upload_target = this.buildMovieUploadTarget()
+    const image_div = this.buildImageDiv()
+    const movie_scrubber = this.buildMovieScrubber()
+    const position_label = this.buildPositionLabel()
+    const movie_load_dialog = this.buildFetchAndSplit()
+    return  (
+      <div className='col'>
 
-    return (
-    <div>
+        <div className='row m-2'>
+          <MoviePanelHeader
+            callMovieSplit={this.callMovieSplit}
+            message={this.props.message}
+            submitMovieJob={this.submitMovieJob}
+            movie_url={this.props.movie_url}
+            showMovieUploadOptions={this.showMovieUploadOptions}
+          />
+        </div>
 
-      {image_zoom_modal}
-
-      <div id='movie_parser_panel'>
-        <div id='video_and_meta' className='row'>
-          <div id='video_meta_div' className='col-md-12'>
-            <MoviePanelHeader
-              callMovieSplit={this.callMovieSplit}
-              message={this.props.message}
-              submitMovieJob={this.submitMovieJob}
-              movie_url={this.props.movie_url}
-              templates={this.props.templates}
-              showMovieUploadTarget={this.showMovieUploadTarget}
-            />
+        <div className='row m-2'>
+          <div className='col-10'>
+            <div className='row'>
+              {image_div}
+              <CanvasMovieOverlay
+                getImageUrl={this.props.getImageUrl}
+                image_width={this.props.image_width}
+                image_height={this.props.image_height}
+                image_scale={this.props.image_scale}
+                show_redaction_borders={this.props.visibilityFlags.redaction_borders}
+                last_click={this.state.last_click}
+                oval_center= {this.state.oval_center}
+                mode={this.state.mode}
+                clickCallback= {this.handleImageClick}
+                getRedactionsFromCurrentFrameset={this.getRedactionsFromCurrentFrameset}
+                getCurrentTemplateAnchors={this.getCurrentTemplateAnchors}
+                getCurrentTemplateMaskZones={this.getCurrentTemplateMaskZones}
+                currentImageIsTemplateAnchorImage={this.currentImageIsTemplateAnchorImage}
+              />
+            </div>
           </div>
+        </div>
 
-          {movie_upload_target}
-          {video_div}
-          {redacted_video_div}
+        <div className='row m-2'>
+          <div className='col'>
+            {position_label}
+            {movie_scrubber}
+            {movie_load_dialog}
+          </div>
+        </div>
 
+        <div className='row m-2'>
+          <MovieImageControls
+            getImageUrl={this.props.getImageUrl}
+            setMessage={this.setMessage}
+            setMode={this.setMode}
+            templates={this.props.templates}
+            processing_end_seconds={this.props.processing_end_seconds}
+            processing_end_minutes={this.props.processing_end_minutes}
+            clearCurrentFramesetChanges={this.props.clearCurrentFramesetChanges}
+            runTemplateRedactPipelineJob={this.props.runTemplateRedactPipelineJob}
+            setProcessingEndSeconds={this.setProcessingEndSeconds}
+            setProcessingEndMinutes={this.setProcessingEndMinutes}
+          />
+        </div>
+
+        <div className='row m-2 bg-light rounded'>
           <MoviePanelAdvancedControls
             movie_url={this.props.movie_url}
             movies={this.props.movies}
@@ -557,63 +1069,69 @@ class MoviePanel extends React.Component {
             changeFramesetOffsetSeconds={this.changeFramesetOffsetSeconds}
             changeFramesetOffsetMinutes={this.changeFramesetOffsetMinutes}
             findFramesetAtOffset={this.findFramesetAtOffset}
+            visibilityFlags={this.props.visibilityFlags}
+            toggleShowVisibility={this.props.toggleShowVisibility}
           />
-
         </div>
 
-        <div id='frame_and_frameset_data' className='row mt-3'>
-          {framesets_title}
-          <div id='frameset_cards' className='col-md-12'>
-            <div id='cards_row' className='row m-2'>
-              <FramesetCardList 
-                getCurrentFramesets={this.props.getCurrentFramesets}
-                getNameFor={this.getNameFor}
-                redactFramesetCallback={this.redactFramesetCallback}
-                getRedactionFromFrameset={this.props.getRedactionFromFrameset}
-                setDraggedId={this.setDraggedId}
-                handleDroppedFrameset={this.handleDroppedFrameset}
-                setZoomImageUrl={this.setZoomImageUrl}
-                getFramesetHashesInOrder={this.props.getFramesetHashesInOrder}
-                getImageFromFrameset={this.props.getImageFromFrameset}
-                getRedactedImageFromFrameset={this.props.getRedactedImageFromFrameset}
-                highlighted_frameset_hash={this.state.highlighted_frameset_hash}
-              />
-            </div>
-          </div>
+        <div className='row m-2 bg-light rounded'>
+          <FramesetCardList 
+            getCurrentFramesets={this.props.getCurrentFramesets}
+            getNameFor={this.getNameFor}
+            redactFramesetCallback={this.redactFramesetCallback}
+            getRedactionFromFrameset={this.props.getRedactionFromFrameset}
+            setDraggedId={this.setDraggedId}
+            handleDroppedFrameset={this.handleDroppedFrameset}
+            getFramesetHashesInOrder={this.props.getFramesetHashesInOrder}
+            getImageFromFrameset={this.props.getImageFromFrameset}
+            getRedactedImageFromFrameset={this.props.getRedactedImageFromFrameset}
+            highlighted_frameset_hash={this.state.highlighted_frameset_hash}
+            gotoFramesetHash={this.gotoFramesetHash}
+            show_story_board={this.state.show_story_board}
+            toggleShowStoryBoardVisibility={this.toggleShowStoryBoardVisibility}
+          />
         </div>
+
+        <div className='row m-2 bg-light rounded'>
+          <SimpleTemplateBuilderControls
+            last_click={this.state.last_click}
+            getImageUrl={this.props.getImageUrl}
+            movie_url={this.props.movie_url}
+            setMode={this.setMode}
+            setMessage={this.setMessage}
+            addCallback={this.addCallback}
+            tier_1_scanners={this.props.tier_1_scanners}
+            tier_1_scanner_current_ids={this.props.tier_1_scanner_current_ids}
+            setGlobalStateVar={this.props.setGlobalStateVar}
+            cropImage={this.props.cropImage}
+            collapsible={true}
+          />
+        </div>
+
       </div>
-    </div>
-
-    );
+    )
   }
 }
 
 class MoviePanelAdvancedControls extends React.Component {
   buildFramesetDiscriminatorDropdown() {
+    const frameset_discriminator_select = buildFramesetDiscriminatorSelect(
+      'frameset_discriminator',
+      this.props.frameset_discriminator,
+      ((event) => 
+        this.props.setGlobalStateVar(
+          'frameset_discriminator',
+          event.target.value,
+          this.props.setMessage('framework discriminator updated')
+        )
+      )
+    )
+
     return (
       <div
           className='d-inline ml-2 mt-2'
       >
-         <select
-            title='Frameset Discriminator'
-            name='frameset_discriminator'
-            value={this.props.frameset_discriminator}
-            onChange={(event) => 
-              this.props.setGlobalStateVar(
-                'frameset_discriminator',
-                event.target.value,
-                this.props.setMessage('framework discriminator updated')
-              )
-            }
-         >
-          <option value='gray8'>--FramesetDiscriminator--</option>
-          <option value='gray64'>gray 64x64</option>
-          <option value='gray32'>gray 32x32</option>
-          <option value='gray16'>gray 16x16</option>
-          <option value='gray8'>gray 8x8 (default)</option>
-          <option value='gray6'>gray 6x6</option>
-          <option value='gray4'>gray 4x4</option>
-        </select>
+        {frameset_discriminator_select}
       </div>
     )
   }
@@ -630,25 +1148,6 @@ class MoviePanelAdvancedControls extends React.Component {
         </a>
       )
     }
-  }
-
-  buildTemplatesString() {
-    let loaded_templates = []
-    if (this.props.templates) {
-      const temp_keys = Object.keys(this.props.templates)
-      for (let i=0; i < temp_keys.length; i++) {
-        loaded_templates.push(this.props.templates[temp_keys[i]]['name'])
-      }
-    }
-    return (
-      <ul>
-      {loaded_templates.map((value, index) => {
-        return (
-          <li key={index}>{value}</li>
-        )
-      })}
-      </ul>
-    )
   }
 
   buildSplitButton() {
@@ -821,6 +1320,24 @@ class MoviePanelAdvancedControls extends React.Component {
     this.props.changeFramesetOffsetMinutes(offset_min)
   }
 
+  buildShowRedactionBordersCheckbox() {
+    let show_redaction_borders_checked = ''
+    if (this.props.visibilityFlags['redaction_borders']) {
+      show_redaction_borders_checked = 'checked'
+    }
+    return (
+      <div className='row mt-3 bg-light rounded'>
+        <input
+          className='ml-2 mr-2 mt-1'
+          checked={show_redaction_borders_checked}
+          type='checkbox'
+          onChange={() => this.props.toggleShowVisibility('redaction_borders')}
+        />
+        Show Redaction Borders
+      </div>
+    )
+  }
+
   render() {
     if (this.props.movie_url === '') {
       return ''
@@ -832,7 +1349,6 @@ class MoviePanelAdvancedControls extends React.Component {
     let num_frames = '0'
     let redacted = 'No'
     let frame_dimensions = 'unknown'
-    let templates_string = this.buildTemplatesString()
     const split_button = this.buildSplitButton()
     const hash_button = this.buildHashButton()
     const copy_button = this.buildCopyButton()
@@ -840,6 +1356,7 @@ class MoviePanelAdvancedControls extends React.Component {
     const redacted_movie_dl_link = this.buildRedactedMovieDownloadLink()
     const preserve_movie_audio_checkbox = this.buildPreserveMovieAudioCheckbox() 
     const find_frameset_at_offset_button = this.buildFindFramesetAtOffsetButton()
+    const show_redaction_borders = this.buildShowRedactionBordersCheckbox()
 
     const fd_dropdown = this.buildFramesetDiscriminatorDropdown()
     if (this.props.movie_url && Object.keys(this.props.movies).includes(this.props.movie_url)) {
@@ -864,15 +1381,20 @@ class MoviePanelAdvancedControls extends React.Component {
       }
     }
 
+    const redaction_select = buildRedactionTypeSelect(
+      'mask_method',
+      this.props.mask_method,
+      ((event) => this.props.setGlobalStateVar('mask_method', event.target.value))
+    )
 
     return (
-      <div className='col-md-9 m-2 bg-light rounded'>
+      <div className='col border pt-2 pb-2'>
         <div className='row'>
           
           <div
             className='col-lg-10 h3 float-left'
           >
-            movie info
+            Movie Info
           </div>
           <div 
               className='d-inline float-right'
@@ -905,10 +1427,6 @@ class MoviePanelAdvancedControls extends React.Component {
               <div>Frameset Discriminator: {frameset_discriminator}</div>
               <div>Frame Dimensions: {frame_dimensions}</div>
               <div>
-                Loaded Templates:
-                {templates_string}
-              </div>
-              <div>
                 {redacted_movie_dl_link}
               </div>
             </div>
@@ -922,23 +1440,12 @@ class MoviePanelAdvancedControls extends React.Component {
               </div>
 
               <div>
-                <span>set mask method</span>
-                <select
-                    className='ml-2'
-                    name='mask_method'
-                    value={this.props.mask_method}
-                    onChange={(event) => this.props.setGlobalStateVar('mask_method', event.target.value)}
-                >
-                  <option value='blur_7x7'>--- Mask Method ---</option>
-                  <option value='blur_7x7'>Gaussian Blur 7x7</option>
-                  <option value='blur_21x21'>Gaussian Blur 21x21</option>
-                  <option value='blur_median'>Median Blur</option>
-                  <option value='black_rectangle'>Black Rectangle</option>
-                  <option value='green_outline'>Green Outline</option>
-                  <option value='text_eraser_eroded_7'>Text Eraser eroded 7</option>
-                  <option value='text_eraser_eroded_13'>Text Eraser eroded 13</option>
-                  <option value='text_eraser_partitioned'>Text Eraser partitioned</option>
-                </select>
+                <div className='d-inline'>
+                  set mask method
+                </div>
+                <div className='d-inline ml-2'>
+                  {redaction_select}
+                </div>
               </div>
               <div className='mt-2'>
                 <div className='d-inline'>
@@ -961,6 +1468,9 @@ class MoviePanelAdvancedControls extends React.Component {
               <div className='mt-2 ml-2'>
                 {preserve_movie_audio_checkbox}
               </div>
+              <div className='mt-2 ml-2'>
+                {show_redaction_borders}
+              </div>
             </div>
           </div>
         </div>
@@ -971,52 +1481,14 @@ class MoviePanelAdvancedControls extends React.Component {
 }
 
 class MoviePanelHeader extends React.Component {
-   buildTemplateButton() {
-    if (this.props.movie_url === '') {
-      return ''
-    }
-    const template_keys = Object.keys(this.props.templates)
-    if (!template_keys.length) {
-      return ''
-    }
-    return (
-      <div id='template_div' className='d-inline'>
-        <button className='btn btn-primary dropdown-toggle ml-2' type='button' id='templateDropdownButton'
-            data-toggle='dropdown' aria-haspopup='true' aria-expanded='false'>
-          Template
-        </button>
-        <div className='dropdown-menu' aria-labelledby='tempateDropdownButton'>
-        {template_keys.map((value, index) => {
-          return (
-            <button className='dropdown-item ml-2'
-                key={index}
-                onClick={() => this.props.submitMovieJob('template_match', this.props.templates[value]['id'])}
-                href='.'>
-              Run {this.props.templates[value]['name']}
-            </button>
-          )
-        })}
-          <button className='dropdown-item ml-2'
-              key='template_match_all_templates_key'
-              onClick={() => this.props.submitMovieJob('template_match_all_templates')}
-              href='.'>
-            Run all templates
-          </button>
-        </div>
-      </div>
-    )
-  }
-
   buildMessage() {
-      if (this.props.message === '.') {
-      let style = {
-        color: '#FFFFFF',
-      }
+      if (
+        this.props.message === '.'
+        || this.props.message === ''
+      ) {
       return (
-        <div
-          style={style}
-        >
-          {this.props.message}
+        <div className='text-white'>
+          .
         </div>
       )
     } else {
@@ -1032,24 +1504,14 @@ class MoviePanelHeader extends React.Component {
       <button 
           id='parse_video_button'
           className='btn btn-primary' 
-          onClick={() => this.props.submitMovieJob('split_and_hash_video', this.props.movie_url)}
+          onClick={
+            () => this.props.submitMovieJob(
+              'split_and_hash_video', 
+              this.props.movie_url
+            )
+          }
       >
         Split and Hash
-      </button>
-    )
-  }
-
-  buildRedactButton() {
-    if (this.props.movie_url === '') {
-      return ''
-    }
-    return (
-      <button 
-          id='parse_video_button'
-          className='btn btn-primary ml-2' 
-          onClick={() => this.props.submitMovieJob('redact_framesets')}
-      >
-        Redact All Frames
       </button>
     )
   }
@@ -1070,10 +1532,13 @@ class MoviePanelHeader extends React.Component {
   }
 
   buildNewButton() {
+    if (!this.props.movie_url) {
+      return ''
+    }
     return (
       <button 
           className='btn btn-primary ml-2' 
-          onClick={() => this.props.showMovieUploadTarget()}
+          onClick={() => this.props.showMovieUploadOptions()}
       >
         New
       </button>
@@ -1081,27 +1546,19 @@ class MoviePanelHeader extends React.Component {
   }
 
   render() {
-    let templates_button = this.buildTemplateButton()
     let message = this.buildMessage()
     let split_button = this.buildSplitButton()
-    let redact_button = this.buildRedactButton()
     let reassemble_button = this.buildReassembleButton()
     let new_button = this.buildNewButton()
 
     return (
-      <div>
-        <div className='row m-2'>
+      <div className='col'>
+        <div className='row'>
           {split_button}
-
-          {templates_button}
-
-          {redact_button}
-
           {reassemble_button}
-
           {new_button}
-
         </div>
+
         <div className='row'>
           <div 
               id='movieparser_status'

@@ -387,7 +387,14 @@ class JobCard extends React.Component {
   }
 
   showJobResultsInModal(job_id) {
-    this.props.getJobResultData(job_id, this.props.setModalData)
+    this.props.getJobResultData(job_id, this.displayInNewTab)
+  }
+
+  displayInNewTab(page_data) {
+    var w = window.open('')
+    w.document.write("<textarea style='width:100%;height:100%;'>")
+    w.document.write(page_data)
+    w.document.write('</textarea>')
   }
 
   buildWrapUpLink() {

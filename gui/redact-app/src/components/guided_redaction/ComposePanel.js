@@ -1,4 +1,12 @@
 import React from 'react'
+import {
+  getMessage
+} from './redact_utils.js'
+import CanvasComposeOverlay from './CanvasComposeOverlay'
+import Workflows from './Workflows'
+import ComposeImageControls from './ComposeImageControls'
+import ComposeImageInfoControls from './ComposeImageInfoControls'
+import SimpleTemplateBuilderControls from './SimpleTemplateBuilderControls'
 
 class ComposePanel extends React.Component {
   constructor(props) {
@@ -6,13 +14,22 @@ class ComposePanel extends React.Component {
     this.state = {
       compose_image: '',
       compose_display_image: '',
-      image_width: 1000,
-      image_height: 1000,
-      compose_image_scale: 1,
+      last_click: null,
+      oval_center: null,
       movie_offset_string: '',
       dragged_type: '',
       dragged_id: '',
-      sequence_display_mode: 'small_card',
+      mode: '', 
+      callbacks: {},
+      sequence_display_mode: 'large_card',
+      displayFetchRecordingId: true,
+      displayCaptureButton: true,
+      displayBuildTemplateControls: false,
+      displayRunTemplateControls: false,
+      displayImageControls: false, // I think this one can go away, let's see 
+      displayIllustrateControls: false,
+      displayAnimateControls: false,
+      displayPrecisionLearning: false,
     }
     this.scrubberOnChange=this.scrubberOnChange.bind(this)
     this.removeSequenceFrame=this.removeSequenceFrame.bind(this)
@@ -27,16 +44,498 @@ class ComposePanel extends React.Component {
     this.generateSubsequence=this.generateSubsequence.bind(this)
     this.previewSubsequence=this.previewSubsequence.bind(this)
     this.setSequenceDisplayMode=this.setSequenceDisplayMode.bind(this)
+    this.templatesExist=this.templatesExist.bind(this)
+    this.sequenceImagesExist=this.sequenceImagesExist.bind(this)
+    this.redactedSequenceImagesExist=this.redactedSequenceImagesExist.bind(this)
+    this.activateSequenceMovie=this.activateSequenceMovie.bind(this)
+    this.activateSourceMovie=this.activateSourceMovie.bind(this)
+    this.movieHasBeenLoaded=this.movieHasBeenLoaded.bind(this)
+    this.sequenceFramesHaveBeenGrabbed=this.sequenceFramesHaveBeenGrabbed.bind(this)
+    this.startLoadMovie=this.startLoadMovie.bind(this)
+    this.startCaptureImages=this.startCaptureImages.bind(this)
+    this.startRedact=this.startRedact.bind(this)
+    this.startBuildTemplates=this.startBuildTemplates.bind(this)
+    this.startScanTemplates=this.startScanTemplates.bind(this)
+    this.startIllustrate=this.startIllustrate.bind(this)
+    this.startAnimate=this.startAnimate.bind(this)
+    this.startPrecisionLearning=this.startPrecisionLearning.bind(this)
+    this.setMessage=this.setMessage.bind(this)
+    this.setMode=this.setMode.bind(this)
+    this.redactImage=this.redactImage.bind(this)
+    this.addCallback=this.addCallback.bind(this)
+    this.do_add_1_box=this.do_add_1_box.bind(this)
+    this.do_add_2_box=this.do_add_2_box.bind(this)
+    this.do_add_1_ocr=this.do_add_1_ocr.bind(this)
+    this.do_add_2_ocr=this.do_add_2_ocr.bind(this)
+    this.do_illustrate_box_1=this.do_illustrate_box_1.bind(this)
+    this.do_illustrate_box_shaded_1=this.do_illustrate_box_shaded_1.bind(this)
+    this.do_illustrate_box_2=this.do_illustrate_box_2.bind(this)
+    this.do_illustrate_box_shaded_2=this.do_illustrate_box_shaded_2.bind(this)
+    this.do_illustrate_oval_1=this.do_illustrate_oval_1.bind(this)
+    this.do_illustrate_oval_shaded_1=this.do_illustrate_oval_shaded_1.bind(this)
+    this.do_illustrate_oval_2=this.do_illustrate_oval_2.bind(this)
+    this.do_illustrate_oval_shaded_2=this.do_illustrate_oval_shaded_2.bind(this)
+    this.do_illustrate_oval_3=this.do_illustrate_oval_3.bind(this)
+    this.do_illustrate_oval_shaded_3=this.do_illustrate_oval_shaded_3.bind(this)
+    this.handleImageClick=this.handleImageClick.bind(this)
+    this.getRedactionsFromCurrentFrameset=this.getRedactionsFromCurrentFrameset.bind(this)
+    this.getCurrentTemplateAnchors=this.getCurrentTemplateAnchors.bind(this)
+    this.getCurrentTemplateMaskZones=this.getCurrentTemplateMaskZones.bind(this)
+    this.currentImageIsTemplateAnchorImage=this.currentImageIsTemplateAnchorImage.bind(this)
+    this.illustrateRollback=this.illustrateRollback.bind(this)
+    this.redactRollback=this.redactRollback.bind(this)
   }
+
 
   componentDidMount() {
+    this.props.addWorkflowCallbacks({
+        'templatesExist': this.templatesExist,
+        'sequenceImagesExist': this.sequenceImagesExist,
+        'redactedSequenceImagesExist': this.redactedSequenceImagesExist,
+        'activateSequenceMovie': this.activateSequenceMovie,
+        'movieHasBeenLoaded': this.movieHasBeenLoaded,
+        'sequenceFramesHaveBeenGrabbed': this.sequenceFramesHaveBeenGrabbed,
+        'activateSourceMovie': this.activateSourceMovie,
+        'startCaptureImages': this.startCaptureImages,
+        'startLoadMovie': this.startLoadMovie,
+        'startRedact': this.startRedact,
+        'startBuildTemplates': this.startBuildTemplates,
+        'startScanTemplates': this.startScanTemplates,
+        'startIllustrate': this.startIllustrate,
+        'startAnimate': this.startAnimate,
+        'startPrecisionLearning': this.startPrecisionLearning,
+        'illustrateRollback': this.illustrateRollback,
+        'redactRollback': this.redactRollback,
+    }) 
     this.scrubberOnChange()
-    this.props.getAndSaveUser()
     this.props.getPipelines()
+    document.getElementById('compose_link').classList.add('active')
+    document.getElementById('compose_link').classList.add('border-bottom')
+    document.getElementById('compose_link').classList.add('pb-0')
+    var app_this=this
+    this.addCallback({
+      'add_1_box': this.do_add_1_box,
+      'add_2_box': this.do_add_2_box,
+      'add_1_ocr': this.do_add_1_ocr,
+      'add_2_ocr': this.do_add_2_ocr,
+      'illustrate_box_1': this.do_illustrate_box_1,
+      'illustrate_box_shaded_1': this.do_illustrate_box_shaded_1,
+      'illustrate_box_2': this.do_illustrate_box_2,
+      'illustrate_box_shaded_2': this.do_illustrate_box_shaded_2,
+      'illustrate_oval_1': this.do_illustrate_oval_1,
+      'illustrate_oval_shaded_1': this.do_illustrate_oval_shaded_1,
+      'illustrate_oval_2': this.do_illustrate_oval_2,
+      'illustrate_oval_shaded_2': this.do_illustrate_oval_shaded_2,
+      'illustrate_oval_3': this.do_illustrate_oval_3,
+      'illustrate_oval_shaded_3': this.do_illustrate_oval_shaded_3,
+      'add_template_anchor_1': this.do_add_template_anchor_1,
+      'add_template_mask_zone_1': this.do_add_template_mask_zone_1,
+    })
+    if (
+      this.props.workflows &&
+      !Object.keys(this.props.workflows).includes('precision_learning')
+    ) {
+      let deepCopyWorkflows = JSON.parse(JSON.stringify(this.props.workflows))
+      deepCopyWorkflows['precision_learning'] = Workflows.precision_learning_workflow
+      this.props.setGlobalStateVar('workflows', deepCopyWorkflows)
+    }
+    setTimeout(function() {app_this.props.setActiveWorkflow('precision_learning')}, 500)
   }
 
-  setMessage(the_message) {
+  illustrateRollback() {
+    this.props.clearCurrentIllustrations()
+  }
+
+  redactRollback() {
+    this.props.clearCurrentRedactions()
+  }
+
+  addRedactionToFrameset(areas_to_redact) {                               
+    let deepCopyFramesets = JSON.parse(JSON.stringify(this.props.getCurrentFramesets()))
+    deepCopyFramesets[this.props.active_frameset_hash]['areas_to_redact'] = areas_to_redact
+    let deepCopyMovies = JSON.parse(JSON.stringify(this.props.movies))
+    let cur_movie = deepCopyMovies[this.props.movie_url]
+    cur_movie['framesets'] = deepCopyFramesets
+    deepCopyMovies[this.props.movie_url] = cur_movie
+    this.props.setGlobalStateVar('movies', deepCopyMovies)
+  }
+
+  getRedactionsFromCurrentFrameset() {
+    const framesets = this.props.getCurrentFramesets()
+    if (!framesets || !this.props.getImageUrl()) {
+        return []
+    }
+    let frameset = framesets[this.props.active_frameset_hash]
+    if (frameset) {
+      if (Object.keys(frameset).indexOf('areas_to_redact') > -1) {
+          return frameset['areas_to_redact']
+      } else {
+          return []
+      }
+    } else {
+      return []
+    }
+  }
+
+  do_add_1_box(cur_click) {
+    this.setMode('add_2_box')
+  }
+
+  do_illustrate_box_1(cur_click) {
+    this.setMode('illustrate_box_2')
+  }
+
+  do_illustrate_box_shaded_1(cur_click) {
+    this.setMode('illustrate_box_shaded_2')
+  }
+
+  do_illustrate_box_2(cur_click) {
+    this.setMode('')
+    this.submitComposeJob(
+      'illustrate_box',
+      {
+        second_click: cur_click,
+        shaded: false,
+      },
+    )
+  }
+
+  do_illustrate_box_shaded_2(cur_click) {
+    this.setMode('')
+    this.submitComposeJob(
+      'illustrate_box',
+      {
+        second_click: cur_click,
+        shaded: true,
+      },
+    )
+  }
+
+  do_illustrate_oval_1(cur_click) {
+    const message = getMessage('illustrate_oval_2')
+    this.setMessage(message)
+    this.setState({
+      'mode': 'illustrate_oval_2',
+      'oval_center': cur_click,
+    })
+  }
+
+  do_illustrate_oval_shaded_1(cur_click) {
+    const message = getMessage('illustrate_oval_shaded_2')
+    this.setMessage(message)
+    this.setState({
+      'mode': 'illustrate_oval_shaded_2',
+      'oval_center': cur_click,
+    })
+  }
+
+  do_illustrate_oval_2(cur_click) {
+    this.setMode('illustrate_oval_3')
+  }
+
+  do_illustrate_oval_shaded_2(cur_click) {
+    this.setMode('illustrate_oval_shaded_3')
+  }
+
+  do_illustrate_oval_3(cur_click) {
+    this.setMode('')
+    this.submitComposeJob(
+      'illustrate_oval',
+      {
+        second_click: cur_click,
+        shaded: false,
+      },
+    )
+  }
+
+  do_illustrate_oval_shaded_3(cur_click) {
+    this.setMode('')
+    this.submitComposeJob(
+      'illustrate_oval',
+      {
+        second_click: cur_click,
+        shaded: true,
+      },
+    )
+  }
+
+  do_add_2_box(cur_click) {
+    let deepCopyAreasToRedact = this.getRedactionsFromCurrentFrameset()
+    const new_a2r = {
+      start: [this.state.last_click[0], this.state.last_click[1]],
+      end: cur_click,
+      text: 'you got it hombre',
+      source: 'manual',
+      id: Math.floor(Math.random() * 1950960),
+    }
+    deepCopyAreasToRedact.push(new_a2r)
+    this.setMessage('region was successfully added, select another region to add')
+    this.addRedactionToFrameset(deepCopyAreasToRedact)
+    this.redactImage([new_a2r])
+    this.setState({mode: 'add_1_box'})
+  }
+
+  componentWillUnmount() {
+    document.getElementById('compose_link').classList.remove('active')
+    document.getElementById('compose_link').classList.add('border-0')
+    document.getElementById('compose_link').classList.remove('pb-0')
+  }
+
+  do_add_1_ocr(cur_click) {
+    this.setMode('add_2_ocr')
+  }
+
+  do_add_2_ocr(cur_click) {
+    const ocr_rule = this.buildSingleUseOcrRule(this.state.last_click, cur_click)
+    const movies = this.props.buildMoviesForSingleFrame()
+    const pipeline_job_props = {
+      cancel_after_loading: true,
+    }
+    this.props.runOcrRedactPipelineJob(ocr_rule, movies, pipeline_job_props)
+    this.setState({mode: ''})
+  }
+
+  addCallback(the_dict) {                          
+    let deepCopyCallbacks = this.state.callbacks
+    for (let i=0; i < Object.keys(the_dict).length; i++) {
+      const the_key = Object.keys(the_dict)[i]
+      const the_func = the_dict[the_key]
+      deepCopyCallbacks[the_key] = the_func
+    }
+    this.setState({
+      'callbacks': deepCopyCallbacks, 
+    })
+  } 
+
+  handleImageClick = (e) => {
+    if (!this.props.getImageUrl()) {
+      return
+    }
+    let x = e.nativeEvent.offsetX
+    let y = e.nativeEvent.offsetY
+    const x_scaled = parseInt(x / this.props.image_scale)
+    const y_scaled = parseInt(y / this.props.image_scale)
+    if (x_scaled > this.props.image_width || y_scaled > this.props.image_height) {
+      return
+    }
+    if (Object.keys(this.state.callbacks).includes(this.state.mode)) {
+      this.state.callbacks[this.state.mode]([x_scaled, y_scaled])
+    } 
+    this.setState({
+      last_click: [x_scaled, y_scaled],
+    })
+  }
+
+  redactImage(areas_to_redact=null)  {
+    if (!areas_to_redact) {
+      areas_to_redact = this.getRedactionsFromCurrentFrameset()
+    }
+    if (areas_to_redact.length > 0) {
+      this.submitComposeJob(
+        'redact',
+        {areas_to_redact: areas_to_redact}
+      )
+    } else {
+      this.setMessage('Nothing to redact has been specified')
+    }
+  }
+
+  setMessage(the_message)  {
     this.props.setGlobalStateVar('message', the_message)
+  }
+
+  setMode(the_mode) {
+    const message = getMessage(the_mode)
+    this.setMessage(message)
+    this.setState({mode: the_mode})
+  }
+
+  sequenceFramesHaveBeenGrabbed() {
+    if (
+      this.props.movies
+      && Object.keys(this.props.movies).includes('sequence')
+      && Object.keys(this.props.movies['sequence']).includes('framesets')
+      && Object.keys(this.props.movies['sequence']['framesets']).length > 0 
+    ) {
+      return true
+    }
+    return false
+  }
+
+  movieHasBeenLoaded() {
+    if (
+      this.props.movies
+      && this.props.movie_url 
+      && Object.keys(this.props.movies).includes(this.props.movie_url)
+      && Object.keys(this.props.movies[this.props.movie_url]).includes('framesets')
+      && Object.keys(this.props.movies[this.props.movie_url]['framesets']).length > 0 
+    ) {
+      return true
+    }
+    return false
+  }
+
+  activateSequenceMovie() {
+    this.setMovie('sequence')
+  }
+
+  startLoadMovie() {
+    this.setMessage('')
+    this.activateSourceMovie()
+    this.setState({
+      displayFetchRecordingId: true,
+      displayCaptureButton: false,
+      displayBuildTemplateControls: false,
+      displayRunTemplateControls: false,
+      displayImageControls: false,
+      displayIllustrateControls: false,
+      displayAnimateControls: false,
+      displayPrecisionLearning: false,
+    })
+  }
+
+  startCaptureImages() {
+    this.setMessage('')
+    this.activateSourceMovie()
+    this.setState({
+      displayFetchRecordingId: false,
+      displayCaptureButton: true,
+      displayBuildTemplateControls: false,
+      displayRunTemplateControls: false,
+      displayImageControls: false,
+      displayIllustrateControls: false,
+      displayAnimateControls: false,
+      displayPrecisionLearning: false,
+    })
+  }
+
+  startRedact() {
+    this.setMessage('')
+    this.setMovie('sequence')
+    this.setState({
+      displayFetchRecordingId: false,
+      displayCaptureButton: false,
+      displayBuildTemplateControls: false,
+      displayRunTemplateControls: false,
+      displayImageControls: true,
+      displayIllustrateControls: false,
+      displayAnimateControls: false,
+      displayPrecisionLearning: false,
+    })
+  }
+
+  startBuildTemplates() {
+    this.setMessage('')
+    this.setMovie('sequence')
+    this.setState({
+      displayFetchRecordingId: false,
+      displayCaptureButton: false,
+      displayBuildTemplateControls: true,
+      displayRunTemplateControls: false,
+      displayImageControls: false,
+      displayIllustrateControls: false,
+      displayAnimateControls: false,
+      displayPrecisionLearning: false,
+    })
+  }
+
+  startScanTemplates() {
+    this.setMessage('')
+    this.setMovie('sequence')
+    this.setState({
+      displayFetchRecordingId: false,
+      displayCaptureButton: false,
+      displayBuildTemplateControls: false,
+      displayRunTemplateControls: true,
+      displayImageControls: false,
+      displayIllustrateControls: false,
+      displayAnimateControls: false,
+      displayPrecisionLearning: false,
+    })
+  }
+
+  startIllustrate() {
+    this.setMessage('')
+    this.setMovie('sequence')
+    this.setState({
+      displayFetchRecordingId: false,
+      displayCaptureButton: false,
+      displayBuildTemplateControls: false,
+      displayRunTemplateControls: false,
+      displayImageControls: false,
+      displayIllustrateControls: true,
+      displayAnimateControls: false,
+      displayPrecisionLearning: false,
+    })
+  }
+
+  startAnimate() {
+    this.setMessage('')
+    this.setMovie('sequence')
+    this.setState({
+      displayFetchRecordingId: false,
+      displayCaptureButton: false,
+      displayBuildTemplateControls: false,
+      displayRunTemplateControls: false,
+      displayImageControls: false,
+      displayIllustrateControls: false,
+      displayAnimateControls: true,
+      displayPrecisionLearning: false,
+    })
+  }
+
+  startPrecisionLearning() {
+    const precondition_test_results = this.wequenceImagesExist()
+    if (precondition_test_results !== true) {
+      return precondition_test_results
+    }
+    let resp = window.confirm("Are you sure you're ready to go to the Precision Learning website?")
+    if (resp) {
+      this.props.gotoWhenDoneTarget()
+    } else {
+      return 'user declined to proceed to Precision Learning'
+    }
+  }
+
+  activateSourceMovie() {
+    for (let i=0; i < Object.keys(this.props.movies).length; i++) {
+      const movie_url = Object.keys(this.props.movies)[i]
+      if (movie_url !== 'sequence') {
+        this.setMovie(movie_url)
+        break
+      }
+    }
+  }
+
+  sequenceImagesExist() { // return true for ok, error string for problem
+    if (Object.keys(this.props.movies).includes('sequence')) {
+      const seq_movie = this.props.movies['sequence']
+      if (seq_movie.frames.length > 0) {
+        return true
+      }
+    }
+    return 'problem with capture, at least one image needs to have been captured'
+  }
+
+  templatesExist() { // return true for ok, error string for problem
+    if (Object.keys(this.props.tier_1_scanners['template']).length > 0) {
+      return true
+    }
+    return 'no templates found'
+  }
+
+  redactedSequenceImagesExist() { // return true for ok, error string for problem
+    if (Object.keys(this.props.movies).includes('sequence')) {
+      const seq_movie = this.props.movies['sequence']
+      for (let i=0; i < Object.keys(seq_movie['framesets']).length; i++) {
+        const frameset_hash = Object.keys(seq_movie['framesets'])[i]
+        const frameset = seq_movie['framesets'][frameset_hash]
+        if (Object.keys(frameset).includes('redacted_image')) {
+          return true
+        }
+      }
+    }
+    return 'no frames have been redacted'
   }
 
   setSequenceDisplayMode(the_mode) {
@@ -83,15 +582,144 @@ class ComposePanel extends React.Component {
     return job_data
   }
 
+  buildRedactJobData(extra_data) {
+    let job_data = {
+      request_data: {},
+    }
+    job_data['app'] = 'redact'
+    job_data['operation'] = 'redact_single'
+    job_data['description'] = 'redact image'
+    job_data['request_data']['movie_url'] = this.props.movie_url
+    let frameset_hash = this.props.getFramesetHashForImageUrl(this.props.getImageUrl())
+    job_data['request_data']['frameset_hash'] = frameset_hash
+    const image_url = this.props.getImageUrl()
+    job_data['request_data']['image_url'] = image_url
+    // I'd like to use true here, even coded it up.  Had to scrap it because, if we
+    //   rredact, then reset, then redact, the image comes through with the same
+    //   url.  That means the system doesn't know to display a new version of the image
+    job_data['request_data']['meta'] = {
+      preserve_working_dir_across_batch: false,
+      return_type: 'url',
+    }
+    job_data['request_data']['mask_method'] = this.props.mask_method
+
+    if (Object.keys(extra_data).includes('areas_to_redact')) {
+      job_data['request_data']['areas_to_redact'] = extra_data['areas_to_redact']
+    } else {
+      let frameset = this.props.movies[this.props.movie_url]['framesets'][frameset_hash]
+      let pass_arr = []
+      for (let i=0; i < frameset['areas_to_redact'].length; i++) {
+        let a2r = frameset['areas_to_redact'][i]
+        pass_arr.push(a2r)
+      }
+      job_data['request_data']['areas_to_redact'] = pass_arr
+    }
+    return job_data
+  }
+
+  buildSingleUseOcrRule(last_click, current_click) {
+    let ocr_rule = {}
+    ocr_rule['id'] = 'ocr_rule_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
+    ocr_rule['name'] = 'single use'
+    ocr_rule['start'] = last_click
+    ocr_rule['end'] = current_click
+    ocr_rule['image'] = ''
+    ocr_rule['movie'] = ''
+    ocr_rule['match_text'] = []
+    ocr_rule['match_percent'] = 0
+    ocr_rule['skip_east'] = false
+    ocr_rule['scan_level'] = 'tier_2'
+    ocr_rule['origin_entity_location'] = [0, 0]
+    return ocr_rule
+  }
+
+  buildIllustrateBoxJobdata(extra_data) {
+    let job_data = {
+      request_data: {},
+    }
+    job_data['app'] = 'redact'
+    job_data['operation'] = 'illustrate'
+    job_data['description'] = 'illustrate box'
+    job_data['request_data']['movie_url'] = this.props.movie_url
+    job_data['request_data']['frameset_hash'] = this.props.getFramesetHashForImageUrl(this.props.getImageUrl())
+    job_data['request_data']['movie'] = this.props.movies[this.props.movie_url]
+    job_data['request_data']['image_url'] = this.props.getImageUrl()
+    let illustration_data = {
+      type: 'box',
+      shade_outside: extra_data['shaded'],
+      start: this.state.last_click,
+      end: extra_data['second_click'],
+      color: this.props.illustrateParameters['color'],
+      line_width: parseInt(this.props.illustrateParameters['lineWidth']),
+      background_darken_ratio: parseFloat(this.props.illustrateParameters['backgroundDarkenPercent']),
+    }
+    job_data['request_data']['illustration_data'] = illustration_data
+    return job_data
+  }
+
+  buildIllustrateOvalJobdata(extra_data) {
+    let job_data = {
+      request_data: {},
+    }
+    job_data['app'] = 'redact'
+    job_data['operation'] = 'illustrate'
+    job_data['description'] = 'illustrate oval'
+    job_data['request_data']['movie_url'] = this.props.movie_url
+    job_data['request_data']['frameset_hash'] = this.props.getFramesetHashForImageUrl(this.props.getImageUrl())
+    job_data['request_data']['movie'] = this.props.movies[this.props.movie_url]
+    job_data['request_data']['image_url'] = this.props.getImageUrl()
+    const radius_x = Math.abs(this.state.last_click[0] - this.state.oval_center[0])
+    const radius_y = Math.abs(extra_data['second_click'][1] - this.state.oval_center[1])
+    const illustration_data = {
+      type: 'oval',
+      shade_outside: extra_data['shaded'],
+      center: this.state.oval_center,
+      radius_x: radius_x,
+      radius_y: radius_y,
+      color: this.props.illustrateParameters['color'],
+      line_width: parseInt(this.props.illustrateParameters['lineWidth']),
+      background_darken_ratio: parseFloat(this.props.illustrateParameters['backgroundDarkenPercent']),
+    }
+    job_data['request_data']['illustration_data'] = illustration_data
+    return job_data
+  }
+
   submitComposeJob(job_string, extra_data = '') {
     if (job_string === 'render_subsequence') {
       const job_data = this.buildRenderSubsequenceJobData(extra_data)
       this.props.submitJob({
         job_data:job_data,
         after_submit: () => {this.setMessage('render subsequence job was submitted')},
-        cancel_after_loading: true,
+        delete_job_after_loading: true,
         after_loaded: () => {this.setMessage('render subsequence completed')},
         when_failed: () => {this.setMessage('render subsequence failed')},
+      })
+    } else if (job_string === 'redact') {
+      const job_data = this.buildRedactJobData(extra_data)
+      this.props.submitJob({
+        job_data:job_data,
+        after_submit: () => {this.setMessage('redact job was submitted')},
+        delete_job_after_loading: true,
+        after_loaded: () => {this.setMessage('redact completed')},
+        when_failed: () => {this.setMessage('redact failed')},
+      })
+    } else if (job_string === 'illustrate_box') {
+      const job_data = this.buildIllustrateBoxJobdata(extra_data)
+      this.props.submitJob({
+        job_data: job_data,
+        after_submit: () => {this.setMessage('illustrate job was submitted')},
+        delete_job_after_loading: true,
+        after_loaded: () => {this.setMessage('illustration completed')},
+        when_failed: () => {this.setMessage('illustration failed')},
+      })
+    } else if (job_string === 'illustrate_oval') {
+      const job_data = this.buildIllustrateOvalJobdata(extra_data)
+      this.props.submitJob({
+        job_data: job_data,
+        after_submit: () => {this.setMessage('illustrate job was submitted')},
+        delete_job_after_loading: true,
+        after_loaded: () => {this.setMessage('illustration completed')},
+        when_failed: () => {this.setMessage('illustration failed')},
       })
     }
   }
@@ -145,7 +773,10 @@ class ComposePanel extends React.Component {
       deepCopySubsequences[subsequence_id]['images'].push(this.state.dragged_id)
 
       const sequence = this.getSequence()
-      const frameset_hash = this.props.getFramesetHashForImageUrl(this.state.dragged_id, sequence['framesets'])
+      const frameset_hash = this.props.getFramesetHashForImageUrl(
+        this.state.dragged_id, 
+        sequence['framesets']
+      )
       const frameset = sequence['framesets'][frameset_hash] 
       deepCopySubsequences[subsequence_id]['framesets'][frameset_hash] = frameset
 
@@ -227,7 +858,7 @@ class ComposePanel extends React.Component {
     }
   }
 
-  updateMovieOffset(offset_in_seconds) {
+  updateMovieOffsetMessage(offset_in_seconds) {
     if (!this.props.movie_url) {
       return
     }
@@ -240,24 +871,22 @@ class ComposePanel extends React.Component {
     })
   }
 
-  scrubberOnChange() {
-    const frames = this.props.getCurrentFrames()
-    if (!frames) {
-      this.setState({
-        compose_image: '',
-        compose_display_image: '',
-      })
-      return
-    }
+  scrubberOnChange(the_frameset_hash='', framesets='', frame_url='') {
     const value = document.getElementById('compose_scrubber').value
-    const the_url = frames[value]
-    const frameset_hash = this.props.getFramesetHashForImageUrl(the_url)
-    const the_display_url = this.props.getImageUrl(frameset_hash)
-    this.setState({
-      compose_image: the_url,
-      compose_display_image: the_display_url,
-    }, this.setImageSize(the_url))
-    this.updateMovieOffset(value)
+    if (
+      typeof the_frameset_hash === 'object'  // manually moving the scrubber yields an event 
+      || (!the_frameset_hash && !framesets && !frame_url) // calling this method with empty parms
+    ) {
+      const frames = this.props.getCurrentFrames()
+      framesets = this.props.getCurrentFramesets()
+      frame_url = frames[value]
+      the_frameset_hash = this.props.getFramesetHashForImageUrl(frame_url)
+    }
+    this.props.setFramesetHash(the_frameset_hash, framesets, (()=>{this.setImageSize(frame_url)}) )
+
+    this.updateMovieOffsetMessage(value)
+    // clear out global message with scrubber movement
+    this.props.setGlobalStateVar('message', '')
   }
 
   setImageSize(the_image) {
@@ -266,21 +895,24 @@ class ComposePanel extends React.Component {
       let img = new Image()
       img.src = the_image
       img.onload = function() {
-        app_this.setState({
-          image_width: this.width,
-          image_height: this.height,
-        }, app_this.setImageScale()
+        app_this.props.setGlobalStateVar(
+          {
+            image_width: this.width,
+            image_height: this.height,
+          },
+          app_this.setImageScale()
         )
       }
     }
   }
 
   setImageScale() {
+    if (!document.getElementById('compose_image')) {
+      return
+    }
     const scale = (document.getElementById('compose_image').width /
         document.getElementById('compose_image').naturalWidth)
-    this.setState({
-      compose_image_scale: scale,
-    })
+    this.props.setGlobalStateVar('image_scale', scale)
   }
 
   getMaxRange() {
@@ -304,29 +936,23 @@ class ComposePanel extends React.Component {
       this.props.establishNewEmptyMovie('sequence', false)
       setTimeout(
         (()=>{this.props.addImageToMovie({
-          url: this.state.compose_image,
+          url: this.props.getImageUrl(),
           movie_url: 'sequence',
-        })}), 1000)
+          update_frameset_hash: false,
+        })}), 100)
     } else {
       this.props.addImageToMovie({
-        url: this.state.compose_image,
+        url: this.props.getImageUrl(),
         movie_url: 'sequence',
+        update_frameset_hash: false,
       })
     }
   }
 
-  gotoRedaction() {
-    this.props.setGlobalStateVar('movie_url', 'sequence')
-    const sequence = this.getSequence()
-    if (sequence['frames']) {
-      const first_image = sequence['frames'][0]
-      const first_frameset_hash = this.props.getFramesetHashForImageUrl(first_image, sequence['framesets'])
-      this.props.setFramesetHash(first_frameset_hash, sequence['framesets'])
-    }
-    document.getElementById('image_panel_link').click()
-  }
-
   buildCaptureButton() {
+    if (!this.state.displayCaptureButton) {
+      return ''
+    }
     return (
       <button
           className='btn btn-primary'
@@ -337,22 +963,10 @@ class ComposePanel extends React.Component {
     )
   }
 
-  buildGotoRedactionButton() {
-    const sequence_movie = this.getSequence()
-    if (!sequence_movie || !sequence_movie['frames'].length) {
+  buildWhenDoneLink() {
+    if (!this.state.displayPrecisionLearning) {
       return ''
     }
-    return (
-      <button
-          className='btn btn-link'
-          onClick={() => this.gotoRedaction()}
-      >
-        Go to Redaction
-      </button>
-    )
-  }
-
-  buildWhenDoneLink() {
     if (this.props.whenDoneTarget) {
       return (
         <button
@@ -366,67 +980,57 @@ class ComposePanel extends React.Component {
   }
 
   setMovie(movie_url) {
+    if (movie_url === this.props.movie_url) {
+      return
+    }
     this.props.setGlobalStateVar('movie_url', movie_url)
     const movie = this.props.movies[movie_url]
-    if (Object.keys(movie).includes('frames')) {
-      const num_frames = movie['frames'].length
-      this.setScrubberMax(num_frames)
-      this.setScrubberValue(0)
-      this.scrubberOnChange()
-    } else {
-      this.setScrubberValue(0)
-      this.scrubberOnChange()
+    const frameset_hashes = Object.keys(movie.framesets)
+    if (frameset_hashes.length) {
+      this.props.setFramesetHash(
+        frameset_hashes[0], 
+        movie.framesets, 
+        (()=>{this.setImageSize(movie.frames[0])}) 
+      )
     }
+    if (Object.keys(movie).includes('frames')) {
+      this.setScrubberMax(movie.frames.length)
+    } 
+    this.setScrubberValue(0)
   }
 
-  buildViewDropdown() {
+  buildMovieNameDisplay() {
     if (!this.props.movie_url) {
       return ''
     }
-    const movie_urls = []
-    for (let i=0; i < Object.keys(this.props.movies).length; i++) {
-      const movie_url = Object.keys(this.props.movies)[i]
-      if (movie_url !== 'sequence') {
-        movie_urls.push(movie_url)
-      }
-    }
-    const sequence = this.getSequence()
-    let sequence_option = ''
-    if (sequence && Object.keys(sequence).includes('frames')) {
-      sequence_option = ( 
-        <option value='sequence'>Sequence</option>
-      )
+    let movie_view_message = ''
+    if (this.props.movie_url === 'sequence') {
+      movie_view_message = 'viewing the images going to precision learning'
+    } else {
+      const movie_name = this.props.movie_url.split('/').slice(-1)[0]
+      movie_view_message = 'viewing movie ' + movie_name
     }
     return (
-      <div className='d-inline'>
-        <div className='d-inline ml-4'>
-          View
-        </div>
-        <div className='d-inline ml-2'>
-          <select
-              name='compose_panel_movie_to_view'
-              value={this.props.movie_url}
-              onChange={(event) => this.setMovie(event.target.value)}
-          >
-            {sequence_option}
-            {movie_urls.map((movie_url, index) => {                            
-              const short_name = 'Movie ' + movie_url.split('/').slice(-1)[0]
-              return (
-                <option key={index} value={movie_url}>{short_name}</option>
-              )
-            })}
-          </select>
-        </div>
+      <div className='d-inline ml-4'>
+        {movie_view_message}
       </div>
     )
   }
 
-  buildComposeMessage() {
-    // just a hack because I can't get min-height working for the message field
+  buildComposeMessageDiv() {
+    // a hack because I can't get min-height working for the message field
     if (!this.props.message) {
-      return '.'
+      return (
+        <div className='text-white'>
+          .
+        </div>
+      )
     }
-    return this.props.message
+    return (
+      <div>
+        {this.props.message}
+      </div>
+    )
   }
 
   gotoScrubberOffset(the_offset) {
@@ -435,6 +1039,9 @@ class ComposePanel extends React.Component {
   }
 
   buildFetchAndSplit() {
+    if (!this.state.displayFetchRecordingId) {
+      return ''
+    }
     return (
       <div>
         <div className='d-inline ml-4'>
@@ -443,11 +1050,12 @@ class ComposePanel extends React.Component {
         <div className='d-inline ml-2'>
           <input
             id='recording_id'
+            size='40'
           />
         </div>
         <div className='d-inline ml-2'>
           <button
-              className='btn btn-primary p-0'
+              className='btn btn-primary'
               onClick={()=>
                 this.props.dispatchFetchSplitAndHash(document.getElementById('recording_id').value, true)
               }
@@ -459,27 +1067,11 @@ class ComposePanel extends React.Component {
     )
   }
 
-  getComposeDisplayImage() {
-    if (this.state.compose_display_image) {
-      return this.state.compose_display_image
-    } else if (this.props.movie_url) {
-      // movie has been loaded but in the background, not by activity on this page
-      //   that means load job results at present
-      const frameset_hashes = this.props.getFramesetHashesInOrder()
-      if (!Object.keys(this.props.movies).includes(this.props.movie_url)) {
-        return
-      }
-      const movie = this.props.movies[this.props.movie_url]
-      const image_url = movie['framesets'][frameset_hashes[0]]['images'][0]
-      return image_url
-    }
-  }
-
   buildComposeImage() {
-    const compose_display_image = this.getComposeDisplayImage()
+    const compose_display_image = this.props.getImageUrl()
     const the_style = {
       'height': '500px',
-      'width': '800px',
+      'width': '1000px',
       'paddingTop': '200px',
     }
     if (compose_display_image) {
@@ -539,41 +1131,170 @@ class ComposePanel extends React.Component {
     }
   }
 
+  buildBreadcrumbsTitleArea() {
+    if (!this.props.breadcrumbs_title && !this.props.breadcrumbs_subtitle) {
+      return ''
+    }
+    return (
+      <div className='col'>
+        <div className='row h2 ml-5'>
+          {this.props.breadcrumbs_title}
+        </div>
+        <div className='row h4 ml-5'>
+          {this.props.breadcrumbs_subtitle}
+        </div>
+      </div>
+    )
+  }
+
+  buildTemplateControls() {
+    if (!this.state.displayBuildTemplateControls) {
+      return ''
+    }
+    return (
+      <SimpleTemplateBuilderControls
+        last_click={this.state.last_click}
+        getImageUrl={this.props.getImageUrl}
+        movie_url={this.props.movie_url}
+        setMode={this.setMode}
+        setMessage={this.setMessage}
+        addCallback={this.addCallback}
+        tier_1_scanners={this.props.tier_1_scanners}
+        tier_1_scanner_current_ids={this.props.tier_1_scanner_current_ids}
+        setGlobalStateVar={this.props.setGlobalStateVar}
+        cropImage={this.props.cropImage}
+      />
+    )
+  }
+
+  buildImageInfoControls() {
+    if (
+      !this.state.displayImageControls
+      && !this.state.displayIllustrateControls
+    ) {
+      return ''
+    }
+    return (
+      <ComposeImageInfoControls
+        getImageUrl={this.props.getImageUrl}
+        mask_method={this.props.mask_method}
+        setGlobalStateVar={this.props.setGlobalStateVar}
+        getFramesetHashForImageUrl={this.props.getFramesetHashForImageUrl}
+        setIllustrateParameters={this.props.setIllustrateParameters}
+        illustrateParameters={this.props.illustrateParameters}
+        displayImageControls={this.state.displayImageControls}
+        displayIllustrateControls={this.state.displayIllustrateControls}
+      />
+    )
+  }
+
+  buildPositionLabel() {
+    if (!this.props.movie_url) {
+      return ''
+    }
+    const position_string = 'Position: ' + this.state.movie_offset_string
+    return (
+      <div>
+        {position_string}
+      </div>
+    )
+  }
+
+  currentImageIsTemplateAnchorImage() {
+    if (this.props.tier_1_scanner_current_ids['template']) {
+      let key = this.props.tier_1_scanner_current_ids['template']
+      if (!Object.keys(this.props.tier_1_scanners['template']).includes(key)) {
+        return false
+      }
+      let template = this.props.tier_1_scanners['template'][key]
+      if (!Object.keys(template).includes('anchors')) {
+        return false
+      }
+      if (!template['anchors'].length && !template['mask_zones'].length) {
+        return false
+      }
+      if (!template['anchors'].length) {
+        // all we have are mask zones, be generous, at this point any image
+        // could be our 'anchor image'.  Though it doesn't make much sense to
+        // have any permanently saved template whith mask zones but no anchors,
+        // it makes the interface more humane to the casual user
+        return true
+      }
+      let cur_template_anchor_image_name = template['anchors'][0]['image']
+      return (cur_template_anchor_image_name === this.props.getImageUrl())
+    } else {
+      return true
+    }
+  }
+
+  getCurrentTemplateAnchors() {
+    const template_id = this.props.tier_1_scanner_current_ids['template']
+    const template = this.props.tier_1_scanners['template'][template_id]
+    if (template) {
+      return template['anchors']
+    }
+    return []
+  }
+
+  getCurrentTemplateMaskZones() {
+    const template_id = this.props.tier_1_scanner_current_ids['template']
+    const template = this.props.tier_1_scanners['template'][template_id]
+    if (template) {
+      return template['mask_zones']
+    }
+    return []
+  }
+
   render() {
     const capture_button = this.buildCaptureButton()
     const fetch_and_split_input = this.buildFetchAndSplit()
-    const goto_redaction_button = this.buildGotoRedactionButton()
+    const image_info_controls = this.buildImageInfoControls()
     const when_done_link = this.buildWhenDoneLink()
     const max_range = this.getMaxRange()
-    const view_dropdown = this.buildViewDropdown()
-    const compose_message = this.buildComposeMessage()
+    const view_dropdown = this.buildMovieNameDisplay()
+    const compose_message = this.buildComposeMessageDiv()
     const compose_image = this.buildComposeImage()
-    let when_done_divider = ''
-    if (when_done_link && goto_redaction_button) {
-      when_done_divider = '|'
-    }
+    const breadcrumbs_area = this.buildBreadcrumbsTitleArea()
+    const template_controls = this.buildTemplateControls()
+    const position_label = this.buildPositionLabel()
+
     return (
       <div id='compose_panel_container'>
         <div className='row ml-4'>
-          <div className='col-lg-9'>
+          <div className='col-7'>
+
+            <div className='row' >
+              {breadcrumbs_area}
+            </div>
+
             <div className='row m-2' >
                 {when_done_link}
-                {when_done_divider}
-                {goto_redaction_button}
             </div>
 
             <div className='row bg-light'>
               <div className='col'>
                 <div className='row'>
                   {compose_image}
+                  <CanvasComposeOverlay
+                    getImageUrl={this.props.getImageUrl}
+                    image_width={this.props.image_width}
+                    image_height={this.props.image_height}
+                    image_scale={this.props.image_scale}
+                    last_click={this.state.last_click}
+                    oval_center= {this.state.oval_center}
+                    mode={this.state.mode}
+                    clickCallback= {this.handleImageClick}
+                    getRedactionsFromCurrentFrameset={this.getRedactionsFromCurrentFrameset}
+                    getCurrentTemplateAnchors={this.getCurrentTemplateAnchors}
+                    getCurrentTemplateMaskZones={this.getCurrentTemplateMaskZones}
+                    currentImageIsTemplateAnchorImage={this.currentImageIsTemplateAnchorImage}
+                  />
                 </div>
 
               </div>
             </div>
 
-            <div 
-                className='row bg-light rounded border'
-            >
+            <div className='row bg-light border rounded'>
               <div className='col'>
 
                 <div className='row ml-2 mt-2'>
@@ -582,17 +1303,17 @@ class ComposePanel extends React.Component {
 
                 <div className='row mt-2'>
                   <input
-                      id='compose_scrubber'
-                      type='range'
-                      max={max_range}
-                      defaultValue='0'
-                      onChange={this.scrubberOnChange}
+                    id='compose_scrubber'
+                    type='range'
+                    max={max_range}
+                    defaultValue='0'
+                    onChange={this.scrubberOnChange}
                   />
                 </div>
 
                 <div className='row border-bottom m-1 pb-1'>
                   <div className='d-inline '>
-                    Position: {this.state.movie_offset_string}
+                    {position_label}
                   </div>
                   <div className='d-inline ml-2'>
                     {view_dropdown}
@@ -604,41 +1325,81 @@ class ComposePanel extends React.Component {
                   {fetch_and_split_input}
                 </div>
 
+                <div className='row m-2'>
+                  <div className='col'>
+                    <ComposeImageControls
+                      getImageUrl={this.props.getImageUrl}
+                      setMessage={this.setMessage}
+                      setMode={this.setMode}
+                      templates={this.props.templates}
+                      clearCurrentFramesetChanges={this.props.clearCurrentFramesetChanges}
+                      displayImageControls={this.state.displayImageControls}
+                      displayRunTemplateControls={this.state.displayRunTemplateControls}
+                      displayIllustrateControls={this.state.displayIllustrateControls}
+                      runTemplateRedactPipelineJob={this.props.runTemplateRedactPipelineJob}
+                      clearCurrentIllustrations={this.props.clearCurrentIllustrations}
+                    />
+                  </div>
+                </div>
+
+                <div className='row m-2'>
+                  {image_info_controls}
+                </div>
+
+                <div className='row m-2'>
+                  {template_controls}
+                </div>
+
               </div>
+
             </div>
           </div>
 
-          <div className='col-lg-3 mh-100'>
-            <div className='row mt-3 ml-2'>
-              .
+          <div className='col-5'>
+            <div className='row mt-3 ml-1 mr-1'>
+              <SequencePanel
+                sequence_movie={this.getSequence()}
+                removeSequenceFrame={this.removeSequenceFrame}
+                gotoSequenceFrame={this.gotoSequenceFrame}
+                compose_image={this.state.compose_image}
+                subsequences={this.props.subsequences}
+                setDraggedItem={this.setDraggedItem}
+                handleDroppedOntoSubsequence={this.handleDroppedOntoSubsequence}
+                handleDroppedOntoSequence={this.handleDroppedOntoSequence}
+                moveSequenceFrameUp={this.moveSequenceFrameUp}
+                moveSequenceFrameDown={this.moveSequenceFrameDown}
+                deleteSubsequence={this.deleteSubsequence}
+                sequence_display_mode={this.state.sequence_display_mode}
+                setSequenceDisplayMode={this.setSequenceDisplayMode}
+                movies={this.props.movies}
+                movie_url={this.props.movie_url}
+                getFramesetHashesInOrder={this.props.getFramesetHashesInOrder}
+                getCurrentFramesets={this.props.getCurrentFramesets}
+                getImageFromFrameset={this.props.getImageFromFrameset}
+                active_frameset_hash={this.props.active_frameset_hash}
+              />
             </div>
           </div>
 
         </div>
 
         <div 
-            id='sequence_area' 
-            className='row'
+            className='row ml-2'
         >
-          <SequenceAndSubsequencePanel
-            sequence_movie={this.getSequence()}
-            removeSequenceFrame={this.removeSequenceFrame}
-            gotoSequenceFrame={this.gotoSequenceFrame}
+          <SubsequencePanel
             compose_image={this.state.compose_image}
             subsequences={this.props.subsequences}
             setSubsequences={this.setSubsequences}
             setDraggedItem={this.setDraggedItem}
             handleDroppedOntoSubsequence={this.handleDroppedOntoSubsequence}
             handleDroppedOntoSequence={this.handleDroppedOntoSequence}
-            moveSequenceFrameUp={this.moveSequenceFrameUp}
-            moveSequenceFrameDown={this.moveSequenceFrameDown}
             deleteSubsequence={this.deleteSubsequence}
             generateSubsequence={this.generateSubsequence}
             previewSubsequence={this.previewSubsequence}
-            sequence_display_mode={this.state.sequence_display_mode}
-            setSequenceDisplayMode={this.setSequenceDisplayMode}
             movies={this.props.movies}
             movie_url={this.props.movie_url}
+            displayAnimateControls={this.state.displayAnimateControls}
+            sequence_movie={this.getSequence()}
           />
         </div>
          
@@ -647,7 +1408,54 @@ class ComposePanel extends React.Component {
   }
 }
 
-class SequenceAndSubsequencePanel extends React.Component {
+
+class SequencePanel extends React.Component {
+
+  render() {
+    if (!this.props.sequence_movie) {
+      return ''
+    }
+    const framesets = this.props.sequence_movie['framesets']
+    const frameset_hashes = this.props.getFramesetHashesInOrder(framesets)
+    return (
+      <div className='col mt-2'>
+        <div className='row h3'>
+          Captured Frames
+        </div>
+        <div className='row'>
+          <div id='sequence_card_wrapper'>
+            {frameset_hashes.map((frameset_hash, index) => {
+              const frame_url = this.props.getImageFromFrameset(frameset_hash, framesets)
+              return (
+              <SequenceCard
+                frame_url={frame_url}
+                image_offset={index}
+                key={index}
+                sequence_movie={this.props.sequence_movie}
+                removeSequenceFrame={this.props.removeSequenceFrame}
+                gotoSequenceFrame={this.props.gotoSequenceFrame}
+                compose_image={this.props.compose_image}
+                setDraggedItem={this.props.setDraggedItem}
+                handleDroppedOntoSequence={this.props.handleDroppedOntoSequence}
+                moveSequenceFrameUp={this.props.moveSequenceFrameUp}
+                moveSequenceFrameDown={this.props.moveSequenceFrameDown}
+                sequence_display_mode={this.props.sequence_display_mode}
+                movies={this.props.movies}
+                movie_url={this.props.movie_url}
+                active_frameset_hash={this.props.active_frameset_hash}
+                frameset_hash={frameset_hash}
+              />
+              )
+            })}
+          </div>
+
+        </div>
+      </div>
+    )
+  }
+}
+
+class SubsequencePanel extends React.Component {
   createSubsequence() {
     let deepCopySubsequences = JSON.parse(JSON.stringify(this.props.subsequences))
     const subsequence_id = 'subsequence_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
@@ -701,40 +1509,19 @@ class SequenceAndSubsequencePanel extends React.Component {
     )
   }
 
-  buildSequenceDisplayModePicker() {
-    return (
-      <select
-          name='compose_panel_sequence_display_mode'
-          value={this.props.sequence_display_mode}
-          onChange={(event) => this.props.setSequenceDisplayMode(event.target.value)}
-      >
-        <option value='list'>display as list</option>
-        <option value='large_card'>display as large cards</option>
-        <option value='small_card'>display as small cards</option>
-      </select>
-    )
-  }
-
   render() {
+    if (!this.props.displayAnimateControls) {
+      return ''
+    }
     if (!this.props.sequence_movie) {
       return ''
     }
-    const sequence_movie_frames = this.props.sequence_movie['frames']
     const create_subsequence_link = this.createSubsequenceLink()
     const subsequence_panel = this.createSubsequencePanel()
-    const sequence_display_mode_picker = this.buildSequenceDisplayModePicker()
     return (
       <div className='col mt-2'>
         <div className='row'>
-          <div className='col-lg-7'>
-            <div className='d-inline ml-4 h5'>
-              Main Sequence
-            </div>
-            <div className='d-inline ml-2'>
-              {sequence_display_mode_picker}
-            </div>
-          </div>
-          <div className='col-lg-5 h5'>
+          <div className='h5'>
             <div className='d-inline'>
               Animated Images
             </div>
@@ -745,35 +1532,9 @@ class SequenceAndSubsequencePanel extends React.Component {
         </div>
 
         <div className='row'>
-          <div className='col-lg-7 ml-4'>
-            <div id='sequence_card_wrapper'>
-              {sequence_movie_frames.map((frame_url, index) => {
-                return (
-                <SequenceCard
-                  frame_url={frame_url}
-                  key={index}
-                  sequence_movie={this.props.sequence_movie}
-                  removeSequenceFrame={this.props.removeSequenceFrame}
-                  gotoSequenceFrame={this.props.gotoSequenceFrame}
-                  compose_image={this.props.compose_image}
-                  setDraggedItem={this.props.setDraggedItem}
-                  handleDroppedOntoSequence={this.props.handleDroppedOntoSequence}
-                  moveSequenceFrameUp={this.props.moveSequenceFrameUp}
-                  moveSequenceFrameDown={this.props.moveSequenceFrameDown}
-                  sequence_display_mode={this.props.sequence_display_mode}
-                  movies={this.props.movies}
-                  movie_url={this.props.movie_url}
-                />
-                )
-              })}
-            </div>
-          </div>
-
-          <div className='col-lg-3'>
-            {subsequence_panel}
-          </div>
-
+          {subsequence_panel}
         </div>
+
       </div>
     )
   }
@@ -781,7 +1542,7 @@ class SequenceAndSubsequencePanel extends React.Component {
 
 class SequenceCard extends React.Component {
   getIsCurrentImageIndicator() {
-    if (this.props.frame_url === this.props.compose_image) {
+    if (this.props.frameset_hash === this.props.active_frameset_hash) {
       return '*'
     }
     return ''
@@ -794,21 +1555,6 @@ class SequenceCard extends React.Component {
         onClick={() => this.props.removeSequenceFrame(this.props.frame_url)}
       >
         remove
-      </button>
-    )
-  }
-
-  buildGotoLink() {
-    const movie = this.props.movies[this.props.movie_url]
-    if (!movie['frames'].includes(this.props.frame_url)) {
-      return ''
-    }
-    return (
-      <button
-        className='border-0 text-primary'
-        onClick={() => this.props.gotoSequenceFrame(this.props.frame_url)}
-      >
-        goto
       </button>
     )
   }
@@ -843,7 +1589,6 @@ class SequenceCard extends React.Component {
 
   buildLinks() {
     const remove_link = this.buildRemoveLink()
-    const goto_link = this.buildGotoLink()
     const up_link = this.buildUpLink()
     const down_link = this.buildDownLink()
     if (this.props.sequence_display_mode === 'small_card')  {
@@ -851,7 +1596,6 @@ class SequenceCard extends React.Component {
         <div className='bg-white'>
           <div>
             {remove_link}
-            {goto_link}
           </div>
           <div>
             {up_link}
@@ -864,7 +1608,6 @@ class SequenceCard extends React.Component {
       <div className='bg-white'>
         <div>
           {remove_link}
-          {goto_link}
           {up_link}
           {down_link}
         </div>
@@ -876,32 +1619,6 @@ class SequenceCard extends React.Component {
     const links_div = this.buildLinks()
     const frame_name = this.buildFrameName()
     const is_current_indicator = this.getIsCurrentImageIndicator() 
-    if (this.props.sequence_display_mode === 'list')  {
-    return (
-      <div 
-          className='sequence-card row bg-light rounded'
-          draggable='true'
-          onDragStart={() => this.props.setDraggedItem('sequence', this.props.frame_url)}
-          onDragOver={(event) => event.preventDefault()}
-          onDrop={() => this.props.handleDroppedOntoSequence()}
-      >
-        <div className='border-bottom pt-1 pb-1 col-lg-6'>
-          {frame_name}
-        </div>
-        <div className='border-bottom pt-1 pb-1 col-lg-4 mr-0'>
-          <div className='float-right'>
-            {links_div}
-          </div>
-        </div>
-        <div className='pt-1 pb-1 ml-0 col-lg-1'>
-          {is_current_indicator}
-        </div>
-        <div className='col-lg-1'>
-        </div>
-      </div>
-      )
-    }
-    // its a card view, default to small card
     let top_div_classname = 'd-inline-block frameCard w-25'
     if (this.props.sequence_display_mode === 'large_card')  {
       top_div_classname = 'd-inline-block frameCard w-50'
@@ -914,9 +1631,11 @@ class SequenceCard extends React.Component {
         top_div_classname = 'd-inline-block frameCard active_card w-25'
       }
     }
+    const display_offset = this.props.image_offset + 1
     return (
       <div
           className={top_div_classname}
+          key={this.props.image_offset}
           draggable='true'
           onDragStart={() => this.props.setDraggedItem('sequence', this.props.frame_url)}
           onDragOver={(event) => event.preventDefault()}
@@ -925,8 +1644,13 @@ class SequenceCard extends React.Component {
         <div
             className='p-2 bg-light m-1'
         >
-          <div className='frameset_hash'>
+          <div className='row'>
+          <div className='col-9 frameset_hash'>
             {frame_name}
+          </div>
+          <div className='col-3 h3'>
+            {display_offset}
+          </div>
           </div>
           <img
               className='zoomable-image'

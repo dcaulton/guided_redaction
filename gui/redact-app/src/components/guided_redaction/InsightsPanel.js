@@ -35,8 +35,6 @@ class InsightsPanel extends React.Component {
     this.handleSetMode=this.handleSetMode.bind(this)
     this.getTier1ScannerMatches=this.getTier1ScannerMatches.bind(this)
     this.currentImageIsTemplateAnchorImage=this.currentImageIsTemplateAnchorImage.bind(this)
-    this.currentImageIsHogTrainingImage=this.currentImageIsHogTrainingImage.bind(this)
-    this.currentImageIsHogTestingImage=this.currentImageIsHogTestingImage.bind(this)
     this.currentImageIsSelectedAreaAnchorImage=this.currentImageIsSelectedAreaAnchorImage.bind(this)
     this.currentImageIsOcrAnchorImage=this.currentImageIsOcrAnchorImage.bind(this)
     this.currentImageIsOsaMatchImage=this.currentImageIsOsaMatchImage.bind(this)
@@ -58,7 +56,6 @@ class InsightsPanel extends React.Component {
     this.setDraggedId=this.setDraggedId.bind(this)
     this.loadInsightsJobResults=this.loadInsightsJobResults.bind(this)
     this.afterMovieSplitInsightsJobLoaded=this.afterMovieSplitInsightsJobLoaded.bind(this)
-    this.blinkDiff=this.blinkDiff.bind(this)
     this.setImageTypeToDisplay=this.setImageTypeToDisplay.bind(this)
     this.addInsightsCallback=this.addInsightsCallback.bind(this)
     this.setModalData=this.setModalData.bind(this)
@@ -200,23 +197,6 @@ class InsightsPanel extends React.Component {
     })
   }
 
-  blinkDiff(blink_status) {
-    if (blink_status === 'off') {
-      this.scrubberOnChange()
-      document.getElementById('movie_scrubber').focus()
-      return
-    }
-    const cur_hash = this.getScrubberFramesetHash() 
-    const cur_frameset = this.props.movies[this.props.movie_url]['framesets'][cur_hash]
-    if (Object.keys(cur_frameset).includes('filtered_image_url')) {
-      const filtered_image_url = cur_frameset['filtered_image_url']
-      this.setState({
-        insights_image: filtered_image_url,
-      })
-    }
-    document.getElementById('movie_scrubber').focus()
-  }
-
   loadInsightsJobResults(job_id) {
     const job = this.getJobForId(job_id)
     if ((job.app === 'parse' && job.operation === 'split_and_hash_threaded')) {
@@ -227,10 +207,6 @@ class InsightsPanel extends React.Component {
     } else {
       this.props.loadJobResults(job_id) 
     }
-  }
-
-  doSleep(milliseconds) {
-    return new Promise(resolve => setTimeout(resolve, milliseconds))
   }
 
   getJobForId(job_id) {
@@ -254,7 +230,12 @@ class InsightsPanel extends React.Component {
     this.props.getJobs()
     this.props.getWorkbooks()
     this.props.getPipelines()
-    this.props.getAndSaveUser()
+    document.getElementById('insights_link').classList.add('active')
+    this.props.setActiveWorkflow('')
+  }
+
+  componentWillUnmount() {                                                      
+    document.getElementById('insights_link').classList.remove('active')          
   }
 
   setDraggedId = (the_id) => {
@@ -310,12 +291,9 @@ class InsightsPanel extends React.Component {
 
     const scanner_operations = {
       template: 'scan_template_threaded',
-      hog: 'hog_test',
       ocr: 'scan_ocr',
       selected_area: 'selected_area_threaded',
       ocr_scene_analysis: 'ocr_scene_analysis_threaded',
-      ocr_movie_analysis: 'oma_first_scan_threaded',
-      entity_finder: 'entity_finder_threaded',
     }
     if (!this.props.tier_1_scanner_current_ids[scanner_type]) {
       this.displayInsightsMessage('no ' + scanner_type + ' rule selected, cannot submit a job')
@@ -460,26 +438,6 @@ class InsightsPanel extends React.Component {
     return job_data
   }
 
-  buildCalcDiffsData(job_type, extra_data) {
-    let job_data = {
-      request_data: {},
-    }
-    job_data['app'] = 'analyze'
-    job_data['operation'] = 'filter'
-    if (job_type === 'current_movie') {
-      job_data['request_data']['movies'] = {}
-      job_data['request_data']['movies'][this.props.movie_url] = this.props.movies[this.props.movie_url]
-      job_data['description'] = 'calc diffs for movie: ' + this.props.movie_url
-    } else if (job_type === 'all_movies') {
-      job_data['request_data']['movies'] = this.props.movies
-      job_data['description'] = 'calc diffs for all movies'
-    }
-    job_data['request_data']['filter_parameters'] = {
-      'filter_operation': 'diff',
-    }
-    return job_data
-  }
-
   buildRedactJobData(job_type, extra_data) {
     let job_data = {
       request_data: {},
@@ -549,51 +507,6 @@ class InsightsPanel extends React.Component {
     return job_data
   }
 
-  buildTrainHogModelJobData(extra_data) {
-    let job_data = {
-      request_data: {},
-    }
-    job_data['app'] = 'analyze'
-    job_data['operation'] = 'hog_train_threaded'
-
-    const hog_id = this.props.tier_1_scanner_current_ids['hog']
-    const hog_rule = this.props.tier_1_scanners['hog'][hog_id]
-    job_data['request_data'] = {
-      tier_1_scanners: {
-        hog: {
-        }
-      }
-    }
-    job_data['request_data']['tier_1_scanners']['hog'][hog_id] = hog_rule
-    job_data['request_data']['scan_level'] = 'tier_1'
-    job_data['request_data']['id'] = hog_id
-
-    let movie_ids = []
-    for (let i=0; i < Object.keys(hog_rule['training_images']).length; i++) {
-      const tim_id = Object.keys(hog_rule['training_images'])[i]
-      const tim = hog_rule['training_images'][tim_id]
-      if (!movie_ids.includes(tim['movie_url'])) {
-        movie_ids.push(tim['movie_url'])
-      }
-    }
-    for (let i=0; i < Object.keys(hog_rule['testing_images']).length; i++) {
-      const tim_id = Object.keys(hog_rule['testing_images'])[i]
-      const tim = hog_rule['testing_images'][tim_id]
-      if (!movie_ids.includes(tim['movie_url'])) {
-        movie_ids.push(tim['movie_url'])
-      }
-    }
-    job_data['request_data']['movies'] = {}
-    for (let i=0; i < movie_ids.length; i++) {
-      const movie_url = movie_ids[i]
-      const movie = this.props.movies[movie_url]
-      job_data['request_data']['movies'][movie_url] = movie
-    }
-
-    job_data['description'] = 'train hog rule ('  + hog_rule['name'] + ')'
-    return job_data
-  }
-
   buildResultsData(extra_data) {
     let job_data = {
       request_data: {},
@@ -642,41 +555,6 @@ class InsightsPanel extends React.Component {
     return job_data
   }
 
-  buildLoadMovieMetadataJobData(extra_data) {
-    let job_data = {
-      request_data: extra_data,
-    }
-    job_data['app'] = 'files'
-    job_data['operation'] = 'load_movie_metadata'
-    job_data['description'] = 'load_movie_metadata: ' + extra_data
-    return job_data
-  }
-
-  buildScanTelemetryData(job_type, extra_data) {
-    let job_data = {
-      request_data: {},
-    }
-    const telemetry_rule = this.props.tier_1_scanners['telemetry'][this.props.tier_1_scanner_current_ids['telemetry']]
-    job_data['app'] = 'analyze'
-    job_data['operation'] = 'telemetry_find_matching_frames'
-    job_data['request_data']['telemetry_data'] = this.props.telemetry_data
-    job_data['request_data']['telemetry_rule'] = telemetry_rule
-    job_data['request_data']['id'] = this.props.tier_1_scanner_current_ids['telemetry']
-    job_data['request_data']['scan_level'] = 'tier_1' // this is the only thing that makes sense for telemetry
-    if (job_type === 'current_movie') {
-      job_data['request_data']['movies'] = {}
-      job_data['request_data']['movies'][this.props.movie_url] = this.props.movies[this.props.movie_url]
-      job_data['description'] = 'telemetry, find matching frames for movie'
-      job_data['description'] += ': movie ' + this.props.movie_url
-      job_data['description'] += ', rule ' + telemetry_rule['name']
-    } else if (job_type === 'all_movies') {
-      job_data['request_data']['movies'] = this.props.movies
-      job_data['description'] = 'telemetry, find matching frames for all movies'
-      job_data['description'] += ': rule ' + telemetry_rule['name']
-    }
-    return job_data
-  }
-
   buildGetSecureFileData(extra_data) {
     let job_data = {
       request_data: {},
@@ -705,11 +583,6 @@ class InsightsPanel extends React.Component {
       let job_data = this.buildGetSecureFileData(extra_data)
       this.props.submitJob({
         job_data: job_data,
-      })
-    } else if (job_string === 'load_movie_metadata') {
-      let job_data = this.buildLoadMovieMetadataJobData(extra_data)
-      this.props.submitJob({
-        job_data: job_data
       })
     } else if (job_string === 'results') {
       let job_data = this.buildResultsData(extra_data)
@@ -754,20 +627,6 @@ class InsightsPanel extends React.Component {
       this.props.submitJob({
         job_data: job_data,
       })
-    } else if (job_string === 'hog_train_model') {
-      let job_data = this.buildTrainHogModelJobData(extra_data)
-      this.props.submitJob({
-        job_data: job_data
-      })
-    } else if (
-        job_string === 'hog_current_frame' || 
-        job_string === 'hog_current_movie' || 
-        job_string === 'hog_all_movies'
-    ) {
-      let job_data = this.buildTier1JobData('hog', job_string, extra_data)
-      this.props.submitJob({
-        job_data: job_data,
-      })
     } else if (
         job_string === 'selected_area_t1_template' || 
         job_string === 'selected_area_t1_ocr' || 
@@ -788,23 +647,6 @@ class InsightsPanel extends React.Component {
         job_string === 'ocr_scene_analysis_all_movies'
     ) {
       let job_data = this.buildTier1JobData('ocr_scene_analysis', job_string, extra_data)
-      this.props.submitJob({
-        job_data: job_data,
-      })
-    } else if (
-        job_string === 'entity_finder_current_frame' ||
-        job_string === 'entity_finder_current_movie' ||
-        job_string === 'entity_finder_all_movies'
-    ) {
-      let job_data = this.buildTier1JobData('entity_finder', job_string, extra_data)
-      this.props.submitJob({
-        job_data: job_data,
-      })
-    } else if (
-        job_string === 'oma_first_scan_current_movie' ||
-        job_string === 'oma_first_scan_all_movies'
-    ) {
-      let job_data = this.buildTier1JobData('ocr_movie_analysis', job_string, extra_data)
       this.props.submitJob({
         job_data: job_data,
       })
@@ -859,26 +701,6 @@ class InsightsPanel extends React.Component {
       this.props.submitJob({
         job_data: job_data
       })
-    } else if (job_string === 'diffs_current_movie') {
-      let job_data = this.buildCalcDiffsData('current_movie', extra_data)
-      this.props.submitJob({
-        job_data: job_data,
-      })
-    } else if (job_string === 'telemetry_current_movie') {
-      let job_data = this.buildScanTelemetryData('current_movie', extra_data)
-      this.props.submitJob({
-        job_data: job_data,
-      })
-    } else if (job_string === 'telemetry_all_movies') {
-      let job_data = this.buildScanTelemetryData('all_movies', extra_data)
-      this.props.submitJob({
-        job_data: job_data,
-      })
-    } else if (job_string === 'diffs_all_movies') {
-      let job_data = this.buildCalcDiffsData('all_movies', extra_data)
-      this.props.submitJob({
-        job_data: job_data,
-      })
     }
   }
   
@@ -917,40 +739,6 @@ class InsightsPanel extends React.Component {
       }
       let cur_sam_anchor_image_name = sam['areas'][0]['image']
       return (cur_sam_anchor_image_name === this.state.insights_image)
-    } else {
-      return true
-    }
-  }
-
-  currentImageIsHogTestingImage() {
-    return this.currentImageIsHogWhateverImage('testing_images')
-  }
-
-  currentImageIsHogTrainingImage() {
-    return this.currentImageIsHogWhateverImage('training_images')
-  }
-
-  currentImageIsHogWhateverImage(group_key) {
-    if (this.props.tier_1_scanner_current_ids['hog']) {
-      let key = this.props.tier_1_scanner_current_ids['hog']
-      if (!Object.keys(this.props.tier_1_scanners['hog']).includes(key)) {
-        return false
-      }
-      let scanner = this.props.tier_1_scanners['hog'][key]
-      if (!Object.keys(scanner).includes(group_key)) {
-        return false
-      }
-      if (!Object.keys(scanner[group_key]).length) {
-        return false
-      }
-      for (let i=0; i < Object.keys(scanner[group_key]).length; i++) {
-        const ti_key = Object.keys(scanner[group_key])[i]
-        const ti = scanner[group_key][ti_key]
-        if (ti['image_url'] === this.state.insights_image) {
-          return true
-        }
-      }
-      return false
     } else {
       return true
     }
@@ -1023,10 +811,6 @@ class InsightsPanel extends React.Component {
       the_message = 'click second corner'
     } else if (the_mode === 'oma_pick_app') {
       the_message = 'select the app'
-    } else if (the_mode === 'hog_pick_training_image_1') {
-      the_message = 'pick the upper left corner of the hog image'
-    } else if (the_mode === 'hog_pick_training_image_2') {
-      the_message = 'pick the lower right corner of the hog image'
     }
     this.props.setGlobalStateVar('message', the_message)
     this.setState({
@@ -1079,8 +863,10 @@ class InsightsPanel extends React.Component {
   handleImageClick = (e) => {
     const x = e.nativeEvent.offsetX
     const y = e.nativeEvent.offsetY
-    const scale = (document.getElementById('insights_image').width / 
-        document.getElementById('insights_image').naturalWidth)
+    const imageEl = document.getElementById('insights_image');
+    const scale = (
+      ((imageEl && imageEl.width) || 100) / ((imageEl && imageEl.naturalWidth) || 100)
+    );
     const x_scaled = parseInt(x / scale)
     const y_scaled = parseInt(y / scale)
     if (x_scaled > this.state.image_width || y_scaled > this.state.image_height) {
@@ -1102,8 +888,6 @@ class InsightsPanel extends React.Component {
       this.handleSetMode('add_annotations_ocr_end') 
     } else if (this.state.mode === 'add_annotations_ocr_end') {
       this.handleSetMode('add_annotations_ocr_end') 
-    } else if (this.state.mode === 'hog_pick_training_image_1') {
-      this.handleSetMode('hog_pick_training_image_2') 
     }
   }
 
@@ -1447,8 +1231,6 @@ class InsightsPanel extends React.Component {
               currentImageIsSelectedAreaAnchorImage={this.currentImageIsSelectedAreaAnchorImage}
               currentImageIsOcrAnchorImage={this.currentImageIsOcrAnchorImage}
               currentImageIsOsaMatchImage={this.currentImageIsOsaMatchImage}
-              currentImageIsHogTrainingImage={this.currentImageIsHogTrainingImage}
-              currentImageIsHogTestingImage={this.currentImageIsHogTestingImage}
               insights_image_scale={this.state.insights_image_scale}
               getTier1ScannerMatches={this.getTier1ScannerMatches}
               getAnnotations={this.getAnnotations}
@@ -1457,8 +1239,6 @@ class InsightsPanel extends React.Component {
               getCurrentOcrMatches={this.getCurrentOcrMatches}
               getCurrentAreasToRedact={this.getCurrentAreasToRedact}
               movie_url={this.props.movie_url}
-              getCurrentHogTrainingImageLocations={(()=>this.runCallbackFunction('getCurrentHogTrainingImageLocations'))}
-              getCurrentHogTestingImageLocations={(()=>this.runCallbackFunction('getCurrentHogTestingImageLocations'))}
               getCurrentTemplateAnchors={(()=>this.runCallbackFunction('getCurrentTemplateAnchors'))}
               getCurrentTemplateMaskZones={(()=>this.runCallbackFunction('getCurrentTemplateMaskZones'))}
               getCurrentOcrWindow={(()=>this.runCallbackFunction('getOcrWindow'))}
@@ -1502,11 +1282,9 @@ class InsightsPanel extends React.Component {
             draggedId={this.state.draggedId}
             visibilityFlags={this.props.visibilityFlags}
             toggleShowVisibility={this.props.toggleShowVisibility}
-            session_audio={this.props.session_audio}
             campaign_movies={this.props.campaign_movies}
             setCampaignMovies={this.props.setCampaignMovies}
             updateGlobalState={this.props.updateGlobalState}
-            blinkDiff={this.blinkDiff}
             setImageTypeToDisplay={this.setImageTypeToDisplay}
             imageTypeToDisplay={this.state.imageTypeToDisplay}
             whenDoneTarget={this.props.whenDoneTarget}
@@ -1515,9 +1293,6 @@ class InsightsPanel extends React.Component {
             deleteFile={this.props.deleteFile}
             frameset_discriminator={this.props.frameset_discriminator}
             preserveAllJobs={this.props.preserveAllJobs}
-            telemetry_data={this.props.telemetry_data}
-            setTelemetryData={this.props.setTelemetryData}
-            setTelemetryRules={this.props.setTelemetryRules}
             addInsightsCallback={this.addInsightsCallback}
             clicked_coords={this.state.clicked_coords}
             setScrubberToIndex={this.setScrubberToIndex}
@@ -1547,12 +1322,12 @@ class InsightsPanel extends React.Component {
             setModalImage={this.setModalImage}
             mask_method={this.props.mask_method}
             impersonateUser={this.props.impersonateUser}
-            maximize={this.props.maximize}
             cv_workers={this.props.cv_workers}
             queryCvWorker={this.props.queryCvWorker}
             dispatchFetchSplitAndHash={this.props.dispatchFetchSplitAndHash}
-            suppress_job_polling={this.props.suppress_job_polling}
+            deleteOldJobs={this.props.deleteOldJobs}
             job_polling_interval_seconds={this.props.job_polling_interval_seconds}
+            telemetry_data={this.props.telemetry_data}
           />
         </div>
 

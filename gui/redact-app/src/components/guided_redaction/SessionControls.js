@@ -1,5 +1,8 @@
 import React from 'react';
 import {
+  buildFramesetDiscriminatorSelect
+} from './redact_utils.js'
+import {
   makePlusMinusRowLight,
 } from './SharedControls'
 
@@ -309,6 +312,19 @@ class SessionControls extends React.Component {
     )
   }
 
+  buildDeleteOldJobsButton() {
+    return (
+      <div className='d-inline'>
+        <button
+            className='btn btn-primary ml-2 mt-2'
+            onClick={() => this.props.deleteOldJobs()}
+        >
+          Delete Old Jobs
+        </button>
+      </div>
+    )
+  }
+
   buildPingCvWorkerButton() {
     if (Object.keys(this.props.cv_workers).length === 0) {
       return ''
@@ -586,246 +602,27 @@ class SessionControls extends React.Component {
   }
 
   buildFramesetDiscriminator() {
+    const frameset_discriminator_select = buildFramesetDiscriminatorSelect(
+      'frameset_discriminator',
+      this.props.frameset_discriminator,
+      (
+        (event) => this.props.setGlobalStateVar(
+          'frameset_discriminator', 
+          event.target.value
+        )
+      )
+    )
+
     return (
       <div className='row mt-3 bg-light rounded'>
         Frameset Discriminator
         <div
             className='d-inline ml-2'
         >   
-           <select
-              title='Frameset Discriminator'
-              name='frameset_discriminator'
-              value={this.props.frameset_discriminator}
-              onChange={(event) => this.props.setGlobalStateVar('frameset_discriminator', event.target.value)}
-           >
-            <option value='gray64'>gray 64x64</option>
-            <option value='gray32'>gray 32x32</option>
-            <option value='gray16'>gray 16x16</option>
-            <option value='gray8'>gray 8x8 (default)</option>
-            <option value='gray6'>gray 6x6</option>
-            <option value='gray4'>gray 4x4</option>
-          </select>
+          {frameset_discriminator_select}}
         </div>
       </div>
     )
-  }
-
-  startSpeechRecognition() {
-    let grammar_list = new window.webkitSpeechGrammarList();
-    var colors = ['Caulton', 'DeVos', 'Cannonball', 'Flubber']
-    var grammar = '#JSGF V1.0; grammar colors; public <color> = ' + colors.join(' | ') + ' ;'
-    grammar_list.addFromString(grammar, 1)
-
-    this.recognizer = new window.webkitSpeechRecognition();
-    this.recognizer.continuous = true;
-    this.recognizer.interimResults = true;
-    this.recognizer.grammars = grammar_list
-
-    this.recognizer.onresult = function (event) {
-      var final = "FINAL: ";
-      var interim = "INTERIM: ";
-      for (var i = 0; i < event.results.length; ++i) {
-        if (event.results[i].isFinal) {
-          final += event.results[i][0].transcript;
-        } else {
-          interim += event.results[i][0].transcript;
-        }
-      }
-      document.getElementById('session_recognized_text_final').innerHTML = final
-      document.getElementById('session_recognized_text_interim').innerHTML = interim
-    }
-    this.recognizer.start()
-  }
-
-  stopSpeechRecognition() {
-    this.recognizer.stop()
-  }
-
-  buildSpeechRecognitionButton() {
-    return (
-      <div>
-        <div className='d-inline'>
-          Speech Recognition
-        </div>
-        <div className='d-inline ml-2'>
-          <button
-              className='btn btn-primary'
-              onClick={() => this.startSpeechRecognition()}
-          >
-            Start
-          </button>
-        </div>
-        <div className='d-inline ml-2'>
-          <button
-              className='btn btn-primary'
-              onClick={() => this.stopSpeechRecognition()}
-          >
-            Stop
-          </button>
-        </div>
-        <div className='d-inline ml-2' id='session_recognized_text_final' />
-        <div className='d-inline ml-2' id='session_recognized_text_interim' />
-      </div>
-    )
-  }
-
-  setVoice() {
-    const voice_index = this.getVoiceIndex()
-    const pitch = parseFloat(document.getElementById('session_voice_pitch').value)
-    const rate = parseFloat(document.getElementById('session_voice_speed').value)
-    const voice_obj = {
-      index: voice_index,
-      pitch: pitch,
-      rate: rate,
-    }
-    let deepCopySessionAudio = JSON.parse(JSON.stringify(this.props.session_audio))
-    deepCopySessionAudio['voice'] = voice_obj
-    this.props.setGlobalStateVar('session_audio', deepCopySessionAudio)
-  }
-
-  getVoiceIndex() {
-    const vs = document.getElementById('session_voices_select').value
-    let vi = vs.split(':')[0]
-    if (vi) {
-      vi = parseInt(vi)
-    }
-    return vi
-  }
-
-  tryOutVoice() {
-    const test_text = "Keep the change you filty animal"
-    const voice_index = this.getVoiceIndex()
-    var msg = new SpeechSynthesisUtterance(test_text)
-    const voice = window.speechSynthesis.getVoices()[voice_index]
-    msg.voice = voice
-    msg.pitch = parseFloat(document.getElementById('session_voice_pitch').value)
-    msg.rate = parseFloat(document.getElementById('session_voice_speed').value)
-    window.speechSynthesis.speak(msg);
-  }
-
-  buildVoiceSpeedList() {
-    return (
-      <div>
-        <div className='d-inline'>
-          Voice Speed
-        </div>
-        <div className='d-inline'>
-          <select
-              id='session_voice_speed'
-              onChange={() => this.tryOutVoice()}
-          >
-            <option value='1'>1</option>
-            <option value='.1'>.1</option>
-            <option value='.2'>.2</option>
-            <option value='.3'>.3</option>
-            <option value='.4'>.4</option>
-            <option value='.5'>.5</option>
-            <option value='.6'>.6</option>
-            <option value='.7'>.7</option>
-            <option value='.8'>.8</option>
-            <option value='.9'>.9</option>
-            <option value='1'>1</option>
-            <option value='1.5'>1.5</option>
-            <option value='2'>2</option>
-          </select>
-        </div>
-      </div>
-    )
-  }
-
-  buildVoicePitchList() {
-    return (
-      <div>
-        <div className='d-inline'>
-          Voice Pitch
-        </div>
-        <div className='d-inline'>
-          <select
-              id='session_voice_pitch'
-              onChange={() => this.tryOutVoice()}
-          >
-            <option value='1'>1</option>
-            <option value='.1'>.1</option>
-            <option value='.2'>.2</option>
-            <option value='.3'>.3</option>
-            <option value='.4'>.4</option>
-            <option value='.5'>.5</option>
-            <option value='.6'>.6</option>
-            <option value='.7'>.7</option>
-            <option value='.8'>.8</option>
-            <option value='.9'>.9</option>
-            <option value='1'>1</option>
-            <option value='1.5'>1.5</option>
-            <option value='2'>2</option>
-          </select>
-        </div>
-      </div>
-    )
-  }
-
-  buildVoiceList(voices) {
-    const voice_speed_list = this.buildVoiceSpeedList()
-    const voice_pitch_list = this.buildVoicePitchList()
-    return (
-      <div>
-        <div className='d-inline'>
-          Voices
-        </div>
-        <div className='d-inline'>
-          <select
-              title='Voices'
-              name='session_voices_select'
-              id='session_voices_select'
-              onChange={() => this.tryOutVoice()}
-          >
-            {voices.map((voice, index) => {
-              const add_value = index.toString() + ':' + voice['voiceURI'] + ':' + voice['lang']
-              return (
-                <option key={index} value={add_value}> {add_value} </option>
-              )
-            })}
-          </select>
-          <div className='d-inline ml-2'>
-            <button
-                className='btn btn-primary'
-                onClick={() => this.setVoice()}
-            >
-              Save
-            </button>
-          </div>
-        </div>
-        <div>
-          {voice_speed_list}
-        </div>
-        <div>
-          {voice_pitch_list}
-        </div>
-      </div>
-    )
-  }
-
-  buildVoiceSelector() {
-    if (window.speechSynthesis.getVoices()) {
-      return this.buildVoiceList(window.speechSynthesis.getVoices())
-    } else {
-      let app_this = this
-      window.speechSynthesis.onvoiceschanged = function() {
-        return app_this.buildVoiceList(window.speechSynthesis.getVoices())
-      }
-    }
-  }
-
-  togglePlaySound() {
-    const new_val = !this.props.session_audio['playSound']
-    let deepCopySessionAudio = JSON.parse(JSON.stringify(this.props.session_audio))
-    deepCopySessionAudio['playSound'] = new_val
-    this.props.setGlobalStateVar('session_audio', deepCopySessionAudio)
-  }
-
-  setUserTone(new_val) {
-    let deepCopySessionAudio = JSON.parse(JSON.stringify(this.props.session_audio))
-    deepCopySessionAudio['userTone'] = new_val
-    this.props.setGlobalStateVar('session_audio', deepCopySessionAudio)
   }
 
   addCvWorker() {
@@ -993,8 +790,6 @@ class SessionControls extends React.Component {
 
   render() {
     const campaign_movies_box = this.buildCampaignMoviesBox()
-    const recognition_button = this.buildSpeechRecognitionButton()
-    const voice_selector = this.buildVoiceSelector()
     const update_state_box = this.buildGlobalStateBox()
     const cv_workers_area = this.buildCvWorkersArea()
     const workbook_load_button = this.buildWorkbookPickerButton()
@@ -1003,40 +798,27 @@ class SessionControls extends React.Component {
     const workbook_id = this.buildWorkbookId()
     const show_hide_user = makePlusMinusRowLight('user', 'session_user_div')
     const show_hide_panels = makePlusMinusRowLight('panels', 'session_panels_div')
-    const show_hide_audio = makePlusMinusRowLight('session audio', 'session_audio_div')
     const show_hide_data = makePlusMinusRowLight('data', 'session_data_div')
     const su_link = this.buildSuLink()
     const impersonate_link = this.buildImpersonateLink()
     const panels_checkboxes = this.buildPanelsCheckboxes() 
 
-    let play_sound_checked = ''
-    if (this.props.session_audio['playSound']) {
-      play_sound_checked = 'checked'
-    }
     let preserve_all_jobs_checked = ''
     if (this.props.preserveAllJobs) {
       preserve_all_jobs_checked = 'checked'
-    }
-    let suppress_job_polling_checked = ''
-    if (this.props.suppress_job_polling) {
-      suppress_job_polling_checked = 'checked'
     }
     let preserve_movie_audio_checked = ''
     if (this.props.preserve_movie_audio) {
       preserve_movie_audio_checked = 'checked'
     }
-    let maximize_checked = ''
-    if (this.props.maximize) {
-      maximize_checked = 'checked'
-    }
     const when_done_selector = this.buildWhenDoneSelector()
-    const user_tone_selector = this.buildUserToneSelector()
     const ping_button = this.buildPingButton() 
     const get_version_button = this.buildGetVersionButton() 
     const workbook_save_button = this.buildWorkbookSaveButton()
     const rebase_movies_button = this.buildRebaseMoviesButton()
     const rebase_jobs_button = this.buildRebaseJobsButton()
     const ping_cv_worker_button = this.buildPingCvWorkerButton()
+    const delete_old_jobs_button = this.buildDeleteOldJobsButton()
     const frameset_discriminator = this.buildFramesetDiscriminator()
 
     return (
@@ -1072,6 +854,7 @@ class SessionControls extends React.Component {
                   {ping_button}
                   {get_version_button}
                   {ping_cv_worker_button}
+                  {delete_old_jobs_button}
 
                   <div className='d-inline'>
                       {workbook_load_button}
@@ -1108,30 +891,19 @@ class SessionControls extends React.Component {
                   Preserve All Jobs (typically for troubleshooting)
                 </div>
 
-                <div className='row mt-3 bg-light rounded'>
-                  <input
-                    className='ml-2 mr-2 mt-1'
-                    id='toggle_suppress_job_polling'
-                    checked={suppress_job_polling_checked}
-                    type='checkbox'
-                    onChange={() => this.props.toggleGlobalStateVar('suppress_job_polling')}
-                  />
-                  Suppress Job Polling
-                </div>
-
-                <div className='row mt-3 bg-light rounded'>
-                  <div className='d-inline'>
-                    Job Polling Interval (seconds): 
-                  </div>
-                  <div className='d-inline ml-2'>
-                    <input 
-                        id='session_job_polling_interval_seconds'
-                        value={this.props.job_polling_interval_seconds}
+                <div className='row mt-3 bg-light rounded'>                     
+                  <div className='d-inline'>                                    
+                    Job Polling Interval (seconds):                             
+                  </div>                                                        
+                  <div className='d-inline ml-2'>                               
+                    <input                                                      
+                        id='session_job_polling_interval_seconds'               
+                        value={this.props.job_polling_interval_seconds}         
                         onChange={(event) => this.props.setGlobalStateVar('job_polling_interval_seconds', event.target.value)}
-                        size='5'
-                    />
-                  </div>
-                </div>
+                        size='5'                                                
+                    />                                                          
+                  </div>                                                        
+                </div> 
 
                 <div className='row mt-3 bg-light rounded'>
                   <input
@@ -1144,17 +916,8 @@ class SessionControls extends React.Component {
                   Preserve Movie Audio
                 </div>
 
-                <div className='row mt-3 bg-light rounded'>
-                  <input
-                    className='ml-2 mr-2 mt-1'
-                    checked={maximize_checked}
-                    type='checkbox'
-                    onChange={(event) => this.props.toggleGlobalStateVar('maximize')}
-                  />
-                  Maximize
-                </div>
-
                 {show_hide_user}
+
                 <div
                     id='session_user_div'
                     className='collapse'
@@ -1164,34 +927,6 @@ class SessionControls extends React.Component {
                   </div>
                   <div>
                     {impersonate_link}
-                  </div>
-                </div>
-
-                {show_hide_audio}
-                <div
-                    id='session_audio_div'
-                    className='collapse'
-                >
-                  <div className='row mt-3 bg-light rounded'>
-                    <input
-                      className='ml-2 mr-2 mt-1'
-                      checked={play_sound_checked}
-                      type='checkbox'
-                      onChange={() => this.togglePlaySound()}
-                    />
-                    Play Sound
-                  </div>
-
-                  <div className='row mt-3 bg-light rounded'>
-                    {user_tone_selector}
-                  </div>
-
-                  <div className='row mt-3 bg-light rounded'>
-                    {voice_selector}
-                  </div>
-
-                  <div className='row mt-3 bg-light rounded'>
-                    {recognition_button}
                   </div>
                 </div>
 

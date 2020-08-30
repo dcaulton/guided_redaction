@@ -235,27 +235,6 @@ class MovieCard extends React.Component {
     )
   }
 
-  getMovieDiffsFound() {
-    if (Object.keys(this.props.movies).includes(this.props.this_cards_movie_url)) {
-      if (!Object.keys(this.props.movies[this.props.this_cards_movie_url]).includes('framesets')) {
-        return ''
-      }
-      for (let i=0; i < Object.keys(this.props.movies[this.props.this_cards_movie_url]['framesets']).length; i++) {
-        const frameset_hash = Object.keys(this.props.movies[this.props.this_cards_movie_url]['framesets'])[i]
-        const frameset = this.props.movies[this.props.this_cards_movie_url]['framesets'][frameset_hash]
-        if (Object.keys(frameset).includes('filtered_image_url') &&
-            frameset['filtered_image_url']) {
-          return (
-            <div>
-              diff images exist
-            </div>
-          )
-        }
-      }
-    }
-    return ''
-  }
-
   getTier1MatchHashesForMovie(scanner_type, movie_url) {
     let hashes = []
     if (!this.props.tier_1_scanner_current_ids) {
@@ -525,6 +504,39 @@ class MovieCard extends React.Component {
     return ''
   }
 
+  buildVideoSourceObject() {
+    if (this.props.this_cards_movie_url.includes('.mp4')) {
+      return (
+        <div>
+          <video 
+              id='video_{this.props.key}' 
+              controls 
+          >
+            <source
+              src={this.props.this_cards_movie_url}
+              type='video/mp4'
+            />
+          </video>
+        </div>
+      )
+    } else {
+      const this_movie = this.props.movies[this.props.this_cards_movie_url]
+      const first_frame = this_movie['frames'][0]
+      const the_style = {
+        width: '100%',
+      }
+      return (
+        <div>
+          <img
+            src={first_frame}
+            alt={first_frame}
+            style={the_style}
+          />
+        </div>
+      )
+    }
+  }
+
   render() {
     let dd_style = {
       'fontSize': 'small',
@@ -535,12 +547,10 @@ class MovieCard extends React.Component {
     const framesets_count_message = this.getFramesetsCountMessage(this.props.this_cards_movie_url)
     const make_active_button = this.buildMakeActiveButton(this.props.this_cards_movie_url)
     const template_matches_string = this.getTier1MatchesString('template')
-    const hog_matches_string = this.getTier1MatchesString('hog')
     const ocr_matches_string = this.getTier1MatchesString('ocr')
     const ocr_scene_analysis_matches_string = this.getTier1MatchesString('ocr_scene_analysis')
     const selected_areas_string = this.getTier1MatchesString('selected_area')
     const areas_to_redact_string = this.getAreasToRedactString()
-    const diffs_string = this.getMovieDiffsFound()
     const dims_string = this.getMovieDimensions(this.props.this_cards_movie_url, this.props.movies)
     let top_div_classname = "row mt-2 card"
     if (this.props.this_cards_movie_url === this.props.active_movie_url) {
@@ -551,6 +561,7 @@ class MovieCard extends React.Component {
     const movie_header = this.buildMovieHeader(movie, movie_body_id, nickname_block)
     const has_timestamp_info = this.buildHasTimestampInfo()
     const has_telemetry_info = this.buildHasTelemetryInfo()
+    const video_source_object = this.buildVideoSourceObject()
 
     return (
       <div 
@@ -570,15 +581,7 @@ class MovieCard extends React.Component {
             >
 
               <div className='row'>
-                <video 
-                    id='video_{this.props.key}' 
-                    controls 
-                >
-                  <source
-                    src={this.props.this_cards_movie_url}
-                    type='video/mp4'
-                  />
-                </video>
+                {video_source_object}
               </div>
 
               <div className='row'>
@@ -601,16 +604,10 @@ class MovieCard extends React.Component {
                     {template_matches_string}
                   </div>
                   <div className='row'>
-                    {hog_matches_string}
-                  </div>
-                  <div className='row'>
                     {ocr_matches_string}
                   </div>
                   <div className='row'>
                     {ocr_scene_analysis_matches_string}
-                  </div>
-                  <div className='row'>
-                    {diffs_string}
                   </div>
                   <div className='row'>
                     {selected_areas_string}

@@ -292,14 +292,14 @@ class OcrControls extends React.Component {
         <button
             className='btn btn-primary dropdown-toggle'
             type='button'
-            id='runTelemetryDropdownButton'
+            id='runOcrDropdownButton'
             data-toggle='dropdown'
             area-haspopup='true'
             area-expanded='false'
         >
           Run
         </button>
-        <div className='dropdown-menu' aria-labelledby='RunTelemetryDropdownButton'>
+        <div className='dropdown-menu' aria-labelledby='RunOcrDropdownButton'>
           <button className='dropdown-item'
               onClick={() => this.props.submitInsightsJob('ocr_current_frame')}
           >

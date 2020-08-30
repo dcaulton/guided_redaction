@@ -1,5 +1,34 @@
 import React from 'react';
 
+export function buildT1ScannerScaleDropdown(
+  name, 
+  value, 
+  onchange
+) {
+  const scale_values = [
+    {'1:1': 'actual image scale only'},
+    {'+/-10/1': '+/- 10%, 1% increments'},
+    {'+/-10/5': '+/- 10%, 5% increments'},
+    {'+/-20/1': '+/- 20%, 1% increments'},
+    {'+/-20/5': '+/- 20%, 5% increments'},
+    {'+/-20/10': '+/- 20%, 10% increments'},
+    {'+/-25/1': '+/- 25%, 1% increments'},
+    {'+/-25/5': '+/- 25%, 5% increments'},
+    {'+/-40/1': '+/- 40%, 1% increments'},
+    {'+/-40/5': '+/- 40%, 5% increments'},
+    {'+/-50/1': '+/- 50%, 1% increments'},
+    {'+/-50/5': '+/- 50%, 5% increments'},
+    {'+/-50/10': '+/- 50%, 10% increments'}
+  ]
+  return buildLabelAndDropdown(
+    scale_values,
+    'Scale',
+    value,
+    name,
+    onchange
+  )
+}
+
 export function buildLabelAndDropdown(allowed_values, label, value, element_name, onchange, raw_options='') {
   return (
     <div>

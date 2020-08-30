@@ -10,6 +10,7 @@ import {
   buildIdString,
   clearTier1Matches,
   buildClearMatchesButton,
+  buildT1ScannerScaleDropdown,
   doTier1Save,
 } from './SharedControls'
 
@@ -535,26 +536,9 @@ class TemplateControls extends React.Component {
   }
 
   buildScaleDropdown() {
-    const scale_values = [
-      {'1:1': 'actual image scale only'},
-      {'+/-10/1': '+/- 10%, 1% increments'},
-      {'+/-10/5': '+/- 10%, 5% increments'},
-      {'+/-20/1': '+/- 20%, 1% increments'},
-      {'+/-20/5': '+/- 20%, 5% increments'},
-      {'+/-20/10': '+/- 20%, 10% increments'},
-      {'+/-25/1': '+/- 25%, 1% increments'},
-      {'+/-25/5': '+/- 25%, 5% increments'},
-      {'+/-40/1': '+/- 40%, 1% increments'},
-      {'+/-40/5': '+/- 40%, 5% increments'},
-      {'+/-50/1': '+/- 50%, 1% increments'},
-      {'+/-50/5': '+/- 50%, 5% increments'},
-      {'+/-50/10': '+/- 50%, 10% increments'}
-    ]
-    return buildLabelAndDropdown(
-      scale_values,
-      'Scale',
-      this.state.scale,
+    return buildT1ScannerScaleDropdown(
       'template_scale',
+      this.state.scale,
       ((value)=>{this.setLocalStateVar('scale', value)})
     )
   }

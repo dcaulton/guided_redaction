@@ -10,13 +10,9 @@ class CanvasInsightsOverlay extends React.Component {
     this.crosshairs_color = '#F33'
     this.template_match_color = '#3F3'
     this.selected_area_color = '#2B9'
-    this.hog_color = '#BEA'
     this.selected_area_center_color = '#9F3'
     this.selected_area_origin_location_color = '#40D'
-    this.hog_training_image_color = '#72A'
-    this.hog_testing_image_color = '#A91'
     this.ocr_origin_location_color = '#51B'
-    this.annotations_color = '#5DE'
     this.ocr_color = '#CC0'
     this.area_to_redact_color = '#D6D'
     this.ocr_window_color = '#DA9'
@@ -52,30 +48,6 @@ class CanvasInsightsOverlay extends React.Component {
         selected_area_min_zones,
         this.selected_area_minimum_zone_color
       )
-    }
-  }
-
-  drawHogTrainingImages() {
-    if (!this.props.currentImageIsHogTrainingImage()) {
-      return
-    }
-    const zones = this.props.getCurrentHogTrainingImageLocations()
-    if (zones) {
-      this.drawBoxesAroundStartEndRecords(
-        zones,
-        this.hog_training_image_color
-      )
-    }
-  }
-
-  drawHogTestingImages() {
-    if (!this.props.currentImageIsHogTestingImage()) {
-      return
-    }
-    const zones = this.props.getCurrentHogTestingImageLocations()
-    for (let i = 0; i < zones.length; i++) {
-      const center = zones[i]['location']
-      this.drawCrosshairsGeneric(center, this.hog_testing_image_color)
     }
   }
 
@@ -169,7 +141,6 @@ class CanvasInsightsOverlay extends React.Component {
       if ((this.props.mode === 'add_template_anchor_2') 
           || (this.props.mode === 'add_template_mask_zone_2')
           || (this.props.mode === 'selected_area_minimum_zones_2')
-          || (this.props.mode === 'hog_pick_training_image_2')
           || (this.props.mode === 'scan_ocr_2')) {
         crosshair_length = 2000
       } 
@@ -332,31 +303,6 @@ class CanvasInsightsOverlay extends React.Component {
     this.drawTier1Matches('ocr', this.ocr_color, this.red_color) 
   }
 
-  drawHogMatches() {
-    this.drawTier1Matches('hog', this.hog_color, this.red_color) 
-  }
-
-  drawAnnotations() {
-    const annotations = this.props.getAnnotations()
-    if (annotations) {
-      let draw_annotation_label = false
-      if (Object.keys(annotations).includes('all') && annotations['all']['data']) {
-        draw_annotation_label = true
-      }
-      if (draw_annotation_label) {
-        const canvas = this.refs.insights_canvas
-        let ctx = canvas.getContext('2d')
-        ctx.fillStyle = this.annotations_color
-        ctx.font = '30px Arial'
-        const x = canvas.width/2 * this.props.insights_image_scale
-        const y = canvas.height/2 * this.props.insights_image_scale
-        ctx.fillText('Template Annotated ', x+50, y+50)
-        ctx.globalAlpha = 0.2
-        ctx.fillRect(x, y, x, y)
-      }
-    }
-  }
-
   drawAreasToRedact() {
     if (this.props.getCurrentAreasToRedact()) {
       const matches = this.props.getCurrentAreasToRedact()
@@ -398,8 +344,6 @@ class CanvasInsightsOverlay extends React.Component {
     this.clearCanvasItems()
     this.drawSelectedAreas()
     this.drawCrosshairs('add_stuff', this.props.clicked_coords)
-    this.drawHogTrainingImages()
-    this.drawHogTestingImages()
     this.drawSelectedAreaCenters()
     this.drawSelectedAreaMinimumZones()
     this.drawSelectedAreaOriginLocation()
@@ -408,9 +352,7 @@ class CanvasInsightsOverlay extends React.Component {
     this.drawTemplateMaskZones()
     this.drawTemplateMatches()
     this.drawScannerOrigins()
-    this.drawAnnotations()
     this.drawOcrMatches()
-    this.drawHogMatches()
     this.drawOcrWindow()
     this.drawOsaMatches()
     this.drawAreasToRedact()
@@ -420,8 +362,6 @@ class CanvasInsightsOverlay extends React.Component {
     this.clearCanvasItems()
     this.drawSelectedAreas()
     this.drawCrosshairs('add_stuff', this.props.clicked_coords)
-    this.drawHogTrainingImages()
-    this.drawHogTestingImages()
     this.drawSelectedAreaCenters()
     this.drawSelectedAreaMinimumZones()
     this.drawSelectedAreaOriginLocation()
@@ -430,9 +370,7 @@ class CanvasInsightsOverlay extends React.Component {
     this.drawTemplateMaskZones()
     this.drawTemplateMatches()
     this.drawScannerOrigins()
-    this.drawAnnotations()
     this.drawOcrMatches()
-    this.drawHogMatches()
     this.drawOcrWindow()
     this.drawOsaMatches()
     this.drawAreasToRedact()

@@ -1,10 +1,8 @@
 import uuid
 import json
 
-from channels.layers import get_channel_layer
 from django.conf import settings
 from django.db import models
-from asgiref.sync import async_to_sync
 
 from guided_redaction.attributes.models import Attribute
 
@@ -57,6 +55,8 @@ class Job(models.Model):
             self.broadcast_percent_complete()
 
     def broadcast_percent_complete(self):
+        from channels.layers import get_channel_layer
+        from asgiref.sync import async_to_sync
         channel_layer = get_channel_layer()
         async_to_sync(channel_layer.group_send)(
             'redact-jobs',

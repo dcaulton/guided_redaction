@@ -1,10 +1,10 @@
+import simplejson as json
+import base.json
 from rest_framework import status, viewsets
 from rest_framework.response import Response
-import json
 
 
 class ViewSet(viewsets.ViewSet):
-
     def error(self, err, status_code=None):
         if status_code is None:
             status_code = status.HTTP_400_BAD_REQUEST
@@ -22,19 +22,22 @@ class ViewSet(viewsets.ViewSet):
             err = [err]
         return Response({"errors": err}, status_code)
 
-    def wrap_list(self, result):
+    def make_csv_ready(self, result):
+        items = list(result)
+        for item in items:
+            for key, value in item.items():
+                if isinstance(value, (dict, list)):
+                    item[key] = base.json.dumps(value)
+        return items
+
+    def wrap_list(self, result, object_name=None):
+        object_name = object_name or self.object_name or self.table_name
         items = list(result)
         return {
-            self.object_name or self.table_name: items,
+            object_name: items,
             "COUNT": len(items),
             "PAGE": 1,
         }
 
-
-class FunctionBasedViewSet(ViewSet):
-    def list(self, request):
-        return self.get(self, request)
-
-    def create(self, request):
-        return self.post(self, request)
-
+    def validate(self, request):
+        return []

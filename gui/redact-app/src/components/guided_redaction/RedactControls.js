@@ -1,28 +1,26 @@
 import React from 'react';
 import {
+  buildRedactionTypeSelect
+} from './redact_utils.js'
+import {
   makeHeaderRow,
-  } from './SharedControls'
+} from './SharedControls'
 
 class RedactControls extends React.Component {
 
   buildMaskMethodDropdown() {
+    const redaction_select = buildRedactionTypeSelect(                          
+      'mask_method',                                                            
+      this.props.mask_method,                                                   
+      ((event) => this.props.setGlobalStateVar('mask_method', event.target.value))
+    )
     return (
       <div>
         <div className='d-inline'>
           Mask method
         </div>
         <div className='d-inline ml-2'>
-          <select
-              name='mask_method'
-              value={this.props.mask_method}
-              onChange={(event) => this.props.setGlobalStateVar('mask_method', event.target.value)}
-          >
-            <option value='blur_7x7'>Gaussian Blur 7x7</option>
-            <option value='blur_21x21'>Gaussian Blur 21x21</option>
-            <option value='blur_median'>Median Blur</option>
-            <option value='black_rectangle'>Black Rectangle</option>
-            <option value='green_outline'>Green Outline</option>
-          </select>
+          {redaction_select}
         </div>
       </div>
     )

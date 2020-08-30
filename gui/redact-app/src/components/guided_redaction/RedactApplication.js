@@ -1,10 +1,13 @@
+
 import React from 'react';
-import ImagePanel from './ImagePanel';
 import MoviePanel from './MoviePanel';
+import JobBug from './JobBug';
+import Pipelines from './Pipelines';
 import InsightsPanel from './InsightsPanel';
+import Workflows from './Workflows';
+import Workbooks from './Workbooks';
 import ComposePanel from './ComposePanel';
 import {getUrlVars} from './redact_utils.js'
-import CompositeTone from './Tones.js'
 import './styles/guided_redaction.css';
 import { fetch } from '../../utils'; 
 import {
@@ -12,7 +15,6 @@ import {
   Route,
   Link
 } from "react-router-dom";
-let helpDoc = ''
 
 class RedactApplication extends React.Component {
   constructor(props) {
@@ -34,10 +36,11 @@ class RedactApplication extends React.Component {
       workbooks: [],
       movies: {},
       movie_sets: {},
-      annotations: {},
+      breadcrumbs_title: '',
+      breadcrumbs_subtitle: '',
+      bypass_whoami: false,
       jobs: [],
       jobs_last_checked: '',
-      suppress_job_polling: false,
       job_polling_interval_seconds: 2,
       scanners: [],
       files: {},
@@ -58,92 +61,83 @@ class RedactApplication extends React.Component {
         status: '',
         percent_complete: '',
       },
+      sideNavIsCollapsed: false,
       preserveAllJobs: false,
+      pipelines: {},
+      results: {},
+      current_pipeline_id: '',
+      preserve_movie_audio: true,
+      app_codebooks: {},
       telemetry_data: {
         raw_data_url: '',
         movie_mappings: [],
       },
-      pipelines: {},
-      results: {},
-      maximize: false,
-      current_pipeline_id: '',
-      preserve_movie_audio: false,
-      app_codebooks: {},
       user: {
         id: '',
-        is_superuser: false,
-      },
-      session_audio: {
-        playSound: false,
-        userTone: 'blip',
-        voice: {
-          index: '',
-          pitch: '',
-          rate: '',
-        },
       },
       message: '',
       cv_workers: {},
       visibilityFlags: {
         'templates': true,
-        'hog': false,
+        'hog': true,
         'selectedArea': true,
-        'annotate': false,
-        'telemetry': false,
+        'annotate': true,
+        'telemetry': true,
         'filesystem': true,
         'ocr': true,
         'ocr_scene_analysis': true,
-        'ocr_movie_analysis': false,
-        'movieSets': false,
+        'ocr_movie_analysis': true,
+        'movieSets': true,
         'results': true,
-        'diffs': false,
+        'diffs': true,
         'redact': true,
         'zip': true,
         'pipelines': true,
-        'entity_finder': false,
+        'entity_finder': true,
+        'redaction_borders': true,
       },
       tier_1_scanners: {
         'ocr': {},
         'hog': {},
         'ocr_scene_analysis': {},
-        'ocr_movie_analysis': {},
         'template': {},
         'telemetry': {},
         'selected_area': {},
-        'entity_finder': {},
       },
       tier_1_scanner_current_ids: {
         'ocr': '',
         'hog': '',
         'ocr_scene_analysis': '',
-        'ocr_movie_analysis': '',
         'template': '',
         'telemetry': '',
         'selected_area': '',
-        'entity_finder': '',
       },
       tier_1_matches: {
         'ocr': {},
         'hog': {},
         'hog_training': {},
         'ocr_scene_analysis': {},
-        'ocr_movie_analysis': {},
         'template': {},
         'telemetry': {},
         'selected_area': {},
-        'entity_finder': {},
+      },
+      workflow_callbacks: {},
+      workflows: {
+        'active_workflow': '',
+        'active_step': '',
       },
     }
 
-    this.getNextImageHash=this.getNextImageHash.bind(this)
-    this.getPrevImageHash=this.getPrevImageHash.bind(this)
     this.handleMergeFramesets=this.handleMergeFramesets.bind(this)
     this.setImageScale=this.setImageScale.bind(this)
     this.doPing=this.doPing.bind(this)
+    this.getUrl=this.getUrl.bind(this)
+    this.buildJsonHeaders=this.buildJsonHeaders.bind(this)
     this.doGetVersion=this.doGetVersion.bind(this)
     this.cancelJob=this.cancelJob.bind(this)
     this.submitJob=this.submitJob.bind(this)
     this.getJobs=this.getJobs.bind(this)
+    this.deleteOldJobs=this.deleteOldJobs.bind(this)
     this.getFiles=this.getFiles.bind(this)
     this.getPipelines=this.getPipelines.bind(this)
     this.dispatchPipeline=this.dispatchPipeline.bind(this)
@@ -157,7 +151,6 @@ class RedactApplication extends React.Component {
     this.loadWorkbook=this.loadWorkbook.bind(this)
     this.deleteWorkbook=this.deleteWorkbook.bind(this)
     this.setSelectedAreaMetas=this.setSelectedAreaMetas.bind(this)
-    this.afterUuidImagesFetched=this.afterUuidImagesFetched.bind(this)
     this.cropImage=this.cropImage.bind(this)
     this.setMovieNickname=this.setMovieNickname.bind(this)
     this.setMovieRedactedUrl=this.setMovieRedactedUrl.bind(this)
@@ -174,9 +167,6 @@ class RedactApplication extends React.Component {
     this.watchForJob=this.watchForJob.bind(this)
     this.unwatchJob=this.unwatchJob.bind(this)
     this.checkForJobs=this.checkForJobs.bind(this)
-    this.playTone=this.playTone.bind(this)
-    this.checkIfApiCanSeeUrl=this.checkIfApiCanSeeUrl.bind(this)
-    this.checkIfGuiCanSeeUrl=this.checkIfGuiCanSeeUrl.bind(this)
     this.updateSingleImageMovie=this.updateSingleImageMovie.bind(this)
     this.postMakeUrlCall=this.postMakeUrlCall.bind(this)
     this.establishNewMovie=this.establishNewMovie.bind(this)
@@ -186,7 +176,6 @@ class RedactApplication extends React.Component {
     this.setIllustrateParameters=this.setIllustrateParameters.bind(this)
     this.getImageUrl=this.getImageUrl.bind(this)
     this.setFramesetHash=this.setFramesetHash.bind(this)
-    this.setTelemetryData=this.setTelemetryData.bind(this)
     this.getJobResultData=this.getJobResultData.bind(this)
     this.setGlobalStateVar=this.setGlobalStateVar.bind(this)
     this.toggleGlobalStateVar=this.toggleGlobalStateVar.bind(this)
@@ -196,13 +185,218 @@ class RedactApplication extends React.Component {
     this.importScanner=this.importScanner.bind(this)
     this.wrapUpJob=this.wrapUpJob.bind(this)
     this.attachToJob=this.attachToJob.bind(this)
-    this.readTelemetryRawData=this.readTelemetryRawData.bind(this)
     this.toggleShowVisibility=this.toggleShowVisibility.bind(this)
     this.impersonateUser=this.impersonateUser.bind(this)
     this.getAndSaveUser=this.getAndSaveUser.bind(this)
     this.queryCvWorker=this.queryCvWorker.bind(this)
-    this.afterIdFetched=this.afterIdFetched.bind(this)
     this.dispatchFetchSplitAndHash=this.dispatchFetchSplitAndHash.bind(this)
+    this.setActiveWorkflow=this.setActiveWorkflow.bind(this)
+    this.addWorkflowCallbacks=this.addWorkflowCallbacks.bind(this)
+    this.clearCurrentIllustrations=this.clearCurrentIllustrations.bind(this)
+    this.clearCurrentRedactions=this.clearCurrentRedactions.bind(this)
+    this.runTemplateRedactPipelineJob=this.runTemplateRedactPipelineJob.bind(this)
+    this.runOcrRedactPipelineJob=this.runOcrRedactPipelineJob.bind(this)
+    this.buildMoviesForSingleFrame=this.buildMoviesForSingleFrame.bind(this)
+    this.buildMoviesForAllFrames=this.buildMoviesForAllFrames.bind(this)
+    this.keyPress=this.keyPress.bind(this)
+  }
+
+  buildOcrRedactPipelineObject(ocr_rule, pipeline_name) {
+    return Pipelines.buildOcrRedactPipelineObject(ocr_rule, pipeline_name) 
+  }
+
+  buildTemplateRedactPipelineObject(template_id, pipeline_name) {
+    return Pipelines.buildTemplateRedactPipelineObject(
+      template_id, 
+      pipeline_name, 
+      this.state.tier_1_scanners
+    )
+  }
+
+  runOcrRedactPipelineJob(ocr_rule, movies_to_process, pipeline_job_props={}) {
+    let input_obj = {
+      movies: movies_to_process
+    }
+    let redact_rule = {
+      mask_method: this.state.mask_method,
+    }
+    input_obj['redact_rule'] = redact_rule
+
+    const pipeline_name = 'scan_ocr_and_redact_' + ocr_rule['id'].toString()
+    const pipeline = this.getPipelineForName(pipeline_name)
+    if (pipeline) {
+      this.dispatchPipeline(
+        {
+          pipeline_id: pipeline['id'], 
+          extra_data: input_obj,
+          attach_to_job: true,
+          delete_job_after_loading: true,
+          after_submit: (()=>{this.setState({message: 'ocr+redact job submitted'})}),
+        }
+      )
+    } else {
+      const pipeline_obj = this.buildOcrRedactPipelineObject(ocr_rule, pipeline_name)
+      this.savePipelineToDatabase(
+        pipeline_obj,
+        ((response) => {this.dispatchPipeline(
+          {
+            pipeline_id: response['pipeline_id'], 
+            extra_data: input_obj, 
+            attach_to_job: true,
+            delete_job_after_loading: true,
+            after_submit: (()=>{this.setState({message: 'ocr+redact job submitted'})}),
+          }
+        )})
+      )
+    }
+  } 
+
+  runTemplateRedactPipelineJob(template_id, scope='one_frame') {
+    if (!Object.keys(this.state.tier_1_scanners['template']).includes(template_id)) {
+      this.setState({
+        message: 'no template found for the specified id'
+      })
+      return
+    }
+    let the_build_movie = {}
+    if (scope === 'one_frame') {
+      the_build_movie = this.buildMoviesForSingleFrame()
+    } else if (scope === 'all') {
+      the_build_movie = this.buildMoviesForAllFrames()
+    }
+    let redact_rule = {
+      mask_method: this.state.mask_method,
+    }
+    let input_obj = {
+      movies: the_build_movie,
+    }
+    input_obj['redact_rule'] = redact_rule
+
+    const pipeline_name = 'scan_template_and_redact_' + template_id.toString()
+    const pipeline = this.getPipelineForName(pipeline_name)
+    if (pipeline) {
+      this.dispatchPipeline(
+        {
+          pipeline_id: pipeline['id'], 
+          extra_data: input_obj,
+          attach_to_job: true,
+          delete_job_after_loading: true,
+          after_submit: (()=>{this.setState({message: 'ocr+redact job submitted'})}),
+        }
+      )
+    } else {
+      const pipeline_obj = this.buildTemplateRedactPipelineObject(
+        template_id, 
+        pipeline_name
+      )
+      this.savePipelineToDatabase(
+        pipeline_obj,
+        ((response) => {this.dispatchPipeline(
+          {
+            pipeline_id: response['pipeline_id'], 
+            extra_data: input_obj, 
+            attach_to_job: true,
+            delete_job_after_loading: true,
+            after_submit: (()=>{this.setState({message: 'template+redact job submitted'})}),
+          }
+        )})
+      )
+    }
+  }
+
+  getPipelineForName(the_name) {
+    return Pipelines.getPipelineForName(the_name, this.state.pipelines)
+  }
+
+  buildMoviesForSingleFrame() {
+    const image_url = this.getImageUrl()
+    const frameset_hash = this.getFramesetHashForImageUrl(image_url)
+    let movies = {}
+    movies[this.state.movie_url] = {
+      framesets: {},
+      frames: [],
+    }
+    movies[this.state.movie_url]['framesets'][frameset_hash] = {images: []}
+    movies[this.state.movie_url]['framesets'][frameset_hash]['images'].push(image_url)
+    movies[this.state.movie_url]['frames'].push(image_url)
+    return movies
+  }
+
+  buildMoviesForAllFrames() {
+    let movies = {}
+    movies[this.state.movie_url] = this.state.movies[this.state.movie_url]
+    return movies
+  }
+
+  clearCurrentIllustrations() {
+    if (!this.state.movie_url || !this.state.movies) {
+      return
+    }
+    let deepCopyMovies = JSON.parse(JSON.stringify(this.state.movies))
+    let deepCopyMovie = JSON.parse(JSON.stringify(this.state.movies[this.state.movie_url]))
+
+    for (let i=0; i < Object.keys(deepCopyMovie.framesets).length; i++) {
+      const frameset_hash = Object.keys(deepCopyMovie.framesets)[i]
+      if (Object.keys(deepCopyMovie.framesets[frameset_hash]).includes('illustrated_image')) {
+        delete deepCopyMovie.framesets[frameset_hash].illustrated_image
+      }
+    }
+    deepCopyMovies[this.state.movie_url] = deepCopyMovie
+    this.setGlobalStateVar('movies', deepCopyMovies)
+  }
+
+  clearCurrentRedactions() {
+    if (!this.state.movie_url || !this.state.movies) {
+      return
+    }
+    let deepCopyMovies = JSON.parse(JSON.stringify(this.state.movies))
+    let deepCopyMovie = JSON.parse(JSON.stringify(this.state.movies[this.state.movie_url]))
+
+    for (let i=0; i < Object.keys(deepCopyMovie.framesets).length; i++) {
+      const frameset_hash = Object.keys(deepCopyMovie.framesets)[i]
+      if (Object.keys(deepCopyMovie.framesets[frameset_hash]).includes('redacted_image')) {
+        delete deepCopyMovie.framesets[frameset_hash].redacted_image
+      }
+      if (Object.keys(deepCopyMovie.framesets[frameset_hash]).includes('areas_to_redact')) {
+        delete deepCopyMovie.framesets[frameset_hash].areas_to_redact
+      }
+    }
+    deepCopyMovies[this.state.movie_url] = deepCopyMovie
+    this.setGlobalStateVar('movies', deepCopyMovies)
+  }
+
+  addWorkflowCallbacks(the_dict, when_done=(()=>{})) {
+    let deepCopyWfCallbacks = JSON.parse(JSON.stringify(this.state.workflow_callbacks))
+    for (let i=0; i < Object.keys(the_dict).length; i++) {
+      const the_key = Object.keys(the_dict)[i]
+      const the_func = the_dict[the_key]
+      deepCopyWfCallbacks[the_key] = the_func
+    }
+    this.setGlobalStateVar('workflow_callbacks', deepCopyWfCallbacks, when_done)
+  }
+
+  setActiveWorkflow(active_workflow_name) {
+    Workflows.setActiveWorkflow(
+      active_workflow_name, 
+      this.state.workflows, 
+      this.state.workflow_callbacks, 
+      this.setGlobalStateVar
+    )
+  }
+
+  afterSaveWorkbookDone(workbook_id) {
+    let cur_url = new URL(window.location.href)
+    cur_url.searchParams.set('save-point', workbook_id)
+    window.history.pushState({}, cur_url)
+// DMC below is a hack to get save points working.  It's disruptive to the 
+//   workflow for now, you get a big old screen flicker when you load any job,
+//   The history approach above SHOULD work but needs tweaking I guess.
+//    window.location = cur_url
+  }
+
+  saveStateCheckpoint() {
+//    const the_name = 'workbook_autosave_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
+//    this.saveWorkbook(this.afterSaveWorkbookDone, the_name, '1hours')
   }
 
   async queryCvWorker(cv_worker_url, when_done=(()=>{})) {
@@ -238,73 +432,17 @@ class RedactApplication extends React.Component {
     let deepCopyUser = JSON.parse(JSON.stringify(this.state.user))
     deepCopyUser['id'] = new_user_id
     this.setGlobalStateVar('user', deepCopyUser)
-    this.processUserClasses()
-  }
-
-  afterIdFetched(user_id) {
-    const user_classes = this.getUserClasses(user_id)
-    let is_superuser = false
-    if (user_classes.includes('superuser')) {
-      is_superuser = true
-    }
-    let user_object = {
-      id: user_id,
-      classes: user_classes,
-      is_superuser: is_superuser,
-    }
-    this.setGlobalStateVar('user', user_object)
-    this.processUserClasses(user_classes)
-    this.checkForJobs(user_id)
-    return user_object
   }
 
   async getAndSaveUser() {
-    this.getCurrentUser(this.afterIdFetched) 
-  }
-
-  getUserClasses(user_id) {
-    let classes = []
-    if (user_id === 'dave.caulton@sykes.com') {
-      classes.push('superuser')
-    }
-    if ((user_id === 'michael.taylor@sykes.com') ||
-        (user_id === 'something.else@sykes.com') ||
-        (user_id === 'david.barrios@sykes.com') ||
-        (user_id === 'scott.devos@sykes.com') ||
-        (user_id === 'ryan.cannon@sykes.com') ||
-        (user_id === 'shelton.hook@sykes.com') ||
-        (user_id === 'scott.devos@sykes.com')
-    ) {
-      classes.push('no_sound')
-    }
-    return classes
-  }
-
-  processUserClasses(classes=null) {
-    let classes_to_use = classes
-    if (!classes_to_use) {
-      if (!this.state.user) {
-        return []
+    await this.getCurrentUser()
+    .then((user_id) => {
+      let user_object = {
+        id: user_id,
       }
-      if (!this.state.user['classes']) {
-        return []
-      } else {
-        classes_to_use = this.state.user['classes']
-      }
-    }
-
-    for (let i=0; i< classes_to_use.length; i++) {
-      const class_name = classes_to_use[i]
-      this.processUserClass(class_name)
-    }
-  }
-
-  processUserClass(class_name) {
-    if (class_name === 'no_sound') {
-      let deepCopySessionAudio = JSON.parse(JSON.stringify(this.state.session_audio))
-      deepCopySessionAudio['playSound']  = false
-      this.setGlobalStateVar('session_audio', deepCopySessionAudio)
-    }
+      this.setGlobalStateVar('user', user_object)
+      return user_object
+    })
   }
 
   getUrl(url_name) {
@@ -327,14 +465,10 @@ class RedactApplication extends React.Component {
       return api_server_url + 'v1/link/learn'
     } else if (url_name === 'link_proxy') {
       return api_server_url + 'v1/link/proxy'
-    } else if (url_name === 'can_see_url') {
-      return api_server_url + 'v1/link/can-reach'
     } else if (url_name === 'make_url_url') {
       return api_server_url + 'v1/files/make-url'
     } else if (url_name === 'scanners_url') {
       return api_server_url + 'v1/scanners'
-    } else if (url_name === 'get_telemetry_rows') {
-      return api_server_url + 'v1/link/get-telemetry-rows'
     } else if (url_name === 'files_url') {
       return api_server_url + 'v1/files'
     } else if (url_name === 'pipelines_url') {
@@ -343,6 +477,10 @@ class RedactApplication extends React.Component {
       return api_server_url + 'v1/attributes'
     } else if (url_name === 'version_url') {
       return api_server_url + 'v1/files/get-version'
+    } else if (url_name === 'delete_old_jobs_url') {
+      return api_server_url + 'v1/delete-old-jobs'
+    } else if (url_name === 'delete_old_workbooks_url') {
+      return api_server_url + 'v1/delete-old-workbooks'
     }
   }
 
@@ -357,33 +495,26 @@ class RedactApplication extends React.Component {
     })
   }
 
-  setGlobalStateVar(var_name, var_value, when_done=(()=>{})) {
-    this.setState({
-      [var_name]: var_value,
-    },
-    when_done())
-  }
-
-  async readTelemetryRawData(transaction_id, when_done=(()=>{})) {
-    if (!this.state.telemetry_data || !Object.keys(this.state.telemetry_data).includes('raw_data_url')) {
-      when_done([])
+  setGlobalStateVar(var_name, var_value='', when_done=(()=>{})) {
+    if (typeof var_name === 'string' || var_name instanceof String) {
+      // we have been given one key and one value
+      if (this.state[var_name] === var_value) {
+        when_done()
+      } else {
+        this.setState(
+          {
+            [var_name]: var_value,
+          },
+          when_done()
+        )
+      }
+    } else {
+      // var_name is actaully a dict
+      this.setState(
+        var_name, 
+        when_done()
+      )
     }
-    let response = await fetch(this.getUrl('get_telemetry_rows'), {
-      method: 'POST',
-      headers: this.buildJsonHeaders(),
-      body: JSON.stringify({
-        raw_data_url: this.state.telemetry_data['raw_data_url'],
-        transaction_id: transaction_id,
-      }),
-    })
-    .then((response) => response.json())
-    .then((responseJson) => {
-      when_done(responseJson['lines'])
-    })
-    .catch((error) => {
-      console.error(error)
-    })
-    await response
   }
 
   toggleGlobalStateVar(var_name) {
@@ -391,29 +522,6 @@ class RedactApplication extends React.Component {
     this.setState({
       [var_name]: new_value,
     })
-  }
-
-  setTelemetryData(hash_in, when_done=(()=>{}), when_failed=(()=>{})) {
-    if (Object.keys(hash_in).includes('raw_data_url')) {
-      let raw_data_filename = hash_in['raw_data_filename']
-      this.postMakeUrlCall({                                                                                  
-        data_uri: hash_in['raw_data_url'],
-        filename: raw_data_filename,
-        when_done: (responseJson) => {
-          let deepCopyTelemetryData = JSON.parse(JSON.stringify(this.state.telemetry_data))
-          deepCopyTelemetryData['raw_data_url'] = responseJson['url']
-          this.setGlobalStateVar('telemetry_data', deepCopyTelemetryData)
-          when_done()
-        },
-        when_failed: when_failed,
-      }) 
-    }
-    if (Object.keys(hash_in).includes('movie_mappings')) {
-      let deepCopyTelemetryData = JSON.parse(JSON.stringify(this.state.telemetry_data))
-      deepCopyTelemetryData['movie_mappings'] = hash_in['movie_mappings']
-      this.setGlobalStateVar('telemetry_data', deepCopyTelemetryData)
-      when_done()
-    }
   }
 
   setIllustrateParameters(hash_in) {
@@ -457,11 +565,14 @@ class RedactApplication extends React.Component {
 
   async getCurrentUser(when_done=(()=>{})) {
     try {
-      await(this.props.whoAmI.getUser())
-      .then((user_id) => {
-        console.log('guided redaction: whoami call returned, user id is ', user_id)
-        when_done(user_id)
-      })
+      let user_id = ''
+      if (!this.state.bypass_whoami) {
+        await this.props.whoAmI.getUser()
+        .then((user_id) => {
+          when_done(user_id)
+        })
+      }
+      return user_id
     }
     catch(err) {
       console.log('gr abend while running whoAmI')
@@ -478,7 +589,6 @@ class RedactApplication extends React.Component {
 
   addImageToMovie(data_in) {
     if (!Object.keys(data_in).includes('url')) {
-      console.log('error in addImageToMovie incoming data, no url found')
       return
     }
     let image_url = data_in['url']
@@ -489,13 +599,26 @@ class RedactApplication extends React.Component {
     }
     let deepCopyMovie = JSON.parse(JSON.stringify(deepCopyMovies[movie_url]))
     let new_hash = (Object.keys(deepCopyMovie['framesets']).length + 1).toString()
+    if (deepCopyMovie['frames'].includes(image_url)) {
+      const the_mess = 'error, trying to add image to move that already has it'
+      this.setGlobalStateVar('message', the_mess)
+      return
+    } else {
+      this.setGlobalStateVar('message', 'frame was successfullly added')
+    }
+
     deepCopyMovie['frames'].push(image_url)
     deepCopyMovie['framesets'][new_hash] = {
       images: [image_url]
     }
     deepCopyMovies[movie_url] = deepCopyMovie
     this.setGlobalStateVar('movies', deepCopyMovies)
-    this.setFramesetHash(new_hash)
+    if (Object.keys(data_in).includes('update_frameset_hash') && !data_in['update_frameset_hash']) {
+      // only skip when explicitly requested
+      console.assert(true)
+    } else {
+      this.setFramesetHash(new_hash)
+    }
   }
 
   establishNewEmptyMovie(new_movie_url='whatever', make_active=true) {
@@ -527,49 +650,29 @@ class RedactApplication extends React.Component {
 
   establishNewMovie(data_in) {
     if (!Object.keys(data_in).includes('url')) {
-      console.log('error in establishNewMovie incoming data, no url found')
       return
     }
     this.handleSetMovieUrl(data_in['url'])
     // A hack, but for whatever reason the state isn't ready when the moviePanel renders
+
+    /* pscottdv - read about React referances and then get rid of all calls to
+                  getElementById() !
+                  For example, if you do something like this in render():
+
+                    <div ref={r => this.myDiv = r}>My Div</div>
+
+                  Then in componentDidMount() and/or componentDidUpdate() you can
+                  refer to the element directly:
+
+                  componentDidUpdate() {
+                    const myDivDimensions = this.myDiv.getBoundingClientRect();
+                    ...
+                  }
+
+    */
     document.getElementById('image_panel_link').click()
     document.getElementById('movie_panel_link').click()
     this.addToCampaignMovies(data_in['url'])
-  }
-
-  async checkIfApiCanSeeUrl(the_url, when_done=(()=>{})) {
-    let response = await fetch(this.getUrl('can_see_url'), {
-      method: 'POST',
-      headers: this.buildJsonHeaders(),
-      body: JSON.stringify({
-        url: the_url,
-      }),
-    })
-    .then((response) => response.json())
-    .then((responseJson) => {
-      when_done(responseJson)
-    })
-    .catch((error) => {
-      console.error(error)
-    })
-    await response
-  }
-
-  async checkIfGuiCanSeeUrl(the_url, when_done=(()=>{})) {
-    let response = await fetch(the_url, {
-      method: 'HEAD',
-    })
-    .then((response) => {
-      if (response.status === 200) {
-        when_done({can_reach: true})
-      } else {
-        when_done({can_reach: false})
-      }
-    })
-    .catch((error) => {
-      when_done({can_reach: false})
-    })
-    await response
   }
 
   getImageBlob(url) {
@@ -702,51 +805,35 @@ class RedactApplication extends React.Component {
     await response
   }
 
-  playTone() {
-    if (!this.state.session_audio['playSound']) {
-      return
-    }
-    let context = new AudioContext()
-    var now = context.currentTime;
-    var ct = new CompositeTone()
-    if (this.state.session_audio['userTone'] === 'kick_snare') {
-      var kick = ct.makeKick(context);
-      var snare = ct.makeSnare(context);
-      for (let i=0; i < 16; i++) {
-        let offset = now + i * .5
-        kick.trigger(offset);
-        kick.trigger(offset + 0.13);
-        snare.trigger(offset + 0.25);
-      }
-    } else if (this.state.session_audio['userTone'] === 'lfo') {
-      var lfo = ct.makeLFO(context)
-      lfo.trigger(now + .75)
-    } else if (this.state.session_audio['userTone'] === 'blip') {
-      var blip = ct.makeBlip(context)
-      blip.trigger(now + .75)
-    }
-  }
-
   unwatchJob(job_id) {
-    let deepCopyCallbacks = JSON.parse(JSON.stringify(this.state.whenJobLoaded))
-    delete deepCopyCallbacks[job_id]
-    this.setGlobalStateVar('whenJobLoaded', deepCopyCallbacks)
+    let deepCopyWJL= JSON.parse(JSON.stringify(this.state.whenJobLoaded))
+    delete deepCopyWJL[job_id]
+    this.setGlobalStateVar('whenJobLoaded', deepCopyWJL)
   }
 
-  watchForJob(job_id, callback=(()=>{}), deleteJob=false) {
-    let deepCopyCallbacks = JSON.parse(JSON.stringify(this.state.whenJobLoaded))
-    deepCopyCallbacks[job_id] = {}
-    deepCopyCallbacks[job_id]['callback'] = callback
-    if (this.state.preserveAllJobs) {
-      deepCopyCallbacks[job_id]['delete'] = false
-    } else {
-      deepCopyCallbacks[job_id]['delete'] = deleteJob
+  watchForJob(job_id, input_obj={}) {
+    let after_loaded = (()=>{})
+    if (Object.keys(input_obj).includes('after_loaded')) {
+      after_loaded= input_obj.after_loaded
     }
-    this.setGlobalStateVar('whenJobLoaded', deepCopyCallbacks)
+    let deleteJob = false
+    if (Object.keys(input_obj).includes('delete_job_after_loading')) {
+      deleteJob = input_obj.delete_job_after_loading
+    }
+
+    let deepCopyWJL= JSON.parse(JSON.stringify(this.state.whenJobLoaded))
+    deepCopyWJL[job_id] = {}
+    deepCopyWJL[job_id]['after_loaded'] = after_loaded
+    if (this.state.preserveAllJobs) {
+      deepCopyWJL[job_id]['delete_job_after_loading'] = false
+    } else {
+      deepCopyWJL[job_id]['delete_job_after_loading'] = deleteJob
+    }
+    this.setGlobalStateVar('whenJobLoaded', deepCopyWJL)
   }
 
-  isAttachedJob(job) {
-    if (this.state.attached_job['id'] && this.state.attached_job['id'] === job['id']) {
+  isAttachedJob(job_id) {
+    if (this.state.attached_job['id'] && this.state.attached_job['id'] === job_id) {
       return true
     }
   }
@@ -778,64 +865,51 @@ class RedactApplication extends React.Component {
     let aj_message_text = this.getAttachedJobMessage(job)
     deepCopyAJ['status'] = job['status']
     deepCopyAJ['percent_complete'] = job['percent_complete']
-    let msg = new SpeechSynthesisUtterance(aj_message_text)
     this.setState({
       attached_job: deepCopyAJ,
       message: aj_message_text,
     })
-    if (!this.state.session_audio['playSound']) {
-      return
-    }
-    if (this.state.session_audio['voice']['index']) {
-      const int_index = parseInt(this.state.session_audio['voice']['index'])
-      if (window.speechSynthesis.getVoices()) {
-        msg.voice = window.speechSynthesis.getVoices()[int_index]
-      }
-    }
-    if (this.state.session_audio['voice']['pitch']) {
-      msg.pitch = this.state.session_audio['voice']['pitch']
-    }
-    if (this.state.session_audio['voice']['rate']) {
-      msg.pitch = this.state.session_audio['voice']['rate']
-    }
-    window.speechSynthesis.speak(msg);
   }
 
-  checkForJobs(user_id=null) {
-    if (this.state.suppress_job_polling) {
-      return
+  async checkForJobs(user_id='') {
+    if (!user_id) {
+      user_id = this.state.user.id
     }
+
     let last_checked = new Date(1990, 1, 1, 12, 30, 0)
+    const now = new Date()
     if (this.state.jobs_last_checked) {
       last_checked = this.state.jobs_last_checked
-    }
-    const now = new Date()
-    const secs_since_last_check = (now - last_checked) / 1000
-    if (secs_since_last_check < 2) {
-      console.log('checking jobs too soon')
-      return
-    }
-
-    this.getJobs(user_id)
-    const jobIdsToCheckFor = Object.keys(this.state.whenJobLoaded)
-
-    for (let index in this.state.jobs) {
-      const job = this.state.jobs[index]
-      if (this.isAttachedJob(job)) {
-        this.handleAttachedJobUpdate(job)
+      const secs_since_last_check = (now - last_checked) / 1000
+      if (secs_since_last_check < 2) {
+        console.log('checking jobs too soon')
+        return
       }
-      if (jobIdsToCheckFor.includes(job['id'])) {
-        if (job['status'] === 'success') {
-          const callback = this.state.whenJobLoaded[job['id']]['callback']
-          this.loadJobResults(job['id'], callback)
-          if (callback) {
-            callback()
+    }
+
+    await this.getJobs(user_id)
+    .then(() => {
+      const jobIdsToCheckFor = Object.keys(this.state.whenJobLoaded)
+
+      for (let index in this.state.jobs) {
+        const job = this.state.jobs[index]
+        // DMC this might not be needed any more.  When we get a signal
+        // on the websocket, we handleAttachedJob there, maybe if we do that
+        // we can skip it here.  Make sure all paths are handled that way
+        if (this.isAttachedJob(job['id'])) {
+          this.handleAttachedJobUpdate(job)
+        }
+        if (jobIdsToCheckFor.includes(job['id'])) {
+          if (job['status'] === 'success') {
+            this.loadJobResults(job['id'])
           }
         }
       }
-    }
-    this.setGlobalStateVar('jobs_last_checked', now)
-    setTimeout(this.checkForJobs, this.state.job_polling_interval_seconds * 1000);
+      this.setGlobalStateVar('jobs_last_checked', now)
+      if (this.props.poll_for_jobs) {
+        setTimeout(this.checkForJobs, this.state.job_polling_interval_seconds * 1000);
+      }
+    })
   }
 
   updateGlobalState(the_data) {
@@ -847,10 +921,7 @@ class RedactApplication extends React.Component {
           let new_state = {}
           new_state[key] = json_data[key]
           this.setState(new_state)
-          console.log('updated global state for '+key)
-        } else {
-          console.log('no key found in global state for '+key)
-        }
+        } 
       }
     } catch (e) {
       console.log('updateGlobalState crashed, probably bad json')
@@ -929,7 +1000,11 @@ class RedactApplication extends React.Component {
 
   getFramesetHashesInOrder(framesets=null) {
     if (framesets === null) {
-      if (this.state.movies && this.state.movie_url && Object.keys(this.state.movies).includes(this.state.movie_url)) {
+      if (
+        this.state.movies 
+        && this.state.movie_url 
+        && Object.keys(this.state.movies).includes(this.state.movie_url)
+      ) {
         if (Object.keys(this.state.movies[this.state.movie_url]).includes('frameset_hashes_in_order')) {
           return this.state.movies[this.state.movie_url]['frameset_hashes_in_order']
         }
@@ -1024,22 +1099,6 @@ class RedactApplication extends React.Component {
     }
   }
 
-  async getImagesForUuid(the_uuid, the_offsets, when_done) {
-    const the_url = this.getUrl('get_images_for_uuid_url') + '?uuid=' + the_uuid
-    let response = await fetch(the_url, {
-      method: 'GET',
-      headers: this.buildJsonHeaders(),
-    })
-    .then((response) => response.json())
-    .then((responseJson) => {
-      when_done(responseJson['images'], the_offsets)
-    })
-    .catch((error) => {
-      console.error(error);
-    })
-    await response
-  }
-
   async cropImage(image_url, start, end, anchor_id, when_done=(()=>{})) {
     const the_url = this.getUrl('crop_url')
     let response = await fetch(the_url, {
@@ -1060,38 +1119,6 @@ class RedactApplication extends React.Component {
       console.error(error);
     })
     await response
-  }
-
-  handleSetImageUuid(the_uuid, the_offsets) {
-    this.getImagesForUuid(the_uuid, the_offsets, this.afterUuidImagesFetched)
-  }
-
-  afterUuidImagesFetched(image_urls, the_offsets) {
-    let offset_arr = the_offsets.split(',')
-    let image_url_arr = []
-    for (let i=0; i < offset_arr.length; i++) {
-      image_url_arr.push(image_urls[parseInt(offset_arr[i])])
-    }
-
-    let the_framesets = {}
-    for (let i=0; i < image_url_arr.length; i++) {
-      the_framesets[i] = {images: [image_url_arr[i]]}
-    }
-
-    let movie_obj = {
-      frames: image_url_arr,
-      framesets: the_framesets,
-    }
-    let movies_obj = {
-      'new_movie_url': movie_obj,
-    }
-
-    this.setState({
-      movies: movies_obj,
-      movie_url: 'new_movie_url',
-    })
-    let first_hash = Object.keys(the_framesets)[0]
-    this.setFramesetHash(first_hash)
   }
 
   setSelectedAreaMetas = (the_metas, meta_id_to_make_active='') => {
@@ -1115,20 +1142,20 @@ class RedactApplication extends React.Component {
     this.setGlobalStateVar('image_scale', the_scale)
   }
 
-  setWorkbooks = (the_workbooks) => {
-    if (!the_workbooks.length) {
-      this.setState({
-        workbooks: the_workbooks,
-        current_workbook_id: '',
-        current_workbook_name: 'workbook 1',
-      })
-    } else {
-      this.setGlobalStateVar('workbooks', the_workbooks)
+  setWorkbooks(the_workbooks) {
+    Workbooks.setWorkbooks(the_workbooks, this.setGlobalStateVar)
+  }
+
+  keyPress(event) {
+    if (event.ctrlKey && event.key === 'i') {
+      document.getElementById('insights_link').click()
     }
   }
 
-  componentDidMount() {
-    this.getAndSaveUser()
+  async componentDidMount() {
+    this.startWebSocket()
+    this.deleteOldJobs()
+    this.deleteOldWorkbooks()
     if (!this.state.showMovieParserLink) {
       document.getElementById('movie_panel_link').style.display = 'none'
     }
@@ -1139,6 +1166,38 @@ class RedactApplication extends React.Component {
       document.getElementById('compose_link').style.display = 'none'
     }
     this.checkForInboundGetParameters()
+    window.addEventListener('keydown', this.keyPress)
+    await this.getAndSaveUser()
+    .then(this.checkForJobs())
+  }
+
+  componentWillUnmount() {
+    window.removeEventListener('keydown', this.keyPress)
+  }
+
+  startWebSocket() {
+    if (this.props.poll_for_jobs) {
+      return // we're doing polling instead of websockets
+    }
+    const protocol = global.location.protocol === "https:" ? "wss:" : "ws:"
+    const hostname = global.location.hostname
+    const port =
+      ["127.0.0.1", "localhost"].includes(hostname) ? 8002 : global.location.port
+    this.socket = new WebSocket(`${protocol}//${hostname}:${port}/ws/redact-jobs`)
+    this.socket.onmessage = message => {
+      const data = JSON.parse(message.data)
+      if (data.percent_complete === 1) {
+        this.checkForJobs()
+      }
+      if (this.isAttachedJob(data['job_id'])) {
+        this.handleAttachedJobUpdate(data)
+      }
+    }
+    this.socket.onopen = event  => {
+    }
+    this.socket.onclose = event  => {
+      this.socket = null
+    }
   }
 
   setActiveMovie(the_url, theCallback=(()=>{})) {
@@ -1307,52 +1366,6 @@ class RedactApplication extends React.Component {
     }
   }
 
-  async loadOcrSceneAnalysisResults(job, when_done=(()=>{})) {
-    const response_data = JSON.parse(job.response_data)
-    if (!response_data) {
-      return
-    }
-    if (!Object.keys(response_data).includes('movies')) {
-      return
-    }
-    const request_data = JSON.parse(job.request_data)
-    this.loadTier1ScannersFromTier1Request('ocr_scene_analysis', request_data)
-    this.loadMoviesFromTier1Request(request_data)
-    let deepCopyTier1Matches = JSON.parse(JSON.stringify(this.state.tier_1_matches))
-    let deepCopyOsaMatches = deepCopyTier1Matches['ocr_scene_analysis']
-    if (!deepCopyOsaMatches) {
-      deepCopyOsaMatches = {}
-    }
-    deepCopyOsaMatches[request_data['id']] = response_data
-    deepCopyTier1Matches['ocr_scene_analysis'] = deepCopyOsaMatches
-    this.setGlobalStateVar('tier_1_matches', deepCopyTier1Matches)
-  }
-
-  async loadOmaScanResults(job, when_done=(()=>{})) {
-    const response_data = JSON.parse(job.response_data)
-    if (!response_data) {
-      return
-    }
-    if (!Object.keys(response_data).includes('movies')) {
-      return
-    }
-    let something_changed = false
-    let movie_url = ''
-    let deepCopyMovies= JSON.parse(JSON.stringify(this.state.movies))
-    for (let i=0; i < Object.keys(response_data['movies']).length; i++) {
-      movie_url = Object.keys(response_data['movies'])[i]
-      deepCopyMovies[movie_url] = response_data['movies'][movie_url]
-      something_changed = true
-    }
-    if (something_changed) {
-      this.addMovieAndSetActive(
-        movie_url,
-        deepCopyMovies,
-        when_done,
-      )
-    }
-  }
-
   async loadOcrResults(job, when_done=(()=>{})) {
     const response_data = JSON.parse(job.response_data)
     if (!response_data) {
@@ -1400,58 +1413,6 @@ class RedactApplication extends React.Component {
         movies: deepCopyMovies,
         movie_url: movie_url,
       })
-    }
-  }
-
-  async loadHogTestResults(job, when_done=(()=>{})) {
-    const response_data = JSON.parse(job.response_data)
-    if (!response_data) {
-      return
-    }
-    if (!Object.keys(response_data).includes('movies')) {
-      return
-    }
-    const request_data = JSON.parse(job.request_data)
-    this.loadTier1ScannersFromTier1Request('hog', request_data)
-    let resp_obj = this.loadMoviesFromTier1Request(request_data)
-    let movie_url = resp_obj['movie_url']
-    let deepCopyMovies = resp_obj['deepCopyMovies']
-    this.setState({
-      movies: deepCopyMovies,
-      movie_url: movie_url,
-    })
-    if (request_data['scan_level'] === 'tier_1') {
-      let deepCopyTier1Matches = JSON.parse(JSON.stringify(this.state.tier_1_matches))
-      let deepCopyHogMatches = deepCopyTier1Matches['hog']
-      deepCopyHogMatches[request_data['id']] = response_data
-      deepCopyTier1Matches['hog'] = deepCopyHogMatches
-      this.setGlobalStateVar('tier_1_matches', deepCopyTier1Matches)
-    }
-  }
-
-  async loadHogTrainResults(job, when_done=(()=>{})) {
-    const response_data = JSON.parse(job.response_data)
-    if (!response_data) {
-      return
-    }
-    if (!Object.keys(response_data).includes('movies')) {
-      return
-    }
-    const request_data = JSON.parse(job.request_data)
-    this.loadTier1ScannersFromTier1Request('hog', response_data, true)
-    let resp_obj = this.loadMoviesFromTier1Request(request_data)
-    let movie_url = resp_obj['movie_url']
-    let deepCopyMovies = resp_obj['deepCopyMovies']
-    this.setState({
-      movies: deepCopyMovies,
-      movie_url: movie_url,
-    })
-    if (request_data['scan_level'] === 'tier_1') {
-      let deepCopyTier1Matches = JSON.parse(JSON.stringify(this.state.tier_1_matches))
-      let deepCopyHogTrainingMatches = deepCopyTier1Matches['hog_training']
-      deepCopyHogTrainingMatches[request_data['id']] = response_data
-      deepCopyTier1Matches['hog_training'] = deepCopyHogTrainingMatches
-      this.setGlobalStateVar('tier_1_matches', deepCopyTier1Matches)
     }
   }
 
@@ -1689,8 +1650,10 @@ class RedactApplication extends React.Component {
     }
 
     if (something_changed) {
-      this.setGlobalStateVar('movies', deepCopyMovies)
-      this.setGlobalStateVar('campaign_movies', new_campaign_movies)
+      this.setGlobalStateVar({
+        'movies': deepCopyMovies,
+        'campaign_movies': new_campaign_movies,
+      })
       this.addMovieAndSetActive(
         movie_url,
         deepCopyMovies,
@@ -1703,7 +1666,6 @@ class RedactApplication extends React.Component {
     const response_data = JSON.parse(job.response_data)
     const request_data = JSON.parse(job.request_data)
     let deepCopyMovies = JSON.parse(JSON.stringify(this.state.movies))
-    let frameset_hash = ''
     let movie_url = ''
     for (let i=0; i < Object.keys(response_data['movies']).length; i++) {
       movie_url = Object.keys(response_data['movies'])[i]
@@ -1723,7 +1685,6 @@ class RedactApplication extends React.Component {
       movies: deepCopyMovies,
       movie_url: movie_url,
     })
-    this.setFramesetHash(frameset_hash)
   }
 
   async loadIllustrateResults(job, when_done=(()=>{})) {
@@ -1829,107 +1790,10 @@ class RedactApplication extends React.Component {
     })
   }
 
-  async loadFilterResults(job, when_done=(()=>{})) {
-    const resp_data = JSON.parse(job.response_data)
-    const req_data = JSON.parse(job.request_data)
-    let deepCopyMovies = JSON.parse(JSON.stringify(this.state.movies))
-    let last_movie_url = ''
-    let last_hash = ''
-    for (let j=0; j < Object.keys(resp_data.movies).length; j++) {
-      const movie_url = Object.keys(resp_data.movies)[j]
-      if (!Object.keys(deepCopyMovies).includes(movie_url)) {
-        deepCopyMovies[movie_url] = req_data['movies'][movie_url]
-      }
-      this.addToCampaignMovies(movie_url)
-      let framesets = resp_data.movies[movie_url]['framesets']
-      for (let i=0; i < Object.keys(framesets).length; i++) {
-        const frameset_hash = Object.keys(framesets)[i]
-        deepCopyMovies[movie_url]['framesets'][frameset_hash]['filtered_image_url'] = framesets[frameset_hash]
-      }
-      last_movie_url = movie_url
-      let hashes = this.getFramesetHashesInOrder(deepCopyMovies[movie_url]['framesets'])
-      last_hash = hashes[0]
-    }
-    this.setState({
-      movies: deepCopyMovies,
-      movie_url: last_movie_url,
-    })
-    this.setFramesetHash(last_hash)
-  }
-
   async loadZipMovieResults(job, when_done=(()=>{})) {
     const response_data = JSON.parse(job.response_data)
     const the_url = response_data.movie_url
     this.setMovieRedactedUrl(the_url) 
-  }
-
-  loadLoadMovieMetadataResults(job, when_done=(()=>{})) {
-    const responseJson = JSON.parse(job.response_data)
-    let deepCopyMovies = JSON.parse(JSON.stringify(this.state.movies))
-    let deepCopyTemplates = JSON.parse(JSON.stringify(this.state.templates))
-    let deepCopyTier1Matches= JSON.parse(JSON.stringify(this.state.tier_1_matches))
-    let deepCopyT1Scanners = JSON.parse(JSON.stringify(this.state.tier_1_scanners))
-    let deepCopySelectedAreaMetas = deepCopyT1Scanners['selected_area']
-    let movie_url = ''
-    if (Object.keys(responseJson).includes('movies')) {
-      for (let i=0; i < Object.keys(responseJson['movies']).length; i++) {
-        movie_url = Object.keys(responseJson['movies'])[i]
-        const movie = responseJson['movies'][movie_url]
-        deepCopyMovies[movie_url] = movie
-        this.addToCampaignMovies(movie_url)
-      }
-      this.setState({
-        movies: deepCopyMovies,
-        movie_url: movie_url,
-      })
-    }
-    if (Object.keys(responseJson).includes('templates') && Object.keys(responseJson['templates']).length > 0) {
-      let something_changed = false
-      for (let i=0; i < Object.keys(responseJson['templates']).length; i++) {
-        const template_id = Object.keys(responseJson['templates'])[i]
-        if (!Object.keys(this.state.templates).includes(template_id)) {
-          deepCopyTemplates[template_id] = responseJson['templates'][template_id]
-          something_changed = true
-        }
-      }
-      if (something_changed) {
-        this.setGlobalStateVar('templates', deepCopyTemplates)
-      }
-    }
-    if (Object.keys(responseJson).includes('tier_1_matches') && Object.keys(responseJson['tier_1_matches']).length > 0) {
-      let something_changed = false
-      for (let i=0; i < Object.keys(responseJson['tier_1_matches']['template']).length; i++) {
-        const template_id = Object.keys(responseJson['tier_1_matches']['template'])[i]
-        if (!Object.keys(this.state.tier_1_matches['template']).includes(template_id)) {
-          deepCopyTier1Matches['template'][template_id] = responseJson['tier_1_matches']['template'][template_id]
-          something_changed = true
-        }
-      }
-      for (let i=0; i < Object.keys(responseJson['tier_1_matches']['ocr']).length; i++) {
-        const ocr_id = Object.keys(responseJson['tier_1_matches']['ocr'])[i]
-        if (!Object.keys(this.state.tier_1_matches['ocr']).includes(ocr_id)) {
-          deepCopyTier1Matches['ocr'][ocr_id] = responseJson['tier_1_matches']['ocr'][ocr_id]
-          something_changed = true
-        }
-      }
-      if (something_changed) {
-        this.setGlobalStateVar('tier_1_matches', deepCopyTier1Matches)
-      }
-    }
-    if (Object.keys(responseJson).includes('selected_area_metas') && Object.keys(responseJson['selected_area_metas']).length > 0) {
-      let something_changed = false
-      for (let i=0; i < Object.keys(responseJson['selected_area_metas']).length; i++) {
-        const sam_id = Object.keys(responseJson['selected_area_metas'])[i]
-        if (!Object.keys(this.state.tier_1_scanners['selected_area']).includes(sam_id)) {
-          deepCopySelectedAreaMetas[sam_id] = responseJson['selected_area_metas'][sam_id]
-          something_changed = true
-        }
-      }
-      if (something_changed) {
-        deepCopyT1Scanners['selected_area'] = deepCopySelectedAreaMetas
-        this.setGlobalStateVar('tier_1_scanners', deepCopyT1Scanners)
-      }
-    }
   }
 
   async loadRedactSingleResults(job, when_done=(()=>{})) {
@@ -1944,32 +1808,6 @@ class RedactApplication extends React.Component {
       movies: deepCopyMovies,
       movie_url: movie_url,
     })
-  }
-
-  async loadTelemetryResults(job, when_done=(()=>{})) {
-    const responseJson = JSON.parse(job.response_data)
-    const req_data = JSON.parse(job.request_data)
-    const rule_id = req_data['telemetry_rule']['id']
-
-    let deepCopyTier1Matches = JSON.parse(JSON.stringify(this.state.tier_1_matches))
-    let deepCopyTelemetryMatches = deepCopyTier1Matches['telemetry']
-    if (!Object.keys(deepCopyTelemetryMatches).includes(rule_id)) {
-      deepCopyTelemetryMatches[rule_id] = {}
-      deepCopyTelemetryMatches[rule_id]['movies'] = {}
-    }
-    for (let i=0; i < Object.keys(responseJson['movies']).length; i++) {
-      const movie_url = Object.keys(responseJson['movies'])[i]
-      const frames = responseJson['movies'][movie_url]
-      if (frames && frames.length > 0) {
-        deepCopyTelemetryMatches[rule_id]['movies'][movie_url] = frames
-      }
-    }
-    deepCopyTier1Matches['telemetry'] = deepCopyTelemetryMatches  // is this needed?
-    this.setGlobalStateVar('tier_1_matches', deepCopyTier1Matches)
-
-    let deepCopyIds = JSON.parse(JSON.stringify(this.state.tier_1_scanner_current_ids))
-    deepCopyIds['telemetry'] = rule_id
-    this.setGlobalStateVar('tier_1_scanner_current_ids', deepCopyIds)
   }
 
   async getJobResultData(job_id, when_done=(()=>{})) {
@@ -2009,13 +1847,11 @@ class RedactApplication extends React.Component {
     })
     .then((response) => response.json())
     .then((responseJson) => {
-			const job = responseJson['job']
-			if ((job.app === 'analyze' && job.operation === 'scan_template_multi')
-			   || (job.app === 'analyze' && job.operation === 'scan_template_threaded')) {
+      const job = responseJson['job']
+      if ((job.app === 'analyze' && job.operation === 'scan_template_multi')
+        || (job.app === 'analyze' && job.operation === 'scan_template_threaded')) {
         this.loadTemplateResults(job, when_done)
-			} else if (job.app === 'analyze' && job.operation === 'filter') {
-        this.loadFilterResults(job, when_done)
-			} else if (job.app === 'analyze' && job.operation === 'get_timestamp_threaded') {
+      } else if (job.app === 'analyze' && job.operation === 'get_timestamp_threaded') {
         this.loadGetTimestampResults(job, when_done)
 			} else if ((job.app === 'analyze' && job.operation === 'template_match_chart')  ||
           (job.app === 'analyze' && job.operation === 'selected_area_chart') ||
@@ -2025,16 +1861,6 @@ class RedactApplication extends React.Component {
         this.loadGetFramesetMatchChartResults(job, when_done)
 			} else if (job.app === 'analyze' && job.operation === 'scan_ocr') {
         this.loadOcrResults(job, when_done)
-			} else if (job.app === 'analyze' && job.operation === 'hog_test') {
-        this.loadHogTestResults(job, when_done)
-			} else if (job.app === 'analyze' && job.operation === 'hog_train_threaded') {
-        this.loadHogTrainResults(job, when_done)
-			} else if (job.app === 'analyze' && job.operation === 'telemetry_find_matching_frames') {
-        this.loadTelemetryResults(job, when_done)
-			} else if (job.app === 'analyze' && job.operation === 'ocr_scene_analysis_threaded') {
-        this.loadOcrSceneAnalysisResults(job, when_done)
-			} else if (job.app === 'analyze' && job.operation === 'oma_first_scan_threaded') {
-        this.loadOmaScanResults(job, when_done)
 			} else if (job.app === 'analyze' && job.operation === 'selected_area_threaded') {
         this.loadSelectedAreaResults(job, when_done)
 			} else if ((job.app === 'parse' && job.operation === 'split_and_hash_threaded')) {
@@ -2047,8 +1873,10 @@ class RedactApplication extends React.Component {
           job.operation === 'pipeline' && 
           job.description.indexOf('scan_template_and_redact') > -1) {
         this.loadRedactResults(job, when_done)
-        // TODO load the tier_1_scanners from the nested request too, but it's not in the top level job
-        this.loadMoviesFromJob(job, 'request', when_done)
+			} else if (job.app === 'pipeline'  && 
+          job.operation === 'pipeline' && 
+          job.description.indexOf('scan_ocr_and_redact') > -1) {
+        this.loadRedactResults(job, when_done)
 			} else if (job.app === 'parse' && job.operation === 'split_threaded') {
         this.loadSplitResults(job, when_done)
 			} else if (job.app === 'parse' && job.operation === 'hash_movie') {
@@ -2071,19 +1899,22 @@ class RedactApplication extends React.Component {
         this.loadZipMovieResults(job, when_done)
 			} else if (job.app === 'redact' && job.operation === 'illustrate') {
         this.loadIllustrateResults(job, when_done)
-			} else if (job.app === 'files' && job.operation === 'load_movie_metadata') {
-        this.loadLoadMovieMetadataResults(job, when_done)
       }
-      this.playTone()
+      return responseJson
     })
-    .then(() => {
+    .then((responseJson) => {
       if (Object.keys(this.state.whenJobLoaded).includes(job_id)) {
-        const deleteJob = this.state.whenJobLoaded[job_id]['delete']
+        const after_loaded = this.state.whenJobLoaded[job_id]['after_loaded']
+        if (after_loaded) {
+          after_loaded()
+        }
+        const deleteJob = this.state.whenJobLoaded[job_id]['delete_job_after_loading']
         if (deleteJob) {
           this.cancelJob(job_id)
         }
         this.unwatchJob(job_id)
       }
+      this.saveStateCheckpoint()
     })
     .catch((error) => {
       console.error(error);
@@ -2103,6 +1934,8 @@ class RedactApplication extends React.Component {
         the_url += '&user_id=' + this.state.user['id']
       } 
     }
+    // DMC a HACK until we get refactored
+    the_url = this.getUrl('jobs_url')
     await fetch(the_url, {
       method: 'GET',
       headers: this.buildJsonHeaders(),
@@ -2152,25 +1985,12 @@ class RedactApplication extends React.Component {
   }
 
   async getPipelines() {
-    let the_url = this.getUrl('pipelines_url')
-    await fetch(the_url, {
-      method: 'GET',
-      headers: this.buildJsonHeaders(),
-    })
-    .then((response) => response.json())
-    .then((responseJson) => {
-      if (Object.keys(responseJson).includes('pipelines')) {
-        const pipelines_list = responseJson['pipelines']
-        let pipelines_hash = {}
-        for (let i=0; i < pipelines_list.length; i++) {
-          pipelines_hash[pipelines_list[i]['id']] = pipelines_list[i]
-        }
-        this.setGlobalStateVar('pipelines', pipelines_hash)
-      }
-    })
-    .catch((error) => {
-      console.error(error);
-    })
+    Pipelines.getPipelines(
+      fetch,
+      this.getUrl,
+      this.setGlobalStateVar,
+      this.buildJsonHeaders
+    )
   }
 
   async getAttributes() {
@@ -2214,31 +2034,34 @@ class RedactApplication extends React.Component {
     })
   }
 
-  async dispatchPipeline(the_uuid, scope='json_obj', extra_data={}, when_done=(()=>{})) {
+  async dispatchPipeline(input_obj) {
     let the_url = this.getUrl('pipelines_url') + '/dispatch'
     let build_movies = {}
     let specified_input = {}
-    if (scope === 'all_movies') {
+    if (!input_obj.scope) {
+      input_obj.scope = 'json_obj'
+    }
+    if (input_obj.scope === 'all_movies') {
       for (let i=0; i < this.state.campaign_movies.length; i++) {
         build_movies[this.state.campaign_movies[i]] = {}
       }
       specified_input['movies'] = build_movies
-    } else if (scope === 'current_movie') {
+    } else if (input_obj.scope === 'current_movie') {
       build_movies[this.state.movie_url] = {}
       specified_input['movies'] = build_movies
-    } else if (scope === 'current_movie_as_frames') {
+    } else if (input_obj.scope === 'current_movie_as_frames') {
       build_movies[this.state.movie_url] = this.state.movies[this.state.movie_url]
       specified_input['movies'] = build_movies
-    } else if (scope === 'json_obj') {
-      specified_input = extra_data
+    } else if (input_obj.scope === 'json_obj') {
+      specified_input = input_obj.extra_data
     }
     let build_payload = {
-      pipeline_id: the_uuid,
+      pipeline_id: input_obj.pipeline_id,
       input: specified_input,
       owner: this.state.user['id'],
     }
-    if (Object.keys(extra_data).includes['lifecycle_data']) {
-      build_payload['lifecycle_data'] = extra_data['lifecycle_data']
+    if (Object.keys(input_obj.extra_data).includes['lifecycle_data']) {
+      build_payload['lifecycle_data'] = input_obj.extra_data['lifecycle_data']
     }
 
     if (this.state.current_workbook_id) {
@@ -2251,9 +2074,35 @@ class RedactApplication extends React.Component {
     })
     .then((response) => response.json())
     .then((responseJson) => {
-      this.watchForJob(responseJson['job_id'], (()=>{}), false)
+      this.watchForJob(responseJson['job_id'])
       this.getPipelines()
-      when_done(responseJson)
+      if (input_obj.attach_to_job) {
+        this.attachToJob(responseJson['job_id'])
+      }
+      if (
+        Object.keys(input_obj).includes('after_loaded') ||
+        Object.keys(input_obj).includes('delete_job_after_loading')
+      ) {
+        let al = (()=>{})
+        if (Object.keys(input_obj).includes('after_loaded')) {
+          al = input_obj.after_loaded
+        }
+        let djal = false
+        if (Object.keys(input_obj).includes('delete_job_after_loading')) {
+          djal = input_obj.delete_job_after_loading
+        }
+        this.watchForJob(
+          responseJson['job_id'], 
+          {
+            'after_loaded': al,
+            'delete_job_after_loading': djal,
+          }
+        )
+      }
+      if (input_obj.after_submit) {
+        input_obj.after_submit(responseJson)
+      }
+      this.getJobs()
     })
     .catch((error) => {
       console.error(error);
@@ -2261,43 +2110,25 @@ class RedactApplication extends React.Component {
   }
 
   async deletePipeline(the_uuid, when_done=(()=>{})) {
-    let the_url = this.getUrl('pipelines_url') + '/' + the_uuid
-    await fetch(the_url, {
-      method: 'DELETE',
-      headers: this.buildJsonHeaders(),
-    })
-    .then(() => {
-      this.getPipelines()
-      when_done()
-    })
-    .catch((error) => {
-      console.error(error);
-    })
+    Pipelines.deletePipeline(
+      the_uuid, 
+      when_done, 
+      this.getUrl,
+      this.buildJsonHeaders,
+      fetch,
+      this.setGlobalStateVar
+    )
   }
 
   async savePipelineToDatabase(pipeline_obj, when_done=(()=>{})) {
-    let description_string = ''
-    if (Object.keys(pipeline_obj).includes('description')) {
-      description_string = pipeline_obj['description']
-    }
-    let response = await fetch(this.getUrl('pipelines_url'), {
-      method: 'POST',
-      headers: this.buildJsonHeaders(),
-      body: JSON.stringify({
-        name: pipeline_obj['name'],
-        description: description_string,
-        content: pipeline_obj,
-      }),
-    })
-    .then((response) => response.json())
-    .then((responseJson) => {
-      this.getPipelines()
-      when_done(responseJson)
-    })
-    .catch((error) => {
-      console.error(error)
-    })
-    await response
+    Pipelines.savePipelineToDatabase(
+      pipeline_obj,
+      when_done,
+      this.getUrl,
+      this.buildJsonHeaders,
+      fetch,
+      this.setGlobalStateVar
+    )
   }
 
   async getFiles() {
@@ -2361,7 +2192,7 @@ class RedactApplication extends React.Component {
   async submitJob(hash_in) {
     let the_job_data = hash_in.hasOwnProperty('job_data')? hash_in['job_data'] : {}
     let when_submit_complete = hash_in.hasOwnProperty('after_submit')? hash_in['after_submit'] : (()=>{})
-    let cancel_after_loading = hash_in.hasOwnProperty('cancel_after_loading')? hash_in['cancel_after_loading'] : false
+    let delete_job_after_loading = hash_in.hasOwnProperty('delete_job_after_loading')? hash_in['delete_job_after_loading'] : false
     let when_fetched = hash_in.hasOwnProperty('after_loaded')? hash_in['after_loaded'] : (()=>{})
     let when_failed = hash_in.hasOwnProperty('when_failed')? hash_in['when_failed'] : (()=>{})
     let enforce_lifecycle = hash_in.hasOwnProperty('enforce_lifecycle')? hash_in['enforce_lifecycle'] : false
@@ -2402,7 +2233,13 @@ class RedactApplication extends React.Component {
       return responseJson
     })
     .then((responseJson) => {
-      this.watchForJob(responseJson['job_id'], when_fetched, cancel_after_loading)
+      this.watchForJob(
+        responseJson['job_id'], 
+        {
+          'after_loaded': when_fetched,
+          'delete_job_after_loading': delete_job_after_loading,
+        }
+      )
     })
     .then(() => {
       this.getJobs()
@@ -2427,23 +2264,29 @@ class RedactApplication extends React.Component {
     })
   }
 
-  async getWorkbooks() {
-    let the_url = this.getUrl('workbooks_url')
-    the_url += '?x=1'
-    if (this.state.user['id']) {
-      the_url += '&user_id=' + this.state.user['id']
-    }
+  async deleteOldJobs() {
+    let the_url = this.getUrl('delete_old_jobs_url')
     await fetch(the_url, {
       method: 'GET',
       headers: this.buildJsonHeaders(),
     })
-    .then((response) => response.json())
-    .then((responseJson) => {
-      this.setWorkbooks(responseJson['workbooks'])
-    })
     .catch((error) => {
       console.error(error);
     })
+  }
+
+  async deleteOldWorkbooks() {
+    Workbooks.deleteOldWorkbooks(this.getUrl, fetch, this.buildJsonHeaders)
+  }
+
+  async getWorkbooks() {
+    Workbooks.getWorkbooks(
+      this.getUrl, 
+      fetch, 
+      this.buildJsonHeaders, 
+      this.state.user['id'], 
+      this.setGlobalStateVar
+    )
   }
 
   saveWorkbookName(the_name) {
@@ -2459,96 +2302,42 @@ class RedactApplication extends React.Component {
     })
   }
 
-  async saveWorkbook(when_done=(()=>{})) {
-    let current_user = ''
-    if (this.state.user['id']) {
-      current_user = this.state.user['id']
-    }
-    await fetch(this.getUrl('workbooks_url'), {
-      method: 'POST',
-      headers: this.buildJsonHeaders(),
-      body: JSON.stringify({
-        state_data: this.state,
-        owner: current_user,
-        name: this.state.current_workbook_name,
-        play_sound: this.state.current_workbook_play_sound,
-      }),
-    })
-    .then((response) => response.json())
-    .then((responseJson) => {
-      this.setState({
-        current_workbook_id: responseJson['workbook_id']
-      })
-      this.getWorkbooks()
-      // delete/load buttons aren't updating on BottomInsightsControl so force em
-      this.forceUpdate()
-    })
-    .then(() => {
-      when_done()
-    })
-    .catch((error) => {
-      console.error(error);
-    })
+  async saveWorkbook(when_done=(()=>{}), workbook_name='', auto_delete_age='') {
+    Workbooks.saveWorkbook(
+      when_done,
+      workbook_name,
+      auto_delete_age,
+      this.state,
+      this.state.current_workbook_name,
+      this.state.user['id'],
+      this.buildJsonHeaders,
+      this.getUrl,
+      fetch,
+      this.setGlobalStateVar
+    )
   }
 
   async loadWorkbook(workbook_id, when_done=(()=>{})) {
-    if (workbook_id === '-1') {
-      this.setState({
-        current_workbook_id: '',
-      })
-      when_done()
-      return
-    }
-    let wb_url = this.getUrl('workbooks_url') + '/' + workbook_id
-    await fetch(wb_url, {
-      method: 'GET',
-      headers: this.buildJsonHeaders(),
-    })
-    .then((response) => response.json())
-    .then((responseJson) => {
-      const dont_add_keys = ['workbooks', 'jobs', 'workbooks_url', 'whenDoneTarget']
-      let wb = responseJson['workbook']
-      let wb_state_data = JSON.parse(wb.state_data)
-      let wb_keys = Object.keys(wb_state_data)
-      let new_state = {}
-      for (let j=0; j < wb_keys.length; j++) {
-        let state_data_key = wb_keys[j]
-        if (!dont_add_keys.includes(state_data_key)) {
-          new_state[state_data_key] = wb_state_data[state_data_key]
-        }
-      } 
-      new_state['current_workbook_name'] = wb.name
-      new_state['current_workbook_id'] = wb.id
-      this.setState(new_state)
-    })
-    .then(() => {
-      this.getJobs()
-    })
-    .then(() => {
-      when_done()
-    })
-    .catch((error) => {
-      console.error(error);
-    })
+    Workbooks.loadWorkbook(
+      workbook_id,
+      when_done,
+      this.setGlobalStateVar,
+      fetch,
+      this.getUrl,
+      this.buildJsonHeaders,
+      this.getJobs
+    )
   }
 
   async deleteWorkbook(workbook_id, when_done=(()=>{})) {
-    let the_url = this.getUrl('workbooks_url')+ '/' + workbook_id
-    await fetch(the_url, {
-      method: 'DELETE',
-      headers: this.buildJsonHeaders(),
-    })
-    .then(() => {
-      this.getWorkbooks()
-      // delete/load buttons aren't updating on BottomInsightsControl so force em
-      this.forceUpdate()
-    })
-    .then(() => {
-      when_done()
-    })
-    .catch((error) => {
-      console.error(error);
-    })
+    Workbooks.deleteWorkbook(
+      workbook_id,
+      when_done,
+      this.getUrl,
+      fetch,
+      this.buildJsonHeaders,
+      this.state.user['id']
+    )
   }
 
   getImageUrl(frameset_hash='') {
@@ -2598,7 +2387,11 @@ class RedactApplication extends React.Component {
     }
   }
 
-  async dispatchFetchSplitAndHash(recording_id, use_lifecycle_data=false) {
+  async dispatchFetchSplitAndHash(
+    recording_id, 
+    use_lifecycle_data=false, 
+    after_loaded=(()=>{})
+  ) {
     if (!recording_id) {
       this.setGlobalStateVar('message', 'no recording id specified, not fetching')
       return
@@ -2607,6 +2400,10 @@ class RedactApplication extends React.Component {
     .then(() => {
       const input_obj = {
         'recording_ids': [recording_id],
+      }
+      if (use_lifecycle_data) {
+        const lifecycle_data = this.getJobLifecycleData({})
+        input_obj['lifecycle_data'] = lifecycle_data
       }
       let fetch_split_pipeline_id = ''
       for (let i=0; i < Object.keys(this.state.pipelines).length; i++) {
@@ -2617,20 +2414,35 @@ class RedactApplication extends React.Component {
         }
       }
       if (!fetch_split_pipeline_id) {
-        this.setGlobalStateVar('message', 'no fetch and split pipeline found, aborting')
+        const pipeline_obj = Pipelines.buildFetchSplitHashPipelineObject()
+        this.savePipelineToDatabase(
+          pipeline_obj,
+          ((response) => {this.dispatchPipeline(
+            {
+              pipeline_id: response['pipeline_id'], 
+              extra_data: input_obj, 
+              attach_to_job: true,
+              after_loaded: after_loaded,
+              after_submit: (
+                ()=>{this.setState({message: 'fetch split and hash job submitted'})}
+              ),
+            }
+          )})
+        )
         return
+      } else {
+        this.dispatchPipeline(
+          {
+            pipeline_id: fetch_split_pipeline_id, 
+            extra_data: input_obj, 
+            attach_to_job: true,
+            after_loaded: after_loaded,
+            after_submit: (
+              ()=>{this.setState({message: 'fetch split and hash job submitted'})}
+            ),
+          }
+        )
       }
-      let when_done_fun = ((response) => {
-        if (Object.keys(response).includes("job_id")) {
-          this.attachToJob(response['job_id'])
-        }
-      })
-      if (use_lifecycle_data) {
-        const lifecycle_data = this.getJobLifecycleData({})
-        input_obj['lifecycle_data'] = lifecycle_data
-      }
-      this.dispatchPipeline(fetch_split_pipeline_id, 'json_obj', input_obj, when_done_fun)
-      this.setGlobalStateVar('message', 'fetch split and hash job was submitted')
     })
   }
 
@@ -2649,55 +2461,25 @@ class RedactApplication extends React.Component {
     } 
     if (Object.keys(vars).includes('workbook_id')) {
       this.loadWorkbook(vars['workbook_id'])
-    }
+    } 
+    if (Object.keys(vars).includes('save-point')) {
+      this.loadWorkbook(vars['save-point'])
+    } 
     if (Object.keys(vars).includes('recording-id')) {
-      this.dispatchFetchSplitAndHash(vars['recording-id'], true) 
-      if (this.iAmWorkOrDev()) {
-        this.setGlobalStateVar('whenDoneTarget', 'learn_dev')
-      } else {
-        this.setGlobalStateVar('whenDoneTarget', 'learn_prod')
-      }
+      this.getAndSaveUser().then(() => {
+        this.dispatchFetchSplitAndHash(vars['recording-id'], true) 
+        if (this.iAmWorkOrDev()) {
+          this.setGlobalStateVar('whenDoneTarget', 'learn_dev')
+        } else {
+          this.setGlobalStateVar('whenDoneTarget', 'learn_prod')
+        }
+      });
     }
-    if (Object.keys(vars).includes('movie_url')) {
-        this.handleSetMovieUrl(vars['movie_url'])
-        document.getElementById('movie_panel_link').click()
-    } else if (Object.keys(vars).includes('image_uuid') && Object.keys(vars).includes('offsets')) {
-        this.handleSetImageUuid(vars['image_uuid'], vars['offsets'])
-        this.getImagesForUuid(vars['image_uuid'], vars['offsets'], this.afterUuidImagesFetched)
-        document.getElementById('image_panel_link').click()
-    }
-  }
-
-  getNextImageHash() {
-    let hashes = this.getFramesetHashesInOrder()
-    if (hashes.length < 2) {
-      return ''
-    }
-    if (this.state.frameset_hash) {
-      let cur_index = hashes.indexOf(this.state.frameset_hash)
-      if (cur_index < (hashes.length-1)) {
-        return hashes[cur_index + 1]
-      } 
-    }
-    return ''
-  }
-
-  getPrevImageHash() {
-    let hashes = this.getFramesetHashesInOrder()
-    if (this.state.frameset_hash) {
-      let cur_index = hashes.indexOf(this.state.frameset_hash)
-      if (cur_index > 0) {
-        return hashes[cur_index - 1]
-      } 
-    }
-    return ''
-  }
-
-  handleMaximize() {
-    if (this.state.maximize) {
-      if (document.getElementById('App-whoami')) {
-        document.getElementById('App-whoami').parentNode.parentNode.style.display='none'
-      }
+    if (Object.keys(vars).includes('title') && Object.keys(vars).includes('subtitle')) {
+      this.setState({
+        breadcrumbs_title: vars['title'],
+        breadcrumbs_subtitle: vars['subtitle'],
+      })
     }
   }
 
@@ -2758,16 +2540,6 @@ class RedactApplication extends React.Component {
     new_target_frameset['images'] = new_target_images
     deepCopyFramesets[target_hash] = new_target_frameset
     delete deepCopyFramesets[source_hash]
-    let deepCopyMovies = JSON.parse(JSON.stringify(this.state.movies))
-    let cur_movie = deepCopyMovies[this.state.movie_url]
-    cur_movie['framesets'] = deepCopyFramesets
-    deepCopyMovies[this.state.movie_url] = cur_movie
-    this.setGlobalStateVar('movies', deepCopyMovies)
-  }
-
-  addRedactionToFrameset = (areas_to_redact) => {
-    let deepCopyFramesets = JSON.parse(JSON.stringify(this.getCurrentFramesets()))
-    deepCopyFramesets[this.state.frameset_hash]['areas_to_redact'] = areas_to_redact
     let deepCopyMovies = JSON.parse(JSON.stringify(this.state.movies))
     let cur_movie = deepCopyMovies[this.state.movie_url]
     cur_movie['framesets'] = deepCopyFramesets
@@ -2839,35 +2611,161 @@ class RedactApplication extends React.Component {
     }
   }
 
+  buildWorkflowButtonBar() {
+    return Workflows.buildWorkflowButtonBar(
+      this.state.workflows,
+      this.state.workflow_callbacks,
+      this.setGlobalStateVar
+    )
+  }
+
+  getBottomLinkStyle() {
+    if (document.getElementById('nav_upper_wrapper')) {
+      const rect = document.getElementById('nav_upper_wrapper').getBoundingClientRect()
+      const rect_bottom = (rect.top + rect.height)
+      const h = window.innerHeight
+      const the_top = (h - rect_bottom - 30) + 'px'
+      let navbar_collapse_style = {
+        'color': 'white',
+        'top': the_top,
+        'textAlign': 'right',
+      }
+      return navbar_collapse_style
+    }
+  }
+
+  buildNavBarCollapseButton() {
+    const navbar_collapse_style = this.getBottomLinkStyle()
+
+    let collapse_nav_words = 'Collapse Menu'
+    let collapse_nav_link_words = '<<'
+    let left_div_classname = 'col-4'
+    let right_div_classname = 'col-8'
+    if (this.state.sideNavIsCollapsed) {
+      collapse_nav_words = 'Expand'
+      collapse_nav_link_words = '>>'
+      left_div_classname = 'col-1'
+      right_div_classname = 'col-11'
+    }
+    return (
+      <div 
+        className='row'
+      >
+        <div className={left_div_classname} />
+        <div className={right_div_classname}
+        style={navbar_collapse_style}
+        >
+          <div className='d-inline'>
+            <button
+              className='btn text-light btn-link pt-1 pl-0'
+              onClick={(()=>this.toggleGlobalStateVar('sideNavIsCollapsed'))}
+            >
+              {collapse_nav_words}
+            </button>
+          </div>
+          <div className='d-inline'>
+            <button
+              className='btn text-light btn-link pt-1 pr-0 pl-0'
+              onClick={(()=>this.toggleGlobalStateVar('sideNavIsCollapsed'))}
+            >
+              {collapse_nav_link_words}
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  buildSideNav() {
+    const navbar_collapse_button = this.buildNavBarCollapseButton()
+    let navbar_style = {
+      'paddingBottom': '100%',
+      'marginBotton': '-100%',
+    }
+    let pl_name = 'Precision Learning'
+    let mr_name = 'Movie Redaction'
+    let insights_name = 'Insights'
+    let top_div_classnames = 'h-100 col-2 bg-dark navbar-dark pl-4 font-weight-bold'
+    if (this.state.sideNavIsCollapsed) {
+      pl_name = 'PL'
+      mr_name = 'MR'
+      insights_name = 'In'
+      top_div_classnames = 'h-100 col-1 bg-dark navbar-dark pl-2 font-weight-bold'
+    }
+    if (!this.props.show_insights) {
+      insights_name = ''
+    }
+    if (this.props.hide_precision_learning) {
+      pl_name = ''
+    }
+    return (
+      <div 
+        className={top_div_classnames}
+        style={navbar_style}
+      >
+        <div id='nav_upper_wrapper'>
+          <ul className="nav navbar-nav flex-column">
+            <li className="nav-item mt-2 mb-2">
+              <Link 
+                className='nav-link' 
+                id='compose_link' 
+                to='/redact/compose'
+              >
+                {pl_name}
+              </Link>
+            </li>
+            <li className="nav-item mt-2 mb-2">
+              <Link 
+                className='nav-link' 
+                id='movie_panel_link' 
+                to='/redact/movie'
+              >
+                {mr_name}
+              </Link>
+            </li>
+            <li className="nav-item mt-2 mb-2">
+              <Link 
+                className='nav-link' 
+                id='insights_link' 
+                to='/redact/insights'
+              >
+                {insights_name}
+              </Link>
+            </li>
+          </ul>
+        </div>
+        {navbar_collapse_button}
+      </div>
+    )
+  }
+
   render() {
-    this.handleMaximize()
+    const button_bar = this.buildWorkflowButtonBar()
     if (document.getElementById('movie_panel_link') && this.state.showMovieParserLink) {
       document.getElementById('movie_panel_link').style.display = 'block'
     }
+    const side_nav = this.buildSideNav()
     return (
-      <div>
-        <nav className="navbar navbar-expand-lg navbar-dark bg-dark">
-        <ul className="navbar-nav mr-auto mt-2 mt-lg-0">
-          <li className="nav-item">
-            <Link className='nav-link' id='image_panel_link' to='/redact/image'>Image</Link>
-          </li>
-          <li className="nav-item">
-            <Link className='nav-link' id='movie_panel_link' to='/redact/movie'>Movie</Link>
-          </li>
-          <li className="nav-item">
-            <Link className='nav-link' id='compose_link' to='/redact/compose'>Compose</Link>
-          </li>
-          <li className="nav-item">
-            <Link className='nav-link' id='insights_link' to='/redact/insights'>Insights</Link>
-          </li>
-        </ul>
-        <div className='float-right nav-link'>
-          <a id='help_link'  href={helpDoc}>
-            help
-          </a>
-        </div>
-        </nav>
-        <div id='container' className='col'>
+      <div className='container-fluid'>
+      <div className='row'>
+
+        {side_nav}
+
+        <div className='col'>
+          <div className='row'>
+            <div className='col-11'>
+              <div className='ml-5 mt-2'>
+              {button_bar}
+              </div>
+            </div>
+            <div className='col-1'>
+              <JobBug
+                jobs={this.state.jobs}
+                attached_job={this.state.attached_job}
+              />
+            </div>
+          </div>
+          <div className='row'>
           <Switch>
             <Route path='/redact/movie'>
               <MoviePanel 
@@ -2875,6 +2773,7 @@ class RedactApplication extends React.Component {
                 toggleGlobalStateVar={this.toggleGlobalStateVar}
                 movie_url = {this.state.movie_url}
                 getCurrentFramesets={this.getCurrentFramesets}
+                getCurrentFrames={this.getCurrentFrames}
                 mask_method = {this.state.mask_method}
                 setFramesetHash={this.setFramesetHash}
                 getRedactionFromFrameset={this.getRedactionFromFrameset}
@@ -2887,43 +2786,29 @@ class RedactApplication extends React.Component {
                 getRedactedMovieUrl={this.getRedactedMovieUrl}
                 setMovieRedactedUrl={this.setMovieRedactedUrl}
                 templates={this.state.tier_1_scanners['template']}
+                tier_1_scanners={this.state.tier_1_scanners}
+                tier_1_scanner_current_ids={this.state.tier_1_scanner_current_ids}
                 getFramesetHashesInOrder={this.getFramesetHashesInOrder}
                 getJobs={this.getJobs}
                 submitJob={this.submitJob}
-                loadJobResults={this.loadJobResults}
                 jobs={this.state.jobs}
                 postMakeUrlCall={this.postMakeUrlCall}
                 establishNewMovie={this.establishNewMovie}
                 preserve_movie_audio={this.state.preserve_movie_audio}
                 message={this.state.message}
-                getAndSaveUser={this.getAndSaveUser}
-              />
-            </Route>
-            <Route path='/redact/compose'>
-              <ComposePanel 
-                setGlobalStateVar={this.setGlobalStateVar}
-                movies={this.state.movies}
-                establishNewEmptyMovie={this.establishNewEmptyMovie}
-                addImageToMovie={this.addImageToMovie}
-                movie_url = {this.state.movie_url}
-                getCurrentFrames={this.getCurrentFrames}
-                whenDoneTarget={this.state.whenDoneTarget}
-                gotoWhenDoneTarget={this.gotoWhenDoneTarget}
-                setFramesetHash={this.setFramesetHash}
-                getFramesetHashForImageUrl={this.getFramesetHashForImageUrl}
-                getFramesetHashesInOrder={this.getFramesetHashesInOrder}
-                getImageFromFrameset={this.getImageFromFrameset}
+                setActiveWorkflow={this.setActiveWorkflow}
+                image_width={this.state.image_width}
+                image_height={this.state.image_height}
+                image_scale={this.state.image_scale}
                 getImageUrl={this.getImageUrl}
-                subsequences={this.state.subsequences}
-                submitJob={this.submitJob}
-                telemetry_data={this.state.telemetry_data}
-                readTelemetryRawData={this.readTelemetryRawData}
-                attachToJob={this.attachToJob}
-                attached_job={this.state.attached_job}
-                message={this.state.message}
-                getAndSaveUser={this.getAndSaveUser}
-                getPipelines={this.getPipelines}
+                active_frameset_hash={this.state.frameset_hash}
+                clearCurrentFramesetChanges={this.clearCurrentFramesetChanges}
+                runTemplateRedactPipelineJob={this.runTemplateRedactPipelineJob}
+                runOcrRedactPipelineJob={this.runOcrRedactPipelineJob}
+                cropImage={this.cropImage}
                 dispatchFetchSplitAndHash={this.dispatchFetchSplitAndHash}
+                toggleShowVisibility={this.toggleShowVisibility}
+                visibilityFlags={this.state.visibilityFlags}
               />
             </Route>
             <Route path='/redact/insights'>
@@ -2931,7 +2816,7 @@ class RedactApplication extends React.Component {
                 setGlobalStateVar={this.setGlobalStateVar}
                 toggleGlobalStateVar={this.toggleGlobalStateVar}
                 getFramesetHashesInOrder={this.getFramesetHashesInOrder}
-                setMovieUrlCallback={this.handleSetMovieUrl}
+                handleSetMovieUrl={this.handleSetMovieUrl}
                 getFramesetHashForImageUrl={this.getFramesetHashForImageUrl}
                 movie_url={this.state.movie_url}
                 movies={this.state.movies}
@@ -2946,14 +2831,12 @@ class RedactApplication extends React.Component {
                 getWorkbooks={this.getWorkbooks}
                 saveWorkbook={this.saveWorkbook}
                 saveWorkbookName={this.saveWorkbookName}
-                session_audio={this.state.session_audio}
                 loadWorkbook={this.loadWorkbook}
                 deleteWorkbook={this.deleteWorkbook}
                 workbooks={this.state.workbooks}
                 current_workbook_name={this.state.current_workbook_name}
                 current_workbook_id={this.state.current_workbook_id}
                 setSelectedAreaMetas={this.setSelectedAreaMetas}
-                annotations={this.state.annotations}
                 cropImage={this.cropImage}
                 setMovieNickname={this.setMovieNickname}
                 movie_sets={this.state.movie_sets}
@@ -2969,7 +2852,6 @@ class RedactApplication extends React.Component {
                 preserveAllJobs={this.state.preserveAllJobs}
                 tier_1_matches={this.state.tier_1_matches}
                 telemetry_data={this.state.telemetry_data}
-                setTelemetryData={this.setTelemetryData}
                 getJobResultData={this.getJobResultData}
                 saveScannerToDatabase={this.saveScannerToDatabase}
                 scanners={this.state.scanners}
@@ -2995,55 +2877,70 @@ class RedactApplication extends React.Component {
                 impersonateUser={this.impersonateUser}
                 attached_job={this.state.attached_job}
                 message={this.state.message}
-                maximize={this.state.maximize}
                 user={this.state.user}
                 cv_workers={this.state.cv_workers}
-                getAndSaveUser={this.getAndSaveUser}
                 queryCvWorker={this.queryCvWorker}
                 dispatchFetchSplitAndHash={this.dispatchFetchSplitAndHash}
-                suppress_job_polling={this.state.suppress_job_polling}
+                deleteOldJobs={this.deleteOldJobs}
+                setActiveWorkflow={this.setActiveWorkflow}
                 job_polling_interval_seconds={this.state.job_polling_interval_seconds}
               />
             </Route>
-            <Route path={['/redact/image', '/redact']}>
-              <ImagePanel 
+            <Route path={['/redact/compose', '/redact']}>
+              <ComposePanel 
                 setGlobalStateVar={this.setGlobalStateVar}
-                mask_method={this.state.mask_method}
                 movies={this.state.movies}
+                establishNewEmptyMovie={this.establishNewEmptyMovie}
+                addImageToMovie={this.addImageToMovie}
                 movie_url = {this.state.movie_url}
+                workflows = {this.state.workflows}
+                getCurrentFrames={this.getCurrentFrames}
+                getCurrentFramesets={this.getCurrentFramesets}
+                whenDoneTarget={this.state.whenDoneTarget}
+                gotoWhenDoneTarget={this.gotoWhenDoneTarget}
+                setFramesetHash={this.setFramesetHash}
+                getFramesetHashForImageUrl={this.getFramesetHashForImageUrl}
+                getFramesetHashesInOrder={this.getFramesetHashesInOrder}
+                getImageFromFrameset={this.getImageFromFrameset}
                 getImageUrl={this.getImageUrl}
+                subsequences={this.state.subsequences}
+                submitJob={this.submitJob}
+                telemetry_data={this.state.telemetry_data}
+                attachToJob={this.attachToJob}
+                attached_job={this.state.attached_job}
+                message={this.state.message}
+                getPipelines={this.getPipelines}
+                dispatchFetchSplitAndHash={this.dispatchFetchSplitAndHash}
+                breadcrumbs_title={this.state.breadcrumbs_title}
+                breadcrumbs_subtitle={this.state.breadcrumbs_subtitle}
+                setActiveWorkflow={this.setActiveWorkflow}
+                templates={this.state.tier_1_scanners['template']}
+                workflow_callbacks={this.state.workflow_callbacks}
+                addWorkflowCallbacks={this.addWorkflowCallbacks}
+                clearCurrentFramesetChanges={this.clearCurrentFramesetChanges}
+                mask_method={this.state.mask_method}
+                cropImage={this.cropImage}
+                tier_1_scanners={this.state.tier_1_scanners}
+                tier_1_scanner_current_ids={this.state.tier_1_scanner_current_ids}
+                illustrateParameters={this.state.illustrateParameters}
+                setIllustrateParameters={this.setIllustrateParameters}
+                clearCurrentIllustrations={this.clearCurrentIllustrations}
+                clearCurrentRedactions={this.clearCurrentRedactions}
+                pipelines={this.state.pipelines}
+                savePipelineToDatabase={this.savePipelineToDatabase}
+                active_frameset_hash={this.state.frameset_hash}
                 image_width={this.state.image_width}
                 image_height={this.state.image_height}
                 image_scale={this.state.image_scale}
-                addRedactionToFrameset={this.addRedactionToFrameset}
-                getRedactionFromFrameset={this.getRedactionFromFrameset}
-                setFramesetHash={this.setFramesetHash}
-                getFramesetHashForImageUrl={this.getFramesetHashForImageUrl}
-                getNextImageHash={this.getNextImageHash}
-                getPrevImageHash={this.getPrevImageHash}
-                setImageScale={this.setImageScale}
-                clearCurrentFramesetChanges={this.clearCurrentFramesetChanges}
-                whenDoneTarget={this.state.whenDoneTarget}
-                gotoWhenDoneTarget={this.gotoWhenDoneTarget}
-                submitJob={this.submitJob}
-                playTone={this.playTone}
-                postMakeUrlCall={this.postMakeUrlCall}
-                establishNewEmptyMovie={this.establishNewEmptyMovie}
-                addImageToMovie={this.addImageToMovie}
-                illustrateParameters={this.state.illustrateParameters}
-                setIllustrateParameters={this.setIllustrateParameters}
-                message={this.state.message}
-                tier_1_scanners={this.state.tier_1_scanners}
-                tier_1_scanner_current_ids={this.state.tier_1_scanner_current_ids}
-                cropImage={this.cropImage}
-                getAndSaveUser={this.getAndSaveUser}
-                dispatchPipeline={this.dispatchPipeline}
-                pipelines={this.state.pipelines}
-                savePipelineToDatabase={this.savePipelineToDatabase}
+                buildMoviesForSingleFrame={this.buildMoviesForSingleFrame}
+                runTemplateRedactPipelineJob={this.runTemplateRedactPipelineJob}
+                runOcrRedactPipelineJob={this.runOcrRedactPipelineJob}
               />
             </Route>
           </Switch>
+          </div>
         </div>
+      </div>
       </div>
     );
   }

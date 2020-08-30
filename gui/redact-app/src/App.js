@@ -46,6 +46,9 @@ class App extends React.Component {
           <RedactApplication 
             getBaseUrl={this.getBaseUrl}
             whoAmI={whoAmI}
+            poll_for_jobs='yes'
+            show_insights='yes'
+            hide_precision_learning='yes'
           />
         </Router>
       </div>
