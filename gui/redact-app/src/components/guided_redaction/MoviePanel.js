@@ -2,6 +2,8 @@ import React from 'react';
 import {
   getMessage, 
   buildFramesetDiscriminatorSelect,
+  buildRedactionReplaceWithSelect,
+  buildRedactionErodeIterationsSelect,
   buildRedactionTypeSelect
 } from './redact_utils.js'
 import MovieImageControls from './MovieImageControls.js'
@@ -485,7 +487,7 @@ class MoviePanel extends React.Component {
     job_data['description'] = 'redact images for movie: ' + this.props.movie_url
     job_data['request_data']['movies'] = {}
     job_data['request_data']['movies'][this.props.movie_url] = this.props.movies[this.props.movie_url]
-    job_data['request_data']['mask_method'] = this.props.mask_method
+    job_data['request_data']['mask_method'] = this.props.redact_rule.mask_method
     job_data['request_data']['meta'] = {
       return_type: 'url',
       preserve_working_dir_across_batch: true,
@@ -512,7 +514,7 @@ class MoviePanel extends React.Component {
     }
     job_data['request_data']['movies'][this.props.movie_url] = build_movie
 
-    job_data['request_data']['mask_method'] = this.props.mask_method
+    job_data['request_data']['mask_method'] = this.props.redact_rule.mask_method
     job_data['request_data']['meta'] = {
       return_type: 'url',
       preserve_working_dir_across_batch: true,
@@ -651,7 +653,7 @@ class MoviePanel extends React.Component {
       preserve_working_dir_across_batch: false,
       return_type: 'url',
     }
-    job_data['request_data']['mask_method'] = this.props.mask_method
+    job_data['request_data']['mask_method'] = this.props.redact_rule.mask_method
 
     if (Object.keys(extra_data).includes('areas_to_redact')) {
       job_data['request_data']['areas_to_redact'] = extra_data['areas_to_redact']
@@ -1059,7 +1061,7 @@ class MoviePanel extends React.Component {
             setGlobalStateVar={this.props.setGlobalStateVar}
             toggleGlobalStateVar={this.props.toggleGlobalStateVar}
             submitMovieJob={this.submitMovieJob}
-            mask_method={this.props.mask_method}
+            redact_rule={this.props.redact_rule}
             frameset_discriminator={this.props.frameset_discriminator}
             changeMovieResolutionNew={this.changeMovieResolutionNew}
             movie_resolution_new={this.state.movie_resolution_new}
@@ -1338,6 +1340,24 @@ class MoviePanelAdvancedControls extends React.Component {
     )
   }
 
+  setGlobalMaskMethod(mask_method) {
+    let deepCopyRedactRule = JSON.parse(JSON.stringify(this.props.redact_rule))
+    deepCopyRedactRule['mask_method'] = mask_method
+    this.props.setGlobalStateVar('redact_rule', deepCopyRedactRule)
+  }
+
+  setGlobalReplaceWith(the_value) {
+    let deepCopyRedactRule = JSON.parse(JSON.stringify(this.props.redact_rule))
+    deepCopyRedactRule['replace_with'] = the_value
+    this.props.setGlobalStateVar('redact_rule', deepCopyRedactRule)
+  }
+
+  setGlobalErodeIterations(the_value) {
+    let deepCopyRedactRule = JSON.parse(JSON.stringify(this.props.redact_rule))
+    deepCopyRedactRule['erode_iterations'] = the_value
+    this.props.setGlobalStateVar('redact_rule', deepCopyRedactRule)
+  }
+
   render() {
     if (this.props.movie_url === '') {
       return ''
@@ -1381,10 +1401,22 @@ class MoviePanelAdvancedControls extends React.Component {
       }
     }
 
-    const redaction_select = buildRedactionTypeSelect(
+    const redaction_mask_method = buildRedactionTypeSelect(
       'mask_method',
-      this.props.mask_method,
-      ((event) => this.props.setGlobalStateVar('mask_method', event.target.value))
+      this.props.redact_rule.mask_method,
+      ((event) => this.setGlobalMaskMethod(event.target.value))
+    )
+
+    const redaction_replace_with = buildRedactionReplaceWithSelect(
+      'replace_with',
+      this.props.redact_rule.replace_with,
+      ((event) => this.setGlobalReplaceWith(event.target.value))
+    )
+
+    const redaction_erode_iterations = buildRedactionErodeIterationsSelect(
+      'erode_iterations',
+      this.props.redact_rule.erode_iterations,
+      ((event) => this.setGlobalErodeIterations(event.target.value))
     )
 
     return (
@@ -1441,12 +1473,31 @@ class MoviePanelAdvancedControls extends React.Component {
 
               <div>
                 <div className='d-inline'>
-                  set mask method
+                  set redaction mask method
                 </div>
                 <div className='d-inline ml-2'>
-                  {redaction_select}
+                  {redaction_mask_method}
                 </div>
               </div>
+
+              <div>
+                <div className='d-inline'>
+                  set redaction replace with
+                </div>
+                <div className='d-inline ml-2'>
+                  {redaction_replace_with}
+                </div>
+              </div>
+
+              <div>
+                <div className='d-inline'>
+                  set redaction erode iterations
+                </div>
+                <div className='d-inline ml-2'>
+                  {redaction_erode_iterations}
+                </div>
+              </div>
+
               <div className='mt-2'>
                 <div className='d-inline'>
                   {split_button}

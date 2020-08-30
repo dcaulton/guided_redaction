@@ -8,14 +8,20 @@ import {
 
 class ComposeImageInfoControls extends React.Component {
 
+  setGlobalRedactRule(mask_method) {
+    let deepCopyRedactRule = JSON.parse(JSON.stringify(this.props.redact_rule))
+    deepCopyRedactRule['mask_method'] = mask_method
+    this.props.setGlobalStateVar('redact_rule', deepCopyRedactRule)
+  }
+
   buildMaskMethodDropdown() {
     if (!this.props.displayImageControls) {
       return
     }
     const redaction_select = buildRedactionTypeSelect(
       'mask_method',
-      this.props.mask_method,
-      ((event) => this.props.setGlobalStateVar('mask_method', event.target.value))
+      this.props.redact_rule.mask_method,
+      ((event) => this.props.setGlobalRedactRule(event.target.value))
     )
     return (
       <div className='mt-2'>

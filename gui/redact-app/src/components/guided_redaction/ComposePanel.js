@@ -601,7 +601,7 @@ class ComposePanel extends React.Component {
       preserve_working_dir_across_batch: false,
       return_type: 'url',
     }
-    job_data['request_data']['mask_method'] = this.props.mask_method
+    job_data['request_data']['mask_method'] = this.props.redact_rule.mask_method
 
     if (Object.keys(extra_data).includes('areas_to_redact')) {
       job_data['request_data']['areas_to_redact'] = extra_data['areas_to_redact']
@@ -1177,7 +1177,7 @@ class ComposePanel extends React.Component {
     return (
       <ComposeImageInfoControls
         getImageUrl={this.props.getImageUrl}
-        mask_method={this.props.mask_method}
+        redact_rule={this.props.redact_rule}
         setGlobalStateVar={this.props.setGlobalStateVar}
         getFramesetHashForImageUrl={this.props.getFramesetHashForImageUrl}
         setIllustrateParameters={this.props.setIllustrateParameters}

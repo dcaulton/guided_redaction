@@ -50,6 +50,49 @@ export const buildIllustrateDarkenPercentSelect = function (name, value, onchang
   )
 }
 
+export const buildRedactionErodeIterationsSelect = function (
+    name,
+    value,
+    onchange,
+  ) {
+  return (
+    <select 
+      name={name}
+      value={value}
+      onChange={onchange}
+    >
+      <option value='1'>1</option>
+      <option value='3'>3</option>
+      <option value='5'>5</option>
+      <option value='7'>7</option>
+      <option value='9'>9</option>
+      <option value='11'>11</option>
+      <option value='13'>13</option>
+      <option value='15'>15</option>
+      <option value='17'>17</option>
+      <option value='19'>19</option>
+    </select>
+  )
+}
+
+export const buildRedactionReplaceWithSelect = function (
+    name,
+    value,
+    onchange,
+  ) {
+  return (
+    <select 
+      name={name}
+      value={value}
+      onChange={onchange}
+    >
+      <option value='eroded'>Eroded</option>
+      <option value='edge_partitioned'>Edge Partitioned</option>
+      <option value='color_partitioned'>Color Partitioned</option>
+    </select>
+  )
+}
+
 export const buildRedactionTypeSelect = function (
     name,
     value,

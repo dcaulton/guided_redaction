@@ -444,7 +444,7 @@ class InsightsPanel extends React.Component {
     }
     job_data['app'] = 'redact'
     job_data['operation'] = 'redact'
-    job_data['request_data']['mask_method'] = this.props.mask_method
+    job_data['request_data']['mask_method'] = this.props.redact_rule.mask_method
     job_data['request_data']['meta'] = {
       return_type: 'url',
       preserve_working_dir_across_batch: true,
@@ -1320,7 +1320,7 @@ class InsightsPanel extends React.Component {
             tier_1_scanners={this.props.tier_1_scanners}
             tier_1_scanner_current_ids={this.props.tier_1_scanner_current_ids}
             setModalImage={this.setModalImage}
-            mask_method={this.props.mask_method}
+            redact_rule={this.props.redact_rule}
             impersonateUser={this.props.impersonateUser}
             cv_workers={this.props.cv_workers}
             queryCvWorker={this.props.queryCvWorker}

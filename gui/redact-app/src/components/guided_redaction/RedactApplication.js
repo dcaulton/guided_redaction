@@ -25,7 +25,11 @@ class RedactApplication extends React.Component {
       api_server_url: api_server_url,
       api_key: api_key,
       frameset_discriminator: 'gray8',
-      mask_method: 'black_rectangle',
+      redact_rule: {
+        mask_method: 'black_rectangle',
+        replace_with: 'eroded',
+        erode_iterations: 1,
+      },
       movie_url: '',
       frameset_hash: '',
       image_width: 0,
@@ -218,7 +222,7 @@ class RedactApplication extends React.Component {
       movies: movies_to_process
     }
     let redact_rule = {
-      mask_method: this.state.mask_method,
+      mask_method: this.state.redact_rule.mask_method,
     }
     input_obj['redact_rule'] = redact_rule
 
@@ -265,7 +269,7 @@ class RedactApplication extends React.Component {
       the_build_movie = this.buildMoviesForAllFrames()
     }
     let redact_rule = {
-      mask_method: this.state.mask_method,
+      mask_method: this.state.redact_rule.mask_method,
     }
     let input_obj = {
       movies: the_build_movie,
@@ -2774,7 +2778,7 @@ class RedactApplication extends React.Component {
                 movie_url = {this.state.movie_url}
                 getCurrentFramesets={this.getCurrentFramesets}
                 getCurrentFrames={this.getCurrentFrames}
-                mask_method = {this.state.mask_method}
+                redact_rule={this.state.redact_rule}
                 setFramesetHash={this.setFramesetHash}
                 getRedactionFromFrameset={this.getRedactionFromFrameset}
                 getImageFromFrameset={this.getImageFromFrameset}
@@ -2871,7 +2875,7 @@ class RedactApplication extends React.Component {
                 app_codebooks={this.state.app_codebooks}
                 tier_1_scanners={this.state.tier_1_scanners}
                 tier_1_scanner_current_ids={this.state.tier_1_scanner_current_ids}
-                mask_method={this.state.mask_method}
+                redact_rule={this.state.redact_rule}
                 visibilityFlags={this.state.visibilityFlags}
                 toggleShowVisibility={this.toggleShowVisibility}
                 impersonateUser={this.impersonateUser}
@@ -2918,7 +2922,7 @@ class RedactApplication extends React.Component {
                 workflow_callbacks={this.state.workflow_callbacks}
                 addWorkflowCallbacks={this.addWorkflowCallbacks}
                 clearCurrentFramesetChanges={this.clearCurrentFramesetChanges}
-                mask_method={this.state.mask_method}
+                redact_rule={this.state.redact_rule}
                 cropImage={this.cropImage}
                 tier_1_scanners={this.state.tier_1_scanners}
                 tier_1_scanner_current_ids={this.state.tier_1_scanner_current_ids}
