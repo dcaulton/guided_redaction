@@ -21,7 +21,6 @@ class ComposePanel extends React.Component {
       dragged_id: '',
       mode: '', 
       callbacks: {},
-      sequence_display_mode: 'large_card',
       displayFetchRecordingId: true,
       displayCaptureButton: true,
       displayBuildTemplateControls: false,
@@ -33,8 +32,6 @@ class ComposePanel extends React.Component {
     }
     this.scrubberOnChange=this.scrubberOnChange.bind(this)
     this.removeSequenceFrame=this.removeSequenceFrame.bind(this)
-    this.gotoSequenceFrame=this.gotoSequenceFrame.bind(this)
-    this.setSubsequences=this.setSubsequences.bind(this)
     this.setDraggedItem=this.setDraggedItem.bind(this)
     this.handleDroppedOntoSubsequence=this.handleDroppedOntoSubsequence.bind(this)
     this.handleDroppedOntoSequence=this.handleDroppedOntoSequence.bind(this)
@@ -42,8 +39,6 @@ class ComposePanel extends React.Component {
     this.moveSequenceFrameDown=this.moveSequenceFrameDown.bind(this)
     this.deleteSubsequence=this.deleteSubsequence.bind(this)
     this.generateSubsequence=this.generateSubsequence.bind(this)
-    this.previewSubsequence=this.previewSubsequence.bind(this)
-    this.setSequenceDisplayMode=this.setSequenceDisplayMode.bind(this)
     this.templatesExist=this.templatesExist.bind(this)
     this.sequenceImagesExist=this.sequenceImagesExist.bind(this)
     this.redactedSequenceImagesExist=this.redactedSequenceImagesExist.bind(this)
@@ -84,6 +79,7 @@ class ComposePanel extends React.Component {
     this.currentImageIsTemplateAnchorImage=this.currentImageIsTemplateAnchorImage.bind(this)
     this.illustrateRollback=this.illustrateRollback.bind(this)
     this.redactRollback=this.redactRollback.bind(this)
+    this.createSubsequence=this.createSubsequence.bind(this)
   }
 
 
@@ -140,6 +136,23 @@ class ComposePanel extends React.Component {
       this.props.setGlobalStateVar('workflows', deepCopyWorkflows)
     }
     setTimeout(function() {app_this.props.setActiveWorkflow('precision_learning')}, 500)
+  }
+
+  createSubsequence() {
+//    let deepCopySubsequences = JSON.parse(JSON.stringify(this.props.subsequences))
+    let deepCopySubsequences = {}
+    const subsequence_id = (
+      'subsequence_' + 
+      Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
+    )
+    const new_subsequence = {
+      id: subsequence_id,
+      images: [],
+      framesets: {},
+      delay: 1000,
+    }
+    deepCopySubsequences[subsequence_id] = new_subsequence
+    this.props.setGlobalStateVar('subsequences', deepCopySubsequences)
   }
 
   illustrateRollback() {
@@ -485,7 +498,7 @@ class ComposePanel extends React.Component {
   }
 
   startPrecisionLearning() {
-    const precondition_test_results = this.wequenceImagesExist()
+    const precondition_test_results = this.sequenceImagesExist()
     if (precondition_test_results !== true) {
       return precondition_test_results
     }
@@ -538,20 +551,6 @@ class ComposePanel extends React.Component {
     return 'no frames have been redacted'
   }
 
-  setSequenceDisplayMode(the_mode) {
-    this.setState({
-      sequence_display_mode: the_mode,
-    })
-  }
-
-  previewSubsequence(subsequence_id) {
-    const subsequence = this.props.subsequences[subsequence_id]
-    this.setState({
-      compose_image: subsequence['name'],
-      compose_display_image: subsequence['rendered_image'],
-    })
-  }
-
   generateSubsequence(subsequence_id) {
     this.submitComposeJob('render_subsequence', subsequence_id)
   }
@@ -565,19 +564,8 @@ class ComposePanel extends React.Component {
     job_data['app'] = 'parse'
     job_data['operation'] = 'render_subsequence'
     job_data['description'] = 'render subsequence from ComposePanel: subsequence ' + subsq_name
-    
-    let subsequence = this.props.subsequences[subsequence_id]
-    let build_images = []
-    for (let i=0; i < subsequence['images'].length; i++) {
-      const source_image = subsequence['images'][i]
-      const frameset_hash = this.props.getFramesetHashForImageUrl(source_image, subsequence['framesets'])
-      const image_to_add = this.props.getImageFromFrameset(frameset_hash, subsequence['framesets'])
-      build_images.push(image_to_add)
-    }
-    subsequence['images'] = build_images
-
     job_data['request_data'] = {
-      subsequence: subsequence,
+      subsequence: this.props.subsequences[subsequence_id]
     }
     return job_data
   }
@@ -731,10 +719,10 @@ class ComposePanel extends React.Component {
     })
   }
 
-  deleteSubsequence(subsequence_id) {
+  deleteSubsequence(subsequence_id, when_done=(()=>{})) {
     let deepCopySubsequences = JSON.parse(JSON.stringify(this.props.subsequences))
     delete deepCopySubsequences[subsequence_id]
-    this.setSubsequences(deepCopySubsequences)
+    this.props.setGlobalStateVar('subsequences', deepCopySubsequences)
   }
 
   moveSequenceFrameUp(image_url) {
@@ -768,24 +756,22 @@ class ComposePanel extends React.Component {
   }
 
   handleDroppedOntoSubsequence(subsequence_id) {
-    if (this.state.dragged_type === 'sequence') {
-      let deepCopySubsequences = JSON.parse(JSON.stringify(this.props.subsequences))
-      deepCopySubsequences[subsequence_id]['images'].push(this.state.dragged_id)
-
-      const sequence = this.getSequence()
-      const frameset_hash = this.props.getFramesetHashForImageUrl(
-        this.state.dragged_id, 
-        sequence['framesets']
-      )
-      const frameset = sequence['framesets'][frameset_hash] 
-      deepCopySubsequences[subsequence_id]['framesets'][frameset_hash] = frameset
-
-      const new_num_sequence_frames = this.getSequence()['frames'].length - 1
-      this.setSubsequences(deepCopySubsequences)
-      setTimeout(this.removeSequenceFrame(this.state.dragged_id), 500)
-      this.setScrubberMax(new_num_sequence_frames) 
-      this.scrubberOnChange()
+    if (this.state.dragged_type !== 'sequence') {
+      return 
     }
+    let deepCopySubsequences = JSON.parse(JSON.stringify(this.props.subsequences))
+    deepCopySubsequences[subsequence_id]['images'].push(this.state.dragged_id)
+
+    const sequence = this.getSequence()
+    const frameset_hash = this.props.getFramesetHashForImageUrl(
+      this.state.dragged_id, 
+      sequence['framesets']
+    )
+    const frameset = sequence['framesets'][frameset_hash] 
+    deepCopySubsequences[subsequence_id]['framesets'][frameset_hash] = frameset
+
+    this.props.setGlobalStateVar('subsequences', deepCopySubsequences)
+    this.removeSequenceFrame(frameset_hash)
   }
 
   handleDroppedOntoSequence() {
@@ -805,13 +791,11 @@ class ComposePanel extends React.Component {
       deepCopyMovies['sequence'] = deepCopySequence
       this.props.setGlobalStateVar('movies', deepCopyMovies)
       if (this.props.movie_url === 'sequence') {
-        this.setScrubberMax(deepCopySequence['frames'].length) 
+        this.setScrubberMax(deepCopySequence['frames'].length-1) 
       }
+      this.scrubberOnChange()
+      this.createSubsequence()
     }
-  }
-
-  setSubsequences(the_subsequences) {
-    this.props.setGlobalStateVar('subsequences', the_subsequences)
   }
 
   setScrubberMax(the_number) {
@@ -822,40 +806,31 @@ class ComposePanel extends React.Component {
     document.getElementById('compose_scrubber').value = the_number
   }
 
-  gotoSequenceFrame(frame_url_to_goto) {
-    const movie = this.props.movies[this.props.movie_url]
-    if (movie['frames'].includes(frame_url_to_goto)) {
-      const index = movie['frames'].indexOf(frame_url_to_goto)
-      this.setScrubberValue(index)
-      this.scrubberOnChange()
-    }
-  }
-
-  removeSequenceFrame(frame_url_to_delete) {
+  removeSequenceFrame(frameset_hash_to_delete) {
     let deepCopyMovies = JSON.parse(JSON.stringify(this.props.movies))
     let movie = JSON.parse(JSON.stringify(deepCopyMovies['sequence']))
     let build_frames = []
     let build_framesets = {}
-    for (let i=0; i < movie['frames'].length; i++) {
-      const frame_url = movie['frames'][i]
-      const frameset_hash = this.props.getFramesetHashForImageUrl(frame_url, movie['framesets'])
-      const old_frameset = JSON.parse(JSON.stringify(movie['framesets'][frameset_hash]))
-      const new_hash = Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
-      if (frame_url !== frame_url_to_delete) {
-        build_frames.push(frame_url)
-        build_framesets[new_hash] = old_frameset
+    let new_hash = 1
+    for (let i=0; i < Object.keys(movie['framesets']).length; i++) {
+      const frameset_hash = Object.keys(movie['framesets'])[i]
+      const old_frameset = movie['framesets'][frameset_hash]
+      const frame_url = old_frameset['images'][0]
+      if (frameset_hash === frameset_hash_to_delete) {
+        continue
       }
+      build_frames.push(frame_url)
+      build_framesets[new_hash.toString()] = old_frameset
+      new_hash += 1
     }
     movie['frames'] = build_frames
     movie['framesets'] = build_framesets
     deepCopyMovies['sequence'] = movie
     this.props.setGlobalStateVar('movies', deepCopyMovies)
-    const num_frames = movie['frames'].length
+    const num_frames = movie['frames'].length - 1
     this.setScrubberMax(num_frames)
-    if (this.props.movie_url === 'sequence') { // set scrubber to 0 to be sure we're in range
-      this.setScrubberValue(0)
-      this.scrubberOnChange()
-    }
+    this.setScrubberValue(0)
+    this.scrubberOnChange()
   }
 
   updateMovieOffsetMessage(offset_in_seconds) {
@@ -882,7 +857,11 @@ class ComposePanel extends React.Component {
       frame_url = frames[value]
       the_frameset_hash = this.props.getFramesetHashForImageUrl(frame_url)
     }
-    this.props.setFramesetHash(the_frameset_hash, framesets, (()=>{this.setImageSize(frame_url)}) )
+    this.props.setFramesetHash(
+      the_frameset_hash, 
+      framesets, 
+      (()=>{this.setImageSize(frame_url)}) 
+    )
 
     this.updateMovieOffsetMessage(value)
     // clear out global message with scrubber movement
@@ -1350,8 +1329,24 @@ class ComposePanel extends React.Component {
                   {template_controls}
                 </div>
 
+                <div className='row m-2'>
+                  <SubsequencePanel
+                    compose_image={this.state.compose_image}
+                    subsequences={this.props.subsequences}
+                    setGlobalStateVar={this.props.setGlobalStateVar}
+                    setDraggedItem={this.setDraggedItem}
+                    handleDroppedOntoSubsequence={this.handleDroppedOntoSubsequence}
+                    handleDroppedOntoSequence={this.handleDroppedOntoSequence}
+                    deleteSubsequence={this.deleteSubsequence}
+                    generateSubsequence={this.generateSubsequence}
+                    movies={this.props.movies}
+                    movie_url={this.props.movie_url}
+                    displayAnimateControls={this.state.displayAnimateControls}
+                    sequence_movie={this.getSequence()}
+                    createSubsequence={this.createSubsequence}
+                  />
+                </div>
               </div>
-
             </div>
           </div>
 
@@ -1360,7 +1355,6 @@ class ComposePanel extends React.Component {
               <SequencePanel
                 sequence_movie={this.getSequence()}
                 removeSequenceFrame={this.removeSequenceFrame}
-                gotoSequenceFrame={this.gotoSequenceFrame}
                 compose_image={this.state.compose_image}
                 subsequences={this.props.subsequences}
                 setDraggedItem={this.setDraggedItem}
@@ -1369,8 +1363,6 @@ class ComposePanel extends React.Component {
                 moveSequenceFrameUp={this.moveSequenceFrameUp}
                 moveSequenceFrameDown={this.moveSequenceFrameDown}
                 deleteSubsequence={this.deleteSubsequence}
-                sequence_display_mode={this.state.sequence_display_mode}
-                setSequenceDisplayMode={this.setSequenceDisplayMode}
                 movies={this.props.movies}
                 movie_url={this.props.movie_url}
                 getFramesetHashesInOrder={this.props.getFramesetHashesInOrder}
@@ -1380,29 +1372,7 @@ class ComposePanel extends React.Component {
               />
             </div>
           </div>
-
         </div>
-
-        <div 
-            className='row ml-2'
-        >
-          <SubsequencePanel
-            compose_image={this.state.compose_image}
-            subsequences={this.props.subsequences}
-            setSubsequences={this.setSubsequences}
-            setDraggedItem={this.setDraggedItem}
-            handleDroppedOntoSubsequence={this.handleDroppedOntoSubsequence}
-            handleDroppedOntoSequence={this.handleDroppedOntoSequence}
-            deleteSubsequence={this.deleteSubsequence}
-            generateSubsequence={this.generateSubsequence}
-            previewSubsequence={this.previewSubsequence}
-            movies={this.props.movies}
-            movie_url={this.props.movie_url}
-            displayAnimateControls={this.state.displayAnimateControls}
-            sequence_movie={this.getSequence()}
-          />
-        </div>
-         
       </div>
     );
   }
@@ -1430,20 +1400,18 @@ class SequencePanel extends React.Component {
               <SequenceCard
                 frame_url={frame_url}
                 image_offset={index}
+                frameset_hash={frameset_hash}
                 key={index}
                 sequence_movie={this.props.sequence_movie}
                 removeSequenceFrame={this.props.removeSequenceFrame}
-                gotoSequenceFrame={this.props.gotoSequenceFrame}
                 compose_image={this.props.compose_image}
                 setDraggedItem={this.props.setDraggedItem}
                 handleDroppedOntoSequence={this.props.handleDroppedOntoSequence}
                 moveSequenceFrameUp={this.props.moveSequenceFrameUp}
                 moveSequenceFrameDown={this.props.moveSequenceFrameDown}
-                sequence_display_mode={this.props.sequence_display_mode}
                 movies={this.props.movies}
                 movie_url={this.props.movie_url}
                 active_frameset_hash={this.props.active_frameset_hash}
-                frameset_hash={frameset_hash}
               />
               )
             })}
@@ -1456,27 +1424,121 @@ class SequencePanel extends React.Component {
 }
 
 class SubsequencePanel extends React.Component {
-  createSubsequence() {
-    let deepCopySubsequences = JSON.parse(JSON.stringify(this.props.subsequences))
-    const subsequence_id = 'subsequence_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
-    const new_subsequence = {
-      id: subsequence_id,
-      images: [],
-      framesets: {},
-      delay: 1000,
-    }
-    deepCopySubsequences[subsequence_id] = new_subsequence
-    this.props.setSubsequences(deepCopySubsequences)
+  componentDidMount() {
+    this.props.createSubsequence()
   }
 
-  createSubsequenceLink() {
+  buildIntervalField(subsequence) {
+    return (
+      <div>
+        <div className='d-inline'>
+          interval (ms):
+        </div>
+        <div className='d-inline ml-2'>
+          <select
+              name='subsequence_interval'
+              value={subsequence['interval']}
+              onChange={(event) => this.setSubsequenceValue(
+                  subsequence['id'], 
+                  'interval', 
+                  event.target.value
+              )}
+          >
+            <option value='100'>100</option>
+            <option value='200'>200</option>
+            <option value='300'>300</option>
+            <option value='500'>500</option>
+            <option value='700'>700</option>
+            <option value='1000'>1000</option>
+            <option value='2000'>2000</option>
+            <option value='3000'>3000</option>
+            <option value='4000'>4000</option>
+          </select>
+        </div>
+      </div>
+    )
+  }
+
+  buildGenerateLink(subsequence) {
+    if (Object.keys(subsequence).includes('rendered_image')) {
+      return ''
+    }
     return (
       <button
-        className='border-0 text-primary bg-white'
-        onClick={() => this.createSubsequence(this.props.frame_url)}
+        className='border-0 text-primary'
+        onClick={() => this.props.generateSubsequence(subsequence['id'])}
       >
-        Create Animated Image
+        generate
       </button>
+    )
+  }
+
+  resetSubsequence(old_subsequence_id) {
+    this.props.deleteSubsequence(
+      old_subsequence_id,
+      (()=>{this.props.createSubsequence()})
+    )
+  }
+
+  buildResetLink(subsequence) {
+    return (
+      <button
+        className='border-0 text-primary'
+        onClick={() => this.resetSubsequence(subsequence['id'])}
+      >
+        reset
+      </button>
+    )
+  }
+
+  buildPreviewWindow(subsequence) {
+    if (!Object.keys(subsequence).includes('rendered_image')) {
+      return ''
+    }
+    return (
+      <div className='frameCard w-100'>
+        <img
+          src={subsequence['rendered_image']}
+          alt={subsequence['rendered_image']}
+        />
+      </div>
+    )
+  }
+
+  setSubsequenceValue(the_id, the_field_name, the_value) {
+    let deepCopySubsequences = JSON.parse(JSON.stringify(this.props.subsequences))
+    deepCopySubsequences[the_id][the_field_name] = the_value
+    this.props.setGlobalStateVar('subsequences', deepCopySubsequences)
+  }
+
+  buildImageNameList(subsequence) {
+    if (Object.keys(subsequence).includes('rendered_image')) {
+      return ''
+    }
+    return (
+      <div className='col'>
+        {subsequence['images'].map((image_url, index) => {
+          const short_name = image_url.split('/').slice(-1)[0]
+          return (
+            <div key={index} className='row'>
+              {short_name}
+            </div>
+          )
+        })}
+      </div>
+    )
+  }
+
+  buildDragDropTarget(subsequence) {
+    if (Object.keys(subsequence).includes('rendered_image')) {
+      return ''
+    }
+    return (
+      <div
+        className='h3 border p-5 m-5'
+      >
+        Drag and drop captured frames here to add to the animated image
+      </div>
     )
   }
 
@@ -1485,27 +1547,51 @@ class SubsequencePanel extends React.Component {
     if (!subsequence_movie_ids.length) {
       return ''
     }
+    const first_subsequence_key = Object.keys(this.props.subsequences)[0]
+    const subsequence = this.props.subsequences[first_subsequence_key]
+    const interval_field = this.buildIntervalField(subsequence)
+    const generate_link = this.buildGenerateLink(subsequence)
+    const reset_link = this.buildResetLink(subsequence)
+    const preview_window = this.buildPreviewWindow(subsequence)
+    const image_name_list = this.buildImageNameList(subsequence)
+    const drag_drop_target = this.buildDragDropTarget(subsequence)
+
     return (
-      <div>
-        <div id='subsequence_card_wrapper'>
-          {subsequence_movie_ids.map((subsequence_id, index) => {
-            const subsequence = this.props.subsequences[subsequence_id]
-            return (
-            <SubsequenceCard
-              subsequence={subsequence}
-              key={index}
-              subsequences={this.props.subsequences}
-              setSubsequences={this.props.setSubsequences}
-              setDraggedItem={this.props.setDraggedItem}
-              handleDroppedOntoSubsequence={this.props.handleDroppedOntoSubsequence}
-              deleteSubsequence={this.props.deleteSubsequence}
-              generateSubsequence={this.props.generateSubsequence}
-              previewSubsequence={this.props.previewSubsequence}
-            />
-            )
-          })}
-       </div>
-     </div>
+      <div 
+        className='col'
+        draggable='true'
+        onDragStart={
+          () => this.props.setDraggedItem('subsequence', subsequence['id'])
+        }
+        onDragOver={(event) => event.preventDefault()}
+        onDrop={
+          () => this.props.handleDroppedOntoSubsequence(subsequence['id'])
+        }
+       >
+        <div className='row'>
+          <div className='col-6'>
+            <div className='row'>
+              {interval_field}
+            </div>
+            <div className='row'>
+              {preview_window}
+            </div>
+            <div className='row'>
+              {image_name_list}
+            </div>
+            <div className='row'>
+              {generate_link}
+              {reset_link}
+            </div>
+          </div>
+          <div className='col-6'>
+            {drag_drop_target}
+          </div>
+        </div>
+        <div className='row'>
+        </div>
+
+      </div>
     )
   }
 
@@ -1516,25 +1602,18 @@ class SubsequencePanel extends React.Component {
     if (!this.props.sequence_movie) {
       return ''
     }
-    const create_subsequence_link = this.createSubsequenceLink()
     const subsequence_panel = this.createSubsequencePanel()
     return (
-      <div className='col mt-2'>
-        <div className='row'>
-          <div className='h5'>
-            <div className='d-inline'>
-              Animated Images
-            </div>
-            <div className='d-inline ml-2'>
-              {create_subsequence_link}
-            </div>
+      <div className='col bg-light rounded border'>
+        <div className='row border-bottom'>
+          <div className='col-6 h3'>
+            Animated Images
           </div>
         </div>
 
-        <div className='row'>
+        <div className='row ml-2 mr-2'>
           {subsequence_panel}
         </div>
-
       </div>
     )
   }
@@ -1552,7 +1631,7 @@ class SequenceCard extends React.Component {
     return (
       <button
         className='border-0 text-primary'
-        onClick={() => this.props.removeSequenceFrame(this.props.frame_url)}
+        onClick={() => this.props.removeSequenceFrame(this.props.frameset_hash)}
       >
         remove
       </button>
@@ -1591,19 +1670,6 @@ class SequenceCard extends React.Component {
     const remove_link = this.buildRemoveLink()
     const up_link = this.buildUpLink()
     const down_link = this.buildDownLink()
-    if (this.props.sequence_display_mode === 'small_card')  {
-      return (
-        <div className='bg-white'>
-          <div>
-            {remove_link}
-          </div>
-          <div>
-            {up_link}
-            {down_link}
-          </div>
-        </div>
-      )
-    } 
     return (
       <div className='bg-white'>
         <div>
@@ -1620,16 +1686,9 @@ class SequenceCard extends React.Component {
     const frame_name = this.buildFrameName()
     const is_current_indicator = this.getIsCurrentImageIndicator() 
     let top_div_classname = 'd-inline-block frameCard w-25'
-    if (this.props.sequence_display_mode === 'large_card')  {
-      top_div_classname = 'd-inline-block frameCard w-50'
-      if (is_current_indicator) {
-        top_div_classname = 'd-inline-block frameCard active_card w-50'
-      }
-    } else if (this.props.sequence_display_mode === 'small_card')  {
-      top_div_classname = 'd-inline-block frameCard w-25'
-      if (is_current_indicator) {
-        top_div_classname = 'd-inline-block frameCard active_card w-25'
-      }
+    top_div_classname = 'd-inline-block frameCard w-50'
+    if (is_current_indicator) {
+      top_div_classname = 'd-inline-block frameCard active_card w-50'
     }
     const display_offset = this.props.image_offset + 1
     return (
@@ -1659,155 +1718,6 @@ class SequenceCard extends React.Component {
           />
           {links_div}
 
-        </div>
-      </div>
-    )
-  }
-}
-
-class SubsequenceCard extends React.Component {
-  buildGenerateLink() {
-    return (
-      <button
-        className='border-0 text-primary'
-        onClick={() => this.props.generateSubsequence(this.props.subsequence['id'])}
-      >
-        generate
-      </button>
-    )
-  }
-
-  buildDeleteLink() {
-    return (
-      <button
-        className='border-0 text-primary'
-        onClick={() => this.props.deleteSubsequence(this.props.subsequence['id'])}
-      >
-        delete
-      </button>
-    )
-  }
-
-  buildPreviewLink() {
-    if (!Object.keys(this.props.subsequence).includes('rendered_image')) {
-      return ''
-    }
-    return (
-      <button
-        className='border-0 text-primary'
-        onClick={() => this.props.previewSubsequence(this.props.subsequence['id'])}
-      >
-        preview
-      </button>
-    )
-  }
-
-  setSubsequenceValue(the_id, the_field_name, the_value) {
-    let deepCopySubsequences = JSON.parse(JSON.stringify(this.props.subsequences))
-    deepCopySubsequences[the_id][the_field_name] = the_value
-    this.props.setSubsequences(deepCopySubsequences)
-  }
-
-  buildIntervalField() {
-    return (
-      <div>
-        <div className='d-inline'>
-          interval (ms):
-        </div>
-        <div className='d-inline ml-2'>
-          <select
-              name='subsequence_interval'
-              value={this.props.subsequence['interval']}
-              onChange={(event) => this.setSubsequenceValue(
-                  this.props.subsequence['id'], 
-                  'interval', 
-                  event.target.value
-              )}
-          >
-            <option value='100'>100</option>
-            <option value='200'>200</option>
-            <option value='300'>300</option>
-            <option value='500'>500</option>
-            <option value='700'>700</option>
-            <option value='1000'>1000</option>
-            <option value='2000'>2000</option>
-            <option value='3000'>3000</option>
-            <option value='4000'>4000</option>
-          </select>
-        </div>
-      </div>
-    )
-  }
-
-  buildNameField() {
-    const key_name = 'name_' + this.props.subsequence['id']
-    const subseq_value=this.props.subsequence['name']
-    return (
-      <div>
-        <div className='d-inline'>
-          Name:
-        </div>
-        <div className='d-inline'>
-        <input
-            className='ml-2'
-            key={key_name}
-            value={subseq_value}
-            size='25'
-            onChange={(event) => this.setSubsequenceValue(
-                this.props.subsequence['id'], 
-                'name', 
-                event.target.value
-            )}
-        />
-        </div>
-      </div>
-    )
-  }
-
-  render() {
-    const generate_link = this.buildGenerateLink()
-    const delete_link = this.buildDeleteLink()
-    const preview_link = this.buildPreviewLink()
-    const name_field = this.buildNameField()
-    const interval_field = this.buildIntervalField()
-    return (
-      <div 
-          className='row mt-2 card bg-light rounded'
-          draggable='true'
-          onDragStart={() => this.props.setDraggedItem('subsequence', this.props.subsequence['id'])}
-          onDragOver={(event) => event.preventDefault()}
-          onDrop={() => this.props.handleDroppedOntoSubsequence(this.props.subsequence['id'])}
-      >
-        <div className='col p-1 ml-3'>
-          <div className='row '>
-            {this.props.subsequence['id']}
-          </div>
-          <div className='row'>
-            <div className='col'>
-              <div className='row mt-1'>
-                {name_field}
-              </div>
-              <div className='row mt-1'>
-                {interval_field}
-              </div>
-              <div className='row mt-1'>
-                {generate_link}
-                {delete_link}
-                {preview_link}
-              </div>
-              <div className='row mt-1'>
-                frames:
-              </div>
-                {this.props.subsequence['images'].map((image_url, index) => {
-                  const short_name = image_url.split('/').slice(-1)[0]
-                  return (
-                    <div key={index} className='row'>
-                      {short_name}
-                    </div>
-                  )
-                })}
-            </div>
-          </div>
         </div>
       </div>
     )

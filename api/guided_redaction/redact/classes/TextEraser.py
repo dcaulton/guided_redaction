@@ -1,9 +1,9 @@
-import cv2
 import imutils
 import numpy as np
 import sys
 np.set_printoptions(threshold=sys.maxsize)
 import math
+import cv2
 
 
 class TextEraser:
@@ -70,6 +70,7 @@ class TextEraser:
 
     def build_color_partitioned_source_image(self, source):
         print('building color partioned source BABY')
+        build_img = source.copy()
         hist = cv2.calcHist(
             [source],
             [0, 1, 2],
@@ -80,9 +81,42 @@ class TextEraser:
         source_num_pixels = source.shape[0] * source.shape[1]
         popular_colors = self.group_colors(hist, source_num_pixels)
 
+        for index, color_key in enumerate(popular_colors.keys()):
+            color_data = popular_colors[color_key]
+            print('processing color {} - {}'.format(index, color_data))
+            color_mask = cv2.inRange(
+                source, 
+                color_data['lower_bgr_color'], 
+                color_data['upper_bgr_color']
+            )
+#            print('tinky', color_mask)
+            inv_color_mask = cv2.bitwise_not(color_mask.copy())
+            color_slide = np.zeros(source.shape, dtype='uint8')
+            cv2.rectangle(
+                color_slide,
+                (0, 0),
+                (color_slide.shape[1], color_slide.shape[0]),
+                color_data['avg_bgr_color'],
+                -1
+            )
+            color_slide = cv2.bitwise_and(color_slide, color_slide, mask=color_mask)
+            filename = '/Users/dcaulton/Desktop/{}_color.png'.format(index)
+            cv2.imwrite(filename, color_slide)
+
+#            build_img = cv2.bitwise_and(build_img, build_img, mask=inv_color_mask)
+#            cv2.imwrite('/Users/dcaulton/Desktop/{}_tatty.png'.format(index), build_img)
+
+            #MAMA
+#            print('andey', color_mask)
+#            build_img = cv2.add(build_img, color_slide)
+
+
+
+
+#        cv2.imwrite('/Users/dcaulton/Desktop/build_final.png', build_img)
         print('dying now ')
         assert False
-        return return_value
+        return build_img
 
     def group_colors(self, hist, source_num_pixels):
         min_num_pixels = math.floor(source_num_pixels * .01)
@@ -96,40 +130,62 @@ class TextEraser:
         #   = [172 196 92], and it's plus or minus 4 on all three of those
 
         reduced = {}
-        for rank, bucket_loc in enumerate(histogram_winners):
+        for index, bucket_loc in enumerate(histogram_winners):
             hist_val = hist[bucket_loc[0]][bucket_loc[1]][bucket_loc[2]]
             bucket_key = '{}-{}-{}'.format(bucket_loc[0], bucket_loc[1], bucket_loc[2])
-            print('{} - {} - {} : {}'.format(rank, bucket_key, bucket_loc, hist_val))
+            print('{} - {} - {} : {}'.format(index, bucket_key, bucket_loc, hist_val))
 
-            if rank == 0:
+            if index == 0:
+                print('   adding to first bucket')
                 build_obj = {
                     'bucket_locs': [bucket_loc],
                     'avg_loc': bucket_loc,
+                    'num_pixels': hist_val,
                 }
                 reduced[bucket_key] = build_obj
                 continue
             added_to_existing_key = False
             for tk in reduced.keys():
                 if self.buckets_are_close_enough(bucket_loc, reduced[tk]['avg_loc']):
+                    num_pixels = reduced[tk]['num_pixels'] + hist_val
+                    reduced[tk]['num_pixels'] = num_pixels
                     reduced[tk]['bucket_locs'].append(bucket_loc)
                     reduced[tk]['avg_loc'] = \
                         self.calc_average_bucket_loc(reduced[tk]['bucket_locs'])
                     added_to_existing_key = True
+                    print('   adding to key {}'.format(tk))
                     break
             if not added_to_existing_key:
+                print('   making a new bucket')
                 build_obj = {
                     'bucket_locs': [bucket_loc],
                     'avg_loc': bucket_loc,
+                    'num_pixels': hist_val,
                 }
                 reduced[bucket_key] = build_obj
 
         for bucket_key in reduced:
-            reduced[bucket_key]['avg_bgr_color'] = \
+            avg_bgr_color = \
                 self.get_color_for_bucket_coords(reduced[bucket_key]['avg_loc'])
+            reduced[bucket_key]['avg_bgr_color'] = avg_bgr_color
             reduced[bucket_key]['color_range'] = \
+            bgr_range = \
                 self.get_color_range_for_buckets(reduced[bucket_key])
+            reduced[bucket_key]['color_range'] = bgr_range
+            lower_bgr_color = (
+              avg_bgr_color[0] - bgr_range[0],
+              avg_bgr_color[1] - bgr_range[1],
+              avg_bgr_color[2] - bgr_range[2]
+            )
+            upper_bgr_color = (
+              avg_bgr_color[0] + bgr_range[0],
+              avg_bgr_color[1] + bgr_range[1],
+              avg_bgr_color[2] + bgr_range[2]
+            )
+            reduced[bucket_key]['lower_bgr_color'] = lower_bgr_color
+            reduced[bucket_key]['upper_bgr_color'] = upper_bgr_color
 
-        print('zekey reduced', reduced)
+#        print('reduced bgr colors', reduced)
         return reduced
 
     def calc_average_bucket_loc(self, bucket_locs):
