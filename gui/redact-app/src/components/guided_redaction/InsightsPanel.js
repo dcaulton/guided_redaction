@@ -950,6 +950,9 @@ class InsightsPanel extends React.Component {
   }
 
   setImageScale() {
+    if (!document.getElementById('insights_image')) {
+      return
+    }
     const scale = (document.getElementById('insights_image').width / 
         document.getElementById('insights_image').naturalWidth)
     this.setState({
