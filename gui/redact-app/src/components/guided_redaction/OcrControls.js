@@ -58,7 +58,7 @@ class OcrControls extends React.Component {
           this.state.image,
           the_movie['framesets']
         )
-        const movie_framesets = this.props.getFramesetHashesInOrder(the_movie['framesets'])
+        const movie_framesets = this.props.getFramesetHashesInOrder(the_movie)
         const image_frameset_index = movie_framesets.indexOf(the_frameset)
         return (
           <div>

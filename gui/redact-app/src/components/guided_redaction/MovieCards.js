@@ -269,7 +269,7 @@ class MovieCard extends React.Component {
   setScrubberToNextTier1Hit(scanner_type) {
     const scanner_frameset_hashes = this.getTier1MatchHashesForMovie(scanner_type, this.props.this_cards_movie_url)
     let movie = this.props.movies[this.props.this_cards_movie_url]
-    const movie_frameset_hashes = this.props.getFramesetHashesInOrder(movie['framesets'])
+    const movie_frameset_hashes = this.props.getFramesetHashesInOrder(movie)
     if (this.props.active_movie_url !== this.props.this_cards_movie_url) {
       this.props.setCurrentVideo(this.props.this_cards_movie_url) 
       let lowest_position = 99999
@@ -352,7 +352,7 @@ class MovieCard extends React.Component {
 
   setScrubberToNextAreasToRedactHit() {
     let movie = this.props.movies[this.props.this_cards_movie_url]
-    const movie_frameset_hashes = this.props.getFramesetHashesInOrder(movie['framesets'])
+    const movie_frameset_hashes = this.props.getFramesetHashesInOrder(movie)
     let hashes_with_areas_to_redact = []
     for (let i=0; i < movie_frameset_hashes.length; i++) {
       const frameset_hash = movie_frameset_hashes[i]
@@ -464,7 +464,7 @@ class MovieCard extends React.Component {
     const the_movie = this.props.movies[movie_url]
     const the_image = the_movie['frames'][offset]
     const the_frameset = this.props.getFramesetHashForImageUrl(the_image, the_movie['framesets'])
-    const movie_framesets = this.props.getFramesetHashesInOrder(the_movie['framesets'])
+    const movie_framesets = this.props.getFramesetHashesInOrder(the_movie)
     const image_frameset_index = movie_framesets.indexOf(the_frameset)
     this.props.setCurrentVideo(movie_url) 
     setTimeout((() => {this.props.setScrubberToIndex(image_frameset_index)}), 1000)

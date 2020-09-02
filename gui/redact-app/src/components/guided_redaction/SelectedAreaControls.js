@@ -63,7 +63,7 @@ class SelectedAreaControls extends React.Component {
           area['image'], 
           the_movie['framesets']
         )
-        const movie_framesets = this.props.getFramesetHashesInOrder(the_movie['framesets'])
+        const movie_framesets = this.props.getFramesetHashesInOrder(the_movie)
         const image_frameset_index = movie_framesets.indexOf(the_frameset)
         return (
           <div>

@@ -685,7 +685,7 @@ class TemplateControls extends React.Component {
           if (Object.keys(this.props.movies).includes(movie_url)) {
             const the_movie = this.props.movies[movie_url]
             const the_frameset = this.props.getFramesetHashForImageUrl(image_url, the_movie['framesets'])
-            const movie_framesets = this.props.getFramesetHashesInOrder(the_movie['framesets'])
+            const movie_framesets = this.props.getFramesetHashesInOrder(the_movie)
             const image_frameset_index = movie_framesets.indexOf(the_frameset)
             goto_link = (
               <div>

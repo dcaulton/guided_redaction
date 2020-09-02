@@ -80,8 +80,8 @@ class ComposePanel extends React.Component {
     this.illustrateRollback=this.illustrateRollback.bind(this)
     this.redactRollback=this.redactRollback.bind(this)
     this.createSubsequence=this.createSubsequence.bind(this)
+    this.addSubsequenceToMainSequence=this.addSubsequenceToMainSequence.bind(this)
   }
-
 
   componentDidMount() {
     this.props.addWorkflowCallbacks({
@@ -138,8 +138,29 @@ class ComposePanel extends React.Component {
     setTimeout(function() {app_this.props.setActiveWorkflow('precision_learning')}, 500)
   }
 
+  addSubsequenceToMainSequence() {
+    if (Object.keys(this.props.subsequences).length === 0) {
+      return 
+    }
+    const subsequence_id = Object.keys(this.props.subsequences)[0]
+    const subsequence = this.props.subsequences[subsequence_id]
+    if (!Object.keys(subsequence).includes('rendered_image')) {
+      return 
+    }
+
+    this.props.addImageToMovie({
+      url: subsequence['rendered_image'],
+      movie_url: 'sequence',
+      update_frameset_hash: false,
+    })
+
+    this.deleteSubsequence(
+      subsequence_id,
+      (()=>{this.createSubsequence()})
+    )
+  }
+
   createSubsequence() {
-//    let deepCopySubsequences = JSON.parse(JSON.stringify(this.props.subsequences))
     let deepCopySubsequences = {}
     const subsequence_id = (
       'subsequence_' + 
@@ -679,8 +700,7 @@ class ComposePanel extends React.Component {
         job_data:job_data,
         after_submit: () => {this.setMessage('render subsequence job was submitted')},
         delete_job_after_loading: true,
-        after_loaded: () => {this.setMessage('render subsequence completed')},
-        when_failed: () => {this.setMessage('render subsequence failed')},
+        after_loaded: () => {this.setMessage('render subsequence completed')}, when_failed: () => {this.setMessage('render subsequence failed')},
       })
     } else if (job_string === 'redact') {
       const job_data = this.buildRedactJobData(extra_data)
@@ -725,17 +745,38 @@ class ComposePanel extends React.Component {
     this.props.setGlobalStateVar('subsequences', deepCopySubsequences)
   }
 
-  moveSequenceFrameUp(image_url) {
+  moveSequenceFrameUp(frameset_hash) {
+    if (this.props.movie_url !== 'sequence') {
+      return 
+    }
+    if (!Object.keys(this.props.movies).includes('sequence')) {
+      return 
+    }
     let deepCopyMovies = JSON.parse(JSON.stringify(this.props.movies))
-    let movie = JSON.parse(JSON.stringify(deepCopyMovies['sequence']))
-    if (movie['frames'].indexOf(image_url) === 0) {
+    let sequence = deepCopyMovies['sequence']
+    const hashes_in_order = this.props.getFramesetHashesInOrder()
+    if (!hashes_in_order.includes(frameset_hash)) {
       return
     }
-    let cur_index = movie['frames'].indexOf(image_url)
-    let cur_frame = movie['frames'][cur_index]
-    movie['frames'][cur_index] = movie['frames'][cur_index-1]
-    movie['frames'][cur_index-1] = cur_frame
-    deepCopyMovies['sequence'] = movie
+    let cur_index = hashes_in_order.indexOf(frameset_hash)
+    if (cur_index === 0) {
+      return
+    }
+    let above_index = cur_index - 1
+    let above_hash = hashes_in_order[above_index]
+    
+    let cur_frameset = JSON.parse(JSON.stringify(sequence['framesets'][frameset_hash]))
+    let above_frameset = JSON.parse(JSON.stringify(sequence['framesets'][above_hash]))
+    sequence['framesets'][frameset_hash] = above_frameset
+    sequence['framesets'][above_hash] = cur_frameset
+    let cur_img = JSON.parse(JSON.stringify(sequence['frames'][cur_index]))
+    let above_img = JSON.parse(JSON.stringify(sequence['frames'][above_index]))
+    sequence['frames'][cur_index] = above_img
+    sequence['frames'][above_index] = cur_img
+    if (Object.keys(sequence).includes('frameset_hashes_in_order')) {
+      delete sequence['frameset_hashes_in_order']
+    }
+    deepCopyMovies['sequence'] = sequence
     this.props.setGlobalStateVar('movies', deepCopyMovies)
     this.scrubberOnChange()
   }
@@ -762,7 +803,7 @@ class ComposePanel extends React.Component {
     let deepCopySubsequences = JSON.parse(JSON.stringify(this.props.subsequences))
     deepCopySubsequences[subsequence_id]['images'].push(this.state.dragged_id)
 
-    const sequence = this.getSequence()
+    const sequence = this.props.movies['sequence']
     const frameset_hash = this.props.getFramesetHashForImageUrl(
       this.state.dragged_id, 
       sequence['framesets']
@@ -904,21 +945,20 @@ class ComposePanel extends React.Component {
     return max_len
   }
 
-  getSequence() {
-    if (Object.keys(this.props.movies).includes('sequence')) {
-      return this.props.movies['sequence']
-    }
-  }
-
   captureFrame() {
     if (!Object.keys(this.props.movies).includes('sequence')) {
-      this.props.establishNewEmptyMovie('sequence', false)
-      setTimeout(
-        (()=>{this.props.addImageToMovie({
-          url: this.props.getImageUrl(),
-          movie_url: 'sequence',
-          update_frameset_hash: false,
-        })}), 100)
+      this.props.establishNewEmptyMovie(
+        'sequence', 
+        false,
+        ((new_movie)=>{this.props.addImageToMovie(
+          {
+            url: this.props.getImageUrl(),
+            movie_url: 'sequence',
+            update_frameset_hash: false,
+            movie: new_movie,
+          }
+        )})
+      )
     } else {
       this.props.addImageToMovie({
         url: this.props.getImageUrl(),
@@ -1342,8 +1382,8 @@ class ComposePanel extends React.Component {
                     movies={this.props.movies}
                     movie_url={this.props.movie_url}
                     displayAnimateControls={this.state.displayAnimateControls}
-                    sequence_movie={this.getSequence()}
                     createSubsequence={this.createSubsequence}
+                    addSubsequenceToMainSequence={this.addSubsequenceToMainSequence}
                   />
                 </div>
               </div>
@@ -1353,7 +1393,6 @@ class ComposePanel extends React.Component {
           <div className='col-5'>
             <div className='row mt-3 ml-1 mr-1'>
               <SequencePanel
-                sequence_movie={this.getSequence()}
                 removeSequenceFrame={this.removeSequenceFrame}
                 compose_image={this.state.compose_image}
                 subsequences={this.props.subsequences}
@@ -1382,11 +1421,12 @@ class ComposePanel extends React.Component {
 class SequencePanel extends React.Component {
 
   render() {
-    if (!this.props.sequence_movie) {
+    if (!Object.keys(this.props.movies).includes('sequence')) {
       return ''
     }
-    const framesets = this.props.sequence_movie['framesets']
-    const frameset_hashes = this.props.getFramesetHashesInOrder(framesets)
+    const sequence_movie = this.props.movies['sequence']
+    const framesets = sequence_movie['framesets']
+    const frameset_hashes = this.props.getFramesetHashesInOrder(sequence_movie)
     return (
       <div className='col mt-2'>
         <div className='row h3'>
@@ -1402,7 +1442,7 @@ class SequencePanel extends React.Component {
                 image_offset={index}
                 frameset_hash={frameset_hash}
                 key={index}
-                sequence_movie={this.props.sequence_movie}
+                sequence_movie={sequence_movie}
                 removeSequenceFrame={this.props.removeSequenceFrame}
                 compose_image={this.props.compose_image}
                 setDraggedItem={this.props.setDraggedItem}
@@ -1416,7 +1456,6 @@ class SequencePanel extends React.Component {
               )
             })}
           </div>
-
         </div>
       </div>
     )
@@ -1491,6 +1530,20 @@ class SubsequencePanel extends React.Component {
     )
   }
 
+  buildAddToMainSequenceLink(subsequence) {
+    if (!Object.keys(subsequence).includes('rendered_image')) {
+      return ''
+    }
+    return (
+      <button
+        className='border-0 text-primary'
+        onClick={() => this.props.addSubsequenceToMainSequence()}
+      >
+        add to captured images
+      </button>
+    )
+  }
+
   buildPreviewWindow(subsequence) {
     if (!Object.keys(subsequence).includes('rendered_image')) {
       return ''
@@ -1529,7 +1582,7 @@ class SubsequencePanel extends React.Component {
     )
   }
 
-  buildDragDropTarget(subsequence) {
+  buildSubsequenceDragDropTarget(subsequence) {
     if (Object.keys(subsequence).includes('rendered_image')) {
       return ''
     }
@@ -1554,7 +1607,8 @@ class SubsequencePanel extends React.Component {
     const reset_link = this.buildResetLink(subsequence)
     const preview_window = this.buildPreviewWindow(subsequence)
     const image_name_list = this.buildImageNameList(subsequence)
-    const drag_drop_target = this.buildDragDropTarget(subsequence)
+    const drag_drop_target = this.buildSubsequenceDragDropTarget(subsequence)
+    const add_to_main_link = this.buildAddToMainSequenceLink(subsequence)
 
     return (
       <div 
@@ -1582,6 +1636,7 @@ class SubsequencePanel extends React.Component {
             <div className='row'>
               {generate_link}
               {reset_link}
+              {add_to_main_link}
             </div>
           </div>
           <div className='col-6'>
@@ -1599,7 +1654,7 @@ class SubsequencePanel extends React.Component {
     if (!this.props.displayAnimateControls) {
       return ''
     }
-    if (!this.props.sequence_movie) {
+    if (!Object.keys(this.props.movies).includes('sequence')) {
       return ''
     }
     const subsequence_panel = this.createSubsequencePanel()
@@ -1639,10 +1694,13 @@ class SequenceCard extends React.Component {
   }
 
   buildUpLink() {
+    if (this.props.movie_url !== 'sequence') {
+      return ''
+    }
     return (
       <button
         className='border-0 text-primary'
-        onClick={() => this.props.moveSequenceFrameUp(this.props.frame_url)}
+        onClick={() => this.props.moveSequenceFrameUp(this.props.frameset_hash)}
       >
         up
       </button>
@@ -1650,10 +1708,13 @@ class SequenceCard extends React.Component {
   }
 
   buildDownLink() {
+    if (this.props.movie_url !== 'sequence') {
+      return ''
+    }
     return (
       <button
         className='border-0 text-primary'
-        onClick={() => this.props.moveSequenceFrameDown(this.props.frame_url)}
+        onClick={() => this.props.moveSequenceFrameDown(this.props.frameset_hash)}
       >
         down
       </button>

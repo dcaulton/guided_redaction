@@ -838,11 +838,10 @@ class InsightsPanel extends React.Component {
     this.props.setGlobalStateVar('message', the_message)
   }
 
-  movieSplitDone(new_framesets) {
-    const len = Object.keys(new_framesets).length
+  movieSplitDone(new_movie) {
+    const len = Object.keys(new_movie['framesets']).length
     document.getElementById('movie_scrubber').max = len-1
-    const first_key = this.props.getFramesetHashesInOrder(new_framesets)[0]
-    const first_image = new_framesets[first_key]['images'][0]
+    const first_image = new_movie['frames'][0]
     this.props.setGlobalStateVar('message', '.')
     this.setState({
       insights_image: first_image,

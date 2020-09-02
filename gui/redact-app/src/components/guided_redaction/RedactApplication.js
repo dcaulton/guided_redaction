@@ -593,9 +593,14 @@ class RedactApplication extends React.Component {
     let deepCopyMovies= JSON.parse(JSON.stringify(this.state.movies))
     let movie_url = 'whatever'
     if (Object.keys(data_in).includes('movie_url')) {
-      movie_url = data_in['movie_url']
+      movie_url = data_in.movie_url
     }
-    let deepCopyMovie = JSON.parse(JSON.stringify(deepCopyMovies[movie_url]))
+    let deepCopyMovie = ''
+    if (Object.keys(data_in).includes('movie')) {
+      deepCopyMovie = data_in.movie
+    } else {
+      deepCopyMovie = JSON.parse(JSON.stringify(deepCopyMovies[movie_url]))
+    }
     let new_hash = (Object.keys(deepCopyMovie['framesets']).length + 1).toString()
     if (deepCopyMovie['frames'].includes(image_url)) {
       const the_mess = 'error, trying to add image to move that already has it'
@@ -609,6 +614,9 @@ class RedactApplication extends React.Component {
     deepCopyMovie['framesets'][new_hash] = {
       images: [image_url]
     }
+    if (Object.keys(deepCopyMovie).includes('frameset_hashes_in_order')) {
+      delete deepCopyMovie['frameset_hashes_in_order']
+    }
     deepCopyMovies[movie_url] = deepCopyMovie
     this.setGlobalStateVar('movies', deepCopyMovies)
     if (Object.keys(data_in).includes('update_frameset_hash') && !data_in['update_frameset_hash']) {
@@ -619,7 +627,7 @@ class RedactApplication extends React.Component {
     }
   }
 
-  establishNewEmptyMovie(new_movie_url='whatever', make_active=true) {
+  establishNewEmptyMovie(new_movie_url='whatever', make_active=true, when_done=(()=>{})) {
     this.setGlobalStateVar('movies', {})
     let new_movie = {
       frames: [],
@@ -627,13 +635,21 @@ class RedactApplication extends React.Component {
     }
     let deepCopyMovies= JSON.parse(JSON.stringify(this.state.movies))
     deepCopyMovies[new_movie_url] = new_movie
-    this.setState({
-      movies: deepCopyMovies,
-    })
     if (make_active) {
-      this.setState({
-        movie_url: new_movie_url,
-      })
+      this.setState(
+        {
+          movie_url: new_movie_url,
+          movies: deepCopyMovies,
+        },
+        when_done()
+      )
+    } else {
+      this.setState(
+        {
+          movies: deepCopyMovies,
+        },
+        when_done(new_movie)
+      )
     }
     this.addToCampaignMovies(new_movie_url)
   }
@@ -996,30 +1012,21 @@ class RedactApplication extends React.Component {
     this.setGlobalStateVar('whenDoneTarget', destination)
   }
 
-  getFramesetHashesInOrder(framesets=null) {
-    if (framesets === null) {
+  getFramesetHashesInOrder(movie=null) {
+    if (!movie) {
       if (
-        this.state.movies 
-        && this.state.movie_url 
+        this.state.movies
+        && this.state.movie_url
         && Object.keys(this.state.movies).includes(this.state.movie_url)
       ) {
-        if (Object.keys(this.state.movies[this.state.movie_url]).includes('frameset_hashes_in_order')) {
-          return this.state.movies[this.state.movie_url]['frameset_hashes_in_order']
-        }
-      }
-      framesets = this.getCurrentFramesets()
-    }
-    let frames = []
-    for (let i=0; i < Object.keys(framesets).length; i++) {
-      let frameset = framesets[Object.keys(framesets)[i]]
-      for (let j=0; j < frameset['images'].length; j++) {
-        frames.push(frameset['images'][j])
+        movie = this.state.movies[this.state.movie_url]
+      } else{
+        return []
       }
     }
-    frames.sort()
     let return_arr = []
-    for (let i=0; i < frames.length; i++) {
-      const frameset_hash = this.getFramesetHashForImageUrl(frames[i], framesets)
+    for (let i=0; i < movie.frames.length; i++) {
+      const frameset_hash = this.getFramesetHashForImageUrl(movie.frames[i], movie.framesets)
       if (!return_arr.includes(frameset_hash)) {
         return_arr.push(frameset_hash)
       }
@@ -1236,7 +1243,7 @@ class RedactApplication extends React.Component {
       movies[movie_url]['frames'].length > 0
     ) {
       deepCopyMovies = JSON.parse(JSON.stringify(movies))
-      const hashes = this.getFramesetHashesInOrder(movies[movie_url]['framesets'])
+      const hashes = this.getFramesetHashesInOrder(movies[movie_url])
       frameset_hash = hashes[0]
       deepCopyMovies[movie_url]['frameset_hashes_in_order'] = hashes
     } 
@@ -1246,7 +1253,7 @@ class RedactApplication extends React.Component {
     },
       (() => {
         this.setFramesetHash(frameset_hash)
-        theCallback(movies[movie_url]['framesets'])
+        theCallback(movies[movie_url])
       })
     )
   }
