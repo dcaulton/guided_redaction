@@ -154,9 +154,10 @@ class ComposePanel extends React.Component {
       update_frameset_hash: false,
     })
 
-    this.deleteSubsequence(
-      subsequence_id,
-      (()=>{this.createSubsequence()})
+    this.deleteSubsequence(subsequence_id)
+    setTimeout(
+      (()=>{this.createSubsequence()}),
+      1000
     )
   }
 
@@ -754,7 +755,7 @@ class ComposePanel extends React.Component {
     }
     let deepCopyMovies = JSON.parse(JSON.stringify(this.props.movies))
     let sequence = deepCopyMovies['sequence']
-    const hashes_in_order = this.props.getFramesetHashesInOrder()
+    const hashes_in_order = this.props.getFramesetHashesInOrder(sequence)
     if (!hashes_in_order.includes(frameset_hash)) {
       return
     }
@@ -763,37 +764,56 @@ class ComposePanel extends React.Component {
       return
     }
     let above_index = cur_index - 1
-    let above_hash = hashes_in_order[above_index]
-    
-    let cur_frameset = JSON.parse(JSON.stringify(sequence['framesets'][frameset_hash]))
-    let above_frameset = JSON.parse(JSON.stringify(sequence['framesets'][above_hash]))
-    sequence['framesets'][frameset_hash] = above_frameset
-    sequence['framesets'][above_hash] = cur_frameset
     let cur_img = JSON.parse(JSON.stringify(sequence['frames'][cur_index]))
     let above_img = JSON.parse(JSON.stringify(sequence['frames'][above_index]))
     sequence['frames'][cur_index] = above_img
     sequence['frames'][above_index] = cur_img
-    if (Object.keys(sequence).includes('frameset_hashes_in_order')) {
-      delete sequence['frameset_hashes_in_order']
-    }
+    const new_hashes_in_order = this.props.getFramesetHashesInOrder(sequence)
+    sequence['frameset_hashes_in_order'] = new_hashes_in_order
     deepCopyMovies['sequence'] = sequence
-    this.props.setGlobalStateVar('movies', deepCopyMovies)
-    this.scrubberOnChange()
+    this.props.setGlobalStateVar(
+      'movies', 
+      deepCopyMovies,
+      (()=>{
+        this.setScrubberValue(cur_index)
+        this.scrubberOnChange()
+      })
+    )
   }
 
-  moveSequenceFrameDown(image_url) {
+  moveSequenceFrameDown(frameset_hash) {
+    if (this.props.movie_url !== 'sequence') {
+      return 
+    }
+    if (!Object.keys(this.props.movies).includes('sequence')) {
+      return 
+    }
     let deepCopyMovies = JSON.parse(JSON.stringify(this.props.movies))
-    let movie = JSON.parse(JSON.stringify(deepCopyMovies['sequence']))
-    if (movie['frames'].indexOf(image_url) === movie['frames'].length - 1) {
+    let sequence = deepCopyMovies['sequence']
+    const hashes_in_order = this.props.getFramesetHashesInOrder(sequence)
+    if (!hashes_in_order.includes(frameset_hash)) {
       return
     }
-    let cur_index = movie['frames'].indexOf(image_url)
-    let cur_frame = movie['frames'][cur_index]
-    movie['frames'][cur_index] = movie['frames'][cur_index+1]
-    movie['frames'][cur_index+1] = cur_frame
-    deepCopyMovies['sequence'] = movie
-    this.props.setGlobalStateVar('movies', deepCopyMovies)
-    this.scrubberOnChange()
+    let cur_index = hashes_in_order.indexOf(frameset_hash)
+    if (cur_index >= sequence.frames.length - 1) {
+      return
+    }
+    let below_index = cur_index + 1
+    let cur_img = JSON.parse(JSON.stringify(sequence['frames'][cur_index]))
+    let below_img = JSON.parse(JSON.stringify(sequence['frames'][below_index]))
+    sequence['frames'][cur_index] = below_img
+    sequence['frames'][below_index] = cur_img
+    const new_hashes_in_order = this.props.getFramesetHashesInOrder(sequence)
+    sequence['frameset_hashes_in_order'] = new_hashes_in_order
+    deepCopyMovies['sequence'] = sequence
+    this.props.setGlobalStateVar(
+      'movies', 
+      deepCopyMovies,
+      (()=>{
+        this.setScrubberValue(cur_index)
+        this.scrubberOnChange()
+      })
+    )
   }
 
   handleDroppedOntoSubsequence(subsequence_id) {
@@ -804,6 +824,10 @@ class ComposePanel extends React.Component {
     deepCopySubsequences[subsequence_id]['images'].push(this.state.dragged_id)
 
     const sequence = this.props.movies['sequence']
+    if (this.state.dragged_id.endsWith('.gif')) {
+      this.setMessage('ERROR - cannot use an animated image as the source of a new one')
+      return 
+    }
     const frameset_hash = this.props.getFramesetHashForImageUrl(
       this.state.dragged_id, 
       sequence['framesets']

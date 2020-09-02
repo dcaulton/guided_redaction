@@ -614,7 +614,7 @@ class RedactApplication extends React.Component {
     deepCopyMovie['framesets'][new_hash] = {
       images: [image_url]
     }
-    if (Object.keys(deepCopyMovie).includes('frameset_hashes_in_order')) {
+    if (Object.keys(deepCopyMovie).includes('nrameset_hashes_in_order')) {
       delete deepCopyMovie['frameset_hashes_in_order']
     }
     deepCopyMovies[movie_url] = deepCopyMovie
