@@ -1,4 +1,5 @@
 import React from 'react'
+import JobBug from './JobBug'
 
 class JobCardList extends React.Component {
   
@@ -46,7 +47,13 @@ class JobCardList extends React.Component {
     return (
       <div>
         <div className='row'>
-          <h3>Jobs</h3>
+          <div className='h3'>
+            Jobs
+          </div>
+          <JobBug
+            jobs={this.props.jobs}
+            attached_job={this.props.attached_job}
+          />
 					<button                                                       
 							className='btn btn-primary mt-2 ml-2'                     
 							onClick={() => this.props.getJobs()}                      

@@ -4,6 +4,7 @@ import {
 } from './redact_utils.js'
 import CanvasComposeOverlay from './CanvasComposeOverlay'
 import Workflows from './Workflows'
+import JobBug from './JobBug'
 import ComposeImageControls from './ComposeImageControls'
 import ComposeImageInfoControls from './ComposeImageInfoControls'
 import SimpleTemplateBuilderControls from './SimpleTemplateBuilderControls'
@@ -1375,7 +1376,15 @@ class ComposePanel extends React.Component {
               <div className='col'>
 
                 <div className='row ml-2 mt-2'>
-                  {compose_message}
+                  <div className='col-11'>
+                    {compose_message}
+                  </div>
+                  <div className='col-1'>
+                    <JobBug
+                      jobs={this.props.jobs}
+                      attached_job={this.props.attached_job}
+                    />
+                  </div>
                 </div>
 
                 <div className='row mt-2'>

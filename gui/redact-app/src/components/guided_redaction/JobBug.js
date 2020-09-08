@@ -33,7 +33,7 @@ class JobBug extends React.Component {
     }
 
     return (
-      <div className='mt-3'>
+      <div>
         <div className="progress mx-auto" data-value='80'>
           <span 
             className="progress-left"

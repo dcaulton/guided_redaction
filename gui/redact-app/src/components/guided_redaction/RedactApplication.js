@@ -1,7 +1,5 @@
-
 import React from 'react';
 import MoviePanel from './MoviePanel';
-import JobBug from './JobBug';
 import Pipelines from './Pipelines';
 import InsightsPanel from './InsightsPanel';
 import Workflows from './Workflows';
@@ -2689,7 +2687,7 @@ class RedactApplication extends React.Component {
     )
   }
 
-  buildSideNav(job_bug) {
+  buildSideNav() {
     const navbar_collapse_button = this.buildNavBarCollapseButton()
     let navbar_style = {
       'paddingBottom': '100%',
@@ -2747,7 +2745,6 @@ class RedactApplication extends React.Component {
             </li>
           </ul>
         </div>
-        {job_bug}
         {navbar_collapse_button}
       </div>
     )
@@ -2758,13 +2755,7 @@ class RedactApplication extends React.Component {
     if (document.getElementById('movie_panel_link') && this.state.showMovieParserLink) {
       document.getElementById('movie_panel_link').style.display = 'block'
     }
-    const job_bug = (
-      <JobBug
-        jobs={this.state.jobs}
-        attached_job={this.state.attached_job}
-      />
-    )
-    const side_nav = this.buildSideNav(job_bug)
+    const side_nav = this.buildSideNav()
     return (
       <div className='container-fluid'>
       <div className='row'>
@@ -2823,6 +2814,7 @@ class RedactApplication extends React.Component {
                 dispatchFetchSplitAndHash={this.dispatchFetchSplitAndHash}
                 toggleShowVisibility={this.toggleShowVisibility}
                 visibilityFlags={this.state.visibilityFlags}
+                attached_job={this.state.attached_job}
               />
             </Route>
             <Route path='/redact/insights'>
@@ -2950,6 +2942,7 @@ class RedactApplication extends React.Component {
                 runTemplateRedactPipelineJob={this.runTemplateRedactPipelineJob}
                 runOcrRedactPipelineJob={this.runOcrRedactPipelineJob}
                 buildWorkflowBottomNav={this.buildWorkflowBottomNav}
+                jobs={this.state.jobs}
               />
             </Route>
           </Switch>

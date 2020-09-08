@@ -8,6 +8,7 @@ import {
 } from './redact_utils.js'
 import MovieImageControls from './MovieImageControls.js'
 import FramesetCardList from './Framesets'
+import JobBug from './JobBug'
 import CanvasMovieOverlay from './CanvasMovieOverlay'
 import SimpleTemplateBuilderControls from './SimpleTemplateBuilderControls'
 
@@ -996,14 +997,22 @@ class MoviePanel extends React.Component {
     return  (
       <div className='col'>
 
-        <div className='row m-2'>
-          <MoviePanelHeader
-            callMovieSplit={this.callMovieSplit}
-            message={this.props.message}
-            submitMovieJob={this.submitMovieJob}
-            movie_url={this.props.movie_url}
-            showMovieUploadOptions={this.showMovieUploadOptions}
-          />
+        <div className='row'>
+          <div className='col-11 m-2'>
+            <MoviePanelHeader
+              callMovieSplit={this.callMovieSplit}
+              message={this.props.message}
+              submitMovieJob={this.submitMovieJob}
+              movie_url={this.props.movie_url}
+              showMovieUploadOptions={this.showMovieUploadOptions}
+            />
+          </div>
+          <div className='col-1'>
+            <JobBug
+              jobs={this.props.jobs}
+              attached_job={this.props.attached_job}
+            />
+          </div>
         </div>
 
         <div className='row m-2'>
