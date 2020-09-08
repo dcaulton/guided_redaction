@@ -2689,7 +2689,7 @@ class RedactApplication extends React.Component {
     )
   }
 
-  buildSideNav() {
+  buildSideNav(job_bug) {
     const navbar_collapse_button = this.buildNavBarCollapseButton()
     let navbar_style = {
       'paddingBottom': '100%',
@@ -2747,6 +2747,7 @@ class RedactApplication extends React.Component {
             </li>
           </ul>
         </div>
+        {job_bug}
         {navbar_collapse_button}
       </div>
     )
@@ -2757,7 +2758,13 @@ class RedactApplication extends React.Component {
     if (document.getElementById('movie_panel_link') && this.state.showMovieParserLink) {
       document.getElementById('movie_panel_link').style.display = 'block'
     }
-    const side_nav = this.buildSideNav()
+    const job_bug = (
+      <JobBug
+        jobs={this.state.jobs}
+        attached_job={this.state.attached_job}
+      />
+    )
+    const side_nav = this.buildSideNav(job_bug)
     return (
       <div className='container-fluid'>
       <div className='row'>
@@ -2766,16 +2773,10 @@ class RedactApplication extends React.Component {
 
         <div className='col'>
           <div className='row'>
-            <div className='col-11'>
+            <div className='col-12'>
               <div className='ml-5 mt-2'>
               {button_bar}
               </div>
-            </div>
-            <div className='col-1'>
-              <JobBug
-                jobs={this.state.jobs}
-                attached_job={this.state.attached_job}
-              />
             </div>
           </div>
           <div className='row'>

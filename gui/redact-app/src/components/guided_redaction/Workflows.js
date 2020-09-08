@@ -63,13 +63,12 @@ class Workflows extends React.Component {
     }
   }
 
-  static stepIsNotFirstStep(workflows) {
-    const cur_step_id = workflows.active_step
+  static stepIsFirstStep(workflows) {
     const cur_wf = workflows[workflows.active_workflow]
     if (cur_wf.steps[0].id === workflows.active_step) {
-      return false
+      return true
     }
-    return true
+    return false
   }
 
   static buildWorkflowBottomNav(workflows, workflow_callbacks, setGlobalStateVar) {
@@ -80,7 +79,7 @@ class Workflows extends React.Component {
     const step_name = cur_step.display_name
 
     let back_button = ''
-    if (this.stepIsNotFirstStep(workflows)) {
+    if (!this.stepIsFirstStep(workflows)) {
       back_button = (
         <div className='ml-2 d-inline'>
           <button
@@ -451,13 +450,20 @@ class Workflows extends React.Component {
       reachable_steps = cur_step.reachable_steps
     }
 
+    const top_div_style = {
+    }
     return (
       <div>
-        <div className='row mt-2'>
+        <div 
+          className='row mt-2 btn-group btn-block'
+          style={top_div_style}
+        >
         {wf_steps.map((step, index) => {
           let button_style = {
             'borderRadius': '0 0 0 0',
             'borderRight': '1px solid white',
+            'xpaddingLeft': '2em',
+            'xpaddingRight': '2em',
           }
           if (index === 0) {
             button_style['borderRadius'] = '75px 10px 10px 75px'

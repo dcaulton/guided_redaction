@@ -217,15 +217,15 @@ class InsightsPanel extends React.Component {
     }
   }
 
-  afterMovieSplitInsightsJobLoaded(framesets) {
+  afterMovieSplitInsightsJobLoaded(movie) {
     this.displayInsightsMessage('insights job loaded')
-    this.movieSplitDone(framesets)
+    this.movieSplitDone(movie)
   }
 
   componentDidMount() {
     this.scrubberOnChange()
     if (Object.keys(this.props.getCurrentFramesets()).length > 0) {
-      this.movieSplitDone(this.props.getCurrentFramesets())
+      this.movieSplitDone(this.props.movies[this.props.movie_url])
     }
     this.props.getJobs()
     this.props.getWorkbooks()
