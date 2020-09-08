@@ -505,21 +505,12 @@ class MovieCard extends React.Component {
   }
 
   buildVideoSourceObject() {
-    if (this.props.this_cards_movie_url.includes('.mp4')) {
-      return (
-        <div>
-          <video 
-              id='video_{this.props.key}' 
-              controls 
-          >
-            <source
-              src={this.props.this_cards_movie_url}
-              type='video/mp4'
-            />
-          </video>
-        </div>
-      )
-    } else {
+    if (
+      this.props.movies &&
+      Object.keys(this.props.movies).includes(this.props.this_cards_movie_url) &&
+      Object.keys(this.props.movies[this.props.this_cards_movie_url]).includes('frames') &&
+      this.props.movies[this.props.this_cards_movie_url]['frames'].length > 0
+    ) {
       const this_movie = this.props.movies[this.props.this_cards_movie_url]
       const first_frame = this_movie['frames'][0]
       const the_style = {
@@ -532,6 +523,20 @@ class MovieCard extends React.Component {
             alt={first_frame}
             style={the_style}
           />
+        </div>
+      )
+    } else {
+      return (
+        <div>
+          <video 
+              id='video_{this.props.key}' 
+              controls 
+          >
+            <source
+              src={this.props.this_cards_movie_url}
+              type='video/mp4'
+            />
+          </video>
         </div>
       )
     }

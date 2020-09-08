@@ -37,7 +37,6 @@ class ComposePanel extends React.Component {
     this.handleDroppedOntoSequence=this.handleDroppedOntoSequence.bind(this)
     this.moveSequenceFrameUp=this.moveSequenceFrameUp.bind(this)
     this.moveSequenceFrameDown=this.moveSequenceFrameDown.bind(this)
-    this.deleteSubsequence=this.deleteSubsequence.bind(this)
     this.generateSubsequence=this.generateSubsequence.bind(this)
     this.templatesExist=this.templatesExist.bind(this)
     this.sequenceImagesExist=this.sequenceImagesExist.bind(this)
@@ -154,11 +153,7 @@ class ComposePanel extends React.Component {
       update_frameset_hash: false,
     })
 
-    this.deleteSubsequence(subsequence_id)
-    setTimeout(
-      (()=>{this.createSubsequence()}),
-      1000
-    )
+    this.createSubsequence()
   }
 
   createSubsequence() {
@@ -738,12 +733,6 @@ class ComposePanel extends React.Component {
       dragged_type: the_type,
       dragged_id: the_id,
     })
-  }
-
-  deleteSubsequence(subsequence_id, when_done=(()=>{})) {
-    let deepCopySubsequences = JSON.parse(JSON.stringify(this.props.subsequences))
-    delete deepCopySubsequences[subsequence_id]
-    this.props.setGlobalStateVar('subsequences', deepCopySubsequences)
   }
 
   moveSequenceFrameUp(frameset_hash) {
@@ -1401,7 +1390,6 @@ class ComposePanel extends React.Component {
                     setDraggedItem={this.setDraggedItem}
                     handleDroppedOntoSubsequence={this.handleDroppedOntoSubsequence}
                     handleDroppedOntoSequence={this.handleDroppedOntoSequence}
-                    deleteSubsequence={this.deleteSubsequence}
                     generateSubsequence={this.generateSubsequence}
                     movies={this.props.movies}
                     movie_url={this.props.movie_url}
@@ -1425,7 +1413,6 @@ class ComposePanel extends React.Component {
                 handleDroppedOntoSequence={this.handleDroppedOntoSequence}
                 moveSequenceFrameUp={this.moveSequenceFrameUp}
                 moveSequenceFrameDown={this.moveSequenceFrameDown}
-                deleteSubsequence={this.deleteSubsequence}
                 movies={this.props.movies}
                 movie_url={this.props.movie_url}
                 getFramesetHashesInOrder={this.props.getFramesetHashesInOrder}
@@ -1526,9 +1513,12 @@ class SubsequencePanel extends React.Component {
     if (Object.keys(subsequence).includes('rendered_image')) {
       return ''
     }
+    if (Object.keys(subsequence.framesets).length === 0) {
+      return ''
+    }
     return (
       <button
-        className='border-0 text-primary'
+        className='border-0 btn btn-primary ml-2'
         onClick={() => this.props.generateSubsequence(subsequence['id'])}
       >
         generate
@@ -1536,18 +1526,14 @@ class SubsequencePanel extends React.Component {
     )
   }
 
-  resetSubsequence(old_subsequence_id) {
-    this.props.deleteSubsequence(
-      old_subsequence_id,
-      (()=>{this.props.createSubsequence()})
-    )
-  }
-
   buildResetLink(subsequence) {
+    if (Object.keys(subsequence.framesets).length === 0) {
+      return ''
+    }
     return (
       <button
-        className='border-0 text-primary'
-        onClick={() => this.resetSubsequence(subsequence['id'])}
+        className='border-0 btn btn-primary ml-2'
+        onClick={() => this.props.createSubsequence()}
       >
         reset
       </button>
@@ -1560,7 +1546,7 @@ class SubsequencePanel extends React.Component {
     }
     return (
       <button
-        className='border-0 text-primary'
+        className='border-0 btn btn-primary ml-2'
         onClick={() => this.props.addSubsequenceToMainSequence()}
       >
         add to captured images
@@ -1592,16 +1578,24 @@ class SubsequencePanel extends React.Component {
     if (Object.keys(subsequence).includes('rendered_image')) {
       return ''
     }
+    if (Object.keys(subsequence.framesets).length === 0) {
+      return ''
+    }
     return (
       <div className='col'>
-        {subsequence['images'].map((image_url, index) => {
-          const short_name = image_url.split('/').slice(-1)[0]
-          return (
-            <div key={index} className='row'>
-              {short_name}
-            </div>
-          )
-        })}
+        <div className='h4'>
+          Frames in this image
+        </div>
+        <ol>
+          {subsequence['images'].map((image_url, index) => {
+            const short_name = image_url.split('/').slice(-1)[0]
+            return (
+              <li key={index}>
+                {short_name}
+              </li>
+            )
+          })}
+        </ol>
       </div>
     )
   }
@@ -1651,13 +1645,13 @@ class SubsequencePanel extends React.Component {
             <div className='row'>
               {interval_field}
             </div>
-            <div className='row'>
+            <div className='row m-2'>
               {preview_window}
             </div>
-            <div className='row'>
+            <div className='row m-2'>
               {image_name_list}
             </div>
-            <div className='row'>
+            <div className='row mt-2 mb-2'>
               {generate_link}
               {reset_link}
               {add_to_main_link}
