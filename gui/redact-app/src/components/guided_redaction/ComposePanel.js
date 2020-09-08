@@ -528,7 +528,7 @@ class ComposePanel extends React.Component {
       displayImageControls: false,
       displayIllustrateControls: false,
       displayAnimateControls: true,
-      displayPrecisionLearning: false,
+      displayPrecisionLearning: true,
     })
   }
 
@@ -1040,22 +1040,6 @@ class ComposePanel extends React.Component {
     )
   }
 
-  buildWhenDoneLink() {
-    if (!this.state.displayPrecisionLearning) {
-      return ''
-    }
-    if (this.props.whenDoneTarget) {
-      return (
-        <button
-            className='btn btn-link'
-            onClick={() => this.props.gotoWhenDoneTarget()}
-        >
-          Go to Precision Learning
-        </button>
-      )
-    }
-  }
-
   setMovie(movie_url) {
     if (movie_url === this.props.movie_url) {
       return
@@ -1326,7 +1310,6 @@ class ComposePanel extends React.Component {
     const capture_button = this.buildCaptureButton()
     const fetch_and_split_input = this.buildFetchAndSplit()
     const image_info_controls = this.buildImageInfoControls()
-    const when_done_link = this.buildWhenDoneLink()
     const max_range = this.getMaxRange()
     const view_dropdown = this.buildMovieNameDisplay()
     const compose_message = this.buildComposeMessageDiv()
@@ -1343,10 +1326,6 @@ class ComposePanel extends React.Component {
 
             <div className='row' >
               {breadcrumbs_area}
-            </div>
-
-            <div className='row m-2' >
-                {when_done_link}
             </div>
 
             <div className='row bg-light'>
@@ -1428,6 +1407,8 @@ class ComposePanel extends React.Component {
                       displayIllustrateControls={this.state.displayIllustrateControls}
                       runTemplateRedactPipelineJob={this.props.runTemplateRedactPipelineJob}
                       clearCurrentIllustrations={this.props.clearCurrentIllustrations}
+                      startPrecisionLearning={this.startPrecisionLearning}
+                      displayPrecisionLearning={this.state.displayPrecisionLearning}
                     />
                   </div>
                 </div>

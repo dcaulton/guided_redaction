@@ -71,6 +71,14 @@ class Workflows extends React.Component {
     return false
   }
 
+  static stepIsNotLastStep(workflows) {
+    const cur_wf = workflows[workflows.active_workflow]
+    if (cur_wf.steps[cur_wf.steps.length-1].id === workflows.active_step) {
+      return false
+    }
+    return true
+  }
+
   static buildWorkflowBottomNav(workflows, workflow_callbacks, setGlobalStateVar) {
     if (!workflows || !workflows.active_workflow || !workflows.active_step) {
       return ''
@@ -96,7 +104,10 @@ class Workflows extends React.Component {
 
     let next_button = ''
     let skip_button = ''
-    if (this.workOnCurStepHasBeenPerformed(cur_step, workflow_callbacks)) {
+    if (
+      this.workOnCurStepHasBeenPerformed(cur_step, workflow_callbacks)
+      && this.stepIsNotLastStep(workflows)
+    ) {
       next_button = (
         <div className='ml-2 d-inline'>
           <button
@@ -109,7 +120,9 @@ class Workflows extends React.Component {
           </button>
         </div>
       )
-    } else {
+    } else if (
+      this.stepIsNotLastStep(workflows)
+    ) {
       skip_button = (
         <div className='ml-2 d-inline'>
           <button
@@ -234,17 +247,6 @@ class Workflows extends React.Component {
           'onComplete': '',
           'testPreconditions': 'sequenceImagesExist',
           'workHasBeenPerformed': 'animatedSequenceImagesExist',
-        },
-        {
-          'id': 8,
-          'required': true,
-          'display_name': 'Go to Precision Learning', 
-          'reachable_steps': [],
-          'onStart': '',
-          'onRollback': '',
-          'onComplete': '', 
-          'testPreconditions': 'startPrecisionLearning', 
-          'workHasBeenPerformed': '',
         },
       ],
     }
@@ -455,15 +457,13 @@ class Workflows extends React.Component {
     return (
       <div>
         <div 
-          className='row mt-2 btn-group btn-block'
+          className='row mt-2 mb-5 btn-group btn-block'
           style={top_div_style}
         >
         {wf_steps.map((step, index) => {
           let button_style = {
             'borderRadius': '0 0 0 0',
             'borderRight': '1px solid white',
-            'xpaddingLeft': '2em',
-            'xpaddingRight': '2em',
           }
           if (index === 0) {
             button_style['borderRadius'] = '75px 10px 10px 75px'

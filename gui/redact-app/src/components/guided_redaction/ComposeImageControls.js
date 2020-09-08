@@ -119,9 +119,9 @@ class ComposeImageControls extends React.Component {
 
   buildIllustrateButton() {
     return (
-      <div id='illustrate_div' className='d-inline'>
+      <div id='illustrate_div' className='d-inline ml-2'>
         <button 
-            className='btn btn-light dropdown-toggle ml-2' 
+            className='btn btn-light dropdown-toggle' 
             style={this.button_style}
             type='button' 
             id='illustrateDropdownButton'
@@ -161,11 +161,30 @@ class ComposeImageControls extends React.Component {
     )
   }
 
+  buildGotoPrecisionLearningButton() {
+    if (!this.props.displayPrecisionLearning) {
+      return ''
+    }
+    return (
+      <div className='d-inline ml-2'>
+        <button 
+          className='btn btn-light'
+          style={this.button_style}
+          onClick={()=>{this.props.startPrecisionLearning()}}
+        >
+          Go to Precision Learning
+        </button>
+      </div>
+    )
+  }
+
   render() {
+
     let add_button = ''
     let reset_button = ''
     let template_button = ''
     let illustrate_button = ''
+    let goto_precision_learning_button = this.buildGotoPrecisionLearningButton()
     if (this.props.displayImageControls) {
       add_button = this.buildAddButton()
       reset_button = this.buildResetButton()
@@ -193,6 +212,7 @@ class ComposeImageControls extends React.Component {
           {template_button}
           {reset_button}
           {illustrate_button}
+          {goto_precision_learning_button}
         </div>
     </div>
     );
