@@ -12,6 +12,9 @@ import SimpleTemplateBuilderControls from './SimpleTemplateBuilderControls'
 class ComposePanel extends React.Component {
   constructor(props) {
     super(props);
+    this.button_style = {
+      borderColor: 'black',
+    }
     this.state = {
       compose_image: '',
       compose_display_image: '',
@@ -749,7 +752,7 @@ class ComposePanel extends React.Component {
         job_data:job_data,
         after_submit: () => {this.setMessage('redact job was submitted')},
         delete_job_after_loading: true,
-        after_loaded: () => {this.setMessage('redact completed')},
+        after_loaded: () => {this.setMessage("redact completed.")},
         when_failed: () => {this.setMessage('redact failed')},
       })
     } else if (job_string === 'illustrate_box') {
@@ -1032,7 +1035,8 @@ class ComposePanel extends React.Component {
     }
     return (
       <button
-          className='btn btn-primary'
+          className='btn btn-light'
+          style={this.button_style}
           onClick={() => this.captureFrame()}
       >
         Capture
@@ -1355,7 +1359,7 @@ class ComposePanel extends React.Component {
               <div className='col'>
 
                 <div className='row ml-2 mt-2'>
-                  <div className='col-11'>
+                  <div className='col-11 h5'>
                     {compose_message}
                   </div>
                   <div className='col-1'>
