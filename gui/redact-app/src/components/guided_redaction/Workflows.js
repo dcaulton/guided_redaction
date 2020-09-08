@@ -64,7 +64,12 @@ class Workflows extends React.Component {
   }
 
   static stepIsNotFirstStep(workflows) {
-  return true
+    const cur_step_id = workflows.active_step
+    const cur_wf = workflows[workflows.active_workflow]
+    if (cur_wf.steps[0].id === workflows.active_step) {
+      return false
+    }
+    return true
   }
 
   static buildWorkflowBottomNav(workflows, workflow_callbacks, setGlobalStateVar) {
@@ -91,6 +96,7 @@ class Workflows extends React.Component {
     }
 
     let next_button = ''
+    let skip_button = ''
     if (this.workOnCurStepHasBeenPerformed(cur_step, workflow_callbacks)) {
       next_button = (
         <div className='ml-2 d-inline'>
@@ -104,20 +110,21 @@ class Workflows extends React.Component {
           </button>
         </div>
       )
+    } else {
+      skip_button = (
+        <div className='ml-2 d-inline'>
+          <button
+            className='btn btn-primary'
+            onClick={()=>{
+              this.gotoNextStep(workflows, workflow_callbacks, setGlobalStateVar)
+            }}
+          >
+            Skip
+          </button>
+        </div>
+      )
     }
 
-    let skip_button = (
-      <div className='ml-2 d-inline'>
-        <button
-          className='btn btn-primary'
-          onClick={()=>{
-            this.gotoNextStep(workflows, workflow_callbacks, setGlobalStateVar)
-          }}
-        >
-          Skip
-        </button>
-      </div>
-    )
 
     return (
       <div className='col'>
@@ -161,7 +168,7 @@ class Workflows extends React.Component {
           'onRollback': '', // a key in workflow_callbacks
           'onComplete': '', // a key in workflow_callbacks, when completed
           'testPreconditions': '', // do we have what we need to start this step?
-          'workHasBeenPerformed': '', // true lets us show the next button
+          'workHasBeenPerformed': 'movieHasBeenLoaded', // true lets us show the next button
         },
         {
           'id': 2,
