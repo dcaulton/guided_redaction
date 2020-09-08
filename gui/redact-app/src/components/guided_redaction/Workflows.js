@@ -6,6 +6,140 @@ class Workflows extends React.Component {
     this.gotoWorkflowStep=this.gotoWorkflowStep.bind(this)
   }
 
+  static gotoPrevStep(workflows, workflow_callbacks, setGlobalStateVar) {
+    const cur_step_id = workflows.active_step
+    const cur_wf = workflows[workflows.active_workflow]
+    let cur_index = -1
+    for (let i=0; i < cur_wf.steps.length; i++) {
+      const step = cur_wf.steps[i]
+      if (step.id === cur_step_id) {
+        cur_index = i
+      }
+    }
+    if (cur_index === 0) { //first step, bail
+      return
+    }
+    const prev_step = cur_wf.steps[cur_index - 1]
+    this.gotoWorkflowStep(prev_step.id, workflows, workflow_callbacks, setGlobalStateVar)
+  }
+
+  static gotoNextStep(workflows, workflow_callbacks, setGlobalStateVar) {
+    const cur_step_id = workflows.active_step
+    const cur_wf = workflows[workflows.active_workflow]
+    let cur_index = -1
+    for (let i=0; i < cur_wf.steps.length; i++) {
+      const step = cur_wf.steps[i]
+      if (step.id === cur_step_id) {
+        cur_index = i
+      }
+    }
+    if (cur_index === (cur_wf.steps.length - 1)) { //last step, nothing to skip to
+      return
+    }
+    const next_step = cur_wf.steps[cur_index + 1]
+    this.gotoWorkflowStep(next_step.id, workflows, workflow_callbacks, setGlobalStateVar)
+  }
+
+  static workOnCurStepHasBeenPerformed(cur_step, workflow_callbacks, setGlobalStateVar) {
+    if (Object.keys(workflow_callbacks).includes(cur_step['workHasBeenPerformed'])) {
+      const answer = workflow_callbacks[cur_step['workHasBeenPerformed']]()
+      if (answer === true) {
+        return true
+      } 
+      return false
+    }
+    return true
+  }
+
+  
+  static getCurStep(workflows) {
+    const cur_step_id = workflows.active_step
+    const cur_wf = workflows[workflows.active_workflow]
+    for (let i=0; i < cur_wf.steps.length; i++) {
+      const step = cur_wf.steps[i]
+      if (step.id === cur_step_id) {
+        return step
+      }
+    }
+  }
+
+  static stepIsNotFirstStep(workflows) {
+  return true
+  }
+
+  static buildWorkflowBottomNav(workflows, workflow_callbacks, setGlobalStateVar) {
+    if (!workflows || !workflows.active_workflow || !workflows.active_step) {
+      return ''
+    }
+    const cur_step = this.getCurStep(workflows)
+    const step_name = cur_step.display_name
+
+    let back_button = ''
+    if (this.stepIsNotFirstStep(workflows)) {
+      back_button = (
+        <div className='ml-2 d-inline'>
+          <button
+            className='btn btn-primary'
+            onClick={()=>{
+              this.gotoPrevStep(workflows, workflow_callbacks, setGlobalStateVar)
+            }}
+          >
+            Back
+          </button>
+        </div>
+      )
+    }
+
+    let next_button = ''
+    if (this.workOnCurStepHasBeenPerformed(cur_step, workflow_callbacks)) {
+      next_button = (
+        <div className='ml-2 d-inline'>
+          <button
+            className='btn btn-primary'
+            onClick={()=>{
+              this.gotoNextStep(workflows, workflow_callbacks, setGlobalStateVar)
+            }}
+          >
+            Next
+          </button>
+        </div>
+      )
+    }
+
+    let skip_button = (
+      <div className='ml-2 d-inline'>
+        <button
+          className='btn btn-primary'
+          onClick={()=>{
+            this.gotoNextStep(workflows, workflow_callbacks, setGlobalStateVar)
+          }}
+        >
+          Skip
+        </button>
+      </div>
+    )
+
+    return (
+      <div className='col'>
+        <div className='d-inline'>
+          current step:
+        </div>
+        <div className='d-inline font-weight-bold ml-2'>
+          {step_name}
+        </div>
+        <div className='d-inline'>
+          {back_button}
+        </div>
+        <div className='d-inline'>
+          {skip_button}
+        </div>
+        <div className='d-inline'>
+          {next_button}
+        </div>
+      </div>
+    )                                                                           
+  }
+
   static get precision_learning_workflow() {
     return {
       'statuses': {
@@ -27,6 +161,7 @@ class Workflows extends React.Component {
           'onRollback': '', // a key in workflow_callbacks
           'onComplete': '', // a key in workflow_callbacks, when completed
           'testPreconditions': '', // do we have what we need to start this step?
+          'workHasBeenPerformed': '', // true lets us show the next button
         },
         {
           'id': 2,
@@ -37,6 +172,7 @@ class Workflows extends React.Component {
           'onRollback': 'activateSourceMovie',
           'onComplete': 'activateSequenceMovie',
           'testPreconditions': 'movieHasBeenLoaded',
+          'workHasBeenPerformed': 'sequenceImagesExist',
         },
         {
           'id': 3,
@@ -47,6 +183,7 @@ class Workflows extends React.Component {
           'onRollback': '',
           'onComplete': '',
           'testPreconditions': 'sequenceImagesExist',
+          'workHasBeenPerformed': '',
         },
         {
           'id': 4,
@@ -57,6 +194,7 @@ class Workflows extends React.Component {
           'onRollback': 'redactRollback',
           'onComplete': '',
           'testPreconditions': 'sequenceImagesExist',
+          'workHasBeenPerformed': '',
         },
         {
           'id': 5,
@@ -67,6 +205,7 @@ class Workflows extends React.Component {
           'onRollback': 'redactRollback',
           'onComplete': '',
           'testPreconditions': 'sequenceImagesExist',
+          'workHasBeenPerformed': 'redactedSequenceImagesExist',
         },
         {
           'id': 6,
@@ -76,7 +215,8 @@ class Workflows extends React.Component {
           'onStart': 'startIllustrate',
           'onRollback': 'illustrateRollback',
           'onComplete': '',
-          'testPreconditions': 'redactedSequenceImagesExist',
+          'testPreconditions': 'sequenceImagesExist',
+          'workHasBeenPerformed': 'illustratedSequenceImagesExist',
         },
         {
           'id': 7,
@@ -86,7 +226,8 @@ class Workflows extends React.Component {
           'onStart': 'startAnimate',
           'onRollback': '',
           'onComplete': '',
-          'testPreconditions': 'redactedSequenceImagesExist',
+          'testPreconditions': 'sequenceImagesExist',
+          'workHasBeenPerformed': 'animatedSequenceImagesExist',
         },
         {
           'id': 8,
@@ -97,6 +238,7 @@ class Workflows extends React.Component {
           'onRollback': '',
           'onComplete': '', 
           'testPreconditions': 'startPrecisionLearning', 
+          'workHasBeenPerformed': '',
         },
       ],
     }

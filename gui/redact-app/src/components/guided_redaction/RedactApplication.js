@@ -203,6 +203,7 @@ class RedactApplication extends React.Component {
     this.buildMoviesForSingleFrame=this.buildMoviesForSingleFrame.bind(this)
     this.buildMoviesForAllFrames=this.buildMoviesForAllFrames.bind(this)
     this.keyPress=this.keyPress.bind(this)
+    this.buildWorkflowBottomNav=this.buildWorkflowBottomNav.bind(this)
   }
 
   buildOcrRedactPipelineObject(ocr_rule, pipeline_name) {
@@ -561,20 +562,19 @@ class RedactApplication extends React.Component {
     img.src = the_url
   }
 
-  async getCurrentUser(when_done=(()=>{})) {
+  async getCurrentUser() {
     try {
-      let user_id = ''
+      let build_user_id = ''
       if (!this.state.bypass_whoami) {
         await this.props.whoAmI.getUser()
         .then((user_id) => {
-          when_done(user_id)
+          build_user_id = user_id
         })
       }
-      return user_id
+      return build_user_id
     }
     catch(err) {
       console.log('gr abend while running whoAmI')
-      when_done('')
     }
   }
 
@@ -2624,6 +2624,14 @@ class RedactApplication extends React.Component {
     )
   }
 
+  buildWorkflowBottomNav() {
+    return Workflows.buildWorkflowBottomNav(
+      this.state.workflows,
+      this.state.workflow_callbacks,
+      this.setGlobalStateVar
+    )
+  }
+
   getBottomLinkStyle() {
     if (document.getElementById('nav_upper_wrapper')) {
       const rect = document.getElementById('nav_upper_wrapper').getBoundingClientRect()
@@ -2940,6 +2948,7 @@ class RedactApplication extends React.Component {
                 buildMoviesForSingleFrame={this.buildMoviesForSingleFrame}
                 runTemplateRedactPipelineJob={this.runTemplateRedactPipelineJob}
                 runOcrRedactPipelineJob={this.runOcrRedactPipelineJob}
+                buildWorkflowBottomNav={this.buildWorkflowBottomNav}
               />
             </Route>
           </Switch>

@@ -41,6 +41,8 @@ class ComposePanel extends React.Component {
     this.templatesExist=this.templatesExist.bind(this)
     this.sequenceImagesExist=this.sequenceImagesExist.bind(this)
     this.redactedSequenceImagesExist=this.redactedSequenceImagesExist.bind(this)
+    this.illustratedSequenceImagesExist=this.illustratedSequenceImagesExist.bind(this)
+    this.animatedSequenceImagesExist=this.animatedSequenceImagesExist.bind(this)
     this.activateSequenceMovie=this.activateSequenceMovie.bind(this)
     this.activateSourceMovie=this.activateSourceMovie.bind(this)
     this.movieHasBeenLoaded=this.movieHasBeenLoaded.bind(this)
@@ -82,11 +84,26 @@ class ComposePanel extends React.Component {
     this.addSubsequenceToMainSequence=this.addSubsequenceToMainSequence.bind(this)
   }
 
+  buildWorkflowBottomNav() {
+    return (
+      <div className='col-4'>
+        <div className='d-inline'>
+          current step:
+        </div>
+        <div className='d-inline font-weight-bold ml-2'>
+        WF BOTTOM NAV
+        </div>
+      </div>
+    )
+  }
+
   componentDidMount() {
     this.props.addWorkflowCallbacks({
         'templatesExist': this.templatesExist,
         'sequenceImagesExist': this.sequenceImagesExist,
         'redactedSequenceImagesExist': this.redactedSequenceImagesExist,
+        'illustratedSequenceImagesExist': this.illustratedSequenceImagesExist,
+        'animatedSequenceImagesExist': this.animatedSequenceImagesExist,
         'activateSequenceMovie': this.activateSequenceMovie,
         'movieHasBeenLoaded': this.movieHasBeenLoaded,
         'sequenceFramesHaveBeenGrabbed': this.sequenceFramesHaveBeenGrabbed,
@@ -402,7 +419,7 @@ class ComposePanel extends React.Component {
     ) {
       return true
     }
-    return false
+    return 'cannot proceed, a movie needs to have been loaded'
   }
 
   activateSequenceMovie() {
@@ -544,7 +561,7 @@ class ComposePanel extends React.Component {
         return true
       }
     }
-    return 'problem with capture, at least one image needs to have been captured'
+    return 'cannot proceed, at least one image needs to have been captured'
   }
 
   templatesExist() { // return true for ok, error string for problem
@@ -566,6 +583,33 @@ class ComposePanel extends React.Component {
       }
     }
     return 'no frames have been redacted'
+  }
+
+  illustratedSequenceImagesExist() { // return true for ok, error string for problem
+    if (Object.keys(this.props.movies).includes('sequence')) {
+      const seq_movie = this.props.movies['sequence']
+      for (let i=0; i < Object.keys(seq_movie['framesets']).length; i++) {
+        const frameset_hash = Object.keys(seq_movie['framesets'])[i]
+        const frameset = seq_movie['framesets'][frameset_hash]
+        if (Object.keys(frameset).includes('illustrated_image')) {
+          return true
+        }
+      }
+    }
+    return 'no frames have been illustrated'
+  }
+
+  animatedSequenceImagesExist() { // return true for ok, error string for problem
+    if (Object.keys(this.props.movies).includes('sequence')) {
+      const seq_movie = this.props.movies['sequence']
+      for (let i=0; i < seq_movie.frames.length; i++) {
+        const image_name = seq_movie.frames[i]
+        if (image_name.endsWith('.gif')) {
+          return true
+        }
+      }
+    }
+    return 'no frames have been animated'
   }
 
   generateSubsequence(subsequence_id) {
@@ -1289,6 +1333,7 @@ class ComposePanel extends React.Component {
     const breadcrumbs_area = this.buildBreadcrumbsTitleArea()
     const template_controls = this.buildTemplateControls()
     const position_label = this.buildPositionLabel()
+    const workflow_bottom_nav = this.props.buildWorkflowBottomNav()
 
     return (
       <div id='compose_panel_container'>
@@ -1350,6 +1395,10 @@ class ComposePanel extends React.Component {
                   <div className='d-inline ml-2'>
                     {view_dropdown}
                   </div>
+                </div>
+
+                <div className='row border-bottom m-1 pb-1'>
+                  {workflow_bottom_nav}
                 </div>
 
                 <div className='row m-2'>
