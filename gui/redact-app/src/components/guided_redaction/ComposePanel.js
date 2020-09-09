@@ -28,7 +28,6 @@ class ComposePanel extends React.Component {
       displayFetchRecordingId: true,
       displayCaptureButton: true,
       displayBuildTemplateControls: false,
-      displayRunTemplateControls: false,
       displayImageControls: false, // I think this one can go away, let's see 
       displayIllustrateControls: false,
       displayAnimateControls: false,
@@ -86,6 +85,11 @@ class ComposePanel extends React.Component {
     this.redactRollback=this.redactRollback.bind(this)
     this.createSubsequence=this.createSubsequence.bind(this)
     this.addSubsequenceToMainSequence=this.addSubsequenceToMainSequence.bind(this)
+    this.showCreateTemplate=this.showCreateTemplate.bind(this)
+  }
+
+  showCreateTemplate() {
+    this.setState({displayBuildTemplateControls: true})
   }
 
   buildWorkflowBottomNav() {
@@ -437,7 +441,6 @@ class ComposePanel extends React.Component {
       displayFetchRecordingId: true,
       displayCaptureButton: false,
       displayBuildTemplateControls: false,
-      displayRunTemplateControls: false,
       displayImageControls: false,
       displayIllustrateControls: false,
       displayAnimateControls: false,
@@ -452,7 +455,6 @@ class ComposePanel extends React.Component {
       displayFetchRecordingId: false,
       displayCaptureButton: true,
       displayBuildTemplateControls: false,
-      displayRunTemplateControls: false,
       displayImageControls: false,
       displayIllustrateControls: false,
       displayAnimateControls: false,
@@ -467,7 +469,6 @@ class ComposePanel extends React.Component {
       displayFetchRecordingId: false,
       displayCaptureButton: false,
       displayBuildTemplateControls: false,
-      displayRunTemplateControls: false,
       displayImageControls: true,
       displayIllustrateControls: false,
       displayAnimateControls: false,
@@ -482,7 +483,6 @@ class ComposePanel extends React.Component {
       displayFetchRecordingId: false,
       displayCaptureButton: false,
       displayBuildTemplateControls: true,
-      displayRunTemplateControls: false,
       displayImageControls: false,
       displayIllustrateControls: false,
       displayAnimateControls: false,
@@ -497,7 +497,6 @@ class ComposePanel extends React.Component {
       displayFetchRecordingId: false,
       displayCaptureButton: false,
       displayBuildTemplateControls: false,
-      displayRunTemplateControls: true,
       displayImageControls: false,
       displayIllustrateControls: false,
       displayAnimateControls: false,
@@ -512,7 +511,6 @@ class ComposePanel extends React.Component {
       displayFetchRecordingId: false,
       displayCaptureButton: false,
       displayBuildTemplateControls: false,
-      displayRunTemplateControls: false,
       displayImageControls: false,
       displayIllustrateControls: true,
       displayAnimateControls: false,
@@ -527,7 +525,6 @@ class ComposePanel extends React.Component {
       displayFetchRecordingId: false,
       displayCaptureButton: false,
       displayBuildTemplateControls: false,
-      displayRunTemplateControls: false,
       displayImageControls: false,
       displayIllustrateControls: false,
       displayAnimateControls: true,
@@ -1407,12 +1404,12 @@ class ComposePanel extends React.Component {
                       templates={this.props.templates}
                       clearCurrentFramesetChanges={this.props.clearCurrentFramesetChanges}
                       displayImageControls={this.state.displayImageControls}
-                      displayRunTemplateControls={this.state.displayRunTemplateControls}
                       displayIllustrateControls={this.state.displayIllustrateControls}
                       runTemplateRedactPipelineJob={this.props.runTemplateRedactPipelineJob}
                       clearCurrentIllustrations={this.props.clearCurrentIllustrations}
                       startPrecisionLearning={this.startPrecisionLearning}
                       displayPrecisionLearning={this.state.displayPrecisionLearning}
+                      showCreateTemplate={this.showCreateTemplate}
                     />
                   </div>
                 </div>

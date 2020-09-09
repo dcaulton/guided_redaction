@@ -26,7 +26,7 @@ class RedactApplication extends React.Component {
       redact_rule: {
         mask_method: 'black_rectangle',
         replace_with: 'eroded',
-        erode_iterations: 1,
+        erode_iterations: 9,
       },
       movie_url: '',
       frameset_hash: '',
