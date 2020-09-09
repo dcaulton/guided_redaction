@@ -166,29 +166,28 @@ class CanvasMovieOverlay extends React.Component {
   }
 
   drawDragDropTarget() {
-    if (!this.props.getImageUrl()) {
+    if (!this.props.getImageUrl() && !this.props.movie_url) {
       let canvas = this.refs.canvas
       let ctx = canvas.getContext("2d")
       ctx.beginPath()
-      ctx.setLineDash([5,10])
       ctx.moveTo(5,5)
       ctx.lineTo(495,5)
-      ctx.lineTo(495,495)
-      ctx.lineTo(5,495)
+      ctx.lineTo(495,105)
+      ctx.lineTo(5,105)
       ctx.lineTo(5,5)
-      ctx.strokeStyle = '#AAAAAA'
+      ctx.strokeStyle = '#000000'
       ctx.stroke()
 
-      ctx.font = '48px serif'
-      ctx.fillStyle = '#AAAAAA'
-      ctx.fillText('drag images here', 80, 200)
-      ctx.fillText('to begin work', 110, 270)
+      ctx.font = '36px sans-serif'
+      ctx.fillStyle = '#000000'
+      ctx.fillText('drag a local movie', 85, 45)
+      ctx.fillText('here to upload', 105, 85)
     }
   }
 
   componentDidMount() {
     this.clearCanvasItems()
-//    this.drawDragDropTarget()
+    this.drawDragDropTarget()
     if (this.props.show_redaction_borders) {
       this.drawRectangles()
     }
@@ -199,7 +198,7 @@ class CanvasMovieOverlay extends React.Component {
 
   componentDidUpdate() {
     this.clearCanvasItems()
-//    this.drawDragDropTarget()
+    this.drawDragDropTarget()
     if (this.props.show_redaction_borders) {
       this.drawRectangles()
     }
@@ -219,31 +218,6 @@ class CanvasMovieOverlay extends React.Component {
     }
   }
 
-  async handleDownloadedFile(the_file) {
-    let reader = new FileReader()
-    let app_this = this
-    reader.onload = function(e) {
-      app_this.props.postMakeUrlCall({
-        data_uri: e.target.result, 
-        filename: the_file.name, 
-        when_done: app_this.props.addImageToMovie,
-        when_failed: (err) => {app_this.props.setMessage('make url job failed')},
-      })
-    }
-    reader.readAsDataURL(the_file)
-  }
-
-  handleDroppedImage = (e) => {
-    e.preventDefault()
-    e.stopPropagation()
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      this.props.establishNewEmptyMovie()
-      for (let i=0; i < e.dataTransfer.files.length; i++) {
-        this.handleDownloadedFile(e.dataTransfer.files[i])
-      }
-    }
-  }
-
   render() {
     const canvasDims = this.getCanvasDims()
 
@@ -257,7 +231,7 @@ class CanvasMovieOverlay extends React.Component {
         style={canvasDivStyle}
         draggable='true'
         onDragOver={(event) => event.preventDefault()}
-        onDrop={(event) => this.handleDroppedImage(event)}
+        onDrop={(event) => this.props.handleDroppedMovie(event)}
       >
         <canvas id='overlay_canvas' 
           ref='canvas'

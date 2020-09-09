@@ -37,6 +37,7 @@ class MoviePanel extends React.Component {
     this.redactFramesetCallback=this.redactFramesetCallback.bind(this)
     this.setDraggedId=this.setDraggedId.bind(this)
     this.handleDroppedFrameset=this.handleDroppedFrameset.bind(this)
+    this.handleDroppedMovie=this.handleDroppedMovie.bind(this)
     this.setMessage=this.setMessage.bind(this)
     this.submitMovieJob=this.submitMovieJob.bind(this)
     this.showMovieUploadOptions=this.showMovieUploadOptions.bind(this)
@@ -69,9 +70,6 @@ class MoviePanel extends React.Component {
   }
 
   componentDidMount() {
-    if (!this.props.movie_url) {
-      this.showMovieUploadOptions()
-    }
     document.getElementById('movie_panel_link').classList.add('active')
     document.getElementById('movie_panel_link').classList.add('border-bottom')
     document.getElementById('movie_panel_link').classList.add('pb-0')
@@ -700,13 +698,19 @@ class MoviePanel extends React.Component {
     return movies
   }
 
+  afterSplitAndHashSubmitted(responseJson) {
+    this.setMessage('movie split job was submitted')
+    this.props.attachToJob(responseJson['job_id'])
+  }
+
   submitMovieJob(job_string, extra_data = '') {
     if (job_string === 'split_and_hash_video') {
       const job_data = this.buildSplitAndHashJobData(extra_data)
       this.props.submitJob({
         job_data:job_data, 
-        after_submit: () => {this.setMessage('movie split job was submitted')}, 
+        after_submit: ((r) => {this.afterSplitAndHashSubmitted(r)}), 
         delete_job_after_loading: true, 
+        attach_to_job: true, 
         after_loaded: () => {this.setMessage('movie split completed')}, 
         when_failed: () => {this.setMessage('movie split failed')},
       })
@@ -844,13 +848,6 @@ class MoviePanel extends React.Component {
     return s
   }
 
-  get_filename(the_url) {
-    if (this.props.movie_url) {
-      const parts = this.props.movie_url.split('/')
-      return parts[parts.length-1]
-    }
-  }
-
   handleDroppedMovie(event) {
     event.preventDefault()
     event.stopPropagation()
@@ -868,7 +865,7 @@ class MoviePanel extends React.Component {
       app_this.props.postMakeUrlCall({
         data_uri: e.target.result,
         filename: the_file.name,
-        when_done: app_this.props.establishNewMovie,
+        when_done: ((x)=>{app_this.props.establishNewMovie(x)}),
         when_failed: (err) => {app_this.setMessage('make url job failed')}, 
       })
     }
@@ -881,6 +878,10 @@ class MoviePanel extends React.Component {
   buildImageDiv() {
     const image_url = this.props.getImageUrl()
     if (!image_url) {
+      let message = 'No movie loaded yet'
+      if (this.props.movie_url) {
+        message = 'movie loaded, but not yet split'
+      }
       const the_style = {
         'height': '500px',
         'width': '1000px',
@@ -892,7 +893,7 @@ class MoviePanel extends React.Component {
             className='h1 text-center'
             style={the_style}
         >
-          No movie loaded yet
+          {message}
         </div>
       )
     }
@@ -1033,6 +1034,8 @@ class MoviePanel extends React.Component {
                 getCurrentTemplateAnchors={this.getCurrentTemplateAnchors}
                 getCurrentTemplateMaskZones={this.getCurrentTemplateMaskZones}
                 currentImageIsTemplateAnchorImage={this.currentImageIsTemplateAnchorImage}
+                handleDroppedMovie={this.handleDroppedMovie}
+                movie_url={this.props.movie_url}
               />
             </div>
           </div>

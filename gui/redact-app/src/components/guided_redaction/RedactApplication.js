@@ -682,8 +682,6 @@ class RedactApplication extends React.Component {
                   }
 
     */
-    document.getElementById('image_panel_link').click()
-    document.getElementById('movie_panel_link').click()
     this.addToCampaignMovies(data_in['url'])
   }
 
@@ -2815,6 +2813,8 @@ class RedactApplication extends React.Component {
                 toggleShowVisibility={this.toggleShowVisibility}
                 visibilityFlags={this.state.visibilityFlags}
                 attached_job={this.state.attached_job}
+                establishNewEmptyMovie={this.establishNewEmptyMovie}
+                attachToJob={this.attachToJob}
               />
             </Route>
             <Route path='/redact/insights'>
