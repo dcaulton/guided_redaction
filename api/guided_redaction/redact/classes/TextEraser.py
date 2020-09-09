@@ -1,4 +1,6 @@
 import imutils
+import os
+import glob
 import numpy as np
 import sys
 np.set_printoptions(threshold=sys.maxsize)
@@ -15,7 +17,13 @@ class TextEraser:
         self.y_kernel[1][1] = 1
         self.y_kernel[2][1] = 1
         self.xy_kernel = np.ones((3,3), np.uint8)
-        self.bucket_closeness_threshold = 50
+        # these help to make color partitioning less brittle, 
+        # bucket closeness thresh allows us to sense a little beyond the colors 
+        # spanned by the top 20 or so hitter colors on the histogram, grouped
+        self.range_below_extra_padding = 10
+        self.range_above_extra_padding = 10
+        self.bucket_closeness_threshold = 100
+        self.num_of_colors_from_histogram = 20
 
         if redact_rule and \
             'replace_with' in redact_rule and \
@@ -60,16 +68,13 @@ class TextEraser:
         hlines_contours = \
             self.filter_hline_contours(hlines_contours, masking_region, debug=False)
 
-#        cv2.imwrite('/Users/dcaulton/Desktop/before_contours.png', roi_copy)
-        self.draw_contours_with_color(zoned_source, hlines_contours, roi_copy, bg_color)
-#        cv2.imwrite('/Users/dcaulton/Desktop/after_contours.png', zoned_source)
+        self.draw_hline_contours_with_color(zoned_source, hlines_contours, roi_copy, bg_color)
         output[
           masking_region['start'][1]:masking_region['end'][1],
           masking_region['start'][0]:masking_region['end'][0]
         ] = zoned_source
 
     def build_color_partitioned_source_image(self, source):
-        print('building color partioned source BABY')
         build_img = source.copy()
         hist = cv2.calcHist(
             [source],
@@ -81,6 +86,7 @@ class TextEraser:
         source_num_pixels = source.shape[0] * source.shape[1]
         popular_colors = self.group_colors(hist, source_num_pixels)
 
+        build_img = source.copy()
         for index, color_key in enumerate(popular_colors.keys()):
             color_data = popular_colors[color_key]
             print('processing color {} - {}'.format(index, color_data))
@@ -89,39 +95,43 @@ class TextEraser:
                 color_data['lower_bgr_color'], 
                 color_data['upper_bgr_color']
             )
-#            print('tinky', color_mask)
-            inv_color_mask = cv2.bitwise_not(color_mask.copy())
-            color_slide = np.zeros(source.shape, dtype='uint8')
-            cv2.rectangle(
-                color_slide,
-                (0, 0),
-                (color_slide.shape[1], color_slide.shape[0]),
-                color_data['avg_bgr_color'],
+
+            color_mask = cv2.dilate(
+                color_mask, 
+                self.xy_kernel, 
+                iterations=3
+            )
+            color_mask = cv2.erode(
+                color_mask, 
+                self.xy_kernel, 
+                iterations=3
+            )
+
+            color_contours = cv2.findContours(
+                color_mask,
+                cv2.RETR_LIST,
+                cv2.CHAIN_APPROX_SIMPLE
+            )
+            color_contours = imutils.grab_contours(color_contours)
+
+            cv2.drawContours(
+                build_img, 
+                color_contours, 
+                -1, 
+                color_data['avg_bgr_color'], 
                 -1
             )
-            color_slide = cv2.bitwise_and(color_slide, color_slide, mask=color_mask)
-            filename = '/Users/dcaulton/Desktop/{}_color.png'.format(index)
-            cv2.imwrite(filename, color_slide)
 
-#            build_img = cv2.bitwise_and(build_img, build_img, mask=inv_color_mask)
-#            cv2.imwrite('/Users/dcaulton/Desktop/{}_tatty.png'.format(index), build_img)
+#        filename = '/Users/dcaulton/Desktop/all_done_source_with_color.png'.format(index)
+#        cv2.imwrite(filename, build_img)
 
-            #MAMA
-#            print('andey', color_mask)
-#            build_img = cv2.add(build_img, color_slide)
-
-
-
-
-#        cv2.imwrite('/Users/dcaulton/Desktop/build_final.png', build_img)
-        print('dying now ')
-        assert False
         return build_img
 
     def group_colors(self, hist, source_num_pixels):
         min_num_pixels = math.floor(source_num_pixels * .01)
         flat_hist = hist.flatten()
-        indices = np.argpartition(flat_hist, -10)[-10:]
+        range_number = -1 * self.num_of_colors_from_histogram
+        indices = np.argpartition(flat_hist, range_number)[range_number:]
         big_enough_indices = [i for i in indices if flat_hist[i] > min_num_pixels]
         histogram_winners = np.vstack(np.unravel_index(big_enough_indices, hist.shape)).T
         # what these are is an array of 5 things, the last is the biggest
@@ -177,11 +187,23 @@ class TextEraser:
               avg_bgr_color[1] - bgr_range[1],
               avg_bgr_color[2] - bgr_range[2]
             )
+            lower_bgr_color = (
+                lower_bgr_color[0] - self.range_below_extra_padding,
+                lower_bgr_color[1] - self.range_below_extra_padding,
+                lower_bgr_color[2] - self.range_below_extra_padding,
+            )
             upper_bgr_color = (
               avg_bgr_color[0] + bgr_range[0],
               avg_bgr_color[1] + bgr_range[1],
               avg_bgr_color[2] + bgr_range[2]
             )
+            upper_bgr_color = (
+                upper_bgr_color[0] + self.range_above_extra_padding,
+                upper_bgr_color[1] + self.range_above_extra_padding,
+                upper_bgr_color[2] + self.range_above_extra_padding,
+            )
+            if upper_bgr_color[0] > 245 and upper_bgr_color[1] > 245 and upper_bgr_color[2] > 245:
+              upper_bgr_color = (255, 255, 255)
             reduced[bucket_key]['lower_bgr_color'] = lower_bgr_color
             reduced[bucket_key]['upper_bgr_color'] = upper_bgr_color
 
@@ -372,7 +394,7 @@ class TextEraser:
                 continue
         return touch_count >= 2
 
-    def draw_contours_with_color(self, target_image, contours, source_image, bg_color):
+    def draw_hline_contours_with_color(self, target_image, contours, source_image, bg_color):
         for contour in contours:
             bounding_box = cv2.boundingRect(contour)
             center_x = math.floor(bounding_box[0] + bounding_box[2]/2)
