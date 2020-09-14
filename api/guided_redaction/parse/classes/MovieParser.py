@@ -103,7 +103,7 @@ class MovieParser:
                         print('MovieParser.load_and_hash_frames: empty or invalid cv2 image')
             except Exception as err:
                 print('MovieParser.load_and_hash_frames DIED TRYING TO READ A FRAME: {}'.format(input_url))
-                print(error)
+                print(err)
 
         return unique_frames
 

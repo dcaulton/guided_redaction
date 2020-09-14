@@ -3,7 +3,7 @@ import React from 'react';
 class JobLogic extends React.Component {
 
   static unwatchJob(job_id, whenJobLoaded, setGlobalStateVar) {
-    let deepCopyWJL= JSON.parse(JSON.stringify(whenJobLoaded))
+    let deepCopyWJL= whenJobLoaded
     delete deepCopyWJL[job_id]
     setGlobalStateVar('whenJobLoaded', deepCopyWJL)
   }
@@ -108,7 +108,7 @@ class JobLogic extends React.Component {
       deleteJob = input_obj.delete_job_after_loading
     }
 
-    let deepCopyWJL= JSON.parse(JSON.stringify(whenJobLoaded))
+    let deepCopyWJL= whenJobLoaded
     deepCopyWJL[job_id] = {}
     deepCopyWJL[job_id]['after_loaded'] = after_loaded
     if (preserveAllJobs) {
@@ -189,17 +189,15 @@ class JobLogic extends React.Component {
     await getJobs(user_id)
     .then(() => {
       const jobIdsToCheckFor = Object.keys(whenJobLoaded)
-
       for (let index in jobs) {
         const job = jobs[index]
-        // DMC this might not be needed any more.  When we get a signal
-        // on the websocket, we handleAttachedJob there, maybe if we do that
-        // we can skip it here.  Make sure all paths are handled that way
+        // we only need this for non-websocket systems.  When we get a signal
+        // on the websocket, we handleAttachedJobUpdate there.
         if (this.isAttachedJob(job['id'], attached_job)) {
-          this.handleAttachedJobUpdate(job)
+          this.handleAttachedJobUpdate(job, attached_job, setGlobalStateVar)
         }
         if (jobIdsToCheckFor.includes(job['id'])) {
-          if (job['status'] === 'success') {
+          if (attached_job['status'] === 'success') {
             this.loadJobResults(
               job['id'],
               (()=>{}), 

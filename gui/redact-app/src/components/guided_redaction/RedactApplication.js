@@ -440,6 +440,9 @@ class RedactApplication extends React.Component {
       this.setGlobalStateVar('user', user_object)
       return user_object
     })
+    .catch((error) => {
+      console.error(error);
+    })
   }
 
   getUrl(url_name) {
@@ -574,11 +577,15 @@ class RedactApplication extends React.Component {
         .then((user_id) => {
           build_user_id = user_id
         })
+        .catch((error) => {
+          console.error(error);
+        })
       }
       return build_user_id
     }
     catch(err) {
       console.log('gr abend while running whoAmI')
+      return 'dave.caulton@sykes.com'
     }
   }
 
@@ -1396,12 +1403,16 @@ class RedactApplication extends React.Component {
         if (Object.keys(input_obj).includes('delete_job_after_loading')) {
           djal = input_obj.delete_job_after_loading
         }
-        this.watchForJob(
+        // TODO this is wasteful, merge it with the watchForJob call a few lines earlier
+        JobLogic.watchForJob(
           responseJson['job_id'], 
           {
             'after_loaded': al,
             'delete_job_after_loading': djal,
-          }
+          },
+          this.state.whenJobLoaded, 
+          this.state.preserveAllJobs,
+          this.setGlobalStateVar
         )
       }
       if (input_obj.after_submit) {
@@ -1680,14 +1691,15 @@ class RedactApplication extends React.Component {
       this.loadWorkbook(vars['save-point'])
     } 
     if (Object.keys(vars).includes('recording-id')) {
-      this.getAndSaveUser().then(() => {
+      this.getAndSaveUser()
+      .then(() => {
         this.dispatchFetchSplitAndHash(vars['recording-id'], true) 
         if (this.iAmWorkOrDev()) {
           this.setGlobalStateVar('whenDoneTarget', 'learn_dev')
         } else {
           this.setGlobalStateVar('whenDoneTarget', 'learn_prod')
         }
-      });
+      })
     }
     if (Object.keys(vars).includes('title') && Object.keys(vars).includes('subtitle')) {
       this.setState({

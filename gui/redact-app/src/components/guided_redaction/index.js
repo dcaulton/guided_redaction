@@ -5,6 +5,12 @@ import './styles/guided_redaction.css';
 import RedactApplication from './RedactApplication';
 import whoAmI from '../../stores/whoami'
 
+class fakeWhoAmI {
+  async getUser() {
+    return 'dave.caulton@sykes.com'
+  }
+}
+
 const X = observer(class X extends React.Component {
 
   constructor(props) {
@@ -16,12 +22,24 @@ const X = observer(class X extends React.Component {
     return '/api/'
   }
 
+  async getWhoAmI() {
+    // WhoAmI isn't always functional/stable when running locally 
+    await(whoAmI.getUser())
+    .then(() => {
+      return whoAmI
+    })
+    .catch((err) => {
+      return fakeWhoAmI
+    })
+  }
+
   render() {
+    const whoAmIToUse = this.getWhoAmI()
     return (
       <div id="redact_application_wrapper">
         <RedactApplication 
           getBaseUrl={this.getBaseUrl}
-          whoAmI={whoAmI}
+          whoAmI={whoAmIToUse}
         />
       </div>
     )
