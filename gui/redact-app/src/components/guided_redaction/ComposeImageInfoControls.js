@@ -21,7 +21,7 @@ class ComposeImageInfoControls extends React.Component {
     const redaction_select = buildRedactionTypeSelect(
       'mask_method',
       this.props.redact_rule.mask_method,
-      ((event) => this.props.setGlobalRedactRule(event.target.value))
+      ((event) => this.setGlobalRedactRule(event.target.value))
     )
     return (
       <div className='mt-2'>
