@@ -3,6 +3,7 @@ import {
   buildRedactionTypeSelect,
   buildRedactionErodeIterationsSelect,
   buildRedactionBucketClosenessSelect,
+  buildRedactionMinContourAreaSelect,
   buildRedactionReplaceWithSelect
 } from './redact_utils.js'
 import {
@@ -62,6 +63,15 @@ class RedactControls extends React.Component {
     return bucket_closeness
   }
 
+  buildMinContourAreaDropdown() {
+    const bucket_closeness = buildRedactionMinContourAreaSelect(
+      'min_contour_area',
+      this.props.redact_rule,
+      ((event) => this.setGlobalMinContourArea(event.target.value))
+    )
+    return bucket_closeness
+  }
+
   setGlobalReplaceWith(the_value) {                                             
     let deepCopyRedactRule = JSON.parse(JSON.stringify(this.props.redact_rule)) 
     deepCopyRedactRule['replace_with'] = the_value                              
@@ -77,6 +87,12 @@ class RedactControls extends React.Component {
   setGlobalBucketCloseness(the_value) {
     let deepCopyRedactRule = JSON.parse(JSON.stringify(this.props.redact_rule))
     deepCopyRedactRule['bucket_closeness'] = the_value
+    this.props.setGlobalStateVar('redact_rule', deepCopyRedactRule)
+  }
+
+  setGlobalMinContourArea(the_value) {
+    let deepCopyRedactRule = JSON.parse(JSON.stringify(this.props.redact_rule))
+    deepCopyRedactRule['min_contour_area'] = the_value
     this.props.setGlobalStateVar('redact_rule', deepCopyRedactRule)
   }
 
@@ -127,6 +143,7 @@ class RedactControls extends React.Component {
     const replace_with = this.buildReplaceWithDropdown()
     const erode_iterations = this.buildErodeIterationsDropdown()
     const bucket_closeness = this.buildBucketClosenessDropdown()
+    const min_contour_area = this.buildMinContourAreaDropdown()
 
     return (
         <div className='row bg-light rounded mt-3'>
@@ -147,6 +164,7 @@ class RedactControls extends React.Component {
                 {replace_with}
                 {erode_iterations}
                 {bucket_closeness}
+                {min_contour_area}
 
                 <div id='row mt-2'>
                   {redact_button}

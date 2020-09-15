@@ -5,6 +5,7 @@ import {
   buildIllustrateDarkenPercentSelect,
   buildRedactionErodeIterationsSelect,
   buildRedactionBucketClosenessSelect,
+  buildRedactionMinContourAreaSelect,
   buildRedactionReplaceWithSelect,
   buildRedactionTypeSelect
 } from './redact_utils.js'
@@ -56,6 +57,12 @@ class ComposeImageInfoControls extends React.Component {
     this.props.setGlobalStateVar('redact_rule', deepCopyRedactRule)
   }
 
+  setGlobalMinContourArea(the_value) {
+    let deepCopyRedactRule = JSON.parse(JSON.stringify(this.props.redact_rule))
+    deepCopyRedactRule['min_contour_area'] = the_value
+    this.props.setGlobalStateVar('redact_rule', deepCopyRedactRule)
+  }
+
   buildReplaceWithSelect() {
     const redaction_replace_with = buildRedactionReplaceWithSelect(
       'replace_with',
@@ -81,6 +88,15 @@ class ComposeImageInfoControls extends React.Component {
       ((event) => this.setGlobalBucketCloseness(event.target.value))
     )
     return redaction_bucket_closeness
+  }
+
+  buildMinContourAreaSelect() {
+    const redaction_min_contour_area = buildRedactionMinContourAreaSelect(
+      'min_contour_area',
+      this.props.redact_rule,
+      ((event) => this.setGlobalMinContourArea(event.target.value))
+    )
+    return redaction_min_contour_area
   }
 
   buildIllustrateColorDropdown() {
@@ -174,6 +190,7 @@ class ComposeImageInfoControls extends React.Component {
     const replace_with = this.buildReplaceWithSelect()
     const erode_iterations = this.buildErodeIterationsSelect()
     const bucket_closeness = this.buildBucketClosenessSelect()
+    const min_contour_area = this.buildMinContourAreaSelect()
     const illustrate_color_dropdown = this.buildIllustrateColorDropdown()
     const illustrate_darken_dropdown = this.buildIllustrateDarkenPercentDropdown()
     const illustrate_line_width_dropdown = this.buildIllustrateLineWidthDropdown()
@@ -212,6 +229,7 @@ class ComposeImageInfoControls extends React.Component {
             {replace_with}
             {erode_iterations}
             {bucket_closeness}
+            {min_contour_area}
 
             <div className='row'>
               {illustrate_color_dropdown}

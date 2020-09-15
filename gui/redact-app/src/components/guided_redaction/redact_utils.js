@@ -59,6 +59,9 @@ export const buildRedactionBucketClosenessSelect = function (
   if (redaction_rule.mask_method !== 'text_eraser') {
     return ''
   }
+  if (redaction_rule.replace_with !== 'color_partitioned') {
+    return ''
+  }
   return (
     <div>
       <div className='d-inline'>
@@ -82,6 +85,47 @@ export const buildRedactionBucketClosenessSelect = function (
   )
 }
 
+export const buildRedactionMinContourAreaSelect = function (
+    name,
+    redaction_rule,
+    onchange,
+    include_label=''
+  ) {
+  if (redaction_rule.mask_method !== 'text_eraser') {
+    return ''
+  }
+  if (redaction_rule.replace_with !== 'color_partitioned') {
+    return ''
+  }
+  return (
+    <div>
+      <div className='d-inline'>
+        Min Contour Area
+      </div>
+      <div className='d-inline ml-2'>
+        <select 
+          name={name}
+          value={redaction_rule.min_contour_area}
+          onChange={onchange}
+        >
+          <option value='100'>100</option>
+          <option value='200'>200</option>
+          <option value='300'>300</option>
+          <option value='400'>400</option>
+          <option value='500'>500</option>
+          <option value='600'>600</option>
+          <option value='800'>800</option>
+          <option value='1000'>1000</option>
+          <option value='1200'>1200</option>
+          <option value='1800'>1800</option>
+          <option value='2400'>2400</option>
+          <option value='3000'>3000</option>
+        </select>
+      </div>
+    </div>
+  )
+}
+
 export const buildRedactionErodeIterationsSelect = function (
     name,
     redaction_rule,
@@ -89,6 +133,9 @@ export const buildRedactionErodeIterationsSelect = function (
     include_label=''
   ) {
   if (redaction_rule.mask_method !== 'text_eraser') {
+    return ''
+  }
+  if (redaction_rule.replace_with !== 'eroded') {
     return ''
   }
   return (

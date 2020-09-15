@@ -29,6 +29,7 @@ class RedactApplication extends React.Component {
         replace_with: 'eroded',
         erode_iterations: 9,
         bucket_closeness: 100,
+        min_contour_area: 1000,
       },
       movie_url: '',
       frameset_hash: '',

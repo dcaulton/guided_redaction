@@ -5,6 +5,7 @@ import {
   buildRedactionReplaceWithSelect,
   buildRedactionErodeIterationsSelect,
   buildRedactionBucketClosenessSelect,
+  buildRedactionMinContourAreaSelect,
   buildRedactionTypeSelect
 } from './redact_utils.js'
 import MovieImageControls from './MovieImageControls.js'
@@ -1377,6 +1378,12 @@ class MoviePanelAdvancedControls extends React.Component {
     this.props.setGlobalStateVar('redact_rule', deepCopyRedactRule)
   }
 
+  setGlobalMinContourArea(the_value) {
+    let deepCopyRedactRule = JSON.parse(JSON.stringify(this.props.redact_rule))
+    deepCopyRedactRule['min_contour_area'] = the_value
+    this.props.setGlobalStateVar('redact_rule', deepCopyRedactRule)
+  }
+
   render() {
     if (this.props.movie_url === '') {
       return ''
@@ -1444,6 +1451,12 @@ class MoviePanelAdvancedControls extends React.Component {
       ((event) => this.setGlobalBucketCloseness(event.target.value))
     )
 
+    const redaction_min_contour_area = buildRedactionMinContourAreaSelect(
+      'min_contour_area',
+      this.props.redact_rule,
+      ((event) => this.setGlobalMinContourArea(event.target.value))
+    )
+
     return (
       <div className='col border pt-2 pb-2'>
         <div className='row'>
@@ -1508,6 +1521,7 @@ class MoviePanelAdvancedControls extends React.Component {
               {redaction_replace_with}
               {redaction_erode_iterations}
               {redaction_bucket_closeness}
+              {redaction_min_contour_area}
 
               <div className='mt-2'>
                 <div className='d-inline'>

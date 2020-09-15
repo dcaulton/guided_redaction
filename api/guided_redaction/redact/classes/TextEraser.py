@@ -44,6 +44,12 @@ class TextEraser:
         else:
             self.bucket_closeness_threshold = 100
 
+        if redact_rule and \
+            'min_contour_area' in redact_rule:
+            self.min_contour_area= int(redact_rule['min_contour_area'])
+        else:
+            self.min_contour_area = 400
+
     def mask_all_regions(self, source, regions_to_mask):
         output = source.copy()
         for masking_region in regions_to_mask:
@@ -119,10 +125,13 @@ class TextEraser:
                 cv2.CHAIN_APPROX_SIMPLE
             )
             color_contours = imutils.grab_contours(color_contours)
+            filtered_color_contours = \
+                self.filter_color_partition_contours(color_contours)
 
             cv2.drawContours(
                 build_img, 
-                color_contours, 
+#                color_contours, 
+                filtered_color_contours, 
                 -1, 
                 color_data['avg_bgr_color'], 
                 -1
@@ -132,6 +141,14 @@ class TextEraser:
 #        cv2.imwrite(filename, build_img)
 
         return build_img
+
+    def filter_color_partition_contours(self, color_contours):
+        filtered_contours = []
+        for contour in color_contours:
+            area = cv2.contourArea(contour)
+            if area >= self.min_contour_area:
+                filtered_contours.append(contour)
+        return filtered_contours
 
     def group_colors(self, hist, source_num_pixels):
         min_num_pixels = math.floor(source_num_pixels * .01)
