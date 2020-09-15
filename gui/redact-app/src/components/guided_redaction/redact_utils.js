@@ -50,11 +50,63 @@ export const buildIllustrateDarkenPercentSelect = function (name, value, onchang
   )
 }
 
+export const buildRedactionRuleControls = function (
+  redact_rule,
+  setGlobalStateVar
+  ) {
+
+  function updateRedactField(field_name, the_value) {
+    let deepCopyRedactRule = JSON.parse(JSON.stringify(redact_rule))
+    deepCopyRedactRule[field_name] = the_value
+    setGlobalStateVar('redact_rule', deepCopyRedactRule)
+  }
+
+  const mask_method = buildRedactionTypeSelect(
+    'mask_method',
+    redact_rule.mask_method,
+    ((event) => updateRedactField('mask_method', event.target.value))
+  )
+
+  const replace_with = buildRedactionReplaceWithSelect(
+    'replace_with',
+    redact_rule,
+    ((event) => updateRedactField('replace_with', event.target.value))
+  )
+
+  const erode_iterations = buildRedactionErodeIterationsSelect(
+    'erode_iterations',
+    redact_rule,
+    ((event) => updateRedactField('erode_iterations', event.target.value))
+  )
+
+  const bucket_closeness = buildRedactionBucketClosenessSelect(
+    'bucket_closeness',
+    redact_rule,
+    ((event) => updateRedactField('bucket_closeness', event.target.value))
+  )
+
+  const min_contour_area = buildRedactionMinContourAreaSelect(
+    'min_contour_area',
+    redact_rule,
+    ((event) => updateRedactField('min_contour_area', event.target.value))
+  )
+
+  return (
+    <div>
+    {mask_method}
+    {replace_with}
+    {erode_iterations}
+    {bucket_closeness}
+    {min_contour_area}
+    </div>
+  )
+}
+
+
 export const buildRedactionBucketClosenessSelect = function (
     name,
     redaction_rule,
-    onchange,
-    include_label=''
+    onchange
   ) {
   if (redaction_rule.mask_method !== 'text_eraser') {
     return ''
@@ -88,8 +140,7 @@ export const buildRedactionBucketClosenessSelect = function (
 export const buildRedactionMinContourAreaSelect = function (
     name,
     redaction_rule,
-    onchange,
-    include_label=''
+    onchange
   ) {
   if (redaction_rule.mask_method !== 'text_eraser') {
     return ''
@@ -129,8 +180,7 @@ export const buildRedactionMinContourAreaSelect = function (
 export const buildRedactionErodeIterationsSelect = function (
     name,
     redaction_rule,
-    onchange,
-    include_label=''
+    onchange
   ) {
   if (redaction_rule.mask_method !== 'text_eraser') {
     return ''
@@ -168,8 +218,7 @@ export const buildRedactionErodeIterationsSelect = function (
 export const buildRedactionReplaceWithSelect = function (
     name,
     redaction_rule,
-    onchange,
-    include_label=''
+    onchange
   ) {
   if (redaction_rule.mask_method !== 'text_eraser') {
     return ''
@@ -200,19 +249,26 @@ export const buildRedactionTypeSelect = function (
     onchange,
   ) {
   return (
-    <select 
-      name={name}
-      value={value}
-      onChange={onchange}
-    >
-      <option value='blur_7x7'>Gaussian Blur 7x7</option>
-      <option value='blur_21x21'>Gaussian Blur 21x21</option>
-      <option value='blur_median'>Median Blur</option>
-      <option value='black_rectangle'>Black Rectangle</option>
-      <option value='green_outline'>Green Outline</option>
-      <option value='background_color'>Background Color</option>
-      <option value='text_eraser'>Text Eraser</option>
-    </select>
+    <div>
+      <div className='d-inline'>
+        Redaction Type
+      </div>
+      <div className='d-inline ml-2'>
+        <select 
+          name={name}
+          value={value}
+          onChange={onchange}
+        >
+          <option value='blur_7x7'>Gaussian Blur 7x7</option>
+          <option value='blur_21x21'>Gaussian Blur 21x21</option>
+          <option value='blur_median'>Median Blur</option>
+          <option value='black_rectangle'>Black Rectangle</option>
+          <option value='green_outline'>Green Outline</option>
+          <option value='background_color'>Background Color</option>
+          <option value='text_eraser'>Text Eraser</option>
+        </select>
+      </div>
+    </div>
   )
 }
 

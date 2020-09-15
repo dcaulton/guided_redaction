@@ -1,100 +1,12 @@
 import React from 'react';
 import {
-  buildRedactionTypeSelect,
-  buildRedactionErodeIterationsSelect,
-  buildRedactionBucketClosenessSelect,
-  buildRedactionMinContourAreaSelect,
-  buildRedactionReplaceWithSelect
+  buildRedactionRuleControls,
 } from './redact_utils.js'
 import {
   makeHeaderRow,
 } from './SharedControls'
 
 class RedactControls extends React.Component {
-
-  setGlobalMaskMethod(mask_method) {
-    let deepCopyRedactRule = JSON.parse(JSON.stringify(this.props.redact_rule))
-    deepCopyRedactRule['mask_method'] = mask_method
-    this.props.setGlobalStateVar('redact_rule', deepCopyRedactRule)
-  }
-
-  buildMaskMethodDropdown() {
-    const redaction_select = buildRedactionTypeSelect(                          
-      'mask_method',                                                            
-      this.props.redact_rule.mask_method,                                                   
-      ((event) => this.setGlobalMaskMethod(event.target.value))
-    )
-    return (
-      <div>
-        <div className='d-inline'>
-          Mask method
-        </div>
-        <div className='d-inline ml-2'>
-          {redaction_select}
-        </div>
-      </div>
-    )
-  }
-
-  buildReplaceWithDropdown() {
-    const redaction_replace_with = buildRedactionReplaceWithSelect(
-      'replace_with',
-      this.props.redact_rule,
-      ((event) => this.setGlobalReplaceWith(event.target.value))
-    )
-    return redaction_replace_with
-  }
-
-  buildErodeIterationsDropdown() {
-    const erode_iterations = buildRedactionErodeIterationsSelect(
-      'erode_iterations',
-      this.props.redact_rule,
-      ((event) => this.setGlobalErodeIterations(event.target.value))
-    )
-    return erode_iterations
-  }
-
-  buildBucketClosenessDropdown() {
-    const bucket_closeness = buildRedactionBucketClosenessSelect(
-      'erode_iterations',
-      this.props.redact_rule,
-      ((event) => this.setGlobalBucketCloseness(event.target.value))
-    )
-    return bucket_closeness
-  }
-
-  buildMinContourAreaDropdown() {
-    const bucket_closeness = buildRedactionMinContourAreaSelect(
-      'min_contour_area',
-      this.props.redact_rule,
-      ((event) => this.setGlobalMinContourArea(event.target.value))
-    )
-    return bucket_closeness
-  }
-
-  setGlobalReplaceWith(the_value) {                                             
-    let deepCopyRedactRule = JSON.parse(JSON.stringify(this.props.redact_rule)) 
-    deepCopyRedactRule['replace_with'] = the_value                              
-    this.props.setGlobalStateVar('redact_rule', deepCopyRedactRule)             
-  }                                                                             
-    
-  setGlobalErodeIterations(the_value) {
-    let deepCopyRedactRule = JSON.parse(JSON.stringify(this.props.redact_rule))
-    deepCopyRedactRule['erode_iterations'] = the_value
-    this.props.setGlobalStateVar('redact_rule', deepCopyRedactRule)
-  }
-
-  setGlobalBucketCloseness(the_value) {
-    let deepCopyRedactRule = JSON.parse(JSON.stringify(this.props.redact_rule))
-    deepCopyRedactRule['bucket_closeness'] = the_value
-    this.props.setGlobalStateVar('redact_rule', deepCopyRedactRule)
-  }
-
-  setGlobalMinContourArea(the_value) {
-    let deepCopyRedactRule = JSON.parse(JSON.stringify(this.props.redact_rule))
-    deepCopyRedactRule['min_contour_area'] = the_value
-    this.props.setGlobalStateVar('redact_rule', deepCopyRedactRule)
-  }
 
   buildRedactButton() {
     if (Object.keys(this.props.movies).length === 0) {
@@ -128,6 +40,13 @@ class RedactControls extends React.Component {
     )
   }
 
+  buildRedactRuleControls() {
+    return buildRedactionRuleControls(
+      this.props.redact_rule,
+      this.props.setGlobalStateVar
+    )
+  }
+
   render() {
     if (!this.props.visibilityFlags['redact']) {
       return([])
@@ -138,12 +57,8 @@ class RedactControls extends React.Component {
       'redact_body',
       (() => this.props.toggleShowVisibility('redact'))
     )
-    const mask_method_dropdown = this.buildMaskMethodDropdown()
     const redact_button = this.buildRedactButton()
-    const replace_with = this.buildReplaceWithDropdown()
-    const erode_iterations = this.buildErodeIterationsDropdown()
-    const bucket_closeness = this.buildBucketClosenessDropdown()
-    const min_contour_area = this.buildMinContourAreaDropdown()
+    const redact_rule_controls = this.buildRedactRuleControls()
 
     return (
         <div className='row bg-light rounded mt-3'>
@@ -156,15 +71,7 @@ class RedactControls extends React.Component {
                 className='row collapse'
             >
               <div id='redact_main' className='col'>
-
-                <div id='row mt-2'>
-                  {mask_method_dropdown}
-                </div>
-
-                {replace_with}
-                {erode_iterations}
-                {bucket_closeness}
-                {min_contour_area}
+                {redact_rule_controls}
 
                 <div id='row mt-2'>
                   {redact_button}

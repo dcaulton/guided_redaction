@@ -2,11 +2,7 @@ import React from 'react';
 import {
   getMessage, 
   buildFramesetDiscriminatorSelect,
-  buildRedactionReplaceWithSelect,
-  buildRedactionErodeIterationsSelect,
-  buildRedactionBucketClosenessSelect,
-  buildRedactionMinContourAreaSelect,
-  buildRedactionTypeSelect
+  buildRedactionRuleControls
 } from './redact_utils.js'
 import MovieImageControls from './MovieImageControls.js'
 import FramesetCardList from './Framesets'
@@ -1354,36 +1350,6 @@ class MoviePanelAdvancedControls extends React.Component {
     )
   }
 
-  setGlobalMaskMethod(mask_method) {
-    let deepCopyRedactRule = JSON.parse(JSON.stringify(this.props.redact_rule))
-    deepCopyRedactRule['mask_method'] = mask_method
-    this.props.setGlobalStateVar('redact_rule', deepCopyRedactRule)
-  }
-
-  setGlobalReplaceWith(the_value) {
-    let deepCopyRedactRule = JSON.parse(JSON.stringify(this.props.redact_rule))
-    deepCopyRedactRule['replace_with'] = the_value
-    this.props.setGlobalStateVar('redact_rule', deepCopyRedactRule)
-  }
-
-  setGlobalErodeIterations(the_value) {
-    let deepCopyRedactRule = JSON.parse(JSON.stringify(this.props.redact_rule))
-    deepCopyRedactRule['erode_iterations'] = the_value
-    this.props.setGlobalStateVar('redact_rule', deepCopyRedactRule)
-  }
-
-  setGlobalBucketCloseness(the_value) {
-    let deepCopyRedactRule = JSON.parse(JSON.stringify(this.props.redact_rule))
-    deepCopyRedactRule['bucket_closeness'] = the_value
-    this.props.setGlobalStateVar('redact_rule', deepCopyRedactRule)
-  }
-
-  setGlobalMinContourArea(the_value) {
-    let deepCopyRedactRule = JSON.parse(JSON.stringify(this.props.redact_rule))
-    deepCopyRedactRule['min_contour_area'] = the_value
-    this.props.setGlobalStateVar('redact_rule', deepCopyRedactRule)
-  }
-
   render() {
     if (this.props.movie_url === '') {
       return ''
@@ -1427,34 +1393,9 @@ class MoviePanelAdvancedControls extends React.Component {
       }
     }
 
-    const redaction_mask_method = buildRedactionTypeSelect(
-      'mask_method',
-      this.props.redact_rule.mask_method,
-      ((event) => this.setGlobalMaskMethod(event.target.value))
-    )
-
-    const redaction_replace_with = buildRedactionReplaceWithSelect(
-      'replace_with',
+    const redaction_rule_controls = buildRedactionRuleControls(
       this.props.redact_rule,
-      ((event) => this.setGlobalReplaceWith(event.target.value))
-    )
-
-    const redaction_erode_iterations = buildRedactionErodeIterationsSelect(
-      'erode_iterations',
-      this.props.redact_rule,
-      ((event) => this.setGlobalErodeIterations(event.target.value))
-    )
-
-    const redaction_bucket_closeness = buildRedactionBucketClosenessSelect(
-      'bucket_closeness',
-      this.props.redact_rule,
-      ((event) => this.setGlobalBucketCloseness(event.target.value))
-    )
-
-    const redaction_min_contour_area = buildRedactionMinContourAreaSelect(
-      'min_contour_area',
-      this.props.redact_rule,
-      ((event) => this.setGlobalMinContourArea(event.target.value))
+      this.props.setGlobalStateVar
     )
 
     return (
@@ -1509,19 +1450,7 @@ class MoviePanelAdvancedControls extends React.Component {
                 {fd_dropdown}
               </div>
 
-              <div>
-                <div className='d-inline'>
-                  set redaction mask method
-                </div>
-                <div className='d-inline ml-2'>
-                  {redaction_mask_method}
-                </div>
-              </div>
-
-              {redaction_replace_with}
-              {redaction_erode_iterations}
-              {redaction_bucket_closeness}
-              {redaction_min_contour_area}
+              {redaction_rule_controls}
 
               <div className='mt-2'>
                 <div className='d-inline'>

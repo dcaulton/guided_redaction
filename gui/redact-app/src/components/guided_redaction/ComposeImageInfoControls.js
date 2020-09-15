@@ -3,101 +3,10 @@ import {
   buildIllustrateColorSelect,
   buildIllustrateLineWidthSelect,
   buildIllustrateDarkenPercentSelect,
-  buildRedactionErodeIterationsSelect,
-  buildRedactionBucketClosenessSelect,
-  buildRedactionMinContourAreaSelect,
-  buildRedactionReplaceWithSelect,
-  buildRedactionTypeSelect
+  buildRedactionRuleControls
 } from './redact_utils.js'
 
 class ComposeImageInfoControls extends React.Component {
-
-  setGlobalRedactRule(mask_method) {
-    let deepCopyRedactRule = JSON.parse(JSON.stringify(this.props.redact_rule))
-    deepCopyRedactRule['mask_method'] = mask_method
-    this.props.setGlobalStateVar('redact_rule', deepCopyRedactRule)
-  }
-
-  buildMaskMethodDropdown() {
-    if (!this.props.displayImageControls) {
-      return
-    }
-    const redaction_select = buildRedactionTypeSelect(
-      'mask_method',
-      this.props.redact_rule.mask_method,
-      ((event) => this.setGlobalRedactRule(event.target.value))
-    )
-    return (
-      <div className='mt-2'>
-        <div className='d-inline font-weight-bold'>
-          Set Mask Method:
-        </div>
-        <div className='d-inline ml-2'>
-          {redaction_select}
-        </div>
-      </div>
-    )
-  }
-
-  setGlobalReplaceWith(the_value) {
-    let deepCopyRedactRule = JSON.parse(JSON.stringify(this.props.redact_rule))
-    deepCopyRedactRule['replace_with'] = the_value
-    this.props.setGlobalStateVar('redact_rule', deepCopyRedactRule)
-  }
-
-  setGlobalErodeIterations(the_value) {
-    let deepCopyRedactRule = JSON.parse(JSON.stringify(this.props.redact_rule))
-    deepCopyRedactRule['erode_iterations'] = the_value
-    this.props.setGlobalStateVar('redact_rule', deepCopyRedactRule)
-  }
-
-  setGlobalBucketCloseness(the_value) {
-    let deepCopyRedactRule = JSON.parse(JSON.stringify(this.props.redact_rule))
-    deepCopyRedactRule['bucket_closeness'] = the_value
-    this.props.setGlobalStateVar('redact_rule', deepCopyRedactRule)
-  }
-
-  setGlobalMinContourArea(the_value) {
-    let deepCopyRedactRule = JSON.parse(JSON.stringify(this.props.redact_rule))
-    deepCopyRedactRule['min_contour_area'] = the_value
-    this.props.setGlobalStateVar('redact_rule', deepCopyRedactRule)
-  }
-
-  buildReplaceWithSelect() {
-    const redaction_replace_with = buildRedactionReplaceWithSelect(
-      'replace_with',
-      this.props.redact_rule,
-      ((event) => this.setGlobalReplaceWith(event.target.value))
-    )
-    return redaction_replace_with
-  }
-
-  buildErodeIterationsSelect() {
-    const redaction_erode_iterations = buildRedactionErodeIterationsSelect(
-      'erode_iterations',
-      this.props.redact_rule,
-      ((event) => this.setGlobalErodeIterations(event.target.value))
-    )
-    return redaction_erode_iterations
-  }
-
-  buildBucketClosenessSelect() {
-    const redaction_bucket_closeness = buildRedactionBucketClosenessSelect(
-      'bucket_closeness',
-      this.props.redact_rule,
-      ((event) => this.setGlobalBucketCloseness(event.target.value))
-    )
-    return redaction_bucket_closeness
-  }
-
-  buildMinContourAreaSelect() {
-    const redaction_min_contour_area = buildRedactionMinContourAreaSelect(
-      'min_contour_area',
-      this.props.redact_rule,
-      ((event) => this.setGlobalMinContourArea(event.target.value))
-    )
-    return redaction_min_contour_area
-  }
 
   buildIllustrateColorDropdown() {
     if (!this.props.displayIllustrateControls) {
@@ -186,11 +95,10 @@ class ComposeImageInfoControls extends React.Component {
     if (!this.props.getImageUrl()) {
       return ''
     }
-    const mask_method_dropdown = this.buildMaskMethodDropdown()
-    const replace_with = this.buildReplaceWithSelect()
-    const erode_iterations = this.buildErodeIterationsSelect()
-    const bucket_closeness = this.buildBucketClosenessSelect()
-    const min_contour_area = this.buildMinContourAreaSelect()
+    const redact_rule_controls = buildRedactionRuleControls(
+      this.props.redact_rule,
+      this.props.setGlobalStateVar
+    )
     const illustrate_color_dropdown = this.buildIllustrateColorDropdown()
     const illustrate_darken_dropdown = this.buildIllustrateDarkenPercentDropdown()
     const illustrate_line_width_dropdown = this.buildIllustrateLineWidthDropdown()
@@ -222,14 +130,7 @@ class ComposeImageInfoControls extends React.Component {
               </div>
             </div>
 
-            <div className='row'>
-              {mask_method_dropdown}
-            </div>
-
-            {replace_with}
-            {erode_iterations}
-            {bucket_closeness}
-            {min_contour_area}
+            {redact_rule_controls}
 
             <div className='row'>
               {illustrate_color_dropdown}
