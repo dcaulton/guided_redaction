@@ -22,7 +22,6 @@ class TextEraser:
         # spanned by the top 20 or so hitter colors on the histogram, grouped
         self.range_below_extra_padding = 10
         self.range_above_extra_padding = 10
-        self.bucket_closeness_threshold = 100
         self.num_of_colors_from_histogram = 20
 
         if redact_rule and \
@@ -32,11 +31,18 @@ class TextEraser:
             self.replace_with = redact_rule['replace_with']
         else:
             self.replace_with = 'eroded'
+
         if redact_rule and \
             'erode_iterations' in redact_rule:
             self.erode_iterations = int(redact_rule['erode_iterations'])
         else:
             self.erode_iterations = 13
+
+        if redact_rule and \
+            'bucket_closeness' in redact_rule:
+            self.bucket_closeness_threshold = int(redact_rule['bucket_closeness'])
+        else:
+            self.bucket_closeness_threshold = 100
 
     def mask_all_regions(self, source, regions_to_mask):
         output = source.copy()

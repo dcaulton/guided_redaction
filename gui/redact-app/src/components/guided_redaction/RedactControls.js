@@ -1,6 +1,9 @@
 import React from 'react';
 import {
-  buildRedactionTypeSelect
+  buildRedactionTypeSelect,
+  buildRedactionErodeIterationsSelect,
+  buildRedactionBucketClosenessSelect,
+  buildRedactionReplaceWithSelect
 } from './redact_utils.js'
 import {
   makeHeaderRow,
@@ -30,6 +33,51 @@ class RedactControls extends React.Component {
         </div>
       </div>
     )
+  }
+
+  buildReplaceWithDropdown() {
+    const redaction_replace_with = buildRedactionReplaceWithSelect(
+      'replace_with',
+      this.props.redact_rule,
+      ((event) => this.setGlobalReplaceWith(event.target.value))
+    )
+    return redaction_replace_with
+  }
+
+  buildErodeIterationsDropdown() {
+    const erode_iterations = buildRedactionErodeIterationsSelect(
+      'erode_iterations',
+      this.props.redact_rule,
+      ((event) => this.setGlobalErodeIterations(event.target.value))
+    )
+    return erode_iterations
+  }
+
+  buildBucketClosenessDropdown() {
+    const bucket_closeness = buildRedactionBucketClosenessSelect(
+      'erode_iterations',
+      this.props.redact_rule,
+      ((event) => this.setGlobalBucketCloseness(event.target.value))
+    )
+    return bucket_closeness
+  }
+
+  setGlobalReplaceWith(the_value) {                                             
+    let deepCopyRedactRule = JSON.parse(JSON.stringify(this.props.redact_rule)) 
+    deepCopyRedactRule['replace_with'] = the_value                              
+    this.props.setGlobalStateVar('redact_rule', deepCopyRedactRule)             
+  }                                                                             
+    
+  setGlobalErodeIterations(the_value) {
+    let deepCopyRedactRule = JSON.parse(JSON.stringify(this.props.redact_rule))
+    deepCopyRedactRule['erode_iterations'] = the_value
+    this.props.setGlobalStateVar('redact_rule', deepCopyRedactRule)
+  }
+
+  setGlobalBucketCloseness(the_value) {
+    let deepCopyRedactRule = JSON.parse(JSON.stringify(this.props.redact_rule))
+    deepCopyRedactRule['bucket_closeness'] = the_value
+    this.props.setGlobalStateVar('redact_rule', deepCopyRedactRule)
   }
 
   buildRedactButton() {
@@ -76,6 +124,10 @@ class RedactControls extends React.Component {
     )
     const mask_method_dropdown = this.buildMaskMethodDropdown()
     const redact_button = this.buildRedactButton()
+    const replace_with = this.buildReplaceWithDropdown()
+    const erode_iterations = this.buildErodeIterationsDropdown()
+    const bucket_closeness = this.buildBucketClosenessDropdown()
+
     return (
         <div className='row bg-light rounded mt-3'>
           <div className='col'>
@@ -91,6 +143,10 @@ class RedactControls extends React.Component {
                 <div id='row mt-2'>
                   {mask_method_dropdown}
                 </div>
+
+                {replace_with}
+                {erode_iterations}
+                {bucket_closeness}
 
                 <div id='row mt-2'>
                   {redact_button}

@@ -50,46 +50,100 @@ export const buildIllustrateDarkenPercentSelect = function (name, value, onchang
   )
 }
 
+export const buildRedactionBucketClosenessSelect = function (
+    name,
+    redaction_rule,
+    onchange,
+    include_label=''
+  ) {
+  if (redaction_rule.mask_method !== 'text_eraser') {
+    return ''
+  }
+  return (
+    <div>
+      <div className='d-inline'>
+        Bucket Closeness
+      </div>
+      <div className='d-inline ml-2'>
+        <select 
+          name={name}
+          value={redaction_rule.bucket_closeness}
+          onChange={onchange}
+        >
+          <option value='25'>25</option>
+          <option value='50'>50</option>
+          <option value='75'>75</option>
+          <option value='100'>100</option>
+          <option value='150'>150</option>
+          <option value='200'>200</option>
+        </select>
+      </div>
+    </div>
+  )
+}
+
 export const buildRedactionErodeIterationsSelect = function (
     name,
-    value,
+    redaction_rule,
     onchange,
+    include_label=''
   ) {
+  if (redaction_rule.mask_method !== 'text_eraser') {
+    return ''
+  }
   return (
-    <select 
-      name={name}
-      value={value}
-      onChange={onchange}
-    >
-      <option value='1'>1</option>
-      <option value='3'>3</option>
-      <option value='5'>5</option>
-      <option value='7'>7</option>
-      <option value='9'>9</option>
-      <option value='11'>11</option>
-      <option value='13'>13</option>
-      <option value='15'>15</option>
-      <option value='17'>17</option>
-      <option value='19'>19</option>
-    </select>
+    <div>
+      <div className='d-inline'>
+        Erode Iterations
+      </div>
+      <div className='d-inline ml-2'>
+        <select 
+          name={name}
+          value={redaction_rule.erode_iterations}
+          onChange={onchange}
+        >
+          <option value='1'>1</option>
+          <option value='3'>3</option>
+          <option value='5'>5</option>
+          <option value='7'>7</option>
+          <option value='9'>9</option>
+          <option value='11'>11</option>
+          <option value='13'>13</option>
+          <option value='15'>15</option>
+          <option value='17'>17</option>
+          <option value='19'>19</option>
+        </select>
+      </div>
+    </div>
   )
 }
 
 export const buildRedactionReplaceWithSelect = function (
     name,
-    value,
+    redaction_rule,
     onchange,
+    include_label=''
   ) {
+  if (redaction_rule.mask_method !== 'text_eraser') {
+    return ''
+  }
   return (
-    <select 
-      name={name}
-      value={value}
-      onChange={onchange}
-    >
-      <option value='eroded'>Eroded</option>
-      <option value='edge_partitioned'>Edge Partitioned</option>
-      <option value='color_partitioned'>Color Partitioned</option>
-    </select>
+    <div>
+      <div className='d-inline'>
+        Replace With
+      </div>
+      <div className='d-inline ml-2'>
+        <select 
+          name={name}
+          value={redaction_rule.replace_with}
+          onChange={onchange}
+        >
+          <option value='eroded'>Eroded</option>
+          <option value='edge_partitioned'>Edge Partitioned</option>
+          <option value='color_partitioned'>Color Partitioned</option>
+        </select>
+      </div>
+    </div>
   )
 }
 

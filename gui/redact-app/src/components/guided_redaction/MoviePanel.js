@@ -4,6 +4,7 @@ import {
   buildFramesetDiscriminatorSelect,
   buildRedactionReplaceWithSelect,
   buildRedactionErodeIterationsSelect,
+  buildRedactionBucketClosenessSelect,
   buildRedactionTypeSelect
 } from './redact_utils.js'
 import MovieImageControls from './MovieImageControls.js'
@@ -1370,6 +1371,12 @@ class MoviePanelAdvancedControls extends React.Component {
     this.props.setGlobalStateVar('redact_rule', deepCopyRedactRule)
   }
 
+  setGlobalBucketCloseness(the_value) {
+    let deepCopyRedactRule = JSON.parse(JSON.stringify(this.props.redact_rule))
+    deepCopyRedactRule['bucket_closeness'] = the_value
+    this.props.setGlobalStateVar('redact_rule', deepCopyRedactRule)
+  }
+
   render() {
     if (this.props.movie_url === '') {
       return ''
@@ -1421,14 +1428,20 @@ class MoviePanelAdvancedControls extends React.Component {
 
     const redaction_replace_with = buildRedactionReplaceWithSelect(
       'replace_with',
-      this.props.redact_rule.replace_with,
+      this.props.redact_rule,
       ((event) => this.setGlobalReplaceWith(event.target.value))
     )
 
     const redaction_erode_iterations = buildRedactionErodeIterationsSelect(
       'erode_iterations',
-      this.props.redact_rule.erode_iterations,
+      this.props.redact_rule,
       ((event) => this.setGlobalErodeIterations(event.target.value))
+    )
+
+    const redaction_bucket_closeness = buildRedactionBucketClosenessSelect(
+      'bucket_closeness',
+      this.props.redact_rule,
+      ((event) => this.setGlobalBucketCloseness(event.target.value))
     )
 
     return (
@@ -1492,23 +1505,9 @@ class MoviePanelAdvancedControls extends React.Component {
                 </div>
               </div>
 
-              <div>
-                <div className='d-inline'>
-                  set redaction replace with
-                </div>
-                <div className='d-inline ml-2'>
-                  {redaction_replace_with}
-                </div>
-              </div>
-
-              <div>
-                <div className='d-inline'>
-                  set redaction erode iterations
-                </div>
-                <div className='d-inline ml-2'>
-                  {redaction_erode_iterations}
-                </div>
-              </div>
+              {redaction_replace_with}
+              {redaction_erode_iterations}
+              {redaction_bucket_closeness}
 
               <div className='mt-2'>
                 <div className='d-inline'>

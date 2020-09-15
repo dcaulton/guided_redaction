@@ -28,6 +28,7 @@ class RedactApplication extends React.Component {
         mask_method: 'black_rectangle',
         replace_with: 'eroded',
         erode_iterations: 9,
+        bucket_closeness: 100,
       },
       movie_url: '',
       frameset_hash: '',
