@@ -47,7 +47,6 @@ class RedactViewSetRedactImage(viewsets.ViewSet):
         if 'mask_method' not in request_data['redact_rule']:
             return self.error("mask_method is required")
         try:
-            print('benny 01')
             pic_response = requests.get(
               request_data["image_url"],
               verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,

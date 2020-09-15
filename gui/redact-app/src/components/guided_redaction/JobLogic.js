@@ -197,7 +197,7 @@ class JobLogic extends React.Component {
           this.handleAttachedJobUpdate(job, attached_job, setGlobalStateVar)
         }
         if (jobIdsToCheckFor.includes(job['id'])) {
-          if (attached_job['status'] === 'success') {
+          if (job['status'] === 'success') {
             this.loadJobResults(
               job['id'],
               (()=>{}), 
