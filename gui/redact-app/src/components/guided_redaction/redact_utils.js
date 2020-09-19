@@ -91,6 +91,12 @@ export const buildRedactionRuleControls = function (
     ((event) => updateRedactField('min_contour_area', event.target.value))
   )
 
+  const preserve_hlines = buildRedactionPreserveHlinesSelect(
+    'preserve_hlines',
+    redact_rule,
+    ((event) => updateRedactField('preserve_hlines', event.target.value))
+  )
+
   return (
     <div>
     {mask_method}
@@ -98,6 +104,7 @@ export const buildRedactionRuleControls = function (
     {erode_iterations}
     {bucket_closeness}
     {min_contour_area}
+    {preserve_hlines}
     </div>
   )
 }
@@ -125,6 +132,10 @@ export const buildRedactionBucketClosenessSelect = function (
           value={redaction_rule.bucket_closeness}
           onChange={onchange}
         >
+          <option value='0'>0</option>
+          <option value='5'>5</option>
+          <option value='10'>10</option>
+          <option value='15'>15</option>
           <option value='25'>25</option>
           <option value='50'>50</option>
           <option value='75'>75</option>
@@ -171,6 +182,36 @@ export const buildRedactionMinContourAreaSelect = function (
           <option value='1800'>1800</option>
           <option value='2400'>2400</option>
           <option value='3000'>3000</option>
+        </select>
+      </div>
+    </div>
+  )
+}
+
+export const buildRedactionPreserveHlinesSelect = function (
+    name,
+    redaction_rule,
+    onchange
+  ) {
+  if (redaction_rule.mask_method !== 'text_eraser') {
+    return ''
+  }
+  if (redaction_rule.replace_with !== 'color_partitioned') {
+    return ''
+  }
+  return (
+    <div>
+      <div className='d-inline'>
+        Preserve Horizontal Lines
+      </div>
+      <div className='d-inline ml-2'>
+        <select 
+          name={name}
+          value={redaction_rule.preserve_hlines}
+          onChange={onchange}
+        >
+          <option value='yes'>yes</option>
+          <option value='no'>no</option>
         </select>
       </div>
     </div>

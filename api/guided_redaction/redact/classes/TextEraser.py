@@ -50,6 +50,15 @@ class TextEraser:
         else:
             self.min_contour_area = 400
 
+        if redact_rule and \
+            'preserve_hlines' in redact_rule:
+            if redact_rule['preserve_hlines'] == 'yes': 
+                self.preserve_hlines = True
+            else:
+                self.preserve_hlines = False
+        else:
+            self.preserve_hlines = True
+
     def mask_all_regions(self, source, regions_to_mask):
         output = source.copy()
         for masking_region in regions_to_mask:
@@ -69,18 +78,20 @@ class TextEraser:
         elif self.replace_with == 'color_partitioned': 
             zoned_source = self.build_color_partitioned_source_image(roi_copy)
 
-        hlines_thresh = self.get_horizontal_line_mask(roi_copy)
-        hlines_thresh = cv2.cvtColor(hlines_thresh, cv2.COLOR_BGR2GRAY)
-        hlines_contours = cv2.findContours(
-            hlines_thresh,
-            cv2.RETR_LIST,
-            cv2.CHAIN_APPROX_SIMPLE
-        )
-        hlines_contours = imutils.grab_contours(hlines_contours)
-        hlines_contours = \
-            self.filter_hline_contours(hlines_contours, masking_region, debug=False)
+        if self.preserve_hlines:
+            hlines_thresh = self.get_horizontal_line_mask(roi_copy)
+            hlines_thresh = cv2.cvtColor(hlines_thresh, cv2.COLOR_BGR2GRAY)
+            hlines_contours = cv2.findContours(
+                hlines_thresh,
+                cv2.RETR_LIST,
+                cv2.CHAIN_APPROX_SIMPLE
+            )
+            hlines_contours = imutils.grab_contours(hlines_contours)
+            hlines_contours = \
+                self.filter_hline_contours(hlines_contours, masking_region, debug=False)
 
-        self.draw_hline_contours_with_color(zoned_source, hlines_contours, roi_copy, bg_color)
+            self.draw_hline_contours_with_color(zoned_source, hlines_contours, roi_copy, bg_color)
+
         output[
           masking_region['start'][1]:masking_region['end'][1],
           masking_region['start'][0]:masking_region['end'][0]
@@ -130,15 +141,11 @@ class TextEraser:
 
             cv2.drawContours(
                 build_img, 
-#                color_contours, 
                 filtered_color_contours, 
                 -1, 
                 color_data['avg_bgr_color'], 
                 -1
             )
-
-#        filename = '/Users/dcaulton/Desktop/all_done_source_with_color.png'.format(index)
-#        cv2.imwrite(filename, build_img)
 
         return build_img
 
@@ -206,32 +213,96 @@ class TextEraser:
                 self.get_color_range_for_buckets(reduced[bucket_key])
             reduced[bucket_key]['color_range'] = bgr_range
             lower_bgr_color = (
-              avg_bgr_color[0] - bgr_range[0],
-              avg_bgr_color[1] - bgr_range[1],
-              avg_bgr_color[2] - bgr_range[2]
-            )
-            lower_bgr_color = (
-                lower_bgr_color[0] - self.range_below_extra_padding,
-                lower_bgr_color[1] - self.range_below_extra_padding,
-                lower_bgr_color[2] - self.range_below_extra_padding,
+              max(0, avg_bgr_color[0] - bgr_range[0] - self.range_below_extra_padding),
+              max(0, avg_bgr_color[1] - bgr_range[1] - self.range_below_extra_padding),
+              max(0, avg_bgr_color[2] - bgr_range[2] - self.range_below_extra_padding)
             )
             upper_bgr_color = (
-              avg_bgr_color[0] + bgr_range[0],
-              avg_bgr_color[1] + bgr_range[1],
-              avg_bgr_color[2] + bgr_range[2]
+              min(255, avg_bgr_color[0] + bgr_range[0] + self.range_above_extra_padding),
+              min(255, avg_bgr_color[1] + bgr_range[1] + self.range_above_extra_padding),
+              min(255, avg_bgr_color[2] + bgr_range[2] + self.range_above_extra_padding)
             )
-            upper_bgr_color = (
-                upper_bgr_color[0] + self.range_above_extra_padding,
-                upper_bgr_color[1] + self.range_above_extra_padding,
-                upper_bgr_color[2] + self.range_above_extra_padding,
-            )
-            if upper_bgr_color[0] > 245 and upper_bgr_color[1] > 245 and upper_bgr_color[2] > 245:
-              upper_bgr_color = (255, 255, 255)
             reduced[bucket_key]['lower_bgr_color'] = lower_bgr_color
             reduced[bucket_key]['upper_bgr_color'] = upper_bgr_color
 
-#        print('reduced bgr colors', reduced)
+        self.filter_overlapping_ranges(reduced, 0)
+
         return reduced
+
+    def filter_overlapping_ranges(self, reduced, index):
+        reduced_keys = [x for x in reduced]
+        reduced_keys.sort()
+        source_key = reduced_keys[index]
+        for x in reduced_keys[index+1:]:
+            overlap_type = self.get_bucket_overlap(reduced[source_key], reduced[x])
+            if overlap_type:
+                self.fix_bucket_overlap(reduced[source_key], reduced[x], overlap_type)
+        if (index < len(reduced_keys) - 1):
+            self.filter_overlapping_ranges(reduced, index+1)
+
+    def fix_bucket_overlap(self, bucket_1, bucket_2, overlap_type):
+      if overlap_type == 'b2_upper':
+          half = (
+            math.floor((bucket_2['upper_bgr_color'][0] - bucket_1['lower_bgr_color'][0]) / 2),
+            math.floor((bucket_2['upper_bgr_color'][1] - bucket_1['lower_bgr_color'][1]) / 2),
+            math.floor((bucket_2['upper_bgr_color'][2] - bucket_1['lower_bgr_color'][2]) / 2)
+          )
+          b1_lower = (
+              bucket_1['lower_bgr_color'][0] + half[0],
+              bucket_1['lower_bgr_color'][1] + half[1],
+              bucket_1['lower_bgr_color'][2] + half[2]
+          )
+          b2_upper = (
+              bucket_2['upper_bgr_color'][0] - half[0] - 1,
+              bucket_2['upper_bgr_color'][1] - half[1] - 1,
+              bucket_2['upper_bgr_color'][2] - half[2] - 1
+          )
+          bucket_1['lower_bgr_color'] = b1_lower
+          bucket_2['upper_bgr_color'] = b2_upper
+      if overlap_type == 'b2_lower':
+          half = (
+            math.floor((bucket_1['upper_bgr_color'][0] - bucket_2['lower_bgr_color'][0]) / 2),
+            math.floor((bucket_1['upper_bgr_color'][1] - bucket_2['lower_bgr_color'][1]) / 2),
+            math.floor((bucket_1['upper_bgr_color'][2] - bucket_2['lower_bgr_color'][2]) / 2)
+          )
+          b2_lower = (
+              bucket_2['lower_bgr_color'][0] + half[0],
+              bucket_2['lower_bgr_color'][1] + half[1],
+              bucket_2['lower_bgr_color'][2] + half[2]
+          )
+          b1_upper = (
+              bucket_1['upper_bgr_color'][0] - half[0] - 1,
+              bucket_1['upper_bgr_color'][1] - half[1] - 1,
+              bucket_1['upper_bgr_color'][2] - half[2] - 1
+          )
+          bucket_1['upper_bgr_color'] = b1_upper
+          bucket_2['lower_bgr_color'] = b2_lower
+
+    def get_bucket_overlap(self, color_bucket_1, color_bucket_2):
+        if color_bucket_1['lower_bgr_color'][0] <= \
+            color_bucket_2['upper_bgr_color'][0] <= \
+            color_bucket_1['upper_bgr_color'][0]:
+            return 'b2_upper'
+        if color_bucket_1['lower_bgr_color'][1] <= \
+            color_bucket_2['upper_bgr_color'][1] <= \
+            color_bucket_1['upper_bgr_color'][1]:
+            return 'b2_upper'
+        if color_bucket_1['lower_bgr_color'][2] <= \
+            color_bucket_2['upper_bgr_color'][2] <= \
+            color_bucket_1['upper_bgr_color'][2]:
+            return 'b2_upper'
+        if color_bucket_1['lower_bgr_color'][0] <= \
+            color_bucket_2['lower_bgr_color'][0] <= \
+            color_bucket_1['upper_bgr_color'][0]:
+            return 'b2_lower'
+        if color_bucket_1['lower_bgr_color'][1] <= \
+            color_bucket_2['lower_bgr_color'][1] <= \
+            color_bucket_1['upper_bgr_color'][1]:
+            return 'b2_lower'
+        if color_bucket_1['lower_bgr_color'][2] <= \
+            color_bucket_2['lower_bgr_color'][2] <= \
+            color_bucket_1['upper_bgr_color'][2]:
+            return 'b2_lower'
 
     def calc_average_bucket_loc(self, bucket_locs):
         tt = [0,0,0]

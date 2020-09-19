@@ -30,6 +30,7 @@ class RedactApplication extends React.Component {
         erode_iterations: 9,
         bucket_closeness: 100,
         min_contour_area: 1000,
+        preserve_hlines: 'yes',
       },
       movie_url: '',
       frameset_hash: '',
