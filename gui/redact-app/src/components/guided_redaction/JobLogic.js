@@ -162,10 +162,8 @@ class JobLogic extends React.Component {
     let setGlobalStateVar = pass_obj['setGlobalStateVar']
     let getGlobalStateVar = pass_obj['getGlobalStateVar']
     let user_id = getGlobalStateVar('user')['id']
-    let attached_job = getGlobalStateVar('attached_job')
     let jobs_last_checked = getGlobalStateVar('jobs_last_checked')
     let whenJobLoaded = getGlobalStateVar('whenJobLoaded')
-    let jobs = getGlobalStateVar('jobs')
     let poll_for_jobs = pass_obj['poll_for_jobs']
     let job_polling_interval_seconds = getGlobalStateVar('job_polling_interval_seconds')
     let getJobs = pass_obj['getJobs']
@@ -188,11 +186,13 @@ class JobLogic extends React.Component {
 
     await getJobs(user_id)
     .then(() => {
+      let jobs = getGlobalStateVar('jobs')
       const jobIdsToCheckFor = Object.keys(whenJobLoaded)
       for (let index in jobs) {
         const job = jobs[index]
         // we only need this for non-websocket systems.  When we get a signal
         // on the websocket, we handleAttachedJobUpdate there.
+        let attached_job = getGlobalStateVar('attached_job')
         if (this.isAttachedJob(job['id'], attached_job)) {
           this.handleAttachedJobUpdate(job, attached_job, setGlobalStateVar)
         }

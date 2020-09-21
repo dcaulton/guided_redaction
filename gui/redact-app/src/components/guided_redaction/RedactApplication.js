@@ -1114,8 +1114,7 @@ class RedactApplication extends React.Component {
           'saveStateCheckpoint': this.saveStateCheckpoint,
         }
         JobLogic.checkForJobs(pass_obj)
-      }
-      if (JobLogic.isAttachedJob(data['job_id'], this.state.attached_job)) {
+      } else if (JobLogic.isAttachedJob(data['job_id'], this.state.attached_job)) {
         JobLogic.handleAttachedJobUpdate(data, this.state.attached_job, this.setGlobalStateVar)
       }
     }
