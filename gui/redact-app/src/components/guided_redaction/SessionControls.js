@@ -375,6 +375,10 @@ class SessionControls extends React.Component {
     if (this.props.visibilityFlags['templates']) {
       show_templates_checked = 'checked'
     }
+    let show_data_sifter_checked = ''
+    if (this.props.visibilityFlags['data_sifter']) {
+      show_data_sifter_checked = 'checked'
+    }
     let show_hog_checked = ''
     if (this.props.visibilityFlags['hog']) {
       show_hog_checked = 'checked'
@@ -446,6 +450,16 @@ class SessionControls extends React.Component {
             onChange={() => this.props.toggleShowVisibility('templates')}
           />
           Show Templates
+        </div>
+
+        <div className='row mt-3 bg-light rounded'>
+          <input
+            className='ml-2 mr-2 mt-1'
+            checked={show_data_sifter_checked}
+            type='checkbox'
+            onChange={() => this.props.toggleShowVisibility('data_sifter')}
+          />
+          Show Data Sifter
         </div>
 
         <div className='row mt-3 bg-light rounded'>

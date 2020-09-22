@@ -1,5 +1,6 @@
 import React from 'react';
 import TemplateControls from './TemplateControls'
+import DataSifterControls from './DataSifterControls'
 import OcrControls from './OcrControls'
 import RedactControls from './RedactControls'
 import ZipControls from './ZipControls'
@@ -124,6 +125,35 @@ class BottomInsightsControls extends React.Component {
           getFramesetHashesInOrder={this.props.getFramesetHashesInOrder}
           movies={this.props.movies}
           setCurrentVideo={this.props.setCurrentVideo}
+          saveScannerToDatabase={this.props.saveScannerToDatabase}
+          scanners={this.props.scanners}
+          getScanners={this.props.getScanners}
+          deleteScanner={this.props.deleteScanner}
+          importScanner={this.props.importScanner}
+          tier_1_scanners={this.props.tier_1_scanners}
+          tier_1_scanner_current_ids={this.props.tier_1_scanner_current_ids}
+          tier_1_matches={this.props.tier_1_matches}
+        />
+
+        <DataSifterControls 
+          setGlobalStateVar={this.props.setGlobalStateVar}
+          handleSetMode={this.props.handleSetMode}
+//          submitInsightsJob={this.props.submitInsightsJob}
+          displayInsightsMessage={this.props.displayInsightsMessage}
+//          cropImage={this.props.cropImage}
+//          buildMovieSetOptions={this.buildMovieSetOptions}
+          buildTier1RunOptions={this.buildTier1RunOptions}
+          visibilityFlags={this.props.visibilityFlags}
+          toggleShowVisibility={this.props.toggleShowVisibility}
+          addInsightsCallback={this.props.addInsightsCallback}
+          insights_image={this.props.insights_image}
+          movie_url={this.props.movie_url}
+          clicked_coords={this.props.clicked_coords}
+//          setScrubberToIndex={this.props.setScrubberToIndex}
+//          getFramesetHashForImageUrl={this.props.getFramesetHashForImageUrl}
+//          getFramesetHashesInOrder={this.props.getFramesetHashesInOrder}
+          movies={this.props.movies}
+//          setCurrentVideo={this.props.setCurrentVideo}
           saveScannerToDatabase={this.props.saveScannerToDatabase}
           scanners={this.props.scanners}
           getScanners={this.props.getScanners}
