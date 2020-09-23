@@ -408,8 +408,14 @@ class AnalyzeViewSetSelectedArea(viewsets.ViewSet):
                         "scanner_type": "selected_area",
                     }
                     regions_as_hashes[region['sam_area_id']] = region_hash
+            # TODO: GET TEMPLATE ANCHOR OFFSET HERE IF NEEDED
+            #   it prolly makes sense to return it from process_t1_results
             if 'minimum_zones' in selected_area_meta and selected_area_meta['minimum_zones']:
-                regions_as_hashes = self.append_min_zones(selected_area_meta, regions_as_hashes, offset)
+                regions_as_hashes = self.append_min_zones(
+                    selected_area_meta, 
+                    regions_as_hashes,
+                    (0, 0)
+                )
             if regions_as_hashes:
                 response_movies[movie_url]['framesets'][frameset_hash] = regions_as_hashes
         return Response({"movies": response_movies})
@@ -455,7 +461,8 @@ class AnalyzeViewSetSelectedArea(viewsets.ViewSet):
             for area in selected_area_meta['areas']:
                 area_scanner_key = area['id'] + '-' + scanner_matcher_id
                 selected_point = area['center']
-                offset = self.get_offset_for_t1(selected_area_meta, frameset, scanner_matcher_id)
+                match_element = frameset[scanner_matcher_id]
+                offset = self.get_offset_for_t1(selected_area_meta, match_element)
                 selected_point = [
                     selected_point[0] + offset[0],
                     selected_point[1] + offset[1]
@@ -510,9 +517,8 @@ class AnalyzeViewSetSelectedArea(viewsets.ViewSet):
             return False
         return True
 
-    def get_offset_for_t1(self, selected_area_meta, frameset, scanner_matcher_id):
+    def get_offset_for_t1(self, selected_area_meta, match_element):
         if 'origin_entity_location' in selected_area_meta:
-            match_element = frameset[scanner_matcher_id]
             if 'location' in match_element:
                 disp_x = match_element['location'][0] - selected_area_meta['origin_entity_location'][0]
                 disp_y = match_element['location'][1] - selected_area_meta['origin_entity_location'][1]

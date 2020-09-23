@@ -359,6 +359,30 @@ class DataSifterControls extends React.Component {
     )
   }
 
+  buildBuildButton() {
+    const t1_sa_build_options = this.props.buildTier1RunOptions(
+      'selected_area', 
+      'data_sifter_build_t1_selected_area'
+    )
+    return (
+      <div className='d-inline'>
+        <button
+            className='btn btn-primary ml-2 dropdown-toggle'
+            type='button'
+            id='scanDataSifterBuildDropdownButton'
+            data-toggle='dropdown'
+            area-haspopup='true'
+            area-expanded='false'
+        >
+          Build
+        </button>
+        <div className='dropdown-menu' aria-labelledby='scanDataSifterBuildDropdownButton'>
+          {t1_sa_build_options}
+        </div>
+      </div>
+    )
+  }
+
   buildRunButton() {
     if (!Object.keys(this.props.tier_1_scanners['data_sifter']).includes(this.state.id)) {
       return ''

@@ -26,9 +26,9 @@ class RedactApplication extends React.Component {
       frameset_discriminator: 'gray8',
       redact_rule: {
         mask_method: 'black_rectangle',
-        replace_with: 'eroded',
+        replace_with: 'color_partitioned',
         erode_iterations: 9,
-        bucket_closeness: 100,
+        bucket_closeness: 0,
         min_contour_area: 1000,
         preserve_hlines: 'yes',
       },
