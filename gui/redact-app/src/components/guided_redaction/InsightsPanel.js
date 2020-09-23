@@ -284,6 +284,38 @@ class InsightsPanel extends React.Component {
     return movies_obj
   }
 
+  buildDataSifterBuildJobData(job_string, extra_data) {
+    let job_data = {
+      request_data: {},
+    }
+    job_data['app'] = 'analyze'
+    job_data['operation'] = 'build_data_sifter'
+
+    const data_sifter_id = this.props.tier_1_scanner_current_ids['data_sifter']
+    const data_sifter = this.props.tier_1_scanners['data_sifter'][data_sifter_id]
+    job_data['request_data']['tier_1_scanners'] = {}
+    job_data['request_data']['tier_1_scanners']['data_sifter'] = {}
+    job_data['request_data']['tier_1_scanners']['data_sifter'][data_sifter_id] = data_sifter
+    job_data['request_data']['id'] = data_sifter_id
+    job_data['description'] = 'build data sifter (' + data_sifter.name + ')'
+
+    job_data['request_data']['movies'] = {}
+    if (job_string === 'data_sifter_build_t1_selected_area') {
+      // extra data has the selected area id
+      const sa_movies = this.props.tier_1_matches['selected_area'][extra_data]['movies']
+      const sa_movie_urls = Object.keys(sa_movies)
+      job_data['request_data']['movies'] = sa_movies
+      let build_source_movies = {}
+      for (let i=0; i < sa_movie_urls.length; i++) {
+        const movie_url = sa_movie_urls[i]
+        const the_movie = this.props.movies[movie_url]
+        build_source_movies[movie_url] = the_movie
+      }
+      job_data['request_data']['movies']['source'] = build_source_movies
+    }
+    return job_data
+  }
+
   buildTier1JobData(scanner_type, scope, extra_data) {
     let job_data = {
       request_data: {},
@@ -647,6 +679,13 @@ class InsightsPanel extends React.Component {
         job_string === 'ocr_scene_analysis_all_movies'
     ) {
       let job_data = this.buildTier1JobData('ocr_scene_analysis', job_string, extra_data)
+      this.props.submitJob({
+        job_data: job_data,
+      })
+    } else if (
+        job_string === 'data_sifter_build_t1_selected_area'
+    ) {
+      let job_data = this.buildDataSifterBuildJobData(job_string, extra_data)
       this.props.submitJob({
         job_data: job_data,
       })
