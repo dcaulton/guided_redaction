@@ -1268,3 +1268,35 @@ class AnalyzeViewSetTestHog(viewsets.ViewSet):
         results = hog_scanner.test_model()
 
         return Response(results)
+
+class AnalyzeViewSetCompileDataSifter(viewsets.ViewSet) :
+    def create(self, request):
+        request_data = request.data
+        return self.process_create_request(request_data)
+
+
+    def process_create_request(self, request_data):
+        if not request_data.get("tier_1_scanners"):
+            return self.error("tier_1_scanners is required", status_code=400)
+        if not request_data.get("movies"):
+            return self.error("movies is required", status_code=400)
+        response_movies = {}
+
+        movies = request_data.get("movies")
+        for movie_url in movies['source']:
+            source_movie = movies['source'][movie_url]
+            sa_movie = movies[movie_url]
+            response_movies[movie_url] = {
+                'framesets': {},
+            }
+            ordered_hashes = get_frameset_hashes_in_order(
+              source_movie['frames'], 
+              source_movie['framesets']
+            )
+            for fs_hash in ordered_hashes:
+                if fs_hash in sa_movie['framesets']:
+                    print('looking at {}'.format(fs_hash))
+        results = {'beef': 'jerky'}
+
+        return Response(results)
+
