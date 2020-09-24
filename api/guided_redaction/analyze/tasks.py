@@ -36,7 +36,39 @@ from guided_redaction.analyze.api import (
 )
 
 
-def get_area_to_redact_from_template_match(mask_zone, anchor_id, template, anchor_found_coords, anchor_found_scale):
+def dispatch_parent_job(job):
+    if job.parent_id:
+        parent_job = Job.objects.get(pk=job.parent_id)
+        if parent_job.app == 'analyze' and parent_job.operation == 'scan_template_threaded':
+            scan_template_threaded.delay(parent_job.id)
+        if parent_job.app == 'analyze' and parent_job.operation == 'scan_template_multi':
+            scan_template_multi.delay(parent_job.id)
+        if parent_job.app == 'analyze' and parent_job.operation == 'build_data_sifter':
+            build_data_sifter.delay(parent_job.id)
+        if parent_job.app == 'analyze' and parent_job.operation == 'get_timestamp_threaded':
+            get_timestamp_threaded.delay(parent_job.id)
+        if parent_job.app == 'analyze' and parent_job.operation == 'scan_ocr_movie':
+            scan_ocr_movie.delay(parent_job.id)
+        if parent_job.app == 'analyze' and parent_job.operation == 'scan_ocr':
+            scan_ocr_movie.delay(parent_job.id)
+        if parent_job.app == 'analyze' and parent_job.operation == 'selected_area_threaded':
+            selected_area_threaded.delay(parent_job.id)
+        if parent_job.app == 'analyze' and parent_job.operation == 'ocr_scene_analysis_threaded':
+            ocr_scene_analysis_threaded.delay(parent_job.id)
+        if parent_job.app == 'analyze' and parent_job.operation == 'entity_finder_threaded':
+            entity_finder_threaded.delay(parent_job.id)
+        if parent_job.app == 'analyze' and parent_job.operation == 'hog_train_threaded':
+            train_hog_threaded.delay(parent_job.id)
+        if parent_job.app == 'analyze' and parent_job.operation == 'oma_first_scan_threaded':
+            oma_first_scan_threaded.delay(parent_job.id)
+
+def get_area_to_redact_from_template_match(
+        mask_zone, 
+        anchor_id, 
+        template, 
+        anchor_found_coords, 
+        anchor_found_scale
+    ):
     for x in template['anchors']:
         if x['id'] == anchor_id:
             anchor = x
@@ -126,12 +158,7 @@ def scan_template(job_uuid):
         job.status = 'success'
         job.save()
 
-        if job.parent_id:
-            parent_job = Job.objects.get(pk=job.parent_id)
-            if parent_job.app == 'analyze' and parent_job.operation == 'scan_template_threaded':
-                scan_template_threaded.delay(parent_job.id)
-            if parent_job.app == 'analyze' and parent_job.operation == 'scan_template_multi':
-                scan_template_multi.delay(parent_job.id)
+        dispatch_parent_job(job)
     else:
         print('calling scan_template on nonexistent job: {}'.format(job_uuid))
 
@@ -210,7 +237,6 @@ def dispatch_ds_scan_ocr(parent_job):
         print('dispatch ds scan ocr kids: dispatching job for movie {}'.format(movie_url))
         scan_ocr_movie.delay(job.id)
 
-#MAMA
 @shared_task
 def compile_data_sifter(job_uuid):
     if not Job.objects.filter(pk=job_uuid).exists():
@@ -229,10 +255,7 @@ def compile_data_sifter(job_uuid):
     job.response_data = json.dumps(response.data)
     job.status = 'success'
     job.save()
-    if job.parent_id:
-        parent_job = Job.objects.get(pk=job.parent_id)
-        if parent_job.app == 'analyze' and parent_job.operation == 'build_data_sifter':
-            build_data_sifter.delay(parent_job.id)
+    dispatch_parent_job(job)
 
 @shared_task
 def build_data_sifter(job_uuid):
@@ -311,10 +334,7 @@ def get_timestamp(job_uuid):
     job.status = 'success'
     job.save()
 
-    if job.parent_id:
-        parent_job = Job.objects.get(pk=job.parent_id)
-        if parent_job.app == 'analyze' and parent_job.operation == 'get_timestamp_threaded':
-            get_timestamp_threaded.delay(parent_job.id)
+    dispatch_parent_job(job)
 
 @shared_task
 def get_timestamp_threaded(job_uuid):
@@ -356,12 +376,9 @@ def build_and_dispatch_get_timestamp_threaded_children(parent_job):
             parent=parent_job,
         )
         job.save()
-        print('build_and_dispatch_get_timestamp_thread_children: dispatching job for movie {}'.format(movie_url))
+        the_str = 'build_and_dispatch_get_timestamp_thread_children: dispatching job for movie {}'
+        print(the_str.format(movie_url))
         get_timestamp.delay(job.id)
-        # intersperse these evenly in the job stack so we get regular updates
-        if index % 5 == 0:
-            get_timestamp_threaded.delay(parent_job.id)
-    get_timestamp_threaded.delay(parent_job.id)
 
 def wrap_up_get_timestamp_threaded(job, children):
     aggregate_response_data = {}
@@ -427,12 +444,9 @@ def build_and_dispatch_scan_template_multi_children(parent_job):
                 parent=parent_job,
             )
             job.save()
-            print('build_and_dispatch_scan_template_multi_children: dispatching job for movie {}'.format(movie_url))
+            the_str = 'build_and_dispatch_scan_template_multi_children: dispatching job for movie {}'
+            print(the_str.format(movie_url))
             scan_template.delay(job.id)
-            # intersperse these evenly in the job stack so we get regular updates
-            if total_index % 5 == 0:
-                scan_template_multi.delay(parent_job.id)
-    scan_template_multi.delay(parent_job.id)
 
 def wrap_up_scan_template_multi(job, children):
     aggregate_response_data = {
@@ -519,12 +533,9 @@ def build_and_dispatch_scan_template_threaded_children(parent_job):
             parent=parent_job,
         )
         job.save()
-        print('build_and_dispatch_scan_template_thread_children: dispatching job for movie {}'.format(movie_url))
+        the_str = 'build_and_dispatch_scan_template_thread_children: dispatching job for movie {}'
+        print(the_str.format(movie_url))
         scan_template.delay(job.id)
-        # intersperse these evenly in the job stack so we get regular updates
-        if index % 5 == 0:
-            scan_template_threaded.delay(parent_job.id)
-    scan_template_threaded.delay(parent_job.id)
 
 def aggregate_statistics_from_template_child(aggregate_response_data, child_response_data):
     if 'statistics' in child_response_data:
@@ -576,12 +587,7 @@ def scan_ocr_image(job_uuid):
         job.status = 'success'
         job.save()
 
-        if job.parent_id:
-            parent_job = Job.objects.get(pk=job.parent_id)
-            if parent_job.app == 'analyze' and parent_job.operation == 'scan_ocr_movie':
-                scan_ocr_movie.delay(parent_job.id)
-            if parent_job.app == 'analyze' and parent_job.operation == 'scan_ocr':
-                scan_ocr_movie.delay(parent_job.id)
+        dispatch_parent_job(job)
 
 @shared_task
 def telemetry_find_matching_frames(job_uuid):
@@ -615,10 +621,7 @@ def scan_ocr_movie(job_uuid):
             if pipeline:
                 worker = PipelinesViewSetDispatch()
                 worker.handle_job_finished(job, pipeline)
-            if job.parent_id:
-                parent_job = Job.objects.get(pk=job.parent_id)
-                if parent_job.app == 'analyze' and parent_job.operation == 'build_data_sifter':
-                    build_data_sifter.delay(parent_job.id)
+            dispatch_parent_job(job)
         elif next_step == 'abort':
             job.status = 'failed'
             job.harvest_failed_child_job_errors(children)
@@ -660,11 +663,9 @@ def build_and_dispatch_scan_ocr_movie_children(parent_job):
                 parent=parent_job,
             )
             job.save()
-            print('build_and_dispatch_scan_ocr_movie_children: dispatching job for frameset {}'.format(frameset_hash))
+            the_str = 'build_and_dispatch_scan_ocr_movie_children: dispatching job for frameset {}'
+            print(the_str.format(frameset_hash))
             scan_ocr_image.delay(job.id)
-            # intersperse these evenly in the job stack so we get regular updates
-            if index % 5 == 0:
-                scan_ocr_movie.delay(parent_job.id)
 
 def wrap_up_scan_ocr_movie(parent_job, children):
     parent_request_data = json.loads(parent_job.request_data)
@@ -751,10 +752,7 @@ def selected_area(job_uuid):
     job.status = 'success'
     job.save()
 
-    if job.parent_id:
-        parent_job = Job.objects.get(pk=job.parent_id)
-        if parent_job.app == 'analyze' and parent_job.operation == 'selected_area_threaded':
-            selected_area_threaded.delay(parent_job.id)
+    dispatch_parent_job(job)
 
 @shared_task
 def selected_area_threaded(job_uuid):
@@ -810,7 +808,8 @@ def build_and_dispatch_selected_area_threaded_children(parent_job):
                 parent=parent_job,
             )
             job.save()
-            print('build_and_dispatch_selected_area_threaded_children: dispatching job for movie {}'.format(movie_url))
+            the_str = 'build_and_dispatch_selected_area_threaded_children: dispatching job for movie {}'
+            print(the_str.format(movie_url))
             selected_area.delay(job.id)
 
 def wrap_up_selected_area_threaded(job, children):
@@ -970,10 +969,7 @@ def ocr_scene_analysis(job_uuid):
     job.status = 'success'
     job.save()
 
-    if job.parent_id:
-        parent_job = Job.objects.get(pk=job.parent_id)
-        if parent_job.app == 'analyze' and parent_job.operation == 'ocr_scene_analysis_threaded':
-            ocr_scene_analysis_threaded.delay(parent_job.id)
+    dispatch_parent_job(job)
 
 @shared_task
 def ocr_scene_analysis_threaded(job_uuid):
@@ -1029,7 +1025,8 @@ def build_and_dispatch_ocr_scene_analysis_threaded_children(parent_job):
                 parent=parent_job,
             )
             job.save()
-            print('build_and_dispatch_ocr_scene_analysis_threaded_children: dispatching job for movie {}'.format(movie_url))
+            the_str = 'build_and_dispatch_ocr_scene_analysis_threaded_children: dispatching job for movie {}'
+            print(the_str.format(movie_url))
             ocr_scene_analysis.delay(job.id)
 
 def wrap_up_ocr_scene_analysis_threaded(job, children):
@@ -1073,10 +1070,7 @@ def oma_first_scan_collect_one_frame(job_uuid):
     job.status = 'success'
     job.save()
 
-    if job.parent_id:
-        parent_job = Job.objects.get(pk=job.parent_id)
-        if parent_job.app == 'analyze' and parent_job.operation == 'oma_first_scan_threaded':
-            oma_first_scan_threaded.delay(parent_job.id)
+    dispatch_parent_job(job)
 
 @shared_task
 def ocr_movie_analysis_condense_all_frames(job_uuid):
@@ -1148,21 +1142,20 @@ def build_and_dispatch_oma_first_scan_threaded_children(parent_job):
             build_request_data['movies'][movie_url]['framesets'][frameset_hash] = \
                 request_data['movies'][movie_url]['framesets'][frameset_hash]
             build_request_data['oma_rule'] = oma_rule
+            a_str = 'oma first scan for movie {} frameset hash {}'
             job = Job(
                 request_data=json.dumps(build_request_data),
                 status='created',
-                description='oma first scan for movie {} frameset hash {}'.format(movie_url, frameset_hash),
+                description=a_str.format(movie_url, frameset_hash),
                 app='analyze',
                 operation='oma_first_scan_collect_one_frame',
                 sequence=0,
                 parent=parent_job,
             )
             job.save()
-            print('build_and_dispatch_oma_first_scan_threaded_children: dispatching job for movie {} frameset {}'.format(movie_url, frameset_hash))
+            the_str = 'build_and_dispatch_oma_first_scan_threaded_children: dispatching job for movie {} frameset {}'
+            print(the_str.format(movie_url, frameset_hash))
             oma_first_scan_collect_one_frame.delay(job.id)
-            if frameset_index % 5 == 0:
-                oma_first_scan_threaded.delay(parent_job.id)
-        oma_first_scan_threaded.delay(parent_job.id)
 
 def get_image_url_from_request(request_obj):
     if 'movies' in request_obj:
@@ -1215,10 +1208,7 @@ def entity_finder(job_uuid):
     job.status = 'success'
     job.save()
 
-    if job.parent_id:
-        parent_job = Job.objects.get(pk=job.parent_id)
-        if parent_job.app == 'analyze' and parent_job.operation == 'entity_finder_threaded':
-            entity_finder_threaded.delay(parent_job.id)
+    dispatch_parent_job(job)
 
 @shared_task
 def entity_finder_threaded(job_uuid):
@@ -1270,7 +1260,8 @@ def build_and_dispatch_entity_finder_threaded_children(parent_job):
                 parent=parent_job,
             )
             job.save()
-            print('build_and_dispatch_entity_finder_threaded_children: dispatching job for movie {}'.format(movie_url))
+            the_str = 'build_and_dispatch_entity_finder_threaded_children: dispatching job for movie {}'
+            print(the_str.format(movie_url))
             entity_finder.delay(job.id)
 
 def wrap_up_entity_finder_threaded(job, children):
@@ -1309,17 +1300,13 @@ def test_hog(job_uuid):
     response = worker.process_create_request(rd)
     if not Job.objects.filter(pk=job_uuid).exists():
         return
-        return
     print('test_hog is complete')
     job = Job.objects.get(pk=job_uuid)
     job.response_data = json.dumps(response.data)
     job.status = 'success'
     job.save()
 
-    if job.parent_id:
-        parent_job = Job.objects.get(pk=job.parent_id)
-        if parent_job.app == 'analyze' and parent_job.operation == 'hog_train_threaded':
-            train_hog_threaded.delay(parent_job.id)
+    dispatch_parent_job(job)
 
 @shared_task
 def train_hog(job_uuid):
@@ -1340,10 +1327,7 @@ def train_hog(job_uuid):
     job.status = 'success'
     job.save()
 
-    if job.parent_id:
-        parent_job = Job.objects.get(pk=job.parent_id)
-        if parent_job.app == 'analyze' and parent_job.operation == 'hog_train_threaded':
-            train_hog_threaded.delay(parent_job.id)
+    dispatch_parent_job(job)
 
 @shared_task
 def train_hog_threaded(job_uuid):

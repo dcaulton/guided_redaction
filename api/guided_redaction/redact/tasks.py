@@ -12,6 +12,12 @@ from guided_redaction.attributes.models import Attribute
 from guided_redaction.pipelines.api import PipelinesViewSetDispatch
 
 
+def dispatch_parent_job(job):
+    if job.parent_id:
+        parent_job = Job.objects.get(pk=job.parent_id)
+        if parent_job.app == 'redact' and parent_job.operation == 'redact':
+            redact_threaded.delay(parent_job.id)
+
 @shared_task
 def redact_single(job_uuid):
     job = Job.objects.get(pk=job_uuid)
@@ -26,10 +32,7 @@ def redact_single(job_uuid):
 
         build_file_directory_user_attributes_from_movies(job, response.data)
 
-        if job.parent_id:
-            parent_job = Job.objects.get(pk=job.parent_id)
-            if parent_job.app == 'redact' and parent_job.operation == 'redact':
-                redact_threaded.delay(parent_job.id)
+        dispatch_parent_job(job)
 
 def build_and_dispatch_redact_threaded_children(parent_job):
     parent_job.status = 'running'

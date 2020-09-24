@@ -153,7 +153,7 @@ class DataSifterControls extends React.Component {
   }
 
   buildFakeDataDropdown() {
-    if (this.state.scan_level !== 'tier_1') {
+    if (this.state.scan_level !== 'tier_2') {
       return 
     }
     const values = [

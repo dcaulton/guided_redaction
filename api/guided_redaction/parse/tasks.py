@@ -30,6 +30,16 @@ split_frames_multithreaded_threshold = 200
 split_frames_chunk_size = 100
 max_retry_count = 10
 
+def dispatch_parent_job(job):
+    if job.parent_id:
+        parent_job = Job.objects.get(pk=job.parent_id)
+        if parent_job.app == 'parse' and parent_job.operation == 'split_and_hash_threaded':
+            split_and_hash_threaded.delay(parent_job.id)
+        if parent_job.app == 'parse' and parent_job.operation == 'zip_movie_threaded':
+            zip_movie_threaded.delay(parent_job.id)
+        if parent_job.app == 'parse' and parent_job.operation == 'split_threaded':
+            split_threaded.delay(parent_job.id)
+
 @shared_task
 def zip_movie_threaded(job_uuid):
     if Job.objects.filter(pk=job_uuid).exists():
@@ -102,10 +112,6 @@ def build_and_dispatch_zip_movie_tasks(parent_job):
         job.save()
         print('build_and_dispatch_zip_movie_tasks: dispatching job for movie {}'.format(movie_url))
         zip_movie.delay(job.id)
-        # intersperse these evenly in the job stack so we get regular updates
-        if index % 5 == 0:
-            zip_movie_threaded.delay(parent_job.id)
-    zip_movie_threaded.delay(parent_job.id)
 
 def wrap_up_zip_movie_threaded(zip_tasks, parent_job):
     print('wrapping up zip_movie_threaded')
@@ -141,10 +147,7 @@ def zip_movie(job_uuid):
         job.status = 'success'
         job.save()
 
-        if job.parent_id:
-            parent_job = Job.objects.get(pk=job.parent_id)
-            if parent_job.app == 'parse' and parent_job.operation == 'zip_movie_threaded':
-                zip_movie_threaded.delay(parent_job.id)
+        dispatch_parent_job(job)
 
 @shared_task
 def split_threaded(job_uuid):
@@ -207,12 +210,7 @@ def split_movie(job_uuid):
 
         build_file_directory_user_attributes_from_movies(job, response.data) 
 
-        if job.parent_id:
-            parent_job = Job.objects.get(pk=job.parent_id)
-            if parent_job.app == 'parse' and parent_job.operation == 'split_and_hash_threaded':
-                split_and_hash_threaded.delay(parent_job.id)
-            elif parent_job.app == 'parse' and parent_job.operation == 'split_threaded':
-                split_threaded.delay(parent_job.id)
+        dispatch_parent_job(job)
 
 @shared_task
 def hash_frames(job_uuid):
@@ -250,10 +248,7 @@ def hash_frames(job_uuid):
             job.save()
             break
 
-    if job.parent_id:
-        parent_job = Job.objects.get(pk=job.parent_id)
-        if parent_job.app == 'parse' and parent_job.operation == 'split_and_hash_threaded':
-            split_and_hash_threaded.delay(parent_job.id)
+    dispatch_parent_job(job)
 
 @shared_task
 def split_and_hash_threaded(job_uuid):
@@ -402,8 +397,6 @@ def make_and_dispatch_hash_tasks(parent_job, split_tasks):
             job.save()
             print('make and dispatch hash tasks, dispatching job {}'.format(job.id))
             hash_frames.delay(job.id)
-            if i % 3 == 0:
-                split_and_hash_threaded.delay(parent_job.id)
 
 def get_movie_length_in_seconds(movie_url):
     worker = ParseViewSetSplitMovie()
@@ -471,11 +464,6 @@ def build_and_dispatch_split_tasks_multithreaded(
         number_of_tasks_created += 1
         print('build and dispatch split tasks multithreaded, dispatching job {}'.format(job.id))
         split_movie.delay(job.id)
-        if i % 5 == 0:
-            if parent_job.operation == 'split_and_hash_threaded': 
-                split_and_hash_threaded.delay(parent_job.id)
-            if parent_job.operation == 'split_threaded': 
-                split_threaded.delay(parent_job.id)
     if 'preserve_movie_audio' in request_data and request_data['preserve_movie_audio']:
         build_request_data = {}
         build_request_data['movie_url'] = movie_url
@@ -494,10 +482,7 @@ def build_and_dispatch_split_tasks_multithreaded(
         job.save()
         print('build and dispatch split tasks multithreaded, dispatching job {} for audio'.format(job.id))
         split_movie.delay(job.id)
-    if parent_job.operation == 'split_and_hash_threaded': 
-        split_and_hash_threaded.delay(parent_job.id)
-    elif parent_job.operation == 'split_threaded': 
-        split_threaded.delay(parent_job.id)
+    dispatch_parent_job(job)
     return number_of_tasks_created
 
 @shared_task

@@ -16,6 +16,7 @@ from guided_redaction.analyze.classes.EntityFinder import EntityFinder
 from guided_redaction.analyze.classes.OcrSceneAnalyzer import OcrSceneAnalyzer
 from guided_redaction.analyze.classes.OcrMovieAnalyzer import OcrMovieAnalyzer
 from guided_redaction.analyze.classes.HogScanner import HogScanner
+from guided_redaction.analyze.classes.DataSifterCompiler import DataSifterCompiler
 import json
 import base64
 import numpy as np
@@ -1281,22 +1282,16 @@ class AnalyzeViewSetCompileDataSifter(viewsets.ViewSet) :
         if not request_data.get("movies"):
             return self.error("movies is required", status_code=400)
         response_movies = {}
-
+        t1_scanners = request_data.get('tier_1_scanners')
+        first_key = list(t1_scanners['data_sifter'].keys())[0]
+        data_sifter = t1_scanners['data_sifter'][first_key]
         movies = request_data.get("movies")
-        for movie_url in movies['source']:
-            source_movie = movies['source'][movie_url]
-            sa_movie = movies[movie_url]
-            response_movies[movie_url] = {
-                'framesets': {},
-            }
-            ordered_hashes = get_frameset_hashes_in_order(
-              source_movie['frames'], 
-              source_movie['framesets']
-            )
-            for fs_hash in ordered_hashes:
-                if fs_hash in sa_movie['framesets']:
-                    print('looking at {}'.format(fs_hash))
-        results = {'beef': 'jerky'}
+        file_writer = FileWriter(
+            working_dir=settings.REDACT_FILE_STORAGE_DIR,
+            base_url=settings.REDACT_FILE_BASE_URL,
+            image_request_verify_headers=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
+        )
+        worker = DataSifterCompiler(data_sifter, movies, file_writer)
+        results = worker.compile()
 
         return Response(results)
-
