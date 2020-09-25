@@ -186,6 +186,7 @@ class AnalyzeViewSetOcr(viewsets.ViewSet):
                 'location': returned_start_coords,
                 'size': size,
                 'origin': adjusted_coords['origin'],
+                'ocr_window_start': adjusted_coords['start'],
                 'scale': 1,
                 'scanner_type': 'ocr',
                 'text': raw_rta['text']

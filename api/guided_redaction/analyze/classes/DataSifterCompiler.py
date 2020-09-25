@@ -3,6 +3,17 @@ import cv2
 import uuid
 
 
+def make_zeros_like_array(arr):
+    # Numpy has a zeros like function that does this, it would be SO nice
+    # if it actually worked for me
+    build_arr = []
+    for row in arr:
+        build_row = []
+        for field in row:
+            build_row.append(0)
+        build_arr.append(build_row)
+    return build_arr
+
 class DataSifterCompiler:
 
     def __init__(self, data_sifter, movies, file_writer):
@@ -18,7 +29,8 @@ class DataSifterCompiler:
                 continue
             all_frameset_data[movie_url] = {}
             movie = self.movies[movie_url]
-            for frameset_hash in movie['framesets']:
+            frameset_hashes = list(movie['framesets'].keys())
+            for frameset_hash in frameset_hashes:
                 frameset = movie['framesets'][frameset_hash]
                 sa_keys = list(frameset.keys())
                 # sort sa_keys by y, then x 
@@ -26,14 +38,32 @@ class DataSifterCompiler:
                     sa_keys, 
                     key=lambda sa: (frameset[sa]['location'][1], frameset[sa]['location'][0])
                 )
-                rows = self.merge_rows(sa_keys, frameset)
+                rows = self.quantize_rows(sa_keys, frameset)
                 all_frameset_data[movie_url][frameset_hash] = rows
-                print(rows)
+#                print(rows)
                 # this is good.  Now sa_keys is ranked by row, then col
+            sfhs = sorted(
+                frameset_hashes, 
+                key=lambda fh: (
+                    len(all_frameset_data[movie_url][fh]), 
+                    sum([len(x) for x in all_frameset_data[movie_url][fh]])
+                )
+            )
+            maximal_fh = sfhs[-1]
+            totals_this_movie = make_zeros_like_array(all_frameset_data[movie_url][maximal_fh])
+            print('loopy')
+            print(len(all_frameset_data[movie_url][maximal_fh]))
+            print(all_frameset_data[movie_url][maximal_fh])
+            print('===========================')
+            for row in all_frameset_data[movie_url][maximal_fh]:
+                print(row)
+            print('===========================')
+            print(totals_this_movie)
+
 
         return {'donkey': 'cheese'}
 
-    def merge_rows(self, sa_keys, frameset):
+    def quantize_rows(self, sa_keys, frameset):
         rows = []
         cur_y = 0
         build_row = []
