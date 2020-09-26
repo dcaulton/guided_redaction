@@ -75,30 +75,53 @@ class DataSifterCompiler:
                 m_item = max_fs_rows[max_row_index][max_col_index]
                 m_text = m_item['text']
                 ratio = fuzz.ratio(m_text, fs_text)
-#                print('  match ratio on {} {} is {}'.format(fs_text, m_text, ratio))
                 if ratio >= self.word_match_threshold:
                     potential_sites_for_fs_word.append({
                         'anchor_score': ratio,
-                        'row_and_col': [max_row_index, max_col_index],
+                        'max_fs_row_and_col': [max_row_index, max_col_index],
                     })
         if potential_sites_for_fs_word:
             print('got a match for this guy: {}'.format(potential_sites_for_fs_word))
+        high_score = 0
         for potential_site in potential_sites_for_fs_word:
             score_above = 0
             score_below = 0
-            prow = potential_site['row_and_col'][0]
-            pcol = potential_site['row_and_col'][1]
-            if pcol > 0:
-                # check for scores above this item in the grid
-                pass
+            prow = potential_site['max_fs_row_and_col'][0]
+            pcol = potential_site['max_fs_row_and_col'][1]
+            if pcol > 0 or prow > 0:
+                score_above = self.get_score_above(
+                    fs_rows, 
+                    max_fs_rows, 
+                    [prow, pcol],
+                    [fs_row_index, fs_col_index]
+                    )
             if (pcol < len(max_fs_rows[prow]) - 1) \
                 or (prow < len(max_fs_rows) - 1):
-                # before the end of this row or
-                # other rows occur afterward
-                # check for scores below this item in the grid
-                pass
+                score_below = self.get_score_below(fs_rows, max_fs_rows, prow, pcol)
+            total_score = score_above + potential_site['anchor_score'] + score_below
+            if total_score > high_score:
+                high_score = total_score
+        print('total score {}'.format(high_score))
+        return high_score
 
+    def get_score_above(self, fs_rows, max_fs_rows, max_row_and_col, fs_row_and_col):
+        m_row = max_row_and_col[0]
+        m_col = max_row_and_col[1]
+        fs_row = fs_row_and_col[0]
+        fs_col = fs_row_and_col[1]
+        build_score = 0
+        # match the preceding stuff on this row
+        if fs_col > 0 and m_col > 0:
+            print('LALA matching earlier this line')
+        # match earlier rows
 
+        return build_score
+
+    def get_score_below(self, fs_rows, max_fs_rows, row_index, col_index):
+        build_score = 0
+        # match the following stuff on this row
+        # match later rows
+        return build_score
 
     def build_and_store_frameset_rows(self, movie_url, frameset_hash):
         frameset = self.movies[movie_url]['framesets'][frameset_hash]
