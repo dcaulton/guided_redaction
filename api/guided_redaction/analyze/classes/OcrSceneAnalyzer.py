@@ -104,16 +104,10 @@ class OcrSceneAnalyzer(GridPointScorer):
                         'ratio': ratio,
                         'app_locations': [(row_number, col_number)],
                     }
-        app_phrase_matches = {}
-#        if any scores are better than match_threshold, save them in app_phrase_matches[phrase]
-        for app_phrase in match_cache[rta_text]:
-            if match_cache[rta_text][app_phrase]['ratio'] > match_threshold:
-                app_phrase_matches[app_phrase] = match_cache[rta_text][app_phrase]
-        if not app_phrase_matches:
-            return 
-        if self.debug:
-            print('app phrase matches from lev distance: {}'.format(app_phrase_matches))
 
+        app_phrase_matches = self.find_potential_matches_for_rta_grid_point_in_app_grid(
+            match_threshold, match_cache, rta_text, app_phrases
+        )
 #       evaluate all matched app phrases to get a base pair match score and stats
         rta_phrase_matches = {}
         for app_phrase in app_phrase_matches:

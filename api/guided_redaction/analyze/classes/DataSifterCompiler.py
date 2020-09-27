@@ -1,8 +1,10 @@
 import numpy as np
 from fuzzywuzzy import fuzz
 
+from guided_redaction.analyze.classes.GridPointScorer import GridPointScorer
 
-class DataSifterCompiler:
+
+class DataSifterCompiler(GridPointScorer):
 
     def __init__(self, data_sifter, movies, file_writer):
         self.data_sifter = data_sifter

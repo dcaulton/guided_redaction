@@ -2,22 +2,45 @@ from fuzzywuzzy import fuzz
 from copy import deepcopy
 
 
-
 class GridPointScorer:
 
     def __init__(self):
         self.debug = True
 
-#    def __init__(self, recognized_text_areas, osa_rule, frame_dimensions):
-#        self.recognized_text_areas = recognized_text_areas
-#        self.app_dictionary = osa_rule['apps']
-#        self.debug = osa_rule['debugging_output']
-#        self.osa_rule = osa_rule
-#        self.frame_dimensions = frame_dimensions
-#        # TODO: move match and row thresholds into the OSA rule
-#        self.match_threshold = 80
-#        self.row_threshold = 10
-#
+    def find_potential_matches_for_rta_grid_point_in_app_grid(
+        self,
+        match_threshold,
+        match_cache,
+        rta_text,
+        app_phrases
+
+    ):
+        app_phrase_matches = {}
+
+#        compare the rta text at row and col to every phrase in app_phrases,
+#            (this will yield the strongest base pair match for the protein)
+        for row_number, phrase_row in enumerate(app_phrases):
+            for col_number, app_phrase in enumerate(phrase_row):
+                if app_phrase and type(app_phrase) != str:
+                    app_phrase = app_phrase['text']
+                if app_phrase in match_cache[rta_text]:
+                    match_cache[rta_text][app_phrase]['app_locations'].append((row_number, col_number))
+                else:
+                    ratio = fuzz.ratio(rta_text, app_phrase)
+                    match_cache[rta_text][app_phrase] = {
+                        'ratio': ratio,
+                        'app_locations': [(row_number, col_number)],
+                    }
+
+#        if any scores are better than match_threshold, save them in app_phrase_matches[phrase]
+        for app_phrase in match_cache[rta_text]:
+            if match_cache[rta_text][app_phrase]['ratio'] > match_threshold:
+                app_phrase_matches[app_phrase] = match_cache[rta_text][app_phrase]
+
+        if self.debug:
+            print('app phrase matches for {} from lev distance: {}'.format(rta_text, app_phrase_matches))
+        return app_phrase_matches
+
     def score_rta_point_and_app_phrase_point(
         self, 
         match_threshold, 
@@ -33,6 +56,18 @@ class GridPointScorer:
         window_start = list(primary_rta['start'])
         window_end = list(primary_rta['end'])
         app_text = app_phrases[app_coords[0]][app_coords[1]]
+        if type(app_text) != str:
+            app_text = app_text['text']
+
+        if rta_text not in match_cache:
+            match_cache[rta_text] = {}
+        if app_text not in match_cache[rta_text]:
+            ratio = fuzz.ratio(rta_text, app_text)
+            match_cache[rta_text][app_text] = {
+                'ratio': ratio,
+                'app_locations': [(row_number, col_number)],
+            }
+
         if self.debug:
             print('matching the rest of the protein for RTA: {}-{} APP {}-{}'.format(
                 rta_text, rta_coords, app_text, app_coords
@@ -65,13 +100,21 @@ class GridPointScorer:
           if self.debug:
               print('remaining phrases: {}'.format(remaining_app_phrases))
           (scores_before, rta_coords_before) = self.add_earlier_this_row_matches(
-              match_threshold, match_cache, sorted_rtas, remaining_app_phrases, rta_coords
+              match_threshold, 
+              match_cache, 
+              sorted_rtas, 
+              remaining_app_phrases, 
+              rta_coords
           )
         app_phrases_row_length = len(app_phrases[app_coords[0]])
         if app_coords[1] < app_phrases_row_length - 1:
           remaining_app_phrases = app_phrases[app_coords[0]][app_coords[1]+1:]
           (scores_after, rta_coords_after) = self.add_later_this_row_matches(
-              match_threshold, match_cache, sorted_rtas, remaining_app_phrases, rta_coords
+              match_threshold, 
+              match_cache, 
+              sorted_rtas, 
+              remaining_app_phrases, 
+              rta_coords
           )
 
         this_rows_scores = scores_before + [primary_score] + scores_after
@@ -181,12 +224,17 @@ class GridPointScorer:
         #                     add match score to the total
         #                     last claimed rta row and column = current rta row/col
                         if ratio > match_threshold:
-                            new_bounding_box = self.build_new_bounding_box(rta, window_start, window_end)
-                            if self.box_exceeds_max_feature_distances(new_bounding_box, app_max_feature_distances):
+                            new_bounding_box = self.build_new_bounding_box(
+                                rta, window_start, window_end
+                            )
+                            if self.box_exceeds_max_feature_distances(
+                                new_bounding_box, app_max_feature_distances
+                            ):
                                 continue
                             if self.debug:
                                 print('adding match for APP {}-{},{}, RTA {}-{},{}  score {}'.format(
-                                    app_row_text, i, app_col_number, rta['text'] ,j, rta_number, ratio))
+                                    app_row_text, i, app_col_number, rta['text'] ,j, rta_number, ratio
+                                ))
                             app_row_score.append(ratio)
                             app_rta_coords_this_row.append((j, rta_number))
                             app_row_text_matched = True
@@ -241,7 +289,14 @@ class GridPointScorer:
             'height': height,
         }
 
-    def add_earlier_this_row_matches(self, match_threshold, match_cache, sorted_rtas, remaining_app_phrases, rta_coords):
+    def add_earlier_this_row_matches(
+        self, 
+        match_threshold, 
+        match_cache, 
+        sorted_rtas, 
+        remaining_app_phrases, 
+        rta_coords
+    ):
         if self.debug:
             print('adding earlier same row matches')
         current_rta_row = sorted_rtas[rta_coords[0]]
@@ -285,7 +340,14 @@ class GridPointScorer:
         return_row_rta_coords = list(reversed(app_row_rta_coords))
         return (return_row_scores, return_row_rta_coords)
 
-    def add_later_this_row_matches(self, match_threshold, match_cache, sorted_rtas, remaining_app_phrases, rta_coords):
+    def add_later_this_row_matches(
+        self, 
+        match_threshold, 
+        match_cache, 
+        sorted_rtas, 
+        remaining_app_phrases, 
+        rta_coords
+    ):
         if self.debug:
             print('adding later same row matches')
         current_rta_row = sorted_rtas[rta_coords[0]]
@@ -402,7 +464,9 @@ class GridPointScorer:
                                 continue
                             if self.debug:
                                 print('adding match for APP {}-{},{}, RTA {}-{},{}  score {}'.format(
-                                    app_row_text, i, app_col_number, rta['text'], true_rta_col_number, j, ratio))
+                                    app_row_text, i, app_col_number, rta['text'], 
+                                    true_rta_col_number, j, ratio
+                                ))
                             app_row_score.append(ratio)
                             app_rta_coords.append(
                                 (j, true_rta_col_number)
