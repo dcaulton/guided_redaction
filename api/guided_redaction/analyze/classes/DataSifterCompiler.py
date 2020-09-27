@@ -22,7 +22,9 @@ class DataSifterCompiler:
                 continue
 
             for frameset_hash in self.movies[movie_url]['framesets']:
-                self.build_and_store_frameset_rows(movie_url, frameset_hash)
+                frameset = self.movies[movie_url]['framesets'][frameset_hash]
+                self.all_frameset_rows[movie_url][frameset_hash] = \
+                    self.build_frameset_rows(frameset, self.row_threshold)
 
             max_frameset_hash = self.get_frameset_hash_with_max_rows(movie_url)
 
@@ -123,18 +125,6 @@ class DataSifterCompiler:
         # match later rows
         return build_score
 
-    def build_and_store_frameset_rows(self, movie_url, frameset_hash):
-        frameset = self.movies[movie_url]['framesets'][frameset_hash]
-        sa_keys = list(frameset.keys())
-        # sort sa_keys by y, then x 
-        sa_keys = sorted(
-            sa_keys, 
-            key=lambda sa: (frameset[sa]['location'][1], frameset[sa]['location'][0])
-        )
-        # group items that are close in the y axis = 'close enough' to the same row
-        rows = self.quantize_rows(sa_keys, frameset)
-        self.all_frameset_rows[movie_url][frameset_hash] = rows
-
     def get_frameset_hash_with_max_rows(self, movie_url):
         frameset_hashes = list(self.movies[movie_url]['framesets'].keys())
         sfhs = sorted(
@@ -159,30 +149,45 @@ class DataSifterCompiler:
             build_arr.append(build_row)
         return build_arr
 
-    def quantize_rows(self, sa_keys, frameset):
+#=============================================== new module
+    def build_frameset_rows(self, ocr_scan_frameset, row_threshold):
+        ocr_keys = list(ocr_scan_frameset.keys())
+        # sort ocr_keys by y, then x 
+        ocr_keys = sorted(
+            ocr_keys, 
+            key=lambda ocr: (
+                ocr_scan_frameset[ocr]['location'][1], 
+                ocr_scan_frameset[ocr]['location'][0]
+            )
+        )
+        # group items that are close in the y axis = 'close enough' to the same row
+        rows = self.quantize_rows(ocr_keys, ocr_scan_frameset, row_threshold)
+        return rows
+
+    def quantize_rows(self, ocr_keys, frameset, row_threshold):
         rows = []
         cur_y = 0
         build_row = []
-        for index, k in enumerate(sa_keys):
-            sa = frameset[k]
-            if sa['location'][1] - cur_y > self.row_threshold:
+        for index, k in enumerate(ocr_keys):
+            ocr = frameset[k]
+            if ocr['location'][1] - cur_y > row_threshold:
                 # new row
                 if build_row:
                     rows.append(build_row)
-                    build_row = [sa]
-                    cur_y = sa['location'][1]
+                    build_row = [ocr]
+                    cur_y = ocr['location'][1]
                     continue
             added = False
             for position, item in enumerate(build_row):
-                if item['location'][0] < sa['location'][0]:
+                if item['location'][0] < ocr['location'][0]:
                     continue
                 else:
-                    build_row.insert(position, sa)
+                    build_row.insert(position, ocr)
                     added = True
                     break
             if not added:
-                build_row.append(sa)
-            if index == len(sa_keys) - 1:
+                build_row.append(ocr)
+            if index == len(ocr_keys) - 1:
                 rows.append(build_row)
         return rows
 

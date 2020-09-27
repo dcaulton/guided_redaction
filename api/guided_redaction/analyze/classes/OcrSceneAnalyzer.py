@@ -7,15 +7,17 @@ class OcrSceneAnalyzer:
     def __init__(self, recognized_text_areas, osa_rule, frame_dimensions):
         self.recognized_text_areas = recognized_text_areas
         self.app_dictionary = osa_rule['apps']
-        self.sorted_rtas = []
         self.match_cache = {}
         self.debug = osa_rule['debugging_output']
         self.match_threshold = 80
         self.osa_rule = osa_rule
         self.frame_dimensions = frame_dimensions
+        self.row_threshold = 10
 
     def analyze_scene(self):
-        self.sorted_rtas = self.order_recognized_text_areas_by_geometry()
+        sorted_rtas = self.order_recognized_text_areas_by_geometry(
+            self.recognized_text_areas, self.row_threshold
+        )
 
         rta_scores = {}
         for app_name in self.app_dictionary:
@@ -26,9 +28,10 @@ class OcrSceneAnalyzer:
             app_max_feature_distances = None
             if 'max_feature_distance' in self.app_dictionary[app_name]:
                 app_max_feature_distances = self.app_dictionary[app_name]['max_feature_distance']
-            for rta_row_number, rta_row in enumerate(self.sorted_rtas):
+            for rta_row_number, rta_row in enumerate(sorted_rtas):
                 for rta_column_number, rta in enumerate(rta_row):
                     scores = self.analyze_one_rta_row_field_vs_one_app(
+                        sorted_rtas,
                         app_phrases,
                         app_max_feature_distances,
                         rta_row_number,
@@ -63,7 +66,7 @@ class OcrSceneAnalyzer:
 
         stats_obj = {
             'rta_scores': rta_scores,
-            'ordered_rtas': self.sorted_rtas,
+            'ordered_rtas': sorted_rtas,
             'frame_dimensions': self.frame_dimensions,
         }
         return (winning_apps, stats_obj)
@@ -74,6 +77,7 @@ class OcrSceneAnalyzer:
                 self.match_cache[rta_key][app_key]['app_locations'] = []
 
     def add_below_matches(self, 
+            sorted_rtas,
             app_row_scores, 
             app_row_rta_coords, 
             window_start, 
@@ -102,11 +106,11 @@ class OcrSceneAnalyzer:
                 app_row_text_matched = False
                 if self.debug:
                     print('--new app field {}'.format(app_row_text))
-        #         for rta rows from last_claimed_rta_row to the end of self.sorted_rtas:
-                for j in range(current_rta_row+1, len(self.sorted_rtas)):
+        #         for rta rows from last_claimed_rta_row to the end of sorted_rtas:
+                for j in range(current_rta_row+1, len(sorted_rtas)):
                     if app_row_text_matched:
                         continue
-                    rta_row = self.sorted_rtas[j]
+                    rta_row = sorted_rtas[j]
         #             for unclaimed rta_items in this rta row:
                     for rta_number, rta in enumerate(rta_row):
                         if rta_number <= last_rta_col_claimed and j <= last_rta_row_claimed:
@@ -191,10 +195,10 @@ class OcrSceneAnalyzer:
             'height': height,
         }
 
-    def add_earlier_this_row_matches(self, remaining_app_phrases, rta_coords):
+    def add_earlier_this_row_matches(self, sorted_rtas, remaining_app_phrases, rta_coords):
         if self.debug:
             print('adding earlier same row matches')
-        current_rta_row = self.sorted_rtas[rta_coords[0]]
+        current_rta_row = sorted_rtas[rta_coords[0]]
         last_rta_col_claimed = rta_coords[1]
         app_row_score = []
         app_row_rta_coords = []
@@ -235,10 +239,10 @@ class OcrSceneAnalyzer:
         return_row_rta_coords = list(reversed(app_row_rta_coords))
         return (return_row_scores, return_row_rta_coords)
 
-    def add_later_this_row_matches(self, remaining_app_phrases, rta_coords):
+    def add_later_this_row_matches(self, sorted_rtas, remaining_app_phrases, rta_coords):
         if self.debug:
             print('adding later same row matches')
-        current_rta_row = self.sorted_rtas[rta_coords[0]]
+        current_rta_row = sorted_rtas[rta_coords[0]]
         last_rta_col_claimed = rta_coords[1]
         app_row_score = []
         app_row_rta_coords = []
@@ -278,6 +282,7 @@ class OcrSceneAnalyzer:
 
     def add_above_matches(
             self, 
+            sorted_rtas,
             app_row_scores, 
             app_row_rta_coords, 
             window_start, 
@@ -308,11 +313,11 @@ class OcrSceneAnalyzer:
                 app_row_text_matched = False
                 if self.debug:
                     print('--new app field {}'.format(app_row_text))
-        #         for rta rows from last_claimed_rta_row to the end of self.sorted_rtas:
+        #         for rta rows from last_claimed_rta_row to the end of sorted_rtas:
                 for j in range(current_rta_row-1, 0, -1):
                     if app_row_text_matched:
                         continue
-                    rta_row = self.sorted_rtas[j]
+                    rta_row = sorted_rtas[j]
         #             for unclaimed rta_items in this rta row:
                     for rta_number, rta in enumerate(reversed(rta_row)):
                         true_rta_col_number = len(rta_row) - rta_number - 1
@@ -379,8 +384,8 @@ class OcrSceneAnalyzer:
                 reversed_arc_columns.append(arc_column)
             app_row_rta_coords.append(reversed_arc_columns)
 
-    def score_rta_point_and_app_phrase_point(self, rta_coords, app_coords, app_phrases, app_max_feature_distances):
-        primary_rta = self.sorted_rtas[rta_coords[0]][rta_coords[1]]
+    def score_rta_point_and_app_phrase_point(self, sorted_rtas, rta_coords, app_coords, app_phrases, app_max_feature_distances):
+        primary_rta = sorted_rtas[rta_coords[0]][rta_coords[1]]
         rta_text = primary_rta['text']
         window_start = list(primary_rta['start'])
         window_end = list(primary_rta['end'])
@@ -393,6 +398,7 @@ class OcrSceneAnalyzer:
         app_row_scores = []
         app_row_rta_coords= []
         self.add_above_matches(
+            sorted_rtas,
             app_row_scores, 
             app_row_rta_coords,
             window_start, 
@@ -411,17 +417,18 @@ class OcrSceneAnalyzer:
           remaining_app_phrases = app_phrases[app_coords[0]][0:app_coords[1]]
           if self.debug:
               print('remaining phrases: {}'.format(remaining_app_phrases))
-          (scores_before, rta_coords_before) = self.add_earlier_this_row_matches(remaining_app_phrases, rta_coords)
+          (scores_before, rta_coords_before) = self.add_earlier_this_row_matches(sorted_rtas, remaining_app_phrases, rta_coords)
         app_phrases_row_length = len(app_phrases[app_coords[0]])
         if app_coords[1] < app_phrases_row_length - 1:
           remaining_app_phrases = app_phrases[app_coords[0]][app_coords[1]+1:]
-          (scores_after, rta_coords_after) = self.add_later_this_row_matches(remaining_app_phrases, rta_coords)
+          (scores_after, rta_coords_after) = self.add_later_this_row_matches(sorted_rtas, remaining_app_phrases, rta_coords)
 
         this_rows_scores = scores_before + [primary_score] + scores_after
         this_rows_rta_coords = rta_coords_before + [rta_coords] + rta_coords_after
         app_row_scores.append(this_rows_scores)
         app_row_rta_coords.append(this_rows_rta_coords)
         self.add_below_matches(
+            sorted_rtas,
             app_row_scores, 
             app_row_rta_coords,
             window_start, 
@@ -460,9 +467,9 @@ class OcrSceneAnalyzer:
         }
         return return_obj
 
-    def analyze_one_rta_row_field_vs_one_app(self, app_phrases, app_max_feature_distances, rta_row_number, rta_col_number):
+    def analyze_one_rta_row_field_vs_one_app(self, sorted_rtas, app_phrases, app_max_feature_distances, rta_row_number, rta_col_number):
         return_data = {}
-        rta_text = self.sorted_rtas[rta_row_number][rta_col_number]['text']
+        rta_text = sorted_rtas[rta_row_number][rta_col_number]['text']
         if rta_text not in self.match_cache:
             self.match_cache[rta_text] = {}
         if self.debug:
@@ -496,6 +503,7 @@ class OcrSceneAnalyzer:
             scores_for_this_phrase = {}
             for location_number, app_phrase_coords in enumerate(matched_app_phrase_data['app_locations']):
                 return_obj = self.score_rta_point_and_app_phrase_point(
+                        sorted_rtas,
                         (rta_row_number, rta_col_number), 
                         app_phrase_coords, 
                         app_phrases,
@@ -521,8 +529,7 @@ class OcrSceneAnalyzer:
             print('best score overall: {}'.format(best_score_overall))
         return best_score_overall
 
-    def order_recognized_text_areas_by_geometry(self):
-        raw_rtas = self.recognized_text_areas
+    def order_recognized_text_areas_by_geometry(self, raw_rtas, row_threshold):
         response_rtas = []
         rtas_by_id = {}
         for rta in raw_rtas:
@@ -532,7 +539,7 @@ class OcrSceneAnalyzer:
         current_y = -200
         row_y_bunches = {}
         for row in rows:
-            if row['start'][1] - current_y > 10:
+            if row['start'][1] - current_y > row_threshold:
                 current_y = row['start'][1]
                 row_y_bunches[current_y] = [row['id']]
                 continue
