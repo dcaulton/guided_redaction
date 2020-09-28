@@ -8,11 +8,15 @@ class DataSifterCompiler(GridPointScorer):
 
     def __init__(self, data_sifter, movies, file_writer):
         self.data_sifter = data_sifter
+        if 'source' in movies:
+            self.source_movies = movies['source']
+        del movies['source']
         self.movies = movies
         self.file_writer = file_writer
         self.all_frameset_rows = {}
         self.movie_max_frameset_rows = {}
         self.all_movie_scores = {}
+        self.supermax_grid_scores = {}
         self.debug = False
         self.row_threshold = 20
         self.word_match_threshold = 80
@@ -23,9 +27,6 @@ class DataSifterCompiler(GridPointScorer):
 
     def compile(self):
         for movie_url in self.movies:
-            if movie_url == 'source':
-                continue
-
             for frameset_hash in self.movies[movie_url]['framesets']:
                 frameset = self.movies[movie_url]['framesets'][frameset_hash]
                 self.all_frameset_rows[movie_url][frameset_hash] = \
@@ -39,27 +40,62 @@ class DataSifterCompiler(GridPointScorer):
                 )
                 self.all_movie_scores[movie_url][frameset_hash] = best_score_obj
 
-########### NEXT:
-#       for each movie
-#         get max_frameset_rows
-#         for each max_frameset_grid_element:
-#           find how many framesets did not see it.  
-#           if above a threshold*, this could be editable text
-#
 #       find a supermax frameset grid across the movies
+        supermax_movie_url = self.get_supermax_movie_url()
+        print('supermax movie url is {}'.format(supermax_movie_url))
+#       compare all non-supermax max grids to supermax max grid, save the results
+        for movie_url in self.movies:
+            if movie_url == supermax_movie_url:
+                continue
+            best_score_obj = self.score_against_supermax(supermax_movie_url, movie_url)
+            print('WANT TO BE HERE')
+            print(best_score_obj)
+######### CURRENTLY RIGHT HERE
 #       for each supermax frameset grid field:
 #           find out how many non-supermax movie max grids did not see it
-#           if above a threshold*, this is text that varies by client
+#           if no one saw it:
+#               it's probably an anomaly, ignore
+#           if above a threshold*, 
+#               this is text that varies by client, 
+#               annotate the supermax entry for that grid element
 #
 #  *the above threshold is because text can randomly 'ocr' slightly differently
 #      like a lowercase L becomes a one, or a word gets split into two.
-
+#
+# ALSO, TODO, add the thing to score_frameset, where, if no other frameset saw some field 
+#     that is on max_frameset_grid, it's an anomaly, so ignore.
 
         print('hippies, take a bath!')
         print(self.all_movie_scores)
         print(self.movie_max_frameset_rows)
 
         return {'donkey': 'cheese'}
+
+    def score_against_supermax(self, supermax_movie_url, movie_url):
+        fs_rows = self.movie_max_frameset_rows[movie_url]
+        max_fs_rows = self.movie_max_frameset_rows[supermax_movie_url]
+        match_cache = {}
+        rta_scores = {}
+        for fs_row_index, row in enumerate(fs_rows):
+            for fs_col_index, col in enumerate(row):
+                score = self.score_one_row_token(
+                    match_cache, fs_rows, max_fs_rows, fs_row_index, fs_col_index
+                )
+                if score and score['total_score'] > 0:
+                    if fs_row_index not in rta_scores:
+                        rta_scores[fs_row_index] = {}
+                    rta_scores[fs_row_index][fs_col_index] = score
+        if not rta_scores:
+            return 0
+        best_score_obj = {}
+        best_total_score = 0
+        for row in rta_scores:
+            for col in rta_scores[row]:
+                grid_ele = rta_scores[row][col]
+                if grid_ele['total_score'] > best_total_score:
+                    best_score_obj = grid_ele
+                    best_total_score = grid_ele['total_score']
+        return best_score_obj
 
     def score_frameset(self, max_frameset_hash, movie_url, frameset_hash):
         # for each ocr match element we have:
@@ -150,6 +186,18 @@ class DataSifterCompiler(GridPointScorer):
             fs_row_index, fs_col_index, fs_text, best_score_overall['total_score']
         ))
         return best_score_overall  
+
+    def get_supermax_movie_url(self):
+        movie_urls = list(self.movie_max_frameset_rows.keys())
+        sorted_movie_urls = sorted(
+            movie_urls,
+            key=lambda movie_url: (
+                len(self.movie_max_frameset_rows[movie_url]), 
+                sum([len(x) for x in self.movie_max_frameset_rows[movie_url]])
+            )
+        )
+        max_movie_url = sorted_movie_urls[-1]
+        return max_movie_url
 
     def get_frameset_hash_with_max_rows(self, movie_url):
         frameset_hashes = list(self.movies[movie_url]['framesets'].keys())
