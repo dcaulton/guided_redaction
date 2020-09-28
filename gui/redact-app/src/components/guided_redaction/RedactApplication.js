@@ -234,7 +234,6 @@ class RedactApplication extends React.Component {
     deepCopyMovies[this.state.movie_url] = deepCopyMovie
 
     this.setGlobalStateVar('movies', deepCopyMovies)
-    console.log('NOICE')
   }
 
   buildOcrRedactPipelineObject(ocr_rule, pipeline_name) {

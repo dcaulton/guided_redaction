@@ -16,7 +16,6 @@ class DataSifterCompiler(GridPointScorer):
         self.all_frameset_rows = {}
         self.movie_max_frameset_rows = {}
         self.all_movie_scores = {}
-        self.supermax_grid_scores = {}
         self.debug = False
         self.row_threshold = 20
         self.word_match_threshold = 80
@@ -44,13 +43,14 @@ class DataSifterCompiler(GridPointScorer):
         supermax_movie_url = self.get_supermax_movie_url()
         print('supermax movie url is {}'.format(supermax_movie_url))
 #       compare all non-supermax max grids to supermax max grid, save the results
+        max_row_scores = {}
         for movie_url in self.movies:
             if movie_url == supermax_movie_url:
                 continue
             best_score_obj = self.score_against_supermax(supermax_movie_url, movie_url)
-            print('WANT TO BE HERE')
-            print(best_score_obj)
-######### CURRENTLY RIGHT HERE
+#           looks like this:
+# {'total_score': 349, 'app_row_scores': [[0], [0], [0, 0], [0, 0, 0], [0, 0], [85], [82, 0, 0, 0, 0], [0, 0, 0], [0, 0, 0], [82, 0], [100, 0, 0, 0], [0, 0]], 'app_row_rta_coords': [[(0, 0)], [(0, 0)], [(0, 0), (0, 0)], [(0, 0), (0, 0), (0, 0)], [(0, 0), (0, 0)], [(2, 0)], [(3, 1), (0, 0), (0, 0), (0, 0), (0, 0)], [(0, 0), (0, 0), (0, 0)], [(0, 0), (0, 0), (0, 0)], [(5, 0), (0, 0)], [(5, 1), (0, 0), (0, 0), (0, 0)], [(0, 0), (0, 0)]], 'window_start': [180, 401], 'window_end': [269, 536], 'app_home_coords': (6, 0), 'app_home_text': {'source': 'ocr: east+tess', 'location': [133, 477], 'size': [98, 27], 'origin': [], 'ocr_window_start': [118, 341], 'scale': 1, 'scanner_type': 'ocr', 'text': 'Security reminder'}, 'app_row_scores_primary_coords': [12, 0]}
+            max_row_scores[movie_url] = best_score_obj
 #       for each supermax frameset grid field:
 #           find out how many non-supermax movie max grids did not see it
 #           if no one saw it:
@@ -58,6 +58,18 @@ class DataSifterCompiler(GridPointScorer):
 #           if above a threshold*, 
 #               this is text that varies by client, 
 #               annotate the supermax entry for that grid element
+        supermax_grid = self.movie_max_frameset_rows[supermax_movie_url]
+        supermax_grid_scores = {}
+        for sm_grid_row_index, sm_grid_row in enumerate(supermax_grid):
+            for sm_grid_col_index, sm_col in enumerate(sm_grid_row):
+                missed_count = self.count_who_didnt_see_field(
+                    (sm_grid_row_index, sm_grid_col_index),
+                    max_row_scores
+                )
+                sm_text= supermax_grid[sm_grid_row_index][sm_grid_col_index]['text']
+                print('{} max apps didnt see {}'.format(missed_count, sm_text))
+                # if this nyumber is 1 or greater, the field only appears on supermax
+                # i.e. it's user data, not a label!!!
 #
 #  *the above threshold is because text can randomly 'ocr' slightly differently
 #      like a lowercase L becomes a one, or a word gets split into two.
@@ -65,12 +77,26 @@ class DataSifterCompiler(GridPointScorer):
 # ALSO, TODO, add the thing to score_frameset, where, if no other frameset saw some field 
 #     that is on max_frameset_grid, it's an anomaly, so ignore.
 
-        print('hippies, take a bath!')
-        print(self.all_movie_scores)
-        print(self.movie_max_frameset_rows)
+#        print('hippies, take a bath!')
+#        print(self.all_movie_scores)
+#        print(self.movie_max_frameset_rows)
 
         return {'donkey': 'cheese'}
 
+    def count_who_didnt_see_field(self, supermax_coords, max_row_scores):
+        missed_count = 0
+        for movie_url in max_row_scores:
+            saw_it = False
+            score_obj = max_row_scores[movie_url]
+            for row in score_obj['app_row_rta_coords']:
+                for col in row:
+                    if col[0] == supermax_coords[0] and col[1] == supermax_coords[1]:
+                        saw_it = True
+            if not saw_it:
+                missed_count += 1
+
+        return missed_count
+        
     def score_against_supermax(self, supermax_movie_url, movie_url):
         fs_rows = self.movie_max_frameset_rows[movie_url]
         max_fs_rows = self.movie_max_frameset_rows[supermax_movie_url]
