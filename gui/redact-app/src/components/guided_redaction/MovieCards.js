@@ -325,7 +325,7 @@ class MovieCard extends React.Component {
     if (count > 0) {
       clear_button = (
         <button
-          className='border-0 text-primary'
+          className='border-0 text-primary bg-white p-1'
           onClick={() => this.clearTier1Matches(scanner_type)}
         >
           clr
@@ -333,7 +333,7 @@ class MovieCard extends React.Component {
       )
       matches_button = (
         <button
-          className='border-0 text-primary'
+          className='border-0 text-primary bg-white p-1 ml-2'
           onClick={() => this.setScrubberToNextTier1Hit(scanner_type)}
         >
           nxt

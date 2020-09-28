@@ -92,19 +92,6 @@ class OcrSceneAnalyzer(GridPointScorer):
             print('---comparing app phrases for rta *{}* at row {} col {}'.format(
                 rta_text, rta_row_number, rta_col_number
             ))
-#        compare the rta text at row and col to every phrase in app_phrases,
-#            (this will be the strongest base pair match for the protein)
-        for row_number, phrase_row in enumerate(app_phrases):
-            for col_number, app_phrase in enumerate(phrase_row):
-                if app_phrase in match_cache[rta_text]:
-                    match_cache[rta_text][app_phrase]['app_locations'].append((row_number, col_number))
-                else:
-                    ratio = fuzz.ratio(rta_text, app_phrase)
-                    match_cache[rta_text][app_phrase] = {
-                        'ratio': ratio,
-                        'app_locations': [(row_number, col_number)],
-                    }
-
         app_phrase_matches = self.find_potential_matches_for_rta_grid_point_in_app_grid(
             match_threshold, match_cache, rta_text, app_phrases
         )

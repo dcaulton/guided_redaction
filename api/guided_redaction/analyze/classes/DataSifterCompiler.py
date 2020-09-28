@@ -10,10 +10,11 @@ class DataSifterCompiler(GridPointScorer):
         self.data_sifter = data_sifter
         self.movies = movies
         self.file_writer = file_writer
-        self.all_frameset_rows = {}
         self.all_movie_scores = {}
+        self.debug = False
         self.row_threshold = 20
         self.word_match_threshold = 80
+        self.all_frameset_rows = {}
         for movie_url in self.movies:
             self.all_frameset_rows[movie_url] = {}
             self.all_movie_scores[movie_url] = {}
@@ -29,8 +30,6 @@ class DataSifterCompiler(GridPointScorer):
                     self.build_frameset_rows(frameset, self.row_threshold)
 
             max_frameset_hash = self.get_frameset_hash_with_max_rows(movie_url)
-
-            totals_this_movie = self.make_zeros_like_array(movie_url, max_frameset_hash)
 
             for frameset_hash in self.movies[movie_url]['framesets']:
                 self.score_frameset(max_frameset_hash, movie_url, frameset_hash)
@@ -53,16 +52,21 @@ class DataSifterCompiler(GridPointScorer):
             return # of course max matches itself 100%
         fs_rows = self.all_frameset_rows[movie_url][frameset_hash]
         max_fs_rows = self.all_frameset_rows[movie_url][max_frameset_hash]
-        fs_anchor_scores = self.make_zeros_like_array(movie_url, frameset_hash)
+        match_cache = {}
+        rta_scores = {}
         for fs_row_index, row in enumerate(fs_rows):
             for fs_col_index, col in enumerate(row):
-                self.score_one_row_token(
-                    fs_anchor_scores, fs_rows, max_fs_rows, fs_row_index, fs_col_index
+                score = self.score_one_row_token(
+                    match_cache, fs_rows, max_fs_rows, fs_row_index, fs_col_index
                 )
+                if score and score['total_score'] > 0:
+                    if fs_row_index not in rta_scores:
+                        rta_scores[fs_row_index] = {}
+                    rta_scores[fs_row_index][fs_col_index] = score
 
     def score_one_row_token(
         self,
-        fs_anchor_scores, 
+        match_cache,
         fs_rows, 
         max_fs_rows, 
         fs_row_index, 
@@ -72,60 +76,46 @@ class DataSifterCompiler(GridPointScorer):
         # finds the best score it can make by matching sequentially against 
         #   ANY point on the max frameset rows, then expanding above and below
         fs_text = fs_rows[fs_row_index][fs_col_index]['text']
-        print('===========getting a dang score for {} {}: {}'.format(fs_row_index, fs_col_index, fs_text))
-        potential_sites_for_fs_word = []
-        for max_row_index, max_row in enumerate(max_fs_rows):
-            for max_col_index, max_col in enumerate(max_row):
-                m_item = max_fs_rows[max_row_index][max_col_index]
-                m_text = m_item['text']
-                ratio = fuzz.ratio(m_text, fs_text)
-                if ratio >= self.word_match_threshold:
-                    potential_sites_for_fs_word.append({
-                        'anchor_score': ratio,
-                        'max_fs_row_and_col': [max_row_index, max_col_index],
-                    })
-        if potential_sites_for_fs_word:
-            print('got a match for this guy: {}'.format(potential_sites_for_fs_word))
-        high_score = 0
-        for potential_site in potential_sites_for_fs_word:
-            score_above = 0
-            score_below = 0
-            prow = potential_site['max_fs_row_and_col'][0]
-            pcol = potential_site['max_fs_row_and_col'][1]
-            if pcol > 0 or prow > 0:
-                score_above = self.get_score_above(
-                    fs_rows, 
-                    max_fs_rows, 
-                    [prow, pcol],
-                    [fs_row_index, fs_col_index]
-                    )
-            if (pcol < len(max_fs_rows[prow]) - 1) \
-                or (prow < len(max_fs_rows) - 1):
-                score_below = self.get_score_below(fs_rows, max_fs_rows, prow, pcol)
-            total_score = score_above + potential_site['anchor_score'] + score_below
-            if total_score > high_score:
-                high_score = total_score
-        print('total score {}'.format(high_score))
-        return high_score
+        app_phrase_matches = self.find_potential_matches_for_rta_grid_point_in_app_grid(
+            self.word_match_threshold, 
+            match_cache, 
+            fs_text, 
+            max_fs_rows
+        )
+        rta_phrase_matches = {}
+        for app_phrase in app_phrase_matches:
+            matched_app_phrase_data = app_phrase_matches[app_phrase]
+            scores_for_this_phrase = {}
+            for location_number, app_phrase_coords in enumerate(matched_app_phrase_data['app_locations']):
+                return_obj = self.score_rta_point_and_app_phrase_point(
+                    self.word_match_threshold,
+                    match_cache,
+                    fs_rows,
+                    (fs_row_index, fs_col_index),
+                    app_phrase_coords,
+                    max_fs_rows,
+                    None,  # max feature distances
+                )
+                scores_for_this_phrase[location_number] = return_obj
+            best_score_this_phrase = {'total_score': 0, 'row_scores': []}
+            for location_number in scores_for_this_phrase:
+                score_at_location = scores_for_this_phrase[location_number]
+                if score_at_location['total_score'] > best_score_this_phrase['total_score']:
+                    best_score_this_phrase = score_at_location
+            rta_phrase_matches[app_phrase] = best_score_this_phrase
 
-    def get_score_above(self, fs_rows, max_fs_rows, max_row_and_col, fs_row_and_col):
-        m_row = max_row_and_col[0]
-        m_col = max_row_and_col[1]
-        fs_row = fs_row_and_col[0]
-        fs_col = fs_row_and_col[1]
-        build_score = 0
-        # match the preceding stuff on this row
-        if fs_col > 0 and m_col > 0:
-            print('LALA matching earlier this line')
-        # match earlier rows
-
-        return build_score
-
-    def get_score_below(self, fs_rows, max_fs_rows, row_index, col_index):
-        build_score = 0
-        # match the following stuff on this row
-        # match later rows
-        return build_score
+#        get highest value for rta_phrase_matches[x]['total_score']             
+        best_score_overall = {'total_score': 0, 'row_scores': []}               
+        for app_phrase in rta_phrase_matches:                                   
+            score_at_location = rta_phrase_matches[app_phrase]                  
+            if score_at_location['total_score'] > best_score_overall['total_score']:
+                best_score_overall = score_at_location                          
+        if self.debug:                                                          
+            print('best score overall: {}'.format(best_score_overall))          
+        print('===========best score for rta {}:{} {} is {}'.format(
+            fs_row_index, fs_col_index, fs_text, best_score_overall['total_score']
+        ))
+        return best_score_overall  
 
     def get_frameset_hash_with_max_rows(self, movie_url):
         frameset_hashes = list(self.movies[movie_url]['framesets'].keys())
@@ -139,19 +129,6 @@ class DataSifterCompiler(GridPointScorer):
         maximal_fh = sfhs[-1]
         return maximal_fh
 
-    def make_zeros_like_array(self, movie_url, frameset_hash):
-        arr = self.all_frameset_rows[movie_url][frameset_hash]
-        # Numpy has a zeros like function that does this, it would be SO nice
-        # if it actually worked for me
-        build_arr = []
-        for row in arr:
-            build_row = []
-            for field in row:
-                build_row.append(0)
-            build_arr.append(build_row)
-        return build_arr
-
-#=============================================== new module
     def build_frameset_rows(self, ocr_scan_frameset, row_threshold):
         ocr_keys = list(ocr_scan_frameset.keys())
         # sort ocr_keys by y, then x 

@@ -5,7 +5,7 @@ from copy import deepcopy
 class GridPointScorer:
 
     def __init__(self):
-        self.debug = True
+        self.debug = False
 
     def find_potential_matches_for_rta_grid_point_in_app_grid(
         self,
@@ -19,6 +19,8 @@ class GridPointScorer:
 
 #        compare the rta text at row and col to every phrase in app_phrases,
 #            (this will yield the strongest base pair match for the protein)
+        if rta_text not in match_cache:
+            match_cache[rta_text] = {}
         for row_number, phrase_row in enumerate(app_phrases):
             for col_number, app_phrase in enumerate(phrase_row):
                 if app_phrase and type(app_phrase) != str:
@@ -41,6 +43,20 @@ class GridPointScorer:
             print('app phrase matches for {} from lev distance: {}'.format(rta_text, app_phrase_matches))
         return app_phrase_matches
 
+    def massage_rtas(self, sorted_rtas):
+        # score_rta_point can be called with either raw output OCR type recognized text areas, 
+        #   which have start, end and text, or t1 compliant output for OCR, which uses
+        #   location, size and text.  Massage them all down to start and end type by adding
+        #   extra fields as needed
+        for rta_row in sorted_rtas:
+            for rta in rta_row:
+                if 'location' in rta and 'start' not in rta:
+                    rta['start'] = rta['location']
+                    rta['end'] = [
+                        rta['location'][0] + rta['size'][0],
+                        rta['location'][1] + rta['size'][1]
+                    ]
+
     def score_rta_point_and_app_phrase_point(
         self, 
         match_threshold, 
@@ -51,6 +67,7 @@ class GridPointScorer:
         app_phrases, 
         app_max_feature_distances
     ):
+        self.massage_rtas(sorted_rtas)
         primary_rta = sorted_rtas[rta_coords[0]][rta_coords[1]]
         rta_text = primary_rta['text']
         window_start = list(primary_rta['start'])
@@ -195,6 +212,8 @@ class GridPointScorer:
                 app_row_text_matched = False
                 if self.debug:
                     print('--new app field {}'.format(app_row_text))
+                if type(app_row_text) != str:
+                    app_row_text = app_row_text['text']
         #         for rta rows from last_claimed_rta_row to the end of sorted_rtas:
                 for j in range(current_rta_row+1, len(sorted_rtas)):
                     if app_row_text_matched:
@@ -207,9 +226,14 @@ class GridPointScorer:
                         if app_row_text_matched:
                             continue
                         if self.debug:
+                            print('bamma')
+                            print(rta)
                             print('  {}---{}'.format(app_row_text, rta['text']))
                         if rta['text'] not in match_cache:
                             match_cache[rta['text']] = {}
+#                        print('poppy {} '.format(app_row_text))
+#                        print('{}'.format(match_cache))
+#                        print('{}'.format(rta['text']))
                         if app_row_text in match_cache[rta['text']]:
                             ratio = match_cache[rta['text']][app_row_text]['ratio']
                         else:
@@ -306,6 +330,8 @@ class GridPointScorer:
         for app_col_number, app_phrase in enumerate(reversed(remaining_app_phrases)):
             if self.debug:
                 print('--new app field {}'.format(app_phrase))
+            if type(app_phrase) != str:
+                app_phrase = app_phrase['text']
             match_found = False
             for rta_col_number, rta in enumerate(reversed(current_rta_row)):
                 true_rta_col_number = len(current_rta_row) - rta_col_number - 1
@@ -357,6 +383,8 @@ class GridPointScorer:
         for app_col_number, app_phrase in enumerate(remaining_app_phrases):
             if self.debug:
                 print('--new app field {}'.format(app_phrase))
+            if type(app_phrase) != str:
+                app_phrase = app_phrase['text']
             match_found = False
             for rta_col_number, rta in enumerate(current_rta_row):
                 if rta_col_number <= last_rta_col_claimed:
@@ -423,6 +451,8 @@ class GridPointScorer:
                 app_row_text_matched = False
                 if self.debug:
                     print('--new app field {}'.format(app_row_text))
+                if type(app_row_text) != str:
+                    app_row_text = app_row_text['text']
         #         for rta rows from last_claimed_rta_row to the end of sorted_rtas:
                 for j in range(current_rta_row-1, 0, -1):
                     if app_row_text_matched:
