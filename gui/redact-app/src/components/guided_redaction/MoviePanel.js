@@ -1101,6 +1101,7 @@ class MoviePanel extends React.Component {
             gotoFramesetHash={this.gotoFramesetHash}
             show_story_board={this.state.show_story_board}
             toggleShowStoryBoardVisibility={this.toggleShowStoryBoardVisibility}
+            removeFramesetHash={this.props.removeFramesetHash}
           />
         </div>
 

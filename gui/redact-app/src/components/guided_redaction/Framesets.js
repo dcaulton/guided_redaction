@@ -66,7 +66,16 @@ class FramesetCard extends React.Component {
               Goto 
             </button>
           </div>
+          <div className='d-inline ml-2'>
+            <button
+              className='btn btn-primary'
+              onClick={() => this.props.removeFramesetHash(this.props.frame_hash)}
+            >
+              Delete
+            </button>
+          </div>
         </div>
+
 
       </div>
     )
@@ -108,6 +117,7 @@ class FramesetCardList extends React.Component {
               getRedactedImageFromFrameset={this.props.getRedactedImageFromFrameset}
               highlighted_frameset_hash={this.props.highlighted_frameset_hash}
               gotoFramesetHash={this.props.gotoFramesetHash}
+              removeFramesetHash={this.props.removeFramesetHash}
             />
           )
         })}

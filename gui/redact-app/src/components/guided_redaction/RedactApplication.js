@@ -209,6 +209,32 @@ class RedactApplication extends React.Component {
     this.buildWorkflowBottomNav=this.buildWorkflowBottomNav.bind(this)
     this.addMovieAndSetActive=this.addMovieAndSetActive.bind(this)
     this.saveStateCheckpoint=this.saveStateCheckpoint.bind(this)
+    this.removeFramesetHash=this.removeFramesetHash.bind(this)
+  }
+
+  removeFramesetHash(frameset_hash) {
+    let deepCopyMovies = JSON.parse(JSON.stringify(this.state.movies))
+    let deepCopyMovie = JSON.parse(JSON.stringify(this.state.movies[this.state.movie_url]))
+    if (!Object.keys(deepCopyMovie['framesets']).includes(frameset_hash)) {
+      return
+    }
+    const frameset = deepCopyMovie['framesets'][frameset_hash]
+    let build_frames = []
+    for (let i=0; i < deepCopyMovie['frames'].length; i++) {
+      const frame_url = deepCopyMovie['frames'][i]
+      if (!frameset['images'].includes(frame_url)) {
+        build_frames.push(frame_url)
+      }
+    }
+    deepCopyMovie['frames'] = build_frames
+    delete deepCopyMovie['framesets'][frameset_hash]
+    if (Object.keys(deepCopyMovie).includes('frameset_hashes_in_order')) {
+      delete deepCopyMovie['frameset_hashes_in_order']
+    }
+    deepCopyMovies[this.state.movie_url] = deepCopyMovie
+
+    this.setGlobalStateVar('movies', deepCopyMovies)
+    console.log('NOICE')
   }
 
   buildOcrRedactPipelineObject(ocr_rule, pipeline_name) {
@@ -2045,6 +2071,7 @@ class RedactApplication extends React.Component {
                 attached_job={this.state.attached_job}
                 establishNewEmptyMovie={this.establishNewEmptyMovie}
                 attachToJob={this.attachToJobWrapper}
+                removeFramesetHash={this.removeFramesetHash}
               />
             </Route>
             <Route path='/redact/insights'>
