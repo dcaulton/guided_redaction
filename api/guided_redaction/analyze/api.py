@@ -351,8 +351,8 @@ class AnalyzeViewSetSelectedArea(viewsets.ViewSet):
         source_movies = {}
         movies = request_data.get('movies')
         if 'source' in movies:
-          source_movies = movies['source']
-          del movies['source']
+            source_movies = movies['source']
+            del movies['source']
         movie_url = list(movies.keys())[0]
         movie = movies[movie_url]
 
