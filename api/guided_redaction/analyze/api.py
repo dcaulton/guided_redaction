@@ -443,6 +443,7 @@ class AnalyzeViewSetSelectedArea(viewsets.ViewSet):
             
 
     def process_t1_results(self, frameset, cv2_image, selected_area_meta, finder):
+        print('================================bonnie rae {}'.format(frameset))
         match_app_id = ''
         if 'app_id' in selected_area_meta['attributes']:
             match_app_id = selected_area_meta['attributes']['app_id']
@@ -465,6 +466,20 @@ class AnalyzeViewSetSelectedArea(viewsets.ViewSet):
                 selected_point = area['center']
                 match_element = frameset[scanner_matcher_id]
                 offset = self.get_offset_for_t1(selected_area_meta, match_element)
+                # scale the offset by the scale of the t1 results
+                if 'scale' in match_element and match_element['scale'] != 1:
+                    origin = selected_area_meta['origin_entity_location']
+                    scale = match_element['scale']
+                    new_sp_offset = [
+                        (selected_point[0] - origin[0]) / scale,
+                        (selected_point[1] - origin[1]) / scale
+                    ]
+                    new_selected_point = [
+                        math.floor(origin[0] + new_sp_offset[0]),
+                        math.floor(origin[1] + new_sp_offset[1])
+                    ]
+                    selected_point = new_selected_point
+
                 selected_point = [
                     selected_point[0] + offset[0],
                     selected_point[1] + offset[1]
