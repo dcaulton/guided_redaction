@@ -22,33 +22,7 @@ from rest_framework.response import Response
 from guided_redaction.jobs.models import Job
 from guided_redaction.utils.classes.FileWriter import FileWriter
 
-
 requests.packages.urllib3.disable_warnings()
-
-def get_frameset_hash_for_frame(frame, framesets):
-    for frameset_hash in framesets:
-        if frame in framesets[frameset_hash]['images']:
-            return frameset_hash
-
-def get_frameset_hashes_in_order(frames, framesets):
-    ret_arr = []
-    for frame in frames:
-        frameset_hash = get_frameset_hash_for_frame(frame, framesets)
-        if frameset_hash and frameset_hash not in ret_arr:
-            ret_arr.append(frameset_hash)
-    return ret_arr
-
-
-def find_any_template_anchor_match_in_image(template, target_image):
-    template_matcher = TemplateMatcher(template)
-    for anchor in template['anchors']:
-        match_image = template_matcher.get_match_image_for_anchor(anchor)
-        match_obj = template_matcher.get_template_coords(
-            target_image, match_image
-        )
-        if match_obj['match_found']:
-            (temp_coords, temp_scale) = match_obj['match_coords']
-            return temp_coords
 
 
 class AnalyzeViewSetOcr(viewsets.ViewSet):
@@ -205,7 +179,7 @@ class AnalyzeViewSetTimestamp(viewsets.ViewSet):
         return Response(response_obj)
 
 
-class AnalyzeViewSetTemplateMatchChart(viewsets.ViewSet):
+class AnalyzeViewSetChart(viewsets.ViewSet):
     def create(self, request):
         request_data = request.data
         return self.process_create_request(request_data)
@@ -214,84 +188,7 @@ class AnalyzeViewSetTemplateMatchChart(viewsets.ViewSet):
         if not request_data.get("job_data"):
             return self.error("job_data is required", status_code=400)
         job_data = request_data.get('job_data')
-        chart_info = {
-            'chart_type': 'template_match',
-        }
-        file_writer = FileWriter(
-            working_dir=settings.REDACT_FILE_STORAGE_DIR,
-            base_url=settings.REDACT_FILE_BASE_URL,
-            image_request_verify_headers=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
-        )
-        chart_maker = ChartMaker(
-            chart_info, job_data, file_writer, settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS
-        )
-        charts_obj = chart_maker.make_charts()
-
-        return Response({'movies': charts_obj})
-
-
-class AnalyzeViewSetOcrMatchChart(viewsets.ViewSet):
-    def create(self, request):
-        request_data = request.data
-        return self.process_create_request(request_data)
-
-    def process_create_request(self, request_data):
-        if not request_data.get("job_data"):
-            return self.error("job_data is required", status_code=400)
-        job_data = request_data.get('job_data')
-        chart_info = {
-            'chart_type': 'ocr_match',
-        }
-        file_writer = FileWriter(
-            working_dir=settings.REDACT_FILE_STORAGE_DIR,
-            base_url=settings.REDACT_FILE_BASE_URL,
-            image_request_verify_headers=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
-        )
-        chart_maker = ChartMaker(
-            chart_info, job_data, file_writer, settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS
-        )
-        charts_obj = chart_maker.make_charts()
-
-        return Response({'movies': charts_obj})
-
-
-class AnalyzeViewSetSelectedAreaChart(viewsets.ViewSet):
-    def create(self, request):
-        request_data = request.data
-        return self.process_create_request(request_data)
-
-    def process_create_request(self, request_data):
-        if not request_data.get("job_data"):
-            return self.error("job_data is required", status_code=400)
-        job_data = request_data.get('job_data')
-        chart_info = {
-            'chart_type': 'selected_area',
-        }
-        file_writer = FileWriter(
-            working_dir=settings.REDACT_FILE_STORAGE_DIR,
-            base_url=settings.REDACT_FILE_BASE_URL,
-            image_request_verify_headers=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
-        )
-        chart_maker = ChartMaker(
-            chart_info, job_data, file_writer, settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS
-        )
-        charts_obj = chart_maker.make_charts()
-
-        return Response({'movies': charts_obj})
-
-
-class AnalyzeViewSetOcrSceneAnalysisChart(viewsets.ViewSet):
-    def create(self, request):
-        request_data = request.data
-        return self.process_create_request(request_data)
-
-    def process_create_request(self, request_data):
-        if not request_data.get("job_data"):
-            return self.error("job_data is required", status_code=400)
-        job_data = request_data.get('job_data')
-        chart_info = {
-            'chart_type': 'ocr_scene_analysis_match',
-        }
+        chart_info = request_data.get('chart_info')
         file_writer = FileWriter(
             working_dir=settings.REDACT_FILE_STORAGE_DIR,
             base_url=settings.REDACT_FILE_BASE_URL,

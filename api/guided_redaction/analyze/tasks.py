@@ -17,6 +17,7 @@ from guided_redaction.utils.task_shared import (
 from guided_redaction.attributes.models import Attribute
 from guided_redaction.pipelines.api import PipelinesViewSetDispatch
 from guided_redaction.analyze.api import (
+    AnalyzeViewSetChart,
     AnalyzeViewSetFilter, 
     AnalyzeViewSetScanTemplate,
     AnalyzeViewSetTelemetry,
@@ -24,10 +25,6 @@ from guided_redaction.analyze.api import (
     AnalyzeViewSetSelectedArea,
     AnalyzeViewSetEntityFinder,
     AnalyzeViewSetOcrSceneAnalysis,
-    AnalyzeViewSetTemplateMatchChart,
-    AnalyzeViewSetOcrMatchChart,
-    AnalyzeViewSetOcrSceneAnalysisChart,
-    AnalyzeViewSetSelectedAreaChart,
     AnalyzeViewSetTrainHog,
     AnalyzeViewSetTestHog,
     AnalyzeViewSetCompileDataSifter,
@@ -846,9 +843,12 @@ def template_match_chart(job_uuid):
             }
 
 
-    worker = AnalyzeViewSetTemplateMatchChart()
+    worker = AnalyzeViewSetChart()
     response = worker.process_create_request({
         'job_data': build_job_data,
+        'chart_info': {
+            'chart_type': 'template_match',
+        },
     })
     if not Job.objects.filter(pk=job_uuid).exists():
         return
@@ -877,9 +877,12 @@ def ocr_match_chart(job_uuid):
             }
 
 
-    worker = AnalyzeViewSetOcrMatchChart()
+    worker = AnalyzeViewSetChart()
     response = worker.process_create_request({
         'job_data': build_job_data,
+        'chart_info': {
+            'chart_type': 'ocr_match',
+        },
     })
     if not Job.objects.filter(pk=job_uuid).exists():
         return
@@ -908,9 +911,12 @@ def selected_area_chart(job_uuid):
             }
 
 
-    worker = AnalyzeViewSetSelectedAreaChart()
+    worker = AnalyzeViewSetChart()
     response = worker.process_create_request({
         'job_data': build_job_data,
+        'chart_info': {
+            'chart_type': 'selected_area',
+        },
     })
     if not Job.objects.filter(pk=job_uuid).exists():
         return
@@ -939,9 +945,12 @@ def ocr_scene_analysis_chart(job_uuid):
             }
 
 
-    worker = AnalyzeViewSetOcrSceneAnalysisChart()
+    worker = AnalyzeViewChart()
     response = worker.process_create_request({
         'job_data': build_job_data,
+        'chart_info': {
+            'chart_type': 'ocr_scene_analysis_match',
+        },
     })
     if not Job.objects.filter(pk=job_uuid).exists():
         return
