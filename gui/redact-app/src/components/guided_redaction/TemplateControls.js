@@ -30,7 +30,6 @@ class TemplateControls extends React.Component {
       anchors: [],
       mask_zones: [],
       download_link: '',
-      unsaved_changes: false,
       attribute_search_name: '',
       attribute_search_value: '',
     }
@@ -45,11 +44,16 @@ class TemplateControls extends React.Component {
   }
 
   setLocalStateVar(var_name, var_value, when_done=(()=>{})) {
-    this.setState({
-      [var_name]: var_value,
-      unsaved_changes: true,
-    },
-    when_done())
+    function anon_func() {
+      this.doSave()
+      when_done()
+    }
+    this.setState(
+      {
+        [var_name]: var_value,
+      },
+      anon_func
+    )
   }
 
   getCurrentAnchors() {
@@ -71,7 +75,6 @@ class TemplateControls extends React.Component {
       anchors: template['anchors'],
       mask_zones: template['mask_zones'],
       download_link: '',
-      unsaved_changes: false,
     })
   }
 
@@ -133,7 +136,6 @@ class TemplateControls extends React.Component {
       anchors: [],
       mask_zones: [],
       download_link: '',
-      unsaved_changes: false,
     })
   }
 
@@ -153,7 +155,6 @@ class TemplateControls extends React.Component {
         anchors: template['anchors'],
         mask_zones: template['mask_zones'],
         download_link: '',
-        unsaved_changes: false,
       })
     }
     let deepCopyIds = JSON.parse(JSON.stringify(this.props.tier_1_scanner_current_ids))
@@ -184,14 +185,9 @@ class TemplateControls extends React.Component {
       }
     }
     if (something_changed) {
-      this.setState({
-        anchors: deepCopyAnchors,
-        unsaved_changes: true,
-      }, 
-      this.updateDownloadLink)
-    } else {
-      this.updateDownloadLink()
-    }
+      this.setLocalStateVar('anchors', deepCopyAnchors)
+    } 
+    this.updateDownloadLink()
   }
 
   updateDownloadLink() {
@@ -229,10 +225,7 @@ class TemplateControls extends React.Component {
   setAttribute(name, value) {
     let deepCopyAttributes = JSON.parse(JSON.stringify(this.state.attributes))
     deepCopyAttributes[name] = value
-    this.setState({
-      attributes: deepCopyAttributes,
-      unsaved_changes: true,
-    })
+    this.setLocalStateVar('attributes', deepCopyAttributes)
     this.props.displayInsightsMessage('Attribute was added')
   }
 
@@ -252,10 +245,7 @@ class TemplateControls extends React.Component {
       return
     }
     delete deepCopyAttributes[name]
-    this.setState({
-      attributes: deepCopyAttributes,
-      unsaved_changes: true,
-    })
+    this.setLocalStateVar('attributes', deepCopyAttributes)
     this.props.displayInsightsMessage('Attribute was deleted')
   }
 
@@ -282,9 +272,6 @@ class TemplateControls extends React.Component {
   }
 
   addTemplateAnchor() {
-    this.setState({
-      unsaved_changes: true,
-    })
     this.props.handleSetMode('add_template_anchor_1')
   }
 
@@ -300,17 +287,11 @@ class TemplateControls extends React.Component {
     }
     let deepCopyAnchors = JSON.parse(JSON.stringify(this.state.anchors))
     deepCopyAnchors.push(the_anchor)
-    this.setState({
-      anchors: deepCopyAnchors,
-      unsaved_changes: true,
-    })
+    this.setLocalStateVar('anchors', deepCopyAnchors)
     this.props.handleSetMode('add_template_anchor_1')
   }
 
   addTemplateMaskZone() {
-    this.setState({
-      unsaved_changes: true,
-    })
     this.props.handleSetMode('add_template_mask_zone_1')
   }
 
@@ -326,10 +307,7 @@ class TemplateControls extends React.Component {
     }
     let deepCopyMaskZones = JSON.parse(JSON.stringify(this.state.mask_zones))
     deepCopyMaskZones.push(the_mask_zone)
-    this.setState({
-      mask_zones: deepCopyMaskZones,
-      unsaved_changes: true,
-    })
+    this.setLocalStateVar('mask_zones', deepCopyMaskZones)
     this.props.handleSetMode('add_template_mask_zone_1')
   } 
 
@@ -489,18 +467,12 @@ class TemplateControls extends React.Component {
   }
 
   clearAnchors() {
-    this.setState({
-      anchors: [],
-      unsaved_changes: true,
-    })
+    this.setLocalStateVar('anchors', [])
     this.props.displayInsightsMessage('Anchors have been cleared')
   }
 
   clearMaskZones() {                                                                                     
-    this.setState({
-      mask_zones: [],
-      unsaved_changes: true,
-    })
+    this.setLocalStateVar('mask_zones', [])
     this.props.displayInsightsMessage('Mask zones have been cleared')
   }
 
@@ -627,13 +599,6 @@ class TemplateControls extends React.Component {
     )
   }
 
-  buildSaveButton() {
-    return buildInlinePrimaryButton(
-      'Save',
-      (()=>{this.doSave()})
-    )
-  }
-
   buildSaveToDatabaseButton() {
     return buildInlinePrimaryButton(
       'Save to DB',
@@ -735,7 +700,7 @@ class TemplateControls extends React.Component {
       return([])                                                                
     }
 
-    const id_string = buildIdString(this.state.id, 'template', this.state.unsaved_changes)
+    const id_string = buildIdString(this.state.id, 'template', false)
     const load_button = this.buildLoadButton()
     const delete_button = this.buildDeleteButton()
     const download_button = this.buildDownloadButton()
@@ -750,7 +715,6 @@ class TemplateControls extends React.Component {
     const import_button = this.buildImportButton()
     const export_button = this.buildExportButton()
     const clear_matches_button = this.buildClearMatchesButton2()
-    const save_button = this.buildSaveButton()
     const save_to_database_button = this.buildSaveToDatabaseButton()
     const add_anchor_button = this.buildAddAnchorButton()
     const clear_anchors_button = this.buildClearAnchorsButton()
@@ -778,7 +742,6 @@ class TemplateControls extends React.Component {
                 <div className='row'>
                   {load_button}
                   {delete_button}
-                  {save_button}
                   {save_to_database_button}
                   {clear_matches_button}
                   {run_button}

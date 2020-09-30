@@ -32,7 +32,6 @@ class SelectedAreaControls extends React.Component {
       areas: [],
       minimum_zones: [],
       tolerance: 5,
-      unsaved_changes: false,
       attribute_search_name: '',
       attribute_search_value: '',
       first_click_coords: [],
@@ -95,10 +94,7 @@ class SelectedAreaControls extends React.Component {
     }
     let deepCopyMinimumZones = JSON.parse(JSON.stringify(this.state.minimum_zones))
     deepCopyMinimumZones.push(the_zone)
-    this.setState({
-      minimum_zones: deepCopyMinimumZones,
-      unsaved_changes: true,
-    })
+    this.setLocalStateVar('minimum_zones', deepCopyMinimumZones)
     this.props.handleSetMode('selected_area_minimum_zones_1')
   }
 
@@ -143,19 +139,21 @@ class SelectedAreaControls extends React.Component {
     }
     let deepCopyAreas = JSON.parse(JSON.stringify(this.state.areas))
     deepCopyAreas.push(the_area)
-    this.setState({
-      areas: deepCopyAreas,
-      unsaved_changes: true,
-    })
+    this.setLocalStateVar('areas', deepCopyAreas)
     this.props.displayInsightsMessage('selected area center was added, add another if you wish')
   }
   
   setLocalStateVar(var_name, var_value, when_done=(()=>{})) {
-    this.setState({
-      [var_name]: var_value,
-      unsaved_changes: true,
-    },
-    when_done())
+    function anon_func() {
+      this.doSave()
+      when_done()
+    }
+    this.setState(
+      {
+        [var_name]: var_value,
+      },
+      anon_func
+    )
   }
 
   buildLoadButton() {                                                           
@@ -185,7 +183,6 @@ class SelectedAreaControls extends React.Component {
         areas: sam['areas'],
         minimum_zones : sam['minimum_zones'],
         tolerance: sam['tolerance'],
-        unsaved_changes: false,
       })
     }
     let deepCopyIds = JSON.parse(JSON.stringify(this.props.tier_1_scanner_current_ids))
@@ -214,7 +211,6 @@ class SelectedAreaControls extends React.Component {
       areas: [],
       minimum_zones: [],
       tolerance: 5,
-      unsaved_changes: false,
     })
   }
 
@@ -421,10 +417,7 @@ class SelectedAreaControls extends React.Component {
   setAttribute(name, value) {
     let deepCopyAttributes = JSON.parse(JSON.stringify(this.state.attributes))
     deepCopyAttributes[name] = value
-    this.setState({
-      attributes: deepCopyAttributes,
-      unsaved_changes: true,
-    })
+    this.setLocalStateVar('attributes', deepCopyAttributes)
     this.props.displayInsightsMessage('Attribute was added')
   }
 
@@ -444,10 +437,7 @@ class SelectedAreaControls extends React.Component {
       return
     }
     delete deepCopyAttributes[name]
-    this.setState({
-      attributes: deepCopyAttributes,
-      unsaved_changes: true,
-    })
+    this.setLocalStateVar('attributes', deepCopyAttributes)
     this.props.displayInsightsMessage('Attribute was deleted')
   }
 
@@ -490,13 +480,6 @@ class SelectedAreaControls extends React.Component {
     return buildInlinePrimaryButton(
       'Add Minimum Zones',
       (()=>{this.startAddMinimumZones()})
-    )
-  }
-
-  buildSaveButton() {
-    return buildInlinePrimaryButton(
-      'Save',
-      (()=>{this.doSave()})
     )
   }
 
@@ -594,9 +577,6 @@ class SelectedAreaControls extends React.Component {
   }
   
   startAddOriginLocation() {
-    this.setState({
-      unsaved_changes: true,
-    })
     this.props.handleSetMode('add_sa_origin_location_1')
   }
 
@@ -615,26 +595,17 @@ class SelectedAreaControls extends React.Component {
   }
 
   clearOriginLocation() {
-    this.setState({
-      origin_entity_location: [],
-      unsaved_changes: true,
-    })
+    this.setLocalStateVar('origin_entity_location', [])
     this.props.displayInsightsMessage('Origin location has been cleared')
   }
 
   clearAnchors() {
-    this.setState({
-      areas: [],
-      unsaved_changes: true,
-    })
+    this.setLocalStateVar('areas', [])
     this.props.displayInsightsMessage('Area centers have been cleared')
   }
 
   clearMinimumZones() {
-    this.setState({
-      minimum_zones: [],
-      unsaved_changes: true,
-    })
+    this.setLocalStateVar('minimum_zones', [])
     this.props.displayInsightsMessage('Minimum zones have been cleared')
   }
 
@@ -662,7 +633,7 @@ class SelectedAreaControls extends React.Component {
       return([])
     }
     const load_button = this.buildLoadButton()
-    const id_string = buildIdString(this.state.id, 'selected area meta', this.state.unsaved_changes)
+    const id_string = buildIdString(this.state.id, 'selected area meta', false)
     const name_field = this.buildNameField()
     const tolerance_field = this.buildToleranceField()
     const merge_dropdown = this.buildMergeDropdown()
@@ -678,7 +649,6 @@ class SelectedAreaControls extends React.Component {
     const clear_minimum_zones_button = this.buildClearMinimumZonesButton()
     const add_origin_location_button = this.buildAddOriginLocationButton()
     const clear_origin_location_button = this.buildClearOriginLocationButton()
-    const save_button = this.buildSaveButton()
     const run_button = this.buildRunButton()
     const delete_button = this.buildDeleteButton()
     const save_to_db_button = this.buildSaveToDatabaseButton()
@@ -705,7 +675,6 @@ class SelectedAreaControls extends React.Component {
                 <div className='row'>
                   {load_button}
                   {delete_button}
-                  {save_button}
                   {save_to_db_button}
                   {clear_matches_button}
                   {run_button}
