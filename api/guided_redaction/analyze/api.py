@@ -362,84 +362,131 @@ class AnalyzeViewSetSelectedArea(viewsets.ViewSet):
         response_movies[movie_url]['framesets'] = {}
         for frameset_hash in movie['framesets']:
             frameset = movie['framesets'][frameset_hash]
-            if 'images' in frameset:
-                image_url = frameset['images'][0]
-            else:
-                image_url = source_movies[movie_url]['framesets'][frameset_hash]['images'][0]
-            image = requests.get(
-              image_url,
-              verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
-            ).content
-            if not image:
-                return self.error("couldnt read image data", status_code=422)
-            nparr = np.fromstring(image, np.uint8)
-            cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-            regions_for_image = {'regions': [], 'origin': [0,0]}
-            if self.frameset_is_t1_output(frameset):
-                regions_for_image = self.process_t1_results(
-                    frameset, 
-                    cv2_image, 
-                    selected_area_meta, 
-                    finder
-                )
-            else:
-                regions_for_image = self.process_virgin_image(
-                    frameset, 
-                    cv2_image, 
-                    selected_area_meta, 
-                    finder
-                )
+            cv2_image = self.get_cv2_image_from_movies(
+                frameset, source_movies, movie_url, frameset_hash
+            ) 
+            regions_for_image = self.build_sa_regions(frameset, cv2_image, selected_area_meta, finder)
             regions_as_hashes = {}
-            if regions_for_image and regions_for_image[0]['regions']:
-                if selected_area_meta['interior_or_exterior'] == 'exterior':
-                    regions_for_image = \
-                        self.transform_interior_selection_to_exterior(
-                            regions_for_image, 
-                            cv2_image
-                        )
-                for region in regions_for_image:
-                    size = [
-                        region['regions'][1][0] - region['regions'][0][0], 
-                        region['regions'][1][1] - region['regions'][0][1]
-                    ]
-                    region_hash = {
-                        'location': region['regions'][0],
-                        'origin': region['origin'],
-                        'scale': 1,
-                        'size': size,
-                        "scanner_type": "selected_area",
-                    }
-                    regions_as_hashes[region['sam_area_id']] = region_hash
+            for region in regions_for_image:
+                size = [
+                    region['regions'][1][0] - region['regions'][0][0], 
+                    region['regions'][1][1] - region['regions'][0][1]
+                ]
+                region_hash = {
+                    'location': region['regions'][0],
+                    'origin': region['origin'],
+                    'scale': 1,
+                    'size': size,
+                    "scanner_type": "selected_area",
+                }
+                regions_as_hashes[region['sam_area_id']] = region_hash
             # TODO: GET TEMPLATE ANCHOR OFFSET HERE IF NEEDED
             #   it prolly makes sense to return it from process_t1_results
-            if 'minimum_zones' in selected_area_meta and selected_area_meta['minimum_zones']:
-                regions_as_hashes = self.append_min_zones(
-                    selected_area_meta, 
-                    regions_as_hashes,
-                    (0, 0)
-                )
             if regions_as_hashes:
                 response_movies[movie_url]['framesets'][frameset_hash] = regions_as_hashes
         return Response({"movies": response_movies})
 
-    def append_min_zones(self, selected_area_meta, regions_as_hashes, offset):
+    def build_sa_regions(self, frameset, cv2_image, selected_area_meta, finder):
+        if self.frameset_is_t1_output(frameset):
+            regions_for_image = self.process_t1_results(
+                frameset, 
+                cv2_image, 
+                selected_area_meta, 
+                finder
+            )
+        else:
+            regions_for_image = self.process_virgin_image(
+                cv2_image, 
+                selected_area_meta, 
+                finder
+            )
+
+        self.append_min_zones(
+            selected_area_meta, 
+            regions_for_image,
+            frameset
+        )
+
+        if selected_area_meta['interior_or_exterior'] == 'exterior':
+            regions_for_image = \
+                self.transform_interior_selection_to_exterior(
+                    regions_for_image, 
+                    cv2_image
+                )
+
+        return regions_for_image
+
+    def get_cv2_image_from_movies(self, frameset, source_movies, movie_url, frameset_hash):
+        cv2_image = None
+        if 'images' in frameset:
+            image_url = frameset['images'][0]
+        else:
+            image_url = source_movies[movie_url]['framesets'][frameset_hash]['images'][0]
+        image = requests.get(
+          image_url,
+          verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
+        ).content
+        if image:
+            nparr = np.fromstring(image, np.uint8)
+            cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        return cv2_image
+
+    def append_min_zones(self, selected_area_meta, regions, source_frameset):
+        if 'minimum_zones' not in selected_area_meta or not selected_area_meta['minimum_zones']:
+            return
+        offset = (0, 0)
+        if selected_area_meta['origin_entity_type'] == 'template_anchor':
+            # TODO, figure this part out soon.
+            # we will need to move it with the anchor.
+            pass
         for minimum_zone in selected_area_meta['minimum_zones']:
             size_arr =[
                 minimum_zone['end'][0] - minimum_zone['start'][0],
                 minimum_zone['end'][1] - minimum_zone['start'][1],
             ]
-            location = [
-                minimum_zone['start'][0] + offset[0],
-                minimum_zone['start'][1] + offset[1]
-            ]
-            region_hash = {
-                'location': location,
-                'scale': 1,
-                'size': size_arr,
-                "scanner_type": "selected_area",
-            }
-            regions_as_hashes[minimum_zone['id']] = region_hash
-        return regions_as_hashes
+            if self.frameset_is_t1_output(source_frameset):
+                for scanner_matcher_id in source_frameset:
+                    if selected_area_meta['origin_entity_type'] == 'template_anchor' and \
+                        selected_area_meta['origin_entity_id'] == scanner_matcher_id:
+                        o_loc = selected_area_meta['origin_entity_location']
+#                        offset = [
+#                            offset[0] + o_loc[0],
+#                            offset[1] + o_loc[1]
+#                        ]
+                        print('WOOHOO ', selected_area_meta)
+    # todo if selected_area has matches on element, and the source_frameset has a scale
+    #  that is not 1, then scale the offset before you use it for computing location
+    #  do it where we're scaling size_arr
+                    match_element = source_frameset[scanner_matcher_id]
+                    location = [
+                        minimum_zone['start'][0] + offset[0],
+                        minimum_zone['start'][1] + offset[1]
+                    ]
+                    if 'scale' in match_element and match_element['scale'] != 1:
+                        scale = match_element['scale']
+                        size_arr = [
+                            size_arr[0] / scale,
+                            size_arr[1] / scale
+                        ]
+                        location = [
+                            location[0] / scale,
+                            location[1] / scale
+                        ]
+                    end = (
+                        location[0] + size_arr[0],
+                        location[1] + size_arr[1]
+                    )
+                    regions.append({
+                        'regions': (location, end),
+                        'origin': (0, 0),
+                        'sam_area_id': scanner_matcher_id,
+                    })
+            else:
+                regions.append({
+                    'regions': (minimum_zone['start'], minimum_zone['end']),
+                    'origin': (0, 0),
+                    'sam_area_id': minimum_zone['id'],
+                })
             
 
     def process_t1_results(self, frameset, cv2_image, selected_area_meta, finder):
@@ -504,7 +551,7 @@ class AnalyzeViewSetSelectedArea(viewsets.ViewSet):
                     })
         return regions_for_image
 
-    def process_virgin_image(self, frameset, cv2_image, selected_area_meta, finder):
+    def process_virgin_image(self, cv2_image, selected_area_meta, finder):
         regions_for_image = []
         tolerance = int(selected_area_meta['tolerance'])
         for area in selected_area_meta['areas']:
