@@ -1,11 +1,7 @@
 import cv2
-from guided_redaction.analyze.classes.EastPlusTessGuidedAnalyzer import (
-    EastPlusTessGuidedAnalyzer,
-)
 from guided_redaction.analyze.classes.TelemetryAnalyzer import TelemetryAnalyzer
 from guided_redaction.analyze.classes.TemplateMatcher import TemplateMatcher
 from guided_redaction.analyze.classes.ChartMaker import ChartMaker
-from guided_redaction.analyze.classes.OcrMovieAnalyzer import OcrMovieAnalyzer
 from guided_redaction.analyze.classes.HogScanner import HogScanner
 from guided_redaction.analyze.classes.DataSifterCompiler import DataSifterCompiler
 from .controller_selected_area import SelectedAreaController
@@ -323,95 +319,6 @@ class AnalyzeViewSetOcrSceneAnalysis(viewsets.ViewSet):
         build_response_data = worker.scan_scene(request_data)
 
         return Response(build_response_data)
-
-
-class AnalyzeViewSetOcrMovieAnalysis(viewsets.ViewSet):
-    def create(self, request):
-        request_data = request.data
-        return self.process_first_scan(request_data)
-
-    def process_first_scan_request(self, request_data):
-        if not request_data.get("movies"):
-            return self.error("movies is required", status_code=400)
-        if not request_data.get("oma_rule"):
-            return self.error("oma_rule is required", status_code=400)
-        movies = request_data['movies']
-        movie_url = list(movies.keys())[0]
-        i1 = movie_url.split('/')[-1]
-        movie_uuid = i1.split('.')[0]
-        frameset_hash = list(movies[movie_url]['framesets'].keys())[0]
-        image_url = movies[movie_url]['framesets'][frameset_hash]['images'][0]
-        i2 = image_url.split('/')[-1]
-        image_name = i2.split('.')[0]
-        file_name_fields = {
-            'movie_uuid': movie_uuid,
-            'image_name': image_name,
-        }
-
-        pic_response = requests.get(
-          image_url,
-          verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
-        )
-        image = pic_response.content
-        if not image:
-            return self.error('could not open image for frameset')
-
-        file_writer = FileWriter(
-            working_dir=settings.REDACT_FILE_STORAGE_DIR,
-            base_url=settings.REDACT_FILE_BASE_URL,
-            image_request_verify_headers=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
-        )
-        analyzer = EastPlusTessGuidedAnalyzer(debug=request_data['oma_rule']['debug_level'])
-        nparr = np.fromstring(image, np.uint8)
-        cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-        start = (0, 0)
-        end = (cv2_image.shape[1], cv2_image.shape[0])
-
-        raw_rtas = analyzer.analyze_text(
-            cv2_image, [start, end]
-        )
-
-        template_ignore_points = []
-        for template_id in request_data['oma_rule']['ignore_templates']:
-            template = request_data['oma_rule']['ignore_templates'][template_id]
-            template_coords = find_any_template_anchor_match_in_image(template, cv2_image)
-            if template_coords:
-                template_ignore_points.append(template_coords)
-
-        ocr_movie_analyzer = OcrMovieAnalyzer(request_data['oma_rule'], file_writer)
-        results = ocr_movie_analyzer.collect_one_frame(
-            raw_rtas, 
-            cv2_image, 
-            file_name_fields, 
-            template_ignore_points
-        )
-
-        return Response(results)
-
-    def process_condense_all_frames_request(self, request_data):
-        if not request_data.get("job_ids"):
-            return self.error("job_ids is required", status_code=400)
-        job_ids = request_data['job_ids']
-        job_data = {}
-        for job_id in job_ids:
-            if not Job.objects.filter(pk=job_id).exists():
-                return self.error('could not fetch job with id {}'.format(job_id))
-            child_job = Job.objects.get(pk=job_id)
-            child_response_data = json.loads(child_job.response_data)
-            child_request_data = json.loads(child_job.request_data)
-            job_data[job_id] = {
-                'request_data': child_request_data,
-                'response_data': child_response_data,
-            }
-        file_writer = FileWriter(
-            working_dir=settings.REDACT_FILE_STORAGE_DIR,
-            base_url=settings.REDACT_FILE_BASE_URL,
-            image_request_verify_headers=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
-        )
-        ocr_movie_analyzer = OcrMovieAnalyzer(True, file_writer)
-        results = ocr_movie_analyzer.condense_all_frames(job_data)
-
-        return Response(results)
 
 
 class AnalyzeViewSetEntityFinder(viewsets.ViewSet):
