@@ -18,6 +18,8 @@ from guided_redaction.analyze.classes.OcrMovieAnalyzer import OcrMovieAnalyzer
 from guided_redaction.analyze.classes.HogScanner import HogScanner
 from guided_redaction.analyze.classes.DataSifterCompiler import DataSifterCompiler
 from .controller_selected_area import SelectedAreaController
+from .controller_ocr import OcrController
+from .controller_template import TemplateController
 import json
 import base64
 import numpy as np
@@ -32,56 +34,6 @@ from guided_redaction.utils.classes.FileWriter import FileWriter
 
 
 requests.packages.urllib3.disable_warnings()
-
-def adjust_start_end_origin_for_t1(coords_in, tier_1_frameset, ocr_rule):
-    adjusted_coords = {}
-    adjusted_coords['start'] = coords_in['start']
-    adjusted_coords['end'] = coords_in['end']
-    adjusted_coords['origin'] = coords_in['origin']
-    if 'images' in tier_1_frameset: # its just a virgin frameset, not t1 output
-        return adjusted_coords
-    match_app_id = ''
-    if 'app_id' in ocr_rule['attributes']:
-        match_app_id = ocr_rule['attributes']['app_id']
-    for subscanner_key in tier_1_frameset:
-        if match_app_id and 'app_id' in tier_1_frameset[subscanner_key] and \
-            tier_1_frameset[subscanner_key]['app_id'] != match_app_id:
-            continue
-        subscanner = tier_1_frameset[subscanner_key]
-        if subscanner['scanner_type'] == 'selected_area':
-            if 'location' in subscanner and 'size' in subscanner:
-                print('adjusting ocr coords by sa location for {}'.format(subscanner_key))
-                adjusted_coords['start'] = subscanner['location']
-                adjusted_coords['end'] = [
-                    subscanner['location'][0] + subscanner['size'][0],
-                    subscanner['location'][1] + subscanner['size'][1]
-                ]
-            return adjusted_coords
-        if 'location' in subscanner and 'origin' in coords_in:
-            disp_x = subscanner['location'][0] - coords_in['origin'][0]
-            disp_y = subscanner['location'][1] - coords_in['origin'][1]
-            if abs(disp_x) or abs(disp_y):
-                print('adjusting ocr coords by non sa location {}, {}'.format(disp_x, disp_y))
-                adjusted_coords['start'] = [
-                    adjusted_coords['start'][0] + disp_x,
-                    adjusted_coords['start'][1] + disp_y
-                ]
-                adjusted_coords['end'] = [
-                    adjusted_coords['end'][0] + disp_x,
-                    adjusted_coords['end'][1] + disp_y
-                ]
-                adjusted_coords['origin'] = [
-                    adjusted_coords['origin'][0] + disp_x,
-                    adjusted_coords['origin'][1] + disp_y 
-                ]
-            return adjusted_coords
-        # TODO this seems redundant if we don't limit above to SA
-        if 'start' in subscanner and 'end' in subscanner:
-            print('adjusting ocr coords by non sa start end')
-            adjusted_coords['start'] = subscanner['start']
-            adjusted_coords['end'] = subscanner['end']
-            return adjusted_coords
-    return adjusted_coords
 
 def get_frameset_hash_for_frame(frame, framesets):
     for frameset_hash in framesets:
@@ -126,72 +78,9 @@ class AnalyzeViewSetOcr(viewsets.ViewSet):
         image = pic_response.content
         if not image:
             return self.error("couldnt read image data", status_code=422)
-        ocr_rule = request_data['ocr_rule']
 
-        analyzer = EastPlusTessGuidedAnalyzer()
-        nparr = np.fromstring(image, np.uint8)
-        cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-
-        box_coords = {
-            'start': ocr_rule['start'],
-            'end': ocr_rule['end'],
-            'origin': ocr_rule['origin_entity_location'],
-        }
-        adjusted_coords = adjust_start_end_origin_for_t1(box_coords, request_data.get('tier_1_data'), ocr_rule)
-        # this assumes there will be just one origin in each frame to work with.  
-        # If we want to ocr against multi boxes in the frame, or when there are multiple boxes
-        #   in the frame, but only one is the app we want OCR to target, we need new logic here
-        start = adjusted_coords['start']
-        end = adjusted_coords['end']
-        origin = adjusted_coords['origin']
-        if ocr_rule['skip_east']:
-            tight_image = cv2_image[
-                start[1]:end[1], 
-                start[0]:end[0]
-            ]
-            gray = cv2.cvtColor(tight_image, cv2.COLOR_BGR2GRAY)
-            bg_color = gray[1,1]
-            if bg_color < 100:  # its light text on dark bg, invert
-                gray = cv2.bitwise_not(gray)
-            raw_recognized_text_areas = analyzer.analyze_text(
-                gray, 
-                [start, end],
-                processing_mode='tess_only'
-            )
-        else:
-            raw_recognized_text_areas = analyzer.analyze_text(
-                cv2_image, [start, end]
-            )
-
-        recognized_text_areas = {}
-        for raw_rta in raw_recognized_text_areas:
-            the_id = 'rta_' + str(random.randint(100000000, 999000000))
-            
-            if 'start' in raw_rta and 'end' in raw_rta:
-                # we used east, so coords come with the ocr results
-                size = [
-                    raw_rta['end'][0]-raw_rta['start'][0], 
-                    raw_rta['end'][1]-raw_rta['start'][1] 
-                ]
-                returned_start_coords = raw_rta['start']
-            else:
-                # 'skip east' requested, use adjusted box coords
-                size = [
-                    end[0] - start[0],
-                    end[1] - start[1]
-                ]
-                returned_start_coords = start
-                
-            recognized_text_areas[the_id] = {
-                'source': raw_rta['source'],
-                'location': returned_start_coords,
-                'size': size,
-                'origin': adjusted_coords['origin'],
-                'ocr_window_start': adjusted_coords['start'],
-                'scale': 1,
-                'scanner_type': 'ocr',
-                'text': raw_rta['text']
-            }
+        worker = OcrController()
+        recognized_text_areas = worker.scan_ocr(request_data)
 
         return Response(recognized_text_areas)
 
@@ -207,134 +96,13 @@ class AnalyzeViewSetScanTemplate(viewsets.ViewSet):
             return self.error("tier_1_scanners is required")
         if not request_data.get("movies"):
             return self.error("movies is required")
-        source_movies = {}
-        movies = request_data.get('movies')
-        if 'source' in movies:
-          source_movies = movies['source']
-          del movies['source']
         if 'template' not in request_data['tier_1_scanners']:
             return self.error("tier_1_scanners > template is required")
-        template_id = list(request_data['tier_1_scanners']['template'].keys())[0]
-        template = request_data['tier_1_scanners']['template'][template_id]
-        template_matcher = TemplateMatcher(template)
-        match_app_id = ''
-        if 'app_id' in template['attributes']:
-            match_app_id = template['attributes']['app_id']
-        match_statistics = {}
-        for anchor in template.get("anchors"):
-            match_image = template_matcher.get_match_image_for_anchor(anchor)
-            start = anchor.get("start")
-            end = anchor.get("end")
-            size = (end[0] - start[0], end[1] - start[1])
-            anchor_id = anchor.get("id")
-            if 'movies' not in match_statistics:
-                match_statistics = {'movies': {}}
-            for movie_url in movies:
-                if movie_url not in match_statistics['movies']:
-                    match_statistics['movies'][movie_url] = {'framesets': {}}
-                movie = movies[movie_url]
-                if not movie:
-                    print('no movie error for {}'.format(movie_url))
-                    continue
-                framesets = movie["framesets"]
-                for frameset_hash in framesets:
-                    print('scanning frameset {}'.format(frameset_hash))
-                    frameset = framesets[frameset_hash]
-                    if match_app_id:
-                        frameset_contains_app = False
-                        all_match_objs_have_app_ids = True
-                        for match_obj_key in frameset:
-                            match_obj = frameset[match_obj_key]
-                            if 'app_id' in match_obj:
-                                if match_obj['app_id'] == match_app_id:
-                                    frameset_contains_app = True
-                            else:
-                                all_match_objs_have_app_ids = False
-                        if all_match_objs_have_app_ids and not frameset_contains_app:
-                            continue
-                    if frameset_hash not in match_statistics['movies'][movie_url]['framesets']:
-                        match_statistics['movies'][movie_url]['framesets'][frameset_hash] = {}
-                    if 'images' in frameset:
-                        one_image_url = frameset["images"][0]
-                    else:
-                        one_image_url = source_movies[movie_url]['framesets'][frameset_hash]['images'][0]
-                    oi_response = requests.get(
-                      one_image_url,
-                      verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
-                    )
-                    one_image = oi_response.content
-                    if one_image:
-                        oi_nparr = np.fromstring(one_image, np.uint8)
-                        target_image = cv2.imdecode(oi_nparr, cv2.IMREAD_COLOR)
-                        target_image = self.trim_target_image_to_t1_inputs(target_image, frameset)
-                        match_obj = template_matcher.get_template_coords(
-                            target_image, match_image
-                        )
-                        match_statistics['movies'][movie_url]['framesets'][frameset_hash][anchor_id] = \
-                            match_obj['match_metadata']
-                        if match_obj['match_found']:
-                            (temp_coords, temp_scale) = match_obj['match_coords']
-                            if movie_url not in matches['movies']:
-                                matches['movies'][movie_url] = {}
-                                matches['movies'][movie_url]['framesets'] = {}
-                            if frameset_hash not in matches['movies'][movie_url]['framesets']:
-                                matches['movies'][movie_url]['framesets'][frameset_hash] = {}
-                            matches['movies'][movie_url]['framesets'][frameset_hash][anchor_id] = {}
-                            matches_for_anchor = \
-                                matches['movies'][movie_url]['framesets'][frameset_hash][anchor_id]
-                            matches_for_anchor['location'] = temp_coords
-                            matches_for_anchor['size'] = size
-                            matches_for_anchor['scale'] = temp_scale
-                            matches_for_anchor['scanner_type'] = 'template'
-        matches['statistics'] = match_statistics
-        return Response(matches)
 
-    #TODO make sure this works, a unit test would be nice
-    def trim_target_image_to_t1_inputs(self, target_image, tier_1_record):
-        if len(tier_1_record.keys()) == 1 and list(tier_1_record.keys())[0] == 'image':
-            return target_image # it's a virgin frameset, not t1
-        for t1_subscanner_id in tier_1_record:
-            t1_subscanner = tier_1_record[t1_subscanner_id]
-            if 'location' in t1_subscanner  \
-                and 'size' in t1_subscanner \
-                and t1_subscanner['scanner_type'] == 'selected_area':
-                start = t1_subscanner['location']
-                end = [
-                    t1_subscanner['location'][0] + t1_subscanner['size'][0],
-                    t1_subscanner['location'][1] + t1_subscanner['size'][1],
-                ]
-                height = target_image.shape[0]
-                width = target_image.shape[1]
-                cv2.rectangle(
-                    target_image,
-                    (0,0),
-                    (start[0], height),
-                    (0, 0, 0),
-                    -1,
-                )
-                cv2.rectangle(
-                    target_image,
-                    (end[0],0),
-                    (width, height),
-                    (0, 0, 0),
-                    -1,
-                )
-                cv2.rectangle(
-                    target_image,
-                    (0,0),
-                    (width, start[1]),
-                    (0, 0, 0),
-                    -1,
-                )
-                cv2.rectangle(
-                    target_image,
-                    (start[0],end[1]),
-                    (end[0], height),
-                    (0, 0, 0),
-                    -1,
-                )
-                return target_image
-        return target_image
+        worker = TemplateController()
+        matches = worker.scan_template(request_data)
+
+        return Response(matches)
 
 
 class AnalyzeViewSetSelectedArea(viewsets.ViewSet):
