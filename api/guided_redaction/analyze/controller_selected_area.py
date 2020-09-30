@@ -6,8 +6,9 @@ import numpy as np
 import requests
 from guided_redaction.analyze.classes.ExtentsFinder import ExtentsFinder
 
-
 requests.packages.urllib3.disable_warnings()
+
+
 class SelectedAreaController:
 
     def __init__(self):

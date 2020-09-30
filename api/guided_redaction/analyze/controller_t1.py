@@ -1,5 +1,18 @@
 class T1Controller:
 
+    def get_frameset_hash_for_frame(self, frame, framesets):
+        for frameset_hash in framesets:
+            if frame in framesets[frameset_hash]['images']:
+                return frameset_hash
+
+    def get_frameset_hashes_in_order(self, frames, framesets):
+        ret_arr = []
+        for frame in frames:
+            frameset_hash = self.get_frameset_hash_for_frame(frame, framesets)
+            if frameset_hash and frameset_hash not in ret_arr:
+                ret_arr.append(frameset_hash)
+        return ret_arr
+
     def adjust_start_end_origin_for_t1(self, coords_in, tier_1_frameset, ocr_rule):
         adjusted_coords = {}
         adjusted_coords['start'] = coords_in['start']

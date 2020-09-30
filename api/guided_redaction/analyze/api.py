@@ -1,27 +1,21 @@
 import cv2
-import random
-import math
-import datetime
-from urllib.parse import urlsplit
-import uuid
-import os
 from guided_redaction.analyze.classes.EastPlusTessGuidedAnalyzer import (
     EastPlusTessGuidedAnalyzer,
 )
 from guided_redaction.analyze.classes.TelemetryAnalyzer import TelemetryAnalyzer
 from guided_redaction.analyze.classes.TemplateMatcher import TemplateMatcher
-from guided_redaction.analyze.classes.ExtentsFinder import ExtentsFinder
 from guided_redaction.analyze.classes.ChartMaker import ChartMaker
-from guided_redaction.analyze.classes.EntityFinder import EntityFinder
-from guided_redaction.analyze.classes.OcrSceneAnalyzer import OcrSceneAnalyzer
 from guided_redaction.analyze.classes.OcrMovieAnalyzer import OcrMovieAnalyzer
 from guided_redaction.analyze.classes.HogScanner import HogScanner
 from guided_redaction.analyze.classes.DataSifterCompiler import DataSifterCompiler
 from .controller_selected_area import SelectedAreaController
 from .controller_ocr import OcrController
+from .controller_ocr_scene_analysis import OcrSceneAnalysisController
 from .controller_template import TemplateController
+from .controller_filter import FilterController
+from .controller_timestamp import TimestampController
+from .controller_entity_finder import EntityFinderController
 import json
-import base64
 import numpy as np
 from django.conf import settings
 from django.shortcuts import render
@@ -124,63 +118,18 @@ class AnalyzeViewSetSelectedArea(viewsets.ViewSet):
 
 
 class AnalyzeViewSetFilter(viewsets.ViewSet):
-    def build_result_file_name(self, image_url):
-        inbound_filename = (urlsplit(image_url)[2]).split("/")[-1]
-        (file_basename, file_extension) = os.path.splitext(inbound_filename)
-        new_filename = file_basename + "_filtered" + file_extension
-        return new_filename
-
     def create(self, request):
         request_data = request.data
         return self.process_create_request(request_data)
 
     def process_create_request(self, request_data):
-        response_movies = {}
         if not request_data.get("movies"):
             return self.error("movies is required")
         if not request_data.get("filter_parameters"):
             return self.error("filter_parameters is required")
 
-        fw = FileWriter(
-            working_dir=settings.REDACT_FILE_STORAGE_DIR,
-            base_url=settings.REDACT_FILE_BASE_URL,
-            image_request_verify_headers=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
-        )
-        for movie_url in request_data.get("movies"):
-            response_movies[movie_url] = {
-                'framesets': {},
-            }
-            movie = request_data.get('movies')[movie_url]
-            frames = movie['frames']
-            framesets = movie['framesets']
-
-            ordered_hashes = get_frameset_hashes_in_order(frames, framesets)
-            workdir_uuid = str(uuid.uuid4())
-            workdir = fw.create_unique_directory(workdir_uuid)
-            for index, frameset_hash in enumerate(ordered_hashes):
-                if index > 0:
-                    cur_image_url = framesets[frameset_hash]['images'][0]
-                    cur_img_bin = requests.get(cur_image_url).content
-                    if not cur_img_bin:
-                        return self.error("couldn't read source image data: ".cur_image_url, status_code=422)
-                    nparr = np.fromstring(cur_img_bin, np.uint8)
-                    cur_image_cv2 = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-                    cur_image_cv2 = cv2.cvtColor(cur_image_cv2, cv2.COLOR_BGR2GRAY)
-
-                    prev_hash = ordered_hashes[index-1]
-                    prev_image_url = framesets[prev_hash]['images'][0]
-                    prev_img_bin = requests.get(prev_image_url).content
-                    if not prev_img_bin:
-                        return self.error("couldn't read source image data: ".prev_image_url, status_code=422)
-                    nparr = np.fromstring(prev_img_bin, np.uint8)
-                    prev_image_cv2 = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-                    prev_image_cv2 = cv2.cvtColor(prev_image_cv2, cv2.COLOR_BGR2GRAY)
-
-                    filtered_image_cv2= cv2.subtract(prev_image_cv2, cur_image_cv2)
-                    new_file_name = self.build_result_file_name(cur_image_url)
-                    outfilename = os.path.join(workdir, new_file_name)
-                    file_url = fw.write_cv2_image_to_filepath(filtered_image_cv2, outfilename)
-                    response_movies[movie_url]['framesets'][frameset_hash] = file_url
+        worker = FilterController()
+        response_movies = worker.run_filter(request_data)
 
         return Response({'movies': response_movies})
 
@@ -245,6 +194,7 @@ class AnalyzeViewSetTelemetry(viewsets.ViewSet):
                 matching_rows.append(row)
         return matching_rows
 
+
 class AnalyzeViewSetTimestamp(viewsets.ViewSet):
     def create(self, request):
         request_data = request.data
@@ -253,225 +203,10 @@ class AnalyzeViewSetTimestamp(viewsets.ViewSet):
     def process_create_request(self, request_data):
         if not request_data.get("movies"):
             return self.error("movies is required")
-        response_obj = {}
-        analyzer = EastPlusTessGuidedAnalyzer(debug=False)
-        movies = request_data.get('movies')
-        for movie_url in movies:
-            response_obj[movie_url] = {}
-            if 'frames' not in movies[movie_url]:
-                print('movie {} was not already split into frames'.format(movie_url))
-                continue
-            blue_screen_timestamp = self.get_timestamp_from_blue_screen(movies[movie_url], analyzer)
-            if blue_screen_timestamp:
-                response_obj[movie_url] = blue_screen_timestamp
-            else:
-                taskbar_timestamp = self.get_timestamp_from_task_bar(movies[movie_url], analyzer)
-                if taskbar_timestamp:
-                    response_obj[movie_url] = taskbar_timestamp
+        worker = TimestampController()
+        response_obj = worker.scan_timestamp(request_data)
+
         return Response(response_obj)
-
-    def get_timestamp_from_blue_screen(self, movie, analyzer):
-        image_url = movie['frames'][0]
-        pic_response = requests.get(
-          image_url,
-          verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
-        )
-        image = pic_response.content
-        if not image:
-            return self.error('could not retrieve the first frame for '+movie_url)
-        nparr = np.fromstring(image, np.uint8)
-        cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-        if not self.screen_is_blue_screen(cv2_image):
-          return
-        print('looking for timestamp from blue screen')
-        recognized_text_areas = analyzer.analyze_text(
-            cv2_image,
-            [(0, 0), (cv2_image.shape[1], cv2_image.shape[0])]
-        )
-        for rta in recognized_text_areas:
-            blue_screen_regex = re.compile('(\d+):(\d+):(\d+) ([A|P])M')
-            match = blue_screen_regex.search(rta['text'])
-            if match:
-                print('got a hit on the blue screen')
-                the_hour = match.group(1)
-                the_minute = match.group(2)
-                the_second = match.group(3)
-                the_am_pm = match.group(4)
-                time_result = {
-                    'hour': the_hour,
-                    'minute': the_minute,
-                    'second': the_second,
-                    'am_pm': the_am_pm + 'M',
-                }
-                return time_result
-
-    def screen_is_blue_screen(self, cv2_image): 
-        dim_y, dim_x = cv2_image.shape[:2]
-        if dim_y < 100 or dim_x < 100:
-            return False
-        swatch = cv2_image[dim_y-20:dim_y, dim_x-20: dim_x]
-
-        for i in range(10):
-            rand_x = random.randint(0, 19)
-            rand_y = random.randint(0, 19)
-            if swatch[rand_y,rand_x][0] != 227 or swatch[rand_y,rand_x][1] != 154 or swatch[rand_y,rand_x][2] != 3:
-                return False
-        return True
-
-    def get_timestamp_from_task_bar(self, movie, analyzer):
-        print('looking for timestamp from taskbar')
-        prev_minute = None
-        cur_minute = None
-        known_minute_at_offset = {}
-        minute_change_at_offset = {}
-        for cur_index, image_url in enumerate(movie['frames']):
-            print('advancing to frame at offset {}'.format(cur_index))
-            prev_minute = cur_minute
-            cur_minute = self.fetch_minute_from_image_task_bar(image_url, analyzer, cur_index)
-            if cur_minute and prev_minute:
-                print('comparing cur {} to prev {} at index {}'.format(cur_minute, prev_minute, cur_index))
-                if (cur_minute == prev_minute + 1)  or  (cur_minute == 0 and prev_minute == 59):
-                    print('========= just saw the minute change')
-                    cur_minute_offset = math.floor(cur_index / 60)
-                    cur_second_offset = cur_index % 60
-                    minute_change_at_offset = {
-                        'cur_minute': cur_minute,
-                        'prev_minute': prev_minute,
-                        'cur_minute_offset': cur_minute_offset,
-                        'cur_second_offset': cur_second_offset,
-                        'cur_offset': cur_index,
-                    }
-                    break
-        print('========== SUMMARY')
-        print('minute change at offset')
-        print(minute_change_at_offset)
-        if  minute_change_at_offset:
-            cur_datetime = datetime.datetime(
-                year=2020,
-                month=1,
-                day=2,
-                hour=10,
-                minute=minute_change_at_offset['cur_minute'],
-                second=0
-            )
-            start_time  = cur_datetime - datetime.timedelta(seconds=minute_change_at_offset['cur_offset'])
-            start_time_obj = {
-              'minute': start_time.minute,
-              'second': start_time.second,
-            }
-            print('computed start time: {}:{}'.format(start_time_obj['minute'], start_time_obj['second']))
-            return start_time_obj
-
-    def fetch_minute_from_image_task_bar(self, image_url, analyzer, cur_index):
-        print('fetching minutes from {}'.format(image_url))
-        pic_response = requests.get(
-          image_url,
-          verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
-        )
-        image = pic_response.content
-        if not image:
-            return 
-        nparr = np.fromstring(image, np.uint8)
-        cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-        dim_x = cv2_image.shape[1]
-        dim_y = cv2_image.shape[0]
-
-        time_region_image = cv2_image[dim_y-40:dim_y-20, dim_x-75:dim_x]
-        gray = cv2.cvtColor(time_region_image, cv2.COLOR_BGR2GRAY)
-        bg_color = gray[1,1]
-        if bg_color < 100:  # its light text on dark bg, invert
-            gray = cv2.bitwise_not(gray)
-        recognized_text_areas = analyzer.analyze_text(
-            gray,
-            '',
-            processing_mode='tess_only'
-        )
-
-        for rta in recognized_text_areas:
-            text = rta['text']
-            text_codes = [ord(x) for x in text]
-            print('text in **{}** {}'.format(text, text_codes))
-            text = self.cast_probably_numbers(text)
-            text_codes = [ord(x) for x in text]
-            print('--transformed to **{}** {}'.format(text, text_codes))
-            match = re.search('(\w*)(:?)(\d\d)(\s*)(\S)M', text)
-            if match:
-                the_minute = int(match.group(3))
-                return the_minute
-
-    def cast_probably_numbers(self, text):
-        text = text.replace('l', '1')
-        text = text.replace('I', '1')
-        text = text.replace('[', '1')
-        text = text.replace(']', '1')
-        text = text.replace('i', '1')
-        text = text.replace('|', '1')
-        text = text.replace('{', '1')
-        text = text.replace('}', '1')
-        text = text.replace('O', '0')
-        text = text.replace('.', ':')
-        return text
-
-    def get_timestamp_from_blue_screen_png_bytes(self, image):
-        # a stand alone method to help Scott with something
-        # let Scott know if it's moving locations
-        analyzer = EastPlusTessGuidedAnalyzer(debug=False)
-        nparr = np.fromstring(image, np.uint8)
-        cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-        time_region_image = cv2_image[169:208, 91:465]
-        gray = cv2.cvtColor(time_region_image, cv2.COLOR_BGR2GRAY)
-        bg_color = gray[1,1]
-        if bg_color < 100:  # its light text on dark bg, invert
-            gray = cv2.bitwise_not(gray)
-        recognized_text_areas = analyzer.analyze_text(
-            gray,
-            '',
-            processing_mode='tess_only'
-        )
-        time_result = {}
-        date_result = {}
-        found_datetime = None
-        time_regex = re.compile('(\d+):(\d+):(\d+) ([A|P])')
-        date_regex = re.compile('(\d+)/(\d+)/(\d+)\s* ')
-        for rta in recognized_text_areas:
-            text = rta['text']
-            text = self.cast_probably_numbers(text)
-            match = time_regex.search(text)
-            if match:
-                the_hour = match.group(1)
-                the_minute = match.group(2)
-                the_second = match.group(3)
-                the_am_pm = match.group(4)
-                time_result = {
-                    'hour': int(the_hour),
-                    'minute': int(the_minute),
-                    'second': int(the_second),
-                    'am_pm': the_am_pm + 'M',
-                }
-            match = date_regex.search(text)
-            if match:
-                the_month = match.group(1)
-                the_day = match.group(2)
-                the_year = match.group(3)
-                date_result = {
-                    'day': int(the_day),
-                    'month': int(the_month),
-                    'year': int(the_year),
-                }
-        if date_result and time_result:
-            if time_result['am_pm'] == 'PM' and time_result['hour'] < 12:
-                time_result['hour'] += 12
-            if time_result['am_pm'] == 'AM' and time_result['hour'] == 12:
-                time_result['hours'] = 0
-            found_datetime = datetime.datetime(
-                date_result['year'],
-                date_result['month'],
-                date_result['day'],
-                time_result['hour'],
-                time_result['minute'],
-                time_result['second']
-            )
-        return found_datetime
 
 
 class AnalyzeViewSetTemplateMatchChart(viewsets.ViewSet):
@@ -491,7 +226,9 @@ class AnalyzeViewSetTemplateMatchChart(viewsets.ViewSet):
             base_url=settings.REDACT_FILE_BASE_URL,
             image_request_verify_headers=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
         )
-        chart_maker = ChartMaker(chart_info, job_data, file_writer, settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS)
+        chart_maker = ChartMaker(
+            chart_info, job_data, file_writer, settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS
+        )
         charts_obj = chart_maker.make_charts()
 
         return Response({'movies': charts_obj})
@@ -514,10 +251,13 @@ class AnalyzeViewSetOcrMatchChart(viewsets.ViewSet):
             base_url=settings.REDACT_FILE_BASE_URL,
             image_request_verify_headers=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
         )
-        chart_maker = ChartMaker(chart_info, job_data, file_writer, settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS)
+        chart_maker = ChartMaker(
+            chart_info, job_data, file_writer, settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS
+        )
         charts_obj = chart_maker.make_charts()
 
         return Response({'movies': charts_obj})
+
 
 class AnalyzeViewSetSelectedAreaChart(viewsets.ViewSet):
     def create(self, request):
@@ -536,10 +276,13 @@ class AnalyzeViewSetSelectedAreaChart(viewsets.ViewSet):
             base_url=settings.REDACT_FILE_BASE_URL,
             image_request_verify_headers=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
         )
-        chart_maker = ChartMaker(chart_info, job_data, file_writer, settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS)
+        chart_maker = ChartMaker(
+            chart_info, job_data, file_writer, settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS
+        )
         charts_obj = chart_maker.make_charts()
 
         return Response({'movies': charts_obj})
+
 
 class AnalyzeViewSetOcrSceneAnalysisChart(viewsets.ViewSet):
     def create(self, request):
@@ -558,7 +301,9 @@ class AnalyzeViewSetOcrSceneAnalysisChart(viewsets.ViewSet):
             base_url=settings.REDACT_FILE_BASE_URL,
             image_request_verify_headers=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
         )
-        chart_maker = ChartMaker(chart_info, job_data, file_writer, settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS)
+        chart_maker = ChartMaker(
+            chart_info, job_data, file_writer, settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS
+        )
         charts_obj = chart_maker.make_charts()
 
         return Response({'movies': charts_obj})
@@ -574,56 +319,10 @@ class AnalyzeViewSetOcrSceneAnalysis(viewsets.ViewSet):
             return self.error("movies is required", status_code=400)
         if not request_data.get("ocr_scene_analysis_meta"):
             return self.error("ocr_scene_analysis_meta is required", status_code=400)
-        osa = request_data.get("ocr_scene_analysis_meta")
-        skip_frames = int(osa['skip_frames'])
-        movies = request_data.get("movies")
-        build_response_data = {'movies': {}}
-        build_statistics = {'movies': {}}
-        for movie_url in movies:
-            build_response_data['movies'][movie_url] = {'framesets': {}}
-            build_statistics['movies'][movie_url] = {'framesets': {}}
-            movie = movies[movie_url]
-            frames = movie['frames']
-            framesets = movie['framesets']
-            ordered_hashes = get_frameset_hashes_in_order(frames, framesets)
-            for index, frameset_hash in enumerate(ordered_hashes):
-                if index % skip_frames == 0:
-                    frameset = movie['framesets'][frameset_hash]
-                    (response, statistics) = self.analyze_one_frame(frameset, osa)
-                    for app_name in response:
-                        if frameset_hash not in build_response_data['movies'][movie_url]['framesets']:
-                            build_response_data['movies'][movie_url]['framesets'][frameset_hash] = {}
-                        build_response_data['movies'][movie_url]['framesets'][frameset_hash][app_name] = response[app_name]
-                    build_statistics['movies'][movie_url]['framesets'][frameset_hash] = statistics
+        worker = OcrSceneAnalysisController()
+        build_response_data = worker.scan_scene(request_data)
 
-        build_response_data['statistics'] = build_statistics
         return Response(build_response_data)
-
-    def analyze_one_frame(self, frameset, osa_rule):
-        if 'images' not in frameset or not frameset['images']:
-            return
-        pic_response = requests.get(
-          frameset['images'][0],
-          verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
-        )
-        image = pic_response.content
-        if not image:
-            return 
-
-        analyzer = EastPlusTessGuidedAnalyzer()
-        nparr = np.fromstring(image, np.uint8)
-        cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-        frame_dimensions = [cv2_image.shape[1], cv2_image.shape[0]]
-        start = (0, 0)
-        end = (cv2_image.shape[1], cv2_image.shape[0])
-
-        raw_recognized_text_areas = analyzer.analyze_text(
-            cv2_image, [start, end]
-        )
-
-        ocr_scene_analyzer = OcrSceneAnalyzer(raw_recognized_text_areas, osa_rule, frame_dimensions)
-
-        return ocr_scene_analyzer.analyze_scene()
 
 
 class AnalyzeViewSetOcrMovieAnalysis(viewsets.ViewSet):
@@ -714,6 +413,7 @@ class AnalyzeViewSetOcrMovieAnalysis(viewsets.ViewSet):
 
         return Response(results)
 
+
 class AnalyzeViewSetEntityFinder(viewsets.ViewSet):
     def create(self, request):
         request_data = request.data
@@ -724,66 +424,12 @@ class AnalyzeViewSetEntityFinder(viewsets.ViewSet):
             return self.error("movies is required", status_code=400)
         if not request_data.get("entity_finder_meta"):
             return self.error("entity_finder_meta is required", status_code=400)
-        entity_finder_meta = request_data.get("entity_finder_meta")
-        movies = request_data.get("movies")
-        build_response_data = {'movies': {}}
-        for movie_url in movies:
-            build_response_data['movies'][movie_url] = {'framesets': {}}
-            movie = movies[movie_url]
-            frames = movie['frames']
-            framesets = movie['framesets']
-            ordered_hashes = get_frameset_hashes_in_order(frames, framesets)
-            for index, frameset_hash in enumerate(ordered_hashes):
-                frameset = movie['framesets'][frameset_hash]
-                response = self.analyze_one_frame(frameset, entity_finder_meta)
-                build_response_data['movies'][movie_url]['framesets'][frameset_hash] = response
+
+        worker = EntityFinderController()
+        build_response_data = worker.find_entities(request_data)
 
         return Response(build_response_data)
 
-    def analyze_one_frame(self, frameset, entity_finder_meta):
-        if 'images' not in frameset or not frameset['images']:
-            return
-        pic_response = requests.get(
-          frameset['images'][0],
-          verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
-        )
-        image = pic_response.content
-        if not image:
-            return 
-
-        nparr = np.fromstring(image, np.uint8)
-        cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-        
-        if entity_finder_meta['entity_type'] == 'chrome_window':
-            template_filepath = os.path.join(
-                settings.BASE_DIR, 
-                'guided_redaction/data/templates/chrome_controls.json'
-            )
-            template_text = ''.join(open(template_filepath, 'rt').readlines())
-            template_object = json.loads(template_text)
-        elif entity_finder_meta['entity_type'] == 'ie_window':
-            template_filepath = os.path.join(
-                settings.BASE_DIR, 
-                'guided_redaction/data/templates/ie_controls.json'
-            )
-            template_text = ''.join(open(template_filepath, 'rt').readlines())
-            template_object = json.loads(template_text)
-        elif entity_finder_meta['entity_type'] == 'desktop':
-            template_object = {}
-        elif entity_finder_meta['entity_type'] == 'taskbar':
-            template_filepath = os.path.join(
-                settings.BASE_DIR, 
-                'guided_redaction/data/templates/windows_start_button.json'
-            )
-            template_text = ''.join(open(template_filepath, 'rt').readlines())
-            template_object = json.loads(template_text)
-
-        template_matcher = TemplateMatcher(template_object)
-        extents_finder = ExtentsFinder()
-
-        entity_finder = EntityFinder(cv2_image, entity_finder_meta, template_matcher, extents_finder)
-
-        return entity_finder.find_entities()
 
 class AnalyzeViewSetTrainHog(viewsets.ViewSet):
     def create(self, request):
@@ -812,6 +458,7 @@ class AnalyzeViewSetTrainHog(viewsets.ViewSet):
 
         return Response(results)
 
+
 class AnalyzeViewSetTestHog(viewsets.ViewSet):
     def create(self, request):
         request_data = request.data
@@ -839,11 +486,11 @@ class AnalyzeViewSetTestHog(viewsets.ViewSet):
 
         return Response(results)
 
+
 class AnalyzeViewSetCompileDataSifter(viewsets.ViewSet) :
     def create(self, request):
         request_data = request.data
         return self.process_create_request(request_data)
-
 
     def process_create_request(self, request_data):
         if not request_data.get("tier_1_scanners"):

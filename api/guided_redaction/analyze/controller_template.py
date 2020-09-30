@@ -4,11 +4,10 @@ import numpy as np
 from django.conf import settings
 import requests
 
-
 requests.packages.urllib3.disable_warnings()
 
 
-class TemplateController():
+class TemplateController:
 
     def __init__(self):
         pass
