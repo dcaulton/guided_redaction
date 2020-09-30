@@ -22,7 +22,7 @@ class SelectedAreaControls extends React.Component {
       id: '',
       name: '',
       select_type: 'arrow',
-      scale: '1:1',
+      merge: 'yes',
       interior_or_exterior: 'interior',
       attributes: {},
       origin_entity_type: 'adhoc',
@@ -175,7 +175,7 @@ class SelectedAreaControls extends React.Component {
         id: sam['id'],
         name: sam['name'],
         select_type: sam['select_type'],
-        scale: sam['scale'],
+        merge: sam['merge'],
         interior_or_exterior: sam['interior_or_exterior'],
         attributes: sam['attributes'],
         origin_entity_type: sam['origin_entity_type'],
@@ -204,7 +204,7 @@ class SelectedAreaControls extends React.Component {
       id: the_id,
       name: '',
       select_type: 'arrow',
-      scale: '1:1',
+      merge: 'yes',
       interior_or_exterior: 'interior',
       attributes: {},
       origin_entity_type: 'adhoc',
@@ -223,7 +223,7 @@ class SelectedAreaControls extends React.Component {
       id: this.state.id,
       name: this.state.name,
       select_type: this.state.select_type,
-      scale: this.state.scale,
+      merge: this.state.merge,
       interior_or_exterior: this.state.interior_or_exterior,
       attributes: this.state.attributes,
       origin_entity_type: this.state.origin_entity_type,
@@ -259,17 +259,17 @@ class SelectedAreaControls extends React.Component {
     }))
   }
 
-  buildScaleDropdown() {
+  buildMergeDropdown() {
     const values = [
-      {'1:1': 'actual image scale only'},
-      {'match_trigger': 'match trigger'}
+      {'yes': 'merge subareas'},
+      {'no': 'preserve subareas'}
     ]
     return buildLabelAndDropdown(
       values,
-      'Scale',
-      this.state.scale,
-      'selected_area_scale',
-      ((value)=>{this.setLocalStateVar('scale', value)})
+      'Merge Subareas',
+      this.state.merge,
+      'selected_area_merge',
+      ((value)=>{this.setLocalStateVar('merge', value)})
     )
   }
 
@@ -665,7 +665,7 @@ class SelectedAreaControls extends React.Component {
     const id_string = buildIdString(this.state.id, 'selected area meta', this.state.unsaved_changes)
     const name_field = this.buildNameField()
     const tolerance_field = this.buildToleranceField()
-    const scale_dropdown = this.buildScaleDropdown()
+    const merge_dropdown = this.buildMergeDropdown()
     const select_type_dropdown = this.buildSelectTypeDropdown()
     const interior_or_exterior_dropdown = this.buildInteriorOrExteriorDropdown()
     const attributes_list = this.buildAttributesList()
@@ -736,7 +736,7 @@ class SelectedAreaControls extends React.Component {
                 </div>
 
                 <div className='row mt-2'>
-                  {scale_dropdown}
+                  {merge_dropdown}
                 </div>
 
                 <div className='row mt-2'>
