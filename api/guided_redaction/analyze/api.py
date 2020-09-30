@@ -407,6 +407,9 @@ class AnalyzeViewSetSelectedArea(viewsets.ViewSet):
             frameset
         )
 
+        if selected_area_meta['merge'] == 'yes':
+            regions_for_image = self.merge_regions(regions_for_image)
+
         if selected_area_meta['interior_or_exterior'] == 'exterior':
             regions_for_image = \
                 self.transform_interior_selection_to_exterior(
@@ -415,6 +418,29 @@ class AnalyzeViewSetSelectedArea(viewsets.ViewSet):
                 )
 
         return regions_for_image
+
+    def merge_regions(self, regions_for_image):
+        if not regions_for_image:
+            return
+        all_start = list(regions_for_image[0]['regions'][0])
+        all_end = list(regions_for_image[0]['regions'][1])
+        for region in regions_for_image:
+            r_start = region['regions'][0]
+            r_end = region['regions'][1]
+            if r_start[0] < all_start[0]:
+                all_start[0] = r_start[0]
+            if r_start[1] < all_start[1]:
+                all_start[1] = r_start[1]
+            if r_end[0] > all_end[0]:
+                all_end[0] = r_end[0]
+            if r_end[1] > all_end[1]:
+                all_end[1] = r_end[1]
+        new_region = {
+          'regions': (all_start, all_end),
+          'origin': (0, 0),
+          'sam_area_id': 'merged',
+        }
+        return [new_region]
 
     def get_cv2_image_from_movies(self, frameset, source_movies, movie_url, frameset_hash):
         cv2_image = None

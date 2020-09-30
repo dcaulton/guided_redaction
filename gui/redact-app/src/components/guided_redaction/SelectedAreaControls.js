@@ -261,8 +261,8 @@ class SelectedAreaControls extends React.Component {
 
   buildMergeDropdown() {
     const values = [
-      {'yes': 'merge subareas'},
-      {'no': 'preserve subareas'}
+      {'yes': 'yes'},
+      {'no': 'no'}
     ]
     return buildLabelAndDropdown(
       values,
