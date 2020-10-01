@@ -31,6 +31,7 @@ class SelectedAreaControls extends React.Component {
       scan_level: 'tier_2',
       areas: [],
       minimum_zones: [],
+      maximum_zones: [],
       tolerance: 5,
       attribute_search_name: '',
       attribute_search_value: '',
@@ -39,10 +40,13 @@ class SelectedAreaControls extends React.Component {
     this.addAreaCoordsCallback=this.addAreaCoordsCallback.bind(this)
     this.getCurrentSelectedAreaCenters=this.getCurrentSelectedAreaCenters.bind(this)
     this.getCurrentSelectedAreaMinimumZones=this.getCurrentSelectedAreaMinimumZones.bind(this)
+    this.getCurrentSelectedAreaMaximumZones=this.getCurrentSelectedAreaMaximumZones.bind(this)
     this.getCurrentSelectedAreaOriginLocation=this.getCurrentSelectedAreaOriginLocation.bind(this)
     this.addOriginLocation=this.addOriginLocation.bind(this)
     this.addMinimumZonesCallback1=this.addMinimumZonesCallback1.bind(this)
     this.addMinimumZonesCallback2=this.addMinimumZonesCallback2.bind(this)
+    this.addMaximumZonesCallback1=this.addMaximumZonesCallback1.bind(this)
+    this.addMaximumZonesCallback2=this.addMaximumZonesCallback2.bind(this)
     this.getSelectedAreaMetaFromState=this.getSelectedAreaMetaFromState.bind(this)
     this.setLocalStateVar=this.setLocalStateVar.bind(this)
   }
@@ -98,6 +102,26 @@ class SelectedAreaControls extends React.Component {
     this.props.handleSetMode('selected_area_minimum_zones_1')
   }
 
+  addMaximumZonesCallback1(click_coords) {
+    this.setState({
+      first_click_coords: click_coords,
+    })
+    this.props.handleSetMode('selected_area_maximum_zones_2')
+  }
+
+  addMaximumZonesCallback2(click_coords) {
+    const zone_id = 'selected_area_maximum_zone_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
+    const the_zone = {
+        'id': zone_id,
+        'start': this.state.first_click_coords,
+        'end': click_coords,
+    }
+    let deepCopyMaximumZones = JSON.parse(JSON.stringify(this.state.maximum_zones))
+    deepCopyMaximumZones.push(the_zone)
+    this.setLocalStateVar('maximum_zones', deepCopyMaximumZones)
+    this.props.handleSetMode('selected_area_maximum_zones_1')
+  }
+
   addOriginLocation(origin_coords) {
     this.setState({
       origin_entity_location: origin_coords
@@ -118,12 +142,19 @@ class SelectedAreaControls extends React.Component {
     return this.state.origin_entity_location
   }
 
+  getCurrentSelectedAreaMaximumZones() {
+    return this.state.maximum_zones
+  }
+
   componentDidMount() {
     this.props.addInsightsCallback('selected_area_area_coords_1', this.addAreaCoordsCallback)
     this.props.addInsightsCallback('selected_area_minimum_zones_1', this.addMinimumZonesCallback1)
     this.props.addInsightsCallback('selected_area_minimum_zones_2', this.addMinimumZonesCallback2)
+    this.props.addInsightsCallback('selected_area_maximum_zones_1', this.addMaximumZonesCallback1)
+    this.props.addInsightsCallback('selected_area_maximum_zones_2', this.addMaximumZonesCallback2)
     this.props.addInsightsCallback('getCurrentSelectedAreaCenters', this.getCurrentSelectedAreaCenters)
     this.props.addInsightsCallback('getCurrentSelectedAreaMinimumZones', this.getCurrentSelectedAreaMinimumZones)
+    this.props.addInsightsCallback('getCurrentSelectedAreaMaximumZones', this.getCurrentSelectedAreaMaximumZones)
     this.props.addInsightsCallback('getCurrentSelectedAreaOriginLocation', this.getCurrentSelectedAreaOriginLocation)
     this.props.addInsightsCallback('add_sa_origin_location_1', this.addOriginLocation)
     this.loadNewSelectedAreaMeta()
@@ -182,6 +213,7 @@ class SelectedAreaControls extends React.Component {
         scan_level: sam['scan_level'],
         areas: sam['areas'],
         minimum_zones : sam['minimum_zones'],
+        maximum_zones : sam['maximum_zones'],
         tolerance: sam['tolerance'],
       })
     }
@@ -210,6 +242,7 @@ class SelectedAreaControls extends React.Component {
       scan_level: 'tier_2',
       areas: [],
       minimum_zones: [],
+      maximum_zones: [],
       tolerance: 5,
     })
   }
@@ -228,6 +261,7 @@ class SelectedAreaControls extends React.Component {
       scan_level: this.state.scan_level,
       areas: this.state.areas,
       minimum_zones: this.state.minimum_zones,
+      maximum_zones: this.state.maximum_zones,
       tolerance: this.state.tolerance,
     }
     return selected_area_meta
@@ -469,6 +503,11 @@ class SelectedAreaControls extends React.Component {
     this.props.displayInsightsMessage('specify the upper left corner of the minimum zone')
   }
 
+  startAddMaximumZones() {
+    this.props.handleSetMode('selected_area_maximum_zones_1')
+    this.props.displayInsightsMessage('specify the upper left corner of the maximum zone')
+  }
+
   buildAddAreaCoordsButton() {
     return buildInlinePrimaryButton(
       'Add Area Center',
@@ -478,8 +517,15 @@ class SelectedAreaControls extends React.Component {
 
   buildAddMinimumZonesButton() {
     return buildInlinePrimaryButton(
-      'Add Minimum Zones',
+      'Add Min Zones',
       (()=>{this.startAddMinimumZones()})
+    )
+  }
+
+  buildAddMaximumZonesButton() {
+    return buildInlinePrimaryButton(
+      'Add Max Zones',
+      (()=>{this.startAddMaximumZones()})
     )
   }
 
@@ -571,8 +617,15 @@ class SelectedAreaControls extends React.Component {
   
   buildClearMinimumZonesButton() {
     return buildInlinePrimaryButton(
-      'Clear Minimum Zones',
+      'Clear Min Zones',
       (()=>{this.clearMinimumZones()})
+    )
+  }
+  
+  buildClearMaximumZonesButton() {
+    return buildInlinePrimaryButton(
+      'Clear Max Zones',
+      (()=>{this.clearMaximumZones()})
     )
   }
   
@@ -607,6 +660,11 @@ class SelectedAreaControls extends React.Component {
   clearMinimumZones() {
     this.setLocalStateVar('minimum_zones', [])
     this.props.displayInsightsMessage('Minimum zones have been cleared')
+  }
+
+  clearMaximumZones() {
+    this.setLocalStateVar('maximum_zones', [])
+    this.props.displayInsightsMessage('Maximum zones have been cleared')
   }
 
   clearSelectedAreaMatches(scope) {
@@ -647,6 +705,8 @@ class SelectedAreaControls extends React.Component {
     const clear_area_coords_button = this.buildClearAreasButton()
     const add_minimum_zones_button = this.buildAddMinimumZonesButton()
     const clear_minimum_zones_button = this.buildClearMinimumZonesButton()
+    const add_maximum_zones_button = this.buildAddMaximumZonesButton()
+    const clear_maximum_zones_button = this.buildClearMaximumZonesButton()
     const add_origin_location_button = this.buildAddOriginLocationButton()
     const clear_origin_location_button = this.buildClearOriginLocationButton()
     const run_button = this.buildRunButton()
@@ -690,6 +750,8 @@ class SelectedAreaControls extends React.Component {
                 <div className='row mt-2'>
                   {add_minimum_zones_button}
                   {clear_minimum_zones_button}
+                  {add_maximum_zones_button}
+                  {clear_maximum_zones_button}
                 </div>
 
                 <div className='row mt-2'>

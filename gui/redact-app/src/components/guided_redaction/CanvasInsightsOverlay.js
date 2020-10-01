@@ -7,6 +7,7 @@ class CanvasInsightsOverlay extends React.Component {
     this.anchor_color = '#33F'
     this.mask_zone_color = '#B6B'
     this.selected_area_minimum_zone_color = '#3EA'
+    this.selected_area_maximum_zone_color = '#A3A'
     this.crosshairs_color = '#F33'
     this.template_match_color = '#3F3'
     this.selected_area_color = '#2B9'
@@ -47,6 +48,19 @@ class CanvasInsightsOverlay extends React.Component {
       this.drawBoxesAroundStartEndRecords(
         selected_area_min_zones,
         this.selected_area_minimum_zone_color
+      )
+    }
+  }
+
+  drawSelectedAreaMaximumZones() {
+    if (!this.props.currentImageIsSelectedAreaAnchorImage()) {
+      return
+    }
+    const selected_area_min_zones = this.props.getCurrentSelectedAreaMaximumZones()
+    if (selected_area_min_zones) {
+      this.drawBoxesAroundStartEndRecords(
+        selected_area_min_zones,
+        this.selected_area_maximum_zone_color
       )
     }
   }
@@ -141,6 +155,7 @@ class CanvasInsightsOverlay extends React.Component {
       if ((this.props.mode === 'add_template_anchor_2') 
           || (this.props.mode === 'add_template_mask_zone_2')
           || (this.props.mode === 'selected_area_minimum_zones_2')
+          || (this.props.mode === 'selected_area_maximum_zones_2')
           || (this.props.mode === 'scan_ocr_2')) {
         crosshair_length = 2000
       } 
@@ -346,6 +361,7 @@ class CanvasInsightsOverlay extends React.Component {
     this.drawCrosshairs('add_stuff', this.props.clicked_coords)
     this.drawSelectedAreaCenters()
     this.drawSelectedAreaMinimumZones()
+    this.drawSelectedAreaMaximumZones()
     this.drawSelectedAreaOriginLocation()
     this.drawOcrOriginLocation()
     this.drawTemplateAnchors()
@@ -364,6 +380,7 @@ class CanvasInsightsOverlay extends React.Component {
     this.drawCrosshairs('add_stuff', this.props.clicked_coords)
     this.drawSelectedAreaCenters()
     this.drawSelectedAreaMinimumZones()
+    this.drawSelectedAreaMaximumZones()
     this.drawSelectedAreaOriginLocation()
     this.drawOcrOriginLocation()
     this.drawTemplateAnchors()

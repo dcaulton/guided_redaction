@@ -823,14 +823,13 @@ def wrap_up_selected_area_threaded(job, children):
     job.response_data = json.dumps(aggregate_response_data)
     job.save()
 
-@shared_task
-def template_match_chart(job_uuid):
+def generic_chart(job_uuid, chart_type):
     if not Job.objects.filter(pk=job_uuid).exists():
-        print('calling template_match_chart on nonexistent job: {}'.format(job_uuid))
+        print('calling ' + chart_type + ' chart on nonexistent job: {}'.format(job_uuid))
     job = Job.objects.get(pk=job_uuid)
     job.status = 'running'
     job.save()
-    print('running template_match_chart for job {}'.format(job_uuid))
+    print('running ' +chart_type + ' chart for job {}'.format(job_uuid))
 
     req_obj = json.loads(job.request_data)
     build_job_data = {}
@@ -847,7 +846,7 @@ def template_match_chart(job_uuid):
     response = worker.process_create_request({
         'job_data': build_job_data,
         'chart_info': {
-            'chart_type': 'template_match',
+            'chart_type': chart_type,
         },
     })
     if not Job.objects.filter(pk=job_uuid).exists():
@@ -856,108 +855,22 @@ def template_match_chart(job_uuid):
     job.response_data = json.dumps(response.data)
     job.status = 'success'
     job.save()
+
+@shared_task
+def template_match_chart(job_uuid):
+    generic_chart(job_uuid, 'template_match')
 
 @shared_task
 def ocr_match_chart(job_uuid):
-    if not Job.objects.filter(pk=job_uuid).exists():
-        print('calling ocr_match_chart on nonexistent job: {}'.format(job_uuid))
-    job = Job.objects.get(pk=job_uuid)
-    job.status = 'running'
-    job.save()
-    print('running ocr_match_chart for job {}'.format(job_uuid))
-
-    req_obj = json.loads(job.request_data)
-    build_job_data = {}
-    if 'job_ids' in req_obj:
-        for job_id in req_obj['job_ids']:
-            job = Job.objects.get(pk=job_id)
-            build_job_data[job_id] = {
-                'request_data': json.loads(job.request_data),
-                'response_data': json.loads(job.response_data),
-            }
-
-
-    worker = AnalyzeViewSetChart()
-    response = worker.process_create_request({
-        'job_data': build_job_data,
-        'chart_info': {
-            'chart_type': 'ocr_match',
-        },
-    })
-    if not Job.objects.filter(pk=job_uuid).exists():
-        return
-    job = Job.objects.get(pk=job_uuid)
-    job.response_data = json.dumps(response.data)
-    job.status = 'success'
-    job.save()
+    generic_chart(job_uuid, 'ocr_match')
 
 @shared_task
 def selected_area_chart(job_uuid):
-    if not Job.objects.filter(pk=job_uuid).exists():
-        print('calling selected_area_chart on nonexistent job: {}'.format(job_uuid))
-    job = Job.objects.get(pk=job_uuid)
-    job.status = 'running'
-    job.save()
-    print('running selected_area_chart for job {}'.format(job_uuid))
-
-    req_obj = json.loads(job.request_data)
-    build_job_data = {}
-    if 'job_ids' in req_obj:
-        for job_id in req_obj['job_ids']:
-            job = Job.objects.get(pk=job_id)
-            build_job_data[job_id] = {
-                'request_data': json.loads(job.request_data),
-                'response_data': json.loads(job.response_data),
-            }
-
-
-    worker = AnalyzeViewSetChart()
-    response = worker.process_create_request({
-        'job_data': build_job_data,
-        'chart_info': {
-            'chart_type': 'selected_area',
-        },
-    })
-    if not Job.objects.filter(pk=job_uuid).exists():
-        return
-    job = Job.objects.get(pk=job_uuid)
-    job.response_data = json.dumps(response.data)
-    job.status = 'success'
-    job.save()
+    generic_chart(job_uuid, 'selected_area')
 
 @shared_task
 def ocr_scene_analysis_chart(job_uuid):
-    if not Job.objects.filter(pk=job_uuid).exists():
-        print('calling ocr_scene_analysis_chart on nonexistent job: {}'.format(job_uuid))
-    job = Job.objects.get(pk=job_uuid)
-    job.status = 'running'
-    job.save()
-    print('running ocr_scene_analysis_chart for job {}'.format(job_uuid))
-
-    req_obj = json.loads(job.request_data)
-    build_job_data = {}
-    if 'job_ids' in req_obj:
-        for job_id in req_obj['job_ids']:
-            job = Job.objects.get(pk=job_id)
-            build_job_data[job_id] = {
-                'request_data': json.loads(job.request_data),
-                'response_data': json.loads(job.response_data),
-            }
-
-
-    worker = AnalyzeViewChart()
-    response = worker.process_create_request({
-        'job_data': build_job_data,
-        'chart_info': {
-            'chart_type': 'ocr_scene_analysis_match',
-        },
-    })
-    if not Job.objects.filter(pk=job_uuid).exists():
-        return
-    job = Job.objects.get(pk=job_uuid)
-    job.response_data = json.dumps(response.data)
-    job.status = 'success'
-    job.save()
+    generic_chart(job_uuid, 'ocr_scene_analysis_match')
 
 @shared_task
 def ocr_scene_analysis(job_uuid):

@@ -187,6 +187,8 @@ class AnalyzeViewSetChart(viewsets.ViewSet):
     def process_create_request(self, request_data):
         if not request_data.get("job_data"):
             return self.error("job_data is required", status_code=400)
+        if not request_data.get("chart_info"):
+            return self.error("chart_info is required", status_code=400)
         job_data = request_data.get('job_data')
         chart_info = request_data.get('chart_info')
         file_writer = FileWriter(

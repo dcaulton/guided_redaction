@@ -840,6 +840,10 @@ class InsightsPanel extends React.Component {
       the_message = 'Select the upper left corner of the zone'
     } else if (the_mode === 'selected_area_minimum_zones_2') {
       the_message = 'Select the bottom right corner of the zone'
+    } else if (the_mode === 'selected_area_maximum_zones_1') {
+      the_message = 'Select the upper left corner of the zone'
+    } else if (the_mode === 'selected_area_maximum_zones_2') {
+      the_message = 'Select the bottom right corner of the zone'
     } else if (the_mode === 'add_template_anchor_2') {
       the_message = 'pick the second corner of the anchor'
     } else if (the_mode === 'add_template_mask_zone_2') {
@@ -1285,6 +1289,7 @@ class InsightsPanel extends React.Component {
               getCurrentOcrWindow={(()=>this.runCallbackFunction('getOcrWindow'))}
               getCurrentSelectedAreaCenters={(()=>this.runCallbackFunction('getCurrentSelectedAreaCenters'))}
               getCurrentSelectedAreaMinimumZones={(()=>this.runCallbackFunction('getCurrentSelectedAreaMinimumZones'))}
+              getCurrentSelectedAreaMaximumZones={(()=>this.runCallbackFunction('getCurrentSelectedAreaMaximumZones'))}
               getCurrentSelectedAreaOriginLocation={(()=>this.runCallbackFunction('getCurrentSelectedAreaOriginLocation'))}
               getCurrentOcrOriginLocation={(()=>this.runCallbackFunction('getCurrentOcrOriginLocation'))}
               getCurrentOcrSceneAnalysisMatches={this.getCurrentOcrSceneAnalysisMatches}
