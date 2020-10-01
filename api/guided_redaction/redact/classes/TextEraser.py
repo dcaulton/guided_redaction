@@ -112,7 +112,6 @@ class TextEraser:
         build_img = source.copy()
         for index, color_key in enumerate(popular_colors.keys()):
             color_data = popular_colors[color_key]
-            print('processing color {} - {}'.format(index, color_data))
             color_mask = cv2.inRange(
                 source, 
                 color_data['lower_bgr_color'], 
@@ -173,10 +172,8 @@ class TextEraser:
         for index, bucket_loc in enumerate(histogram_winners):
             hist_val = hist[bucket_loc[0]][bucket_loc[1]][bucket_loc[2]]
             bucket_key = '{}-{}-{}'.format(bucket_loc[0], bucket_loc[1], bucket_loc[2])
-            print('{} - {} - {} : {}'.format(index, bucket_key, bucket_loc, hist_val))
 
             if index == 0:
-                print('   adding to first bucket')
                 build_obj = {
                     'bucket_locs': [bucket_loc],
                     'avg_loc': bucket_loc,
@@ -196,7 +193,6 @@ class TextEraser:
                     print('   adding to key {}'.format(tk))
                     break
             if not added_to_existing_key:
-                print('   making a new bucket')
                 build_obj = {
                     'bucket_locs': [bucket_loc],
                     'avg_loc': bucket_loc,
