@@ -290,24 +290,33 @@ class SelectedAreaController:
 
     def transform_interior_selection_to_exterior(self, regions_for_image, cv2_image):
         if len(regions_for_image) == 1:
-            start_x = min(regions_for_image['regions'][0][0][0], regions_for_image['regions'][0][1][0])
-            end_x = max(regions_for_image['regions'][0][0][0], regions_for_image['regions'][0][1][0])
-            start_y = min(regions_for_image['regions'][0][0][1], regions_for_image['regions'][0][1][1])
-            end_y = max(regions_for_image['regions'][0][0][1], regions_for_image['regions'][0][1][1])
-            new_regions = {
-              'regions': [],
-              'origin': regions_for_image['origin'],
-            }
+            start_x = min(regions_for_image[0]['regions'][0][0], regions_for_image[0]['regions'][1][0])
+            end_x = max(regions_for_image[0]['regions'][0][0], regions_for_image[0]['regions'][1][0])
+            start_y = min(regions_for_image[0]['regions'][0][1], regions_for_image[0]['regions'][1][1])
+            end_y = max(regions_for_image[0]['regions'][0][1], regions_for_image[0]['regions'][1][1])
             height = cv2_image.shape[0]
             width = cv2_image.shape[1]
-            r1 = [[0,0], [width,start_y]]
-            r2 = [[0,start_y], [start_x,end_y]]
-            r3 = [[end_x,start_y], [width,end_y]]
-            r4 = [[0,end_y], [width,height]]
-            new_regions['regions'].append(r1)
-            new_regions['regions'].append(r2)
-            new_regions['regions'].append(r3)
-            new_regions['regions'].append(r4)
+            new_regions = []
+            new_regions.append({
+              'regions': [[0,0], [width,start_y]],
+              'origin': regions_for_image[0]['origin'],
+              'sam_area_id': 'reversed_1',
+            })
+            new_regions.append({
+              'regions': [[0,start_y], [start_x,end_y]],
+              'origin': regions_for_image[0]['origin'],
+              'sam_area_id': 'reversed_2',
+            })
+            new_regions.append({
+              'regions': [[end_x,start_y], [width,end_y]],
+              'origin': regions_for_image[0]['origin'],
+              'sam_area_id': 'reversed_3',
+            })
+            new_regions.append({
+              'regions': [[0,end_y], [width,height]],
+              'origin': regions_for_image[0]['origin'],
+              'sam_area_id': 'reversed_4',
+            })
             return new_regions
         return regions_for_image
 
