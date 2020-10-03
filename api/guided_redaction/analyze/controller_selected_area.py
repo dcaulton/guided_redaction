@@ -141,31 +141,19 @@ class SelectedAreaController:
             ]
             if self.frameset_is_t1_output(source_frameset):
                 for scanner_matcher_id in source_frameset:
-                    if selected_area_meta['origin_entity_type'] == 'template_anchor' and \
-                        selected_area_meta['origin_entity_id'] == scanner_matcher_id:
-                        o_loc = selected_area_meta['origin_entity_location']
-#                        offset = [
-#                            offset[0] + o_loc[0],
-#                            offset[1] + o_loc[1]
-#                        ]
+                    if selected_area_meta['origin_entity_id'] == scanner_matcher_id:
                         print('WOOHOO ', selected_area_meta)
-    # todo if selected_area has matches on element, and the source_frameset has a scale
-    #  that is not 1, then scale the offset before you use it for computing location
-    #  do it where we're scaling size_arr
                     match_element = source_frameset[scanner_matcher_id]
-                    location = [
-                        minimum_zone['start'][0] + offset[0],
-                        minimum_zone['start'][1] + offset[1]
-                    ]
+
+                    location = self.scale_selected_point(
+                        match_element, selected_area_meta, minimum_zone['start']
+                    )
+
                     if 'scale' in match_element and match_element['scale'] != 1:
                         scale = match_element['scale']
                         size_arr = [
                             size_arr[0] / scale,
                             size_arr[1] / scale
-                        ]
-                        location = [
-                            location[0] / scale,
-                            location[1] / scale
                         ]
                     end = (
                         location[0] + size_arr[0],
@@ -173,7 +161,7 @@ class SelectedAreaController:
                     )
                     regions.append({
                         'regions': (location, end),
-                        'origin': (0, 0),
+                        'origin': location,
                         'sam_area_id': scanner_matcher_id,
                     })
             else:
@@ -184,12 +172,33 @@ class SelectedAreaController:
                 })
             
 
+    def scale_selected_point(self, match_element, selected_area_meta, selected_point):
+        offset = self.get_offset_for_t1(selected_area_meta, match_element)
+        # scale the offset by the scale of the t1 results
+        if 'scale' in match_element and match_element['scale'] != 1:
+            origin = selected_area_meta['origin_entity_location']
+            scale = match_element['scale']
+            new_sp_offset = [
+                (selected_point[0] - origin[0]) / scale,
+                (selected_point[1] - origin[1]) / scale
+            ]
+            new_selected_point = [
+                math.floor(origin[0] + new_sp_offset[0]),
+                math.floor(origin[1] + new_sp_offset[1])
+            ]
+            selected_point = new_selected_point
+
+        selected_point = [
+            selected_point[0] + offset[0],
+            selected_point[1] + offset[1]
+        ]
+        return selected_point
+
     def process_t1_results(self, frameset, cv2_image, selected_area_meta, finder):
         print('================================bonnie rae {}'.format(frameset))
         match_app_id = ''
         if 'app_id' in selected_area_meta['attributes']:
             match_app_id = selected_area_meta['attributes']['app_id']
-        regions_for_image = []
         tolerance = int(selected_area_meta['tolerance'])
         regions_for_image = []
         for scanner_matcher_id in frameset:
@@ -207,25 +216,9 @@ class SelectedAreaController:
                 area_scanner_key = area['id'] + '-' + scanner_matcher_id
                 selected_point = area['center']
                 match_element = frameset[scanner_matcher_id]
-                offset = self.get_offset_for_t1(selected_area_meta, match_element)
-                # scale the offset by the scale of the t1 results
-                if 'scale' in match_element and match_element['scale'] != 1:
-                    origin = selected_area_meta['origin_entity_location']
-                    scale = match_element['scale']
-                    new_sp_offset = [
-                        (selected_point[0] - origin[0]) / scale,
-                        (selected_point[1] - origin[1]) / scale
-                    ]
-                    new_selected_point = [
-                        math.floor(origin[0] + new_sp_offset[0]),
-                        math.floor(origin[1] + new_sp_offset[1])
-                    ]
-                    selected_point = new_selected_point
-
-                selected_point = [
-                    selected_point[0] + offset[0],
-                    selected_point[1] + offset[1]
-                ]
+                selected_point = self.scale_selected_point(
+                    match_element, selected_area_meta, selected_point
+                )
                 if selected_area_meta['select_type'] == 'arrow':
                     regions = finder.determine_arrow_fill_area(
                         cv2_image, selected_point, tolerance
