@@ -137,16 +137,39 @@ class SelectedAreaController:
             return
         if not len(regions):
             return
+
         # looks like regions is always gonna be a one element array for now at least
         region = regions[0]
         build_regions = []
         for region in regions:
             for maximum_zone in selected_area_meta['maximum_zones']:
-                print('enforcing maximum zone ', region, maximum_zone)
+                for scanner_matcher_id in source_frameset:
+                    if selected_area_meta['origin_entity_id'] == scanner_matcher_id:
+                        match_element = source_frameset[scanner_matcher_id]
+                        break
+                if selected_area_meta['origin_entity_id'] and not match_element:
+                    print('error in enforce_max_zones, cannot find entity data for sam_oe_id')
+                    return
+
                 r_start = region['regions'][0]
                 r_end = region['regions'][1]
                 mz_start = maximum_zone['start']
-                mz_end = maximum_zone['end']
+                mz_start = self.scale_selected_point(
+                    match_element, selected_area_meta, mz_start, True
+                )
+                mz_size = [
+                    maximum_zone['end'][0] - maximum_zone['start'][0],
+                    maximum_zone['end'][1] - maximum_zone['start'][1]
+                ]
+                if 'scale' in match_element and match_element['scale'] != 1:
+                    mz_size = [
+                        math.floor(mz_size[0] / match_element['scale']),
+                        math.floor(mz_size[1] / match_element['scale']),
+                    ]
+                mz_end = [
+                    mz_start[0] + mz_size[0],
+                    mz_start[1] + mz_size[1]
+                ]
                 # if min zone has at least one pixel overlapping:
                 if (r_start[0] < mz_end[0] and r_start[1] < mz_end[0]) and\
                     (r_end[0] > mz_start[0] and r_end[1] > mz_start[1]):
@@ -210,10 +233,14 @@ class SelectedAreaController:
                 })
             
 
-    def scale_selected_point(self, match_element, selected_area_meta, selected_point):
+    def scale_selected_point(self, match_element, selected_area_meta, selected_point, verbose=False):
         offset = self.get_offset_for_t1(selected_area_meta, match_element)
         # scale the offset by the scale of the t1 results
+        if verbose:
+            print('BILLY CLUB {}'.format(match_element.keys()))
         if 'scale' in match_element and match_element['scale'] != 1:
+            if verbose:
+                print('=-=-=-=-=-=-=-=-=-=-=--=-=benny non unity scale')
             origin = selected_area_meta['origin_entity_location']
             scale = match_element['scale']
             new_sp_offset = [
@@ -233,7 +260,6 @@ class SelectedAreaController:
         return selected_point
 
     def process_t1_results(self, frameset, cv2_image, selected_area_meta, finder):
-        print('================================bonnie rae {}'.format(frameset))
         match_app_id = ''
         if 'app_id' in selected_area_meta['attributes']:
             match_app_id = selected_area_meta['attributes']['app_id']

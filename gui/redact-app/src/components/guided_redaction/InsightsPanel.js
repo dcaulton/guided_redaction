@@ -763,6 +763,7 @@ class InsightsPanel extends React.Component {
     }
   }
 
+// todo push this into SelectedAreaController, with a callback, same for template stuff
   currentImageIsSelectedAreaAnchorImage() {
     if (this.props.tier_1_scanner_current_ids['selected_area']) {
       let key = this.props.tier_1_scanner_current_ids['selected_area']
