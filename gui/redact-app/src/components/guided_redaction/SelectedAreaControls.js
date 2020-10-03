@@ -95,6 +95,8 @@ class SelectedAreaControls extends React.Component {
         'id': zone_id,
         'start': this.state.first_click_coords,
         'end': click_coords,
+        'image': this.props.insights_image,
+        'movie': this.props.movie_url,
     }
     let deepCopyMinimumZones = JSON.parse(JSON.stringify(this.state.minimum_zones))
     deepCopyMinimumZones.push(the_zone)

@@ -773,10 +773,15 @@ class InsightsPanel extends React.Component {
       if (!Object.keys(sam).includes('areas')) {
         return false
       }
-      if (!sam['areas'].length) {
+      if (!sam['areas'].length && !sam['minimum_zones'].length) {
         return false
       }
-      let cur_sam_anchor_image_name = sam['areas'][0]['image']
+      let cur_sam_anchor_image_name = ''
+      if (sam['areas'].length > 0) {
+        cur_sam_anchor_image_name = sam['areas'][0]['image']
+      } else if (sam['minimum_zones'].length > 0) {
+        cur_sam_anchor_image_name = sam['minimum_zones'][0]['image']
+      }
       return (cur_sam_anchor_image_name === this.state.insights_image)
     } else {
       return true
