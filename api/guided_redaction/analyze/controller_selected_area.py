@@ -86,6 +86,12 @@ class SelectedAreaController:
                     cv2_image
                 )
 
+        self.enforce_max_zones(
+            selected_area_meta, 
+            regions_for_image,
+            frameset
+        )
+
         return regions_for_image
 
     def merge_regions(self, regions_for_image):
@@ -126,14 +132,46 @@ class SelectedAreaController:
             cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
         return cv2_image
 
+    def enforce_max_zones(self, selected_area_meta, regions, source_frameset):
+        if 'maximum_zones' not in selected_area_meta or not selected_area_meta['maximum_zones']:
+            return
+        if not len(regions):
+            return
+        # looks like regions is always gonna be a one element array for now at least
+        region = regions[0]
+        build_regions = []
+        for region in regions:
+            for maximum_zone in selected_area_meta['maximum_zones']:
+                print('enforcing maximum zone ', region, maximum_zone)
+                r_start = region['regions'][0]
+                r_end = region['regions'][1]
+                mz_start = maximum_zone['start']
+                mz_end = maximum_zone['end']
+                # if min zone has at least one pixel overlapping:
+                if (r_start[0] < mz_end[0] and r_start[1] < mz_end[0]) and\
+                    (r_end[0] > mz_start[0] and r_end[1] > mz_start[1]):
+                    print('at least one pixel is in the max zone')
+                    # enforce max x
+                    if r_end[0] > mz_end[0]:
+                        r_end[0] = mz_end[0]
+                    # enforce min x
+                    if r_start[0] < mz_start[0]:
+                        r_start[0] = mz_start[0]
+                    # enforce max y
+                    if r_end[1] > mz_end[1]:
+                        r_end[1] = mz_end[1]
+                    # enforce min y
+                    if r_start[1] < mz_start[1]:
+                        r_start[1] = mz_start[1]
+                    region['regions'] = ((r_start, r_end))
+                        
+            build_regions.append(region)
+        return build_regions
+
+
     def append_min_zones(self, selected_area_meta, regions, source_frameset):
         if 'minimum_zones' not in selected_area_meta or not selected_area_meta['minimum_zones']:
             return
-        offset = (0, 0)
-        if selected_area_meta['origin_entity_type'] == 'template_anchor':
-            # TODO, figure this part out soon.
-            # we will need to move it with the anchor.
-            pass
         for minimum_zone in selected_area_meta['minimum_zones']:
             size_arr =[
                 minimum_zone['end'][0] - minimum_zone['start'][0],
