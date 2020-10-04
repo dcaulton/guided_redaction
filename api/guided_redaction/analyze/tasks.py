@@ -784,6 +784,7 @@ def build_and_dispatch_selected_area_threaded_children(parent_job):
         del movies['source']
     for selected_area_meta_id in selected_area_metas:
         selected_area_meta = selected_area_metas[selected_area_meta_id]
+        print('collie')
         for index, movie_url in enumerate(movies.keys()):
             movie = movies[movie_url]
             build_movies = {}

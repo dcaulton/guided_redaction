@@ -50,10 +50,25 @@ class TemplateMatcher:
         else:
             self.scales = [1]
 
-    def get_anchors(self):
-        return self.template['anchors']
+        self.matches = {}
+        for anchor in self.template['anchors']:
+            self.matches[anchor['id']] = {}
 
-    def get_template_coords(self, source, template):
+        self.scale_match_threshold_count = 5
+
+    def rearrange_scales(self, anchor_id, movie_url):
+        if len(self.scales) == 1:
+            return
+        ma_matches = self.matches[anchor_id][movie_url]
+        for scale in ma_matches:
+            if ma_matches[scale] >= self.scale_match_threshold_count:
+                self.scales = [scale]
+                return
+        
+    def get_template_coords(self, source, template, anchor_id, movie_url):
+        if movie_url not in self.matches[anchor_id]:
+            self.matches[anchor_id][movie_url] = {}
+        
         if self.use_grayscale_edges:
             tm_template = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY)
             tm_template = cv2.Canny(tm_template, 50, 200)
@@ -71,7 +86,9 @@ class TemplateMatcher:
 
         found = (0, (-1, -1), 0)
         match_was_found = False
-        match_metadata = {}
+        scaled_match_upper_left = ()
+        found_scale = 0
+
         for scale in self.scales:
             resized = imutils.resize(tm_source, width=int(tm_source.shape[1] * scale))
             res = cv2.matchTemplate(resized, tm_template, cv2.TM_CCOEFF_NORMED)
@@ -91,24 +108,26 @@ class TemplateMatcher:
 #            print_str += '*'
             template_top_left = found[1]
             found_scale = found[2]
+            found_scale = round(found_scale, 4)
             scaled_match_upper_left = (
                 int(template_top_left[0] / found_scale), 
                 int(template_top_left[1] / found_scale)
             )
+            self.update_matches(found_scale, anchor_id, movie_url)
+            self.rearrange_scales(anchor_id, movie_url)
 #        print(print_str)
 
-        if match_was_found:
-            return {
-                'match_found': True,
-                'match_coords': (scaled_match_upper_left, found_scale),
-                'match_metadata': match_metadata,
-            }
+        return {
+            'match_found': match_was_found,
+            'match_coords': (scaled_match_upper_left, found_scale),
+            'match_metadata': match_metadata,
+        }
+
+    def update_matches(self, found_scale, anchor_id, movie_url):
+        if found_scale in self.matches[anchor_id][movie_url]:
+            self.matches[anchor_id][movie_url][found_scale] += 1
         else:
-            return {
-                'match_found': False,
-                'match_coords': (),
-                'match_metadata': match_metadata,
-            }
+            self.matches[anchor_id][movie_url][found_scale] = 1
 
     def get_match_image_for_anchor(self, anchor):
         if 'cropped_image_bytes' in anchor:

@@ -73,7 +73,7 @@ class TemplateController:
                         target_image = cv2.imdecode(oi_nparr, cv2.IMREAD_COLOR)
                         target_image = self.trim_target_image_to_t1_inputs(target_image, frameset)
                         match_obj = template_matcher.get_template_coords(
-                            target_image, match_image
+                            target_image, match_image, anchor_id, movie_url
                         )
                         match_statistics['movies'][movie_url]['framesets'][frameset_hash][anchor_id] = \
                             match_obj['match_metadata']
