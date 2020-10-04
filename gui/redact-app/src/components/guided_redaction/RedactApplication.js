@@ -1376,7 +1376,7 @@ class RedactApplication extends React.Component {
     let build_movies = {}
     let specified_input = {}
     if (!input_obj.scope) {
-      input_obj.scope = 'json_obj'
+      input_obj.scope = 'input_json'
     }
     if (input_obj.scope === 'all_movies') {
       for (let i=0; i < this.state.campaign_movies.length; i++) {
@@ -1389,8 +1389,8 @@ class RedactApplication extends React.Component {
     } else if (input_obj.scope === 'current_movie_as_frames') {
       build_movies[this.state.movie_url] = this.state.movies[this.state.movie_url]
       specified_input['movies'] = build_movies
-    } else if (input_obj.scope === 'json_obj') {
-      specified_input = input_obj.extra_data
+    } else if (input_obj.scope === 'input_json') {
+      specified_input = JSON.parse(input_obj.extra_data)
     }
     let build_payload = {
       pipeline_id: input_obj.pipeline_id,

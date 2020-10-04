@@ -36,7 +36,7 @@ class PipelineControls extends React.Component {
       movie_urls: [],
       attribute_search_value: '',
       use_parsed_movies: false,
-      unsaved_changes: false,
+      json: '',
     }
     this.afterPipelineSaved=this.afterPipelineSaved.bind(this)
     this.deletePipeline=this.deletePipeline.bind(this)
@@ -149,12 +149,8 @@ class PipelineControls extends React.Component {
   afterPipelineSaved(pipeline_response_obj) {
     if (Object.keys(pipeline_response_obj).includes('pipeline_id')) {
       const pipeline_id = pipeline_response_obj['pipeline_id']
-      this.setState({
-        id: pipeline_id,
-        unsaved_changes: false,
-      })
+      this.setLocalStateVar('id', pipeline_id)
       this.props.setGlobalStateVar('current_pipeline_id', pipeline_id)
-      this.props.displayInsightsMessage('pipeline was successfully saved')
     }
   }
 
@@ -171,7 +167,10 @@ class PipelineControls extends React.Component {
   }
 
   doRun(scope) {
-    const extra_data = document.getElementById('pipeline_input_json').value
+    let extra_data = ''
+    if (this.state.json && scope === 'input_json') {
+        extra_data = this.state.json
+    }
     this.props.dispatchPipeline(
       {
         pipeline_id: this.props.current_pipeline_id, 
@@ -198,7 +197,6 @@ class PipelineControls extends React.Component {
       attributes: {},
       steps: [],
       movie_urls: [],
-      unsaved_changes: false,
     })
   }
 
@@ -223,7 +221,6 @@ class PipelineControls extends React.Component {
         movie_urls: movie_urls,
         edges: content['edges'],
         node_metadata: content['node_metadata'],
-        unsaved_changes: false,
       })
       if (Object.keys(content['node_metadata']).includes('tier_1_scanners')) {
         let deepCopyT1Scanners = JSON.parse(JSON.stringify(this.props.tier_1_scanners))
@@ -243,11 +240,16 @@ class PipelineControls extends React.Component {
   }
 
   setLocalStateVar(var_name, var_value, when_done=(()=>{})) {
-    this.setState({
-      [var_name]: var_value,
-      unsaved_changes: true,
-    },
-    when_done())
+    function anon_func() {
+      this.doSave()
+      when_done()
+    }
+    this.setState(
+      {
+        [var_name]: var_value,
+      },
+      anon_func
+    )
   }
 
   buildLoadButton() {
@@ -377,6 +379,9 @@ class PipelineControls extends React.Component {
             id='pipeline_input_json'
             cols='60'
             rows='5'
+            onChange={
+              (event)=>{this.setLocalStateVar('json', event.target.value)}
+            }
           />
         </div>
       </div>
@@ -421,11 +426,7 @@ class PipelineControls extends React.Component {
   setAttribute(name, value) {
     let deepCopyAttributes = JSON.parse(JSON.stringify(this.state.attributes))
     deepCopyAttributes[name] = value
-    this.setState({
-      attributes: deepCopyAttributes,
-      unsaved_changes: true,
-    })
-    this.props.displayInsightsMessage('Attribute was added')
+    this.setLocalStateVar('attributes', deepCopyAttributes)
   }
 
   deleteAttribute(name) {
@@ -434,18 +435,14 @@ class PipelineControls extends React.Component {
       return
     }
     delete deepCopyAttributes[name]
-    this.setState({
-      attributes: deepCopyAttributes,
-      unsaved_changes: true,
-    })
-    this.props.displayInsightsMessage('Attribute was deleted')
+    this.setLocalStateVar('attributes', deepCopyAttributes)
   }
 
   render() {
     if (!this.props.visibilityFlags['pipelines']) {
       return([])
     }
-    const id_string = buildIdString(this.state.id, 'pipeline', this.state.unsaved_changes)
+    const id_string = buildIdString(this.state.id, 'pipeline', false)
     const load_button = this.buildLoadButton()
     const save_button = this.buildSaveButton()
     const delete_button = this.buildDeleteButton()
