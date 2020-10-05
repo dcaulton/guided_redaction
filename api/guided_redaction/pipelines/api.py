@@ -384,9 +384,16 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
             t1_framesets = t1_output['movies'][movie_url]['framesets']
         merged_movie = self.add_t1_output_to_areas_to_redact(source_movie, t1_framesets)
         build_movies[movie_url] = merged_movie
+
+        redact_rule = {
+          'mask_method': 'black_rectangle',
+        }
+        if 'redact_rule' in parent_request_data:
+            redact_rule = parent_request_data['redact_rule']
+
         build_request_data = {
             "movies": build_movies,
-            'redact_rule': parent_request_data['redact_rule'],
+            'redact_rule': redact_rule,
             'meta': {
                 'return_type': 'url',
                 'preserve_working_dir_across_batch': True,
@@ -513,10 +520,8 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
         else:
             parent_job_request_data = {'movies': {}}
         if job.operation == 'split_and_hash_threaded':
-            for movie_url in response_data['movies']:
-                parent_job_request_data['movies'][movie_url] = response_data['movies'][movie_url]
-            parent_job.request_data = json.dumps(parent_job_request_data)
-            return True
+            something_changed = self.get_child_request_movies(parent_job)
+            return something_changed
         elif job.operation == 'get_secure_file':
             parent_job.request_data = job.response_data
             return True
@@ -530,6 +535,23 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
                         source_frameset['redacted_image'] = frameset['redacted_image']
             parent_job.request_data = json.dumps({'movies': source_movies})
             return True
+
+
+    def get_child_request_movies(self, parent_job):
+        children = Job.objects.filter(parent_id=parent_job.id)
+        parent_rd = json.loads(parent_job.request_data)
+        parent_movies = parent_rd['movies']
+        for child in children:
+            if child.status != 'success':
+                return False
+            child_response_data = json.loads(child.response_data)
+            for movie_url in child_response_data['movies']:
+                movie = child_response_data['movies'][movie_url]
+                parent_movies[movie_url] = movie
+        parent_rd['movies'] = parent_movies
+        parent_job.request_data = json.dumps(parent_rd)
+        return True
+
 
     def handle_job_finished(self, job, pipeline):
         parent_job = job.parent

@@ -421,15 +421,16 @@ def make_and_dispatch_split_tasks(parent_job):
                 parent=parent_job,
             )
             job.save()
-            print('make and dispatch split tasks, dispatching job {}'.format(job.id))
+            print('make and dispatch split tasks, dispatching job {} for {}'.format(job.id, movie_url))
             split_movie.delay(job.id)
+            num_tasks += 1
         else: 
             num_tasks = build_and_dispatch_split_tasks_multithreaded(
                 parent_job, 
                 movie_url, 
                 movie_length_seconds
             )
-        return num_tasks
+    return num_tasks
 
 def build_and_dispatch_split_tasks_multithreaded(
         parent_job, 
@@ -462,7 +463,7 @@ def build_and_dispatch_split_tasks_multithreaded(
         )
         job.save()
         number_of_tasks_created += 1
-        print('build and dispatch split tasks multithreaded, dispatching job {}'.format(job.id))
+        print('build and dispatch split tasks multithreaded, dispatching job {} for {}'.format(job.id, movie_url))
         split_movie.delay(job.id)
     if 'preserve_movie_audio' in request_data and request_data['preserve_movie_audio']:
         build_request_data = {}
