@@ -236,8 +236,6 @@ class SelectedAreaController:
     def scale_selected_point(self, match_element, selected_area_meta, selected_point, verbose=False):
         offset = self.get_offset_for_t1(selected_area_meta, match_element)
         # scale the offset by the scale of the t1 results
-        if verbose:
-            print('BILLY CLUB {}'.format(match_element.keys()))
         if 'scale' in match_element and match_element['scale'] != 1:
             if verbose:
                 print('=-=-=-=-=-=-=-=-=-=-=--=-=benny non unity scale')
