@@ -377,7 +377,6 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
         parent_request_data = json.loads(parent_job.request_data)
         t1_output = json.loads(previous_job.response_data)
 
-        # TODO loop on movie urls here
         for movie_url in parent_request_data['movies']:
             if movie_url == 'source':
                 continue
