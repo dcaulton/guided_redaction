@@ -378,12 +378,15 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
         t1_output = json.loads(previous_job.response_data)
 
         # TODO loop on movie urls here
-        source_movie = parent_request_data['movies'][movie_url]
-        t1_framesets = {}
-        if movie_url in t1_output['movies']:
-            t1_framesets = t1_output['movies'][movie_url]['framesets']
-        merged_movie = self.add_t1_output_to_areas_to_redact(source_movie, t1_framesets)
-        build_movies[movie_url] = merged_movie
+        for movie_url in parent_request_data['movies']:
+            if movie_url == 'source':
+                continue
+            source_movie = parent_request_data['movies'][movie_url]
+            t1_framesets = {}
+            if movie_url in t1_output['movies']:
+                t1_framesets = t1_output['movies'][movie_url]['framesets']
+            merged_movie = self.add_t1_output_to_areas_to_redact(source_movie, t1_framesets)
+            build_movies[movie_url] = merged_movie
 
         redact_rule = {
           'mask_method': 'black_rectangle',
