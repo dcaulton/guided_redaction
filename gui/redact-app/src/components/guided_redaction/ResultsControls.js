@@ -1,8 +1,10 @@
 import React from 'react';
 import {
+  buildLabelAndTextInput, 
   makeHeaderRow,
   makePlusMinusRow,
 } from './SharedControls'
+
 
 class ResultsControls extends React.Component {
   constructor(props) {
@@ -10,7 +12,64 @@ class ResultsControls extends React.Component {
     this.state = ({
       type: '',
       job_id: '',
+      manually_specify_job_id: false,
     })
+  }
+
+  buildManuallySpecify() {
+    let checked_state = ''
+    if (this.state.manually_specify_job_id) {
+      checked_state = 'checked'
+    }
+    return (
+      <div className='ml-2'>
+        <div className='d-inline'>
+          Manually Specify Job Id
+        </div>
+        <div className='d-inline'>
+          <input
+            className='ml-2 mr-2 mt-1'
+            id='toggle_manually_specify'
+            checked={checked_state}
+            type='checkbox'
+            onChange={() => this.toggleManuallySpecify()}
+          />
+        </div>
+      </div>
+    )
+  }
+
+  toggleManuallySpecify() {
+    const new_value = (!this.state.manually_specify_job_id)
+    this.setState({
+      manually_specify_job_id: new_value,
+    })
+  }
+
+  buildJobIdField() {
+    if (!this.state.manually_specify_job_id) {
+      return
+    }
+    return buildLabelAndTextInput(
+      this.state.job_id,
+      'Job Id',
+      'results_job_id',
+      'job_id',
+      40,
+      ((value)=>{this.setLocalStateVar('job_id', value)})
+    )
+  }
+
+  setLocalStateVar(var_name, var_value, when_done=(()=>{})) {
+    function anon_func() {
+      when_done()
+    }
+    this.setState(
+      {
+        [var_name]: var_value,
+      },
+      anon_func
+    )
   }
 
   submitResultsJob() {
@@ -31,7 +90,7 @@ class ResultsControls extends React.Component {
           <select
               name='report_type'
               value={this.state.type}
-              onChange={(event) => this.setType(event.target.value)}
+              onChange={(event) => this.setLocalStateVar('type', event.target.value)}
           >
             <option value=''></option>
             <option value='template_match_chart'>template match chart</option>
@@ -44,19 +103,10 @@ class ResultsControls extends React.Component {
     )
   }
 
-  setJobId(job_id) {
-    this.setState({
-      job_id: job_id,
-    })
-  }
-
-  setType(the_type) {
-    this.setState({
-      type: the_type,
-    })
-  }
-
   buildJobSelector() {
+    if (this.state.manually_specify_job_id) {
+      return
+    }
     let eligible_jobs = []
     for (let i=0; i < this.props.jobs.length; i++) {
       const job = this.props.jobs[i]
@@ -84,7 +134,7 @@ class ResultsControls extends React.Component {
           <select
               name='report_job'
               value={this.state.job_id}
-              onChange={(event) => this.setJobId(event.target.value)}
+              onChange={(event) => this.setLocalStateVar('job_id', event.target.value)}
           >
             <option value=''></option>
             {eligible_jobs.map((job, index) => {
@@ -448,6 +498,8 @@ class ResultsControls extends React.Component {
     const submit_button = this.buildSubmitButton()
     const clear_button = this.buildClearButton()
     const charts_div = this.buildChartsDiv()
+    const manually_specify = this.buildManuallySpecify()
+    const job_id_field = this.buildJobIdField()
 
     return (
         <div className='row bg-light rounded mt-3'>
@@ -462,9 +514,14 @@ class ResultsControls extends React.Component {
               <div id='results_main' className='col'>
 
                 <div className='row mt-3 bg-light'>
+                  {manually_specify}
+                </div>
+                <div className='row mt-2 bg-light'>
+                  {job_id_field}
+                </div>
+                <div className='row mt-2 bg-light'>
                   {type_selector}
                 </div>
-
                 <div className='row mt-2 bg-light'>
                   {job_selector}
                 </div>
