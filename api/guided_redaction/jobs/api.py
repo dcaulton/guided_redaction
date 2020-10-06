@@ -272,7 +272,7 @@ class JobsViewSet(viewsets.ViewSet):
         owners = info["owners"]
         for job in jobs:
             job_id = str(job.id)
-            child_ids = [child.id for child in job.children.all()]
+            child_ids = [child.id for child in job.children.order_by('created_on').all()]
             pretty_time = self.pretty_date(job.created_on)
             wall_clock_run_time = str(job.updated - job.created_on)
             owner = owners[job_id] if job_id in owners else ""
@@ -305,71 +305,6 @@ class JobsViewSet(viewsets.ViewSet):
             if attrs:
                 job_obj['attributes'] = attrs
             jobs_list.append(job_obj)
-        return Response({"jobs": jobs_list})
-
-    def list_slowly(self, request):
-        jobs_list = []
-        if 'workbook_id' in request.GET.keys():
-            jobs = Job.objects.filter(workbook_id=request.GET['workbook_id'])
-        else:
-            jobs = Job.objects.filter(parent_id__isnull=True)
- 
-        desired_cv_worker_id = ''
-        if 'pick-up-for' in request.GET.keys():
-            desired_cv_worker_id = request.GET['pick-up-for']
-
-        user_id = ''
-        if 'user_id' in request.GET.keys():
-            if request.GET['user_id'] and \
-                request.GET['user_id'] != 'undefined' and \
-                request.GET['user_id'] != 'all':
-                user_id = request.GET['user_id']
-
-        for job in jobs:
-            children = Job.objects.filter(parent_id=job.id).order_by('sequence')
-            child_ids = [child.id for child in children]
-            pretty_time = self.pretty_date(job.created_on)
-            wall_clock_run_time = str(job.updated - job.created_on)
-
-            owner = get_job_owner(job)
-            if user_id and owner != user_id:
-                continue
-            if desired_cv_worker_id:
-                if job.get_cv_worker_id() != desired_cv_worker_id:
-                    continue
-
-            attrs = {}
-            if Attribute.objects.filter(job=job).exists():
-                attributes = Attribute.objects.filter(job=job)
-                for attribute in attributes:
-                    if attribute.name not in ['user_id', 'file_dir_user']:
-                        attrs[attribute.name] = attribute.value
-
-            job_obj = {
-                'id': job.id,
-                'status': job.status,
-                'description': job.description,
-                'created_on': job.created_on,
-                'updated': job.updated,
-                'pretty_created_on': pretty_time,
-                'percent_complete': job.percent_complete,
-                'wall_clock_run_time': wall_clock_run_time,
-                'app': job.app,
-                'operation': job.operation,
-                'workbook_id': job.workbook_id,
-                'owner': owner,
-                'children': child_ids,
-            }
-            file_dirs = get_job_file_dirs(job)
-            if file_dirs:
-                job_obj['file_dirs'] = file_dirs
-            if owner:
-                job_obj['owner'] = owner
-            if attrs:
-                job_obj['attributes'] = attrs
-
-            jobs_list.append(job_obj)
-
         return Response({"jobs": jobs_list})
 
     def retrieve(self, request, pk):
