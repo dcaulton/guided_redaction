@@ -234,7 +234,19 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
                 parent_job, 
                 previous_job
             )
+        elif node['type'] == 'ocr_scene_analysis':
+            return self.build_tier_1_scanner_job(
+                'ocr_scene_analysis', 
+                content, 
+                node, 
+                parent_job, 
+                previous_job
+            )
         elif node['type'] == 'split_and_hash':
+            # DMC ADD SOME LOGIC HERE TO CREATE A COMPLETED JOB AND DISPATCH IT
+#            if self.parent_job_has_hashed_movies(parent_job):
+#            return self.build_completed_split_and_hash_job(content, node, parent_job)
+#                print('nice')
             return self.build_split_and_hash_job(content, node, parent_job)
         elif node['type'] == 'secure_files_import':
             return self.build_secure_files_import_job(content, node, parent_job)
@@ -287,6 +299,38 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
             operation='zip_movie_threaded',
             sequence=0,
             request_data=json.dumps(build_request_data),
+            parent=parent_job,
+        )
+        job.save()
+        Attribute(
+            name='node_id',
+            value=node['id'],
+            job=job,
+        ).save()
+        return job
+
+    def parent_job_has_hashed_movies(self, parent_job):
+        prd = json.loads(parent_job.request_data)
+        print('chichi', prd)
+        if 'movies' not in prd:
+            return False
+        for movie_url in prd['movies']:
+            if 'frames' in prd['movies'][movie_url] and \
+                len(prd['movies'][movie_url]['frames']) > 0 and\
+                'framesets' in prd['movies'][movie_url] and \
+                len(prd['movies'][movie_url]['framesets']) > 0:
+                continue
+            return False
+        return True
+
+    def build_completed_split_and_hash_job(self, content, node, parent_job):
+        job = Job(
+            status='success',
+            description='split and hash threaded for pipeline',
+            app='parse',
+            operation='split_and_hash_threaded',
+            sequence=0,
+            request_data=json.dumps(request_data),
             parent=parent_job,
         )
         job.save()
@@ -462,6 +506,8 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
             operation = 'selected_area_threaded'
         elif scanner_type == 'ocr':
             operation = 'scan_ocr'
+        elif scanner_type == 'ocr_scene_analysis':
+            operation = 'ocr_scene_analysis_threaded'
         elif scanner_type == 'telemetry':
             operation = 'telemetry_find_matching_frames'
         request_data = json.dumps(build_request_data)
