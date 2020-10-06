@@ -318,6 +318,12 @@ class PipelineControls extends React.Component {
           </button>
           <button
               className='dropdown-item'
+              onClick={() => this.doRun('current_frame')}
+          >
+            Current Frame
+          </button>
+          <button
+              className='dropdown-item'
               onClick={() => this.doRun('input_json')}
           >
             Input JSON

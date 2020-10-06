@@ -1386,6 +1386,10 @@ class RedactApplication extends React.Component {
     } else if (input_obj.scope === 'current_movie') {
       build_movies[this.state.movie_url] = {}
       specified_input['movies'] = build_movies
+    } else if (input_obj.scope === 'current_frame') {
+      const build_movie = this.buildMoviesForSingleFrame() 
+      build_movies[this.state.movie_url] = build_movie
+      specified_input['movies'] = build_movies
     } else if (input_obj.scope === 'current_movie_as_frames') {
       build_movies[this.state.movie_url] = this.state.movies[this.state.movie_url]
       specified_input['movies'] = build_movies
