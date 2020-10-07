@@ -1394,7 +1394,11 @@ class RedactApplication extends React.Component {
       build_movies[this.state.movie_url] = this.state.movies[this.state.movie_url]
       specified_input['movies'] = build_movies
     } else if (input_obj.scope === 'input_json') {
-      specified_input = JSON.parse(input_obj.extra_data)
+      if (typeof(input_obj) === 'string') {
+        specified_input = JSON.parse(input_obj.extra_data)
+      } else {
+        specified_input = input_obj.extra_data
+      }
     }
     let build_payload = {
       pipeline_id: input_obj.pipeline_id,
