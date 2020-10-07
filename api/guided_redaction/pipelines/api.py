@@ -210,6 +210,13 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
 
     def build_job(self, content, node_id, parent_job, previous_job=None):
         node = content['node_metadata']['node'][node_id]
+
+        if node['type'] == 'split_and_hash' and self.parent_job_has_hashed_movies(parent_job):
+            self.build_completed_split_and_hash_job(content, node, parent_job)
+            if node_id in content['edges']:
+                next_node_id = content['edges'][node_id][0]
+                node = content['node_metadata']['node'][next_node_id]
+
         if node['type'] == 'template':
             return self.build_tier_1_scanner_job(
                 'template', 
@@ -243,10 +250,6 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
                 previous_job
             )
         elif node['type'] == 'split_and_hash':
-            # DMC ADD SOME LOGIC HERE TO CREATE A COMPLETED JOB AND DISPATCH IT
-#            if self.parent_job_has_hashed_movies(parent_job):
-#            return self.build_completed_split_and_hash_job(content, node, parent_job)
-#                print('nice')
             return self.build_split_and_hash_job(content, node, parent_job)
         elif node['type'] == 'secure_files_import':
             return self.build_secure_files_import_job(content, node, parent_job)
@@ -311,7 +314,6 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
 
     def parent_job_has_hashed_movies(self, parent_job):
         prd = json.loads(parent_job.request_data)
-        print('chichi', prd)
         if 'movies' not in prd:
             return False
         for movie_url in prd['movies']:
@@ -330,7 +332,7 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
             app='parse',
             operation='split_and_hash_threaded',
             sequence=0,
-            request_data=json.dumps(request_data),
+            request_data=parent_job.request_data,
             parent=parent_job,
         )
         job.save()
