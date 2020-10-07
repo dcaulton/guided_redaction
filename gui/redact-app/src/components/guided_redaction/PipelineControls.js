@@ -100,16 +100,11 @@ class PipelineControls extends React.Component {
   handleAddEntityId(deepCopyNodeMetadata, node_id, value) {
     const node = deepCopyNodeMetadata['node'][node_id]
     // TODO can this become a two liner now?
-    if (node['type'] === 'template') {
-      deepCopyNodeMetadata['tier_1_scanners']['template'][value] = this.props.tier_1_scanners['template'][value]
-    } else if (node['type'] === 'selected_area') {
-      deepCopyNodeMetadata['tier_1_scanners']['selected_area'][value] = this.props.tier_1_scanners['selected_area'][value]
-    } else if (node['type'] === 'ocr') {
-      deepCopyNodeMetadata['tier_1_scanners']['ocr'][value] = this.props.tier_1_scanners['ocr'][value]
-    } else if (node['type'] === 'ocr_scene_analysis') {
-      deepCopyNodeMetadata['tier_1_scanners']['ocr_scene_analysis'][value] = this.props.tier_1_scanners['ocr_scene_analysis'][value]
-    } else if (node['type'] === 'telemetry') {
-      deepCopyNodeMetadata['tier_1_scanners']['telemetry'][value] = this.props.tier_1_scanners['telemetry'][value]
+    const good_values = [
+      'template', 'selected_area', 'ocr', 'ocr_scene_analysis', 'telemetry'
+    ]
+    if (good_values.includes(node['type'])) {
+      deepCopyNodeMetadata['tier_1_scanners'][node['type']][value] = this.props.tier_1_scanners[node['type']][value]
     }
   }
 

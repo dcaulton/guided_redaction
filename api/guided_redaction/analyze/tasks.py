@@ -927,6 +927,8 @@ def build_and_dispatch_ocr_scene_analysis_threaded_children(parent_job):
     for osa_id in osas:
         osa = osas[osa_id]
         for index, movie_url in enumerate(movies.keys()):
+            if movie_url == 'source':
+                continue
             movie = movies[movie_url]
             build_movies = {}
             build_movies[movie_url] = movie
