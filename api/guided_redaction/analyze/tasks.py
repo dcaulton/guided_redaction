@@ -914,6 +914,11 @@ def ocr_scene_analysis_threaded(job_uuid):
           job.harvest_failed_child_job_errors(children)
           job.save()
 
+def movie_is_full_movie(movie):
+    if 'frames' in movie:
+        return True
+    return False
+
 def build_and_dispatch_ocr_scene_analysis_threaded_children(parent_job):
     parent_job.status = 'running'
     parent_job.save()
@@ -932,8 +937,9 @@ def build_and_dispatch_ocr_scene_analysis_threaded_children(parent_job):
             movie = movies[movie_url]
             build_movies = {}
             build_movies[movie_url] = movie
-            if source_movies:
-                build_movies['source'] = source_movies
+            if not movie_is_full_movie(movie):
+                build_movies['source'] = {}
+                build_movies['source'][movie_url] = source_movies[movie_url]
             build_request_data = json.dumps({
                 'movies': build_movies,
                 'ocr_scene_analysis_meta': osa,
