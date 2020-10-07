@@ -1375,16 +1375,29 @@ class RedactApplication extends React.Component {
     let the_url = this.getUrl('pipelines_url') + '/dispatch'
     let build_movies = {}
     let specified_input = {}
+    let use_parsed_movies = false
+    if (Object.keys(input_obj).includes('use_parsed_movies') && input_obj['use_parsed_movies']) {
+      use_parsed_movies = true
+    }
     if (!input_obj.scope) {
       input_obj.scope = 'input_json'
     }
     if (input_obj.scope === 'all_movies') {
       for (let i=0; i < this.state.campaign_movies.length; i++) {
-        build_movies[this.state.campaign_movies[i]] = {}
+        const movie_url = this.state.campaign_movies[i]
+        if (use_parsed_movies) {
+          build_movies[movie_url] = this.state.movies[movie_url]
+        } else {
+          build_movies[movie_url] = {}
+        }
       }
       specified_input['movies'] = build_movies
     } else if (input_obj.scope === 'current_movie') {
-      build_movies[this.state.movie_url] = {}
+      if (use_parsed_movies) {
+        build_movies[this.state.movie_url] = this.state.movies[this.state.movie_url]
+      } else {
+        build_movies[this.state.movie_url] = {}
+      }
       specified_input['movies'] = build_movies
     } else if (input_obj.scope === 'current_frame') {
       const build_movie = this.buildMoviesForSingleFrame() 

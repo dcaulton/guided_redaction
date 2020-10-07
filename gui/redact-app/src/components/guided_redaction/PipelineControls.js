@@ -174,6 +174,7 @@ class PipelineControls extends React.Component {
         pipeline_id: this.props.current_pipeline_id, 
         scope: scope, 
         extra_data: extra_data,
+        use_parsed_movies: this.state.use_parsed_movies,
       }
     )
     this.props.displayInsightsMessage('pipeline was dispatched')
