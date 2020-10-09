@@ -308,40 +308,26 @@ class JobLogic extends React.Component {
     setGlobalStateVar, 
     getGlobalStateVar
   ) {
-    const response_data = JSON.parse(job.response_data)
-    const tier_1_scanners = getGlobalStateVar('tier_1_scanners')
-    const tier_1_scanner_current_ids = getGlobalStateVar('tier_1_scanner_current_ids')
-    const tier_1_matches = getGlobalStateVar('tier_1_matches')
-    if (!response_data) {
-      return
-    }
-    if (!Object.keys(response_data).includes('movies')) {
-      return
-    }
-    const request_data = JSON.parse(job.request_data)
-    this.loadTier1ScannersFromTier1Request(
+    this.loadScannersMoviesAndMatchesFromTier1(
+      job, 
       'ocr', 
-      request_data, 
-      tier_1_scanners, 
-      tier_1_scanner_current_ids, 
-      setGlobalStateVar,
+      setGlobalStateVar, 
       getGlobalStateVar
     )
+
+    const response_data = JSON.parse(job.response_data)
+    const request_data = JSON.parse(job.request_data)
+
+    if (request_data['scan_level'] === 'tier_1') {
+      return
+    }
     let resp_obj = this.loadMoviesFromTier1Request(
       request_data, 
       setGlobalStateVar,
       getGlobalStateVar
     )
-    let movie_url = resp_obj['movie_url']
+    const movie_url = resp_obj['movie_url']
     let deepCopyMovies = resp_obj['deepCopyMovies']
-    if (request_data['scan_level'] === 'tier_1') {
-      let deepCopyTier1Matches = JSON.parse(JSON.stringify(tier_1_matches))
-      let deepCopyOcrMatches = deepCopyTier1Matches['ocr']
-      deepCopyOcrMatches[request_data['id']] = response_data
-      deepCopyTier1Matches['ocr'] = deepCopyOcrMatches // todo: can we remove this?
-      setGlobalStateVar('tier_1_matches', deepCopyTier1Matches)
-      return
-    }
 
     let something_changed = false
     for (let i=0; i < Object.keys(response_data['movies']).length; i++) {
@@ -377,40 +363,26 @@ class JobLogic extends React.Component {
     setGlobalStateVar, 
     getGlobalStateVar, 
   ) {
-    const response_data = JSON.parse(job.response_data)
-    const tier_1_scanners = getGlobalStateVar('tier_1_scanners')
-    const tier_1_scanner_current_ids = getGlobalStateVar('tier_1_scanner_current_ids')
-    const tier_1_matches = getGlobalStateVar('tier_1_matches')
-    if (!response_data) {
-      return
-    }
-    if (!Object.keys(response_data).includes('movies')) {
-      return
-    }
-    const request_data = JSON.parse(job.request_data)
-    this.loadTier1ScannersFromTier1Request(
+    this.loadScannersMoviesAndMatchesFromTier1(
+      job, 
       'template', 
-      request_data, 
-      tier_1_scanners, 
-      tier_1_scanner_current_ids, 
-      setGlobalStateVar,
+      setGlobalStateVar, 
       getGlobalStateVar
     )
+
+    const response_data = JSON.parse(job.response_data)
+    const request_data = JSON.parse(job.request_data)
+
+    if (request_data['scan_level'] === 'tier_1') {
+      return
+    }
     let resp_obj = this.loadMoviesFromTier1Request(
       request_data, 
       setGlobalStateVar,
       getGlobalStateVar
     )
-    let movie_url = resp_obj['movie_url']
+    const movie_url = resp_obj['movie_url']
     let deepCopyMovies = resp_obj['deepCopyMovies']
-    if (request_data['scan_level'] === 'tier_1') {
-      let deepCopyTier1Matches = JSON.parse(JSON.stringify(tier_1_matches))
-      let deepCopyTemplateMatches = deepCopyTier1Matches['template']
-      deepCopyTemplateMatches[request_data['id']] = response_data
-      deepCopyTier1Matches['template'] = deepCopyTemplateMatches // todo: can we remove this?
-      setGlobalStateVar('tier_1_matches', deepCopyTier1Matches)
-      return
-    }
 
     let something_changed = false
     for (let i=0; i < Object.keys(response_data['movies']).length; i++) {
@@ -445,9 +417,9 @@ class JobLogic extends React.Component {
     }
   }
 
-  static loadOcrSceneAnalysisResults(
+  static loadScannersMoviesAndMatchesFromTier1(
     job, 
-    when_done, 
+    scanner_type, 
     setGlobalStateVar, 
     getGlobalStateVar
   ) {
@@ -463,7 +435,7 @@ class JobLogic extends React.Component {
     }
     const request_data = JSON.parse(job.request_data)
     this.loadTier1ScannersFromTier1Request(
-      'ocr_scene_analysis', 
+      scanner_type, 
       request_data, 
       tier_1_scanners, 
       tier_1_scanner_current_ids, 
@@ -480,12 +452,26 @@ class JobLogic extends React.Component {
 
     if (request_data['scan_level'] === 'tier_1') {
       let deepCopyTier1Matches = JSON.parse(JSON.stringify(tier_1_matches))
-      let deepCopyMatches = deepCopyTier1Matches['ocr_scene_analysis']
+      let deepCopyMatches = deepCopyTier1Matches[scanner_type]
       deepCopyMatches[request_data['id']] = response_data
-      deepCopyTier1Matches['ocr_scene_analysis'] = deepCopyMatches // todo: can we remove this?
+      deepCopyTier1Matches[scanner_type] = deepCopyMatches // todo: can we remove this?
       setGlobalStateVar('tier_1_matches', deepCopyTier1Matches)
       return
     }
+  }
+
+  static loadOcrSceneAnalysisResults(
+    job, 
+    when_done, 
+    setGlobalStateVar, 
+    getGlobalStateVar
+  ) {
+    this.loadScannersMoviesAndMatchesFromTier1(
+      job, 
+      'ocr_scene_analysis', 
+      setGlobalStateVar, 
+      getGlobalStateVar
+    )
   } 
 
   static loadSelectedAreaResults(
@@ -494,25 +480,19 @@ class JobLogic extends React.Component {
     setGlobalStateVar, 
     getGlobalStateVar
   ) {
-    const response_data = JSON.parse(job.response_data)
-    const tier_1_scanners = getGlobalStateVar('tier_1_scanners')
-    const tier_1_scanner_current_ids = getGlobalStateVar('tier_1_scanner_current_ids')
-    const tier_1_matches = getGlobalStateVar('tier_1_matches')
-    if (!response_data) {
-      return
-    }
-    if (!Object.keys(response_data).includes('movies')) {
-      return
-    }
-    const request_data = JSON.parse(job.request_data)
-    this.loadTier1ScannersFromTier1Request(
+    this.loadScannersMoviesAndMatchesFromTier1(
+      job, 
       'selected_area', 
-      request_data, 
-      tier_1_scanners, 
-      tier_1_scanner_current_ids, 
-      setGlobalStateVar,
+      setGlobalStateVar, 
       getGlobalStateVar
     )
+
+    const response_data = JSON.parse(job.response_data)
+    const request_data = JSON.parse(job.request_data)
+
+    if (request_data['scan_level'] === 'tier_1') {
+      return
+    }
     let resp_obj = this.loadMoviesFromTier1Request(
       request_data, 
       setGlobalStateVar,
@@ -520,16 +500,6 @@ class JobLogic extends React.Component {
     )
     const movie_url = resp_obj['movie_url']
     let deepCopyMovies = resp_obj['deepCopyMovies']
-
-    if (request_data['scan_level'] === 'tier_1') {
-      let deepCopyTier1Matches = JSON.parse(JSON.stringify(tier_1_matches))
-      let deepCopySelectedAreaMatches = deepCopyTier1Matches['selected_area']
-      deepCopySelectedAreaMatches[request_data['id']] = response_data
-      deepCopyTier1Matches['selected_area'] = deepCopySelectedAreaMatches // todo: can we remove this?
-      setGlobalStateVar('tier_1_matches', deepCopyTier1Matches)
-      return
-    }
-
     let something_changed = false
     for (let i=0; i < Object.keys(response_data['movies']).length; i++) {
       const movie_url = Object.keys(response_data['movies'])[i]
