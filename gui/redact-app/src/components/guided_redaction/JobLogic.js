@@ -445,6 +445,49 @@ class JobLogic extends React.Component {
     }
   }
 
+  static loadOcrSceneAnalysisResults(
+    job, 
+    when_done, 
+    setGlobalStateVar, 
+    getGlobalStateVar
+  ) {
+    const response_data = JSON.parse(job.response_data)
+    const tier_1_scanners = getGlobalStateVar('tier_1_scanners')
+    const tier_1_scanner_current_ids = getGlobalStateVar('tier_1_scanner_current_ids')
+    const tier_1_matches = getGlobalStateVar('tier_1_matches')
+    if (!response_data) {
+      return
+    }
+    if (!Object.keys(response_data).includes('movies')) {
+      return
+    }
+    const request_data = JSON.parse(job.request_data)
+    this.loadTier1ScannersFromTier1Request(
+      'ocr_scene_analysis', 
+      request_data, 
+      tier_1_scanners, 
+      tier_1_scanner_current_ids, 
+      setGlobalStateVar,
+      getGlobalStateVar
+    )
+    let resp_obj = this.loadMoviesFromTier1Request(
+      request_data, 
+      setGlobalStateVar,
+      getGlobalStateVar
+    )
+    const movie_url = resp_obj['movie_url']
+    let deepCopyMovies = resp_obj['deepCopyMovies']
+
+    if (request_data['scan_level'] === 'tier_1') {
+      let deepCopyTier1Matches = JSON.parse(JSON.stringify(tier_1_matches))
+      let deepCopyMatches = deepCopyTier1Matches['ocr_scene_analysis']
+      deepCopyMatches[request_data['id']] = response_data
+      deepCopyTier1Matches['ocr_scene_analysis'] = deepCopyMatches // todo: can we remove this?
+      setGlobalStateVar('tier_1_matches', deepCopyTier1Matches)
+      return
+    }
+  } 
+
   static loadSelectedAreaResults(
     job, 
     when_done, 
@@ -888,6 +931,13 @@ class JobLogic extends React.Component {
         )
 			} else if (job.app === 'analyze' && job.operation === 'selected_area_threaded') {
         this.loadSelectedAreaResults(
+          job, 
+          when_done, 
+          setGlobalStateVar, 
+          getGlobalStateVar
+        )
+			} else if (job.app === 'analyze' && job.operation === 'ocr_scene_analysis_threaded') {
+        this.loadOcrSceneAnalysisResults(
           job, 
           when_done, 
           setGlobalStateVar, 
