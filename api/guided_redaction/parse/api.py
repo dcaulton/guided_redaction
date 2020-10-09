@@ -77,13 +77,17 @@ def split_movie_audio(file_writer, movie_url):
     movie_filepath = file_writer.get_file_path_for_url(movie_url)
     audio_url = movie_url[0:movie_url.rfind('.')] + '.mp3'
     audio_filepath = file_writer.get_file_path_for_url(audio_url)
-    (
-    ffmpeg
-        .input(movie_filepath)
-        .output(audio_filepath)
-        .overwrite_output()
-        .run()
-    )
+    try:
+        (
+        ffmpeg
+            .input(movie_filepath)
+            .output(audio_filepath)
+            .overwrite_output()
+            .run()
+        )
+    except Exception as err:
+        print('exception while trying to split movie audio')
+        audio_url = ''
     return audio_url
 
 def add_movie_audio(file_writer, movie_url, audio_url):

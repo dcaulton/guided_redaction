@@ -59,11 +59,13 @@ class OcrSceneAnalyzer(GridPointScorer):
                         app_high_score_coords['end'] = col['window_end']
 
             if app_high_score >= self.osa_rule['apps'][app_name]['app_score_threshold']:
+                origin_location = self.get_origin_location_for_match(app_high_score_coords)
                 winning_apps[app_name] = {
                     'app_id': app_name,
                     'score': app_high_score,
                     'start': app_high_score_coords['start'],
                     'end': app_high_score_coords['end'],
+                    'origin': origin_location,
                     'scanner_type': 'ocr_scene_analysis',
                 }
 
@@ -73,6 +75,16 @@ class OcrSceneAnalyzer(GridPointScorer):
             'frame_dimensions': self.frame_dimensions,
         }
         return (winning_apps, stats_obj)
+
+    def get_origin_location_for_match(self, app_high_score_coords):
+        origin = app_high_score_coords['start']
+        if 'first_row_offset_from_origin' in self.osa_rule:
+            o_coords = self.osa_rule['first_row_offset_from_origin']
+            origin = [
+                app_high_score_coords[0] - o_coords[0],
+                app_high_score_coords[1] - o_coords[1]
+            ]
+        return origin
 
     def analyze_one_rta_row_field_vs_one_app(
         self, 
