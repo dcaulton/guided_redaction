@@ -35,6 +35,8 @@ class PipelineControls extends React.Component {
         'zip': {},
       },
       movie_urls: [],
+      minuends: {},
+      subtrahends: {},
       attribute_search_value: '',
       use_parsed_movies: false,
       json: '',
@@ -47,6 +49,7 @@ class PipelineControls extends React.Component {
     this.loadNewPipeline=this.loadNewPipeline.bind(this)
     this.addNodeEdge=this.addNodeEdge.bind(this)
     this.deleteNodeEdge=this.deleteNodeEdge.bind(this)
+    this.setLocalStateVar=this.setLocalStateVar.bind(this)
   }
 
   addNode() {
@@ -138,6 +141,8 @@ class PipelineControls extends React.Component {
       description: this.state.description,
       attributes: this.state.attributes,
       edges: this.state.edges,
+      minuends: this.state.minuends,
+      subtrahends: this.state.subtrahends,
       node_metadata: this.state.node_metadata,
       movies: build_movies,
     }
@@ -219,6 +224,8 @@ class PipelineControls extends React.Component {
         attributes: pipeline['attributes'],
         movie_urls: movie_urls,
         edges: content['edges'],
+        minuends: content['minuends'],
+        subtrahends: content['subtrahends'],
         node_metadata: content['node_metadata'],
       })
       if (Object.keys(content['node_metadata']).includes('tier_1_scanners')) {
@@ -513,8 +520,11 @@ class PipelineControls extends React.Component {
                   <div id='pipelines_sequence_body' className='row '>
 
                     <NodeCardList
+                      setLocalStateVar={this.setLocalStateVar}
                       node_metadata={this.state.node_metadata}
                       edges={this.state.edges}
+                      minuends={this.state.minuends}
+                      subtrahends={this.state.subtrahends}
                       addNode={this.addNode}
                       addNodeEdge={this.addNodeEdge}
                       deleteNodeEdge={this.deleteNodeEdge}
@@ -568,6 +578,9 @@ class NodeCardList extends React.Component {
                   addNodeEdge={this.props.addNodeEdge}
                   deleteNodeEdge={this.props.deleteNodeEdge}
                   tier_1_scanners={this.props.tier_1_scanners}
+                  minuends={this.props.minuends}
+                  subtrahends={this.props.subtrahends}
+                  setLocalStateVar={this.props.setLocalStateVar}
                 />
               )
             })}
@@ -678,6 +691,77 @@ class NodeCard extends React.Component {
     )
   }
 
+  addDeleteMinuendSubtrahend(type, parent_node_id, minuend_node_id) {
+    let deepCopyMins = JSON.parse(JSON.stringify(this.props[type]))
+    if (Object.keys(deepCopyMins).includes(parent_node_id)) {
+      if (deepCopyMins[parent_node_id].includes(minuend_node_id)) {
+        const ind = deepCopyMins[parent_node_id].indexOf(minuend_node_id)
+        deepCopyMins[parent_node_id].splice(ind, 1)
+      } else {
+        deepCopyMins[parent_node_id].push(minuend_node_id)
+      }
+    } else {
+      deepCopyMins[parent_node_id] = [minuend_node_id]
+    }
+    this.props.setLocalStateVar(type, deepCopyMins)
+  }
+
+  buildMinuendsSubtrahendsField(ms_type) {
+    if (this.props.node_metadata['node'][this.props.node_id]['type'] !== 't1_diff') {
+      return ''
+    }
+    const id_types = [
+      'template', 'selected_area', 'ocr', 'telemetry', 'ocr_scene_analysis'
+    ]
+    let title = 'Minuends'
+    if (ms_type === 'subtrahends') {
+      title = 'Subtrahends'
+    } 
+    return (
+      <div className='mt-2 mb-2'>
+        <div className='font-weight-bold'>
+          {title}
+        </div>
+        {Object.keys(this.props.node_metadata['node']).map((node_id, index) => {
+          if (node_id === this.props.node_id) {
+            return '' 
+          }
+          if (!id_types.includes(
+            this.props.node_metadata['node'][node_id]['type']
+          )) {
+            return ''
+          }
+          let ms_selected = false
+          if (this.props
+              && this.props[ms_type]
+              && Object.keys(this.props[ms_type]).includes(this.props.node_id)
+              && this.props[ms_type][this.props.node_id].includes(node_id)
+          ) {
+            ms_selected = true
+          }
+
+          return (
+            <div
+              key={index}
+            >
+              <div className='d-inline'>
+                <input
+                  checked={ms_selected}
+                  type='checkbox'
+                  onChange={() => this.addDeleteMinuendSubtrahend(ms_type, this.props.node_id, node_id)}
+                />
+              </div>
+              <div className='d-inline ml-2'>
+                {node_id}
+              </div>
+            </div>
+          )
+
+        })}
+      </div>
+    )
+  }
+
   buildTypeField() {
     if (!this.props.node_metadata['node']) {
       return ''
@@ -704,6 +788,7 @@ class NodeCard extends React.Component {
             <option value='ocr_scene_analysis'>ocr scene analysis</option>
             <option value='telemetry'>telemetry</option>
             <option value='t1_sum'>sum t1 outputs</option>
+            <option value='t1_diff'>difference of t1 outputs</option>
             <option value='template_match_chart'>template match chart</option>
             <option value='redact'>redact</option>
             <option value='zip'>zip</option>
@@ -818,6 +903,8 @@ class NodeCard extends React.Component {
     const add_edge_dropdown = this.buildAddEdgeDropdown()
     const edge_list = this.buildEdgeList()
     const type_field = this.buildTypeField()
+    const minuends_field = this.buildMinuendsSubtrahendsField('minuends')
+    const subtrahends_field = this.buildMinuendsSubtrahendsField('subtrahends')
     const entity_id_field = this.buildEntityIdField()
     return (
     <div
@@ -835,6 +922,12 @@ class NodeCard extends React.Component {
         </div>
         <div className='row'>
           {entity_id_field}
+        </div>
+        <div className='row'>
+          {minuends_field}
+        </div>
+        <div className='row'>
+          {subtrahends_field}
         </div>
         <div className='row'>
           {edge_list}
