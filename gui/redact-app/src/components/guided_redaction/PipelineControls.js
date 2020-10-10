@@ -44,12 +44,21 @@ class PipelineControls extends React.Component {
     this.afterPipelineSaved=this.afterPipelineSaved.bind(this)
     this.deletePipeline=this.deletePipeline.bind(this)
     this.addNode=this.addNode.bind(this)
+    this.deleteNode=this.deleteNode.bind(this)
     this.updateNodeValue=this.updateNodeValue.bind(this)
     this.loadPipeline=this.loadPipeline.bind(this)
     this.loadNewPipeline=this.loadNewPipeline.bind(this)
-    this.addNodeEdge=this.addNodeEdge.bind(this)
-    this.deleteNodeEdge=this.deleteNodeEdge.bind(this)
     this.setLocalStateVar=this.setLocalStateVar.bind(this)
+  }
+
+  deleteNode(node_id) {
+    let deepCopyNodeMetadata = JSON.parse(JSON.stringify(this.state.node_metadata))
+    delete deepCopyNodeMetadata['node'][node_id]
+    this.setLocalStateVar(
+      'node_metadata', 
+      deepCopyNodeMetadata,
+      (()=>{this.props.displayInsightsMessage('node was added')})
+    )
   }
 
   addNode() {
@@ -70,36 +79,6 @@ class PipelineControls extends React.Component {
     )
   }
 
-  deleteNodeEdge(originating_node_id, target_node_id) {
-    let deepCopyEdges = JSON.parse(JSON.stringify(this.state.edges))
-    let new_node_edges = []
-    for (let i=0; i < this.state.edges[originating_node_id].length; i++) {
-      const tt = this.state.edges[originating_node_id][i]
-      if (tt !== target_node_id) {
-        new_node_edges.push(tt)
-      }
-    }
-    deepCopyEdges[originating_node_id] = new_node_edges
-    this.setLocalStateVar(
-      'edges', 
-      deepCopyEdges,
-      (()=>{this.props.displayInsightsMessage('edge was removed')})
-    )
-  }
-
-  addNodeEdge(originating_node_id, target_node_id) {
-    let deepCopyEdges = JSON.parse(JSON.stringify(this.state.edges))
-    if (!Object.keys(deepCopyEdges).includes(originating_node_id)) {
-      deepCopyEdges[originating_node_id] = []
-    }
-    deepCopyEdges[originating_node_id].push(target_node_id)
-    this.setLocalStateVar(
-      'edges', 
-      deepCopyEdges,
-      (()=>{this.props.displayInsightsMessage('edge was added')})
-    )
-  }
-
   handleAddEntityId(deepCopyNodeMetadata, node_id, value) {
     const node = deepCopyNodeMetadata['node'][node_id]
     // TODO can this become a two liner now?
@@ -117,7 +96,7 @@ class PipelineControls extends React.Component {
     if (field_name === 'entity_id') {
       this.handleAddEntityId(deepCopyNodeMetadata, node_id, value)
     } 
-    this.setState({'node_metadata': deepCopyNodeMetadata})
+    this.setLocalStateVar('node_metadata', deepCopyNodeMetadata)
   }
 
   componentDidMount() {
@@ -152,7 +131,7 @@ class PipelineControls extends React.Component {
   afterPipelineSaved(pipeline_response_obj) {
     if (Object.keys(pipeline_response_obj).includes('pipeline_id')) {
       const pipeline_id = pipeline_response_obj['pipeline_id']
-      this.setLocalStateVar('id', pipeline_id)
+      this.setState({'id': pipeline_id})
       this.props.setGlobalStateVar('current_pipeline_id', pipeline_id)
     }
   }
@@ -217,6 +196,14 @@ class PipelineControls extends React.Component {
       for (let i=0; i < Object.keys(content['movies']).length; i++) {
         movie_urls.push(Object.keys(content['movies'])[i])
       }
+      let minuends = {}
+      if (Object.keys(content).includes('minuends')) {
+        minuends = content['minuends']
+      }
+      let subtrahends = {}
+      if (Object.keys(content).includes('subtrahends')) {
+        subtrahends = content['subtrahends']
+      }
       this.setState({
         id: pipeline_id,
         name: content['name'],
@@ -224,8 +211,8 @@ class PipelineControls extends React.Component {
         attributes: pipeline['attributes'],
         movie_urls: movie_urls,
         edges: content['edges'],
-        minuends: content['minuends'],
-        subtrahends: content['subtrahends'],
+        minuends: minuends,
+        subtrahends: subtrahends,
         node_metadata: content['node_metadata'],
       })
       if (Object.keys(content['node_metadata']).includes('tier_1_scanners')) {
@@ -275,13 +262,6 @@ class PipelineControls extends React.Component {
 
   buildDeleteButton() {
     return buildTier1DeleteButton('pipeline', this.props.pipelines, this.deletePipeline)
-  }
-
-  buildSaveButton() {
-    return buildInlinePrimaryButton(
-      'Save',
-      (()=>{this.doSave()})
-    )
   }
 
   buildRunButton() {
@@ -356,7 +336,7 @@ class PipelineControls extends React.Component {
       'Description',
       'pipeline_description',
       'description',
-      80,
+      60,
       ((value)=>{this.setLocalStateVar('description', value)})
     )
   }
@@ -456,7 +436,6 @@ class PipelineControls extends React.Component {
     }
     const id_string = buildIdString(this.state.id, 'pipeline', false)
     const load_button = this.buildLoadButton()
-    const save_button = this.buildSaveButton()
     const delete_button = this.buildDeleteButton()
     const run_button = this.buildRunButton()
     const name_field = this.buildNameField()
@@ -485,7 +464,6 @@ class PipelineControls extends React.Component {
 
               <div className='row'>
                 {load_button}
-                {save_button}
                 {delete_button}
                 {run_button}
               </div>
@@ -526,8 +504,7 @@ class PipelineControls extends React.Component {
                       minuends={this.state.minuends}
                       subtrahends={this.state.subtrahends}
                       addNode={this.addNode}
-                      addNodeEdge={this.addNodeEdge}
-                      deleteNodeEdge={this.deleteNodeEdge}
+                      deleteNode={this.deleteNode}
                       updateNodeValue={this.updateNodeValue}
                       tier_1_scanners={this.props.tier_1_scanners}
                     />
@@ -561,12 +538,18 @@ class NodeCardList extends React.Component {
   render() {
     const add_button = this.buildAddStepButton() 
     return (
-      <div className='col'>
+      <div className='col border-top m-2 p-2'>
         <div className='row'>
-          <div className='col-lg-3'>
+          <div className='col-9 h4'>
+            Pipeline Steps
+          </div>
+          <div className='col-3'>
             {add_button}
           </div>
-          <div className='col-lg-6'>
+        </div>
+        <div className='row'>
+          <div className='col-lg-2'/>
+          <div className='col-lg-8'>
             {Object.keys(this.props.node_metadata['node']).map((node_id, index) => {
               return (
                 <NodeCard
@@ -575,18 +558,14 @@ class NodeCardList extends React.Component {
                   node_metadata={this.props.node_metadata}
                   edges={this.props.edges}
                   updateNodeValue={this.props.updateNodeValue}
-                  addNodeEdge={this.props.addNodeEdge}
-                  deleteNodeEdge={this.props.deleteNodeEdge}
                   tier_1_scanners={this.props.tier_1_scanners}
                   minuends={this.props.minuends}
                   subtrahends={this.props.subtrahends}
                   setLocalStateVar={this.props.setLocalStateVar}
+                  deleteNode={this.props.deleteNode}
                 />
               )
             })}
-          </div>
-          <div className='col-lg-3'>
-          right
           </div>
         </div>
       </div>
@@ -691,6 +670,75 @@ class NodeCard extends React.Component {
     )
   }
 
+  buildEdgesField() {
+    return (
+      <div className='mt-2 mb-2'>
+        <div className='font-weight-bold'>
+          Edges
+        </div>
+        {Object.keys(this.props.node_metadata['node']).map((node_id, index) => {
+          if (node_id === this.props.node_id) {
+            return '' 
+          }
+          let selected = false
+          if (this.props
+              && this.props.edges
+              && Object.keys(this.props.edges).includes(this.props.node_id)
+              && this.props.edges[this.props.node_id].includes(node_id)
+          ) {
+            selected = true
+          }
+
+          const node = this.props.node_metadata['node'][node_id]
+          const disp_name = node_id + ' - ' + node['type']
+          return (
+            <div
+              key={index}
+            >
+              <div className='d-inline'>
+                <input
+                  checked={selected}
+                  type='checkbox'
+                  onChange={() => this.addDeleteEdge(this.props.node_id, node_id)}
+                />
+              </div>
+              <div className='d-inline ml-2'>
+                {disp_name}
+              </div>
+            </div>
+          )
+
+        })}
+      </div>
+    )
+  }
+
+  buildDeleteButton() {
+    return (
+      <button
+          className='btn btn-primary p-1 m-1'
+          onClick={() => this.props.deleteNode(this.props.node_id)}
+      >
+        Delete Step
+      </button>
+    )
+  }
+
+  addDeleteEdge(parent_node_id, minuend_node_id) {
+    let deepCopyMins = JSON.parse(JSON.stringify(this.props.edges))
+    if (Object.keys(deepCopyMins).includes(parent_node_id)) {
+      if (deepCopyMins[parent_node_id].includes(minuend_node_id)) {
+        const ind = deepCopyMins[parent_node_id].indexOf(minuend_node_id)
+        deepCopyMins[parent_node_id].splice(ind, 1)
+      } else {
+        deepCopyMins[parent_node_id].push(minuend_node_id)
+      }
+    } else {
+      deepCopyMins[parent_node_id] = [minuend_node_id]
+    }
+    this.props.setLocalStateVar('edges', deepCopyMins)
+  }
+
   addDeleteMinuendSubtrahend(type, parent_node_id, minuend_node_id) {
     let deepCopyMins = JSON.parse(JSON.stringify(this.props[type]))
     if (Object.keys(deepCopyMins).includes(parent_node_id)) {
@@ -717,10 +765,18 @@ class NodeCard extends React.Component {
     if (ms_type === 'subtrahends') {
       title = 'Subtrahends'
     } 
+
+    let select_none_comment = ''
+    if (ms_type === 'minuends') {
+      select_none_comment = 'selecting none means to use the input for the pipeline'
+    }
     return (
       <div className='mt-2 mb-2'>
         <div className='font-weight-bold'>
           {title}
+        </div>
+        <div className='d-inline font-italic'>
+          {select_none_comment}
         </div>
         {Object.keys(this.props.node_metadata['node']).map((node_id, index) => {
           if (node_id === this.props.node_id) {
@@ -739,6 +795,8 @@ class NodeCard extends React.Component {
           ) {
             ms_selected = true
           }
+          const node = this.props.node_metadata['node'][node_id]
+          const disp_name = node_id + ' - ' + node['type']
 
           return (
             <div
@@ -752,7 +810,7 @@ class NodeCard extends React.Component {
                 />
               </div>
               <div className='d-inline ml-2'>
-                {node_id}
+                {disp_name}
               </div>
             </div>
           )
@@ -798,121 +856,51 @@ class NodeCard extends React.Component {
     )
   }
 
-  buildEdgeDropdownId() {
-    return this.props.node_id +  '_edge_dropdown'
-  }
-
-  doAddNodeEdge() {
-    const edge_dropdown_field_id = this.buildEdgeDropdownId()
-    const edge_dropdown_id = document.getElementById(edge_dropdown_field_id).value
-    this.props.addNodeEdge(this.props.node_id, edge_dropdown_id)
-  }
-
-  buildAddEdgeDropdown() {
-    const edge_dropdown_id = this.buildEdgeDropdownId()
-    if (Object.keys(this.props.edges).includes(this.props.node_id) && 
-        this.props.edges[this.props.node_id].length === Object.keys(this.props.node_metadata['node']).length-1) {
-      return ''
+  buildFirstIndicator() {
+    for (let i=0; i < Object.keys(this.props.edges).length; i++) {
+      const ta = this.props.edges[Object.keys(this.props.edges)[i]]
+      if (ta.includes(this.props.node_id)) {
+        return ''
+      }
     }
-    return (
-      <div>
-        <div className='d-inline'>
-          Add Edge
-        </div>
-        <div className='d-inline'>
-          <select
-              name='step_type'
-              id={edge_dropdown_id}
-          >
-            <option key='' value=''></option>
-            {Object.keys(this.props.node_metadata['node']).map((node_id, index) => {
-              if (node_id === this.props.node_id) {
-                return ''
-              }
-              if (Object.keys(this.props.edges).includes(this.props.node_id) && 
-                  this.props.edges[this.props.node_id].includes(node_id)) {
-                return ''
-              }
-              return (
-                <option key={index} value={node_id}>{node_id}</option>
-              )
-            })}
-          </select>
-          
-        </div>
-        <div className='d-inline'>
-            <button
-                className='btn btn-primary p-1'
-                onClick={() => this.doAddNodeEdge()}
-            >
-              Add
-            </button>
-          
-        </div>
-      </div>
-    )
+    return 'first'
   }
 
-  buildDeleteEdgeLink(target_node_id) {
-    return (
-      <button
-          className='btn btn-link'
-          onClick={() => this.props.deleteNodeEdge(this.props.node_id, target_node_id)}
-      >
-        delete
-      </button>
-    )
-  }
-
-  buildEdgeList() {
+  buildLeafIndicator() {
     if (!Object.keys(this.props.edges).includes(this.props.node_id)) {
-      return (
-        <div>
-          <div className='font-italic'>
-            no edges
-          </div>
-        </div>
-      )
+      return 'leaf'
     }
-    return (
-      <div>
-        <div className='font-weight-bold'>
-          edge list
-        </div>
-        <ul>
-          {this.props.edges[this.props.node_id].map((target_node_id, index) => {
-            const delete_link = this.buildDeleteEdgeLink(target_node_id) 
-            return (
-              <li key={index}>
-                <div className='d-inline'>
-                  {target_node_id}
-                </div>
-                <div className='d-inline ml-2'>
-                  {delete_link}
-                </div>
-              </li>
-            )
-          })}
-        </ul>
-      </div>
-    )
+    if (Object.keys(this.props.edges[this.props.node_id]).length < 1) {
+      return 'leaf'
+    }
+    return ''
   }
 
   render() {
+    const delete_button = this.buildDeleteButton()
     const name_field = this.buildNameField()
-    const add_edge_dropdown = this.buildAddEdgeDropdown()
-    const edge_list = this.buildEdgeList()
     const type_field = this.buildTypeField()
+    const edges_field = this.buildEdgesField()
     const minuends_field = this.buildMinuendsSubtrahendsField('minuends')
     const subtrahends_field = this.buildMinuendsSubtrahendsField('subtrahends')
     const entity_id_field = this.buildEntityIdField()
+    const first_indicator = this.buildFirstIndicator()
+    const leaf_indicator = this.buildLeafIndicator()
     return (
     <div
-        className='row mt-2 card'
+        className='row mt-2 p-1 m-1 card'
     >
       <div className='col'>
         <div className='row'>
-          {this.props.node_id}
+          <div className='col-8'>
+            {this.props.node_id}
+          </div>
+          <div className='col-2 font-weight-bold'>
+            {first_indicator}
+          </div>
+          <div className='col-2 font-weight-bold'>
+            {leaf_indicator}
+          </div>
         </div>
         <div className='row'>
           {name_field}
@@ -924,16 +912,16 @@ class NodeCard extends React.Component {
           {entity_id_field}
         </div>
         <div className='row'>
+          {edges_field}
+        </div>
+        <div className='row'>
           {minuends_field}
         </div>
         <div className='row'>
           {subtrahends_field}
         </div>
         <div className='row'>
-          {edge_list}
-        </div>
-        <div className='row'>
-          {add_edge_dropdown}
+          {delete_button}
         </div>
       </div>
     </div>
