@@ -66,15 +66,19 @@ class PipelinesViewSet(viewsets.ViewSet):
 
     def create(self, request):
         request_content = request.data.get('content')
-        request_name = request.data.get('name')
-        if Pipeline.objects.filter(name=request_name).exists():
-            pipeline = Pipeline.objects.filter(name=request_name).first()
+        pipeline_id = request_content.get('id')
+        request_name = request_content.get('name')
+        if pipeline_id and Pipeline.objects.filter(pk=pipeline_id).exists():
+            pipeline = Pipeline.objects.get(pk=pipeline_id)
+            if pipeline.name != request_name:
+                pipeline.name = request_name
+                pipeline.save()
         else:
             pipeline = Pipeline(
                 name=request_name,
                 description=request.data.get('description'),
             )
-        pipeline.save()
+            pipeline.save()
         if 'attributes' in request_content:
             for attribute_name in request_content['attributes']:
                 attribute_value = request_content['attributes'][attribute_name]

@@ -173,7 +173,6 @@ class SelectedAreaController:
                 # if min zone has at least one pixel overlapping:
                 if (r_start[0] < mz_end[0] and r_start[1] < mz_end[0]) and\
                     (r_end[0] > mz_start[0] and r_end[1] > mz_start[1]):
-                    print('at least one pixel is in the max zone')
                     # enforce max x
                     if r_end[0] > mz_end[0]:
                         r_end[0] = mz_end[0]
@@ -237,8 +236,6 @@ class SelectedAreaController:
         offset = self.get_offset_for_t1(selected_area_meta, match_element)
         # scale the offset by the scale of the t1 results
         if 'scale' in match_element and match_element['scale'] != 1:
-            if verbose:
-                print('=-=-=-=-=-=-=-=-=-=-=--=-=benny non unity scale')
             origin = selected_area_meta['origin_entity_location']
             scale = match_element['scale']
             new_sp_offset = [
