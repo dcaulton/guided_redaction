@@ -74,6 +74,14 @@ class FramesetCard extends React.Component {
               Delete
             </button>
           </div>
+          <div className='d-inline ml-2'>
+            <button
+              className='btn btn-primary'
+              onClick={() => this.props.truncateAtFramesetHash(this.props.frame_hash)}
+            >
+              Delete to Movie End
+            </button>
+          </div>
         </div>
 
 
@@ -118,6 +126,7 @@ class FramesetCardList extends React.Component {
               highlighted_frameset_hash={this.props.highlighted_frameset_hash}
               gotoFramesetHash={this.props.gotoFramesetHash}
               removeFramesetHash={this.props.removeFramesetHash}
+              truncateAtFramesetHash={this.props.truncateAtFramesetHash}
             />
           )
         })}

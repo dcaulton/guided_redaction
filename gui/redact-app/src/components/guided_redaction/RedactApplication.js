@@ -210,6 +210,42 @@ class RedactApplication extends React.Component {
     this.addMovieAndSetActive=this.addMovieAndSetActive.bind(this)
     this.saveStateCheckpoint=this.saveStateCheckpoint.bind(this)
     this.removeFramesetHash=this.removeFramesetHash.bind(this)
+    this.truncateAtFramesetHash=this.truncateAtFramesetHash.bind(this)
+  }
+
+  truncateAtFramesetHash(frameset_hash) {
+    const hashes = this.getFramesetHashesInOrder()
+    if (!hashes.includes(frameset_hash)) {
+      return
+    }
+    const hash_ind = hashes.indexOf(frameset_hash)
+    const trunc_hashes = hashes.slice(0, hash_ind)
+
+    let deepCopyMovies = JSON.parse(JSON.stringify(this.state.movies))
+    let deepCopyMovie = JSON.parse(JSON.stringify(this.state.movies[this.state.movie_url]))
+    if (!Object.keys(deepCopyMovie['framesets']).includes(frameset_hash)) {
+      return
+    }
+    const movie = this.state.movies[this.state.movie_url]
+    let build_frames = []
+    let build_framesets = {}
+    for (let i=0; i < trunc_hashes.length; i++) {
+      const hash = trunc_hashes[i]
+      const frameset = movie['framesets'][hash]
+      build_framesets[hash] = frameset
+
+      for (let j=0; j < frameset['images'].length; j++) {
+        build_frames.push(frameset['images'][j])
+      }
+      build_frames.concat(frameset['images'])
+    }
+    build_frames.sort()
+
+    deepCopyMovie['frames'] = build_frames
+    deepCopyMovie['framesets'] = build_framesets
+    deepCopyMovies[this.state.movie_url] = deepCopyMovie
+
+    this.setGlobalStateVar('movies', deepCopyMovies)
   }
 
   removeFramesetHash(frameset_hash) {
@@ -2092,6 +2128,7 @@ class RedactApplication extends React.Component {
                 establishNewEmptyMovie={this.establishNewEmptyMovie}
                 attachToJob={this.attachToJobWrapper}
                 removeFramesetHash={this.removeFramesetHash}
+                truncateAtFramesetHash={this.truncateAtFramesetHash}
               />
             </Route>
             <Route path='/redact/insights'>
