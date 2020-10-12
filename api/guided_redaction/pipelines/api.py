@@ -316,15 +316,16 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
         return job
 
     def build_t1_sum_job(self, content, node, parent_job):
-        build_job_ids = []
-        inbound_node_ids = self.get_node_ids_with_inbound_edges(node['id'], content)
-        for node_id in inbound_node_ids:
+        addend_node_ids = []
+        if 'addends' in content and node['id'] in content['addends']:
+            addend_node_ids = content['addends'][node['id']]
+        addend_jobs = []
+        for node_id in addend_node_ids:
             job = self.get_job_for_node(node_id, parent_job)
-            if not job:
-                return
-            build_job_ids.append(str(job.id))
+            addend_jobs.append(str(job.id))
+
         build_request_data = {
-            'job_ids': build_job_ids,
+            'job_ids': addend_jobs,
         }
         job = Job(
             status='created',

@@ -35,6 +35,7 @@ class PipelineControls extends React.Component {
         'zip': {},
       },
       movie_urls: [],
+      input: '',
       addends: {},
       minuends: {},
       subtrahends: {},
@@ -121,6 +122,7 @@ class PipelineControls extends React.Component {
       description: this.state.description,
       attributes: this.state.attributes,
       edges: this.state.edges,
+      input: this.state.input,
       addends: this.state.addends,
       minuends: this.state.minuends,
       subtrahends: this.state.subtrahends,
@@ -210,6 +212,10 @@ class PipelineControls extends React.Component {
       if (Object.keys(content).includes('subtrahends')) {
         subtrahends = content['subtrahends']
       }
+      let input = {}
+      if (Object.keys(content).includes('input')) {
+        input = content['input']
+      }
       this.setState({
         id: pipeline_id,
         name: content['name'],
@@ -217,6 +223,7 @@ class PipelineControls extends React.Component {
         attributes: pipeline['attributes'],
         movie_urls: movie_urls,
         edges: content['edges'],
+        input: input,
         addends: addends,
         minuends: minuends,
         subtrahends: subtrahends,
@@ -508,6 +515,7 @@ class PipelineControls extends React.Component {
                       setLocalStateVar={this.setLocalStateVar}
                       node_metadata={this.state.node_metadata}
                       edges={this.state.edges}
+                      input={this.state.input}
                       addends={this.state.addends}
                       minuends={this.state.minuends}
                       subtrahends={this.state.subtrahends}
@@ -567,6 +575,7 @@ class NodeCardList extends React.Component {
                   edges={this.props.edges}
                   updateNodeValue={this.props.updateNodeValue}
                   tier_1_scanners={this.props.tier_1_scanners}
+                  input={this.props.input}
                   addends={this.props.addends}
                   minuends={this.props.minuends}
                   subtrahends={this.props.subtrahends}
@@ -683,7 +692,7 @@ class NodeCard extends React.Component {
     return (
       <div className='mt-2 mb-2'>
         <div className='font-weight-bold'>
-          Edges
+          Outbound Edge for Execution Flow
         </div>
         {Object.keys(this.props.node_metadata['node']).map((node_id, index) => {
           if (node_id === this.props.node_id) {
@@ -840,6 +849,44 @@ class NodeCard extends React.Component {
     )
   }
 
+  buildInputField() {
+    if (!this.props.node_metadata['node']) {
+      return ''
+    }
+    const types_without_input = ['t1_diff', 't1_add']
+    return (
+      <div>
+        <div className='d-inline font-weight-bold'>
+          Data Input 
+        </div>
+        <div className='d-inline ml-2'>
+          <select
+              name='step_input'
+              value={this.props.node_metadata['node'][this.props.node_id]['input']}
+              onChange={
+                (event) => this.props.updateNodeValue(this.props.node_id, 'input', event.target.value)
+              }
+          >
+            <option value=''>Default (output from prev step)</option>
+            <option value='parent_job_request'>Parent Job Request</option>
+            {Object.keys(this.props.node_metadata['node']).map((node_id, index) => {
+              if (node_id === this.props.node_id) {
+                return ''
+              }
+              const node_type = this.props.node_metadata['node'][node_id]['type']
+              if (types_without_input.includes(this.props.node_metadata['node'][node_id]['type'])) {
+                return ''
+              }
+              return (
+                <option key={index} value={node_id}>{node_id} - {node_type}</option>
+              )
+            })}
+          </select>
+        </div>
+      </div>
+    )
+  }
+
   buildTypeField() {
     if (!this.props.node_metadata['node']) {
       return ''
@@ -896,10 +943,51 @@ class NodeCard extends React.Component {
     return ''
   }
 
+
+  moreThanOneFirstNode() {
+    const nodes = Object.keys(this.props.node_metadata['node']).length
+    const nodes_with_edges =Object.keys(this.props.edges).length
+    if (nodes_with_edges !== (nodes - 1)) {
+      return true
+    }
+  }
+
+  buildNodeStatus() {
+    const bg_color_good = '#C2F5A6'
+    const bg_color_bad = '#F5B5A6'
+    const the_style = {}
+    let errors = []
+    if (!this.props.node_metadata['node'][this.props.node_id]['type']) {
+      errors.push(
+        <div key='1'>type is required</div>
+      )
+    }
+    if (this.moreThanOneFirstNode()) {
+      errors.push(
+        <div key='3'>only one node can be first</div>
+      )
+    }
+
+    if (errors) {
+      the_style['backgroundColor'] = bg_color_bad
+    } else {
+      the_style['backgroundColor'] = bg_color_good
+    }
+    return (
+      <div 
+        style={the_style}
+        className='col'
+      >
+        {errors}
+      </div>
+    )
+  }
+
   render() {
     const delete_button = this.buildDeleteButton()
     const name_field = this.buildNameField()
     const type_field = this.buildTypeField()
+    const input_field = this.buildInputField()
     const edges_field = this.buildEdgesField()
     const minuends_field = this.buildMinuendsSubtrahendsAddendsField('minuends')
     const subtrahends_field = this.buildMinuendsSubtrahendsAddendsField('subtrahends')
@@ -907,11 +995,15 @@ class NodeCard extends React.Component {
     const entity_id_field = this.buildEntityIdField()
     const first_indicator = this.buildFirstIndicator()
     const leaf_indicator = this.buildLeafIndicator()
+    const node_status = this.buildNodeStatus()
     return (
     <div
         className='row mt-2 p-1 m-1 card'
     >
       <div className='col'>
+        <div className='row'>
+          {node_status}
+        </div>
         <div className='row'>
           <div className='col-8'>
             {this.props.node_id}
@@ -934,6 +1026,9 @@ class NodeCard extends React.Component {
         </div>
         <div className='row'>
           {edges_field}
+        </div>
+        <div className='row'>
+          {input_field}
         </div>
         <div className='row'>
           {minuends_field}
