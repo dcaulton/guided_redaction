@@ -35,6 +35,7 @@ class PipelineControls extends React.Component {
         'zip': {},
       },
       movie_urls: [],
+      addends: {},
       minuends: {},
       subtrahends: {},
       attribute_search_value: '',
@@ -120,6 +121,7 @@ class PipelineControls extends React.Component {
       description: this.state.description,
       attributes: this.state.attributes,
       edges: this.state.edges,
+      addends: this.state.addends,
       minuends: this.state.minuends,
       subtrahends: this.state.subtrahends,
       node_metadata: this.state.node_metadata,
@@ -196,6 +198,10 @@ class PipelineControls extends React.Component {
       for (let i=0; i < Object.keys(content['movies']).length; i++) {
         movie_urls.push(Object.keys(content['movies'])[i])
       }
+      let addends = {}
+      if (Object.keys(content).includes('addends')) {
+        addends = content['addends']
+      }
       let minuends = {}
       if (Object.keys(content).includes('minuends')) {
         minuends = content['minuends']
@@ -211,6 +217,7 @@ class PipelineControls extends React.Component {
         attributes: pipeline['attributes'],
         movie_urls: movie_urls,
         edges: content['edges'],
+        addends: addends,
         minuends: minuends,
         subtrahends: subtrahends,
         node_metadata: content['node_metadata'],
@@ -501,6 +508,7 @@ class PipelineControls extends React.Component {
                       setLocalStateVar={this.setLocalStateVar}
                       node_metadata={this.state.node_metadata}
                       edges={this.state.edges}
+                      addends={this.state.addends}
                       minuends={this.state.minuends}
                       subtrahends={this.state.subtrahends}
                       addNode={this.addNode}
@@ -559,6 +567,7 @@ class NodeCardList extends React.Component {
                   edges={this.props.edges}
                   updateNodeValue={this.props.updateNodeValue}
                   tier_1_scanners={this.props.tier_1_scanners}
+                  addends={this.props.addends}
                   minuends={this.props.minuends}
                   subtrahends={this.props.subtrahends}
                   setLocalStateVar={this.props.setLocalStateVar}
@@ -724,22 +733,22 @@ class NodeCard extends React.Component {
     )
   }
 
-  addDeleteEdge(parent_node_id, minuend_node_id) {
-    let deepCopyMins = JSON.parse(JSON.stringify(this.props.edges))
-    if (Object.keys(deepCopyMins).includes(parent_node_id)) {
-      if (deepCopyMins[parent_node_id].includes(minuend_node_id)) {
-        const ind = deepCopyMins[parent_node_id].indexOf(minuend_node_id)
-        deepCopyMins[parent_node_id].splice(ind, 1)
+  addDeleteEdge(parent_node_id, node_id) {
+    let deepCopyEdges = JSON.parse(JSON.stringify(this.props.edges))
+    if (Object.keys(deepCopyEdges).includes(parent_node_id)) {
+      if (deepCopyEdges[parent_node_id].includes(node_id)) {
+        const ind = deepCopyEdges[parent_node_id].indexOf(node_id)
+        deepCopyEdges[parent_node_id].splice(ind, 1)
       } else {
-        deepCopyMins[parent_node_id].push(minuend_node_id)
+        deepCopyEdges[parent_node_id].push(node_id)
       }
     } else {
-      deepCopyMins[parent_node_id] = [minuend_node_id]
+      deepCopyEdges[parent_node_id] = [node_id]
     }
-    this.props.setLocalStateVar('edges', deepCopyMins)
+    this.props.setLocalStateVar('edges', deepCopyEdges)
   }
 
-  addDeleteMinuendSubtrahend(type, parent_node_id, minuend_node_id) {
+  addDeleteMinuendSubtrahendAddend(type, parent_node_id, minuend_node_id) {
     let deepCopyMins = JSON.parse(JSON.stringify(this.props[type]))
     if (Object.keys(deepCopyMins).includes(parent_node_id)) {
       if (deepCopyMins[parent_node_id].includes(minuend_node_id)) {
@@ -754,8 +763,17 @@ class NodeCard extends React.Component {
     this.props.setLocalStateVar(type, deepCopyMins)
   }
 
-  buildMinuendsSubtrahendsField(ms_type) {
-    if (this.props.node_metadata['node'][this.props.node_id]['type'] !== 't1_diff') {
+  buildMinuendsSubtrahendsAddendsField(ms_type) {
+    if (
+      this.props.node_metadata['node'][this.props.node_id]['type'] !== 't1_diff'
+      && (ms_type === 'minuends' || ms_type === 'subtrahends')
+    ) {
+      return ''
+    }
+    if (
+      this.props.node_metadata['node'][this.props.node_id]['type'] !== 't1_sum'
+      && ms_type === 'addends'
+    ) {
       return ''
     }
     const id_types = [
@@ -764,12 +782,14 @@ class NodeCard extends React.Component {
     let title = 'Minuends'
     if (ms_type === 'subtrahends') {
       title = 'Subtrahends'
+    } else if (ms_type === 'addends') {
+      title = 'Addends'
     } 
 
     let select_none_comment = ''
     if (ms_type === 'minuends') {
       select_none_comment = 'selecting none means to use the input for the pipeline'
-    }
+    } 
     return (
       <div className='mt-2 mb-2'>
         <div className='font-weight-bold'>
@@ -806,7 +826,7 @@ class NodeCard extends React.Component {
                 <input
                   checked={ms_selected}
                   type='checkbox'
-                  onChange={() => this.addDeleteMinuendSubtrahend(ms_type, this.props.node_id, node_id)}
+                  onChange={() => this.addDeleteMinuendSubtrahendAddend(ms_type, this.props.node_id, node_id)}
                 />
               </div>
               <div className='d-inline ml-2'>
@@ -881,8 +901,9 @@ class NodeCard extends React.Component {
     const name_field = this.buildNameField()
     const type_field = this.buildTypeField()
     const edges_field = this.buildEdgesField()
-    const minuends_field = this.buildMinuendsSubtrahendsField('minuends')
-    const subtrahends_field = this.buildMinuendsSubtrahendsField('subtrahends')
+    const minuends_field = this.buildMinuendsSubtrahendsAddendsField('minuends')
+    const subtrahends_field = this.buildMinuendsSubtrahendsAddendsField('subtrahends')
+    const addends_field = this.buildMinuendsSubtrahendsAddendsField('addends')
     const entity_id_field = this.buildEntityIdField()
     const first_indicator = this.buildFirstIndicator()
     const leaf_indicator = this.buildLeafIndicator()
@@ -919,6 +940,9 @@ class NodeCard extends React.Component {
         </div>
         <div className='row'>
           {subtrahends_field}
+        </div>
+        <div className='row'>
+          {addends_field}
         </div>
         <div className='row'>
           {delete_button}

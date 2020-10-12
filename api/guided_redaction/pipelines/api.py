@@ -263,8 +263,57 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
             return self.build_zip_job(content, node, parent_job)
         elif node['type'] == 't1_sum':
             return self.build_t1_sum_job(content, node, parent_job)
+        elif node['type'] == 't1_diff':
+            return self.build_t1_diff_job(content, node, parent_job)
         else:
             raise Exception('UNRECOGNIZED PIPELINE JOB TYPE: {}'.format(node['type']))
+
+    def build_t1_diff_job(self, content, node, parent_job):
+        minuend_node_ids = []
+        if 'minuends' in content and node['id'] in content['minuends']:
+            minuend_node_ids = content['minuends'][node['id']]
+        minuend_jobs = []
+        if minuend_node_ids:
+            for node_id in minuend_node_ids:
+                job = self.get_job_for_node(node_id, parent_job)
+                minuend_jobs.append({
+                    'id': str(job.id),
+                    'request_or_response_data': 'response_data',
+                })
+        else:
+            minuend_jobs = [{
+                'id': str(parent_job.id),
+                'request_or_response_data': 'request_data',
+            }]
+
+        subtrahend_node_ids = []
+        if 'subtrahends' in content and node['id'] in content['subtrahends']:
+            subtrahend_node_ids = content['subtrahends'][node['id']]
+        subtrahend_jobs = []
+        for node_id in subtrahend_node_ids:
+            job = self.get_job_for_node(node_id, parent_job)
+            subtrahend_jobs.append(str(job.id))
+
+        build_request_data = {
+            'minuend_jobs': minuend_jobs,
+            'subtrahend_job_ids': subtrahend_jobs,
+        }
+        job = Job(
+            status='created',
+            description='t1 diff for pipeline',
+            app='pipelines',
+            operation='t1_diff',
+            sequence=0,
+            request_data=json.dumps(build_request_data),
+            parent=parent_job,
+        )
+        job.save()
+        Attribute(
+            name='node_id',
+            value=node['id'],
+            job=job,
+        ).save()
+        return job
 
     def build_t1_sum_job(self, content, node, parent_job):
         build_job_ids = []
@@ -671,5 +720,92 @@ class PipelineT1SumViewSet(viewsets.ViewSet):
                             if frameset_hash not in build_movies[movie_url]['framesets']:
                                 build_movies[movie_url]['framesets'][frameset_hash] = {}
                             build_movies[movie_url]['framesets'][frameset_hash][key] = frameset[key]
+
+        return Response({'movies': build_movies})
+
+class PipelineT1DiffViewSet(viewsets.ViewSet):
+    def create(self, request):
+        request_data = request.data
+        return self.process_create_request(request_data)
+
+    def get_frameset_hash_for_frame(self, frame, framesets):
+        for frameset_hash in framesets:
+            if frame in framesets[frameset_hash]['images']:
+                return frameset_hash
+
+    def get_frameset_hashes_in_order(self, frames, framesets):
+        ret_arr = []
+        for frame in frames:
+            frameset_hash = self.get_frameset_hash_for_frame(frame, framesets)
+            if frameset_hash and frameset_hash not in ret_arr:
+                ret_arr.append(frameset_hash)
+        return ret_arr
+
+    def process_create_request(self, request_data):
+        if not request_data.get("minuend_jobs"):
+            return self.error("minuend_jobs is required", status_code=400)
+        if not request_data.get("subtrahend_job_ids"):
+            return self.error("subtrahend_job_ids is required", status_code=400)
+        build_movies = {}
+
+        build_movies = {}
+        for minuend_obj in request_data.get('minuend_jobs'):
+            job_id = minuend_obj['id']
+            if not Job.objects.filter(id=job_id).exists():
+                return self.error("invalid minuend job id: {}".format(job_id), status_code=400)
+            job = Job.objects.get(pk=job_id)
+            if minuend_obj['request_or_response_data'] == 'request_data':
+                job_data = json.loads(job.request_data)
+            else:
+                job_data = json.loads(job.response_data)
+            if 'movies' in job_data:
+                for movie_url in job_data['movies']:
+                    movie_data = job_data['movies'][movie_url]
+                    if movie_url not in build_movies:
+                        build_movies[movie_url] = {
+                            'framesets': {},
+                        }
+                        if 'frames' in movie_data:
+                            build_movies[movie_url]['frames'] = []
+                    if 'frames' in movie_data:
+                        sorted_hashes = self.get_frameset_hashes_in_order(
+                            movie_data['frames'], movie_data['framesets']
+                        )
+                    else:
+                        sorted_hashes = list(movie_data['framesets'].keys())
+
+                    for frameset_hash in sorted_hashes:
+                        frameset = movie_data['framesets'][frameset_hash]
+                        for key in frameset:
+                            if frameset_hash not in build_movies[movie_url]['framesets']:
+                                build_movies[movie_url]['framesets'][frameset_hash] = {}
+                            build_movies[movie_url]['framesets'][frameset_hash][key] = frameset[key]
+                        if 'frames' in movie_data and 'images' in frameset:
+                            build_movies[movie_url]['frames'] += frameset['images']
+
+        counter = 0
+        for sub_job_id in request_data.get('subtrahend_job_ids'):
+            job = Job.objects.get(pk=sub_job_id)
+            job_data = json.loads(job.response_data)
+            if 'movies' in job_data:
+                for movie_url in job_data['movies']:
+                    movie = job_data['movies'][movie_url]
+                    for frameset_hash in movie['framesets']:
+                        if movie_url in build_movies and \
+                            frameset_hash in build_movies[movie_url]['framesets']:
+                            counter += 1
+                            if 'frames' in build_movies[movie_url] and \
+                                'images' in build_movies[movie_url]['framesets'][frameset_hash]:
+                                del_images = build_movies[movie_url]['framesets'][frameset_hash]['images']
+                                build_frames = []
+                                for frame_url in build_movies[movie_url]['frames']:
+                                    if frame_url not in del_images:
+                                        build_frames.append(frame_url)
+                                build_movies[movie_url]['frames'] = build_frames
+                            del build_movies[movie_url]['framesets'][frameset_hash]
+                            if not build_movies[movie_url]['framesets']:
+                                del build_movies[movie_url]
+
+        print('t1 diff knocked out {} frames '.format(counter))
 
         return Response({'movies': build_movies})
