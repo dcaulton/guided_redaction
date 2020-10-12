@@ -957,9 +957,18 @@ class NodeCard extends React.Component {
     const bg_color_bad = '#F5B5A6'
     const the_style = {}
     let errors = []
-    if (!this.props.node_metadata['node'][this.props.node_id]['type']) {
+    const t1_id_types = [
+      'template', 'selected_area', 'ocr', 'telemetry', 'ocr_scene_analysis'
+    ]
+    const node = this.props.node_metadata['node'][this.props.node_id]
+    if (!node['type']) {
       errors.push(
         <div key='1'>type is required</div>
+      )
+    }
+    if (t1_id_types.includes(node['type']) && !node['entity_id']) {
+      errors.push(
+        <div key='2'>entity id is required</div>
       )
     }
     if (this.moreThanOneFirstNode()) {
