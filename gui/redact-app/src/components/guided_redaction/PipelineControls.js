@@ -688,6 +688,22 @@ class NodeCard extends React.Component {
     )
   }
 
+  nodeFeedsIntoThisNode(node_id) {
+    if (!Object.keys(this.props.edges).includes(node_id)) {
+      return false
+    }
+    const edge_ids = this.props.edges[node_id]
+    for (let i=0; i < edge_ids.length; i++) {
+      if (edge_ids[i] === this.props.node_id) {
+        return true
+      } else {
+        if (this.nodeFeedsIntoThisNode(edge_ids[i])) {
+          return true
+        }
+      }
+    }
+  }
+
   buildEdgesField() {
     return (
       <div className='mt-2 mb-2'>
@@ -697,6 +713,9 @@ class NodeCard extends React.Component {
         {Object.keys(this.props.node_metadata['node']).map((node_id, index) => {
           if (node_id === this.props.node_id) {
             return '' 
+          }
+          if (this.nodeFeedsIntoThisNode(node_id)) {
+            return ''
           }
           let selected = false
           if (this.props
