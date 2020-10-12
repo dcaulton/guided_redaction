@@ -750,6 +750,14 @@ def selected_area(job_uuid):
 
     dispatch_parent_job(job)
 
+def finish_selected_area_threaded(job):
+  children = Job.objects.filter(parent=job)
+  wrap_up_selected_area_threaded(job, children)
+  pipeline = get_pipeline_for_job(job.parent)
+  if pipeline:
+      worker = PipelinesViewSetDispatch()
+      worker.handle_job_finished(job, pipeline)
+
 @shared_task
 def selected_area_threaded(job_uuid):
     if Job.objects.filter(pk=job_uuid).exists():
@@ -762,11 +770,7 @@ def selected_area_threaded(job_uuid):
         if next_step == 'build_child_tasks':
           build_and_dispatch_selected_area_threaded_children(job)
         elif next_step == 'wrap_up':
-          wrap_up_selected_area_threaded(job, children)
-          pipeline = get_pipeline_for_job(job.parent)
-          if pipeline:
-              worker = PipelinesViewSetDispatch()
-              worker.handle_job_finished(job, pipeline)
+          finish_selected_area_threaded(job)
         elif next_step == 'abort':
           job.status = 'failed'
           job.harvest_failed_child_job_errors(children)
@@ -778,10 +782,16 @@ def build_and_dispatch_selected_area_threaded_children(parent_job):
     request_data = json.loads(parent_job.request_data)
     selected_area_metas = request_data['tier_1_scanners']['selected_area']
     movies = request_data['movies']
+
     source_movies = {}
     if 'source' in movies:
         source_movies = movies['source']
         del movies['source']
+
+    if len(movies) == 0:
+        finish_selected_area_threaded(parent_job)
+        return
+
     for selected_area_meta_id in selected_area_metas:
         selected_area_meta = selected_area_metas[selected_area_meta_id]
         for index, movie_url in enumerate(movies.keys()):
