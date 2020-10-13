@@ -312,7 +312,7 @@ class JobsViewSet(viewsets.ViewSet):
     def retrieve(self, request, pk):
         job = Job.objects.get(pk=pk)
         children = Job.objects.filter(parent_id=job.id).order_by('sequence')
-        child_ids = [child.id for child in children]
+        child_ids = [str(child.id) + ' : ' + child.operation for child in children]
         pretty_time = self.pretty_date(job.created_on)
         wall_clock_run_time = str(job.updated - job.created_on)
 
