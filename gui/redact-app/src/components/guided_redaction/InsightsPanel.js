@@ -1380,6 +1380,7 @@ class InsightsPanel extends React.Component {
             deleteOldJobs={this.props.deleteOldJobs}
             job_polling_interval_seconds={this.props.job_polling_interval_seconds}
             telemetry_data={this.props.telemetry_data}
+            getJobResultData={this.props.getJobResultData}
           />
         </div>
 

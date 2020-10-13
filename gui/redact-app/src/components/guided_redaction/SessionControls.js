@@ -11,6 +11,7 @@ class SessionControls extends React.Component {
   constructor(props) {
     super(props)
     this.state = {
+      job_id: '',
       cv_worker_id: '',
       cv_worker_type: 'call_back',
       cv_worker_supported_operations: [],
@@ -802,6 +803,46 @@ class SessionControls extends React.Component {
     )
   }
 
+  buildViewJobArea()  {
+    return (
+      <div>
+        <div className='d-inline'>
+          Show Job Results
+        </div>
+        <div className='d-inline ml-2'>
+          <input
+            size='40'
+            id='session_job_id'
+            value={this.state.job_id}
+            onChange={(event) => this.setLocalStateVar('job_id', event.target.value)}
+           />
+        </div>
+        <div className='d-inline ml-2'>
+          <button
+              className='btn btn-primary'
+              onClick={()=>this.showJobResultsInModal()}
+          >
+            Show
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  showJobResultsInModal(job_id) {                                               
+    if (!this.state.job_id) {
+      return
+    }
+    this.props.getJobResultData(this.state.job_id, this.displayInNewTab)                   
+  }                                                                             
+                                                                                
+  displayInNewTab(page_data) {                                                  
+    var w = window.open('')                                                     
+    w.document.write("<textarea style='width:100%;height:100%;'>")              
+    w.document.write(page_data)                                                 
+    w.document.write('</textarea>')                                             
+  }                                                                             
+
   render() {
     const campaign_movies_box = this.buildCampaignMoviesBox()
     const update_state_box = this.buildGlobalStateBox()
@@ -816,6 +857,7 @@ class SessionControls extends React.Component {
     const su_link = this.buildSuLink()
     const impersonate_link = this.buildImpersonateLink()
     const panels_checkboxes = this.buildPanelsCheckboxes() 
+    const job_view_area = this.buildViewJobArea()
 
     let preserve_all_jobs_checked = ''
     if (this.props.preserveAllJobs) {
@@ -892,6 +934,10 @@ class SessionControls extends React.Component {
 
                 <div className='row mt-3 bg-light rounded'>
                   {when_done_selector}
+                </div>
+
+                <div className='row mt-3 bg-light rounded'>
+                  {job_view_area}
                 </div>
 
                 <div className='row mt-3 bg-light rounded'>
