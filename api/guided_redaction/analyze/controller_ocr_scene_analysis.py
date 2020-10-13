@@ -32,7 +32,9 @@ class OcrSceneAnalysisController(T1Controller):
             for index, fs_hash in enumerate(ordered_hashes):
                 if index % skip_frames == 0:
                     frameset = movie['framesets'][fs_hash]
-                    (response, statistics) = self.analyze_one_frame(frameset, osa)
+                    resp_obj = self.analyze_one_frame(frameset, osa)
+                    if resp_obj:
+                        (response, statistics) = resp_obj
                     for app_name in response:
                         if fs_hash not in build_response_data['movies'][movie_url]['framesets']:
                             build_response_data['movies'][movie_url]['framesets'][fs_hash] = {}

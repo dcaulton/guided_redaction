@@ -1,4 +1,5 @@
 from celery import shared_task
+import math
 import random
 import time
 import uuid
@@ -31,6 +32,8 @@ from guided_redaction.analyze.api import (
     AnalyzeViewSetOcr
 )
 
+
+osa_batch_size = 5
 
 def dispatch_parent_job(job):
     if job.parent_id:
@@ -929,6 +932,20 @@ def movie_is_full_movie(movie):
         return True
     return False
 
+                    
+def get_frameset_hash_for_frame(frame, framesets):
+    for frameset_hash in framesets:
+        if frame in framesets[frameset_hash]['images']:
+            return frameset_hash
+
+def get_frameset_hashes_in_order(frames, framesets):
+    ret_arr = []
+    for frame in frames:
+        frameset_hash = get_frameset_hash_for_frame(frame, framesets)
+        if frameset_hash and frameset_hash not in ret_arr:
+            ret_arr.append(frameset_hash)
+    return ret_arr
+
 def build_and_dispatch_ocr_scene_analysis_threaded_children(parent_job):
     parent_job.status = 'running'
     parent_job.save()
@@ -945,28 +962,44 @@ def build_and_dispatch_ocr_scene_analysis_threaded_children(parent_job):
             if movie_url == 'source':
                 continue
             movie = movies[movie_url]
-            build_movies = {}
-            build_movies[movie_url] = movie
-            if not movie_is_full_movie(movie):
-                build_movies['source'] = {}
-                build_movies['source'][movie_url] = source_movies[movie_url]
-            build_request_data = json.dumps({
-                'movies': build_movies,
-                'ocr_scene_analysis_meta': osa,
-            })
-            job = Job(
-                request_data=build_request_data,
-                status='created',
-                description='ocr scene analysis for movie {}'.format(movie_url),
-                app='analyze',
-                operation='ocr_scene_analysis',
-                sequence=0,
-                parent=parent_job,
-            )
-            job.save()
-            the_str = 'build_and_dispatch_ocr_scene_analysis_threaded_children: dispatching job for movie {}'
-            print(the_str.format(movie_url))
-            ocr_scene_analysis.delay(job.id)
+            num_jobs = math.ceil(len(movie['framesets']) / osa_batch_size)
+            for i in range(num_jobs):
+                start_point = i * osa_batch_size
+                end_point = ((i+1) * osa_batch_size)
+                if i == (num_jobs-1):
+                    end_point = len(movie['frames'])
+                build_obj = {
+                    'ocr_scene_analysis_meta': osa,
+                    'movies': {},
+                }
+                build_obj['movies'][movie_url] = {
+                    'framesets': {},
+                    'frames': [],
+                }
+                hashes_in_order = get_frameset_hashes_in_order(movie['frames'], movie['framesets'])
+                hashes_to_use = hashes_in_order[start_point:end_point]
+                for frameset_hash in hashes_to_use:
+                    build_obj['movies'][movie_url]['framesets'][frameset_hash] = \
+                        movie['framesets'][frameset_hash]
+                    build_obj['movies'][movie_url]['frames'] += movie['framesets'][frameset_hash]['images']
+                build_request_data = json.dumps(build_obj)
+                if not movie_is_full_movie(movie):
+                    build_movies['source'] = {}
+                    build_movies['source'][movie_url] = source_movies[movie_url]
+                job = Job(
+                    request_data=build_request_data,
+                    status='created',
+                    description='ocr scene analysis for movie {}'.format(movie_url),
+                    app='analyze',
+                    operation='ocr_scene_analysis',
+                    sequence=0,
+                    parent=parent_job,
+                )
+                job.save()
+                the_str = 'build_and_dispatch_ocr_scene_analysis_threaded_children: dispatching job for movie {}'
+                print(the_str.format(movie_url))
+                ocr_scene_analysis.delay(job.id)
+
 
 def wrap_up_ocr_scene_analysis_threaded(job, children):
     aggregate_response_data = {
@@ -978,10 +1011,13 @@ def wrap_up_ocr_scene_analysis_threaded(job, children):
         child_stats = json.loads(child.response_data)['statistics']
         if len(child_response_movies.keys()) > 0:
             movie_url = list(child_response_movies.keys())[0]
-            aggregate_response_data['movies'][movie_url] = child_response_movies[movie_url]
+            if movie_url not in aggregate_response_data['movies']:
+                aggregate_response_data['movies'][movie_url] = {'framesets': {}}
             if movie_url not in aggregate_stats['movies']:
                 aggregate_stats['movies'][movie_url] = {'framesets': {}}
-            for frameset_hash in child_stats['movies'][movie_url]['framesets']:
+            for frameset_hash in child_response_movies[movie_url]['framesets']:
+                aggregate_response_data['movies'][movie_url]['framesets'][frameset_hash] = \
+                    child_response_movies[movie_url]['framesets'][frameset_hash]
                 aggregate_stats['movies'][movie_url]['framesets'][frameset_hash] = \
                     child_stats['movies'][movie_url]['framesets'][frameset_hash]
 

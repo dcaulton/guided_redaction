@@ -71,6 +71,11 @@ def wrap_up_redact_threaded(job, children):
     }
     for child in children:
         child_response_data = json.loads(child.response_data)
+        if 'redacted_image_url' not in child_response_data:
+            print('problem getting redacted image url for job {} {}'.format(
+                child, child_response_data
+            ))
+            continue
         redacted_image_url = child_response_data['redacted_image_url']
         child_request_data = json.loads(child.request_data)
         movie_url = child_request_data['movie_url']
