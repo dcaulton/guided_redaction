@@ -36,6 +36,7 @@ class InsightsPanel extends React.Component {
     this.getTier1ScannerMatches=this.getTier1ScannerMatches.bind(this)
     this.currentImageIsTemplateAnchorImage=this.currentImageIsTemplateAnchorImage.bind(this)
     this.currentImageIsSelectedAreaAnchorImage=this.currentImageIsSelectedAreaAnchorImage.bind(this)
+    this.currentImageIsMeshMatchAnchorImage=this.currentImageIsMeshMatchAnchorImage.bind(this)
     this.currentImageIsOcrAnchorImage=this.currentImageIsOcrAnchorImage.bind(this)
     this.currentImageIsOsaMatchImage=this.currentImageIsOsaMatchImage.bind(this)
     this.afterPingSuccess=this.afterPingSuccess.bind(this)
@@ -789,6 +790,28 @@ class InsightsPanel extends React.Component {
     }
   }
 
+  currentImageIsMeshMatchAnchorImage() {
+    if (this.props.tier_1_scanner_current_ids['mesh_match']) {
+      let key = this.props.tier_1_scanner_current_ids['mesh_match']
+      if (!Object.keys(this.props.tier_1_scanners['mesh_match']).includes(key)) {
+        return false
+      }
+      let sam = this.props.tier_1_scanners['mesh_match'][key]
+      if (!sam['maximum_zones'].length && !sam['minimum_zones'].length) {
+        return false
+      }
+      let cur_sam_anchor_image_name = ''
+      if (sam['minimum_zones'].length > 0) {
+        cur_sam_anchor_image_name = sam['minimum_zones'][0]['image']
+      } else if (sam['maximum_zones'].length > 0) {
+        cur_sam_anchor_image_name = sam['maximum_zones'][0]['image']
+      }
+      return (cur_sam_anchor_image_name === this.state.insights_image)
+    } else {
+      return true
+    }
+  }
+
   callPing() {
     this.props.doPing(this.afterPingSuccess, this.afterPingFailure)
   }
@@ -1280,6 +1303,7 @@ class InsightsPanel extends React.Component {
               clickCallback={this.handleImageClick}
               currentImageIsTemplateAnchorImage={this.currentImageIsTemplateAnchorImage}
               currentImageIsSelectedAreaAnchorImage={this.currentImageIsSelectedAreaAnchorImage}
+              currentImageIsMeshMatchAnchorImage={this.currentImageIsMeshMatchAnchorImage}
               currentImageIsOcrAnchorImage={this.currentImageIsOcrAnchorImage}
               currentImageIsOsaMatchImage={this.currentImageIsOsaMatchImage}
               insights_image_scale={this.state.insights_image_scale}
@@ -1297,6 +1321,9 @@ class InsightsPanel extends React.Component {
               getCurrentSelectedAreaMinimumZones={(()=>this.runCallbackFunction('getCurrentSelectedAreaMinimumZones'))}
               getCurrentSelectedAreaMaximumZones={(()=>this.runCallbackFunction('getCurrentSelectedAreaMaximumZones'))}
               getCurrentSelectedAreaOriginLocation={(()=>this.runCallbackFunction('getCurrentSelectedAreaOriginLocation'))}
+              getCurrentMeshMatchMinimumZones={(()=>this.runCallbackFunction('getCurrentMeshMatchMinimumZones'))}
+              getCurrentMeshMatchMaximumZones={(()=>this.runCallbackFunction('getCurrentMeshMatchMaximumZones'))}
+              getCurrentMeshMatchOriginLocation={(()=>this.runCallbackFunction('getCurrentMeshMatchOriginLocation'))}
               getCurrentOcrOriginLocation={(()=>this.runCallbackFunction('getCurrentOcrOriginLocation'))}
               getCurrentOcrSceneAnalysisMatches={this.getCurrentOcrSceneAnalysisMatches}
             />
@@ -1359,7 +1386,6 @@ class InsightsPanel extends React.Component {
             deleteScanner={this.props.deleteScanner}
             importScanner={this.props.importScanner}
             preserve_movie_audio={this.props.preserve_movie_audio}
-            setSelectedAreaMetas={this.props.setSelectedAreaMetas}
             pipelines={this.props.pipelines}
             current_pipeline_id={this.props.current_pipeline_id}
             getPipelines={this.props.getPipelines}

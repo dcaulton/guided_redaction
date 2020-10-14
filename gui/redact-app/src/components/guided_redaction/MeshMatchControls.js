@@ -26,6 +26,7 @@ class MeshMatchControls extends React.Component {
       origin_entity_id: '',
       origin_entity_location: [],
       scan_level: 'tier_1',
+      maximum_zones: [],
       minimum_zones: [],
       min_score: 500,
       mesh_size: 50,
@@ -34,10 +35,13 @@ class MeshMatchControls extends React.Component {
       first_click_coords: [],
     }
     this.getCurrentMeshMatchMinimumZones=this.getCurrentMeshMatchMinimumZones.bind(this)
+    this.getCurrentMeshMatchMaximumZones=this.getCurrentMeshMatchMaximumZones.bind(this)
     this.getCurrentMeshMatchOriginLocation=this.getCurrentMeshMatchOriginLocation.bind(this)
     this.addOriginLocation=this.addOriginLocation.bind(this)
     this.addMinimumZonesCallback1=this.addMinimumZonesCallback1.bind(this)
     this.addMinimumZonesCallback2=this.addMinimumZonesCallback2.bind(this)
+    this.addMaximumZonesCallback1=this.addMaximumZonesCallback1.bind(this)
+    this.addMaximumZonesCallback2=this.addMaximumZonesCallback2.bind(this)
     this.getMeshMatchMetaFromState=this.getMeshMatchMetaFromState.bind(this)
     this.setLocalStateVar=this.setLocalStateVar.bind(this)
   }
@@ -49,8 +53,14 @@ class MeshMatchControls extends React.Component {
   }
 
   buildGotoSourceLink() {
-    if (this.state.minimum_zones.length > 0) {
-      const mz = this.state.minimum_zones[0]
+    if (this.state.minimum_zones.length > 0
+        || this.state.maximum_zones.length > 0) {
+      let mz = ''
+      if (this.state.minimum_zones.length > 0) {
+        mz = this.state.minimum_zones[0]
+      } else {
+        mz = this.state.maximum_zones[0]
+      }
       if (Object.keys(this.props.movies).includes(mz['movie'])) {
         const the_movie = this.props.movies[mz['movie']]
         const the_frameset = this.props.getFramesetHashForImageUrl(
@@ -95,6 +105,28 @@ class MeshMatchControls extends React.Component {
     this.props.handleSetMode('mesh_match_minimum_zones_1')
   }
 
+  addMaximumZonesCallback1(click_coords) {
+    this.setState({
+      first_click_coords: click_coords,
+    })
+    this.props.handleSetMode('mesh_match_maximum_zones_2')
+  }
+
+  addMaximumZonesCallback2(click_coords) {
+    const zone_id = 'mesh_match_maximum_zone_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
+    const the_zone = {
+        'id': zone_id,
+        'start': this.state.first_click_coords,
+        'end': click_coords,
+        'image': this.props.insights_image,
+        'movie': this.props.movie_url,
+    }
+    let deepCopyMaximumZones = JSON.parse(JSON.stringify(this.state.maximum_zones))
+    deepCopyMaximumZones.push(the_zone)
+    this.setLocalStateVar('maximum_zones', deepCopyMaximumZones)
+    this.props.handleSetMode('mesh_match_maximum_zones_1')
+  }
+
   addOriginLocation(origin_coords) {
     this.setState({
       origin_entity_location: origin_coords
@@ -107,17 +139,24 @@ class MeshMatchControls extends React.Component {
     return this.state.minimum_zones
   }
 
+  getCurrentMeshMatchMaximumZones() {
+    return this.state.maximum_zones
+  }
+
   getCurrentMeshMatchOriginLocation() {
     return this.state.origin_entity_location
   }
 
   componentDidMount() {
-//    this.props.addInsightsCallback('mesh_match_area_coords_1', this.addAreaCoordsCallback)
-//    this.props.addInsightsCallback('mesh_match_minimum_zones_1', this.addMinimumZonesCallback1)
-//    this.props.addInsightsCallback('mesh_match_minimum_zones_2', this.addMinimumZonesCallback2)
-//    this.props.addInsightsCallback('getCurrentMeshMatchMinimumZones', this.getCurrentMeshMatchMinimumZones)
-//    this.props.addInsightsCallback('getCurrentMeshMatchOriginLocation', this.getCurrentMeshMatchOriginLocation)
-//    this.props.addInsightsCallback('add_sa_origin_location_1', this.addOriginLocation)
+    this.props.addInsightsCallback('mesh_match_area_coords_1', this.addAreaCoordsCallback)
+    this.props.addInsightsCallback('mesh_match_minimum_zones_1', this.addMinimumZonesCallback1)
+    this.props.addInsightsCallback('mesh_match_minimum_zones_2', this.addMinimumZonesCallback2)
+    this.props.addInsightsCallback('getCurrentMeshMatchMinimumZones', this.getCurrentMeshMatchMinimumZones)
+    this.props.addInsightsCallback('mesh_match_maximum_zones_1', this.addMaximumZonesCallback1)
+    this.props.addInsightsCallback('mesh_match_maximum_zones_2', this.addMaximumZonesCallback2)
+    this.props.addInsightsCallback('getCurrentMeshMatchMaximumZones', this.getCurrentMeshMatchMaximumZones)
+    this.props.addInsightsCallback('getCurrentMeshMatchOriginLocation', this.getCurrentMeshMatchOriginLocation)
+    this.props.addInsightsCallback('add_sa_origin_location_1', this.addOriginLocation)
     this.loadNewMeshMatchMeta()
   }
 
@@ -156,6 +195,7 @@ class MeshMatchControls extends React.Component {
         origin_entity_location: sam['origin_entity_location'],
         scan_level: sam['scan_level'],
         minimum_zones : sam['minimum_zones'],
+        maximum_zones : sam['maximum_zones'],
         min_score: sam['min_score'],
         mesh_size: sam['mesh_size'],
       })
@@ -181,6 +221,7 @@ class MeshMatchControls extends React.Component {
       origin_entity_location: [],
       scan_level: 'tier_1',
       minimum_zones: [],
+      maximum_zones: [],
       min_score: 500,
       mesh_size: 50,
     })
@@ -196,6 +237,7 @@ class MeshMatchControls extends React.Component {
       origin_entity_location: this.state.origin_entity_location,
       scan_level: this.state.scan_level,
       minimum_zones: this.state.minimum_zones,
+      maximum_zones: this.state.maximum_zones,
       min_score: this.state.min_score,
       mesh_size: this.state.mesh_size,
     }
@@ -409,6 +451,18 @@ class MeshMatchControls extends React.Component {
     )
   }
 
+  startAddMaximumZones() {
+    this.props.handleSetMode('mesh_match_maximum_zones_1')
+    this.props.displayInsightsMessage('specify the upper left corner of the maximum zone')
+  }
+
+  buildAddMaximumZonesButton() {
+    return buildInlinePrimaryButton(
+      'Add Max Zones',
+      (()=>{this.startAddMaximumZones()})
+    )
+  }
+
   buildSaveToDatabaseButton() {
     return buildInlinePrimaryButton(
       'Save to DB',
@@ -421,11 +475,9 @@ class MeshMatchControls extends React.Component {
       return ''
     }
     const tier_1_template_run_options = this.props.buildTier1RunOptions('template', 'mesh_match_t1_template')
-    const tier_1_mesh_match_run_options = this.props.buildTier1RunOptions('mesh_match', 'mesh_match_t1_mesh_match')
-    const tier_1_ocr_run_options = this.props.buildTier1RunOptions('ocr', 'mesh_match_t1_ocr')
+    const tier_1_sa_run_options = this.props.buildTier1RunOptions('selected_area', 'mesh_match_t1_sa')
     const tier_1_osa_run_options = this.props.buildTier1RunOptions('ocr_scene_analysis', 'mesh_match_t1_osa')
-    const tier_1_telemetry_run_options = this.props.buildTier1RunOptions('telemetry', 'mesh_match_t1_telemetry')
-    const movie_set_run_options = this.props.buildMovieSetOptions('mesh_match_movie_set')
+    const tier_1_mesh_match_run_options = this.props.buildTier1RunOptions('mesh_match', 'mesh_match_t1_mm')
 
     return (
       <div className='d-inline'>
@@ -455,12 +507,10 @@ class MeshMatchControls extends React.Component {
           >
             All Movies
           </button>
-          {movie_set_run_options}
           {tier_1_template_run_options}
-          {tier_1_mesh_match_run_options}
-          {tier_1_ocr_run_options}
+          {tier_1_sa_run_options}
           {tier_1_osa_run_options}
-          {tier_1_telemetry_run_options}
+          {tier_1_mesh_match_run_options}
         </div>
       </div>
     )
@@ -495,6 +545,13 @@ class MeshMatchControls extends React.Component {
     )
   }
   
+  buildClearMaximumZonesButton() {
+    return buildInlinePrimaryButton(
+      'Clear Max Zones',
+      (()=>{this.clearMaximumZones()})
+    )
+  }
+  
   startAddOriginLocation() {
     this.props.handleSetMode('add_sa_origin_location_1')
   }
@@ -521,6 +578,11 @@ class MeshMatchControls extends React.Component {
   clearMinimumZones() {
     this.setLocalStateVar('minimum_zones', [])
     this.props.displayInsightsMessage('Minimum zones have been cleared')
+  }
+
+  clearMaximumZones() {
+    this.setLocalStateVar('maximum_zones', [])
+    this.props.displayInsightsMessage('Maximum zones have been cleared')
   }
 
   clearMeshMatchMatches(scope) {
@@ -557,6 +619,8 @@ class MeshMatchControls extends React.Component {
     const origin_entity_id_dropdown = this.buildOriginEntityIdDropdown()
     const add_minimum_zones_button = this.buildAddMinimumZonesButton()
     const clear_minimum_zones_button = this.buildClearMinimumZonesButton()
+    const add_maximum_zones_button = this.buildAddMaximumZonesButton()
+    const clear_maximum_zones_button = this.buildClearMaximumZonesButton()
     const add_origin_location_button = this.buildAddOriginLocationButton()
     const clear_origin_location_button = this.buildClearOriginLocationButton()
     const run_button = this.buildRunButton()
@@ -595,6 +659,8 @@ class MeshMatchControls extends React.Component {
                   {clear_origin_location_button}
                   {add_minimum_zones_button}
                   {clear_minimum_zones_button}
+                  {add_maximum_zones_button}
+                  {clear_maximum_zones_button}
                 </div>
 
                 <div className='row mt-2'>

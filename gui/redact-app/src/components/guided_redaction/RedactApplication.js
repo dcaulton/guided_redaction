@@ -164,7 +164,6 @@ class RedactApplication extends React.Component {
     this.saveWorkbookName=this.saveWorkbookName.bind(this)
     this.loadWorkbook=this.loadWorkbook.bind(this)
     this.deleteWorkbook=this.deleteWorkbook.bind(this)
-    this.setSelectedAreaMetas=this.setSelectedAreaMetas.bind(this)
     this.cropImage=this.cropImage.bind(this)
     this.setMovieNickname=this.setMovieNickname.bind(this)
     this.getCurrentFramesets=this.getCurrentFramesets.bind(this)
@@ -1088,21 +1087,6 @@ class RedactApplication extends React.Component {
       console.error(error);
     })
     await response
-  }
-
-  setSelectedAreaMetas = (the_metas, meta_id_to_make_active='') => {
-    let deepCopyScanners = JSON.parse(JSON.stringify(this.state.tier_1_scanners))
-    deepCopyScanners['selected_area'] = the_metas
-    let deepCopyIds = JSON.parse(JSON.stringify(this.state.tier_1_scanner_current_ids))
-    deepCopyIds['selected_area'] = meta_id_to_make_active
-    if (meta_id_to_make_active) {
-      this.setState({
-        tier_1_scanners: deepCopyScanners,
-        tier_1_scanner_current_ids: deepCopyIds,
-      })
-    } else {
-      this.setGlobalStateVar('tier_1_scanners', deepCopyScanners)
-    }
   }
 
   setImageScale= () => {
@@ -2160,7 +2144,6 @@ class RedactApplication extends React.Component {
                 workbooks={this.state.workbooks}
                 current_workbook_name={this.state.current_workbook_name}
                 current_workbook_id={this.state.current_workbook_id}
-                setSelectedAreaMetas={this.setSelectedAreaMetas}
                 cropImage={this.cropImage}
                 setMovieNickname={this.setMovieNickname}
                 movie_sets={this.state.movie_sets}

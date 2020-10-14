@@ -206,7 +206,6 @@ class BottomInsightsControls extends React.Component {
           toggleShowVisibility={this.props.toggleShowVisibility}
           displayInsightsMessage={this.props.displayInsightsMessage}
           addInsightsCallback={this.props.addInsightsCallback}
-          setSelectedAreaMetas={this.props.setSelectedAreaMetas}
           scanners={this.props.scanners}
           getScanners={this.props.getScanners}
           deleteScanner={this.props.deleteScanner}
@@ -236,7 +235,6 @@ class BottomInsightsControls extends React.Component {
           toggleShowVisibility={this.props.toggleShowVisibility}
           displayInsightsMessage={this.props.displayInsightsMessage}
           addInsightsCallback={this.props.addInsightsCallback}
-          setSelectedAreaMetas={this.props.setSelectedAreaMetas}
           scanners={this.props.scanners}
           getScanners={this.props.getScanners}
           deleteScanner={this.props.deleteScanner}
