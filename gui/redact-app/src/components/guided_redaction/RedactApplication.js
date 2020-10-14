@@ -88,6 +88,7 @@ class RedactApplication extends React.Component {
         'data_sifter': true,
         'hog': true,
         'selectedArea': true,
+        'mesh_match': true,
         'annotate': true,
         'telemetry': true,
         'filesystem': true,
@@ -111,6 +112,7 @@ class RedactApplication extends React.Component {
         'data_sifter': {},
         'telemetry': {},
         'selected_area': {},
+        'mesh_match': {},
       },
       tier_1_scanner_current_ids: {
         'ocr': '',
@@ -120,6 +122,7 @@ class RedactApplication extends React.Component {
         'data_sifter': '',
         'telemetry': '',
         'selected_area': '',
+        'mesh_match': '',
       },
       tier_1_matches: {
         'ocr': {},
@@ -130,6 +133,7 @@ class RedactApplication extends React.Component {
         'data_sifter': {},
         'telemetry': {},
         'selected_area': {},
+        'mesh_match': {},
       },
       workflow_callbacks: {},
       workflows: {
