@@ -25,6 +25,7 @@ class PipelineControls extends React.Component {
         'tier_1_scanners': {
           'template': {},
           'selected_area': {},
+          'mesh_match': {},
           'ocr': {},
           'ocr_scene_analysis': {},
           'telemetry': {},
@@ -85,7 +86,7 @@ class PipelineControls extends React.Component {
     const node = deepCopyNodeMetadata['node'][node_id]
     // TODO can this become a two liner now?
     const good_values = [
-      'template', 'selected_area', 'ocr', 'ocr_scene_analysis', 'telemetry'
+      'template', 'selected_area', 'mesh_match', 'ocr', 'ocr_scene_analysis', 'telemetry'
     ]
     if (good_values.includes(node['type'])) {
       deepCopyNodeMetadata['tier_1_scanners'][node['type']][value] = this.props.tier_1_scanners[node['type']][value]
@@ -624,7 +625,7 @@ class NodeCard extends React.Component {
 
     const node_type = this.props.node_metadata['node'][this.props.node_id]['type']
     const good_types = [
-      'template', 'selected_area', 'ocr', 'telemetry', 'ocr_scene_analysis'
+      'template', 'selected_area', 'mesh_match', 'ocr', 'telemetry', 'ocr_scene_analysis'
     ]
     if (good_types.includes(node_type)) {
       const node_keys =  Object.keys(this.props.tier_1_scanners[node_type])
@@ -668,7 +669,7 @@ class NodeCard extends React.Component {
       return ''
     }
     const id_types = [
-      'template', 'selected_area', 'ocr', 'telemetry', 'ocr_scene_analysis'
+      'template', 'selected_area', 'mesh_match', 'ocr', 'telemetry', 'ocr_scene_analysis'
     ]
     if (!id_types.includes(
       this.props.node_metadata['node'][this.props.node_id]['type']
@@ -805,7 +806,7 @@ class NodeCard extends React.Component {
       return ''
     }
     const id_types = [
-      'template', 'selected_area', 'ocr', 'telemetry', 'ocr_scene_analysis'
+      'template', 'selected_area', 'mesh_match', 'ocr', 'telemetry', 'ocr_scene_analysis'
     ]
     let title = 'Minuends'
     if (ms_type === 'subtrahends') {
@@ -928,6 +929,7 @@ class NodeCard extends React.Component {
             <option value='split_and_hash'>split and hash</option>
             <option value='template'>template</option>
             <option value='selected_area'>selected area</option>
+            <option value='mesh_match'>mesh match</option>
             <option value='ocr'>ocr</option>
             <option value='ocr_scene_analysis'>ocr scene analysis</option>
             <option value='telemetry'>telemetry</option>
@@ -977,7 +979,7 @@ class NodeCard extends React.Component {
     const the_style = {}
     let errors = []
     const t1_id_types = [
-      'template', 'selected_area', 'ocr', 'telemetry', 'ocr_scene_analysis'
+      'template', 'selected_area', 'mesh_match', 'ocr', 'telemetry', 'ocr_scene_analysis'
     ]
     const node = this.props.node_metadata['node'][this.props.node_id]
     if (!node['type']) {

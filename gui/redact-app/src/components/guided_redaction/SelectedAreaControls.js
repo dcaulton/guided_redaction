@@ -125,9 +125,7 @@ class SelectedAreaControls extends React.Component {
   }
 
   addOriginLocation(origin_coords) {
-    this.setState({
-      origin_entity_location: origin_coords
-    })
+    this.setLocalStateVar('origin_entity_location', origin_coords)
     this.props.displayInsightsMessage('selected area origin location was added,')
     this.props.handleSetMode('')
   }

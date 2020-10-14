@@ -128,9 +128,7 @@ class MeshMatchControls extends React.Component {
   }
 
   addOriginLocation(origin_coords) {
-    this.setState({
-      origin_entity_location: origin_coords
-    })
+    this.setLocalStateVar('origin_entity_location', origin_coords)
     this.props.displayInsightsMessage('mesh match origin location was added,')
     this.props.handleSetMode('')
   }
@@ -156,7 +154,7 @@ class MeshMatchControls extends React.Component {
     this.props.addInsightsCallback('mesh_match_maximum_zones_2', this.addMaximumZonesCallback2)
     this.props.addInsightsCallback('getCurrentMeshMatchMaximumZones', this.getCurrentMeshMatchMaximumZones)
     this.props.addInsightsCallback('getCurrentMeshMatchOriginLocation', this.getCurrentMeshMatchOriginLocation)
-    this.props.addInsightsCallback('add_sa_origin_location_1', this.addOriginLocation)
+    this.props.addInsightsCallback('add_mm_origin_location_1', this.addOriginLocation)
     this.loadNewMeshMatchMeta()
   }
 
@@ -553,7 +551,7 @@ class MeshMatchControls extends React.Component {
   }
   
   startAddOriginLocation() {
-    this.props.handleSetMode('add_sa_origin_location_1')
+    this.props.handleSetMode('add_mm_origin_location_1')
   }
 
   buildAddOriginLocationButton() {
