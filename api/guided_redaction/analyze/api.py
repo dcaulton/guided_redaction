@@ -5,6 +5,7 @@ from guided_redaction.analyze.classes.ChartMaker import ChartMaker
 from guided_redaction.analyze.classes.HogScanner import HogScanner
 from guided_redaction.analyze.classes.DataSifterCompiler import DataSifterCompiler
 from .controller_selected_area import SelectedAreaController
+from .controller_mesh_match import MeshMatchController
 from .controller_ocr import OcrController
 from .controller_ocr_scene_analysis import OcrSceneAnalysisController
 from .controller_template import TemplateController
@@ -83,6 +84,24 @@ class AnalyzeViewSetSelectedArea(viewsets.ViewSet):
 
         worker = SelectedAreaController()
         response_movies = worker.build_selected_areas(request_data)
+
+        return Response({"movies": response_movies})
+
+
+class AnalyzeViewSetMeshMatch(viewsets.ViewSet):
+    def create(self, request):
+        request_data = request.data
+        return self.process_create_request(request_data)
+
+    def process_create_request(self, request_data):
+        response_movies = {}
+        if not request_data.get("movies"):
+            return self.error("movies is required")
+        if not request_data.get("mesh_match_meta"):
+            return self.error("mesh_match_meta is required")
+
+        worker = MeshMatchController()
+        response_movies = worker.process_mesh_match(request_data)
 
         return Response({"movies": response_movies})
 

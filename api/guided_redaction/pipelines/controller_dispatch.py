@@ -162,33 +162,10 @@ class DispatchController:
                 next_node_id = content['edges'][node_id][0]
                 node = content['node_metadata']['node'][next_node_id]
 
-        if node['type'] == 'template':
+        t1_scanner_types = ['template', 'selected_area', 'ocr', 'ocr_scene_analysis', 'mesh_match'] 
+        if node['type'] in t1_scanner_types:
             return self.build_tier_1_scanner_job(
-                'template', 
-                content, 
-                node, 
-                parent_job, 
-                previous_job
-            )
-        elif node['type'] == 'selected_area':
-            return self.build_tier_1_scanner_job(
-                'selected_area', 
-                content, 
-                node, 
-                parent_job, 
-                previous_job
-            )
-        elif node['type'] == 'ocr':
-            return self.build_tier_1_scanner_job(
-                'ocr', 
-                content, 
-                node, 
-                parent_job, 
-                previous_job
-            )
-        elif node['type'] == 'ocr_scene_analysis':
-            return self.build_tier_1_scanner_job(
-                'ocr_scene_analysis', 
+                node['type'], 
                 content, 
                 node, 
                 parent_job, 
@@ -505,8 +482,8 @@ class DispatchController:
             operation = 'scan_ocr'
         elif scanner_type == 'ocr_scene_analysis':
             operation = 'ocr_scene_analysis_threaded'
-        elif scanner_type == 'telemetry':
-            operation = 'telemetry_find_matching_frames'
+        elif scanner_type == 'mesh_match':
+            operation = 'mesh_match_threaded'
         request_data = json.dumps(build_request_data)
 
         job = Job(
