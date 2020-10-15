@@ -17,7 +17,8 @@ class OcrSceneAnalysisController(T1Controller):
         pass
 
     def scan_scene(self, request_data):
-        osa = request_data.get("ocr_scene_analysis_meta")
+        osa_id = list(request_data.get("tier_1_scanners")['ocr_scene_analysis'].keys())[0]
+        osa = request_data.get("tier_1_scanners")['ocr_scene_analysis'][osa_id]
         skip_frames = int(osa['skip_frames'])
         movies = request_data.get("movies")
         build_response_data = {'movies': {}}

@@ -1066,6 +1066,11 @@ def build_and_dispatch_ocr_scene_analysis_threaded_children(parent_job):
         del movies['source']
     for osa_id in osas:
         osa = osas[osa_id]
+        build_t1_osa_obj = {
+            'ocr_scene_analysis': {
+                osa_id: osa,
+            },
+        }
         for index, movie_url in enumerate(movies.keys()):
             if movie_url == 'source':
                 continue
@@ -1077,7 +1082,7 @@ def build_and_dispatch_ocr_scene_analysis_threaded_children(parent_job):
                 if i == (num_jobs-1):
                     end_point = len(movie['frames'])
                 build_obj = {
-                    'ocr_scene_analysis_meta': osa,
+                    'tier_1_scanners': build_t1_osa_obj,
                     'movies': {},
                 }
                 build_obj['movies'][movie_url] = {

@@ -233,8 +233,12 @@ class AnalyzeViewSetOcrSceneAnalysis(viewsets.ViewSet):
     def process_create_request(self, request_data):
         if not request_data.get("movies"):
             return self.error("movies is required", status_code=400)
-        if not request_data.get("ocr_scene_analysis_meta"):
-            return self.error("ocr_scene_analysis_meta is required", status_code=400)
+        if not request_data.get("tier_1_scanners"):
+            return self.error("tier_1_scanners is required", status_code=400)
+        t1s = request_data.get("tier_1_scanners")
+        if 'ocr_scene_analysis' not in t1s:
+            return self.error("tier_1_scanners must have an ocr_scene_analysis element", status_code=400)
+
         worker = OcrSceneAnalysisController()
         build_response_data = worker.scan_scene(request_data)
 
