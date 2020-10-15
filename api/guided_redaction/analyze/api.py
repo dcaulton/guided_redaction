@@ -11,7 +11,6 @@ from .controller_ocr_scene_analysis import OcrSceneAnalysisController
 from .controller_template import TemplateController
 from .controller_filter import FilterController
 from .controller_timestamp import TimestampController
-from .controller_entity_finder import EntityFinderController
 import json
 import numpy as np
 from django.conf import settings
@@ -235,23 +234,6 @@ class AnalyzeViewSetOcrSceneAnalysis(viewsets.ViewSet):
             return self.error("ocr_scene_analysis_meta is required", status_code=400)
         worker = OcrSceneAnalysisController()
         build_response_data = worker.scan_scene(request_data)
-
-        return Response(build_response_data)
-
-
-class AnalyzeViewSetEntityFinder(viewsets.ViewSet):
-    def create(self, request):
-        request_data = request.data
-        return self.process_create_request(request_data)
-
-    def process_create_request(self, request_data):
-        if not request_data.get("movies"):
-            return self.error("movies is required", status_code=400)
-        if not request_data.get("entity_finder_meta"):
-            return self.error("entity_finder_meta is required", status_code=400)
-
-        worker = EntityFinderController()
-        build_response_data = worker.find_entities(request_data)
 
         return Response(build_response_data)
 

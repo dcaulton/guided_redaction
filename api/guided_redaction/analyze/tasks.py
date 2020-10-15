@@ -25,7 +25,6 @@ from guided_redaction.analyze.api import (
     AnalyzeViewSetTimestamp,
     AnalyzeViewSetSelectedArea,
     AnalyzeViewSetMeshMatch,
-    AnalyzeViewSetEntityFinder,
     AnalyzeViewSetOcrSceneAnalysis,
     AnalyzeViewSetTrainHog,
     AnalyzeViewSetTestHog,
@@ -57,8 +56,6 @@ def dispatch_parent_job(job):
             mesh_match_threaded.delay(parent_job.id)
         if parent_job.app == 'analyze' and parent_job.operation == 'ocr_scene_analysis_threaded':
             ocr_scene_analysis_threaded.delay(parent_job.id)
-        if parent_job.app == 'analyze' and parent_job.operation == 'entity_finder_threaded':
-            entity_finder_threaded.delay(parent_job.id)
         if parent_job.app == 'analyze' and parent_job.operation == 'hog_train_threaded':
             train_hog_threaded.delay(parent_job.id)
         if parent_job.app == 'analyze' and parent_job.operation == 'oma_first_scan_threaded':
@@ -414,6 +411,9 @@ def scan_template_multi(job_uuid):
           job.status = 'failed'
           job.harvest_failed_child_job_errors(children)
           job.save()
+
+def build_and_dispatch_children_per_scanner_and_movie(parent_job, scanner_type):
+    pass
 
 def build_and_dispatch_scan_template_multi_children(parent_job):
     parent_job.status = 'running'
@@ -1137,103 +1137,6 @@ def wrap_up_ocr_scene_analysis_threaded(job, children):
 
     aggregate_response_data['statistics'] = aggregate_stats
     print('wrap_up_ocr_scene_analysis_threaded: wrapping up parent job')
-    job.status = 'success'
-    job.response_data = json.dumps(aggregate_response_data)
-    job.save()
-
-@shared_task
-def entity_finder(job_uuid):
-    if not Job.objects.filter(pk=job_uuid).exists():
-        print('calling entity_finder on nonexistent job: {}'.format(job_uuid))
-    job = Job.objects.get(pk=job_uuid)
-    job.status = 'running'
-    job.save()
-    print('running entity_finder for job {}'.format(job_uuid))
-    worker = AnalyzeViewSetEntityFinder()
-    rd = json.loads(job.request_data)
-    response = worker.process_create_request(rd)
-    if not Job.objects.filter(pk=job_uuid).exists():
-        return
-    job = Job.objects.get(pk=job_uuid)
-    job.response_data = json.dumps(response.data)
-    job.status = 'success'
-    job.save()
-
-    dispatch_parent_job(job)
-
-@shared_task
-def entity_finder_threaded(job_uuid):
-    if Job.objects.filter(pk=job_uuid).exists():
-        job = Job.objects.get(pk=job_uuid)
-        if job.status in ['success', 'failed']:
-            return
-        children = Job.objects.filter(parent=job)
-        next_step = evaluate_children('ENTITY FINDER THREADED', 'entity_finder', children)
-        print('next step is {}'.format(next_step))
-        if next_step == 'build_child_tasks':
-          build_and_dispatch_entity_finder_threaded_children(job)
-        elif next_step == 'wrap_up':
-          wrap_up_entity_finder_threaded(job, children)
-        elif next_step == 'abort':
-          job.status = 'failed'
-          job.harvest_failed_child_job_errors(children)
-          job.save()
-
-def build_and_dispatch_entity_finder_threaded_children(parent_job):
-    parent_job.status = 'running'
-    parent_job.save()
-    request_data = json.loads(parent_job.request_data)
-    efs = request_data['tier_1_scanners']['entity_finder']
-    movies = request_data['movies']
-    source_movies = {}
-    if 'source' in movies:
-        source_movies = movies['source']
-        del movies['source']
-    for ef_id in efs:
-        entity_finder_meta = efs[ef_id]
-        for index, movie_url in enumerate(movies.keys()):
-            movie = movies[movie_url]
-            build_movies = {}
-            build_movies[movie_url] = movie
-            if source_movies:
-                build_movies['source'] = source_movies
-            build_request_data = json.dumps({
-                'movies': build_movies,
-                'entity_finder_meta': entity_finder_meta,
-            })
-            job = Job(
-                request_data=build_request_data,
-                status='created',
-                description='entity finder for movie {}'.format(movie_url),
-                app='analyze',
-                operation='entity_finder',
-                sequence=0,
-                parent=parent_job,
-            )
-            job.save()
-            the_str = 'build_and_dispatch_entity_finder_threaded_children: dispatching job for movie {}'
-            print(the_str.format(movie_url))
-            entity_finder.delay(job.id)
-
-def wrap_up_entity_finder_threaded(job, children):
-    aggregate_response_data = {
-      'movies': {}
-    }
-    aggregate_stats = {'movies': {}}
-    for child in children:
-        child_response_movies = json.loads(child.response_data)['movies']
-        child_stats = json.loads(child.response_data)['statistics']
-        if len(child_response_movies.keys()) > 0:
-            movie_url = list(child_response_movies.keys())[0]
-            aggregate_response_data['movies'][movie_url] = child_response_movies[movie_url]
-            if movie_url not in aggregate_stats['movies']:
-                aggregate_stats['movies'][movie_url] = {'framesets': {}}
-            for frameset_hash in child_stats['movies'][movie_url]['framesets']:
-                aggregate_stats['movies'][movie_url]['framesets'][frameset_hash] = \
-                    child_stats['movies'][movie_url]['framesets'][frameset_hash]
-
-    aggregate_response_data['statistics'] = aggregate_stats
-    print('wrap_up_entity_finder_threaded: wrapping up parent job')
     job.status = 'success'
     job.response_data = json.dumps(aggregate_response_data)
     job.save()
