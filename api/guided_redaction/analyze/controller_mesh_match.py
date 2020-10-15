@@ -12,7 +12,7 @@ requests.packages.urllib3.disable_warnings()
 class MeshMatchController(T1Controller):
 
     def __init__(self):
-        pass
+        self.debug = True
 
     def process_mesh_match(self, request_data):
         response_movies = {}
@@ -44,22 +44,34 @@ class MeshMatchController(T1Controller):
             if not most_recent_t1_frameset:
                 continue
             image_url = source_movies[movie_url]['framesets'][frameset_hash]['images'][0]
+            if self.debug:
+                image_name = image_url.split('/')[-1]
+                print('meshmmatch trying image {} with mr hash {}'.format(image_name, most_recent_t1_frameset_hash))
             cv2_image = self.get_cv2_image(image_url)
             if most_recent_t1_frameset_hash not in meshes:
                 mr_image_url = source_movies[movie_url]['framesets'][most_recent_t1_frameset_hash]['images'][0]
                 mr_cv2_image = self.get_cv2_image(mr_image_url)
 #                meshes = {}  # this algo only cares about the most recent one anyway
                 meshes[most_recent_t1_frameset_hash] = finder.build_mesh(most_recent_t1_frameset, mr_cv2_image)
+            match_obj = finder.match_mesh(
+                meshes[most_recent_t1_frameset_hash], 
+                most_recent_t1_frameset,
+                cv2_image
+            )
 
 
 
-            print('samuel trying image {} with mr hash {}'.format(image_url.split('/')[-1], most_recent_t1_frameset_hash))
 
 
 
 
 
-            return response_movies
+
+
+
+
+
+#            return response_movies
 
 
 
