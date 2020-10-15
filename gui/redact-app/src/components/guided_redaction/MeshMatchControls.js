@@ -473,9 +473,9 @@ class MeshMatchControls extends React.Component {
       return ''
     }
     const tier_1_template_run_options = this.props.buildTier1RunOptions('template', 'mesh_match_t1_template')
-    const tier_1_sa_run_options = this.props.buildTier1RunOptions('selected_area', 'mesh_match_t1_sa')
+    const tier_1_sa_run_options = this.props.buildTier1RunOptions('selected_area', 'mesh_match_t1_selected_area')
     const tier_1_osa_run_options = this.props.buildTier1RunOptions('ocr_scene_analysis', 'mesh_match_t1_osa')
-    const tier_1_mesh_match_run_options = this.props.buildTier1RunOptions('mesh_match', 'mesh_match_t1_mm')
+    const tier_1_mesh_match_run_options = this.props.buildTier1RunOptions('mesh_match', 'mesh_match_t1_mesh_match')
 
     return (
       <div className='d-inline'>

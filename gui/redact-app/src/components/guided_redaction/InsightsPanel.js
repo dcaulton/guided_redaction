@@ -326,6 +326,7 @@ class InsightsPanel extends React.Component {
       template: 'scan_template_threaded',
       ocr: 'scan_ocr',
       selected_area: 'selected_area_threaded',
+      mesh_match: 'mesh_match_threaded',
       ocr_scene_analysis: 'ocr_scene_analysis_threaded',
     }
     if (!this.props.tier_1_scanner_current_ids[scanner_type]) {
@@ -384,6 +385,13 @@ class InsightsPanel extends React.Component {
       const t1_osa_rule = this.props.tier_1_scanners['ocr_scene_analysis'][osa_id]
       const tier_1_output = this.props.tier_1_matches['ocr_scene_analysis'][osa_id]['movies']
       job_data['description'] += 'on t1 osa results (osa ' + t1_osa_rule['name'] + ')'
+      job_data['request_data']['movies'] = tier_1_output
+      job_data['request_data']['movies']['source'] = this.makeSourceForPassedT1Output(tier_1_output)
+    } else if (scope.match(/_t1_mesh_match$/)) {   
+      const osa_id = extra_data
+      const t1_osa_rule = this.props.tier_1_scanners['mesh_match'][osa_id]
+      const tier_1_output = this.props.tier_1_matches['mesh_match'][osa_id]['movies']
+      job_data['description'] += 'on t1 mesh_match results (mm ' + t1_osa_rule['name'] + ')'
       job_data['request_data']['movies'] = tier_1_output
       job_data['request_data']['movies']['source'] = this.makeSourceForPassedT1Output(tier_1_output)
     } else if (scope.match(/_t1_telemetry$/)) {   
@@ -671,6 +679,20 @@ class InsightsPanel extends React.Component {
         job_string === 'selected_area_movie_set'
     ) {
       let job_data = this.buildTier1JobData('selected_area', job_string, extra_data)
+      this.props.submitJob({
+        job_data: job_data,
+      })
+    } else if (
+        job_string === 'mesh_match_t1_template' || 
+        job_string === 'mesh_match_t1_ocr' || 
+        job_string === 'mesh_match_t1_osa' || 
+        job_string === 'mesh_match_current_frame' || 
+        job_string === 'mesh_match_current_movie' || 
+        job_string === 'mesh_match_all_movies' || 
+        job_string === 'mesh_match_t1_selected_area' || 
+        job_string === 'mesh_match_t1_mesh_match'
+    ) {
+      let job_data = this.buildTier1JobData('mesh_match', job_string, extra_data)
       this.props.submitJob({
         job_data: job_data,
       })
