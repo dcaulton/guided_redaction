@@ -101,7 +101,6 @@ class RedactApplication extends React.Component {
         'redact': true,
         'zip': true,
         'pipelines': true,
-        'entity_finder': true,
         'redaction_borders': true,
       },
       tier_1_scanners: {
