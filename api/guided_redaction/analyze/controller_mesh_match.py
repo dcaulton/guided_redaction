@@ -1,11 +1,10 @@
-import json
-import math
 import cv2
 from django.conf import settings
 import numpy as np
 import requests
 from .controller_t1 import T1Controller
 
+from guided_redaction.analyze.classes.MeshMatchFinder import MeshMatchFinder
 
 requests.packages.urllib3.disable_warnings()
 
@@ -17,13 +16,6 @@ class MeshMatchController(T1Controller):
 
     def process_mesh_match(self, request_data):
         response_movies = {}
-
-
-
-
-
-
-
         source_movies = {}
         movies = request_data.get('movies')
         if 'source' in movies:
@@ -33,28 +25,41 @@ class MeshMatchController(T1Controller):
         movie = movies[movie_url]
         source_movie = source_movies[movie_url]
 
-
         mesh_match_id = list(request_data["tier_1_scanners"]['mesh_match'].keys())[0]
         mesh_match_meta = request_data["tier_1_scanners"]['mesh_match'][mesh_match_id]
-#        finder = ExtentsFinder()
+
+        finder = MeshMatchFinder(mesh_match_meta)
+
         response_movies[movie_url] = {}
         response_movies[movie_url]['framesets'] = {}
         most_recent_t1_frameset = {}
+        most_recent_t1_frameset_hash = ''
         ordered_hashes = self.get_frameset_hashes_in_order(source_movie['frames'], source_movie['framesets'])
+        meshes = {}  
         for frameset_hash in ordered_hashes:
             if frameset_hash in movie['framesets']:
                 most_recent_t1_frameset = movie['framesets'][frameset_hash]
+                most_recent_t1_frameset_hash = frameset_hash
                 continue
+            if not most_recent_t1_frameset:
+                continue
+            image_url = source_movies[movie_url]['framesets'][frameset_hash]['images'][0]
+            cv2_image = self.get_cv2_image(image_url)
+            if most_recent_t1_frameset_hash not in meshes:
+                mr_image_url = source_movies[movie_url]['framesets'][most_recent_t1_frameset_hash]['images'][0]
+                mr_cv2_image = self.get_cv2_image(mr_image_url)
+#                meshes = {}  # this algo only cares about the most recent one anyway
+                meshes[most_recent_t1_frameset_hash] = finder.build_mesh(most_recent_t1_frameset, mr_cv2_image)
 
-            cv2_image = self.get_cv2_image(
-                source_movies[movie_url]['framesets'][frameset_hash]['images'][0]
-            ) 
-            print('samuel {}'.format(mesh_match_meta))
+
+
+            print('samuel trying image {} with mr hash {}'.format(image_url.split('/')[-1], most_recent_t1_frameset_hash))
 
 
 
 
 
+            return response_movies
 
 
 
