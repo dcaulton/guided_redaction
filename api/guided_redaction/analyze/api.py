@@ -78,8 +78,11 @@ class AnalyzeViewSetSelectedArea(viewsets.ViewSet):
         response_movies = {}
         if not request_data.get("movies"):
             return self.error("movies is required")
-        if not request_data.get("selected_area_meta"):
-            return self.error("selected_area_meta is required")
+        if not request_data.get("tier_1_scanners"):
+            return self.error("tier_1_scanners is required")
+        t1s = request_data.get("tier_1_scanners")
+        if 'selected_area' not in t1s:
+            return self.error("tier_1_scanners needs to have a selected_area child")
 
         worker = SelectedAreaController()
         response_movies = worker.build_selected_areas(request_data)

@@ -25,7 +25,9 @@ class SelectedAreaController:
         movie_url = list(movies.keys())[0]
         movie = movies[movie_url]
 
-        selected_area_meta = request_data["selected_area_meta"]
+        sam_id = list(request_data['tier_1_scanners']['selected_area'].keys())[0]
+        selected_area_meta = request_data['tier_1_scanners']['selected_area'][sam_id]
+
         finder = ExtentsFinder()
         response_movies[movie_url] = {}
         response_movies[movie_url]['framesets'] = {}

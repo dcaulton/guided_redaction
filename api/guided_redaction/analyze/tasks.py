@@ -412,9 +412,6 @@ def scan_template_multi(job_uuid):
           job.harvest_failed_child_job_errors(children)
           job.save()
 
-def build_and_dispatch_children_per_scanner_and_movie(parent_job, scanner_type):
-    pass
-
 def build_and_dispatch_scan_template_multi_children(parent_job):
     parent_job.status = 'running'
     parent_job.save()
@@ -433,7 +430,6 @@ def build_and_dispatch_scan_template_multi_children(parent_job):
                 'tier_1_scanners': {
                     'templates': build_templates,
                 },
-                'template_id': template_id,
                 'movies': build_movies,
             })
             job = Job(
@@ -522,7 +518,6 @@ def build_and_dispatch_scan_template_threaded_children(parent_job):
             'tier_1_scanners': {
                 'template': build_templates,
             },
-            'template_id': template_id,
             'movies': build_movies,
         })
         job = Job(
@@ -911,11 +906,14 @@ def build_and_dispatch_selected_area_threaded_children(parent_job):
             movie = movies[movie_url]
             build_movies = {}
             build_movies[movie_url] = movie
+            build_sas = {selected_area_meta_id: selected_area_meta}
             if source_movies:
                 build_movies['source'] = source_movies
             build_request_data = json.dumps({
+                'tier_1_scanners': {
+                    'selected_area': build_sas,
+                },
                 'movies': build_movies,
-                'selected_area_meta': selected_area_meta,
             })
             job = Job(
                 request_data=build_request_data,
@@ -945,10 +943,6 @@ def wrap_up_selected_area_threaded(job, children):
     job.status = 'success'
     job.response_data = json.dumps(aggregate_response_data)
     job.save()
-
-
-
-
 
 def generic_chart(job_uuid, chart_type):
     if not Job.objects.filter(pk=job_uuid).exists():
