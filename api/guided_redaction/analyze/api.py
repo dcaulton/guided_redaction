@@ -33,8 +33,11 @@ class AnalyzeViewSetOcr(viewsets.ViewSet):
     def process_create_request(self, request_data):
         if not request_data.get("image_url"):
             return self.error("image_url is required", status_code=400)
-        if not request_data.get("ocr_rule"):
-            return self.error("ocr_rule is required", status_code=400)
+        if not request_data.get("tier_1_scanners"):
+            return self.error("tier_1_scanners is required", status_code=400)
+        t1s = request_data.get("tier_1_scanners")
+        if 'ocr' not in t1s:
+            return self.error("tier_1_scanners must have an ocr child", status_code=400)
         pic_response = requests.get(
           request_data["image_url"],
           verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
@@ -99,8 +102,11 @@ class AnalyzeViewSetMeshMatch(viewsets.ViewSet):
         response_movies = {}
         if not request_data.get("movies"):
             return self.error("movies is required")
-        if not request_data.get("mesh_match_meta"):
-            return self.error("mesh_match_meta is required")
+        if not request_data.get("tier_1_scanners"):
+            return self.error("tier_1_scanners is required")
+        t1s = request_data.get("tier_1_scanners")
+        if 'mesh_match' not in t1s:
+            return self.error("tier_1_scanners needs to have a mesh_match child")
 
         worker = MeshMatchController()
         response_movies = worker.process_mesh_match(request_data)

@@ -23,7 +23,8 @@ class OcrController(T1Controller):
           verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
         )
         image = pic_response.content
-        ocr_rule = request_data['ocr_rule']
+        ocr_rule_id = list(request_data['tier_1_scanners']['ocr'].keys())[0]
+        ocr_rule = request_data['tier_1_scanners']['ocr'][ocr_rule_id]
 
         analyzer = EastPlusTessGuidedAnalyzer()
         nparr = np.fromstring(image, np.uint8)

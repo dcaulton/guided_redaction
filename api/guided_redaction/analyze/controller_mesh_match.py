@@ -34,7 +34,8 @@ class MeshMatchController(T1Controller):
         source_movie = source_movies[movie_url]
 
 
-        mesh_match_meta = request_data["mesh_match_meta"]
+        mesh_match_id = list(request_data["tier_1_scanners"]['mesh_match'].keys())[0]
+        mesh_match_meta = request_data["tier_1_scanners"]['mesh_match'][mesh_match_id]
 #        finder = ExtentsFinder()
         response_movies[movie_url] = {}
         response_movies[movie_url]['framesets'] = {}

@@ -628,8 +628,6 @@ def build_and_dispatch_scan_ocr_movie_children(parent_job):
     parent_job.status = 'running'
     parent_job.save()
     request_data = json.loads(parent_job.request_data)
-    ocr_rule_id = list(request_data['tier_1_scanners']['ocr'].keys())[0]
-    ocr_rule = request_data['tier_1_scanners']['ocr'][ocr_rule_id]
     movies = request_data['movies']
     source_movies = {}
     if 'source' in movies:
@@ -647,7 +645,9 @@ def build_and_dispatch_scan_ocr_movie_children(parent_job):
                 'movie_url': movie_url,
                 'image_url': first_image_url,
                 'frameset_hash': frameset_hash,
-                'ocr_rule': ocr_rule,
+                'tier_1_scanners': {
+                    'ocr': request_data['tier_1_scanners']['ocr'],
+                },
                 'tier_1_data': frameset,
             })
             job = Job(
@@ -814,7 +814,7 @@ def build_and_dispatch_mesh_match_threaded_children(parent_job):
         return
 
     for mm_meta_id in mm_metas:
-        mm_meta = mm_metas[mm_meta_id]
+        build_mm_meta = {mm_meta_id: mm_metas[mm_meta_id]}
         for index, movie_url in enumerate(movies.keys()):
             movie = movies[movie_url]
             build_movies = {}
@@ -823,7 +823,9 @@ def build_and_dispatch_mesh_match_threaded_children(parent_job):
                 build_movies['source'] = source_movies
             build_request_data = json.dumps({
                 'movies': build_movies,
-                'mesh_match_meta': mm_meta,
+                'tier_1_scanners': {
+                    'mesh_match': build_mm_meta,
+                }
             })
             job = Job(
                 request_data=build_request_data,
