@@ -58,6 +58,8 @@ class MeshMatchController(T1Controller):
                 most_recent_t1_frameset,
                 cv2_image
             )
+            if match_obj:
+                response_movies[movie_url]['framesets'][frameset_hash] = match_obj
 
 
 

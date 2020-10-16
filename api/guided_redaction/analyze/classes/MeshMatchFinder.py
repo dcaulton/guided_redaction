@@ -1,4 +1,5 @@
 import cv2
+import random
 import math
 import imutils
 import numpy as np
@@ -8,12 +9,73 @@ class MeshMatchFinder:
 
     def __init__(self, mesh_match_meta):
         self.mesh_match_meta = mesh_match_meta
-        self.debug = True
+        self.debug = False
+        self.template_match_threshold = .9
+        self.match_origin_xy_tolerance = 5
 
     def match_mesh(self, mesh, most_recent_t1_frameset, cv2_image):
         match_obj = {}
 
-        self.build_cells_by_popularity()
+        same_loc_match = self.try_to_match_mesh_at_t1_location(mesh, most_recent_t1_frameset, cv2_image)
+        if same_loc_match:
+            return same_loc_match
+
+        ranked_cells = self.build_cells_by_popularity(mesh)
+        num_matches = 0
+        match_score = 0
+        projected_origin = []
+        for cell in ranked_cells:
+            if self.debug:
+                print('looking at cell {}'.format(cell))
+            ma = cell['mesh_address']
+            mesh_element = mesh[ma[0]][ma[1]]
+            gray_template_image = cv2.cvtColor(mesh_element['image'], cv2.COLOR_BGR2GRAY)
+            gray_target_image = cv2.cvtColor(cv2_image, cv2.COLOR_BGR2GRAY)
+            res = cv2.matchTemplate(gray_target_image, gray_template_image, cv2.TM_CCOEFF_NORMED)
+            _, max_val, _, max_loc = cv2.minMaxLoc(res)
+            if max_val >= self.template_match_threshold:
+                cell_proj_origin = self.compute_projected_origin(max_loc, cell['mesh_address'])
+                if not projected_origin:
+                    projected_origin = cell_proj_origin
+#                make sure proj origin lines up with that of the others, otherwise bail
+                if abs(cell_proj_origin[0] - projected_origin[0]) > self.match_origin_xy_tolerance \
+                    or abs(cell_proj_origin[1] - projected_origin[1]) > self.match_origin_xy_tolerance:
+#                    print('  matched, but too far apart {} {} '.format(cell_proj_origin, projected_origin))
+                    continue
+                if self.debug:
+                    print('  MESH CELL MATCHED: val/loc {} {}'.format(max_val, max_loc))
+                num_matches += 1
+                match_score += int(cell['interesting_score'])
+            else:
+                continue
+        if match_score > int(self.mesh_match_meta['min_score']):
+#            tst = '=============== MESH MATCHED {} TIMES FOR {} POINTS AT {} ================================'
+#            print(tst.format(num_matches, match_score, projected_origin))
+            match_element = self.get_desired_frameset_element(most_recent_t1_frameset)
+            size = (0, 0)
+            scale = 1
+            if 'size' in match_element:
+                size = (
+                    int(match_element['size'][0]),
+                    int(match_element['size'][1])
+                )
+            if 'scale' in match_element:
+                scale = int(match_element['scale'])
+            match_obj = {
+                'id': 'mesh_match_' + str(random.randint(0, 99999)),
+                'location': projected_origin,
+                'size': size,
+                'scanner_type': 'mesh_match',
+                'scale': scale,
+            }
+            if self.debug:
+                print('mesh match results {}'.format(match_obj))
+
+        else:
+            if self.debug:
+                print('no match found')
+
+
 # try to match against whats in cv2_image, but at most_recent_t1_frameset's location
 # if match_found:
 #    build a match object and return it
@@ -34,9 +96,26 @@ class MeshMatchFinder:
 
         return match_obj
 
-    def build_cells_by_popularity(self):
+    def compute_projected_origin(self, match_location, mesh_grid_coords):
+        mesh_size = int(self.mesh_match_meta['mesh_size'])
+        mesh_pixel_offset = [
+            int(mesh_grid_coords[1] * mesh_size * 2),
+            int(mesh_grid_coords[0] * mesh_size * 2)
+        ]
+        proj_origin = (
+            int(match_location[0]) - mesh_pixel_offset[0],
+            int(match_location[1]) - mesh_pixel_offset[1]
+        )
+#        print('-------proj origin for mesh {} {} is {}'.format(match_location, mesh_grid_coords, proj_origin))
+        return proj_origin
+
+    def try_to_match_mesh_at_t1_location(self, mesh, most_recent_t1_frameset, cv2_image):
+        # TODO flesh this out
+        return False
+
+    def build_cells_by_popularity(self, mesh):
         to_rank = []
-        for row_pos, mesh_row in enumerate(self.mesh):
+        for row_pos, mesh_row in enumerate(mesh):
             for col_pos, mesh_cell in enumerate(mesh_row):
                 build_obj = {
                     'interesting_score': mesh_cell['interesting_score'],
@@ -51,15 +130,17 @@ class MeshMatchFinder:
             ),
             reverse=True
         )
-        if self.debug:
-            for tt in sorted_to_rank:
-                print('---int score-{} {}'.format(tt['interesting_score'], tt['mesh_address']))
+#        if self.debug:
+#            for tt in sorted_to_rank:
+#                print('---popularity: int score-{} {}'.format(tt['interesting_score'], tt['mesh_address']))
+
+        return sorted_to_rank
 
     def build_mesh(self, most_recent_t1_frameset, most_recent_cv2_image):
-        print('building a mesh for {}'.format(most_recent_t1_frameset))
-        print('meta is {}'.format(self.mesh_match_meta))
+#        print('building a mesh for {}'.format(most_recent_t1_frameset))
+#        print('meta is {}'.format(self.mesh_match_meta))
         match_element = self.get_desired_frameset_element(most_recent_t1_frameset)
-        self.mesh = []
+        mesh = []
         if 'size' in match_element:
             t1_size = match_element['size']
             self.debug_mask_image = np.zeros((t1_size[1], t1_size[0], 3), dtype='uint8')
@@ -81,9 +162,10 @@ class MeshMatchFinder:
                         row_num, col_num, match_element, most_recent_cv2_image
                     )
                     build_mesh_row.append(mesh_obj)
-                self.mesh.append(build_mesh_row)
+                mesh.append(build_mesh_row)
         if self.debug:
             cv2.imwrite('/Users/dcaulton/Desktop/debug_mask_image.png', self.debug_mask_image)
+        return mesh
 
     def build_one_mesh_obj(self, row_num, col_num, match_element, most_recent_cv2_image):
         t1_start_point = [
