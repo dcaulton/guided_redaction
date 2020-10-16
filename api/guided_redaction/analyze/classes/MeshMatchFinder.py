@@ -13,6 +13,7 @@ class MeshMatchFinder:
     def match_mesh(self, mesh, most_recent_t1_frameset, cv2_image):
         match_obj = {}
 
+        self.build_cells_by_popularity()
 # try to match against whats in cv2_image, but at most_recent_t1_frameset's location
 # if match_found:
 #    build a match object and return it
@@ -32,6 +33,27 @@ class MeshMatchFinder:
 #             #        from cells_by_popularity, then recurse and do this same call
 
         return match_obj
+
+    def build_cells_by_popularity(self):
+        to_rank = []
+        for row_pos, mesh_row in enumerate(self.mesh):
+            for col_pos, mesh_cell in enumerate(mesh_row):
+                build_obj = {
+                    'interesting_score': mesh_cell['interesting_score'],
+                    'mesh_address': (row_pos, col_pos),
+                }
+                to_rank.append(build_obj)
+
+        sorted_to_rank = sorted(
+            to_rank,
+            key=lambda to_rank_obj: (
+                to_rank_obj['interesting_score']
+            ),
+            reverse=True
+        )
+        if self.debug:
+            for tt in sorted_to_rank:
+                print('---int score-{} {}'.format(tt['interesting_score'], tt['mesh_address']))
 
     def build_mesh(self, most_recent_t1_frameset, most_recent_cv2_image):
         print('building a mesh for {}'.format(most_recent_t1_frameset))
