@@ -28,7 +28,7 @@ class MeshMatchControls extends React.Component {
       scan_level: 'tier_1',
       maximum_zones: [],
       minimum_zones: [],
-      min_score: 500,
+      min_score: 15,
       mesh_size: 50,
       attribute_search_name: '',
       attribute_search_value: '',
@@ -220,7 +220,7 @@ class MeshMatchControls extends React.Component {
       scan_level: 'tier_1',
       minimum_zones: [],
       maximum_zones: [],
-      min_score: 500,
+      min_score: 15,
       mesh_size: 50,
     })
   }

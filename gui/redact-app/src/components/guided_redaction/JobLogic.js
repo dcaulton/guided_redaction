@@ -464,6 +464,20 @@ class JobLogic extends React.Component {
     )
   } 
 
+  static loadMeshMatchResults(
+    job, 
+    when_done, 
+    setGlobalStateVar, 
+    getGlobalStateVar
+  ) {
+    this.loadScannersMoviesAndMatchesFromTier1(
+      job, 
+      'mesh_match',
+      setGlobalStateVar, 
+      getGlobalStateVar
+    )
+  }
+
   static loadSelectedAreaResults(
     job, 
     when_done, 
@@ -472,7 +486,7 @@ class JobLogic extends React.Component {
   ) {
     let resp_obj = this.loadScannersMoviesAndMatchesFromTier1(
       job, 
-      'selected_area', 
+      'selected_area',
       setGlobalStateVar, 
       getGlobalStateVar
     )
@@ -886,6 +900,13 @@ class JobLogic extends React.Component {
         )
 			} else if (job.app === 'analyze' && job.operation === 'selected_area_threaded') {
         this.loadSelectedAreaResults(
+          job, 
+          when_done, 
+          setGlobalStateVar, 
+          getGlobalStateVar
+        )
+			} else if (job.app === 'analyze' && job.operation === 'mesh_match_threaded') {
+        this.loadMeshMatchResults(
           job, 
           when_done, 
           setGlobalStateVar, 

@@ -15,6 +15,7 @@ class CanvasInsightsOverlay extends React.Component {
     this.crosshairs_color = '#F33'
     this.template_match_color = '#3F3'
     this.selected_area_color = '#2B9'
+    this.mesh_match_color = '#C93'
     this.selected_area_center_color = '#9F3'
     this.ocr_origin_location_color = '#51B'
     this.ocr_color = '#CC0'
@@ -354,6 +355,10 @@ class CanvasInsightsOverlay extends React.Component {
     this.drawTier1Matches('selected_area', this.selected_area_color, this.red_color) 
   }
 
+  drawMeshMatches() {
+    this.drawTier1Matches('mesh_match', this.mesh_match_color, this.red_color) 
+  }
+
   drawOcrMatches() {
     this.drawTier1Matches('ocr', this.ocr_color, this.red_color) 
   }
@@ -398,6 +403,7 @@ class CanvasInsightsOverlay extends React.Component {
   componentDidMount() {
     this.clearCanvasItems()
     this.drawSelectedAreas()
+    this.drawMeshMatches()
     this.drawCrosshairs('add_stuff', this.props.clicked_coords)
     this.drawSelectedAreaCenters()
     this.drawSelectedAreaMinimumZones()
@@ -420,6 +426,7 @@ class CanvasInsightsOverlay extends React.Component {
   componentDidUpdate() {
     this.clearCanvasItems()
     this.drawSelectedAreas()
+    this.drawMeshMatches()
     this.drawCrosshairs('add_stuff', this.props.clicked_coords)
     this.drawSelectedAreaCenters()
     this.drawSelectedAreaMinimumZones()
