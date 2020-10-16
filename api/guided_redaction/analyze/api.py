@@ -109,9 +109,12 @@ class AnalyzeViewSetMeshMatch(viewsets.ViewSet):
             return self.error("tier_1_scanners needs to have a mesh_match child")
 
         worker = MeshMatchController()
-        response_movies = worker.process_mesh_match(request_data)
+        response_movies, response_statistics = worker.process_mesh_match(request_data)
 
-        return Response({"movies": response_movies})
+        return Response({
+            "movies": response_movies,
+            "statistics": response_statistics,
+        })
 
 
 class AnalyzeViewSetFilter(viewsets.ViewSet):

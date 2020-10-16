@@ -36,6 +36,8 @@ class MeshMatchController(T1Controller):
         most_recent_t1_frameset_hash = ''
         ordered_hashes = self.get_frameset_hashes_in_order(source_movie['frames'], source_movie['framesets'])
         meshes = {}  
+        mesh_statistics = {'movies': {}}
+        mesh_statistics['movies'][movie_url] = {'framesets': {}}
         for frameset_hash in ordered_hashes:
             if frameset_hash in movie['framesets']:
                 most_recent_t1_frameset = movie['framesets'][frameset_hash]
@@ -51,9 +53,9 @@ class MeshMatchController(T1Controller):
             if most_recent_t1_frameset_hash not in meshes:
                 mr_image_url = source_movies[movie_url]['framesets'][most_recent_t1_frameset_hash]['images'][0]
                 mr_cv2_image = self.get_cv2_image(mr_image_url)
-#                meshes = {}  # this algo only cares about the most recent one anyway
+                meshes = {}  # this algo only cares about the most recent one anyway
                 meshes[most_recent_t1_frameset_hash] = finder.build_mesh(most_recent_t1_frameset, mr_cv2_image)
-            match_obj = finder.match_mesh(
+            match_obj, match_stats = finder.match_mesh(
                 meshes[most_recent_t1_frameset_hash], 
                 most_recent_t1_frameset,
                 cv2_image
@@ -61,44 +63,8 @@ class MeshMatchController(T1Controller):
             if match_obj:
                 response_movies[movie_url]['framesets'][frameset_hash] = {}
                 response_movies[movie_url]['framesets'][frameset_hash][match_obj['id']] = match_obj
-
-
-
-
-
-
-
-
-
-
-
-
-
-#            return response_movies
-
-
-
-
-#            regions_for_image = self.build_sa_regions(frameset, cv2_image, selected_area_meta, finder)
-#            regions_as_hashes = {}
-#            for region in regions_for_image:
-#                size = [
-#                    region['regions'][1][0] - region['regions'][0][0], 
-#                    region['regions'][1][1] - region['regions'][0][1]
-#                ]
-#                region_hash = {
-#                    'location': region['regions'][0],
-#                    'origin': region['origin'],
-#                    'scale': 1,
-#                    'size': size,
-#                    "scanner_type": "selected_area",
-#                }
-#                regions_as_hashes[region['sam_area_id']] = region_hash
-#            # TODO: GET TEMPLATE ANCHOR OFFSET HERE IF NEEDED
-#            #   it prolly makes sense to return it from process_t1_results
-#            if regions_as_hashes:
-#                response_movies[movie_url]['framesets'][frameset_hash] = regions_as_hashes
-        return response_movies
+            mesh_statistics['movies'][movie_url]['framesets'][frameset_hash] = match_stats
+        return response_movies, mesh_statistics
 
     def get_cv2_image(self, image_url):
         cv2_image = None

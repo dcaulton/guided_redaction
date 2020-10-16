@@ -13,12 +13,26 @@ class MeshMatchFinder:
         self.template_match_threshold = .9
         self.match_origin_xy_tolerance = 5
 
+    def save_cell_stats(self, match_stats, max_val, max_loc, mesh_address, interesting_score):
+        if max_val >= self.template_match_threshold:
+            above_threshold = 'yes'
+        else:
+            above_threshold = 'no'
+        cell_stats_obj = {
+            'template_match_score': max_val,
+            'template_match_loc': max_loc,
+            'mesh_address': mesh_address,
+            'above_threshold': above_threshold,
+            'interesting_score': interesting_score,
+        }
+        cell_stats_key = str(mesh_address[0]) + '-' + str(mesh_address[1])
+        match_stats['cell_stats'][cell_stats_key] = cell_stats_obj
+
     def match_mesh(self, mesh, most_recent_t1_frameset, cv2_image):
         match_obj = {}
-
-        same_loc_match = self.try_to_match_mesh_at_t1_location(mesh, most_recent_t1_frameset, cv2_image)
-        if same_loc_match:
-            return same_loc_match
+        match_stats = {
+            'cell_stats': {},
+        }
 
         ranked_cells = self.build_cells_by_popularity(mesh)
         num_matches = 0
@@ -33,24 +47,28 @@ class MeshMatchFinder:
             gray_target_image = cv2.cvtColor(cv2_image, cv2.COLOR_BGR2GRAY)
             res = cv2.matchTemplate(gray_target_image, gray_template_image, cv2.TM_CCOEFF_NORMED)
             _, max_val, _, max_loc = cv2.minMaxLoc(res)
+            self.save_cell_stats(match_stats, max_val, max_loc, ma, cell['interesting_score'])
             if max_val >= self.template_match_threshold:
                 cell_proj_origin = self.compute_projected_origin(max_loc, cell['mesh_address'])
                 if not projected_origin:
                     projected_origin = cell_proj_origin
-#                make sure proj origin lines up with that of the others, otherwise bail
                 if abs(cell_proj_origin[0] - projected_origin[0]) > self.match_origin_xy_tolerance \
                     or abs(cell_proj_origin[1] - projected_origin[1]) > self.match_origin_xy_tolerance:
-#                    print('  matched, but too far apart {} {} '.format(cell_proj_origin, projected_origin))
+                    if self.debug:
+                        print('matched, but too far apart {} {} '.format(cell_proj_origin, projected_origin))
                     continue
                 if self.debug:
-                    print('  MESH CELL MATCHED: val/loc {} {}'.format(max_val, max_loc))
+                    print('MESH CELL MATCHED: val/loc {} {}'.format(max_val, max_loc))
                 num_matches += 1
                 match_score += int(cell['interesting_score'])
             else:
                 continue
+
+        match_stats['match_score'] = match_score
         if match_score > int(self.mesh_match_meta['min_score']):
-#            tst = '=============== MESH MATCHED {} TIMES FOR {} POINTS AT {} ================================'
-#            print(tst.format(num_matches, match_score, projected_origin))
+            if self.debug:
+                tst = 'MESH MATCHED {} TIMES FOR {} POINTS AT {}'
+                print(tst.format(num_matches, match_score, projected_origin))
             match_element = self.get_desired_frameset_element(most_recent_t1_frameset)
             size = (0, 0)
             scale = 1
@@ -70,31 +88,11 @@ class MeshMatchFinder:
             }
             if self.debug:
                 print('mesh match results {}'.format(match_obj))
-
         else:
             if self.debug:
                 print('no match found')
 
-
-# try to match against whats in cv2_image, but at most_recent_t1_frameset's location
-# if match_found:
-#    build a match object and return it
-#
-# percent_that_needs_to_match = 25%
-# 
-# build a list of all mesh cells, ranked by interestingness, descending
-# for mesh_cell in cells_by_popularity: 
-#     mesh_cell_position = (get the position somehow)
-#     potential_cell_matches = find_matches(mesh_cell, cv2_image)
-#     for pc_match in potential_cell_matches:
-#         anchor_percent = pc_match['percent']
-#         score_for_rest = self.match_around_pivot(pc_match, mesh_cell_position, mesh, cv2_image)
-#         if anchor_percent + score_for_rest >= percent_that_needs_to_match:
-#             build a match object and return it
-#             # TODO.  if we want to have multiple submatches, then remove the mesh cells that match here
-#             #        from cells_by_popularity, then recurse and do this same call
-
-        return match_obj
+        return match_obj, match_stats
 
     def compute_projected_origin(self, match_location, mesh_grid_coords):
         mesh_size = int(self.mesh_match_meta['mesh_size'])
@@ -106,12 +104,7 @@ class MeshMatchFinder:
             int(match_location[0]) - mesh_pixel_offset[0],
             int(match_location[1]) - mesh_pixel_offset[1]
         )
-#        print('-------proj origin for mesh {} {} is {}'.format(match_location, mesh_grid_coords, proj_origin))
         return proj_origin
-
-    def try_to_match_mesh_at_t1_location(self, mesh, most_recent_t1_frameset, cv2_image):
-        # TODO flesh this out
-        return False
 
     def build_cells_by_popularity(self, mesh):
         to_rank = []
@@ -130,15 +123,16 @@ class MeshMatchFinder:
             ),
             reverse=True
         )
-#        if self.debug:
-#            for tt in sorted_to_rank:
-#                print('---popularity: int score-{} {}'.format(tt['interesting_score'], tt['mesh_address']))
+        if self.debug:
+            for tt in sorted_to_rank:
+                print('---popularity: int score-{} {}'.format(tt['interesting_score'], tt['mesh_address']))
 
         return sorted_to_rank
 
     def build_mesh(self, most_recent_t1_frameset, most_recent_cv2_image):
-#        print('building a mesh for {}'.format(most_recent_t1_frameset))
-#        print('meta is {}'.format(self.mesh_match_meta))
+        if self.debug:
+            print('building a mesh for {}'.format(most_recent_t1_frameset))
+            print('meta is {}'.format(self.mesh_match_meta))
         match_element = self.get_desired_frameset_element(most_recent_t1_frameset)
         mesh = []
         if 'size' in match_element:
@@ -163,8 +157,10 @@ class MeshMatchFinder:
                     )
                     build_mesh_row.append(mesh_obj)
                 mesh.append(build_mesh_row)
+
         if self.debug:
             cv2.imwrite('/Users/dcaulton/Desktop/debug_mask_image.png', self.debug_mask_image)
+
         return mesh
 
     def build_one_mesh_obj(self, row_num, col_num, match_element, most_recent_cv2_image):
@@ -214,7 +210,6 @@ class MeshMatchFinder:
 
     def get_interesting_score(self, cell_swatch, row_num, col_num):
         copy = cv2.cvtColor(cell_swatch.copy(), cv2.COLOR_BGR2GRAY)
-#        (T, copy) = cv2.threshold(copy, 200, 255, cv2.THRESH_BINARY_INV)
         (T, copy) = cv2.threshold(copy, 200, 255, cv2.THRESH_BINARY)
         cnts = cv2.findContours(
             copy,
@@ -222,8 +217,5 @@ class MeshMatchFinder:
             cv2.CHAIN_APPROX_SIMPLE
         )
         cnts = imutils.grab_contours(cnts)
-#        fn = '/Users/dcaulton/Desktop/{}-{}--{}--dumb.png'.format(row_num, col_num, len(cnts))
-#        cv2.imwrite(fn, copy)
 
         return len(cnts)
-

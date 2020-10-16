@@ -843,10 +843,17 @@ def build_and_dispatch_mesh_match_threaded_children(parent_job):
 
 def wrap_up_mesh_match_threaded(job, children):
     aggregate_response_data = {
-      'movies': {}
+      'movies': {},
+      'statistics': {
+          'movies': {},
+      },
     }
     for child in children:
         child_response_movies = json.loads(child.response_data)['movies']
+        child_response_stats = json.loads(child.response_data)['statistics']
+        for movie_url in child_response_stats['movies']:
+            aggregate_response_data['statistics']['movies'][movie_url] = child_response_stats['movies'][movie_url]
+
         if len(child_response_movies.keys()) > 0:
             movie_url = list(child_response_movies.keys())[0]
             aggregate_response_data['movies'][movie_url] = child_response_movies[movie_url]
@@ -855,10 +862,6 @@ def wrap_up_mesh_match_threaded(job, children):
     job.status = 'success'
     job.response_data = json.dumps(aggregate_response_data)
     job.save()
-
-
-
-
 
 def finish_selected_area_threaded(job):
   children = Job.objects.filter(parent=job)
