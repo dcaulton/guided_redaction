@@ -143,6 +143,7 @@ class SelectedAreaController:
         # looks like regions is always gonna be a one element array for now at least
         region = regions[0]
         build_regions = []
+        match_element = {}
         for region in regions:
             for maximum_zone in selected_area_meta['maximum_zones']:
                 for scanner_matcher_id in source_frameset:
@@ -239,7 +240,9 @@ class SelectedAreaController:
         # scale the offset by the scale of the t1 results
         if 'scale' in match_element and match_element['scale'] != 1:
             origin = selected_area_meta['origin_entity_location']
-            scale = match_element['scale']
+            scale = 1
+            if match_element and 'scale' in match_element:
+                scale = match_element['scale']
             new_sp_offset = [
                 (selected_point[0] - origin[0]) / scale,
                 (selected_point[1] - origin[1]) / scale

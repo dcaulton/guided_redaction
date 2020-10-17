@@ -13,21 +13,6 @@ class MeshMatchFinder:
         self.template_match_threshold = .9
         self.match_origin_xy_tolerance = 5
 
-    def save_cell_stats(self, match_stats, max_val, max_loc, mesh_address, interesting_score):
-        if max_val >= self.template_match_threshold:
-            above_threshold = 'yes'
-        else:
-            above_threshold = 'no'
-        cell_stats_obj = {
-            'template_match_score': max_val,
-            'template_match_loc': max_loc,
-            'mesh_address': mesh_address,
-            'above_threshold': above_threshold,
-            'interesting_score': interesting_score,
-        }
-        cell_stats_key = str(mesh_address[0]) + '-' + str(mesh_address[1])
-        match_stats['cell_stats'][cell_stats_key] = cell_stats_obj
-
     def match_mesh(self, mesh, most_recent_t1_frameset, cv2_image):
         match_obj = {}
         match_stats = {
@@ -219,3 +204,18 @@ class MeshMatchFinder:
         cnts = imutils.grab_contours(cnts)
 
         return len(cnts)
+
+    def save_cell_stats(self, match_stats, max_val, max_loc, mesh_address, interesting_score):
+        if max_val >= self.template_match_threshold:
+            above_threshold = 'yes'
+        else:
+            above_threshold = 'no'
+        cell_stats_obj = {
+            'template_match_score': max_val,
+            'template_match_loc': max_loc,
+            'mesh_address': mesh_address,
+            'above_threshold': above_threshold,
+            'interesting_score': interesting_score,
+        }
+        cell_stats_key = str(mesh_address[0]) + '-' + str(mesh_address[1])
+        match_stats['cell_stats'][cell_stats_key] = cell_stats_obj
