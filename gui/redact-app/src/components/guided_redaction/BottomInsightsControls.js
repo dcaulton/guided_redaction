@@ -12,6 +12,7 @@ import SessionControls from './SessionControls'
 import HogControls from './HogControls'
 import SelectedAreaControls from './SelectedAreaControls'
 import MeshMatchControls from './MeshMatchControls'
+import SelectionGrowerControls from './SelectionGrowerControls'
 import TelemetryControls from './TelemetryControls'
 import OcrSceneAnalysisControls from './OcrSceneAnalysisControls'
 
@@ -222,6 +223,35 @@ class BottomInsightsControls extends React.Component {
         />
 
         <MeshMatchControls
+          setGlobalStateVar={this.props.setGlobalStateVar}
+          buildMovieSetOptions={this.buildMovieSetOptions}
+          buildTier1RunOptions={this.buildTier1RunOptions}
+          handleSetMode={this.props.handleSetMode}
+          insights_image={this.props.insights_image}
+          getFramesetHashForImageUrl={this.props.getFramesetHashForImageUrl}
+          movie_url={this.props.movie_url}
+          setSelectedAreaTemplateAnchor={this.props.setSelectedAreaTemplateAnchor}
+          getCurrentSelectedAreaMeta={this.props.getCurrentSelectedAreaMeta}
+          visibilityFlags={this.props.visibilityFlags}
+          toggleShowVisibility={this.props.toggleShowVisibility}
+          displayInsightsMessage={this.props.displayInsightsMessage}
+          addInsightsCallback={this.props.addInsightsCallback}
+          scanners={this.props.scanners}
+          getScanners={this.props.getScanners}
+          deleteScanner={this.props.deleteScanner}
+          importScanner={this.props.importScanner}
+          saveScannerToDatabase={this.props.saveScannerToDatabase}
+          submitInsightsJob={this.props.submitInsightsJob}
+          movies={this.props.movies}
+          setCurrentVideo={this.props.setCurrentVideo}
+          setScrubberToIndex={this.props.setScrubberToIndex}
+          getFramesetHashesInOrder={this.props.getFramesetHashesInOrder}
+          tier_1_scanners={this.props.tier_1_scanners}
+          tier_1_scanner_current_ids={this.props.tier_1_scanner_current_ids}
+          tier_1_matches={this.props.tier_1_matches}
+        />
+
+        <SelectionGrowerControls
           setGlobalStateVar={this.props.setGlobalStateVar}
           buildMovieSetOptions={this.buildMovieSetOptions}
           buildTier1RunOptions={this.buildTier1RunOptions}

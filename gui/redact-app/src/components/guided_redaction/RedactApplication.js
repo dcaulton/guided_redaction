@@ -89,6 +89,7 @@ class RedactApplication extends React.Component {
         'hog': true,
         'selectedArea': true,
         'mesh_match': true,
+        'selection_grower': true,
         'annotate': true,
         'telemetry': true,
         'filesystem': true,
@@ -112,6 +113,7 @@ class RedactApplication extends React.Component {
         'telemetry': {},
         'selected_area': {},
         'mesh_match': {},
+        'selection_grower': {},
       },
       tier_1_scanner_current_ids: {
         'ocr': '',
@@ -122,6 +124,7 @@ class RedactApplication extends React.Component {
         'telemetry': '',
         'selected_area': '',
         'mesh_match': '',
+        'selection_grower': '',
       },
       tier_1_matches: {
         'ocr': {},
@@ -133,6 +136,7 @@ class RedactApplication extends React.Component {
         'telemetry': {},
         'selected_area': {},
         'mesh_match': {},
+        'selection_grower': {},
       },
       workflow_callbacks: {},
       workflows: {

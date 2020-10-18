@@ -392,6 +392,10 @@ class SessionControls extends React.Component {
     if (this.props.visibilityFlags['mesh_match']) {
       show_mesh_match_checked = 'checked'
     }
+    let show_selection_grower_checked = ''
+    if (this.props.visibilityFlags['selection_grower']) {
+      show_selection_grower_checked = 'checked'
+    }
     let show_movie_sets_checked = ''
     if (this.props.visibilityFlags['movieSets']) {
       show_movie_sets_checked = 'checked'
@@ -491,6 +495,16 @@ class SessionControls extends React.Component {
             onChange={() => this.props.toggleShowVisibility('mesh_match')}
           />
           Show Mesh Match
+        </div>
+
+        <div className='row mt-3 bg-light rounded'>
+          <input
+            className='ml-2 mr-2 mt-1'
+            checked={show_selection_grower_checked}
+            type='checkbox'
+            onChange={() => this.props.toggleShowVisibility('selection_grower')}
+          />
+          Show Selection Grower
         </div>
 
         <div className='row mt-3 bg-light rounded'>
