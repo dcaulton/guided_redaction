@@ -1,4 +1,6 @@
 from celery import shared_task
+import time
+import random
 import json
 from guided_redaction.jobs.models import Job
 from guided_redaction.attributes.models import Attribute
@@ -53,7 +55,8 @@ def t1_diff(job_uuid):
 def noop(job_uuid):
     job = Job.objects.get(pk=job_uuid)
     if job:
-        job.response_data = json.dumps({})
+        time.sleep(random.random()) # randomized sleep to avoid race conditions with complex noop pipelines
+        job.response_data = job.request_data
         job.status = 'success'
         job.save()
 

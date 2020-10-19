@@ -204,8 +204,6 @@ class SelectedAreaController:
             ]
             if self.frameset_is_t1_output(source_frameset):
                 for scanner_matcher_id in source_frameset:
-                    if selected_area_meta['origin_entity_id'] == scanner_matcher_id:
-                        print('WOOHOO ', selected_area_meta)
                     match_element = source_frameset[scanner_matcher_id]
 
                     location = self.scale_selected_point(

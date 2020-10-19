@@ -164,7 +164,6 @@ class DispatchController:
             if node_id in content['edges']:
                 next_node_id = content['edges'][node_id][0]
                 node = content['node_metadata']['node'][next_node_id]
-
         t1_scanner_types = ['template', 'selected_area', 'ocr', 'ocr_scene_analysis', 'mesh_match'] 
         if node['type'] in t1_scanner_types:
             return self.build_tier_1_scanner_job(
@@ -187,7 +186,7 @@ class DispatchController:
         elif node['type'] == 't1_diff':
             return self.build_t1_diff_job(content, node, parent_job)
         elif node['type'] == 'noop':
-            return self.build_noop_job(content, node, parent_job)
+            return self.build_noop_job(content, node, parent_job, previous_job)
         else:
             raise Exception('UNRECOGNIZED PIPELINE JOB TYPE: {}'.format(node['type']))
 
@@ -267,14 +266,17 @@ class DispatchController:
         ).save()
         return job
 
-    def build_noop_job(self, content, node, parent_job):
+    def build_noop_job(self, content, node, parent_job, previous_job):
+        data_in = parent_job.request_data
+        if previous_job and previous_job.response_data:
+            data_in = previous_job.response_data
         job = Job(
             status='created',
             description='noop for pipeline',
             app='pipelines',
             operation='noop',
             sequence=0,
-            request_data=parent_job.request_data,
+            request_data=data_in,
             parent=parent_job,
         )
         job.save()
@@ -555,6 +557,8 @@ class DispatchController:
         inbound_node_ids = self.get_node_ids_with_inbound_edges(next_node_id, content)
         for inbound_node_id in inbound_node_ids:
             job = self.get_job_for_node(inbound_node_id, parent_job)
+            if not job:
+                return False
             if job and job.status != 'success':
                 return False
         return True
