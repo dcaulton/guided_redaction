@@ -297,21 +297,6 @@ class MeshMatchControls extends React.Component {
     )
   }
 
-  buildScanLevelDropdown2() {
-    const scan_level_dropdown = [
-      {'tier_1': 'Tier 1 (select only)'},
-      {'tier_2': 'Tier 2 (select and redact)'}
-    ]
-
-    return buildLabelAndDropdown(
-      scan_level_dropdown,
-      'Scan Level',
-      this.state.scan_level,
-      'mesh_match_scan_level',
-      ((value)=>{this.setLocalStateVar('scan_level', value)})
-    )
-  }
-
   buildOriginEntityTypeDropdown() {
     const values = [
       {'adhoc': 'ad hoc'},
@@ -336,13 +321,7 @@ class MeshMatchControls extends React.Component {
     if (this.state.origin_entity_type === 'template_anchor') {
       for (let i=0; i < Object.keys(this.props.tier_1_scanners['template']).length; i++) {
         const template_id = Object.keys(this.props.tier_1_scanners['template'])[i]
-        const template = this.props.tier_1_scanners['template'][template_id]
-        if (template['scan_level'] === 'tier_1') {
-          t1_temp_ids.push(template_id)
-        }
-        if (template['scan_level'] === 'tier_2') {
-          t2_temp_ids.push(template_id)
-        }
+        t1_temp_ids.push(template_id)
       }
       adhoc_option = ''
     }
@@ -612,7 +591,6 @@ class MeshMatchControls extends React.Component {
     const min_score_field = this.buildMinScoreField()
     const mesh_size_field = this.buildMeshSizeField()
     const attributes_list = this.buildAttributesList()
-    const scan_level_dropdown = this.buildScanLevelDropdown2()
     const origin_entity_type_dropdown = this.buildOriginEntityTypeDropdown()
     const origin_entity_id_dropdown = this.buildOriginEntityIdDropdown()
     const add_minimum_zones_button = this.buildAddMinimumZonesButton()
@@ -679,10 +657,6 @@ class MeshMatchControls extends React.Component {
 
                 <div className='row mt-2'>
                   {mesh_size_field}
-                </div>
-
-                <div className='row mt-2'>
-                  {scan_level_dropdown}
                 </div>
 
                 <div className='row mt-2'>

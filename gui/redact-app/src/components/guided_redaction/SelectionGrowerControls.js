@@ -1,7 +1,8 @@
 import React from 'react';
 import ScannerSearchControls from './ScannerSearchControls'
 import {
-  buildAttributesAddRow, buildLabelAndTextInput, buildLabelAndDropdown,
+  buildAttributesAddRow, 
+  buildLabelAndTextInput,
   buildInlinePrimaryButton, 
   buildTier1LoadButton, 
   buildTier1DeleteButton,
@@ -23,17 +24,50 @@ class SelectionGrowerControls extends React.Component {
       name: '',
       attributes: {},
       scan_level: 'tier_1',
+      directions: {
+        north: false,
+        south: false,
+        east: false,
+        west: false,
+      },
+      offsets: {
+        north: 0,
+        south: 0,
+        east: 0,
+        west: 0,
+      },
       min_score: 15,
-      mesh_size: 50,
+      colors: {
+      },
       attribute_search_name: '',
       attribute_search_value: '',
       first_click_coords: [],
     }
     this.getSelectionGrowerMetaFromState=this.getSelectionGrowerMetaFromState.bind(this)
     this.setLocalStateVar=this.setLocalStateVar.bind(this)
+    this.addColorCenterCallback=this.addColorCenterCallback.bind(this)
+  }
+
+  addColorCenterCallback(clicked_coords) {
+  console.log('YI', clicked_coords)
+// we're gonna need to do an api call to get this.  Trying to load the image offscreen gives us cors headaches
+//what if I got the image as a data url?
+  }
+
+  startAddColorCenters() {
+    this.props.handleSetMode('selection_grower_add_color_center')
+    this.props.displayInsightsMessage('specify a point with the color you want')
+  }
+
+  buildAddColorCentersButton() {
+    return buildInlinePrimaryButton(
+      'Add Color Centers',
+      (()=>{this.startAddColorCenters()})
+    )
   }
 
   componentDidMount() {
+    this.props.addInsightsCallback('selection_grower_add_color_center', this.addColorCenterCallback)
     this.loadNewSelectionGrowerMeta()
   }
 
@@ -68,8 +102,10 @@ class SelectionGrowerControls extends React.Component {
         name: sam['name'],
         attributes: sam['attributes'],
         scan_level: sam['scan_level'],
+        directions: sam['directions'],
+        offsets: sam['offsets'],
         min_score: sam['min_score'],
-        mesh_size: sam['mesh_size'],
+        colors: sam['colors'],
       })
     }
     let deepCopyIds = JSON.parse(JSON.stringify(this.props.tier_1_scanner_current_ids))
@@ -89,8 +125,20 @@ class SelectionGrowerControls extends React.Component {
       name: '',
       attributes: {},
       scan_level: 'tier_1',
+      directions: {
+        north: false,
+        south: false,
+        east: false,
+        west: false,
+      },
+      offsets: {
+        north: 0,
+        south: 0,
+        east: 0,
+        west: 0,
+      },
       min_score: 15,
-      mesh_size: 50,
+      colors: {},
     })
   }
 
@@ -100,8 +148,10 @@ class SelectionGrowerControls extends React.Component {
       name: this.state.name,
       attributes: this.state.attributes,
       scan_level: this.state.scan_level,
+      directions: this.state.directions,
+      offsets: this.state.offsets,
       min_score: this.state.min_score,
-      mesh_size: this.state.mesh_size,
+      colors: this.state.colors,
     }
     return meta
   }
@@ -150,28 +200,78 @@ class SelectionGrowerControls extends React.Component {
     )
   }
 
-  buildMeshSizeField() {
-    return buildLabelAndTextInput(
-      this.state.mesh_size,
-      'Mesh Size',
-      'selection_grower_mesh_size',
-      'mesh_size',
-      4,
-      ((value)=>{this.setLocalStateVar('mesh_size', value)})
+  toggleDirections(direction_name) {
+    const new_value = (!this.state.directions[direction_name])
+    let deepCopyDirs = JSON.parse(JSON.stringify(this.state.directions))
+    deepCopyDirs[direction_name] = new_value
+    this.setLocalStateVar('directions', deepCopyDirs)
+  }
+
+  buildDirectionsField() {
+    const directions = ['north', 'south', 'east', 'west']
+    return (
+      <div>
+        <div className='h5'>
+          Directions
+        </div>
+        {directions.map((direction, index) => {
+          const id_name = 'toggle_dir_' + direction
+          const display_title = direction.charAt(0).toUpperCase() + direction.slice(1)
+          return (
+            <div key={index}>
+              <div className='d-inline'>
+                <input
+                  className='ml-2 mr-2 mt-1'
+                  id={id_name}
+                  checked={this.state.directions[direction]}
+                  type='checkbox'
+                  onChange={() => this.toggleDirections(direction)}
+                />
+              </div>
+              <div className='d-inline'>
+                {display_title}
+              </div>
+            </div>
+          )
+        })}
+      </div>
     )
   }
 
-  buildScanLevelDropdown2() {
-    const scan_level_dropdown = [
-      {'tier_1': 'Tier 1 (select only)'},
-    ]
+  setOffset(direction, value) {
+    let deepCopyOffs = JSON.parse(JSON.stringify(this.state.offsets))
+    deepCopyOffs[direction] = value
+    this.setLocalStateVar('offsets', deepCopyOffs)
+  }
 
-    return buildLabelAndDropdown(
-      scan_level_dropdown,
-      'Scan Level',
-      this.state.scan_level,
-      'selection_grower_scan_level',
-      ((value)=>{this.setLocalStateVar('scan_level', value)})
+  buildOffsetsField() {
+    const directions = ['north', 'south', 'east', 'west']
+    return (
+      <div>
+        <div className='h5'>
+          Offsets
+        </div>
+        {directions.map((direction, index) => {
+          const id_name = 'set_offset_' + direction
+          const display_title = direction.charAt(0).toUpperCase() + direction.slice(1)
+          return (
+            <div key={index}>
+              <div className='d-inline'>
+                <input
+                  className='ml-2 mr-2 mt-1'
+                  id={id_name}
+                  size='3'
+                  value={this.state.offsets[direction]}
+                  onChange={(event) => this.setOffset(direction, event.target.value)}
+                />
+              </div>
+              <div className='d-inline'>
+                {display_title}
+              </div>
+            </div>
+          )
+        })}
+      </div>
     )
   }
 
@@ -322,13 +422,14 @@ class SelectionGrowerControls extends React.Component {
     const id_string = buildIdString(this.state.id, 'selection_grower', false)
     const name_field = this.buildNameField()
     const min_score_field = this.buildMinScoreField()
-    const mesh_size_field = this.buildMeshSizeField()
     const attributes_list = this.buildAttributesList()
-    const scan_level_dropdown = this.buildScanLevelDropdown2()
     const run_button = this.buildRunButton()
     const delete_button = this.buildDeleteButton()
     const save_to_db_button = this.buildSaveToDatabaseButton()
     const clear_matches_button = this.buildClearMatchesButton2()
+    const directions_field = this.buildDirectionsField()
+    const offsets_field = this.buildOffsetsField()
+    const add_color_centers_button = this.buildAddColorCentersButton()
     const header_row = makeHeaderRow(
       'selection grower',
       'selection_grower_body',
@@ -353,6 +454,7 @@ class SelectionGrowerControls extends React.Component {
                   {save_to_db_button}
                   {clear_matches_button}
                   {run_button}
+                  {add_color_centers_button}
                 </div>
 
                 <div className='row mt-2'>
@@ -368,13 +470,12 @@ class SelectionGrowerControls extends React.Component {
                 </div>
 
                 <div className='row mt-2'>
-                  {mesh_size_field}
+                  {directions_field}
                 </div>
 
                 <div className='row mt-2'>
-                  {scan_level_dropdown}
+                  {offsets_field}
                 </div>
-
                 <div className='row mt-1 mr-1 ml-1 border-top'>
                   {attributes_list}
                 </div>

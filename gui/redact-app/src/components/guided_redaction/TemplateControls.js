@@ -132,7 +132,7 @@ class TemplateControls extends React.Component {
       scale: '1_1',
       match_percent: 90,
       match_method: 'any',
-      scan_level: 'tier_2',
+      scan_level: 'tier_1',
       anchors: [],
       mask_zones: [],
       download_link: '',
