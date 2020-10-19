@@ -183,6 +183,8 @@ class DispatchController:
             return self.build_t1_sum_job(content, node, parent_job)
         elif node['type'] == 't1_diff':
             return self.build_t1_diff_job(content, node, parent_job)
+        elif node['type'] == 'noop':
+            return self.build_noop_job(content, node, parent_job)
         else:
             raise Exception('UNRECOGNIZED PIPELINE JOB TYPE: {}'.format(node['type']))
 
@@ -252,6 +254,24 @@ class DispatchController:
             operation='t1_sum',
             sequence=0,
             request_data=json.dumps(build_request_data),
+            parent=parent_job,
+        )
+        job.save()
+        Attribute(
+            name='node_id',
+            value=node['id'],
+            job=job,
+        ).save()
+        return job
+
+    def build_noop_job(self, content, node, parent_job):
+        job = Job(
+            status='created',
+            description='noop for pipeline',
+            app='pipelines',
+            operation='noop',
+            sequence=0,
+            request_data=parent_job.request_data,
             parent=parent_job,
         )
         job.save()

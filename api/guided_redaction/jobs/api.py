@@ -189,6 +189,8 @@ def dispatch_job(job):
         pipelines_tasks.t1_sum.delay(job_uuid)
     if job.app == 'pipelines' and job.operation == 't1_diff':
         pipelines_tasks.t1_diff.delay(job_uuid)
+    if job.app == 'pipelines' and job.operation == 'noop':
+        pipelines_tasks.noop.delay(job_uuid)
 
 
 class JobsViewSet(viewsets.ViewSet):

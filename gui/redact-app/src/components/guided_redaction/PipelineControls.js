@@ -728,7 +728,13 @@ class NodeCard extends React.Component {
           }
 
           const node = this.props.node_metadata['node'][node_id]
-          const disp_name = node_id + ' - ' + node['type']
+          let disp_name = node_id
+          if (node['type']) {
+            disp_name += ' - ' + node['type']
+          }
+          if (node['name']) {
+            disp_name += ' - ' + node['name']
+          }
           return (
             <div
               key={index}

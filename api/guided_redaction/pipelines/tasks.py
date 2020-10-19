@@ -48,3 +48,16 @@ def t1_diff(job_uuid):
         if pipeline:
             worker = PipelinesViewSetDispatch()
             worker.handle_job_finished(job, pipeline)
+
+@shared_task
+def noop(job_uuid):
+    job = Job.objects.get(pk=job_uuid)
+    if job:
+        job.response_data = json.dumps({})
+        job.status = 'success'
+        job.save()
+
+        pipeline = get_pipeline_for_job(job.parent)
+        if pipeline:
+            worker = PipelinesViewSetDispatch()
+            worker.handle_job_finished(job, pipeline)
