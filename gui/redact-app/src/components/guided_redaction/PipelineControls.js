@@ -938,6 +938,7 @@ class NodeCard extends React.Component {
             <option value='template_match_chart'>template match chart</option>
             <option value='redact'>redact</option>
             <option value='zip'>zip</option>
+            <option value='noop'>noop</option>
           </select>
         </div>
       </div>
