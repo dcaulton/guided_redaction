@@ -72,6 +72,9 @@ class DispatchController:
                     content, 
                     parent_job
                 ):
+                    preexisting_child_job = self.get_job_for_node(next_node_id, parent_job)
+                    if preexisting_child_job:
+                        return
                     child_job = self.build_job(content, next_node_id, parent_job, job)
                     if child_job:
                         jobs_api.dispatch_job(child_job)
