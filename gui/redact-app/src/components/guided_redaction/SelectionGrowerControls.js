@@ -12,7 +12,7 @@ import {
   clearTier1Matches,
   buildClearMatchesButton,
   doTier1Save,
-  } from './SharedControls'
+} from './SharedControls'
 
 
 class SelectionGrowerControls extends React.Component {
@@ -37,8 +37,7 @@ class SelectionGrowerControls extends React.Component {
         west: 0,
       },
       min_score: 15,
-      colors: {
-      },
+      colors: [],
       attribute_search_name: '',
       attribute_search_value: '',
       first_click_coords: [],
@@ -46,12 +45,24 @@ class SelectionGrowerControls extends React.Component {
     this.getSelectionGrowerMetaFromState=this.getSelectionGrowerMetaFromState.bind(this)
     this.setLocalStateVar=this.setLocalStateVar.bind(this)
     this.addColorCenterCallback=this.addColorCenterCallback.bind(this)
+    this.getColors=this.getColors.bind(this)
+  }
+
+  getColors() {
+    return this.state.colors
   }
 
   addColorCenterCallback(clicked_coords) {
-  console.log('YI', clicked_coords)
-// we're gonna need to do an api call to get this.  Trying to load the image offscreen gives us cors headaches
-//what if I got the image as a data url?
+    let deepCopyColors = JSON.parse(JSON.stringify(this.state.colors))
+    const the_id = 'color_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
+    let build_obj = {
+      'image': this.props.insights_image,
+      'movie': this.props.movie_url,
+      id: the_id,
+      location: clicked_coords,
+    }
+    deepCopyColors.push(build_obj)
+    this.setLocalStateVar('colors', deepCopyColors)
   }
 
   startAddColorCenters() {
@@ -68,6 +79,7 @@ class SelectionGrowerControls extends React.Component {
 
   componentDidMount() {
     this.props.addInsightsCallback('selection_grower_add_color_center', this.addColorCenterCallback)
+    this.props.addInsightsCallback('getCurrentSGColors', this.getColors)
     this.loadNewSelectionGrowerMeta()
   }
 
@@ -138,7 +150,7 @@ class SelectionGrowerControls extends React.Component {
         west: 0,
       },
       min_score: 15,
-      colors: {},
+      colors: [],
     })
   }
 
@@ -414,6 +426,41 @@ class SelectionGrowerControls extends React.Component {
     )
   }
 
+  clearColorCenter(color_id) {
+    let build_colors = []
+    for (let i=0; i < this.state.colors.length; i++) {
+      const color = this.state.colors[i]
+      if (color['id']  !== color_id) {
+        build_colors.push(color)
+      }
+    }
+    this.setLocalStateVar('colors', build_colors)
+  }
+
+  buildColorsField() {
+    return (
+      <div>
+        <div className='h5'>
+          Colors
+        </div>
+        {this.state.colors.map((color_obj, index) => {
+          return (
+            <div key={index}>
+              {color_obj.id}
+              <button
+                className='btn btn-primary p-1 m-1 ml-2'
+                onClick={() => this.clearColorCenter(color_obj.id)}
+              >
+                Delete
+              </button>
+            </div>
+          )
+        })}
+
+      </div>
+    )
+  }
+
   render() {
     if (!this.props.visibilityFlags['selection_grower']) {
       return([])
@@ -429,6 +476,7 @@ class SelectionGrowerControls extends React.Component {
     const clear_matches_button = this.buildClearMatchesButton2()
     const directions_field = this.buildDirectionsField()
     const offsets_field = this.buildOffsetsField()
+    const colors_field = this.buildColorsField()
     const add_color_centers_button = this.buildAddColorCentersButton()
     const header_row = makeHeaderRow(
       'selection grower',
@@ -454,6 +502,9 @@ class SelectionGrowerControls extends React.Component {
                   {save_to_db_button}
                   {clear_matches_button}
                   {run_button}
+                </div>
+
+                <div className='row mt-2'>
                   {add_color_centers_button}
                 </div>
 
@@ -476,6 +527,11 @@ class SelectionGrowerControls extends React.Component {
                 <div className='row mt-2'>
                   {offsets_field}
                 </div>
+
+                <div className='row mt-2'>
+                  {colors_field}
+                </div>
+
                 <div className='row mt-1 mr-1 ml-1 border-top'>
                   {attributes_list}
                 </div>

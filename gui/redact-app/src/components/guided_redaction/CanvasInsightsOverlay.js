@@ -5,6 +5,7 @@ class CanvasInsightsOverlay extends React.Component {
   constructor (props) {
     super(props)
     this.anchor_color = '#33F'
+    this.sg_color = '#2F8'
     this.mask_zone_color = '#B6B'
     this.selected_area_minimum_zone_color = '#3EA'
     this.selected_area_maximum_zone_color = '#A3A'
@@ -231,6 +232,19 @@ class CanvasInsightsOverlay extends React.Component {
     }
   }
 
+  drawSGColors() {
+    if (!this.props.currentImageIsSGAnchorImage()) {
+      return
+    }
+    if (this.props.getCurrentSGColors() && this.props.getCurrentSGColors().length > 0) {
+      const colors = this.props.getCurrentSGColors()
+      for (let i=0; i < colors.length; i++) {
+        const color = colors[i]
+        this.drawCrosshairsGeneric(color['location'], this.sg_color)
+      }
+    }
+  }
+
   drawCrosshairsGeneric(origin, color) {
     const crosshair_length = 200
     const canvas = this.refs.insights_canvas
@@ -406,6 +420,7 @@ class CanvasInsightsOverlay extends React.Component {
     this.drawMeshMatches()
     this.drawCrosshairs('add_stuff', this.props.clicked_coords)
     this.drawSelectedAreaCenters()
+    this.drawSGColors()
     this.drawSelectedAreaMinimumZones()
     this.drawSelectedAreaMaximumZones()
     this.drawSelectedAreaOriginLocation()
@@ -429,6 +444,7 @@ class CanvasInsightsOverlay extends React.Component {
     this.drawMeshMatches()
     this.drawCrosshairs('add_stuff', this.props.clicked_coords)
     this.drawSelectedAreaCenters()
+    this.drawSGColors()
     this.drawSelectedAreaMinimumZones()
     this.drawSelectedAreaMaximumZones()
     this.drawSelectedAreaOriginLocation()

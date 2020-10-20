@@ -39,6 +39,7 @@ class InsightsPanel extends React.Component {
     this.currentImageIsMeshMatchAnchorImage=this.currentImageIsMeshMatchAnchorImage.bind(this)
     this.currentImageIsOcrAnchorImage=this.currentImageIsOcrAnchorImage.bind(this)
     this.currentImageIsOsaMatchImage=this.currentImageIsOsaMatchImage.bind(this)
+    this.currentImageIsSGAnchorImage=this.currentImageIsSGAnchorImage.bind(this)
     this.afterPingSuccess=this.afterPingSuccess.bind(this)
     this.afterPingFailure=this.afterPingFailure.bind(this)
     this.afterGetVersionSuccess=this.afterGetVersionSuccess.bind(this)
@@ -834,6 +835,26 @@ class InsightsPanel extends React.Component {
     }
   }
 
+  currentImageIsSGAnchorImage() {
+    if (this.props.tier_1_scanner_current_ids['selection_grower']) {
+      let key = this.props.tier_1_scanner_current_ids['selection_grower']
+      if (!Object.keys(this.props.tier_1_scanners['selection_grower']).includes(key)) {
+        return false
+      }
+      let sam = this.props.tier_1_scanners['selection_grower'][key]
+      if (!sam['colors'].length && !sam['colors'].length) {
+        return false
+      }
+      let cur_sam_anchor_image_name = ''
+      if (sam['colors'].length > 0) {
+        cur_sam_anchor_image_name = sam['colors'][0]['image']
+      }
+      return (cur_sam_anchor_image_name === this.state.insights_image)
+    } else {
+      return true
+    }
+  }
+
   callPing() {
     this.props.doPing(this.afterPingSuccess, this.afterPingFailure)
   }
@@ -1326,6 +1347,7 @@ class InsightsPanel extends React.Component {
               currentImageIsTemplateAnchorImage={this.currentImageIsTemplateAnchorImage}
               currentImageIsSelectedAreaAnchorImage={this.currentImageIsSelectedAreaAnchorImage}
               currentImageIsMeshMatchAnchorImage={this.currentImageIsMeshMatchAnchorImage}
+              currentImageIsSGAnchorImage={this.currentImageIsSGAnchorImage}
               currentImageIsOcrAnchorImage={this.currentImageIsOcrAnchorImage}
               currentImageIsOsaMatchImage={this.currentImageIsOsaMatchImage}
               insights_image_scale={this.state.insights_image_scale}
@@ -1345,6 +1367,7 @@ class InsightsPanel extends React.Component {
               getCurrentSelectedAreaOriginLocation={(()=>this.runCallbackFunction('getCurrentSelectedAreaOriginLocation'))}
               getCurrentMeshMatchMinimumZones={(()=>this.runCallbackFunction('getCurrentMeshMatchMinimumZones'))}
               getCurrentMeshMatchMaximumZones={(()=>this.runCallbackFunction('getCurrentMeshMatchMaximumZones'))}
+              getCurrentSGColors={(()=>this.runCallbackFunction('getCurrentSGColors'))}
               getCurrentMeshMatchOriginLocation={(()=>this.runCallbackFunction('getCurrentMeshMatchOriginLocation'))}
               getCurrentOcrOriginLocation={(()=>this.runCallbackFunction('getCurrentOcrOriginLocation'))}
               getCurrentOcrSceneAnalysisMatches={this.getCurrentOcrSceneAnalysisMatches}
