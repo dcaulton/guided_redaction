@@ -25,6 +25,7 @@ from guided_redaction.analyze.api import (
     AnalyzeViewSetTimestamp,
     AnalyzeViewSetSelectedArea,
     AnalyzeViewSetMeshMatch,
+#    AnalyzeViewSetSelectionGrower,
     AnalyzeViewSetOcrSceneAnalysis,
     AnalyzeViewSetTrainHog,
     AnalyzeViewSetTestHog,
@@ -60,6 +61,92 @@ def dispatch_parent_job(job):
             train_hog_threaded.delay(parent_job.id)
         if parent_job.app == 'analyze' and parent_job.operation == 'oma_first_scan_threaded':
             oma_first_scan_threaded.delay(parent_job.id)
+
+def generic_threaded(job_uuid, child_operation, title, build_and_dispatch_func, finish_func):
+    if Job.objects.filter(pk=job_uuid).exists():
+        job = Job.objects.get(pk=job_uuid)
+        if job.status in ['success', 'failed']:
+            return
+        children = Job.objects.filter(parent=job)
+        next_step = evaluate_children(title, child_operation, children)
+        print('next step is {}'.format(next_step))
+        if next_step == 'build_child_tasks':
+          build_and_dispatch_func(job)
+        elif next_step == 'wrap_up':
+          finish_func(job)
+        elif next_step == 'abort':
+          job.status = 'failed'
+          job.harvest_failed_child_job_errors(children)
+          job.save()
+
+def build_and_dispatch_generic_threaded_children(parent_job, scanner_type, child_task, finish_func):
+    parent_job.status = 'running'
+    parent_job.save()
+    request_data = json.loads(parent_job.request_data)
+    mm_metas = request_data['tier_1_scanners'][scanner_type]
+    movies = request_data['movies']
+
+    source_movies = {}
+    if 'source' in movies:
+        source_movies = movies['source']
+        del movies['source']
+
+    if len(movies) == 0:
+        finish_func(parent_job)
+        return
+
+    for mm_meta_id in mm_metas:
+        build_mm_meta = {mm_meta_id: mm_metas[mm_meta_id]}
+        for index, movie_url in enumerate(movies.keys()):
+            movie = movies[movie_url]
+            build_movies = {}
+            build_movies[movie_url] = movie
+            if source_movies:
+                build_movies['source'] = source_movies
+            build_request_data = json.dumps({
+                'movies': build_movies,
+                'tier_1_scanners': {
+                    scanner_type: build_mm_meta,
+                }
+            })
+            job = Job(
+                request_data=build_request_data,
+                status='created',
+                description=scanner_type + ' for movie {}'.format(movie_url),
+                app='analyze',
+                operation=scanner_type,
+                sequence=0,
+                parent=parent_job,
+            )
+            job.save()
+            the_str = 'build_and_dispatch_'+scanner_type+'_threaded_children: dispatching job for movie {}'
+            print(the_str.format(movie_url))
+            child_task.delay(job.id)
+
+def wrap_up_generic_threaded(job, children, scanner_type):
+    aggregate_response_data = {
+      'movies': {},
+      'statistics': {
+          'movies': {},
+      },
+    }
+    for child in children:
+        child_response_data = json.loads(child.response_data)
+        child_response_movies = child_response_data['movies']
+        child_response_stats = {'movies': {}}
+        if 'statistics' in child_response_data:
+            child_response_stats = child_response_data['statistics']
+        for movie_url in child_response_stats['movies']:
+            aggregate_response_data['statistics']['movies'][movie_url] = child_response_stats['movies'][movie_url]
+
+        if len(child_response_movies.keys()) > 0:
+            movie_url = list(child_response_movies.keys())[0]
+            aggregate_response_data['movies'][movie_url] = child_response_movies[movie_url]
+
+    print('wrap_up_' + scanner_type + '_threaded: wrapping up parent job')
+    job.status = 'success'
+    job.response_data = json.dumps(aggregate_response_data)
+    job.save()
 
 def get_area_to_redact_from_template_match(
         mask_zone, 
@@ -337,21 +424,13 @@ def get_timestamp(job_uuid):
 
 @shared_task
 def get_timestamp_threaded(job_uuid):
-    if Job.objects.filter(pk=job_uuid).exists():
-        job = Job.objects.get(pk=job_uuid)
-        if job.status in ['success', 'failed']:
-            return
-        children = Job.objects.filter(parent=job)
-        next_step = evaluate_children('GET TIMESTAMP THREADED', 'get_timestamp', children)
-        print('next step is {}'.format(next_step))
-        if next_step == 'build_child_tasks':
-          build_and_dispatch_get_timestamp_threaded_children(job)
-        elif next_step == 'wrap_up':
-          wrap_up_get_timestamp_threaded(job, children)
-        elif next_step == 'abort':
-          job.status = 'failed'
-          job.harvest_failed_child_job_errors(children)
-          job.save()
+    generic_threaded(
+        job_uuid, 
+        'get_timestamp', 
+        'GET TIMESTAMP THREADED', 
+        build_and_dispatch_get_timestamp_threaded_children, 
+        wrap_up_get_timestamp_threaded
+    )
 
 def build_and_dispatch_get_timestamp_threaded_children(parent_job):
     parent_job.status = 'running'
@@ -380,18 +459,7 @@ def build_and_dispatch_get_timestamp_threaded_children(parent_job):
         get_timestamp.delay(job.id)
 
 def wrap_up_get_timestamp_threaded(job, children):
-    aggregate_response_data = {}
-    for child in children:
-        child_response_data = json.loads(child.response_data)
-        if len(child_response_data.keys()) > 0:
-            movie_url = list(child_response_data.keys())[0]
-            aggregate_response_data[movie_url] = child_response_data[movie_url]
-
-    print('wrap_up_get_timestamp_threaded: wrapping up parent job')
-    job.status = 'success'
-    job.response_data = json.dumps(aggregate_response_data)
-    job.save()
-
+    wrap_up_generic_threaded(job, children, 'get_timestamp')
 
 @shared_task
 def scan_template_multi(job_uuid):
@@ -471,29 +539,23 @@ def wrap_up_scan_template_multi(job, children):
     job.response_data = json.dumps(aggregate_response_data)
     job.save()
 
+def finish_scan_template_threaded(job):
+  children = Job.objects.filter(parent=job)
+  wrap_up_scan_template_threaded(job, children)
+  pipeline = get_pipeline_for_job(job.parent)
+  if pipeline:
+      worker = PipelinesViewSetDispatch()
+      worker.handle_job_finished(job, pipeline)
+
 @shared_task
 def scan_template_threaded(job_uuid):
-    # ASSUMES WE ONLY HAVE ONE TEMPLATE
-    # DOESNT EXPECT TEMPLATE ID, JUST A HASH WITH ONE TEMPLATE
-    if Job.objects.filter(pk=job_uuid).exists():
-        job = Job.objects.get(pk=job_uuid)
-        if job.status in ['success', 'failed']:
-            return
-        children = Job.objects.filter(parent=job)
-        next_step = evaluate_children('SCAN TEMPLATE THREADED', 'scan_template', children)
-        print('next step is {}'.format(next_step))
-        if next_step == 'build_child_tasks':
-          build_and_dispatch_scan_template_threaded_children(job)
-        elif next_step == 'wrap_up':
-          wrap_up_scan_template_threaded(job, children)
-          pipeline = get_pipeline_for_job(job.parent)
-          if pipeline:
-              worker = PipelinesViewSetDispatch()
-              worker.handle_job_finished(job, pipeline)
-        elif next_step == 'abort':
-          job.status = 'failed'
-          job.harvest_failed_child_job_errors(children)
-          job.save()
+    generic_threaded(
+        job_uuid, 
+        'scan_template', 
+        'SCAN TEMPLATE THREADED', 
+        build_and_dispatch_scan_template_threaded_children, 
+        finish_scan_template_threaded
+    )
 
 def build_and_dispatch_scan_template_threaded_children(parent_job):
     parent_job.status = 'running'
@@ -603,26 +665,22 @@ def telemetry_find_matching_frames(job_uuid):
 
 @shared_task
 def scan_ocr_movie(job_uuid):
-    if Job.objects.filter(pk=job_uuid).exists():
-        job = Job.objects.get(pk=job_uuid)
-        if job.status in ['success', 'failed']:
-            return
-        children = Job.objects.filter(parent=job)
-        next_step = evaluate_children('SCAN OCR MOVIE', 'scan_ocr_image', children)
-        print('next step is {}'.format(next_step))
-        if next_step == 'build_child_tasks':
-            build_and_dispatch_scan_ocr_movie_children(job)
-        elif next_step == 'wrap_up':
-            wrap_up_scan_ocr_movie(job, children)
-            pipeline = get_pipeline_for_job(job.parent)
-            if pipeline:
-                worker = PipelinesViewSetDispatch()
-                worker.handle_job_finished(job, pipeline)
-            dispatch_parent_job(job)
-        elif next_step == 'abort':
-            job.status = 'failed'
-            job.harvest_failed_child_job_errors(children)
-            job.save()
+    generic_threaded(
+        job_uuid, 
+        'scan_ocr_image', 
+        'SCAN OCR MOVIE', 
+        build_and_dispatch_scan_ocr_movie_children, 
+        finish_ocr_movie 
+    )
+
+def finish_ocr_movie(job):
+    children = Job.objects.filter(parent=job)
+    wrap_up_scan_ocr_movie(job, children)
+    pipeline = get_pipeline_for_job(job.parent)
+    if pipeline:
+        worker = PipelinesViewSetDispatch()
+        worker.handle_job_finished(job, pipeline)
+    dispatch_parent_job(job)
 
 def build_and_dispatch_scan_ocr_movie_children(parent_job):
     parent_job.status = 'running'
@@ -751,7 +809,6 @@ def selected_area(job_uuid):
 
     dispatch_parent_job(job)
 
-
 @shared_task
 def mesh_match(job_uuid):
     if not Job.objects.filter(pk=job_uuid).exists():
@@ -781,87 +838,24 @@ def finish_mesh_match_threaded(job):
 
 @shared_task
 def mesh_match_threaded(job_uuid):
-    if Job.objects.filter(pk=job_uuid).exists():
-        job = Job.objects.get(pk=job_uuid)
-        if job.status in ['success', 'failed']:
-            return
-        children = Job.objects.filter(parent=job)
-        next_step = evaluate_children('MESH MATCH THREADED', 'mesh_match', children)
-        print('next step is {}'.format(next_step))
-        if next_step == 'build_child_tasks':
-          build_and_dispatch_mesh_match_threaded_children(job)
-        elif next_step == 'wrap_up':
-          finish_mesh_match_threaded(job)
-        elif next_step == 'abort':
-          job.status = 'failed'
-          job.harvest_failed_child_job_errors(children)
-          job.save()
+    generic_threaded(
+        job_uuid, 
+        'mesh_match', 
+        'MESH MATCH THREADED', 
+        build_and_dispatch_mesh_match_threaded_children, 
+        finish_mesh_match_threaded
+    )
 
 def build_and_dispatch_mesh_match_threaded_children(parent_job):
-    parent_job.status = 'running'
-    parent_job.save()
-    request_data = json.loads(parent_job.request_data)
-    mm_metas = request_data['tier_1_scanners']['mesh_match']
-    movies = request_data['movies']
-
-    source_movies = {}
-    if 'source' in movies:
-        source_movies = movies['source']
-        del movies['source']
-
-    if len(movies) == 0:
-        finish_mesh_match_threaded(parent_job)
-        return
-
-    for mm_meta_id in mm_metas:
-        build_mm_meta = {mm_meta_id: mm_metas[mm_meta_id]}
-        for index, movie_url in enumerate(movies.keys()):
-            movie = movies[movie_url]
-            build_movies = {}
-            build_movies[movie_url] = movie
-            if source_movies:
-                build_movies['source'] = source_movies
-            build_request_data = json.dumps({
-                'movies': build_movies,
-                'tier_1_scanners': {
-                    'mesh_match': build_mm_meta,
-                }
-            })
-            job = Job(
-                request_data=build_request_data,
-                status='created',
-                description='mesh match for movie {}'.format(movie_url),
-                app='analyze',
-                operation='mesh_match',
-                sequence=0,
-                parent=parent_job,
-            )
-            job.save()
-            the_str = 'build_and_dispatch_mesh_match_threaded_children: dispatching job for movie {}'
-            print(the_str.format(movie_url))
-            mesh_match.delay(job.id)
+    build_and_dispatch_generic_threaded_children(
+        parent_job, 
+        'mesh_match', 
+        mesh_match, 
+        finish_mesh_match_threaded
+    )
 
 def wrap_up_mesh_match_threaded(job, children):
-    aggregate_response_data = {
-      'movies': {},
-      'statistics': {
-          'movies': {},
-      },
-    }
-    for child in children:
-        child_response_movies = json.loads(child.response_data)['movies']
-        child_response_stats = json.loads(child.response_data)['statistics']
-        for movie_url in child_response_stats['movies']:
-            aggregate_response_data['statistics']['movies'][movie_url] = child_response_stats['movies'][movie_url]
-
-        if len(child_response_movies.keys()) > 0:
-            movie_url = list(child_response_movies.keys())[0]
-            aggregate_response_data['movies'][movie_url] = child_response_movies[movie_url]
-
-    print('wrap_up_mesh_match_threaded: wrapping up parent job')
-    job.status = 'success'
-    job.response_data = json.dumps(aggregate_response_data)
-    job.save()
+    wrap_up_generic_threaded(job, children, 'mesh_match')
 
 def finish_selected_area_threaded(job):
   children = Job.objects.filter(parent=job)
@@ -873,21 +867,13 @@ def finish_selected_area_threaded(job):
 
 @shared_task
 def selected_area_threaded(job_uuid):
-    if Job.objects.filter(pk=job_uuid).exists():
-        job = Job.objects.get(pk=job_uuid)
-        if job.status in ['success', 'failed']:
-            return
-        children = Job.objects.filter(parent=job)
-        next_step = evaluate_children('SELECTED AREA THREADED', 'selected_area', children)
-        print('next step is {}'.format(next_step))
-        if next_step == 'build_child_tasks':
-          build_and_dispatch_selected_area_threaded_children(job)
-        elif next_step == 'wrap_up':
-          finish_selected_area_threaded(job)
-        elif next_step == 'abort':
-          job.status = 'failed'
-          job.harvest_failed_child_job_errors(children)
-          job.save()
+    generic_threaded(
+        job_uuid, 
+        'selected_area', 
+        'SELECTED AREA THREADED', 
+        build_and_dispatch_selected_area_threaded_children, 
+        finish_selected_area_threaded
+    )
 
 def build_and_dispatch_selected_area_threaded_children(parent_job):
     parent_job.status = 'running'
@@ -935,19 +921,7 @@ def build_and_dispatch_selected_area_threaded_children(parent_job):
             selected_area.delay(job.id)
 
 def wrap_up_selected_area_threaded(job, children):
-    aggregate_response_data = {
-      'movies': {}
-    }
-    for child in children:
-        child_response_movies = json.loads(child.response_data)['movies']
-        if len(child_response_movies.keys()) > 0:
-            movie_url = list(child_response_movies.keys())[0]
-            aggregate_response_data['movies'][movie_url] = child_response_movies[movie_url]
-
-    print('wrap_up_selected_area_threaded: wrapping up parent job')
-    job.status = 'success'
-    job.response_data = json.dumps(aggregate_response_data)
-    job.save()
+    wrap_up_generic_threaded(job, children, 'selected_area')
 
 def generic_chart(job_uuid, chart_type):
     if not Job.objects.filter(pk=job_uuid).exists():
@@ -1020,25 +994,22 @@ def ocr_scene_analysis(job_uuid):
 
 @shared_task
 def ocr_scene_analysis_threaded(job_uuid):
-    if Job.objects.filter(pk=job_uuid).exists():
-        job = Job.objects.get(pk=job_uuid)
-        if job.status in ['success', 'failed']:
-            return
-        children = Job.objects.filter(parent=job)
-        next_step = evaluate_children('OCR SCENE ANALYSIS THREADED', 'ocr_scene_analysis', children)
-        print('next step is {}'.format(next_step))
-        if next_step == 'build_child_tasks':
-          build_and_dispatch_ocr_scene_analysis_threaded_children(job)
-        elif next_step == 'wrap_up':
-          wrap_up_ocr_scene_analysis_threaded(job, children)
-          pipeline = get_pipeline_for_job(job.parent)
-          if pipeline:
-              worker = PipelinesViewSetDispatch()
-              worker.handle_job_finished(job, pipeline)
-        elif next_step == 'abort':
-          job.status = 'failed'
-          job.harvest_failed_child_job_errors(children)
-          job.save()
+    generic_threaded(
+        job_uuid, 
+        'ocr_scene_analysis', 
+        'OCR SCENE ANALYSIS THREADED', 
+        build_and_dispatch_ocr_scene_analysis_threaded_children, 
+        finish_ocr_scene_analysis_threaded
+    )
+
+def finish_ocr_scene_analysis_threaded(job):
+    children = Job.objects.filter(parent=job)
+    wrap_up_ocr_scene_analysis_threaded(job, children)
+    pipeline = get_pipeline_for_job(job.parent)
+    if pipeline:
+        worker = PipelinesViewSetDispatch()
+        worker.handle_job_finished(job, pipeline)
+
 
 def movie_is_full_movie(movie):
     if 'frames' in movie:

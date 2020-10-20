@@ -149,6 +149,8 @@ def dispatch_job(job):
         analyze_tasks.selected_area_threaded.delay(job_uuid)
     if job.app == 'analyze' and job.operation == 'mesh_match_threaded':
         analyze_tasks.mesh_match_threaded.delay(job_uuid)
+    if job.app == 'analyze' and job.operation == 'selection_grower_threaded':
+        analyze_tasks.selection_grower_threaded.delay(job_uuid)
     if job.app == 'analyze' and job.operation == 'build_data_sifter':
         analyze_tasks.build_data_sifter.delay(job_uuid)
     if job.app == 'analyze' and job.operation == 'ocr_scene_analysis_threaded':
