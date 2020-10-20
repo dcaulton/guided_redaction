@@ -2,6 +2,8 @@ class T1Controller:
 
     def get_frameset_hash_for_frame(self, frame, framesets):
         for frameset_hash in framesets:
+            if frameset_hash not in framesets or 'images' not in framesets[frameset_hash]:
+                return
             if frame in framesets[frameset_hash]['images']:
                 return frameset_hash
 

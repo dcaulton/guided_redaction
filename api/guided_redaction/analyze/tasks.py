@@ -25,7 +25,7 @@ from guided_redaction.analyze.api import (
     AnalyzeViewSetTimestamp,
     AnalyzeViewSetSelectedArea,
     AnalyzeViewSetMeshMatch,
-#    AnalyzeViewSetSelectionGrower,
+    AnalyzeViewSetSelectionGrower,
     AnalyzeViewSetOcrSceneAnalysis,
     AnalyzeViewSetTrainHog,
     AnalyzeViewSetTestHog,
@@ -55,12 +55,31 @@ def dispatch_parent_job(job):
             selected_area_threaded.delay(parent_job.id)
         if parent_job.app == 'analyze' and parent_job.operation == 'mesh_match_threaded':
             mesh_match_threaded.delay(parent_job.id)
+        if parent_job.app == 'analyze' and parent_job.operation == 'selection_grower_threaded':
+            selection_grower_threaded.delay(parent_job.id)
         if parent_job.app == 'analyze' and parent_job.operation == 'ocr_scene_analysis_threaded':
             ocr_scene_analysis_threaded.delay(parent_job.id)
         if parent_job.app == 'analyze' and parent_job.operation == 'hog_train_threaded':
             train_hog_threaded.delay(parent_job.id)
         if parent_job.app == 'analyze' and parent_job.operation == 'oma_first_scan_threaded':
             oma_first_scan_threaded.delay(parent_job.id)
+
+def generic_worker_call(job_uuid, operation, worker_class):
+    if not Job.objects.filter(pk=job_uuid).exists():
+        print('calling ' + operation + ' on nonexistent job: {}'.format(job_uuid))
+    job = Job.objects.get(pk=job_uuid)
+    job.status = 'running'
+    job.save()
+    print('running ' + operation + ' job {}'.format(job_uuid))
+    worker = worker_class()
+    response = worker.process_create_request(json.loads(job.request_data))
+    if not Job.objects.filter(pk=job_uuid).exists():
+        return
+    job = Job.objects.get(pk=job_uuid)
+    job.response_data = json.dumps(response.data)
+    job.status = 'success'
+    job.save()
+    dispatch_parent_job(job)
 
 def generic_threaded(job_uuid, child_operation, title, build_and_dispatch_func, finish_func):
     if Job.objects.filter(pk=job_uuid).exists():
@@ -791,42 +810,41 @@ def find_relevant_areas_from_response(match_strings, match_percent, areas_to_red
     return (relevant_areas, match_percentages)
 
 @shared_task
-def selected_area(job_uuid):
-    if not Job.objects.filter(pk=job_uuid).exists():
-        print('calling selected_area on nonexistent job: {}'.format(job_uuid))
-    job = Job.objects.get(pk=job_uuid)
-    job.status = 'running'
-    job.save()
-    print('running selected_area for job {}'.format(job_uuid))
-    worker = AnalyzeViewSetSelectedArea()
-    response = worker.process_create_request(json.loads(job.request_data))
-    if not Job.objects.filter(pk=job_uuid).exists():
-        return
-    job = Job.objects.get(pk=job_uuid)
-    job.response_data = json.dumps(response.data)
-    job.status = 'success'
-    job.save()
+def selection_grower(job_uuid):
+    generic_worker_call(job_uuid, 'selection_grower', AnalyzeViewSetSelectionGrower)
 
-    dispatch_parent_job(job)
+def finish_selection_grower_threaded(job):
+  children = Job.objects.filter(parent=job)
+  wrap_up_selection_grower_threaded(job, children)
+  pipeline = get_pipeline_for_job(job.parent)
+  if pipeline:
+      worker = PipelinesViewSetDispatch()
+      worker.handle_job_finished(job, pipeline)
+
+@shared_task
+def selection_grower_threaded(job_uuid):
+    generic_threaded(
+        job_uuid, 
+        'selection_grower', 
+        'SELECTION GROWER THREADED', 
+        build_and_dispatch_selection_grower_threaded_children, 
+        finish_selection_grower_threaded
+    )
+
+def build_and_dispatch_selection_grower_threaded_children(parent_job):
+    build_and_dispatch_generic_threaded_children(
+        parent_job, 
+        'selection_grower', 
+        selection_grower, 
+        finish_selection_grower_threaded
+    )
+
+def wrap_up_selection_grower_threaded(job, children):
+    wrap_up_generic_threaded(job, children, 'selection_grower')
 
 @shared_task
 def mesh_match(job_uuid):
-    if not Job.objects.filter(pk=job_uuid).exists():
-        print('calling mesh_match on nonexistent job: {}'.format(job_uuid))
-    job = Job.objects.get(pk=job_uuid)
-    job.status = 'running'
-    job.save()
-    print('running mesh_match for job {}'.format(job_uuid))
-    worker = AnalyzeViewSetMeshMatch()
-    response = worker.process_create_request(json.loads(job.request_data))
-    if not Job.objects.filter(pk=job_uuid).exists():
-        return
-    job = Job.objects.get(pk=job_uuid)
-    job.response_data = json.dumps(response.data)
-    job.status = 'success'
-    job.save()
-
-    dispatch_parent_job(job)
+    generic_worker_call(job_uuid, 'mesh_match', AnalyzeViewSetMeshMatch)
 
 def finish_mesh_match_threaded(job):
   children = Job.objects.filter(parent=job)
@@ -856,6 +874,25 @@ def build_and_dispatch_mesh_match_threaded_children(parent_job):
 
 def wrap_up_mesh_match_threaded(job, children):
     wrap_up_generic_threaded(job, children, 'mesh_match')
+
+@shared_task
+def selected_area(job_uuid):
+    if not Job.objects.filter(pk=job_uuid).exists():
+        print('calling selected_area on nonexistent job: {}'.format(job_uuid))
+    job = Job.objects.get(pk=job_uuid)
+    job.status = 'running'
+    job.save()
+    print('running selected_area for job {}'.format(job_uuid))
+    worker = AnalyzeViewSetSelectedArea()
+    response = worker.process_create_request(json.loads(job.request_data))
+    if not Job.objects.filter(pk=job_uuid).exists():
+        return
+    job = Job.objects.get(pk=job_uuid)
+    job.response_data = json.dumps(response.data)
+    job.status = 'success'
+    job.save()
+
+    dispatch_parent_job(job)
 
 def finish_selected_area_threaded(job):
   children = Job.objects.filter(parent=job)

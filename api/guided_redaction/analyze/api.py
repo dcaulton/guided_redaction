@@ -6,6 +6,7 @@ from guided_redaction.analyze.classes.HogScanner import HogScanner
 from guided_redaction.analyze.classes.DataSifterCompiler import DataSifterCompiler
 from .controller_selected_area import SelectedAreaController
 from .controller_mesh_match import MeshMatchController
+from .controller_selection_grower import SelectionGrowerController
 from .controller_ocr import OcrController
 from .controller_ocr_scene_analysis import OcrSceneAnalysisController
 from .controller_template import TemplateController
@@ -91,6 +92,30 @@ class AnalyzeViewSetSelectedArea(viewsets.ViewSet):
         response_movies = worker.build_selected_areas(request_data)
 
         return Response({"movies": response_movies})
+
+
+class AnalyzeViewSetSelectionGrower(viewsets.ViewSet):
+    def create(self, request):
+        request_data = request.data
+        return self.process_create_request(request_data)
+
+    def process_create_request(self, request_data):
+        response_movies = {}
+        if not request_data.get("movies"):
+            return self.error("movies is required")
+        if not request_data.get("tier_1_scanners"):
+            return self.error("tier_1_scanners is required")
+        t1s = request_data.get("tier_1_scanners")
+        if 'selection_grower' not in t1s:
+            return self.error("tier_1_scanners needs to have a selection_grower child")
+
+        worker = SelectionGrowerController()
+        response_movies, response_statistics = worker.process_selection_grower(request_data)
+
+        return Response({
+            "movies": response_movies,
+            "statistics": response_statistics,
+        })
 
 
 class AnalyzeViewSetMeshMatch(viewsets.ViewSet):
