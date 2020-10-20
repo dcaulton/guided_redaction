@@ -327,6 +327,7 @@ class InsightsPanel extends React.Component {
       template: 'scan_template_threaded',
       ocr: 'scan_ocr',
       selected_area: 'selected_area_threaded',
+      selection_grower: 'selection_grower_threaded',
       mesh_match: 'mesh_match_threaded',
       ocr_scene_analysis: 'ocr_scene_analysis_threaded',
     }
@@ -393,6 +394,13 @@ class InsightsPanel extends React.Component {
       const t1_osa_rule = this.props.tier_1_scanners['mesh_match'][osa_id]
       const tier_1_output = this.props.tier_1_matches['mesh_match'][osa_id]['movies']
       job_data['description'] += 'on t1 mesh_match results (mm ' + t1_osa_rule['name'] + ')'
+      job_data['request_data']['movies'] = tier_1_output
+      job_data['request_data']['movies']['source'] = this.makeSourceForPassedT1Output(tier_1_output)
+    } else if (scope.match(/_t1_selection_grower$/)) {   
+      const osa_id = extra_data
+      const t1_osa_rule = this.props.tier_1_scanners['selection_grower'][osa_id]
+      const tier_1_output = this.props.tier_1_matches['selection_grower'][osa_id]['movies']
+      job_data['description'] += 'on t1 selection_grower results (mm ' + t1_osa_rule['name'] + ')'
       job_data['request_data']['movies'] = tier_1_output
       job_data['request_data']['movies']['source'] = this.makeSourceForPassedT1Output(tier_1_output)
     } else if (scope.match(/_t1_telemetry$/)) {   
@@ -694,6 +702,16 @@ class InsightsPanel extends React.Component {
         job_string === 'mesh_match_t1_mesh_match'
     ) {
       let job_data = this.buildTier1JobData('mesh_match', job_string, extra_data)
+      this.props.submitJob({
+        job_data: job_data,
+      })
+    } else if (
+        job_string === 'selection_grower_t1_osa' || 
+        job_string === 'selection_grower_t1_selected_area' || 
+        job_string === 'selection_grower_t1_selection_grower' || 
+        job_string === 'selection_grower_t1_mesh_match'
+    ) {
+      let job_data = this.buildTier1JobData('selection_grower', job_string, extra_data)
       this.props.submitJob({
         job_data: job_data,
       })

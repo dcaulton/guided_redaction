@@ -36,7 +36,6 @@ class SelectionGrowerControls extends React.Component {
         east: 0,
         west: 0,
       },
-      min_score: 15,
       colors: [],
       attribute_search_name: '',
       attribute_search_value: '',
@@ -60,6 +59,7 @@ class SelectionGrowerControls extends React.Component {
       'movie': this.props.movie_url,
       id: the_id,
       location: clicked_coords,
+      tolerance: 25,
     }
     deepCopyColors.push(build_obj)
     this.setLocalStateVar('colors', deepCopyColors)
@@ -116,7 +116,6 @@ class SelectionGrowerControls extends React.Component {
         scan_level: sam['scan_level'],
         directions: sam['directions'],
         offsets: sam['offsets'],
-        min_score: sam['min_score'],
         colors: sam['colors'],
       })
     }
@@ -149,7 +148,6 @@ class SelectionGrowerControls extends React.Component {
         east: 0,
         west: 0,
       },
-      min_score: 15,
       colors: [],
     })
   }
@@ -162,7 +160,6 @@ class SelectionGrowerControls extends React.Component {
       scan_level: this.state.scan_level,
       directions: this.state.directions,
       offsets: this.state.offsets,
-      min_score: this.state.min_score,
       colors: this.state.colors,
     }
     return meta
@@ -198,17 +195,6 @@ class SelectionGrowerControls extends React.Component {
       'name',
       25,
       ((value)=>{this.setLocalStateVar('name', value)})
-    )
-  }
-
-  buildMinScoreField() {
-    return buildLabelAndTextInput(
-      this.state.min_score,
-      'Min Score',
-      'selection_grower_min_score',
-      'min_score',
-      4,
-      ((value)=>{this.setLocalStateVar('min_score', value)})
     )
   }
 
@@ -343,10 +329,10 @@ class SelectionGrowerControls extends React.Component {
     if (!Object.keys(this.props.tier_1_scanners['selection_grower']).includes(this.state.id)) {
       return ''
     }
-    const tier_1_template_run_options = this.props.buildTier1RunOptions('template', 'selection_grower_t1_template')
     const tier_1_sa_run_options = this.props.buildTier1RunOptions('selected_area', 'selection_grower_t1_selected_area')
     const tier_1_osa_run_options = this.props.buildTier1RunOptions('ocr_scene_analysis', 'selection_grower_t1_osa')
     const tier_1_mesh_match_run_options = this.props.buildTier1RunOptions('mesh_match', 'selection_grower_t1_mesh_match')
+    const tier_1_sg_run_options = this.props.buildTier1RunOptions('selection_grower', 'selection_grower_t1_selection_grower')
 
     return (
       <div className='d-inline'>
@@ -361,25 +347,10 @@ class SelectionGrowerControls extends React.Component {
           Run
         </button>
         <div className='dropdown-menu' aria-labelledby='scanSelectionGrowerDropdownButton'>
-          <button className='dropdown-item'
-              onClick={() => this.props.submitInsightsJob('selection_grower_current_frame')}
-          >
-            Frame
-          </button>
-          <button className='dropdown-item'
-              onClick={() => this.props.submitInsightsJob('selection_grower_current_movie')}
-          >
-            Movie
-          </button>
-          <button className='dropdown-item'
-              onClick={() => this.props.submitInsightsJob('selection_grower_all_movies')}
-          >
-            All Movies
-          </button>
-          {tier_1_template_run_options}
           {tier_1_sa_run_options}
           {tier_1_osa_run_options}
           {tier_1_mesh_match_run_options}
+          {tier_1_sg_run_options}
         </div>
       </div>
     )
@@ -437,22 +408,88 @@ class SelectionGrowerControls extends React.Component {
     this.setLocalStateVar('colors', build_colors)
   }
 
+  updateColorProperty(color_id, property_name, property_value) {
+    let deepCopyColors = JSON.parse(JSON.stringify(this.state.colors))
+    let build_colors = []
+    for (let i=0; i < this.state.colors.length; i++) {
+      const color_obj = deepCopyColors[i]
+      if (color_obj['id'] === color_id) {
+        color_obj[property_name] = property_value
+      }
+      build_colors.push(color_obj)
+    }
+    this.setLocalStateVar('colors', build_colors)
+  }
+
   buildColorsField() {
     return (
-      <div>
-        <div className='h5'>
+      <div className='col'>
+        <div className='h5 row'>
           Colors
         </div>
         {this.state.colors.map((color_obj, index) => {
+          const mar_left = '-' + String(color_obj['location'][0] - 25) + 'px'
+          const mar_top = '-' + String(color_obj['location'][1] - 25) + 'px'
+          const div_style = {
+            width:'50px',
+            height:'50px',
+            overflow: 'hidden',
+            border: '2px solid black',
+          }
+          const img_style = {
+            marginLeft: mar_left,
+            marginTop: mar_top,
+          }
+          const color_img = (
+            <div 
+              style={div_style}
+            >
+              <img
+                style={img_style}
+                src={this.props.insights_image}
+                alt='whatever'
+              />
+            </div>
+          )
           return (
-            <div key={index}>
-              {color_obj.id}
-              <button
-                className='btn btn-primary p-1 m-1 ml-2'
-                onClick={() => this.clearColorCenter(color_obj.id)}
-              >
-                Delete
-              </button>
+            <div key={index} className='row border-top mt-2'>
+              <div className='col'>
+
+                <div className='row mt-2'>
+                  <div className='col-3'>
+                    {color_obj.id}
+                  </div>
+                  <div className='col-1'>
+                    {color_img}
+                  </div>
+                </div>
+
+                <div className='row mt-2'>
+                  <div className='d-inline'>
+                    <input
+                      size='4'
+                      value={color_obj['tolerance']}
+                      onChange={(event) => this.updateColorProperty(color_obj.id, 'tolerance', event.target.value)}
+                    />
+                  </div>
+                  <div className='d-inline'>
+                    Color Tolerance
+                  </div>
+
+                </div>
+
+                <div className='row'>
+                  <div className='col-2'>
+                    <button
+                      className='btn btn-primary p-1 m-1'
+                      onClick={() => this.clearColorCenter(color_obj.id)}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+
+              </div>
             </div>
           )
         })}
@@ -468,7 +505,6 @@ class SelectionGrowerControls extends React.Component {
     const load_button = this.buildLoadButton()
     const id_string = buildIdString(this.state.id, 'selection_grower', false)
     const name_field = this.buildNameField()
-    const min_score_field = this.buildMinScoreField()
     const attributes_list = this.buildAttributesList()
     const run_button = this.buildRunButton()
     const delete_button = this.buildDeleteButton()
@@ -514,10 +550,6 @@ class SelectionGrowerControls extends React.Component {
 
                 <div className='row mt-2'>
                   {name_field}
-                </div>
-
-                <div className='row mt-2'>
-                  {min_score_field}
                 </div>
 
                 <div className='row mt-2'>
