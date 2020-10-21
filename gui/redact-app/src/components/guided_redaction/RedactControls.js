@@ -44,6 +44,51 @@ class RedactControls extends React.Component {
     this.setLocalStateVar=this.setLocalStateVar.bind(this)
   }
 
+  setAttribute(name, value) {
+    let deepCopyAttributes = JSON.parse(JSON.stringify(this.state.attributes))
+    deepCopyAttributes[name] = value
+    this.setLocalStateVar('attributes', deepCopyAttributes)
+    this.props.displayInsightsMessage('Attribute was added')
+  }
+
+  doAddAttribute() {
+    const value_ele = document.getElementById('redact_rule_attribute_value')
+    const name_ele = document.getElementById('redact_rule_attribute_name')
+    if (value_ele.value && name_ele.value) {
+      this.setAttribute(name_ele.value, value_ele.value)
+      name_ele.value = ''
+      value_ele.value = ''
+    }
+  }
+
+  deleteAttribute(name) {
+    let deepCopyAttributes = JSON.parse(JSON.stringify(this.state.attributes))
+    if (!Object.keys(this.state.attributes).includes(name)) {
+      return
+    }
+    delete deepCopyAttributes[name]
+    this.setLocalStateVar('attributes', deepCopyAttributes)
+    this.props.displayInsightsMessage('Attribute was deleted')
+  }
+
+  buildAttributesList() {
+    const add_attr_row = buildAttributesAddRow(
+      'redact_rule_attribute_name',
+      'redact_rule_attribute_value',
+      (()=>{this.doAddAttribute()})
+    )
+    const attribs_list = buildAttributesAsRows(
+      this.state.attributes,
+      ((value)=>{this.deleteAttribute(value)})
+    )
+    return (
+      <div>
+        {add_attr_row}
+        {attribs_list}
+      </div>
+    )
+  }
+
   doSave(when_done=(()=>{})) {
     let deepCopyRRs = JSON.parse(JSON.stringify(this.props.redact_rules))
     const rr = this.getRedactRuleFromState()
@@ -66,7 +111,6 @@ class RedactControls extends React.Component {
       this.loadNewRedactRule()
     } else {
       const rr = this.props.redact_rules[rr_id]
-console.log('mingus ', rr)
       this.setState({
         id: rr['id'],
         name: rr['name'],
@@ -233,6 +277,8 @@ console.log('mingus ', rr)
     const delete_button = this.buildDeleteButton()
     const load_button = this.buildLoadButton()
     const save_to_db_button = this.buildSaveToDatabaseButton()
+    const attributes_list = this.buildAttributesList()
+
     const mask_method_field = buildRedactionTypeSelect(
       'mask_method', 
       this.state.mask_method, 
@@ -280,8 +326,8 @@ console.log('mingus ', rr)
 
                 <div id='row mt-2'>
                   {load_button}
-                  {save_to_db_button}
                   {delete_button}
+                  {save_to_db_button}
                   {redact_button}
                 </div>
 
@@ -300,6 +346,10 @@ console.log('mingus ', rr)
                   {bucket_closeness_field}
                   {min_contour_area_field}
                   {preserve_hlines_field}
+                </div>
+
+                <div id='row mt-2'>
+                  {attributes_list}
                 </div>
 
                 <div className='row mt-3 ml-1 mr-1'>
