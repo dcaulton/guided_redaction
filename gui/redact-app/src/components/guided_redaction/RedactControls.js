@@ -17,9 +17,6 @@ import {
   makeHeaderRow,
   buildAttributesAsRows,
   buildIdString,
-  clearTier1Matches,
-  buildClearMatchesButton,
-  doTier1Save,
 } from './SharedControls'
 
 class RedactControls extends React.Component {

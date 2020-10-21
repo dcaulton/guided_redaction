@@ -848,7 +848,6 @@ class RedactApplication extends React.Component {
     .then((response) => response.json())
     .then((responseJson) => {
       const scanner = JSON.parse(responseJson['scanner']['content'])
-      const scanner_type = responseJson['scanner']['type']
       let deepCopyRRs = JSON.parse(JSON.stringify(this.state.redact_rules))
       scanner['attributes'] = responseJson['scanner']['attributes']
       deepCopyRRs[scanner['id']] = scanner
