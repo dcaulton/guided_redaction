@@ -361,6 +361,11 @@ class BottomInsightsControls extends React.Component {
           redact_rule_current_id={this.props.redact_rule_current_id}
           movies={this.props.movies}
           setGlobalStateVar={this.props.setGlobalStateVar}
+          scanners={this.props.scanners}
+          getScanners={this.props.getScanners}
+          deleteScanner={this.props.deleteScanner}
+          importRedactRule={this.props.importRedactRule}
+          saveScannerToDatabase={this.props.saveScannerToDatabase}
         />
 
         <ZipControls

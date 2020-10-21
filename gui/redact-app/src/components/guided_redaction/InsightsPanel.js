@@ -1455,6 +1455,7 @@ class InsightsPanel extends React.Component {
             getScanners={this.props.getScanners}
             deleteScanner={this.props.deleteScanner}
             importScanner={this.props.importScanner}
+            importRedactRule={this.props.importRedactRule}
             preserve_movie_audio={this.props.preserve_movie_audio}
             pipelines={this.props.pipelines}
             current_pipeline_id={this.props.current_pipeline_id}

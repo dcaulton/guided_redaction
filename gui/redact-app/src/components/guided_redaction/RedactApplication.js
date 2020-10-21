@@ -190,6 +190,7 @@ class RedactApplication extends React.Component {
     this.getScanners=this.getScanners.bind(this)
     this.deleteScanner=this.deleteScanner.bind(this)
     this.importScanner=this.importScanner.bind(this)
+    this.importRedactRule=this.importRedactRule.bind(this)
     this.wrapUpJobWrapper=this.wrapUpJobWrapper.bind(this)
     this.attachToJobWrapper=this.attachToJobWrapper.bind(this)
     this.toggleShowVisibility=this.toggleShowVisibility.bind(this)
@@ -214,7 +215,11 @@ class RedactApplication extends React.Component {
   }
 
   seedRedactRule() {
+    const rr_id = 'redact_rule_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
     const redact_rule = {
+      id: rr_id,
+      name: 'default',
+      scan_level: 'tier_2',
       mask_method: 'black_rectangle',
       replace_with: 'color_partitioned',
       erode_iterations: 9,
@@ -222,7 +227,6 @@ class RedactApplication extends React.Component {
       min_contour_area: 1000,
       preserve_hlines: 'yes',
     }
-    const rr_id = 'redact_rule_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
     let build_rrs = {}
     build_rrs[rr_id] = redact_rule
 
@@ -829,6 +833,30 @@ class RedactApplication extends React.Component {
     .then((response) => response.json())
     .then((responseJson) => {
       this.setGlobalStateVar('scanners', responseJson['scanners'])
+    })
+    .catch((error) => {
+      console.error(error);
+    })
+  }
+
+  async importRedactRule(the_uuid, when_done=(()=>{})) {
+    let the_url = this.getUrl('scanners_url') + '/' + the_uuid
+    await fetch(the_url, {
+      method: 'GET',
+      headers: this.buildJsonHeaders(),
+    })
+    .then((response) => response.json())
+    .then((responseJson) => {
+      const scanner = JSON.parse(responseJson['scanner']['content'])
+      const scanner_type = responseJson['scanner']['type']
+      let deepCopyRRs = JSON.parse(JSON.stringify(this.state.redact_rules))
+      scanner['attributes'] = responseJson['scanner']['attributes']
+      deepCopyRRs[scanner['id']] = scanner
+      this.setGlobalStateVar('redact_rules', deepCopyRRs)
+      return responseJson
+    })
+    .then((responseJson) => {
+      when_done(responseJson)
     })
     .catch((error) => {
       console.error(error);
@@ -2193,6 +2221,7 @@ class RedactApplication extends React.Component {
                 getScanners={this.getScanners}
                 deleteScanner={this.deleteScanner}
                 importScanner={this.importScanner}
+                importRedactRule={this.importRedactRule}
                 wrapUpJob={this.wrapUpJobWrapper}
                 attachToJob={this.attachToJobWrapper}
                 preserve_movie_audio={this.state.preserve_movie_audio}
