@@ -651,7 +651,13 @@ class ComposePanel extends React.Component {
       preserve_working_dir_across_batch: false,
       return_type: 'url',
     }
-    job_data['request_data']['redact_rule'] = this.props.redact_rule
+    
+    if (
+      this.props.redact_rule_current_id &&
+      Object.keys(this.props.redact_rules).includes(this.props.redact_rule_current_id)
+    ) {
+      job_data['request_data']['redact_rule'] = this.props.redact_rules[this.props.redact_rule_current_id]
+    }
 
     if (Object.keys(extra_data).includes('areas_to_redact')) {
       job_data['request_data']['areas_to_redact'] = extra_data['areas_to_redact']
@@ -1239,7 +1245,8 @@ class ComposePanel extends React.Component {
     return (
       <ComposeImageInfoControls
         getImageUrl={this.props.getImageUrl}
-        redact_rule={this.props.redact_rule}
+        redact_rules={this.props.redact_rules}
+        redact_rule_current_id={this.props.redact_rule_current_id}
         setGlobalStateVar={this.props.setGlobalStateVar}
         getFramesetHashForImageUrl={this.props.getFramesetHashForImageUrl}
         setIllustrateParameters={this.props.setIllustrateParameters}

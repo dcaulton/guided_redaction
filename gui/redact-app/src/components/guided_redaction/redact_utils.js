@@ -51,16 +51,20 @@ export const buildIllustrateDarkenPercentSelect = function (name, value, onchang
 }
 
 export const buildRedactionRuleControls = function (
-  redact_rule,
+  redact_rules,
+  redact_rule_current_id,
   setGlobalStateVar
   ) {
 
   function updateRedactField(field_name, the_value) {
-    let deepCopyRedactRule = JSON.parse(JSON.stringify(redact_rule))
-    deepCopyRedactRule[field_name] = the_value
-    setGlobalStateVar('redact_rule', deepCopyRedactRule)
+    let deepCopyRedactRules = JSON.parse(JSON.stringify(redact_rules))
+    let rr = JSON.parse(JSON.stringify(redact_rules[redact_rule_current_id]))
+    rr[field_name] = the_value
+    deepCopyRedactRules[redact_rule_current_id] = rr   // probably unneeded
+    setGlobalStateVar('redact_rules', deepCopyRedactRules)
   }
 
+  let redact_rule = redact_rules[redact_rule_current_id]
   const mask_method = buildRedactionTypeSelect(
     'mask_method',
     redact_rule.mask_method,
@@ -99,12 +103,12 @@ export const buildRedactionRuleControls = function (
 
   return (
     <div>
-    {mask_method}
-    {replace_with}
-    {erode_iterations}
-    {bucket_closeness}
-    {min_contour_area}
-    {preserve_hlines}
+      {mask_method}
+      {replace_with}
+      {erode_iterations}
+      {bucket_closeness}
+      {min_contour_area}
+      {preserve_hlines}
     </div>
   )
 }

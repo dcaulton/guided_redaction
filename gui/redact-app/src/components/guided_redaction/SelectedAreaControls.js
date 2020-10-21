@@ -21,7 +21,7 @@ class SelectedAreaControls extends React.Component {
     this.state = {
       id: '',
       name: '',
-      select_type: 'arrow',
+      select_type: 'flood',
       merge: 'yes',
       interior_or_exterior: 'interior',
       attributes: {},
@@ -232,7 +232,7 @@ class SelectedAreaControls extends React.Component {
     this.setState({
       id: the_id,
       name: '',
-      select_type: 'arrow',
+      select_type: 'flood',
       merge: 'yes',
       interior_or_exterior: 'interior',
       attributes: {},

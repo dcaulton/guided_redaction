@@ -41,8 +41,12 @@ class RedactControls extends React.Component {
   }
 
   buildRedactRuleControls() {
+    if (!this.props.redact_rule_current_id) {
+      return ''
+    }
     return buildRedactionRuleControls(
-      this.props.redact_rule,
+      this.props.redact_rules,
+      this.props.redact_rule_current_id,
       this.props.setGlobalStateVar
     )
   }

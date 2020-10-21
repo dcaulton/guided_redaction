@@ -475,6 +475,15 @@ class MoviePanel extends React.Component {
     return job_data
   }
 
+  getRedactRule() {
+    if (
+      this.props.redact_rule_current_id &&
+      Object.keys(this.props.redact_rules).includes(this.props.redact_rule_current_id)
+    ) {
+      return this.props.redact_rules[this.props.redact_rule_current_id]
+    }
+  }
+
   buildRedactFramesetsJobData(extra_data) {
     let job_data = {
       request_data: {},
@@ -484,7 +493,7 @@ class MoviePanel extends React.Component {
     job_data['description'] = 'redact images for movie: ' + this.props.movie_url
     job_data['request_data']['movies'] = {}
     job_data['request_data']['movies'][this.props.movie_url] = this.props.movies[this.props.movie_url]
-    job_data['request_data']['redact_rule'] = this.props.redact_rule
+    job_data['request_data']['redact_rule'] = this.getRedactRule()
     job_data['request_data']['meta'] = {
       return_type: 'url',
       preserve_working_dir_across_batch: true,
@@ -511,7 +520,7 @@ class MoviePanel extends React.Component {
     }
     job_data['request_data']['movies'][this.props.movie_url] = build_movie
 
-    job_data['request_data']['redact_rule'] = this.props.redact_rule
+    job_data['request_data']['redact_rule'] = this.getRedactRule()
     job_data['request_data']['meta'] = {
       return_type: 'url',
       preserve_working_dir_across_batch: true,
@@ -650,7 +659,7 @@ class MoviePanel extends React.Component {
       preserve_working_dir_across_batch: false,
       return_type: 'url',
     }
-    job_data['request_data']['redact_rule'] = this.props.redact_rule
+    job_data['request_data']['redact_rule'] = this.getRedactRule()
 
     if (Object.keys(extra_data).includes('areas_to_redact')) {
       job_data['request_data']['areas_to_redact'] = extra_data['areas_to_redact']
@@ -1071,7 +1080,8 @@ class MoviePanel extends React.Component {
             setGlobalStateVar={this.props.setGlobalStateVar}
             toggleGlobalStateVar={this.props.toggleGlobalStateVar}
             submitMovieJob={this.submitMovieJob}
-            redact_rule={this.props.redact_rule}
+            redact_rules={this.props.redact_rules}
+            redact_rule_current_id={this.props.redact_rule_current_id}
             frameset_discriminator={this.props.frameset_discriminator}
             changeMovieResolutionNew={this.changeMovieResolutionNew}
             movie_resolution_new={this.state.movie_resolution_new}
@@ -1396,7 +1406,8 @@ class MoviePanelAdvancedControls extends React.Component {
     }
 
     const redaction_rule_controls = buildRedactionRuleControls(
-      this.props.redact_rule,
+      this.props.redact_rules,
+      this.props.redact_rule_current_id,
       this.props.setGlobalStateVar
     )
 

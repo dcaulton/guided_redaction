@@ -96,7 +96,8 @@ class ComposeImageInfoControls extends React.Component {
       return ''
     }
     const redact_rule_controls = buildRedactionRuleControls(
-      this.props.redact_rule,
+      this.props.redact_rules,
+      this.props.redact_rule_current_id,
       this.props.setGlobalStateVar
     )
     const illustrate_color_dropdown = this.buildIllustrateColorDropdown()

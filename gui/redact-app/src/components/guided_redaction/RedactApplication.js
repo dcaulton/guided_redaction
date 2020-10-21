@@ -24,14 +24,8 @@ class RedactApplication extends React.Component {
       api_server_url: api_server_url,
       api_key: api_key,
       frameset_discriminator: 'gray8',
-      redact_rule: {
-        mask_method: 'black_rectangle',
-        replace_with: 'color_partitioned',
-        erode_iterations: 9,
-        bucket_closeness: 0,
-        min_contour_area: 1000,
-        preserve_hlines: 'yes',
-      },
+      redact_rules: {},
+      redact_rule_current_id: '',
       movie_url: '',
       frameset_hash: '',
       image_width: 0,
@@ -219,6 +213,25 @@ class RedactApplication extends React.Component {
     this.truncateAtFramesetHash=this.truncateAtFramesetHash.bind(this)
   }
 
+  seedRedactRule() {
+    const redact_rule = {
+      mask_method: 'black_rectangle',
+      replace_with: 'color_partitioned',
+      erode_iterations: 9,
+      bucket_closeness: 0,
+      min_contour_area: 1000,
+      preserve_hlines: 'yes',
+    }
+    const rr_id = 'redact_rule_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
+    let build_rrs = {}
+    build_rrs[rr_id] = redact_rule
+
+    this.setState({
+      redact_rules: build_rrs,
+      redact_rule_current_id: rr_id,
+    })
+  }
+
   truncateAtFramesetHash(frameset_hash) {
     const hashes = this.getFramesetHashesInOrder()
     if (!hashes.includes(frameset_hash)) {
@@ -294,7 +307,12 @@ class RedactApplication extends React.Component {
     let input_obj = {
       movies: movies_to_process
     }
-    input_obj['redact_rule'] = this.state.redact_rule
+    if (
+      this.state.redact_rule_current_id && 
+      Object.keys(this.state.redact_rules).includes(this.state.redact_rule_current_id)
+    ) {
+      input_obj['redact_rule'] = this.state.redact_rules[this.state.redact_rule_current_id]
+    }
 
     const pipeline_name = 'scan_ocr_and_redact_' + ocr_rule['id'].toString()
     const pipeline = this.getPipelineForName(pipeline_name)
@@ -341,7 +359,12 @@ class RedactApplication extends React.Component {
     let input_obj = {
       movies: the_build_movie,
     }
-    input_obj['redact_rule'] = this.state.redact_rule
+    if (
+      this.state.redact_rule_current_id && 
+      Object.keys(this.state.redact_rules).includes(this.state.redact_rule_current_id)
+    ) {
+      input_obj['redact_rule'] = this.state.redact_rules[this.state.redact_rule_current_id]
+    }
 
     const pipeline_name = 'scan_template_and_redact_' + template_id.toString()
     const pipeline = this.getPipelineForName(pipeline_name)
@@ -1139,6 +1162,7 @@ class RedactApplication extends React.Component {
       }
       JobLogic.checkForJobs(pass_obj)
     })
+    this.seedRedactRule()
   }
 
   componentWillUnmount() {
@@ -2081,7 +2105,8 @@ class RedactApplication extends React.Component {
                 movie_url = {this.state.movie_url}
                 getCurrentFramesets={this.getCurrentFramesets}
                 getCurrentFrames={this.getCurrentFrames}
-                redact_rule={this.state.redact_rule}
+                redact_rules={this.state.redact_rules}
+                redact_rule_current_id={this.state.redact_rule_current_id}
                 setFramesetHash={this.setFramesetHash}
                 getRedactionFromFrameset={this.getRedactionFromFrameset}
                 getImageFromFrameset={this.getImageFromFrameset}
@@ -2181,7 +2206,8 @@ class RedactApplication extends React.Component {
                 app_codebooks={this.state.app_codebooks}
                 tier_1_scanners={this.state.tier_1_scanners}
                 tier_1_scanner_current_ids={this.state.tier_1_scanner_current_ids}
-                redact_rule={this.state.redact_rule}
+                redact_rules={this.state.redact_rules}
+                redact_rule_current_id={this.state.redact_rule_current_id}
                 visibilityFlags={this.state.visibilityFlags}
                 toggleShowVisibility={this.toggleShowVisibility}
                 impersonateUser={this.impersonateUser}
@@ -2228,7 +2254,8 @@ class RedactApplication extends React.Component {
                 workflow_callbacks={this.state.workflow_callbacks}
                 addWorkflowCallbacks={this.addWorkflowCallbacks}
                 clearCurrentFramesetChanges={this.clearCurrentFramesetChanges}
-                redact_rule={this.state.redact_rule}
+                redact_rules={this.state.redact_rules}
+                redact_rule_current_id={this.state.redact_rule_current_id}
                 cropImage={this.cropImage}
                 tier_1_scanners={this.state.tier_1_scanners}
                 tier_1_scanner_current_ids={this.state.tier_1_scanner_current_ids}

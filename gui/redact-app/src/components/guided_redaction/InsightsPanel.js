@@ -494,7 +494,14 @@ class InsightsPanel extends React.Component {
     }
     job_data['app'] = 'redact'
     job_data['operation'] = 'redact'
-    job_data['request_data']['redact_rule'] = this.props.redact_rule
+
+    if (
+      this.props.redact_rule_current_id &&
+      Object.keys(this.props.redact_rules).includes(this.props.redact_rule_current_id)
+    ) {
+      job_data['request_data']['redact_rule'] = this.props.redact_rules[this.props.redact_rule_current_id]
+    }
+
     job_data['request_data']['meta'] = {
       return_type: 'url',
       preserve_working_dir_across_batch: true,
@@ -1461,7 +1468,8 @@ class InsightsPanel extends React.Component {
             tier_1_scanners={this.props.tier_1_scanners}
             tier_1_scanner_current_ids={this.props.tier_1_scanner_current_ids}
             setModalImage={this.setModalImage}
-            redact_rule={this.props.redact_rule}
+            redact_rules={this.props.redact_rules}
+            redact_rule_current_id={this.props.redact_rule_current_id}
             impersonateUser={this.props.impersonateUser}
             cv_workers={this.props.cv_workers}
             queryCvWorker={this.props.queryCvWorker}

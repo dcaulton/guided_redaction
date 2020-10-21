@@ -357,7 +357,8 @@ class BottomInsightsControls extends React.Component {
           visibilityFlags={this.props.visibilityFlags}
           toggleShowVisibility={this.props.toggleShowVisibility}
           submitInsightsJob={this.props.submitInsightsJob}
-          redact_rule={this.props.redact_rule}
+          redact_rules={this.props.redact_rules}
+          redact_rule_current_id={this.props.redact_rule_current_id}
           movies={this.props.movies}
           setGlobalStateVar={this.props.setGlobalStateVar}
         />
