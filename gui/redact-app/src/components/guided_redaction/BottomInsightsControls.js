@@ -350,6 +350,7 @@ class BottomInsightsControls extends React.Component {
           setGlobalStateVar={this.props.setGlobalStateVar}
           movies={this.props.movies}
           tier_1_scanners={this.props.tier_1_scanners}
+          redact_rules={this.props.redact_rules}
         />
 
         <RedactControls

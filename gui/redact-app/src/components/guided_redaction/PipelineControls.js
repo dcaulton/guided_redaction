@@ -30,7 +30,7 @@ class PipelineControls extends React.Component {
           'ocr_scene_analysis': {},
           'telemetry': {},
         },
-        'redact': {},
+        'redact_rules': {},
         'split_and_hash': {},
         'secure_files_import': {},
         'zip': {},
@@ -40,6 +40,7 @@ class PipelineControls extends React.Component {
       addends: {},
       minuends: {},
       subtrahends: {},
+      redact_rule_edges: {},
       attribute_search_value: '',
       use_parsed_movies: false,
       json: '',
@@ -524,6 +525,8 @@ class PipelineControls extends React.Component {
                       deleteNode={this.deleteNode}
                       updateNodeValue={this.updateNodeValue}
                       tier_1_scanners={this.props.tier_1_scanners}
+                      redact_rule_edges={this.state.redact_rule_edges}
+                      redact_rules={this.props.redact_rules}
                     />
                   
                   </div>
@@ -582,6 +585,8 @@ class NodeCardList extends React.Component {
                   subtrahends={this.props.subtrahends}
                   setLocalStateVar={this.props.setLocalStateVar}
                   deleteNode={this.props.deleteNode}
+                  redact_rule_edges={this.props.redact_rule_edges}
+                  redact_rules={this.props.redact_rules}
                 />
               )
             })}
@@ -1020,6 +1025,72 @@ class NodeCard extends React.Component {
     )
   }
 
+  updateRedactRuleEdge(redact_node_id, inbound_node_id, rule_id) {
+console.log('linking redact rule baby ', redact_node_id, inbound_node_id, rule_id)
+  }
+
+  buildRedactionRulesField() {
+    if (!this.props.node_metadata['node']) {
+      return ''
+    }
+    if (this.props.node_metadata['node'][this.props.node_id]['type'] !== 'redact') {
+      return ''
+    }
+    let inbound_node_ids = []
+    for (let i=0; i < Object.keys(this.props.edges).length; i++) {
+      const nid = Object.keys(this.props.edges)[i]
+      if (this.props.edges[nid].includes(this.props.node_id)) {
+        inbound_node_ids.push(nid)
+      }
+    }
+
+    return (
+      <div>
+        <div className='font-weight-bold'>
+          Redact Rules
+        </div>
+        <div>
+          {inbound_node_ids.map((i_node_id, index) => {
+            const in_label = i_node_id + ' - ' + this.props.node_metadata['node'][i_node_id]['type']
+            let selected_rr_id = ''
+            if (Object.keys(this.props.redact_rule_edges).includes(this.props.node_id)) {
+              if (Object.keys(this.props.redact_rule_edges[this.props.node_id]).includes(i_node_id)) {
+                selected_rr_id = this.props.redact_rule_edges[this.props.node_id][i_node_id]
+              }
+
+            }
+            return (
+              <div key={index}>
+                <div className='d-inline'>
+                  {in_label}
+                </div>
+                <div className='d-inline ml-2'>
+                  <select
+                      name='whatevs'
+                      value={selected_rr_id}
+                      onChange={
+                        (event) => this.updateRedactRuleEdge(this.props.node_id, i_node_id, event.target.value)
+                      }
+                  >
+                    {Object.keys(this.props.redact_rules).map((rr_id, index2) => {
+                      const rr_obj = this.props.redact_rules[rr_id]
+                      return (
+                        <option key={index2} value={rr_id}>{rr_obj['name']}</option>
+                      )
+                    })}
+                  </select>
+
+
+
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    )
+  }
+
   render() {
     const delete_button = this.buildDeleteButton()
     const name_field = this.buildNameField()
@@ -1029,6 +1100,7 @@ class NodeCard extends React.Component {
     const minuends_field = this.buildMinuendsSubtrahendsAddendsField('minuends')
     const subtrahends_field = this.buildMinuendsSubtrahendsAddendsField('subtrahends')
     const addends_field = this.buildMinuendsSubtrahendsAddendsField('addends')
+    const redaction_rules_field = this.buildRedactionRulesField()
     const entity_id_field = this.buildEntityIdField()
     const first_indicator = this.buildFirstIndicator()
     const leaf_indicator = this.buildLeafIndicator()
@@ -1075,6 +1147,9 @@ class NodeCard extends React.Component {
         </div>
         <div className='row'>
           {addends_field}
+        </div>
+        <div className='row'>
+          {redaction_rules_field}
         </div>
         <div className='row'>
           {delete_button}
