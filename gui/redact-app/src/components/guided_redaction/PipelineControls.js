@@ -128,6 +128,7 @@ class PipelineControls extends React.Component {
       addends: this.state.addends,
       minuends: this.state.minuends,
       subtrahends: this.state.subtrahends,
+      redact_rule_edges: this.state.redact_rule_edges,
       node_metadata: this.state.node_metadata,
       movies: build_movies,
     }
@@ -214,6 +215,10 @@ class PipelineControls extends React.Component {
       if (Object.keys(content).includes('subtrahends')) {
         subtrahends = content['subtrahends']
       }
+      let redact_rule_edges = {}
+      if (Object.keys(content).includes('redact_rule_edges')) {
+        redact_rule_edges= content['redact_rule_edges']
+      }
       let input = {}
       if (Object.keys(content).includes('input')) {
         input = content['input']
@@ -229,6 +234,7 @@ class PipelineControls extends React.Component {
         addends: addends,
         minuends: minuends,
         subtrahends: subtrahends,
+        redact_rule_edges: redact_rule_edges,
         node_metadata: content['node_metadata'],
       })
       if (Object.keys(content['node_metadata']).includes('tier_1_scanners')) {
@@ -243,12 +249,42 @@ class PipelineControls extends React.Component {
         }
         this.props.setGlobalStateVar('tier_1_scanners', deepCopyT1Scanners) 
       }
+      if (Object.keys(content['node_metadata']).includes('redact_rules')) {
+        let deepCopyRRs = JSON.parse(JSON.stringify(this.props.redact_rules))
+        for (let i=0; i < Object.keys(content['node_metadata']['redact_rules']).length; i++) {
+          const rr_id = Object.keys(content['node_metadata']['redact_rules'])[i]
+          const rr = content['node_metadata']['redact_rules'][rr_id]
+          deepCopyRRs[rr_id] = rr
+        }
+        this.props.setGlobalStateVar('redact_rules', deepCopyRRs) 
+      }
     }
     this.props.setGlobalStateVar('current_pipeline_id', pipeline_id)
     this.props.displayInsightsMessage('pipeline has been loaded')
   }
 
   setLocalStateVar(var_name, var_value, when_done=(()=>{})) {
+//    function anon_func() {
+//      this.doSave()
+//      when_done()
+//    }
+//    if (typeof var_name === 'string' || var_name instanceof String) {           
+//      // we have been given one key and one value                               
+//      this.setState(                                                          
+//        {                                                                     
+//          [var_name]: var_value,                                              
+//        },                                                                    
+//        anon_func()                                                           
+//      )                                                                       
+//    } else {                                                                    
+//      // var_name is actaully a dict                                            
+//      this.setState(                                                            
+//        var_name,                                                               
+//        anon_func()                                                             
+//      )                                                                         
+//    }
+//
+//
     function anon_func() {
       this.doSave()
       when_done()
@@ -259,6 +295,8 @@ class PipelineControls extends React.Component {
       },
       anon_func
     )
+
+
   }
 
   buildLoadButton() {
@@ -1025,8 +1063,17 @@ class NodeCard extends React.Component {
     )
   }
 
-  updateRedactRuleEdge(redact_node_id, inbound_node_id, rule_id) {
-console.log('linking redact rule baby ', redact_node_id, inbound_node_id, rule_id)
+  updateRedactRuleEdge(inbound_node_id, rule_id) {
+    let deepCopyRREs = JSON.parse(JSON.stringify(this.props.redact_rule_edges))
+    if (!Object.keys(deepCopyRREs).includes(this.props.node_id)) {
+      deepCopyRREs[this.props.node_id] = {}
+    }
+    deepCopyRREs[this.props.node_id][inbound_node_id] = rule_id
+    this.props.setLocalStateVar( 'redact_rule_edges', deepCopyRREs)
+
+    let deepCopyNM = JSON.parse(JSON.stringify(this.props.node_metadata))
+    deepCopyNM['redact_rules'][rule_id] = this.props.redact_rules[rule_id]
+    setTimeout((()=>{this.props.setLocalStateVar( 'node_metadata', deepCopyNM)}), 500)
   }
 
   buildRedactionRulesField() {
@@ -1052,26 +1099,37 @@ console.log('linking redact rule baby ', redact_node_id, inbound_node_id, rule_i
         <div>
           {inbound_node_ids.map((i_node_id, index) => {
             const in_label = i_node_id + ' - ' + this.props.node_metadata['node'][i_node_id]['type']
+            let cur_rr = ''
+
+            
+
             let selected_rr_id = ''
             if (Object.keys(this.props.redact_rule_edges).includes(this.props.node_id)) {
               if (Object.keys(this.props.redact_rule_edges[this.props.node_id]).includes(i_node_id)) {
                 selected_rr_id = this.props.redact_rule_edges[this.props.node_id][i_node_id]
+                if (Object.keys(this.props.node_metadata['redact_rules']).includes(selected_rr_id)) {
+                  selected_rr_id  = this.props.node_metadata['redact_rules'][selected_rr_id]['name']
+                }
+                cur_rr = '(currently ' + selected_rr_id + ')'
               }
-
             }
             return (
               <div key={index}>
                 <div className='d-inline'>
                   {in_label}
                 </div>
+                <div className='d-inline font-italic ml-2'>
+                  {cur_rr}
+                </div>
                 <div className='d-inline ml-2'>
                   <select
                       name='whatevs'
                       value={selected_rr_id}
                       onChange={
-                        (event) => this.updateRedactRuleEdge(this.props.node_id, i_node_id, event.target.value)
+                        (event) => this.updateRedactRuleEdge(i_node_id, event.target.value)
                       }
                   >
+                    <option value=''></option>
                     {Object.keys(this.props.redact_rules).map((rr_id, index2) => {
                       const rr_obj = this.props.redact_rules[rr_id]
                       return (
