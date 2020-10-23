@@ -53,7 +53,6 @@ def evaluate_children(operation, child_operation, children):
     completed_children = 0
     failed_children = 0
     for child in children:
-        print('  minga one child is {}'.format(child.operation))
         if child.operation == child_operation:
             all_children += 1
             if child.status == 'success':

@@ -26,6 +26,7 @@ class PipelineControls extends React.Component {
           'template': {},
           'selected_area': {},
           'mesh_match': {},
+          'selection_grower': {},
           'ocr': {},
           'ocr_scene_analysis': {},
           'telemetry': {},
@@ -87,7 +88,7 @@ class PipelineControls extends React.Component {
     const node = deepCopyNodeMetadata['node'][node_id]
     // TODO can this become a two liner now?
     const good_values = [
-      'template', 'selected_area', 'mesh_match', 'ocr', 'ocr_scene_analysis', 'telemetry'
+      'template', 'selected_area', 'mesh_match', 'selection_grower', 'ocr', 'ocr_scene_analysis', 'telemetry'
     ]
     if (good_values.includes(node['type'])) {
       deepCopyNodeMetadata['tier_1_scanners'][node['type']][value] = this.props.tier_1_scanners[node['type']][value]
@@ -565,6 +566,7 @@ class PipelineControls extends React.Component {
                       tier_1_scanners={this.props.tier_1_scanners}
                       redact_rule_edges={this.state.redact_rule_edges}
                       redact_rules={this.props.redact_rules}
+                      pipelines={this.props.pipelines}
                     />
                   
                   </div>
@@ -625,6 +627,7 @@ class NodeCardList extends React.Component {
                   deleteNode={this.props.deleteNode}
                   redact_rule_edges={this.props.redact_rule_edges}
                   redact_rules={this.props.redact_rules}
+                  pipelines={this.props.pipelines}
                 />
               )
             })}
@@ -660,7 +663,28 @@ class NodeCard extends React.Component {
     )
   }
 
+  getSelectForPipelineId() {
+    return (
+      <select
+          name='step_type'
+          value={this.props.node_metadata['node'][this.props.node_id]['entity_id']}
+          onChange={
+            (event) => this.props.updateNodeValue(this.props.node_id, 'entity_id', event.target.value)
+          }
+      >
+        {Object.keys(this.props.pipelines).map((pipeline_id, index) => {
+          const pipeline = this.props.pipelines[pipeline_id]
+          return (
+            <option value={pipeline_id} key={index}>{pipeline['name']}</option>
+          )
+        })}
+      </select>
+    )
+  }
   getSelectForEntityId() {
+    if (this.props.node_metadata['node'][this.props.node_id]['type'] === 'pipeline') {
+      return this.getSelectForPipelineId()
+    }
     let options = []
     let added_ids = []
     // TODO can this be brought down to a small piece of code, iterating through scanner types?
@@ -668,7 +692,7 @@ class NodeCard extends React.Component {
 
     const node_type = this.props.node_metadata['node'][this.props.node_id]['type']
     const good_types = [
-      'template', 'selected_area', 'mesh_match', 'ocr', 'telemetry', 'ocr_scene_analysis'
+      'template', 'selected_area', 'mesh_match', 'selection_grower', 'ocr', 'telemetry', 'ocr_scene_analysis'
     ]
     if (good_types.includes(node_type)) {
       const node_keys =  Object.keys(this.props.tier_1_scanners[node_type])
@@ -712,11 +736,12 @@ class NodeCard extends React.Component {
       return ''
     }
     const id_types = [
-      'template', 'selected_area', 'mesh_match', 'ocr', 'telemetry', 'ocr_scene_analysis'
+      'template', 'selected_area', 'mesh_match', 'selection_grower', 'ocr', 'telemetry', 'ocr_scene_analysis'
     ]
-    if (!id_types.includes(
-      this.props.node_metadata['node'][this.props.node_id]['type']
-    )) {
+    if (
+      !id_types.includes(this.props.node_metadata['node'][this.props.node_id]['type'])
+      && this.props.node_metadata['node'][this.props.node_id]['type'] !== 'pipeline'
+    ) {
       return ''
     }
     const select = this.getSelectForEntityId()
@@ -855,7 +880,7 @@ class NodeCard extends React.Component {
       return ''
     }
     const id_types = [
-      'template', 'selected_area', 'mesh_match', 'ocr', 'telemetry', 'ocr_scene_analysis'
+      'template', 'selected_area', 'mesh_match', 'selection_grower', 'ocr', 'telemetry', 'ocr_scene_analysis'
     ]
     let title = 'Minuends'
     if (ms_type === 'subtrahends') {
@@ -979,9 +1004,11 @@ class NodeCard extends React.Component {
             <option value='template'>template</option>
             <option value='selected_area'>selected area</option>
             <option value='mesh_match'>mesh match</option>
+            <option value='selection_grower'>selection_grower</option>
             <option value='ocr'>ocr</option>
             <option value='ocr_scene_analysis'>ocr scene analysis</option>
             <option value='telemetry'>telemetry</option>
+            <option value='pipeline'>pipeline</option>
             <option value='t1_sum'>sum t1 outputs</option>
             <option value='t1_diff'>difference of t1 outputs</option>
             <option value='template_match_chart'>template match chart</option>
@@ -1029,7 +1056,7 @@ class NodeCard extends React.Component {
     const the_style = {}
     let errors = []
     const t1_id_types = [
-      'template', 'selected_area', 'mesh_match', 'ocr', 'telemetry', 'ocr_scene_analysis'
+      'template', 'selected_area', 'mesh_match', 'selection_grower', 'ocr', 'telemetry', 'ocr_scene_analysis'
     ]
     const node = this.props.node_metadata['node'][this.props.node_id]
     if (!node['type']) {
