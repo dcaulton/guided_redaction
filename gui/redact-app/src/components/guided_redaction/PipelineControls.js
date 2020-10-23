@@ -567,6 +567,7 @@ class PipelineControls extends React.Component {
                       redact_rule_edges={this.state.redact_rule_edges}
                       redact_rules={this.props.redact_rules}
                       pipelines={this.props.pipelines}
+                      pipeline_id={this.state.id}
                     />
                   
                   </div>
@@ -628,6 +629,7 @@ class NodeCardList extends React.Component {
                   redact_rule_edges={this.props.redact_rule_edges}
                   redact_rules={this.props.redact_rules}
                   pipelines={this.props.pipelines}
+                  pipeline_id={this.props.pipeline_id}
                 />
               )
             })}
@@ -673,6 +675,9 @@ class NodeCard extends React.Component {
           }
       >
         {Object.keys(this.props.pipelines).map((pipeline_id, index) => {
+          if (pipeline_id === this.props.pipeline_id) {
+            return ''
+          }
           const pipeline = this.props.pipelines[pipeline_id]
           return (
             <option value={pipeline_id} key={index}>{pipeline['name']}</option>
