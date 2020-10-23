@@ -64,12 +64,60 @@ def dispatch_parent_job(job):
         if parent_job.app == 'analyze' and parent_job.operation == 'oma_first_scan_threaded':
             oma_first_scan_threaded.delay(parent_job.id)
 
+def build_and_dispatch_generic_threaded_children(parent_job, scanner_type, child_task, finish_func):
+    parent_job.status = 'running'
+    parent_job.save()
+    request_data = json.loads(parent_job.request_data)
+    scanner_metas = request_data['tier_1_scanners'][scanner_type]
+    movies = request_data['movies']
+
+    source_movies = {}
+    if 'source' in movies:
+        source_movies = movies['source']
+        del movies['source']
+
+    if len(movies) == 0:
+        finish_func(parent_job)
+        return
+
+    for scanner_meta_id in scanner_metas:
+        build_scanner_meta = {scanner_meta_id: scanner_metas[scanner_meta_id]}
+        for index, movie_url in enumerate(movies.keys()):
+            movie = movies[movie_url]
+            build_movies = {}
+            build_movies[movie_url] = movie
+            if source_movies:
+                build_movies['source'] = {}
+                build_movies['source'][movie_url] = source_movies[movie_url]
+            build_request_data = json.dumps({
+                'movies': build_movies,
+                'tier_1_scanners': {
+                    scanner_type: build_scanner_meta,
+                }
+            })
+            job = Job(
+                request_data=build_request_data,
+                status='created',
+                description=scanner_type + ' for movie {}'.format(movie_url),
+                app='analyze',
+                operation=scanner_type,
+                sequence=0,
+                parent=parent_job,
+            )
+            job.save()
+            the_str = 'build_and_dispatch_'+scanner_type+'_threaded_children: dispatching job for movie {}'
+            print(the_str.format(movie_url))
+            child_task.delay(job.id)
+
 def generic_worker_call(job_uuid, operation, worker_class):
     if not Job.objects.filter(pk=job_uuid).exists():
         print('calling ' + operation + ' on nonexistent job: {}'.format(job_uuid))
     job = Job.objects.get(pk=job_uuid)
-    job.status = 'running'
-    job.save()
+    if job.status in ['success', 'failed']:                                     
+        return                                                                  
+    if job.status != 'running':
+        job.status = 'running'
+        job.save()
     print('running ' + operation + ' job {}'.format(job_uuid))
     worker = worker_class()
     response = worker.process_create_request(json.loads(job.request_data))
@@ -97,50 +145,6 @@ def generic_threaded(job_uuid, child_operation, title, build_and_dispatch_func, 
           job.status = 'failed'
           job.harvest_failed_child_job_errors(children)
           job.save()
-
-def build_and_dispatch_generic_threaded_children(parent_job, scanner_type, child_task, finish_func):
-    parent_job.status = 'running'
-    parent_job.save()
-    request_data = json.loads(parent_job.request_data)
-    mm_metas = request_data['tier_1_scanners'][scanner_type]
-    movies = request_data['movies']
-
-    source_movies = {}
-    if 'source' in movies:
-        source_movies = movies['source']
-        del movies['source']
-
-    if len(movies) == 0:
-        finish_func(parent_job)
-        return
-
-    for mm_meta_id in mm_metas:
-        build_mm_meta = {mm_meta_id: mm_metas[mm_meta_id]}
-        for index, movie_url in enumerate(movies.keys()):
-            movie = movies[movie_url]
-            build_movies = {}
-            build_movies[movie_url] = movie
-            if source_movies:
-                build_movies['source'] = source_movies
-            build_request_data = json.dumps({
-                'movies': build_movies,
-                'tier_1_scanners': {
-                    scanner_type: build_mm_meta,
-                }
-            })
-            job = Job(
-                request_data=build_request_data,
-                status='created',
-                description=scanner_type + ' for movie {}'.format(movie_url),
-                app='analyze',
-                operation=scanner_type,
-                sequence=0,
-                parent=parent_job,
-            )
-            job.save()
-            the_str = 'build_and_dispatch_'+scanner_type+'_threaded_children: dispatching job for movie {}'
-            print(the_str.format(movie_url))
-            child_task.delay(job.id)
 
 def wrap_up_generic_threaded(job, children, scanner_type):
     aggregate_response_data = {
@@ -344,23 +348,7 @@ def dispatch_ds_scan_ocr(parent_job):
 
 @shared_task
 def compile_data_sifter(job_uuid):
-    if not Job.objects.filter(pk=job_uuid).exists():
-        print('calling compile_data_sifter on nonexistent job: {}'.format(job_uuid))
-    job = Job.objects.get(pk=job_uuid)
-    if job.status in ['success', 'failed']:                                     
-        return                                                                  
-    if job.status != 'running':
-        job.status = 'running'
-        job.save()
-    worker = AnalyzeViewSetCompileDataSifter()
-    response = worker.process_create_request(json.loads(job.request_data))
-    if not Job.objects.filter(pk=job_uuid).exists():
-        return
-    job = Job.objects.get(pk=job_uuid)
-    job.response_data = json.dumps(response.data)
-    job.status = 'success'
-    job.save()
-    dispatch_parent_job(job)
+    generic_worker_call(job_uuid, 'compile_data_sifter', AnalyzeViewSetCompileDataSifter)
 
 @shared_task
 def build_data_sifter(job_uuid):
@@ -406,40 +394,11 @@ def build_data_sifter(job_uuid):
 
 @shared_task
 def filter(job_uuid):
-    if Job.objects.filter(pk=job_uuid).exists():
-        job = Job.objects.get(pk=job_uuid)
-        job.status = 'running'
-        job.save()
-        print('running filter for job {}'.format(job_uuid))
-        avsf = AnalyzeViewSetFilter()
-        response = avsf.process_create_request(json.loads(job.request_data))
-        if not Job.objects.filter(pk=job_uuid).exists():
-            return
-        job = Job.objects.get(pk=job_uuid)
-        job.response_data = json.dumps(response.data)
-        job.status = 'success'
-        job.save()
-    else:
-        print('calling filter on nonexistent job: '+ job_uuid)
+    generic_worker_call(job_uuid, 'filter', AnalyzeViewSetFilter)
 
 @shared_task
 def get_timestamp(job_uuid):
-    if not Job.objects.filter(pk=job_uuid).exists():
-        print('calling get_timestamp on nonexistent job: {}'.format(job_uuid))
-    job = Job.objects.get(pk=job_uuid)
-    job.status = 'running'
-    job.save()
-    print('running get_timestamp for job {}'.format(job_uuid))
-    worker = AnalyzeViewSetTimestamp()
-    response = worker.process_create_request(json.loads(job.request_data))
-    if not Job.objects.filter(pk=job_uuid).exists():
-        return
-    job = Job.objects.get(pk=job_uuid)
-    job.response_data = json.dumps(response.data)
-    job.status = 'success'
-    job.save()
-
-    dispatch_parent_job(job)
+    generic_worker_call(job_uuid, 'get_timestamp', AnalyzeViewSetTimestamp)
 
 @shared_task
 def get_timestamp_threaded(job_uuid):
@@ -483,55 +442,29 @@ def wrap_up_get_timestamp_threaded(job, children):
 @shared_task
 def scan_template_multi(job_uuid):
     # MULTI TEMPLATE MULTI MOVIE
-    if Job.objects.filter(pk=job_uuid).exists():
-        job = Job.objects.get(pk=job_uuid)
-        if job.status in ['success', 'failed']:
-            return
-        children = Job.objects.filter(parent=job)
-        next_step = evaluate_children('SCAN TEMPLATE MULTI', 'scan_template', children)
-        print('next step is {}'.format(next_step))
-        if next_step == 'build_child_tasks':
-          build_and_dispatch_scan_template_multi_children(job)
-        elif next_step == 'wrap_up':
-          wrap_up_scan_template_multi(job, children)
-        elif next_step == 'abort':
-          job.status = 'failed'
-          job.harvest_failed_child_job_errors(children)
-          job.save()
+    generic_threaded(
+        job_uuid, 
+        'scan_template', 
+        'SCAN TEMPLATE MULTI', 
+        build_and_dispatch_scan_template_multi_children, 
+        wrap_up_scan_template_multi
+    )
 
 def build_and_dispatch_scan_template_multi_children(parent_job):
-    parent_job.status = 'running'
-    parent_job.save()
-    request_data = json.loads(parent_job.request_data)
-    movies = request_data['movies']
-    total_index = 0
-    for template_id in request_data['tier_1_scanners']['template']:
-        template = request_data['tier_1_scanners']['template'][template_id]
-        build_templates = {}
-        build_templates[template_id] = template
-        for movie_url in request_data['movies']:
-            total_index += 1
-            build_movies = {}
-            build_movies[movie_url] = movies[movie_url]
-            build_request_data = json.dumps({
-                'tier_1_scanners': {
-                    'templates': build_templates,
-                },
-                'movies': build_movies,
-            })
-            job = Job(
-                request_data=build_request_data,
-                status='created',
-                description='scan_template {} for movie {}'.format(template['name'], movie_url),
-                app='analyze',
-                operation='scan_template',
-                sequence=0,
-                parent=parent_job,
-            )
-            job.save()
-            the_str = 'build_and_dispatch_scan_template_multi_children: dispatching job for movie {}'
-            print(the_str.format(movie_url))
-            scan_template.delay(job.id)
+    build_and_dispatch_generic_threaded_children(
+        parent_job, 
+        'template', 
+        scan_template, 
+        finish_scan_template_multi
+    )
+
+def finish_scan_template_multi(job):
+  children = Job.objects.filter(parent=job)
+  wrap_up_scan_template_multi(job, children)
+  pipeline = get_pipeline_for_job(job.parent)
+  if pipeline:
+      worker = PipelinesViewSetDispatch()
+      worker.handle_job_finished(job, pipeline)
 
 def wrap_up_scan_template_multi(job, children):
     aggregate_response_data = {
@@ -577,43 +510,12 @@ def scan_template_threaded(job_uuid):
     )
 
 def build_and_dispatch_scan_template_threaded_children(parent_job):
-    parent_job.status = 'running'
-    parent_job.save()
-    request_data = json.loads(parent_job.request_data)
-    template_id = list(request_data['tier_1_scanners']['template'].keys())[0]
-    template = request_data['tier_1_scanners']['template'][template_id]
-    movies = request_data['movies']
-    for index, movie_url in enumerate(movies):
-        if movie_url == 'source':
-            continue
-        movie = movies.get(movie_url)
-        build_movies = {}
-        build_movies[movie_url] = movie
-        if 'source' in movies:
-            source_movie = movies['source'][movie_url]
-            build_movies['source'] = {}
-            build_movies['source'][movie_url] = source_movie
-        build_templates = {}
-        build_templates[template_id] = template
-        request_data = json.dumps({
-            'tier_1_scanners': {
-                'template': build_templates,
-            },
-            'movies': build_movies,
-        })
-        job = Job(
-            request_data=request_data,
-            status='created',
-            description='scan_template {} for movie {}'.format(template['name'], movie_url),
-            app='analyze',
-            operation='scan_template',
-            sequence=0,
-            parent=parent_job,
-        )
-        job.save()
-        the_str = 'build_and_dispatch_scan_template_thread_children: dispatching job for movie {}'
-        print(the_str.format(movie_url))
-        scan_template.delay(job.id)
+    build_and_dispatch_generic_threaded_children(
+        parent_job, 
+        'template', 
+        scan_template, 
+        finish_scan_template_threaded
+    )
 
 def aggregate_statistics_from_template_child(aggregate_response_data, child_response_data):
     if 'statistics' in child_response_data:
@@ -652,35 +554,11 @@ def wrap_up_scan_template_threaded(job, children):
 
 @shared_task
 def scan_ocr_image(job_uuid):
-    if Job.objects.filter(pk=job_uuid).exists():
-        job = Job.objects.get(pk=job_uuid)
-        job.status = 'running'
-        job.save()
-        scanner = AnalyzeViewSetOcr()
-        response = scanner.process_create_request(json.loads(job.request_data))
-        if not Job.objects.filter(pk=job_uuid).exists():
-            return
-        job = Job.objects.get(pk=job_uuid)
-        job.response_data = json.dumps(response.data)
-        job.status = 'success'
-        job.save()
-
-        dispatch_parent_job(job)
+    generic_worker_call(job_uuid, 'scan_ocr_image', AnalyzeViewSetOcr)
 
 @shared_task
 def telemetry_find_matching_frames(job_uuid):
-    if Job.objects.filter(pk=job_uuid).exists():
-        job = Job.objects.get(pk=job_uuid)
-        job.status = 'running'
-        job.save()
-        scanner = AnalyzeViewSetTelemetry()
-        response = scanner.process_create_request(json.loads(job.request_data))
-        if not Job.objects.filter(pk=job_uuid).exists():
-            return
-        job = Job.objects.get(pk=job_uuid)
-        job.response_data = json.dumps(response.data)
-        job.status = 'success'
-        job.save()
+    generic_worker_call(job_uuid, 'telemetry_find_matching_frames', AnalyzeViewSetTelemetry)
 
 @shared_task
 def scan_ocr_movie(job_uuid):
@@ -877,22 +755,7 @@ def wrap_up_mesh_match_threaded(job, children):
 
 @shared_task
 def selected_area(job_uuid):
-    if not Job.objects.filter(pk=job_uuid).exists():
-        print('calling selected_area on nonexistent job: {}'.format(job_uuid))
-    job = Job.objects.get(pk=job_uuid)
-    job.status = 'running'
-    job.save()
-    print('running selected_area for job {}'.format(job_uuid))
-    worker = AnalyzeViewSetSelectedArea()
-    response = worker.process_create_request(json.loads(job.request_data))
-    if not Job.objects.filter(pk=job_uuid).exists():
-        return
-    job = Job.objects.get(pk=job_uuid)
-    job.response_data = json.dumps(response.data)
-    job.status = 'success'
-    job.save()
-
-    dispatch_parent_job(job)
+    generic_worker_call(job_uuid, 'selected_area', AnalyzeViewSetSelectedArea)
 
 def finish_selected_area_threaded(job):
   children = Job.objects.filter(parent=job)
@@ -913,49 +776,12 @@ def selected_area_threaded(job_uuid):
     )
 
 def build_and_dispatch_selected_area_threaded_children(parent_job):
-    parent_job.status = 'running'
-    parent_job.save()
-    request_data = json.loads(parent_job.request_data)
-    selected_area_metas = request_data['tier_1_scanners']['selected_area']
-    movies = request_data['movies']
-
-    source_movies = {}
-    if 'source' in movies:
-        source_movies = movies['source']
-        del movies['source']
-
-    if len(movies) == 0:
-        finish_selected_area_threaded(parent_job)
-        return
-
-    for selected_area_meta_id in selected_area_metas:
-        selected_area_meta = selected_area_metas[selected_area_meta_id]
-        for index, movie_url in enumerate(movies.keys()):
-            movie = movies[movie_url]
-            build_movies = {}
-            build_movies[movie_url] = movie
-            build_sas = {selected_area_meta_id: selected_area_meta}
-            if source_movies:
-                build_movies['source'] = source_movies
-            build_request_data = json.dumps({
-                'tier_1_scanners': {
-                    'selected_area': build_sas,
-                },
-                'movies': build_movies,
-            })
-            job = Job(
-                request_data=build_request_data,
-                status='created',
-                description='get selected area for movie {}'.format(movie_url),
-                app='analyze',
-                operation='selected_area',
-                sequence=0,
-                parent=parent_job,
-            )
-            job.save()
-            the_str = 'build_and_dispatch_selected_area_threaded_children: dispatching job for movie {}'
-            print(the_str.format(movie_url))
-            selected_area.delay(job.id)
+    build_and_dispatch_generic_threaded_children(
+        parent_job, 
+        'selected_area', 
+        selected_area, 
+        finish_selected_area_threaded
+    )
 
 def wrap_up_selected_area_threaded(job, children):
     wrap_up_generic_threaded(job, children, 'selected_area')
@@ -1011,23 +837,7 @@ def ocr_scene_analysis_chart(job_uuid):
 
 @shared_task
 def ocr_scene_analysis(job_uuid):
-    if not Job.objects.filter(pk=job_uuid).exists():
-        print('calling ocr_scene_analysis on nonexistent job: {}'.format(job_uuid))
-    job = Job.objects.get(pk=job_uuid)
-    job.status = 'running'
-    job.save()
-    print('running ocr_scene_analysis for job {}'.format(job_uuid))
-    worker = AnalyzeViewSetOcrSceneAnalysis()
-    rd = json.loads(job.request_data)
-    response = worker.process_create_request(rd)
-    if not Job.objects.filter(pk=job_uuid).exists():
-        return
-    job = Job.objects.get(pk=job_uuid)
-    job.response_data = json.dumps(response.data)
-    job.status = 'success'
-    job.save()
-
-    dispatch_parent_job(job)
+    generic_worker_call(job_uuid, 'ocr_scene_analysis', AnalyzeViewSetOcrSceneAnalysis)
 
 @shared_task
 def ocr_scene_analysis_threaded(job_uuid):
@@ -1047,12 +857,10 @@ def finish_ocr_scene_analysis_threaded(job):
         worker = PipelinesViewSetDispatch()
         worker.handle_job_finished(job, pipeline)
 
-
 def movie_is_full_movie(movie):
     if 'frames' in movie:
         return True
     return False
-
                     
 def get_frameset_hash_for_frame(frame, framesets):
     for frameset_hash in framesets:
@@ -1155,45 +963,11 @@ def wrap_up_ocr_scene_analysis_threaded(job, children):
 
 @shared_task
 def test_hog(job_uuid):
-    if not Job.objects.filter(pk=job_uuid).exists():
-        print('calling test_hog on nonexistent job: {}'.format(job_uuid))
-    job = Job.objects.get(pk=job_uuid)
-    job.status = 'running'
-    job.save()
-    print('running test_hog for job {}'.format(job_uuid))
-    worker = AnalyzeViewSetTestHog()
-    rd = json.loads(job.request_data)
-    response = worker.process_create_request(rd)
-    if not Job.objects.filter(pk=job_uuid).exists():
-        return
-    print('test_hog is complete')
-    job = Job.objects.get(pk=job_uuid)
-    job.response_data = json.dumps(response.data)
-    job.status = 'success'
-    job.save()
-
-    dispatch_parent_job(job)
+    generic_worker_call(job_uuid, 'test_hog', AnalyzeViewSetTestHog)
 
 @shared_task
 def train_hog(job_uuid):
-    if not Job.objects.filter(pk=job_uuid).exists():
-        print('calling train_hog on nonexistent job: {}'.format(job_uuid))
-    job = Job.objects.get(pk=job_uuid)
-    job.status = 'running'
-    job.save()
-    print('running train_hog for job {}'.format(job_uuid))
-    worker = AnalyzeViewSetTrainHog()
-    rd = json.loads(job.request_data)
-    response = worker.process_create_request(rd)
-    if not Job.objects.filter(pk=job_uuid).exists():
-        return
-    print('train_hog is complete')
-    job = Job.objects.get(pk=job_uuid)
-    job.response_data = json.dumps(response.data)
-    job.status = 'success'
-    job.save()
-
-    dispatch_parent_job(job)
+    generic_worker_call(job_uuid, 'train_hog', AnalyzeViewSetTrainHog)
 
 @shared_task
 def train_hog_threaded(job_uuid):
