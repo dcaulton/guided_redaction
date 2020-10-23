@@ -64,7 +64,7 @@ def dispatch_parent_job(job):
         if parent_job.app == 'analyze' and parent_job.operation == 'oma_first_scan_threaded':
             oma_first_scan_threaded.delay(parent_job.id)
 
-def build_and_dispatch_generic_threaded_children(parent_job, scanner_type, child_task, finish_func):
+def build_and_dispatch_generic_threaded_children(parent_job, scanner_type, operation, child_task, finish_func):
     parent_job.status = 'running'
     parent_job.save()
     request_data = json.loads(parent_job.request_data)
@@ -100,12 +100,12 @@ def build_and_dispatch_generic_threaded_children(parent_job, scanner_type, child
                 status='created',
                 description=scanner_type + ' for movie {}'.format(movie_url),
                 app='analyze',
-                operation=scanner_type,
+                operation=operation,
                 sequence=0,
                 parent=parent_job,
             )
             job.save()
-            the_str = 'build_and_dispatch_'+scanner_type+'_threaded_children: dispatching job for movie {}'
+            the_str = 'build_and_dispatch_'+operation+'_threaded_children: dispatching job for movie {}'
             print(the_str.format(movie_url))
             child_task.delay(job.id)
 
@@ -454,6 +454,7 @@ def build_and_dispatch_scan_template_multi_children(parent_job):
     build_and_dispatch_generic_threaded_children(
         parent_job, 
         'template', 
+        'scan_template', 
         scan_template, 
         finish_scan_template_multi
     )
@@ -513,6 +514,7 @@ def build_and_dispatch_scan_template_threaded_children(parent_job):
     build_and_dispatch_generic_threaded_children(
         parent_job, 
         'template', 
+        'scan_template', 
         scan_template, 
         finish_scan_template_threaded
     )
@@ -713,6 +715,7 @@ def build_and_dispatch_selection_grower_threaded_children(parent_job):
     build_and_dispatch_generic_threaded_children(
         parent_job, 
         'selection_grower', 
+        'selection_grower', 
         selection_grower, 
         finish_selection_grower_threaded
     )
@@ -746,6 +749,7 @@ def build_and_dispatch_mesh_match_threaded_children(parent_job):
     build_and_dispatch_generic_threaded_children(
         parent_job, 
         'mesh_match', 
+        'mesh_match', 
         mesh_match, 
         finish_mesh_match_threaded
     )
@@ -778,6 +782,7 @@ def selected_area_threaded(job_uuid):
 def build_and_dispatch_selected_area_threaded_children(parent_job):
     build_and_dispatch_generic_threaded_children(
         parent_job, 
+        'selected_area', 
         'selected_area', 
         selected_area, 
         finish_selected_area_threaded
