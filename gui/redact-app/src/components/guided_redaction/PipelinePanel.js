@@ -8,9 +8,11 @@ class PipelinePanel extends React.Component {
       id: '',
       jobs: [],
       active_job_id: '',
+      active_job_request_data: '',
+      active_job_response_data: '',
       usable_pipeline_ids: [],
     }
-//    this.loadRelevantPipelines=this.loadRelevantPipelines.bind(this)
+    this.saveJobResultData=this.saveJobResultData.bind(this)
   }
 
   loadRelevantPipelines(gp_resp_obj) {
@@ -33,26 +35,192 @@ class PipelinePanel extends React.Component {
     document.getElementById('pipeline_link').classList.add('active')
   }
    
+  saveJobResultData(response) {
+    const job = response['job']
+    const job_resp = JSON.parse(job['response_data'])
+    const job_req = JSON.parse(job['request_data'])
+    this.setState({
+      active_job_response_data: job_resp,
+      active_job_request_data: job_req,
+    })
+  }
+
   viewJob(job_id) {
     this.setState({
       active_job_id: job_id,
     })
+    this.props.loadJobResults(job_id, this.saveJobResultData)
   }
 
-  buildJobView() {
+  tryToCancelJob(job_id) {
+    let resp = window.confirm("Are you sure you want to delete this job?")
+    if (resp) {
+      this.props.cancelJob(job_id)
+    } 
+  }
+
+  buildWorkInProgressSummary() {
     if (!this.state.active_job_id) {
-      return ''
+      return
     }
-    return (
-      <div className='col mt-5'>
-        <div className='row h5'>
-          Job View
+    let active_job = this.getActiveJob()
+    let active_pipeline = this.getActivePipeline()
+    const content = JSON.parse(active_pipeline.content)
+//console.log('hunchy', content)
+// TODO use content['node_metadata']['node'] to get all nodes
+//  use content['edges'] to find the order to display them in
+//  use the child job ids to get job data
+//  maybe have the api return something richer for children: child_operation, status, percent done, name
+    const wip_statuses = ['running']
+    if (wip_statuses.includes(active_job.status)) {
+      return (
+        <div className='ml-2'>
+        zowie
         </div>
+      )
+    }
+  }
+
+  buildRequestDataSummary() {
+    if (!this.state.active_job_id) {
+      return
+    }
+    if (!this.state.active_job_request_data) {
+      return
+    }
+    const movies_summary = String(Object.keys(this.state.active_job_request_data['movies']).length) + ' movies'
+    return (
+      <div className='ml-2'>
+        {movies_summary}
       </div>
     )
   }
 
-  buildPipelineRuns() {
+  buildResponseDataSummary() {
+    if (!this.state.active_job_id) {
+      return
+    }
+    if (!this.state.active_job_response_data) {
+      return
+    }
+    let resp_movies = {}
+    if (Object.keys(this.state.active_job_response_data).includes('movies')) {
+      resp_movies = this.state.active_job_response_data['movies']
+      
+    } else {
+      resp_movies = this.state.active_job_response_data
+    }
+    const movies_summary = String(Object.keys(resp_movies).length) + ' movies returned'
+
+    let build_redacted_movies = []
+    const ak = Object.keys(resp_movies)[0]
+    const am = resp_movies[ak]
+    if (Object.keys(am).length === 1) {
+      const first_key = Object.keys(am)[0]
+      if (first_key === 'redacted_movie_url') {
+        build_redacted_movies = (
+          <div>
+            <div className='font-weight-bold'>
+              Redacted Movies:
+            </div>
+            {Object.keys(resp_movies).sort().map((movie_url, index) => {
+              const movie = resp_movies[movie_url]
+              const short_name = movie['redacted_movie_url'].split('/').slice(-1)[0]
+              return (
+                <div key={index}>
+                  <a href={movie['redacted_movie_url']}>
+                    {short_name}
+                  </a>
+                </div>
+              )
+            })}
+          </div>
+        )
+      }
+    }
+
+    return (
+      <div className='ml-2'>
+        {movies_summary}
+        {build_redacted_movies}
+      </div>
+    )
+  }
+
+  getActiveJob() {
+    for (let i=0; i < this.props.jobs.length; i++) {
+      const job = this.props.jobs[i]
+      if (job['id'] === this.state.active_job_id) {
+        return job
+      }
+    }
+  }
+
+  getActivePipeline() {
+    let active_job = this.getActiveJob()
+    if (!active_job) {
+      return
+    }
+    const pipeline = this.props.pipelines[active_job.attributes.pipeline_job_link]
+    return pipeline
+  }
+
+  buildJobView() {
+    if (!this.state.active_job_id) {
+      return
+    }
+    let active_job = this.getActiveJob()
+    const req_data_summary = this.buildRequestDataSummary()
+    const wip_summary = this.buildWorkInProgressSummary()
+    const resp_data_summary = this.buildResponseDataSummary()
+    const pipeline = this.getActivePipeline()
+    let title = 'Pipeline ' + pipeline.name 
+    title += ', job ' + this.state.active_job_id
+
+    return (
+      <div className='col mt-5'>
+        <div className='row h5'>
+          Pipeline Run Detail
+        </div>
+        <div className='row'>
+          {title}
+        </div>
+        <div className='row'>
+          Status: {active_job.status}
+        </div>
+
+        <div className='row mt-2'>
+          <div className='col-12 font-weight-bold'>
+            Data In
+          </div>
+          <div className='col-12'>
+            {req_data_summary}
+          </div>
+        </div>
+
+        <div className='row mt-2'>
+          <div className='col-12 font-weight-bold'>
+            Work in Progress
+          </div>
+          <div className='col-12'>
+            {wip_summary}
+          </div>
+        </div>
+
+        <div className='row mt-2'>
+          <div className='col-12 font-weight-bold'>
+            Data Out
+          </div>
+          <div className='col-12'>
+            {resp_data_summary}
+          </div>
+        </div>
+
+      </div>
+    )
+  }
+
+  buildRuns() {
     let good_jobs = []
     for (let i=0; i < this.props.jobs.length; i++) {
       const job_obj = this.props.jobs[i]
@@ -60,7 +228,9 @@ class PipelinePanel extends React.Component {
         continue
       }
       if (
-        Object.keys(job_obj.attributes).includes('pipeline_job_link')
+        Object.keys(job_obj).includes('attributes')
+        && Object.keys(job_obj.attributes).includes('pipeline_job_link')
+        && this.state.usable_pipeline_ids
         && this.state.usable_pipeline_ids.includes(job_obj.attributes['pipeline_job_link'])
       ) {
         good_jobs.push(job_obj)
@@ -74,7 +244,7 @@ class PipelinePanel extends React.Component {
         </div>
         <div className='row'>
           <table className='table table-striped'>
-            <thead>
+            <thead className='font-weight-bold'>
               <tr>
                 <td>Pipeline</td>
                 <td>Created</td>
@@ -84,13 +254,20 @@ class PipelinePanel extends React.Component {
             </thead>
             <tbody>
               {good_jobs.map((job_obj, index) => {
+                let tr_style = {}
+                if (job_obj.id === this.state.active_job_id) {
+                  tr_style['border'] = '5px black solid'
+                }
                 const pipeline = this.props.pipelines[job_obj.attributes.pipeline_job_link]
                 let status_line = job_obj.status
                 if (status_line === 'running') {
                   status_line += ' - ' + Math.floor(100 * parseFloat(job_obj.percent_complete)) + '% done'
                 }
                 return (
-                  <tr key={index}>
+                  <tr 
+                      key={index}
+                      style={tr_style}
+                  >
                     <td className='p-2'>
                       {pipeline.name}
                     </td>
@@ -109,7 +286,7 @@ class PipelinePanel extends React.Component {
                       </button>
                       <button
                         className='btn btn-primary ml-1 p-1'
-                        onClick={()=>this.props.cancelJob(job_obj.id)}
+                        onClick={()=>this.tryToCancelJob(job_obj.id)}
                       >
                         Cancel
                       </button>
@@ -126,14 +303,11 @@ class PipelinePanel extends React.Component {
 
   render() {
     const job_view = this.buildJobView()
-    const pl_runs = this.buildPipelineRuns()
+    const pl_runs = this.buildRuns()
     return (
       <div className='container'>
         <div id='pipeline_panel' className='row mt-5'>
           <div className='col'>
-            <div className='row h3'>
-              Pipelines
-            </div>
             <div className='row'>
               {job_view}
             </div>

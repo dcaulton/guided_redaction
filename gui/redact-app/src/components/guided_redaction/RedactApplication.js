@@ -2271,6 +2271,7 @@ class RedactApplication extends React.Component {
                 getPipelines={this.getPipelines}
                 getJobs={this.getJobs}
                 cancelJob={this.cancelJobWrapper}
+                loadJobResults={this.loadJobResultsWrapper}
               />
             </Route>
             <Route path={['/redact/compose', '/redact']}>

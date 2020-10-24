@@ -56,6 +56,9 @@ export const buildRedactionRuleControls = function (
   setGlobalStateVar
   ) {
 
+  if (!redact_rule_current_id) {
+    return
+  }
   function updateRedactField(field_name, the_value) {
     let deepCopyRedactRules = JSON.parse(JSON.stringify(redact_rules))
     let rr = JSON.parse(JSON.stringify(redact_rules[redact_rule_current_id]))

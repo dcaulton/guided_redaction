@@ -990,6 +990,8 @@ class JobLogic extends React.Component {
         this.loadIllustrateResults(
           job, when_done, setGlobalStateVar, getGlobalStateVar
         )
+      } else {
+        when_done(responseJson)
       }
       return responseJson
     })
