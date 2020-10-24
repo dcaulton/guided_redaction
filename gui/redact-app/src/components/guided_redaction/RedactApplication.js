@@ -2,6 +2,7 @@ import React from 'react';
 import MoviePanel from './MoviePanel';
 import Pipelines from './Pipelines';
 import InsightsPanel from './InsightsPanel';
+import PipelinePanel from './PipelinePanel';
 import Workflows from './Workflows';
 import JobLogic from './JobLogic';
 import Workbooks from './Workbooks';
@@ -1399,12 +1400,13 @@ class RedactApplication extends React.Component {
     JobLogic.attachToJob(job_id, (()=>{}), true, this.setGlobalStateVar, this.state.jobs)
   }
 
-  async getPipelines() {
+  async getPipelines(when_done=(()=>{})) {
     Pipelines.getPipelines(
       fetch,
       this.getUrl,
       this.setGlobalStateVar,
-      this.buildJsonHeaders
+      this.buildJsonHeaders,
+      when_done
     )
   }
 
@@ -2049,11 +2051,13 @@ class RedactApplication extends React.Component {
     let pl_name = 'Precision Learning'
     let mr_name = 'Movie Redaction'
     let insights_name = 'Insights'
+    let pipeline_name = 'Pipeline'
     let top_div_classnames = 'h-100 col-2 bg-dark navbar-dark pl-4 font-weight-bold'
     if (this.state.sideNavIsCollapsed) {
       pl_name = 'PL'
       mr_name = 'MR'
       insights_name = 'In'
+      pipeline_name = 'PI'
       top_div_classnames = 'h-100 col-1 bg-dark navbar-dark pl-2 font-weight-bold'
     }
     if (!this.props.show_insights) {
@@ -2085,6 +2089,15 @@ class RedactApplication extends React.Component {
                 to='/redact/movie'
               >
                 {mr_name}
+              </Link>
+            </li>
+            <li className="nav-item mt-2 mb-2">
+              <Link 
+                className='nav-link' 
+                id='pipeline_link' 
+                to='/redact/pipeline'
+              >
+                {pipeline_name}
               </Link>
             </li>
             <li className="nav-item mt-2 mb-2">
@@ -2248,6 +2261,16 @@ class RedactApplication extends React.Component {
                 deleteOldJobs={this.deleteOldJobsWrapper}
                 setActiveWorkflow={this.setActiveWorkflow}
                 job_polling_interval_seconds={this.state.job_polling_interval_seconds}
+              />
+            </Route>
+            <Route path='/redact/pipeline'>
+              <PipelinePanel  
+                setGlobalStateVar={this.setGlobalStateVar}
+                pipelines={this.state.pipelines}
+                jobs={this.state.jobs}
+                getPipelines={this.getPipelines}
+                getJobs={this.getJobs}
+                cancelJob={this.cancelJobWrapper}
               />
             </Route>
             <Route path={['/redact/compose', '/redact']}>

@@ -92,6 +92,8 @@ class MeshMatchFinder:
         return proj_origin
 
     def build_cells_by_popularity(self, mesh):
+        if not mesh:
+            return []
         to_rank = []
         for row_pos, mesh_row in enumerate(mesh):
             for col_pos, mesh_cell in enumerate(mesh_row):

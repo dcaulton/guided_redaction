@@ -293,6 +293,8 @@ class JobsViewSet(viewsets.ViewSet):
             for attribute in job.attributes.all():
                 if attribute.name not in ['user_id', 'file_dir_user']:
                     attrs[attribute.name] = attribute.value
+                if attribute.name == 'pipeline_job_link':
+                    attrs[attribute.name] = attribute.pipeline_id
             job_obj = {
                 'id': job_id,
                 'status': job.status,
@@ -347,6 +349,8 @@ class JobsViewSet(viewsets.ViewSet):
             for attribute in attributes:
                 if attribute.name not in ['user_id', 'file_dir_user']:
                     attrs[attribute.name] = attribute.value
+                if attribute.name == 'pipeline_job_link':
+                    attrs[attribute.name] = attribute.pipeline_id
         if owner:
             job_data['owner'] = owner
         if attrs:

@@ -413,6 +413,8 @@ class ChartMaker:
                 if not stats_framesets: 
                     continue
                 for frameset_hash in framesets_in_order:
+                    if frameset_hash not in stats_framesets:
+                        continue
                     for anchor_id in stats_framesets[frameset_hash]:
                         if anchor_id not in build_chart_data[movie_url][template_id]:
                             build_chart_data[movie_url][template_id][anchor_id] = []

@@ -147,7 +147,8 @@ class FileWriter():
         # copy images to a new directory, give them sequential numbers
         for image_index, image_url in enumerate(image_url_list):
             build_image_filename = 'frame_{:05d}.png'.format(image_index)
-            print('build image filename {}'.format(build_image_filename))
+            (x_part, file_part) = os.path.split(image_url)
+            print('build image filename {}: {}'.format(build_image_filename, file_part))
             self.copy_file(image_url, new_subdir, build_image_filename)
         # run ffmpeg against the new directory
         input_filepath = self.build_file_fullpath_for_uuid_and_filename(new_subdir, 'frame_%05d.png')

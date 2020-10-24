@@ -137,7 +137,7 @@ class Pipelines extends React.Component {
     }
   }
 
-  static async getPipelines(fetch, getUrl, setGlobalStateVar, buildJsonHeaders) {
+  static async getPipelines(fetch, getUrl, setGlobalStateVar, buildJsonHeaders, when_done=(()=>{})) {
     let the_url = getUrl('pipelines_url')
     await fetch(the_url, {
       method: 'GET',
@@ -153,6 +153,10 @@ class Pipelines extends React.Component {
         }
         setGlobalStateVar('pipelines', pipelines_hash)
       }
+      return responseJson
+    })
+    .then((responseJson) => {
+      when_done(responseJson)
     })
     .catch((error) => {
       console.error(error);
