@@ -13,3 +13,6 @@ router.register(
 router.register(
     r"v1/delete-old-jobs", api.JobsViewSetDeleteOld, basename="BillBurr"
 )
+router.register(
+    r"v1/jobs/pipeline-job-status", api.JobsViewSetPipelineJobStatus, basename="MrGarrison"
+)

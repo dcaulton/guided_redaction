@@ -8,11 +8,13 @@ class PipelinePanel extends React.Component {
       id: '',
       jobs: [],
       active_job_id: '',
+      active_job_status_obj: {},
       active_job_request_data: '',
       active_job_response_data: '',
       usable_pipeline_ids: [],
     }
     this.saveJobResultData=this.saveJobResultData.bind(this)
+    this.updateActiveJobStatus=this.updateActiveJobStatus.bind(this)
   }
 
   loadRelevantPipelines(gp_resp_obj) {
@@ -45,10 +47,23 @@ class PipelinePanel extends React.Component {
     })
   }
 
+  updateActiveJobStatus(response) {
+console.log('jah wobble ', response)
+    this.setState({
+      active_job_status_obj: response,
+    })
+  }
+
+  refreshJobStatus() {
+    let active_job = this.getActiveJob()
+    this.props.getPipelineJobStatus(active_job.id, this.updateActiveJobStatus)
+  }
+
   viewJob(job_id) {
     this.setState({
       active_job_id: job_id,
     })
+    this.props.getPipelineJobStatus(job_id, this.updateActiveJobStatus)
     this.props.loadJobResults(job_id, this.saveJobResultData)
   }
 
@@ -59,13 +74,89 @@ class PipelinePanel extends React.Component {
     } 
   }
 
+  rankChildren(build_obj, edges, parent_node_id, parent_level_number) {
+    for (let i=0; i < Object.keys(edges[parent_node_id]).length; i++) {
+      const target_node_id = edges[parent_node_id][i]
+      if (!Object.keys(build_obj).includes(String(parent_level_number+1))) {
+        build_obj[String(parent_level_number+1)] = []
+      }
+      if (build_obj[String(parent_level_number+1)].includes(target_node_id)) {
+        continue
+      }
+      build_obj[String(parent_level_number+1)].push(target_node_id)
+      if (Object.keys(edges).includes(target_node_id)) {
+        this.rankChildren(build_obj, edges, target_node_id, parent_level_number+1)
+      }
+    }
+  }
+
+  getNodeIdsAsRows(content) {
+    let all_node_ids = Object.keys(content['node_metadata']['node'])
+    for (let i=0; i < Object.keys(content['edges']).length; i++) {
+      const edge_start_id = Object.keys(content['edges'])[i]
+      for (let j=0; j < content['edges'][edge_start_id].length; j++) {
+        const target_node_id = content['edges'][edge_start_id][j]
+        if (all_node_ids.includes(target_node_id)) {
+          const index = all_node_ids.indexOf(target_node_id)
+          if (index > -1) {
+            all_node_ids.splice(index, 1)
+          }
+        }
+      }
+    }
+    if (all_node_ids.length > 1 || all_node_ids.length === 0) {
+      console.log('problem determining first node')
+      return
+    }
+    let first_node_id = all_node_ids[0]
+    let build_obj = {
+      0: [first_node_id],
+    }
+    this.rankChildren(build_obj, content['edges'], first_node_id, 0)
+    return build_obj
+  }
+
+  buildWipDiagram(content) {
+    const nodes_as_rows= this.getNodeIdsAsRows(content)
+
+    return (
+      <div>
+        {Object.keys(nodes_as_rows).sort().map((row_key, index1) => {
+          const nodes_row = nodes_as_rows[row_key]
+          return (
+            <div 
+              key={index1}
+              className='row'
+            >
+              {nodes_row.map((node_id, index2) => {
+                let cell_style = {
+                }
+                return (
+                  <div 
+                    key={index2}
+                    className='col'
+                    style={cell_style}
+                  >
+                    {node_id}
+                  </div>
+                )
+              })}
+            </div>
+          )
+        })}
+      </div>
+    )
+  }
+
   buildWorkInProgressSummary() {
+    const refresh_button = this.buildRefreshStatusButton()
     if (!this.state.active_job_id) {
       return
     }
     let active_job = this.getActiveJob()
     let active_pipeline = this.getActivePipeline()
     const content = JSON.parse(active_pipeline.content)
+    const wip_diagram = this.buildWipDiagram(content)
 //console.log('hunchy', content)
 // TODO use content['node_metadata']['node'] to get all nodes
 //  use content['edges'] to find the order to display them in
@@ -75,7 +166,18 @@ class PipelinePanel extends React.Component {
     if (wip_statuses.includes(active_job.status)) {
       return (
         <div className='ml-2'>
-        zowie
+          <div>
+            {wip_diagram}
+          </div>
+          <div>
+            {refresh_button}
+          </div>
+        </div>
+      )
+    } else {
+      return (
+        <div>
+          {refresh_button}
         </div>
       )
     }
@@ -163,6 +265,17 @@ class PipelinePanel extends React.Component {
     }
     const pipeline = this.props.pipelines[active_job.attributes.pipeline_job_link]
     return pipeline
+  }
+
+  buildRefreshStatusButton() {
+    return (
+      <button
+        className='btn btn-primary'
+        onClick={()=>this.refreshJobStatus()}
+      >
+        Refresh Job Status
+      </button>
+    )
   }
 
   buildJobView() {

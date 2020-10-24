@@ -213,6 +213,7 @@ class RedactApplication extends React.Component {
     this.saveStateCheckpoint=this.saveStateCheckpoint.bind(this)
     this.removeFramesetHash=this.removeFramesetHash.bind(this)
     this.truncateAtFramesetHash=this.truncateAtFramesetHash.bind(this)
+    this.getPipelineJobStatus=this.getPipelineJobStatus.bind(this)
   }
 
   seedRedactRule() {
@@ -561,6 +562,8 @@ class RedactApplication extends React.Component {
       return api_server_url + 'v1/jobs'
     } else if (url_name === 'wrap_up_job_url') {
       return api_server_url + 'v1/wrap-up-jobs'
+    } else if (url_name === 'pipeline_job_status_url') {
+      return api_server_url + 'v1/jobs/pipeline-job-status'
     } else if (url_name === 'workbooks_url') {
       return api_server_url + 'v1/workbooks'
     } else if (url_name === 'link_url') {
@@ -1346,6 +1349,16 @@ class RedactApplication extends React.Component {
 
   async getJobResultDataWrapper(job_id, when_done=(()=>{})) {
     JobLogic.getJobResultData(job_id, when_done, this.getUrl, fetch, this.buildJsonHeaders)
+  }
+
+  async getPipelineJobStatus(job_id, when_done=(()=>{})) {
+    JobLogic.getPipelineJobStatus(
+      job_id,
+      when_done,
+      this.getUrl,
+      fetch,
+      this.buildJsonHeaders,
+    )
   }
 
   async loadJobResultsWrapper(job_id, when_done=(()=>{})) {
@@ -2272,6 +2285,7 @@ class RedactApplication extends React.Component {
                 getJobs={this.getJobs}
                 cancelJob={this.cancelJobWrapper}
                 loadJobResults={this.loadJobResultsWrapper}
+                getPipelineJobStatus={this.getPipelineJobStatus}
               />
             </Route>
             <Route path={['/redact/compose', '/redact']}>

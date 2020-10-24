@@ -1106,6 +1106,25 @@ class JobLogic extends React.Component {
       when_failed()
     })
   }
+
+  static async getPipelineJobStatus(
+      job_id,
+      when_done,
+      getUrl,
+      fetch_func,
+      buildJsonHeaders,
+  ) {
+    let job_url = getUrl('pipeline_job_status_url') + '/' + job_id
+    await fetch_func(job_url, {
+      method: 'GET',
+      headers: buildJsonHeaders(),
+    })
+    .then((response) => response.json())
+    .then((responseJson) => {
+      when_done(responseJson)
+    })
+  }
+
 }
 
 export default JobLogic;

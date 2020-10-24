@@ -558,3 +558,10 @@ class JobsViewSetDeleteOld(viewsets.ViewSet):
 
         resp_msg = '{} jobs deleted'.format(len(job_ids_to_delete))
         return Response({'message': resp_msg})
+
+class JobsViewSetPipelineJobStatus(viewsets.ViewSet):
+    def retrieve(self, request, pk):
+        job = Job.objects.get(pk=pk)
+        children = Job.objects.filter(parent_id=job.id).order_by('sequence')
+        return Response({'message': 'LOL'})
+

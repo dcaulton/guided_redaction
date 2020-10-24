@@ -55,7 +55,7 @@ def t1_diff(job_uuid):
 def noop(job_uuid):
     job = Job.objects.get(pk=job_uuid)
     if job:
-        time.sleep(random.random()) # randomized sleep to avoid race conditions with complex noop pipelines
+        time.sleep(5 + random.random()) # randomized sleep to avoid race conditions with complex noop pipelines
         job.response_data = job.request_data
         job.status = 'success'
         job.save()
