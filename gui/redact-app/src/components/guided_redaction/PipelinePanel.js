@@ -48,7 +48,6 @@ class PipelinePanel extends React.Component {
   }
 
   updateActiveJobStatus(response) {
-console.log('jah wobble ', response)
     this.setState({
       active_job_status_obj: response,
     })
@@ -124,12 +123,7 @@ console.log('jah wobble ', response)
     let active_job = this.getActiveJob()
     let active_pipeline = this.getActivePipeline()
     const content = JSON.parse(active_pipeline.content)
-//console.log('hunchy', content)
-// TODO use content['node_metadata']['node'] to get all nodes
-//  use content['edges'] to find the order to display them in
-//  use the child job ids to get job data
-//  maybe have the api return something richer for children: child_operation, status, percent done, name
-    let node_statuses = 'NO NODE StATUSES'
+    let node_statuses = 'No Node Status Graph Available'
     if (
       this.state.active_job_status_obj 
       && Object.keys(this.state.active_job_status_obj).includes('node_status_image')
@@ -142,25 +136,16 @@ console.log('jah wobble ', response)
         />
       )
     }
-    const wip_statuses = ['running']
-    if (wip_statuses.includes(active_job.status)) {
-      return (
-        <div className='ml-2'>
-          <div>
-            {node_statuses}
-          </div>
-          <div>
-            {refresh_button}
-          </div>
+    return (
+      <div className='ml-2'>
+        <div>
+          {node_statuses}
         </div>
-      )
-    } else {
-      return (
         <div>
           {refresh_button}
         </div>
-      )
-    }
+      </div>
+    )
   }
 
   buildRequestDataSummary() {
