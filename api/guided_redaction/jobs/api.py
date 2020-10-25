@@ -21,6 +21,7 @@ from guided_redaction.files import tasks as files_tasks
 from guided_redaction.pipelines import tasks as pipelines_tasks
 from guided_redaction.utils.task_shared import get_job_owner, query_profiler
 from guided_redaction.utils.classes.FileWriter import FileWriter
+from .controller_pipeline_job_status import PipelineJobStatusController
 
 
 log = logging.getLogger(__name__)
@@ -562,6 +563,12 @@ class JobsViewSetDeleteOld(viewsets.ViewSet):
 class JobsViewSetPipelineJobStatus(viewsets.ViewSet):
     def retrieve(self, request, pk):
         job = Job.objects.get(pk=pk)
-        children = Job.objects.filter(parent_id=job.id).order_by('sequence')
-        return Response({'message': 'LOL'})
+        fw = FileWriter(
+            working_dir=settings.REDACT_FILE_STORAGE_DIR,
+            base_url=settings.REDACT_FILE_BASE_URL,
+            image_request_verify_headers=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
+        )
+        worker = PipelineJobStatusController(fw)
 
+        worker_response = worker.build_status(job)
+        return Response(worker_response)

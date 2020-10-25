@@ -116,39 +116,7 @@ console.log('jah wobble ', response)
     return build_obj
   }
 
-  buildWipDiagram(content) {
-    const nodes_as_rows= this.getNodeIdsAsRows(content)
-
-    return (
-      <div>
-        {Object.keys(nodes_as_rows).sort().map((row_key, index1) => {
-          const nodes_row = nodes_as_rows[row_key]
-          return (
-            <div 
-              key={index1}
-              className='row'
-            >
-              {nodes_row.map((node_id, index2) => {
-                let cell_style = {
-                }
-                return (
-                  <div 
-                    key={index2}
-                    className='col'
-                    style={cell_style}
-                  >
-                    {node_id}
-                  </div>
-                )
-              })}
-            </div>
-          )
-        })}
-      </div>
-    )
-  }
-
-  buildWorkInProgressSummary() {
+  buildStatusSummary() {
     const refresh_button = this.buildRefreshStatusButton()
     if (!this.state.active_job_id) {
       return
@@ -156,18 +124,30 @@ console.log('jah wobble ', response)
     let active_job = this.getActiveJob()
     let active_pipeline = this.getActivePipeline()
     const content = JSON.parse(active_pipeline.content)
-    const wip_diagram = this.buildWipDiagram(content)
 //console.log('hunchy', content)
 // TODO use content['node_metadata']['node'] to get all nodes
 //  use content['edges'] to find the order to display them in
 //  use the child job ids to get job data
 //  maybe have the api return something richer for children: child_operation, status, percent done, name
+    let node_statuses = 'NO NODE StATUSES'
+    if (
+      this.state.active_job_status_obj 
+      && Object.keys(this.state.active_job_status_obj).includes('node_status_image')
+      && this.state.active_job_status_obj['node_status_image']
+    ) {
+      node_statuses = (
+        <img 
+          src={this.state.active_job_status_obj['node_status_image']}
+          alt='status image'
+        />
+      )
+    }
     const wip_statuses = ['running']
     if (wip_statuses.includes(active_job.status)) {
       return (
         <div className='ml-2'>
           <div>
-            {wip_diagram}
+            {node_statuses}
           </div>
           <div>
             {refresh_button}
@@ -284,7 +264,7 @@ console.log('jah wobble ', response)
     }
     let active_job = this.getActiveJob()
     const req_data_summary = this.buildRequestDataSummary()
-    const wip_summary = this.buildWorkInProgressSummary()
+    const status_summary = this.buildStatusSummary()
     const resp_data_summary = this.buildResponseDataSummary()
     const pipeline = this.getActivePipeline()
     let title = 'Pipeline ' + pipeline.name 
@@ -313,10 +293,10 @@ console.log('jah wobble ', response)
 
         <div className='row mt-2'>
           <div className='col-12 font-weight-bold'>
-            Work in Progress
+            Status Details
           </div>
           <div className='col-12'>
-            {wip_summary}
+            {status_summary}
           </div>
         </div>
 
