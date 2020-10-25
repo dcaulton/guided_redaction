@@ -43,7 +43,29 @@ class PipelineJobStatusController:
             'node_status_image': self.node_status_image,
             'node_statuses': self.node_statuses,
         }
-    
+
+    def build_node_status_image(self):
+        canvas = np.ones((self.canvas_height, self.canvas_width, 3), dtype='uint8') * 255
+        self.add_node_edges_to_image(canvas)
+        for row_key in sorted(self.node_ids_by_row.keys()):
+            for col_index, node_id in enumerate(self.node_ids_by_row[row_key]):
+                center = (
+                    math.floor(self.node_coords[node_id][0] + .5*self.cell_size),
+                    math.floor(self.node_coords[node_id][1] + .5*self.cell_size)
+                )
+                status_color = self.get_node_status_color(node_id)
+                cv2.circle(canvas, center, math.floor(self.cell_size/2), status_color, -1)
+                cv2.circle(canvas, center, math.floor(self.cell_size/2), (0,0,0), 2)
+                self.add_node_operation_to_image(canvas, node_id, center)
+                self.add_node_name_to_image(canvas, node_id, center)
+                self.add_node_percent_complete_to_image(canvas, node_id, center)
+
+        the_uuid = str(uuid.uuid4())
+        workdir = self.file_writer.create_unique_directory(the_uuid)
+        outfilename = os.path.join(workdir, 'pipeline_status_graph.png')
+        file_url = self.file_writer.write_cv2_image_to_filepath(canvas, outfilename)
+        self.node_status_image = file_url
+
     def get_node_status_color(self, node_id):
         status = self.node_statuses[node_id]['status']
         if status == 'success':
@@ -54,8 +76,51 @@ class PipelineJobStatusController:
             return (255, 200, 200)
         return (255, 255, 255)
 
-    def build_node_status_image(self):
-        canvas = np.ones((self.canvas_height, self.canvas_width, 3), dtype='uint8') * 255
+    def add_node_percent_complete_to_image(self, canvas, node_id, center):
+        if self.node_statuses[node_id]['status'] != 'running':
+            return
+        if self.node_statuses[node_id]['percent_complete'] == 0:
+            return
+        num_degrees = int(360 * (self.node_statuses[node_id]['percent_complete'] / 100))
+        end_angle = num_degrees + 270
+        past_zero = False
+        if end_angle > 360:
+            past_zero = True
+            end_angle -= 360
+        if past_zero:
+            cv2.ellipse(
+                canvas, # image, 
+                center, # center, 
+                (math.floor(self.cell_size/2), math.floor(self.cell_size/2)), # axes, 
+                0, # angle, 
+                270, # startAngle, 
+                360, # endAngle, 
+                (130, 230, 255), # orangish, 
+                5, # thickness
+            )
+            cv2.ellipse(
+                canvas, # image, 
+                center, # center, 
+                (math.floor(self.cell_size/2), math.floor(self.cell_size/2)), # axes, 
+                0, # angle, 
+                0, # startAngle, 
+                end_angle, # endAngle, 
+                (130, 230, 255), # orangish, 
+                5, # thickness
+            )
+        else:
+            cv2.ellipse(
+                canvas, # image, 
+                center, # center, 
+                (math.floor(self.cell_size/2), math.floor(self.cell_size/2)), # axes, 
+                0, # angle, 
+                270, # startAngle, 
+                end_angle, # endAngle, 
+                (130, 230, 255), # orangish, 
+                5, # thickness
+            )
+
+    def add_node_edges_to_image(self, canvas):
         for originating_node_id in self.content['edges']:
             target_ids = self.content['edges'][originating_node_id]
             for tid in target_ids:
@@ -68,74 +133,63 @@ class PipelineJobStatusController:
                     math.floor(self.node_coords[tid][1] + .5*self.cell_size)
                 )
                 cv2.line(canvas, source_center, target_center, (0,0,0), 2)
-        for row_key in sorted(self.node_ids_by_row.keys()):
-            for col_index, node_id in enumerate(self.node_ids_by_row[row_key]):
-                center = (
-                    math.floor(self.node_coords[node_id][0] + .5*self.cell_size),
-                    math.floor(self.node_coords[node_id][1] + .5*self.cell_size)
-                )
-                status_color = self.get_node_status_color(node_id)
-                cv2.circle(canvas, center, math.floor(self.cell_size/2), status_color, -1)
-                cv2.circle(canvas, center, math.floor(self.cell_size/2), (0,0,0), 2)
-                short_type = self.get_short_type(self.content['node_metadata']['node'][node_id]['type'])
-                font_scale = .75
-                if len(short_type) > 2:
-                    text_origin = (
-                        math.floor(center[0]-self.cell_size/2), 
-                        math.floor(center[1]+self.cell_size/5)
-                    )
-                    font_scale = .6
-                elif len(short_type) == 2:
-                    text_origin = (
-                        math.floor(center[0]-self.cell_size/2.5), 
-                        math.floor(center[1]+self.cell_size/5)
-                    )
-                else:
-                    text_origin = (
-                        math.floor(center[0]-self.cell_size/4), 
-                        math.floor(center[1]+self.cell_size/5)
-                    )
 
-                cv2.putText(
-                    canvas,
-                    short_type,
-                    text_origin,
-                    cv2.FONT_HERSHEY_SIMPLEX, #font
-                    font_scale, #fontScale,
-                    (0,0,0), #fontColor,
-                    2 #lineType
-                )
+    def add_node_operation_to_image(self, canvas, node_id, center):
+        short_type = self.get_short_type(self.content['node_metadata']['node'][node_id]['type'])
+        font_scale = .75
+        if len(short_type) > 2:
+            text_origin = (
+                math.floor(center[0]-self.cell_size/2), 
+                math.floor(center[1]+self.cell_size/5)
+            )
+            font_scale = .6
+        elif len(short_type) == 2:
+            text_origin = (
+                math.floor(center[0]-self.cell_size/2.5), 
+                math.floor(center[1]+self.cell_size/5)
+            )
+        else:
+            text_origin = (
+                math.floor(center[0]-self.cell_size/4), 
+                math.floor(center[1]+self.cell_size/5)
+            )
 
-                name = self.content['node_metadata']['node'][node_id]['name']
-                if len(short_type) > 2:
-                    text_origin = (
-                        math.floor(center[0]+self.cell_size/3.5), 
-                        math.floor(center[1]+self.cell_size/5)
-                    )
-                elif len(short_type) == 2:
-                    text_origin = (
-                        math.floor(center[0]+self.cell_size/4), 
-                        math.floor(center[1]+self.cell_size/5)
-                    )
-                else:
-                    text_origin = (
-                        math.floor(center[0]+self.cell_size/10), 
-                        math.floor(center[1]+self.cell_size/5)
-                    )
-                cv2.putText(
-                    canvas,
-                    name,
-                    text_origin,
-                    cv2.FONT_HERSHEY_SIMPLEX, #font
-                    .45, #fontScale,
-                    (0,0,0), #fontColor,
-                    1 #lineType
-                )
-        the_uuid = str(uuid.uuid4())
-        workdir = self.file_writer.create_unique_directory(the_uuid)
-        outfilename = os.path.join(workdir, 'pipeline_status_graph.png')
-        file_url = self.file_writer.write_cv2_image_to_filepath(canvas, outfilename)
-        self.node_status_image = file_url
+        cv2.putText(
+            canvas,
+            short_type,
+            text_origin,
+            cv2.FONT_HERSHEY_SIMPLEX, #font
+            font_scale, #fontScale,
+            (0,0,0), #fontColor,
+            2 #lineType
+        )
+    def add_node_name_to_image(self, canvas, node_id, center):
+        name = self.content['node_metadata']['node'][node_id]['name']
+        short_type = self.get_short_type(self.content['node_metadata']['node'][node_id]['type'])
+        if len(short_type) > 2:
+            text_origin = (
+                math.floor(center[0]+self.cell_size/3.5), 
+                math.floor(center[1]+self.cell_size/5)
+            )
+        elif len(short_type) == 2:
+            text_origin = (
+                math.floor(center[0]+self.cell_size/4), 
+                math.floor(center[1]+self.cell_size/5)
+            )
+        else:
+            text_origin = (
+                math.floor(center[0]+self.cell_size/10), 
+                math.floor(center[1]+self.cell_size/5)
+            )
+        cv2.putText(
+            canvas,
+            name,
+            text_origin,
+            cv2.FONT_HERSHEY_SIMPLEX, #font
+            .45, #fontScale,
+            (0,0,0), #fontColor,
+            1 #lineType
+        )
 
     def get_short_type(self, long_type):
         if long_type == 'noop':
@@ -239,13 +293,33 @@ class PipelineJobStatusController:
         for node_id in all_node_ids:
             if node_id in self.jobs:
                 job = self.jobs[node_id]
+                request_data = {} 
+                if job.request_data:
+                    request_data = json.loads(job.request_data)
+                input_frameset_count = 0
+                if 'movies' in request_data:
+                    for movie_url in request_data['movies']:
+                        if movie_url == 'source':
+                            continue
+                        if 'framesets' not in request_data['movies'][movie_url]:
+                            continue
+                        input_frameset_count += len(request_data['movies'][movie_url]['framesets'])
+                response_data = {}
+                if job.response_data:
+                    response_data = json.loads(job.response_data)
+                output_frameset_count = 0
+                if 'movies' in response_data:
+                    for movie_url in response_data['movies']:
+                        if 'framesets' not in response_data['movies'][movie_url]:
+                            continue
+                        output_frameset_count += len(response_data['movies'][movie_url]['framesets'])
                 build_obj = {
                     'operation': job.operation,
                     'status': job.status,
-                    'percent_complete': str(math.floor(round(job.percent_complete, 2) * 100)) + '%',
-                    'frames_seen': 0,
-                    'frames_matched': 0,
-                    'percent_matched': 0,
+                    'percent_complete': math.floor(round(job.percent_complete, 2) * 100),
+                    'last_updated': job.updated,
+                    'frames_seen': input_frameset_count,
+                    'frames_matched': output_frameset_count,
                 }
                 self.node_statuses[node_id] = build_obj
             else:
