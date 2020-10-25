@@ -77,12 +77,91 @@ class PipelineJobStatusController:
                 status_color = self.get_node_status_color(node_id)
                 cv2.circle(canvas, center, math.floor(self.cell_size/2), status_color, -1)
                 cv2.circle(canvas, center, math.floor(self.cell_size/2), (0,0,0), 2)
+                short_type = self.get_short_type(self.content['node_metadata']['node'][node_id]['type'])
+                font_scale = .75
+                if len(short_type) > 2:
+                    text_origin = (
+                        math.floor(center[0]-self.cell_size/2), 
+                        math.floor(center[1]+self.cell_size/5)
+                    )
+                    font_scale = .6
+                elif len(short_type) == 2:
+                    text_origin = (
+                        math.floor(center[0]-self.cell_size/2.5), 
+                        math.floor(center[1]+self.cell_size/5)
+                    )
+                else:
+                    text_origin = (
+                        math.floor(center[0]-self.cell_size/4), 
+                        math.floor(center[1]+self.cell_size/5)
+                    )
 
+                cv2.putText(
+                    canvas,
+                    short_type,
+                    text_origin,
+                    cv2.FONT_HERSHEY_SIMPLEX, #font
+                    font_scale, #fontScale,
+                    (0,0,0), #fontColor,
+                    2 #lineType
+                )
+
+                name = self.content['node_metadata']['node'][node_id]['name']
+                if len(short_type) > 2:
+                    text_origin = (
+                        math.floor(center[0]+self.cell_size/3.5), 
+                        math.floor(center[1]+self.cell_size/5)
+                    )
+                elif len(short_type) == 2:
+                    text_origin = (
+                        math.floor(center[0]+self.cell_size/4), 
+                        math.floor(center[1]+self.cell_size/5)
+                    )
+                else:
+                    text_origin = (
+                        math.floor(center[0]+self.cell_size/10), 
+                        math.floor(center[1]+self.cell_size/5)
+                    )
+                cv2.putText(
+                    canvas,
+                    name,
+                    text_origin,
+                    cv2.FONT_HERSHEY_SIMPLEX, #font
+                    .45, #fontScale,
+                    (0,0,0), #fontColor,
+                    1 #lineType
+                )
         the_uuid = str(uuid.uuid4())
         workdir = self.file_writer.create_unique_directory(the_uuid)
         outfilename = os.path.join(workdir, 'pipeline_status_graph.png')
         file_url = self.file_writer.write_cv2_image_to_filepath(canvas, outfilename)
         self.node_status_image = file_url
+
+    def get_short_type(self, long_type):
+        if long_type == 'noop':
+            return 'N'
+        elif long_type == 'template':
+            return 'T'
+        elif long_type == 'selected_area':
+            return 'SA'
+        elif long_type == 'mesh_match':
+            return 'MM'
+        elif long_type == 'selection_grower':
+            return 'SG'
+        elif long_type == 'split_and_hash':
+            return 'S|H'
+        elif long_type == 'redact':
+            return 'R'
+        elif long_type == 'zip':
+            return 'Z'
+        elif long_type == 't1_sum':
+            return 'SUM'
+#            return '\u03A3'
+        elif long_type == 't1_dif':
+            return 'DIF'
+        else:
+            print('dont know about type {}'.format(long_type))
+            return '?'
 
     def build_node_coords(self):
         num_rows = len(self.node_ids_by_row)
