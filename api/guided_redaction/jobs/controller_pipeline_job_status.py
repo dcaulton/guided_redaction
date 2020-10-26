@@ -289,8 +289,12 @@ class PipelineJobStatusController:
                     self.jobs[nid_attr.value] = child
 
     def build_node_statuses(self):
-        all_node_ids = list(self.content['node_metadata']['node'].keys()) 
+        all_node_ids = []
+        for row_key in sorted(self.node_ids_by_row.keys()):
+            for col_index, node_id in enumerate(self.node_ids_by_row[row_key]):
+                all_node_ids.append(node_id)
         for node_id in all_node_ids:
+            node = self.content['node_metadata']['node'][node_id]
             if node_id in self.jobs:
                 job = self.jobs[node_id]
                 request_data = {} 
@@ -313,23 +317,29 @@ class PipelineJobStatusController:
                         if 'framesets' not in response_data['movies'][movie_url]:
                             continue
                         output_frameset_count += len(response_data['movies'][movie_url]['framesets'])
+                job = self.jobs[node_id]
                 build_obj = {
                     'operation': job.operation,
+                    'name': node['name'],
+                    'node_sequence': all_node_ids.index(node_id),
                     'status': job.status,
                     'percent_complete': math.floor(round(job.percent_complete, 2) * 100),
                     'last_updated': job.updated,
-                    'frames_seen': input_frameset_count,
-                    'frames_matched': output_frameset_count,
+                    'framesets_in': input_frameset_count,
+                    'framesets_out': output_frameset_count,
+                    'job_id': str(job.id),
                 }
                 self.node_statuses[node_id] = build_obj
             else:
-                node = self.content['node_metadata']['node'][node_id]
                 build_obj = {
                     'operation': node['type'],
+                    'name': node['name'],
+                    'node_sequence': all_node_ids.index(node_id),
                     'status': 'not yet created',
                     'percent_complete': 0,
-                    'frames_seen': 0,
-                    'frames_matched': 0,
+                    'framesets_in': 0,
+                    'framesets_out': 0,
                     'percent_matched': 0,
+                    'job_id': '',
                 }
                 self.node_statuses[node_id] = build_obj

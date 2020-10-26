@@ -12,6 +12,8 @@ class PipelinePanel extends React.Component {
       active_job_request_data: '',
       active_job_response_data: '',
       usable_pipeline_ids: [],
+      show_job_status_image: true,
+      show_job_status_details: true,
     }
     this.saveJobResultData=this.saveJobResultData.bind(this)
     this.updateActiveJobStatus=this.updateActiveJobStatus.bind(this)
@@ -115,34 +117,211 @@ class PipelinePanel extends React.Component {
     return build_obj
   }
 
-  buildStatusSummary() {
-    const refresh_button = this.buildRefreshStatusButton()
-    if (!this.state.active_job_id) {
-      return
-    }
-    let active_job = this.getActiveJob()
-    let active_pipeline = this.getActivePipeline()
-    const content = JSON.parse(active_pipeline.content)
-    let node_statuses = 'No Node Status Graph Available'
+  getNodeStatusImage() {
+    let node_status_img = 'No Node Status Graph Available'
     if (
       this.state.active_job_status_obj 
       && Object.keys(this.state.active_job_status_obj).includes('node_status_image')
       && this.state.active_job_status_obj['node_status_image']
     ) {
-      node_statuses = (
+      let the_image = (
         <img 
           src={this.state.active_job_status_obj['node_status_image']}
-          alt='status image'
+          alt='status'
         />
       )
+      if (!this.state.show_job_status_image) {
+        the_image = ''
+      }
+      return (
+        <div>
+          <div className='row'>
+            <div className='col-3 h5'>
+              Status at a Glance
+            </div>
+            <div className='col-2'>
+              <input
+                type='checkbox'
+                checked={!this.state.show_job_status_image}
+                onChange={() => this.toggleShowJobStatusImage()}
+              />
+              <div className='d-inline ml-2'>
+                Hide
+              </div>
+            </div>
+          </div>
+          <div className='row'>
+            <div className='col'>
+              {the_image}
+            </div>
+          </div>
+        </div>
+      )
     }
+  }
+
+  toggleShowJobStatusDetails() {
+    const new_value = (!this.state.show_job_status_details)
+    this.setState({
+      show_job_status_details: new_value,
+    })
+  }
+
+  toggleShowJobStatusImage() {
+    const new_value = (!this.state.show_job_status_image)
+    this.setState({
+      show_job_status_image: new_value,
+    })
+  }
+
+  getNodeJobsList() {
+    let node_jobs_list = 'No Node Job Details Available'
+    if (
+      this.state.active_job_status_obj 
+      && Object.keys(this.state.active_job_status_obj).includes('node_statuses')
+      && this.state.active_job_status_obj['node_statuses']
+    ) {
+      const node_statuses = this.state.active_job_status_obj['node_statuses']
+      node_jobs_list = (
+        <div>
+          <div className='row'>
+            <div className='col-3 h5'>
+              Job Details
+            </div>
+            <div className='col-1'>
+              <input
+                type='checkbox'
+                checked={!this.state.show_job_status_details}
+                onChange={() => this.toggleShowJobStatusDetails()}
+              />
+              <div className='d-inline ml-2'>
+                Hide
+              </div>
+            </div>
+          </div>
+
+          <div>
+          {Object.keys(node_statuses).map((node_id, index) => {
+            if (!this.state.show_job_status_details) {
+              return
+            }
+            const status_obj = node_statuses[node_id]
+            let percent_complete = (
+              <div>
+                <div className='d-inline'>
+                  Percent Complete:
+                </div>
+                <div className='d-inline ml-2'>
+                  {status_obj['percent_complete']}
+                </div>
+              </div>
+            )
+            if (status_obj['status'] !== 'running') {
+              percent_complete = ''
+            }
+
+            return (
+              <div className='border-top'>
+                <div>
+                  <div className='d-inline'>
+                    Node Name: 
+                  </div>
+                  <div className='d-inline ml-2'>
+                    {status_obj['name']}
+                  </div>
+                </div>
+                
+                <div>
+                  <div className='d-inline'>
+                    Operation:
+                  </div>
+                  <div className='d-inline ml-2'>
+                    {status_obj['operation']}
+                  </div>
+                </div>
+                
+                <div>
+                  <div className='d-inline'>
+                    Status:
+                  </div>
+                  <div className='d-inline ml-2'>
+                    {status_obj['status']}
+                  </div>
+                </div>
+                
+                {percent_complete}
+                
+                <div>
+                  <div className='d-inline'>
+                    Last Updated:
+                  </div>
+                  <div className='d-inline ml-2'>
+                    {status_obj['last_updated']}
+                  </div>
+                </div>
+                
+                <div>
+                  <div className='d-inline'>
+                    Framesets In:
+                  </div>
+                  <div className='d-inline ml-2'>
+                    {status_obj['framesets_in']}
+                  </div>
+                </div>
+                
+                <div>
+                  <div className='d-inline'>
+                    Framesets Out:
+                  </div>
+                  <div className='d-inline ml-2'>
+                    {status_obj['framesets_out']}
+                  </div>
+                </div>
+                
+                <div className='ml-5 mb-2'>
+                  <button
+                    className='btn btn-primary'
+                    onClick={
+                      ()=>this.props.getJobResultData(status_obj['job_id'], this.displayInNewTab)
+                    }
+                  >
+                    View
+                  </button>
+                </div>
+              </div>
+            )
+          })}
+          </div>
+        </div>
+      )
+    }
+    return node_jobs_list
+  }
+
+  displayInNewTab(page_data) {
+    var w = window.open('')
+    w.document.write("<textarea style='width:100%;height:100%;'>")
+    w.document.write(page_data)
+    w.document.write('</textarea>')
+  }
+
+  buildStatusSummary() {
+    if (!this.state.active_job_id) {
+      return
+    }
+    let active_job = this.getActiveJob()
+    let active_pipeline = this.getActivePipeline()
+
+    const node_status_img = this.getNodeStatusImage()
+    const node_jobs_list = this.getNodeJobsList()
+
     return (
       <div className='ml-2'>
         <div>
-          {node_statuses}
+          {node_status_img}
         </div>
         <div>
-          {refresh_button}
+          {node_jobs_list}
         </div>
       </div>
     )
@@ -235,10 +414,10 @@ class PipelinePanel extends React.Component {
   buildRefreshStatusButton() {
     return (
       <button
-        className='btn btn-primary'
+        className='btn btn-primary p-1'
         onClick={()=>this.refreshJobStatus()}
       >
-        Refresh Job Status
+        Refresh
       </button>
     )
   }
@@ -252,12 +431,13 @@ class PipelinePanel extends React.Component {
     const status_summary = this.buildStatusSummary()
     const resp_data_summary = this.buildResponseDataSummary()
     const pipeline = this.getActivePipeline()
+    const refresh_button = this.buildRefreshStatusButton()
     let title = 'Pipeline ' + pipeline.name 
     title += ', job ' + this.state.active_job_id
 
     return (
       <div className='col mt-5'>
-        <div className='row h5'>
+        <div className='row h2'>
           Pipeline Run Detail
         </div>
         <div className='row'>
@@ -268,7 +448,7 @@ class PipelinePanel extends React.Component {
         </div>
 
         <div className='row mt-2'>
-          <div className='col-12 font-weight-bold'>
+          <div className='col-12 h4 border-top border-bottom mt-5 bg-light'>
             Data In
           </div>
           <div className='col-12'>
@@ -277,16 +457,22 @@ class PipelinePanel extends React.Component {
         </div>
 
         <div className='row mt-2'>
-          <div className='col-12 font-weight-bold'>
-            Status Details
+          <div className='col-10 h4 border-top border-bottom mt-5 bg-light'>
+            Job Status
           </div>
-          <div className='col-12'>
+          <div className='col-2 h4 border-top border-bottom mt-5 bg-light'>
+            {refresh_button}
+          </div>
+        </div>
+
+        <div className='row mt-2'>
+          <div className='col'>
             {status_summary}
           </div>
         </div>
 
         <div className='row mt-2'>
-          <div className='col-12 font-weight-bold'>
+          <div className='col-12 h4 border-top border-bottom mt-5 bg-light'>
             Data Out
           </div>
           <div className='col-12'>
@@ -317,7 +503,7 @@ class PipelinePanel extends React.Component {
 
     return (
       <div className='col mt-5'>
-        <div className='row h5'>
+        <div className='row h2'>
           Pipeline Runs
         </div>
         <div className='row'>

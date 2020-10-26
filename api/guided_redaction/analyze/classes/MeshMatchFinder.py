@@ -124,7 +124,7 @@ class MeshMatchFinder:
         mesh = []
         if 'size' in match_element:
             t1_size = match_element['size']
-            self.debug_mask_image = np.zeros((t1_size[1], t1_size[0], 3), dtype='uint8')
+            self.debug_mask_image = np.zeros((int(t1_size[1]), int(t1_size[0]), 3), dtype='uint8')
             mesh_size = self.mesh_match_meta['mesh_size']
             all_count = [
                 math.floor(int(t1_size[0]) / int(mesh_size)),
