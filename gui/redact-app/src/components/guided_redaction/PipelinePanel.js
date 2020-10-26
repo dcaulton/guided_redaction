@@ -118,7 +118,6 @@ class PipelinePanel extends React.Component {
   }
 
   getNodeStatusImage() {
-    let node_status_img = 'No Node Status Graph Available'
     if (
       this.state.active_job_status_obj 
       && Object.keys(this.state.active_job_status_obj).includes('node_status_image')
@@ -174,6 +173,49 @@ class PipelinePanel extends React.Component {
     })
   }
 
+  tryToRestartJob(job_id) {
+    console.log('trying to restart job ', job_id)
+  }
+
+  getLastUpdated(status_obj) {
+    let last_updated = ''
+    if (status_obj['status'] == 'running') {
+      let restart_button = ''
+      if (parseInt(status_obj['minutes_since_last_updated']) > 15) {
+        restart_button = (
+          <div className='d-inline'>
+            <div className='d-inline ml-5 font-weight-italic'>
+              this job looks stalled, 
+            </div>
+            <div className='d-inline ml-2'>
+              <button
+                className='btn btn-primary ml-1 p-1'
+                onClick={()=>this.tryToRestartJob(status_obj['job_id'])}
+              >
+                Restart
+              </button>
+            </div>
+            <div className='d-inline font-weight-italic'>
+              ?
+            </div>
+          </div>
+        )
+      }
+      
+      last_updated = (
+        <div>
+          <div className='d-inline'>
+            Last Updated:
+          </div>
+          <div className='d-inline ml-2'>
+            {status_obj['minutes_since_last_updated']} minutes ago. {restart_button}
+          </div>
+        </div>
+      )
+    }
+    return last_updated
+  }
+
   getNodeJobsList() {
     let node_jobs_list = 'No Node Job Details Available'
     if (
@@ -203,7 +245,7 @@ class PipelinePanel extends React.Component {
           <div>
           {Object.keys(node_statuses).map((node_id, index) => {
             if (!this.state.show_job_status_details) {
-              return
+              return ''
             }
             const status_obj = node_statuses[node_id]
             let percent_complete = (
@@ -220,8 +262,10 @@ class PipelinePanel extends React.Component {
               percent_complete = ''
             }
 
+            const last_updated = this.getLastUpdated(status_obj)
+
             return (
-              <div className='border-top'>
+              <div key={index} className='border-top'>
                 <div>
                   <div className='d-inline'>
                     Node Name: 
@@ -251,15 +295,8 @@ class PipelinePanel extends React.Component {
                 
                 {percent_complete}
                 
-                <div>
-                  <div className='d-inline'>
-                    Last Updated:
-                  </div>
-                  <div className='d-inline ml-2'>
-                    {status_obj['last_updated']}
-                  </div>
-                </div>
-                
+                {last_updated}
+
                 <div>
                   <div className='d-inline'>
                     Framesets In:
@@ -309,9 +346,6 @@ class PipelinePanel extends React.Component {
     if (!this.state.active_job_id) {
       return
     }
-    let active_job = this.getActiveJob()
-    let active_pipeline = this.getActivePipeline()
-
     const node_status_img = this.getNodeStatusImage()
     const node_jobs_list = this.getNodeJobsList()
 

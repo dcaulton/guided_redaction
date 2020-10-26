@@ -1,5 +1,6 @@
 #from guided_redaction.analyze.classes.TemplateMatcher import TemplateMatcher
 import os
+import datetime
 import uuid
 import math
 import numpy as np
@@ -318,13 +319,16 @@ class PipelineJobStatusController:
                             continue
                         output_frameset_count += len(response_data['movies'][movie_url]['framesets'])
                 job = self.jobs[node_id]
+                updated_interval = (datetime.datetime.now(datetime.timezone.utc) - job.updated)
+                updated_minutes = math.floor(updated_interval.seconds / 60)
+
                 build_obj = {
                     'operation': job.operation,
                     'name': node['name'],
                     'node_sequence': all_node_ids.index(node_id),
                     'status': job.status,
                     'percent_complete': math.floor(round(job.percent_complete, 2) * 100),
-                    'last_updated': job.updated,
+                    'minutes_since_last_updated': updated_minutes,
                     'framesets_in': input_frameset_count,
                     'framesets_out': output_frameset_count,
                     'job_id': str(job.id),
