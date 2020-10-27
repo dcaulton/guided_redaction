@@ -179,7 +179,7 @@ class PipelinePanel extends React.Component {
 
   getLastUpdated(status_obj) {
     let last_updated = ''
-    if (status_obj['status'] == 'running') {
+    if (status_obj['status'] === 'running') {
       let restart_button = ''
       if (parseInt(status_obj['minutes_since_last_updated']) > 15) {
         restart_button = (
@@ -208,7 +208,7 @@ class PipelinePanel extends React.Component {
             Last Updated:
           </div>
           <div className='d-inline ml-2'>
-            {status_obj['minutes_since_last_updated']} minutes ago. {restart_button}
+            {status_obj['minutes_since_last_updated']} minutes ago {restart_button}
           </div>
         </div>
       )
@@ -350,11 +350,11 @@ class PipelinePanel extends React.Component {
     const node_jobs_list = this.getNodeJobsList()
 
     return (
-      <div className='ml-2'>
-        <div>
+      <div className='row'>
+        <div className='col-6'>
           {node_status_img}
         </div>
-        <div>
+        <div className='col-6'>
           {node_jobs_list}
         </div>
       </div>
