@@ -14,6 +14,7 @@ class PipelinePanel extends React.Component {
       usable_pipeline_ids: [],
       show_job_status_image: true,
       show_job_status_details: true,
+      restart_safety_on: true,
     }
     this.saveJobResultData=this.saveJobResultData.bind(this)
     this.updateActiveJobStatus=this.updateActiveJobStatus.bind(this)
@@ -136,7 +137,7 @@ class PipelinePanel extends React.Component {
       return (
         <div>
           <div className='row'>
-            <div className='col-3 h5'>
+            <div className='col-6 h5'>
               Status at a Glance
             </div>
             <div className='col-2'>
@@ -160,6 +161,13 @@ class PipelinePanel extends React.Component {
     }
   }
 
+  toggleRestartSafety() {
+    const new_value = (!this.state.restart_safety)
+    this.setState({
+      restart_safety: new_value,
+    })
+  }
+
   toggleShowJobStatusDetails() {
     const new_value = (!this.state.show_job_status_details)
     this.setState({
@@ -181,9 +189,10 @@ class PipelinePanel extends React.Component {
 
   getLastUpdated(status_obj) {
     let last_updated = ''
-    if (status_obj['status'] === 'running') {
+    const statuses_needing_restart = ['running', 'created']
+    if (this.state.restart_safety || statuses_needing_restart.includes(status_obj['status'])) {
       let restart_button = ''
-      if (parseInt(status_obj['minutes_since_last_updated']) > 15) {
+      if (parseInt(status_obj['minutes_since_last_updated']) > 10) {
         restart_button = (
           <div className='d-inline'>
             <div className='d-inline ml-5 font-weight-italic'>
@@ -232,7 +241,7 @@ class PipelinePanel extends React.Component {
             <div className='col-3 h5'>
               Job Details
             </div>
-            <div className='col-1'>
+            <div className='col-3'>
               <input
                 type='checkbox'
                 checked={!this.state.show_job_status_details}
@@ -241,6 +250,20 @@ class PipelinePanel extends React.Component {
               <div className='d-inline ml-2'>
                 Hide
               </div>
+            </div>
+          </div>
+
+          <div>
+            <input
+              type='checkbox'
+              checked={!this.state.restart_safety}
+              onChange={() => this.toggleRestartSafety()}
+            />
+            <div className='d-inline ml-2'>
+              Restart Safety 
+            </div>
+            <div className='d-inline font-italic ml-2'>
+              (disabling lets you restart any job)
             </div>
           </div>
 
