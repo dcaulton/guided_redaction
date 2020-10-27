@@ -152,7 +152,7 @@ class PipelinePanel extends React.Component {
             </div>
           </div>
           <div className='row'>
-            <div className='col'>
+            <div className='col text-center' id='job_status_image'>
               {the_image}
             </div>
           </div>
@@ -235,12 +235,21 @@ class PipelinePanel extends React.Component {
       && this.state.active_job_status_obj['node_statuses']
     ) {
       const node_statuses = this.state.active_job_status_obj['node_statuses']
+      let job_details_style = {}
+      const jsi = document.getElementById('job_status_image')
+      if (jsi) {
+        job_details_style['height'] = jsi.clientHeight
+        job_details_style['overflow'] = 'scroll'
+      }
+
       node_jobs_list = (
-        <div>
+        <div
+        >
           <div className='row'>
             <div className='col-3 h5'>
               Job Details
             </div>
+
             <div className='col-3'>
               <input
                 type='checkbox'
@@ -267,7 +276,9 @@ class PipelinePanel extends React.Component {
             </div>
           </div>
 
-          <div>
+          <div
+          style={job_details_style}
+          >
           {Object.keys(node_statuses).map((node_id, index) => {
             if (!this.state.show_job_status_details) {
               return ''
@@ -324,19 +335,10 @@ class PipelinePanel extends React.Component {
 
                 <div>
                   <div className='d-inline'>
-                    Framesets In:
+                    Framesets In / Out:
                   </div>
                   <div className='d-inline ml-2'>
-                    {status_obj['framesets_in']}
-                  </div>
-                </div>
-                
-                <div>
-                  <div className='d-inline'>
-                    Framesets Out:
-                  </div>
-                  <div className='d-inline ml-2'>
-                    {status_obj['framesets_out']}
+                    {status_obj['framesets_in']} / {status_obj['framesets_out']}
                   </div>
                 </div>
                 
@@ -379,7 +381,7 @@ class PipelinePanel extends React.Component {
         <div className='col-6'>
           {node_status_img}
         </div>
-        <div className='col-6'>
+        <div className='col-6 border-left'>
           {node_jobs_list}
         </div>
       </div>

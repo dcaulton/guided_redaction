@@ -541,6 +541,7 @@ class JobsViewSetWrapUp(viewsets.ViewSet):
             
         return Response({'job_id': job.id})
 
+
 class JobsViewSetRestart(viewsets.ViewSet):
     def create(self, request):
         if not request.data.get("job_id"):
@@ -550,9 +551,11 @@ class JobsViewSetRestart(viewsets.ViewSet):
         job.response_data = ''
         job.precent_complete = 0
         job.save()
+        Job.objects.filter(parent=job).delete()
         dispatch_job(job)
-            
+
         return Response({'job_id': job.id})
+
 
 class JobsViewSetDeleteOld(viewsets.ViewSet):
     def list(self, request):
