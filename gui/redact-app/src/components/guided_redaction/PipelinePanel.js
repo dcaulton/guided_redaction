@@ -245,7 +245,7 @@ class PipelinePanel extends React.Component {
       node_jobs_list = (
         <div
         >
-          <div className='row'>
+          <div className='row bg-light'>
             <div className='col-3 h5'>
               Job Details
             </div>
@@ -262,8 +262,9 @@ class PipelinePanel extends React.Component {
             </div>
           </div>
 
-          <div>
+          <div className='row bg-light'>
             <input
+              className='m-1'
               type='checkbox'
               checked={!this.state.restart_safety}
               onChange={() => this.toggleRestartSafety()}
@@ -561,6 +562,7 @@ class PipelinePanel extends React.Component {
         good_jobs.push(job_obj)
       }
     }
+    good_jobs.sort(function(a,b){return Date.parse(b.updated) - Date.parse(a.updated)})
 
     return (
       <div className='col mt-5'>
