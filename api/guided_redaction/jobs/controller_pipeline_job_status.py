@@ -27,8 +27,10 @@ class PipelineJobStatusController:
         self.node_status_image = 'http://localhost:8080/30a0d9ad-8bd1-4525-9f8e-da819eb7cef9/frame_00000.png',
         self.node_coords = {}
         self.cell_size = 50
+        self.parent_job_id = ''
 
     def build_status(self, job):
+        self.parent_job_id = job.id
         pipeline = get_pipeline_for_job(job)
         if not pipeline:
             return {'errors': 'job is not a top level pipeline job' }
@@ -61,11 +63,25 @@ class PipelineJobStatusController:
                 self.add_node_name_to_image(canvas, node_id, center)
                 self.add_node_percent_complete_to_image(canvas, node_id, center)
 
-        the_uuid = str(uuid.uuid4())
-        workdir = self.file_writer.create_unique_directory(the_uuid)
-        outfilename = os.path.join(workdir, 'pipeline_status_graph.png')
-        file_url = self.file_writer.write_cv2_image_to_filepath(canvas, outfilename)
+        workdir_uuid = self.get_parent_job_workdir_uuid()
+        filename_uuid = str(uuid.uuid4())
+        outfilename = 'pipeline_status_graph_' + filename_uuid + '.png'
+        fullpath = self.file_writer.build_file_fullpath_for_uuid_and_filename(workdir_uuid, outfilename)
+        file_url = self.file_writer.write_cv2_image_to_filepath(canvas, fullpath)
         self.node_status_image = file_url
+
+    def get_parent_job_workdir_uuid(self):
+        parent_job = self.jobs[self.parent_job_id]
+        pjrd = json.loads(parent_job.request_data)
+        if 'movies' in pjrd:
+            for movie_url in pjrd['movies'].keys():
+                if movie_url != 'source': 
+                    break
+            if movie_url:
+                movie_uuid = movie_url.split('/')[-2]
+                if movie_uuid: 
+                    return movie_uuid
+            return str(uuid.uuid4())
 
     def get_node_status_color(self, node_id):
         status = self.node_statuses[node_id]['status']
@@ -283,6 +299,7 @@ class PipelineJobStatusController:
         # TODO massage the row so that child nodes are directly below their own parents
         
     def build_jobs(self, parent_job):
+        self.jobs[parent_job.id] = parent_job
         for child in parent_job.children.all():
             if Attribute.objects.filter(job=child).filter(name='node_id').exists:
                 nid_attr = Attribute.objects.filter(job=child).filter(name='node_id').first()

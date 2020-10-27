@@ -541,6 +541,19 @@ class JobsViewSetWrapUp(viewsets.ViewSet):
             
         return Response({'job_id': job.id})
 
+class JobsViewSetRestart(viewsets.ViewSet):
+    def create(self, request):
+        if not request.data.get("job_id"):
+            return self.error("job_id is required")
+        job = Job.objects.get(pk=request.data.get('job_id'))
+        job.status = 'created'
+        job.response_data = ''
+        job.precent_complete = 0
+        job.save()
+        dispatch_job(job)
+            
+        return Response({'job_id': job.id})
+
 class JobsViewSetDeleteOld(viewsets.ViewSet):
     def list(self, request):
         job_ids_to_delete = []
