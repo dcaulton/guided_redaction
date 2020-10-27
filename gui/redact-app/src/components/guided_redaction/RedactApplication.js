@@ -193,6 +193,7 @@ class RedactApplication extends React.Component {
     this.importScanner=this.importScanner.bind(this)
     this.importRedactRule=this.importRedactRule.bind(this)
     this.wrapUpJobWrapper=this.wrapUpJobWrapper.bind(this)
+    this.restartJobWrapper=this.restartJobWrapper.bind(this)
     this.attachToJobWrapper=this.attachToJobWrapper.bind(this)
     this.toggleShowVisibility=this.toggleShowVisibility.bind(this)
     this.impersonateUser=this.impersonateUser.bind(this)
@@ -562,6 +563,8 @@ class RedactApplication extends React.Component {
       return api_server_url + 'v1/jobs'
     } else if (url_name === 'wrap_up_job_url') {
       return api_server_url + 'v1/wrap-up-jobs'
+    } else if (url_name === 'restart_job_url') {
+      return api_server_url + 'v1/restart-job'
     } else if (url_name === 'pipeline_job_status_url') {
       return api_server_url + 'v1/jobs/pipeline-job-status'
     } else if (url_name === 'workbooks_url') {
@@ -1407,6 +1410,10 @@ class RedactApplication extends React.Component {
 
   async wrapUpJobWrapper(job_id) {
     JobLogic.wrapUpJob(job_id, this.getUrl, fetch, this.buildJsonHeaders, this.getJobs)
+  }
+
+  async restartJobWrapper(job_id, when_done=(()=>{})) {
+    JobLogic.restartJob(job_id, this.getUrl, fetch, this.buildJsonHeaders, when_done)
   }
 
   attachToJobWrapper(job_id) {
@@ -2287,6 +2294,7 @@ class RedactApplication extends React.Component {
                 loadJobResults={this.loadJobResultsWrapper}
                 getPipelineJobStatus={this.getPipelineJobStatus}
                 getJobResultData={this.getJobResultDataWrapper}
+                restartJob={this.restartJobWrapper}
               />
             </Route>
             <Route path={['/redact/compose', '/redact']}>

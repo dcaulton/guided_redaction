@@ -17,6 +17,7 @@ class PipelinePanel extends React.Component {
     }
     this.saveJobResultData=this.saveJobResultData.bind(this)
     this.updateActiveJobStatus=this.updateActiveJobStatus.bind(this)
+    this.restartJobCompleted=this.restartJobCompleted.bind(this)
   }
 
   loadRelevantPipelines(gp_resp_obj) {
@@ -173,8 +174,9 @@ class PipelinePanel extends React.Component {
     })
   }
 
-  tryToRestartJob(job_id) {
-    console.log('trying to restart job ', job_id)
+  restartJobCompleted(response) {
+    console.log('restart job finished with ', response)
+    this.props.getJobs()
   }
 
   getLastUpdated(status_obj) {
@@ -190,7 +192,7 @@ class PipelinePanel extends React.Component {
             <div className='d-inline ml-2'>
               <button
                 className='btn btn-primary ml-1 p-1'
-                onClick={()=>this.tryToRestartJob(status_obj['job_id'])}
+                onClick={()=>this.props.restartJob(status_obj['job_id'], this.restartJobCompleted)}
               >
                 Restart
               </button>

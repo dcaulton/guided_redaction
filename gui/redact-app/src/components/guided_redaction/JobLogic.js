@@ -1030,6 +1030,24 @@ class JobLogic extends React.Component {
     })
   }
 
+  static async restartJob(job_id, getUrl, fetch_func, buildJsonHeaders, when_done=(()=>{})) {
+    await fetch_func(getUrl('restart_job_url'), {
+      method: 'POST',
+      headers: buildJsonHeaders(),
+      body: JSON.stringify({
+        job_id: job_id,
+      }),
+    })
+    .then((response) => response.json())
+    .then((responseJson) => {
+      when_done(responseJson)
+      return responseJson
+    })
+    .catch((error) => {
+      console.error(error);
+    })
+  }
+
   static async submitJob(
     hash_in, 
     whenJobLoaded, 
