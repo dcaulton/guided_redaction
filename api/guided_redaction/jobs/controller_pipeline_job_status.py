@@ -208,6 +208,14 @@ class PipelineJobStatusController:
             1 #lineType
         )
 
+    def get_node_task_description(self, node_id):
+        node = self.content['node_metadata']['node'][node_id]
+        desc_part2 = ''
+        if node['type'] in ('template', 'selected_area', 'mesh_match', 'ocr_scene_analysis', 'ocr', 'selection_grower') :
+            scanner = self.content['node_metadata']['tier_1_scanners'][node['type']][node['entity_id']]
+            desc_part2 = ' - ' + scanner['name']
+        return node['type'] + desc_part2
+
     def get_short_type(self, long_type):
         if long_type == 'noop':
             return 'N'
@@ -217,6 +225,8 @@ class PipelineJobStatusController:
             return 'SA'
         elif long_type == 'mesh_match':
             return 'MM'
+        elif long_type == 'ocr_scene_analysis':
+            return 'OSA'
         elif long_type == 'selection_grower':
             return 'SG'
         elif long_type == 'split_and_hash':
@@ -313,6 +323,7 @@ class PipelineJobStatusController:
                 all_node_ids.append(node_id)
         for node_id in all_node_ids:
             node = self.content['node_metadata']['node'][node_id]
+            build_operation = self.get_node_task_description(node_id)
             if node_id in self.jobs:
                 job = self.jobs[node_id]
                 request_data = {} 
@@ -340,7 +351,7 @@ class PipelineJobStatusController:
                 updated_minutes = math.floor(updated_interval.seconds / 60)
 
                 build_obj = {
-                    'operation': job.operation,
+                    'operation': build_operation,
                     'name': node['name'],
                     'node_sequence': all_node_ids.index(node_id),
                     'status': job.status,
@@ -353,7 +364,7 @@ class PipelineJobStatusController:
                 self.node_statuses[node_id] = build_obj
             else:
                 build_obj = {
-                    'operation': node['type'],
+                    'operation': build_operation,
                     'name': node['name'],
                     'node_sequence': all_node_ids.index(node_id),
                     'status': 'not yet created',

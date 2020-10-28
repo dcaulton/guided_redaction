@@ -887,9 +887,15 @@ def build_and_dispatch_ocr_scene_analysis_threaded_children(parent_job):
     osas = request_data['tier_1_scanners']['ocr_scene_analysis']
     movies = request_data['movies']
     source_movies = {}
+
     if 'source' in movies:
         source_movies = movies['source']
         del movies['source']
+
+    if len(movies) == 0:
+        finish_ocr_scene_analysis_threaded(parent_job)
+        return
+
     for osa_id in osas:
         osa = osas[osa_id]
         build_t1_osa_obj = {
@@ -915,16 +921,21 @@ def build_and_dispatch_ocr_scene_analysis_threaded_children(parent_job):
                     'framesets': {},
                     'frames': [],
                 }
-                hashes_in_order = get_frameset_hashes_in_order(movie['frames'], movie['framesets'])
+                frames = []
+                if 'frames' in movie:
+                    frames = movie['frames']
+                elif 'movie_url' in source_movies and 'frames' in source_movies[movie_url]:
+                    frames = source_movies[movie_url]['frames']
+                hashes_in_order = get_frameset_hashes_in_order(frames, movie['framesets'])
                 hashes_to_use = hashes_in_order[start_point:end_point]
                 for frameset_hash in hashes_to_use:
                     build_obj['movies'][movie_url]['framesets'][frameset_hash] = \
                         movie['framesets'][frameset_hash]
                     build_obj['movies'][movie_url]['frames'] += movie['framesets'][frameset_hash]['images']
-                build_request_data = json.dumps(build_obj)
                 if not movie_is_full_movie(movie):
-                    build_movies['source'] = {}
-                    build_movies['source'][movie_url] = source_movies[movie_url]
+                    build_obj['movies']['source'] = {}
+                    build_obj['movies']['source'][movie_url] = source_movies[movie_url]
+                build_request_data = json.dumps(build_obj)
                 job = Job(
                     request_data=build_request_data,
                     status='created',
