@@ -423,7 +423,7 @@ class PipelinePanel extends React.Component {
     let build_redacted_movies = []
     const ak = Object.keys(resp_movies)[0]
     const am = resp_movies[ak]
-    if (Object.keys(am).length === 1) {
+    if (am && Object.keys(am).length === 1) {
       const first_key = Object.keys(am)[0]
       if (first_key === 'redacted_movie_url') {
         build_redacted_movies = (
