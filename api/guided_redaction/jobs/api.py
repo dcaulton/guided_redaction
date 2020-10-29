@@ -548,6 +548,7 @@ class JobsViewSetRestart(viewsets.ViewSet):
         if not request.data.get("job_id"):
             return self.error("job_id is required")
         job = Job.objects.get(pk=request.data.get('job_id'))
+        Job.objects.filter(parent=job).delete()
         job.status = 'created'
         job.response_data = ''
         job.percent_complete = 0
