@@ -404,6 +404,26 @@ class PipelinePanel extends React.Component {
     )
   }
 
+  getResponseDataType() {
+    let resp_movies = {}
+    if (Object.keys(this.state.active_job_response_data).includes('movies')) {
+      resp_movies = this.state.active_job_response_data['movies']
+    } else {
+      resp_movies = this.state.active_job_response_data
+    }
+    let movie_url = Object.keys(resp_movies)[0]
+    if (Object.keys(resp_movies[movie_url]).includes('redacted_movie_url')) {
+      return String(Object.keys(resp_movies).length) + ' redacted movies'
+    }
+    let total_framesets = 0
+    for (let i=0; i < Object.keys(resp_movies).length; i++) {
+      movie_url = Object.keys(resp_movies)[i]
+      total_framesets += Object.keys(resp_movies[movie_url]['framesets']).length
+    }
+    return String(Object.keys(resp_movies).length) + ' movies, ' + String(total_framesets) + ' frameset scan results'
+  }
+
+
   buildResponseDataSummary() {
     if (!this.state.active_job_id) {
       return
@@ -411,14 +431,13 @@ class PipelinePanel extends React.Component {
     if (!this.state.active_job_response_data) {
       return
     }
+    const movies_summary = this.getResponseDataType()
     let resp_movies = {}
     if (Object.keys(this.state.active_job_response_data).includes('movies')) {
       resp_movies = this.state.active_job_response_data['movies']
-      
     } else {
       resp_movies = this.state.active_job_response_data
     }
-    const movies_summary = String(Object.keys(resp_movies).length) + ' movies returned'
 
     let build_redacted_movies = []
     const ak = Object.keys(resp_movies)[0]

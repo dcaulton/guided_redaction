@@ -872,13 +872,19 @@ def get_frameset_hash_for_frame(frame, framesets):
         if frame in framesets[frameset_hash]['images']:
             return frameset_hash
 
-def get_frameset_hashes_in_order(frames, framesets):
+def get_frameset_hashes_in_order(frames, framesets, filter_movie):
     ret_arr = []
     for frame in frames:
         frameset_hash = get_frameset_hash_for_frame(frame, framesets)
         if frameset_hash and frameset_hash not in ret_arr:
             ret_arr.append(frameset_hash)
-    return ret_arr
+    if len(ret_arr) == len(filter_movie['framesets']):
+        return ret_arr    # frames and framesets are the same as filter movie
+    else:
+        # it looks like we have our filter movie input is a t1 output, with a source movie
+        # being used to give us commplete frames and framesets with image names for ordering
+        resp = [x for x in ret_arr if x in filter_movie['framesets']]
+        return resp
 
 def build_and_dispatch_ocr_scene_analysis_threaded_children(parent_job):
     parent_job.status = 'running'
@@ -908,11 +914,21 @@ def build_and_dispatch_ocr_scene_analysis_threaded_children(parent_job):
                 continue
             movie = movies[movie_url]
             num_jobs = math.ceil(len(movie['framesets']) / osa_batch_size)
+            if 'frames' in movie and movie['frames']:
+                frames = movie['frames']
+                framesets = movie['framesets']
+            elif movie_url in source_movies:
+                frames = source_movies[movie_url]['frames']
+                framesets = source_movies[movie_url]['framesets']
+            else:
+                return # nothing to work on
+            hashes_in_order = get_frameset_hashes_in_order(frames, framesets, movie)
+
             for i in range(num_jobs):
                 start_point = i * osa_batch_size
                 end_point = ((i+1) * osa_batch_size)
                 if i == (num_jobs-1):
-                    end_point = len(movie['frames'])
+                    end_point = len(movie['framesets'])
                 build_obj = {
                     'tier_1_scanners': build_t1_osa_obj,
                     'movies': {},
@@ -921,20 +937,20 @@ def build_and_dispatch_ocr_scene_analysis_threaded_children(parent_job):
                     'framesets': {},
                     'frames': [],
                 }
-                frames = []
-                if 'frames' in movie:
-                    frames = movie['frames']
-                elif 'movie_url' in source_movies and 'frames' in source_movies[movie_url]:
-                    frames = source_movies[movie_url]['frames']
-                hashes_in_order = get_frameset_hashes_in_order(frames, movie['framesets'])
+
                 hashes_to_use = hashes_in_order[start_point:end_point]
                 for frameset_hash in hashes_to_use:
                     build_obj['movies'][movie_url]['framesets'][frameset_hash] = \
                         movie['framesets'][frameset_hash]
-                    build_obj['movies'][movie_url]['frames'] += movie['framesets'][frameset_hash]['images']
+                    if movie_is_full_movie(movie):
+                        build_obj['movies'][movie_url]['frames'] += movie['framesets'][frameset_hash]['images']
+                    else:
+                        build_obj['movies'][movie_url]['frames'] += \
+                            source_movies[movie_url]['framesets'][frameset_hash]['images']
                 if not movie_is_full_movie(movie):
                     build_obj['movies']['source'] = {}
                     build_obj['movies']['source'][movie_url] = source_movies[movie_url]
+
                 build_request_data = json.dumps(build_obj)
                 job = Job(
                     request_data=build_request_data,
