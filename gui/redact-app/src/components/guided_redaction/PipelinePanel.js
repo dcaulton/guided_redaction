@@ -14,7 +14,7 @@ class PipelinePanel extends React.Component {
       usable_pipeline_ids: [],
       show_job_status_image: true,
       show_job_status_details: true,
-      restart_safety_on: true,
+      restart_safety: true,
     }
     this.saveJobResultData=this.saveJobResultData.bind(this)
     this.updateActiveJobStatus=this.updateActiveJobStatus.bind(this)
@@ -190,8 +190,9 @@ class PipelinePanel extends React.Component {
   getLastUpdated(status_obj) {
     let last_updated = ''
     const statuses_needing_restart = ['running', 'created']
-    if (this.state.restart_safety || statuses_needing_restart.includes(status_obj['status'])) {
+    if (!this.state.restart_safety || statuses_needing_restart.includes(status_obj['status'])) {
       let restart_button = ''
+      if (statuses_needing_restart.includes(status_obj['status'])) {
       if (parseInt(status_obj['minutes_since_last_updated']) > 10) {
         restart_button = (
           <div className='d-inline'>
@@ -209,6 +210,18 @@ class PipelinePanel extends React.Component {
             <div className='d-inline font-weight-italic'>
               ?
             </div>
+          </div>
+        )
+      }
+      } else { 
+        restart_button = (
+          <div className='d-inline'>
+            <button
+              className='btn btn-primary ml-1 p-1'
+              onClick={()=>this.props.restartJob(status_obj['job_id'], this.restartJobCompleted)}
+            >
+              Restart
+            </button>
           </div>
         )
       }
@@ -266,7 +279,7 @@ class PipelinePanel extends React.Component {
             <input
               className='m-1'
               type='checkbox'
-              checked={!this.state.restart_safety}
+              checked={this.state.restart_safety}
               onChange={() => this.toggleRestartSafety()}
             />
             <div className='d-inline ml-2'>
@@ -418,7 +431,9 @@ class PipelinePanel extends React.Component {
     let total_framesets = 0
     for (let i=0; i < Object.keys(resp_movies).length; i++) {
       movie_url = Object.keys(resp_movies)[i]
-      total_framesets += Object.keys(resp_movies[movie_url]['framesets']).length
+      if (Object.keys(resp_movies[movie_url]).includes('framesets')) {
+        total_framesets += Object.keys(resp_movies[movie_url]['framesets']).length
+      }
     }
     return String(Object.keys(resp_movies).length) + ' movies, ' + String(total_framesets) + ' frameset scan results'
   }
@@ -512,6 +527,9 @@ class PipelinePanel extends React.Component {
     const status_summary = this.buildStatusSummary()
     const resp_data_summary = this.buildResponseDataSummary()
     const pipeline = this.getActivePipeline()
+    if (!pipeline) {
+      return
+    }
     const refresh_button = this.buildRefreshStatusButton()
     let title = 'Pipeline ' + pipeline.name 
     title += ', job ' + this.state.active_job_id

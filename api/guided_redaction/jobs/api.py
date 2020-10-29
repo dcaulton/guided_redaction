@@ -22,6 +22,7 @@ from guided_redaction.pipelines import tasks as pipelines_tasks
 from guided_redaction.utils.task_shared import get_job_owner, query_profiler
 from guided_redaction.utils.classes.FileWriter import FileWriter
 from .controller_pipeline_job_status import PipelineJobStatusController
+from guided_redaction.utils.task_shared import get_pipeline_for_job, get_job_for_node
 
 
 log = logging.getLogger(__name__)
@@ -549,13 +550,32 @@ class JobsViewSetRestart(viewsets.ViewSet):
         job = Job.objects.get(pk=request.data.get('job_id'))
         job.status = 'created'
         job.response_data = ''
-        job.precent_complete = 0
+        job.percent_complete = 0
         job.save()
-        Job.objects.filter(parent=job).delete()
+
+        pipeline = get_pipeline_for_job(job.parent)
+        if pipeline:
+            # delete all descendant jobs based on the node edges
+            pc = json.loads(pipeline.content)
+            cur_node_id = Attribute.objects.filter(job=job, name='node_id').first().value
+
+            if cur_node_id in pc['edges']:
+                for target_node_id in pc['edges'][cur_node_id]:
+                    self.delete_all_child_jobs(job.parent, target_node_id, pc['edges'])
         dispatch_job(job)
 
         return Response({'job_id': job.id})
 
+    def delete_all_child_jobs(self, parent_job, node_id, edges):
+        print('deleting child jobs for {}'.format(node_id))
+        job = get_job_for_node(node_id, parent_job)
+        if job:
+            job.delete()
+        if node_id not in edges:
+            return
+        outbound_node_ids = edges[node_id]
+        for outbound_node_id in outbound_node_ids:
+            self.delete_all_child_jobs(parent_job, outbound_node_id, edges)
 
 class JobsViewSetDeleteOld(viewsets.ViewSet):
     def list(self, request):

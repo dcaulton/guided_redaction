@@ -2,7 +2,8 @@ import json
 from guided_redaction.pipelines.models import Pipeline
 from guided_redaction.utils.task_shared import (
     make_child_time_fractions_attribute_for_job,
-    make_anticipated_operation_count_attribute_for_job
+    make_anticipated_operation_count_attribute_for_job,
+    get_job_for_node
 )
 from guided_redaction.attributes.models import Attribute
 from guided_redaction.jobs.models import Job
@@ -72,7 +73,7 @@ class DispatchController:
                     content, 
                     parent_job
                 ):
-                    preexisting_child_job = self.get_job_for_node(next_node_id, parent_job)
+                    preexisting_child_job = get_job_for_node(next_node_id, parent_job)
                     if preexisting_child_job:
                         return
                     child_job = self.build_job(content, next_node_id, parent_job, job)
@@ -197,7 +198,7 @@ class DispatchController:
         minuend_jobs = []
         if minuend_node_ids:
             for node_id in minuend_node_ids:
-                job = self.get_job_for_node(node_id, parent_job)
+                job = get_job_for_node(node_id, parent_job)
                 minuend_jobs.append({
                     'id': str(job.id),
                     'request_or_response_data': 'response_data',
@@ -213,7 +214,7 @@ class DispatchController:
             subtrahend_node_ids = content['subtrahends'][node['id']]
         subtrahend_jobs = []
         for node_id in subtrahend_node_ids:
-            job = self.get_job_for_node(node_id, parent_job)
+            job = get_job_for_node(node_id, parent_job)
             subtrahend_jobs.append(str(job.id))
 
         build_request_data = {
@@ -243,7 +244,7 @@ class DispatchController:
             addend_node_ids = content['addends'][node['id']]
         addend_jobs = []
         for node_id in addend_node_ids:
-            job = self.get_job_for_node(node_id, parent_job)
+            job = get_job_for_node(node_id, parent_job)
             addend_jobs.append(str(job.id))
 
         build_request_data = {
@@ -528,15 +529,8 @@ class DispatchController:
         ).save()
         return job
 
-    def get_job_for_node(self, node_id, parent_job):
-        if Attribute.objects.filter(name='node_id', value=node_id).exists():
-            attrs = Attribute.objects.filter(name='node_id', value=node_id)
-            for attr in attrs:
-                if attr.job and attr.job.parent == parent_job:
-                    return attr.job
-
     def node_has_no_job_yet(self, next_node_id, parent_job):
-        job_for_node = self.get_job_for_node(next_node_id, parent_job)
+        job_for_node = get_job_for_node(next_node_id, parent_job)
         if job_for_node:
             return False
         return True
@@ -556,7 +550,7 @@ class DispatchController:
     ):
         inbound_node_ids = self.get_node_ids_with_inbound_edges(next_node_id, content)
         for inbound_node_id in inbound_node_ids:
-            job = self.get_job_for_node(inbound_node_id, parent_job)
+            job = get_job_for_node(inbound_node_id, parent_job)
             if not job:
                 return False
             if job and job.status != 'success':

@@ -8,6 +8,13 @@ from guided_redaction.attributes.models import Attribute
 
 log = logging.getLogger(__name__)
 
+def get_job_for_node(node_id, parent_job):
+    if Attribute.objects.filter(name='node_id', value=node_id).exists():
+        attrs = Attribute.objects.filter(name='node_id', value=node_id)
+        for attr in attrs:
+            if attr.job and attr.job.parent == parent_job:
+                return attr.job
+
 def get_job_ancestor_ids(job):
     ancestor_ids = [str(job.id)]
     while job.parent:
