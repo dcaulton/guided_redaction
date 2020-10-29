@@ -120,6 +120,7 @@ class RedactApplication extends React.Component {
         'selected_area': '',
         'mesh_match': '',
         'selection_grower': '',
+        'pipeline': '',
       },
       tier_1_matches: {
         'ocr': {},
@@ -132,6 +133,7 @@ class RedactApplication extends React.Component {
         'selected_area': {},
         'mesh_match': {},
         'selection_grower': {},
+        'pipeline': {},
       },
       workflow_callbacks: {},
       workflows: {

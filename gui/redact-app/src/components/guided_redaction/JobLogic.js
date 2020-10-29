@@ -478,6 +478,61 @@ class JobLogic extends React.Component {
     )
   }
 
+  static loadT1PipelineResults(
+    job, 
+    when_done, 
+    setGlobalStateVar, 
+    getGlobalStateVar
+  ) {
+    const request_data = JSON.parse(job.request_data)
+    const response_data = JSON.parse(job.response_data)
+
+    const movies = getGlobalStateVar('movies')
+    let campaign_movies = getGlobalStateVar('campaign_movies')
+    let movie_url = ''
+    let deepCopyMovies= JSON.parse(JSON.stringify(movies))
+    let something_changed = false
+    if (Object.keys(request_data['movies']).includes('source')) {
+      for (let i=0; i < Object.keys(request_data['movies']['source']).length; i++) {
+        movie_url = Object.keys(request_data['movies']['source'])[i]
+        something_changed = true
+        campaign_movies.push(movie_url)
+        deepCopyMovies[movie_url] = request_data['movies']['source'][movie_url]
+      }
+    } else {
+      for (let i=0; i < Object.keys(request_data['movies']).length; i++) {
+        const movie_url = Object.keys(request_data['movies'])[i]
+        const movie = request_data['movies'][movie_url]
+        if (Object.keys(movie).includes('frames') && movie['frames'].length > 0) {
+          deepCopyMovies[movie_url] = movie
+          something_changed = true
+          campaign_movies.push(movie_url)
+        }
+      }
+    }
+    if (something_changed) {
+      setGlobalStateVar({
+        campaign_movies: campaign_movies,
+        movies: deepCopyMovies,
+        movie_url: movie_url,
+      })
+    }
+
+    const t1s_cids = getGlobalStateVar('tier_1_scanner_current_ids')
+    let deepCopyT1SCIDs = JSON.parse(JSON.stringify(t1s_cids))
+    deepCopyT1SCIDs['pipeline'] = job['id']
+
+    const tier_1_matches = getGlobalStateVar('tier_1_matches')
+    let deepCopyTier1Matches = JSON.parse(JSON.stringify(tier_1_matches))
+    let deepCopyMatches = deepCopyTier1Matches['pipeline']
+    deepCopyMatches[job['id']] = response_data
+    deepCopyTier1Matches['pipeline'] = deepCopyMatches
+    setGlobalStateVar({
+      'tier_1_matches': deepCopyTier1Matches,
+      'tier_1_scanner_current_ids': deepCopyT1SCIDs,
+    })
+  }
+
   static loadSelectedAreaResults(
     job, 
     when_done, 
@@ -990,6 +1045,15 @@ class JobLogic extends React.Component {
         this.loadIllustrateResults(
           job, when_done, setGlobalStateVar, getGlobalStateVar
         )
+			} else if (job.app === 'pipeline' && job.operation === 'pipeline') {
+          if (this.jobHasT1Output(job)) {
+            this.loadT1PipelineResults(
+              job, 
+              when_done, 
+              setGlobalStateVar, 
+              getGlobalStateVar
+            )
+          }
       } else {
         when_done(responseJson)
       }
@@ -1012,6 +1076,28 @@ class JobLogic extends React.Component {
     .catch((error) => {
       console.error(error);
     })
+  }
+
+  static jobHasT1Output(job) {
+    const rd = JSON.parse(job['response_data'])
+    if (
+      Object.keys(rd).includes('movies') &&
+      Object.keys(rd['movies']).length > 0
+    ) {
+      if (Object.keys(rd).includes('source')) {
+        if (Object.keys(rd['movies']).length === 1) {
+          return
+        }
+        delete rd['movies']['source']
+      }
+      const movie_url = Object.keys(rd['movies'])[0]
+      if (
+        Object.keys(rd['movies'][movie_url]).includes('framesets') && 
+        !Object.keys(rd['movies'][movie_url]).includes('frames')
+      ) {
+        return true
+      }
+    }
   }
 
   static async wrapUpJob(job_id, getUrl, fetch_func, buildJsonHeaders, getJobs) {
