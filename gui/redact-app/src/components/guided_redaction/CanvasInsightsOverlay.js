@@ -7,6 +7,7 @@ class CanvasInsightsOverlay extends React.Component {
     this.anchor_color = '#33F'
     this.sg_color = '#2F8'
     this.mask_zone_color = '#B6B'
+    this.pipeline_color = '#F44'
     this.selected_area_minimum_zone_color = '#3EA'
     this.selected_area_maximum_zone_color = '#A3A'
     this.selected_area_origin_location_color = '#40D'
@@ -113,7 +114,28 @@ class CanvasInsightsOverlay extends React.Component {
         const width = (end[0] - start[0]) * this.props.insights_image_scale
         const height = (end[1] - start[1]) * this.props.insights_image_scale
         ctx.strokeRect(start_x_scaled, start_y_scaled, width, height)
+      } else if (Object.keys(record).includes('location')) {
+        let start = record['location']
+        let end = [
+          record['location'][0] + record['size'][0],
+          record['location'][1] + record['size'][1]
+        ]
+        const start_x_scaled = start[0] * this.props.insights_image_scale
+        const start_y_scaled = start[1] * this.props.insights_image_scale
+        const width = (end[0] - start[0]) * this.props.insights_image_scale
+        const height = (end[1] - start[1]) * this.props.insights_image_scale
+        ctx.strokeRect(start_x_scaled, start_y_scaled, width, height)
       }
+    }
+  }
+
+  drawPipelineMatches() {
+    const window = this.props.getCurrentPipelineMatches()
+    if (window) {
+      this.drawBoxesAroundStartEndRecords(
+        window,
+        this.pipeline_color
+      )
     }
   }
 
@@ -435,6 +457,7 @@ class CanvasInsightsOverlay extends React.Component {
     this.drawOcrMatches()
     this.drawOcrWindow()
     this.drawOsaMatches()
+    this.drawPipelineMatches()
     this.drawAreasToRedact()
   }
 
@@ -459,6 +482,7 @@ class CanvasInsightsOverlay extends React.Component {
     this.drawOcrMatches()
     this.drawOcrWindow()
     this.drawOsaMatches()
+    this.drawPipelineMatches()
     this.drawAreasToRedact()
   }
 
