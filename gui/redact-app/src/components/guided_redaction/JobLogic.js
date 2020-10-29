@@ -495,6 +495,9 @@ class JobLogic extends React.Component {
     if (Object.keys(request_data['movies']).includes('source')) {
       for (let i=0; i < Object.keys(request_data['movies']['source']).length; i++) {
         movie_url = Object.keys(request_data['movies']['source'])[i]
+        if (Object.keys(deepCopyMovies).includes(movie_url)) {
+          continue
+        }
         something_changed = true
         campaign_movies.push(movie_url)
         deepCopyMovies[movie_url] = request_data['movies']['source'][movie_url]
@@ -503,6 +506,9 @@ class JobLogic extends React.Component {
       for (let i=0; i < Object.keys(request_data['movies']).length; i++) {
         const movie_url = Object.keys(request_data['movies'])[i]
         const movie = request_data['movies'][movie_url]
+        if (Object.keys(deepCopyMovies).includes(movie_url)) {
+          continue
+        }
         if (Object.keys(movie).includes('frames') && movie['frames'].length > 0) {
           deepCopyMovies[movie_url] = movie
           something_changed = true
