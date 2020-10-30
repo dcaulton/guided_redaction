@@ -924,7 +924,8 @@ class NodeCard extends React.Component {
             ms_selected = true
           }
           const node = this.props.node_metadata['node'][node_id]
-          const disp_name = node_id + ' - ' + node['type']
+          let disp_name = node_id + ' - ' + node['type']
+          disp_name += ' - ' + node['name']
 
           return (
             <div

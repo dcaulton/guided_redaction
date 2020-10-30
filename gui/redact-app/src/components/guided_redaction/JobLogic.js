@@ -1087,6 +1087,7 @@ class JobLogic extends React.Component {
   static jobHasT1Output(job) {
     const rd = JSON.parse(job['response_data'])
     if (
+      rd &&
       Object.keys(rd).includes('movies') &&
       Object.keys(rd['movies']).length > 0
     ) {
