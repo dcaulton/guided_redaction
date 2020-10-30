@@ -42,6 +42,9 @@ class DispatchController:
                         Attribute.objects.filter(job=child_job, name='pipeline_job_link').first().pipeline.id
                     child_job.status = 'running'
                     child_job.save()
+                    if parent_job.status != 'running':
+                        parent_job.status = 'running'
+                        parent_job.save()
                     self.dispatch_pipeline(child_pipeline_id, input_data, workbook_id, owner, child_job)
                 else:
                     jobs_api.dispatch_job(child_job)
@@ -75,6 +78,13 @@ class DispatchController:
             parent_job.response_data = job.response_data
             parent_job.status = 'success'
             parent_job.save()
+            if parent_job.parent and \
+                parent_job.parent.app == 'pipeline' and \
+                parent_job.parent.operation == 'pipeline':
+                pj_pipeline_id = \
+                    Attribute.objects.filter(job=parent_job.parent, name='pipeline_job_link').first().pipeline.id
+                pj_pipeline = Pipeline.objects.get(pk=pj_pipeline_id)
+                self.handle_job_finished(parent_job, pj_pipeline)
             return
         for next_node_id in content['edges'][node_id]:
             if self.node_has_no_job_yet(next_node_id, parent_job):
