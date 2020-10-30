@@ -189,11 +189,11 @@ def dispatch_job(job):
         files_tasks.save_movie_metadata.delay(job_uuid)
     if job.app == 'files' and job.operation == 'load_movie_metadata':
         files_tasks.load_movie_metadata.delay(job_uuid)
-    if job.app == 'pipelines' and job.operation == 't1_sum':
+    if job.app == 'pipeline' and job.operation == 't1_sum':
         pipelines_tasks.t1_sum.delay(job_uuid)
-    if job.app == 'pipelines' and job.operation == 't1_diff':
+    if job.app == 'pipeline' and job.operation == 't1_diff':
         pipelines_tasks.t1_diff.delay(job_uuid)
-    if job.app == 'pipelines' and job.operation == 'noop':
+    if job.app == 'pipeline' and job.operation == 'noop':
         pipelines_tasks.noop.delay(job_uuid)
 
 

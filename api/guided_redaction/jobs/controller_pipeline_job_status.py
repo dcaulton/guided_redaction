@@ -240,6 +240,8 @@ class PipelineJobStatusController:
 #            return '\u03A3'
         elif long_type == 't1_dif':
             return 'DIF'
+        elif long_type == 'pipeline':
+            return 'P'
         else:
             print('dont know about type {}'.format(long_type))
             return '?'

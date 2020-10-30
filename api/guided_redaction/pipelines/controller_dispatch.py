@@ -16,27 +16,37 @@ class DispatchController:
     def __init__(self):
         pass
 
-    def dispatch_pipeline(self, pipeline_id, input_data, workbook_id, owner):
+    def dispatch_pipeline(self, pipeline_id, input_data, workbook_id, owner, parent_job=None):
+#        print('dispatching job for pipeline {}'.format(pipeline_id))
         pipeline = Pipeline.objects.get(pk=pipeline_id)
         content = json.loads(pipeline.content)
         child_job_count = self.get_number_of_child_jobs(content) 
-        parent_job = self.build_parent_job(
-          pipeline, 
-          input_data,
-          content, 
-          workbook_id, 
-          owner
-        )
+        if not parent_job:
+            parent_job = self.build_parent_job(
+              pipeline, 
+              input_data,
+              content, 
+              workbook_id, 
+              owner
+            )
         make_anticipated_operation_count_attribute_for_job(parent_job, child_job_count)
         self.try_to_make_child_time_fractions_attribute(parent_job, pipeline)
 
         first_node_id = self.get_first_node_id(content)
         if first_node_id:
             child_job = self.build_job(content, first_node_id, parent_job)
+#            print("pipeline {} parent job {} child job {}".format(pipeline_id, parent_job.id, child_job))
             if child_job:
-                jobs_api.dispatch_job(child_job)
-                parent_job.status = 'running'
-                parent_job.save()
+                if child_job.operation == 'pipeline' and child_job.app == 'pipeline':
+                    child_pipeline_id = \
+                        Attribute.objects.filter(job=child_job, name='pipeline_job_link').first().pipeline.id
+                    child_job.status = 'running'
+                    child_job.save()
+                    self.dispatch_pipeline(child_pipeline_id, input_data, workbook_id, owner, child_job)
+                else:
+                    jobs_api.dispatch_job(child_job)
+                    parent_job.status = 'running'
+                    parent_job.save()
         return parent_job.id
 
     def handle_job_finished(self, job, pipeline):
@@ -188,6 +198,8 @@ class DispatchController:
             return self.build_t1_diff_job(content, node, parent_job)
         elif node['type'] == 'noop':
             return self.build_noop_job(content, node, parent_job, previous_job)
+        elif node['type'] == 'pipeline':
+            return self.build_pipeline_job(content, node, parent_job, previous_job)
         else:
             raise Exception('UNRECOGNIZED PIPELINE JOB TYPE: {}'.format(node['type']))
 
@@ -224,7 +236,7 @@ class DispatchController:
         job = Job(
             status='created',
             description='t1 diff for pipeline',
-            app='pipelines',
+            app='pipeline',
             operation='t1_diff',
             sequence=0,
             request_data=json.dumps(build_request_data),
@@ -253,7 +265,7 @@ class DispatchController:
         job = Job(
             status='created',
             description='t1 sum for pipeline',
-            app='pipelines',
+            app='pipeline',
             operation='t1_sum',
             sequence=0,
             request_data=json.dumps(build_request_data),
@@ -267,6 +279,36 @@ class DispatchController:
         ).save()
         return job
 
+    def build_pipeline_job(self, content, node, parent_job, previous_job):
+        data_in = parent_job.request_data
+        if previous_job and previous_job.response_data:
+            data_in = previous_job.response_data
+        job = Job(
+            status='created',
+            description='job for pipeline',
+            app='pipeline',
+            operation='pipeline',
+            sequence=0,
+            request_data=data_in,
+            parent=parent_job,
+        )
+        job.save()
+        Attribute(
+            name='node_id',
+            value=node['id'],
+            job=job,
+        ).save()
+
+        child_pipeline = Pipeline.objects.get(pk=node['entity_id'])
+        attribute = Attribute(
+            name='pipeline_job_link',
+            value='pipeline_job_link',
+            job=job,
+            pipeline=child_pipeline
+        )
+        attribute.save()
+        return job
+
     def build_noop_job(self, content, node, parent_job, previous_job):
         data_in = parent_job.request_data
         if previous_job and previous_job.response_data:
@@ -274,7 +316,7 @@ class DispatchController:
         job = Job(
             status='created',
             description='noop for pipeline',
-            app='pipelines',
+            app='pipeline',
             operation='noop',
             sequence=0,
             request_data=data_in,
