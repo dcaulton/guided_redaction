@@ -17,7 +17,6 @@ class DispatchController:
         pass
 
     def dispatch_pipeline(self, pipeline_id, input_data, workbook_id, owner, parent_job=None):
-#        print('dispatching job for pipeline {}'.format(pipeline_id))
         pipeline = Pipeline.objects.get(pk=pipeline_id)
         content = json.loads(pipeline.content)
         child_job_count = self.get_number_of_child_jobs(content) 
@@ -35,7 +34,6 @@ class DispatchController:
         first_node_id = self.get_first_node_id(content)
         if first_node_id:
             child_job = self.build_job(content, first_node_id, parent_job)
-#            print("pipeline {} parent job {} child job {}".format(pipeline_id, parent_job.id, child_job))
             if child_job:
                 if child_job.operation == 'pipeline' and child_job.app == 'pipeline':
                     child_pipeline_id = \
@@ -303,20 +301,22 @@ class DispatchController:
             parent=parent_job,
         )
         job.save()
+
         Attribute(
             name='node_id',
             value=node['id'],
             job=job,
         ).save()
 
-        child_pipeline = Pipeline.objects.get(pk=node['entity_id'])
+        pipeline = Pipeline.objects.get(pk=node['entity_id'])
         attribute = Attribute(
             name='pipeline_job_link',
             value='pipeline_job_link',
             job=job,
-            pipeline=child_pipeline
+            pipeline=pipeline
         )
         attribute.save()
+
         return job
 
     def build_noop_job(self, content, node, parent_job, previous_job):
