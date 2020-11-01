@@ -6,6 +6,7 @@ import shutil
 import uuid
 from datetime import datetime, timedelta
 
+from itertools import chain
 import pytz
 import requests
 from django.conf import settings
@@ -264,10 +265,14 @@ class JobsViewSet(viewsets.ViewSet):
     def list(self, request):
         jobs_list = []
         if 'workbook_id' in request.GET.keys():
-            jobs = Job.objects.filter(workbook_id=request.GET['workbook_id'])
+            noparent_jobs = Job.objects.filter(workbook_id=request.GET['workbook_id'])
+            noparent_jobs = noparent_jobs.prefetch_related("children", "attributes")
         else:
-            jobs = Job.objects.filter(parent_id=None)
-        jobs = jobs.prefetch_related("children", "attributes")
+            noparent_jobs = Job.objects.filter(parent_id=None)
+            noparent_jobs = noparent_jobs.prefetch_related("children", "attributes")
+        pipeline_jobs = Job.objects.filter(app='pipeline').filter(operation='pipeline').exclude(parent_id=None)
+        pipeline_jobs = pipeline_jobs.prefetch_related("children", "attributes")
+        jobs = chain(noparent_jobs, pipeline_jobs)
         desired_cv_worker_id = ''
         if 'pick-up-for' in request.GET.keys():
             desired_cv_worker_id = request.GET['pick-up-for']
