@@ -3,6 +3,7 @@ from guided_redaction.pipelines.models import Pipeline
 from guided_redaction.utils.task_shared import (
     make_child_time_fractions_attribute_for_job,
     make_anticipated_operation_count_attribute_for_job,
+    get_job_owner,
     get_job_for_node
 )
 from guided_redaction.attributes.models import Attribute
@@ -16,7 +17,7 @@ class DispatchController:
     def __init__(self):
         pass
 
-    def dispatch_pipeline(self, pipeline_id, input_data, workbook_id, owner, parent_job=None):
+    def dispatch_pipeline(self, pipeline_id, input_data, workbook_id=None, owner=None, parent_job=None):
         pipeline = Pipeline.objects.get(pk=pipeline_id)
         content = json.loads(pipeline.content)
         child_job_count = self.get_number_of_child_jobs(content) 
@@ -35,20 +36,23 @@ class DispatchController:
         if first_node_id:
             child_job = self.build_job(content, first_node_id, parent_job)
             if child_job:
-                if child_job.operation == 'pipeline' and child_job.app == 'pipeline':
-                    child_pipeline_id = \
-                        Attribute.objects.filter(job=child_job, name='pipeline_job_link').first().pipeline.id
-                    child_job.status = 'running'
-                    child_job.save()
-                    if parent_job.status != 'running':
-                        parent_job.status = 'running'
-                        parent_job.save()
-                    self.dispatch_pipeline(child_pipeline_id, input_data, workbook_id, owner, child_job)
-                else:
-                    jobs_api.dispatch_job(child_job)
-                    parent_job.status = 'running'
-                    parent_job.save()
+                self.dispatch_child_job_or_pipeline(parent_job, child_job, input_data, workbook_id, owner)
         return parent_job.id
+
+    def dispatch_child_job_or_pipeline(self, parent_job, child_job, input_data, workbook_id, owner):
+        if child_job.operation == 'pipeline' and child_job.app == 'pipeline':
+            child_pipeline_id = \
+                Attribute.objects.filter(job=child_job, name='pipeline_job_link').first().pipeline.id
+            child_job.status = 'running'
+            child_job.save()
+            if parent_job.status != 'running':
+                parent_job.status = 'running'
+                parent_job.save()
+            self.dispatch_pipeline(child_pipeline_id, input_data, workbook_id, owner, child_job)
+        else:
+            jobs_api.dispatch_job(child_job)
+            parent_job.status = 'running'
+            parent_job.save()
 
     def handle_job_finished(self, job, pipeline):
         parent_job = job.parent
@@ -96,7 +100,14 @@ class DispatchController:
                         return
                     child_job = self.build_job(content, next_node_id, parent_job, job)
                     if child_job:
-                        jobs_api.dispatch_job(child_job)
+                        workbook_id = ''
+                        if job.workbook:
+                            workbook_id = job.workbook.id
+                        owner = get_job_owner(job)
+                        self.dispatch_child_job_or_pipeline(
+                            parent_job, child_job, json.loads(job.response_data), workbook_id, owner
+                        )
+#                        jobs_api.dispatch_job(child_job)
 
     def try_to_make_child_time_fractions_attribute(self, parent_job, pipeline):
         if pipeline.name == 'fetch_split_hash_secure_file':
@@ -291,9 +302,11 @@ class DispatchController:
         data_in = parent_job.request_data
         if previous_job and previous_job.response_data:
             data_in = previous_job.response_data
+        pipeline = Pipeline.objects.get(pk=node['entity_id'])
+
         job = Job(
             status='created',
-            description='job for pipeline',
+            description='job for pipeline ' + pipeline.name,
             app='pipeline',
             operation='pipeline',
             sequence=0,
@@ -308,7 +321,6 @@ class DispatchController:
             job=job,
         ).save()
 
-        pipeline = Pipeline.objects.get(pk=node['entity_id'])
         attribute = Attribute(
             name='pipeline_job_link',
             value='pipeline_job_link',
