@@ -36,23 +36,8 @@ class DispatchController:
         if first_node_id:
             child_job = self.build_job(content, first_node_id, parent_job)
             if child_job:
-                self.dispatch_child_job_or_pipeline(parent_job, child_job, input_data, workbook_id, owner)
+                self.dispatch_child(parent_job, child_job, input_data, workbook_id, owner)
         return parent_job.id
-
-    def dispatch_child_job_or_pipeline(self, parent_job, child_job, input_data, workbook_id, owner):
-        if child_job.operation == 'pipeline' and child_job.app == 'pipeline':
-            child_pipeline_id = \
-                Attribute.objects.filter(job=child_job, name='pipeline_job_link').first().pipeline.id
-            child_job.status = 'running'
-            child_job.save()
-            if parent_job.status != 'running':
-                parent_job.status = 'running'
-                parent_job.save()
-            self.dispatch_pipeline(child_pipeline_id, input_data, workbook_id, owner, child_job)
-        else:
-            jobs_api.dispatch_job(child_job)
-            parent_job.status = 'running'
-            parent_job.save()
 
     def handle_job_finished(self, job, pipeline):
         parent_job = job.parent
@@ -104,10 +89,24 @@ class DispatchController:
                         if job.workbook:
                             workbook_id = job.workbook.id
                         owner = get_job_owner(job)
-                        self.dispatch_child_job_or_pipeline(
+                        self.dispatch_child(
                             parent_job, child_job, json.loads(job.response_data), workbook_id, owner
                         )
-#                        jobs_api.dispatch_job(child_job)
+
+    def dispatch_child(self, parent_job, child_job, input_data, workbook_id, owner):
+        if child_job.operation == 'pipeline' and child_job.app == 'pipeline':
+            child_pipeline_id = \
+                Attribute.objects.filter(job=child_job, name='pipeline_job_link').first().pipeline.id
+            child_job.status = 'running'
+            child_job.save()
+            if parent_job.status != 'running':
+                parent_job.status = 'running'
+                parent_job.save()
+            self.dispatch_pipeline(child_pipeline_id, input_data, workbook_id, owner, child_job)
+        else:
+            jobs_api.dispatch_job(child_job)
+            parent_job.status = 'running'
+            parent_job.save()
 
     def try_to_make_child_time_fractions_attribute(self, parent_job, pipeline):
         if pipeline.name == 'fetch_split_hash_secure_file':
