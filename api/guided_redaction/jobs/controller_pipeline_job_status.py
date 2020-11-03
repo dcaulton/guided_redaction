@@ -15,6 +15,7 @@ from guided_redaction.utils.task_shared import (
     get_pipeline_for_job
 )
 from guided_redaction.attributes.models import Attribute
+from guided_redaction.pipelines.models import Pipeline
 
 
 class PipelineJobStatusController:
@@ -214,6 +215,9 @@ class PipelineJobStatusController:
         if node['type'] in ('template', 'selected_area', 'mesh_match', 'ocr_scene_analysis', 'ocr', 'selection_grower') :
             scanner = self.content['node_metadata']['tier_1_scanners'][node['type']][node['entity_id']]
             desc_part2 = ' - ' + scanner['name']
+        elif node['type'] == 'pipeline': 
+            if Pipeline.objects.filter(pk=node['entity_id']).exists():
+                desc_part2 = ' - ' + Pipeline.objects.get(pk=node['entity_id']).name
         return node['type'] + desc_part2
 
     def get_short_type(self, long_type):
