@@ -1521,6 +1521,8 @@ class RedactApplication extends React.Component {
       } else {
         specified_input = input_obj.extra_data
       }
+    } else if (input_obj.scope.match(/^t1_matches:/)) {
+        specified_input = input_obj.extra_data
     }
     let build_payload = {
       pipeline_id: input_obj.pipeline_id,

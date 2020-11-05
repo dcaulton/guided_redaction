@@ -1,5 +1,51 @@
 import React from 'react';
 
+export function buildRunButton(tier_1_scanners, scanner_type, buildTier1RunOptions, submitInsightsJob) {
+  const tier_1_template_run_options = buildTier1RunOptions('template', scanner_type + '_t1_template')
+  const tier_1_selected_area_run_options = buildTier1RunOptions('selected_area', scanner_type + '_t1_selected_area')
+  const tier_1_ocr_run_options = buildTier1RunOptions('ocr', scanner_type + '_t1_ocr')
+  const tier_1_telemetry_run_options = buildTier1RunOptions('telemetry', scanner_type + '_t1_telemetry')
+  const tier_1_osa_run_options = buildTier1RunOptions('ocr_scene_analysis', scanner_type + '_t1_osa')
+
+  const dropdown_id = 'scan_' + scanner_type + '_DropdownButton'
+  return (
+    <div className='d-inline'>
+      <button
+          className='btn btn-primary ml-2 dropdown-toggle'
+          type='button'
+          id={dropdown_id}
+          data-toggle='dropdown'
+          area-haspopup='true'
+          area-expanded='false'
+      >
+        Run
+      </button>
+      <div className='dropdown-menu' aria-labelledby={dropdown_id}>
+        <button className='dropdown-item'
+            onClick={() => submitInsightsJob(scanner_type + '_current_frame')}
+        >
+          Frame
+        </button>
+        <button className='dropdown-item'
+            onClick={() => submitInsightsJob(scanner_type + '_current_movie')}
+        >
+          Movie
+        </button>
+        <button className='dropdown-item'
+            onClick={() => submitInsightsJob(scanner_type + '_all_movies')}
+        >
+          All Movies
+        </button>
+        {tier_1_template_run_options}
+        {tier_1_selected_area_run_options}
+        {tier_1_ocr_run_options}
+        {tier_1_osa_run_options}
+        {tier_1_telemetry_run_options}
+      </div>
+    </div>
+  )
+}
+
 export function buildT1ScannerScaleDropdown(
   name, 
   value, 

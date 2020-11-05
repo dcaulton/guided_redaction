@@ -10,6 +10,7 @@ import {
   buildIdString,
   clearTier1Matches,
   buildClearMatchesButton,
+  buildRunButton,
   doTier1Save,
   } from './SharedControls'
 
@@ -288,64 +289,12 @@ class DataSifterControls extends React.Component {
     )
   }
 
-  buildRunButton() {
+  buildRunButtonWrapper() {
     if (!Object.keys(this.props.tier_1_scanners['data_sifter']).includes(this.state.id)) {
       return ''
     }
-    const data_sifter = this.props.tier_1_scanners['data_sifter'][this.state.id]
-    if (!Object.keys(data_sifter.app_dictionary).includes('phrases')) {
-      return ''
-    }
-    if (data_sifter.app_dictionary['phrases'].length === 0) {
-      return ''
-    }
-    const tier_1_template_run_options = this.props.buildTier1RunOptions(
-      'template', 'data_sifter_t1_template'
-    )
-    const tier_1_selected_area_run_options = this.props.buildTier1RunOptions(
-      'selected_area', 'data_sifter_t1_selected_area'
-    )
-    const tier_1_ocr_run_options = this.props.buildTier1RunOptions(
-      'ocr', 'data_sifter_t1_ocr'
-    )
-    const tier_1_osa_run_options = this.props.buildTier1RunOptions(
-      'ocr_scene_analysis', 'data_sifter_t1_osa'
-    )
-
-    return (
-      <div className='d-inline'>
-        <button
-            className='btn btn-primary ml-2 dropdown-toggle'
-            type='button'
-            id='scanDataSifterDropdownButton'
-            data-toggle='dropdown'
-            area-haspopup='true'
-            area-expanded='false'
-        >
-          Run
-        </button>
-        <div className='dropdown-menu' aria-labelledby='scanDataSifterDropdownButton'>
-          <button className='dropdown-item'
-              onClick={() => this.props.submitInsightsJob('data_sifter_current_frame')}
-          >
-            Frame
-          </button>
-          <button className='dropdown-item'
-              onClick={() => this.props.submitInsightsJob('data_sifter_current_movie')}
-          >
-            Movie
-          </button>
-          <button className='dropdown-item'
-              onClick={() => this.props.submitInsightsJob('data_sifter_all_movies')}
-          >
-            All Movies
-          </button>
-          {tier_1_template_run_options}
-          {tier_1_selected_area_run_options}
-          {tier_1_ocr_run_options}
-          {tier_1_osa_run_options}
-        </div>
-      </div>
+    return buildRunButton(
+      this.props.tier_1_scanners, 'data_sifter', this.props.buildTier1RunOptions, this.props.submitInsightsJob
     )
   }
 
@@ -405,7 +354,7 @@ class DataSifterControls extends React.Component {
     const fake_data_dropdown = this.buildFakeDataDropdown()
     const attributes_list = this.buildAttributesList()
     const scan_level_dropdown = this.buildScanLevelDropdown2()
-    const run_button = this.buildRunButton()
+    const run_button = this.buildRunButtonWrapper()
     const build_button = this.buildBuildButton()
     const delete_button = this.buildDeleteButton()
     const save_to_db_button = this.buildSaveToDatabaseButton()

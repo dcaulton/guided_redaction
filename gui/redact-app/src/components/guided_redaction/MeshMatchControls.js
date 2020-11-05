@@ -10,6 +10,7 @@ import {
   buildIdString,
   clearTier1Matches,
   buildClearMatchesButton,
+  buildRunButton,
   doTier1Save,
   } from './SharedControls'
 
@@ -447,49 +448,12 @@ class MeshMatchControls extends React.Component {
     )
   }
 
-  buildRunButton() {
+  buildRunButtonWrapper() {
     if (!Object.keys(this.props.tier_1_scanners['mesh_match']).includes(this.state.id)) {
       return ''
     }
-    const tier_1_template_run_options = this.props.buildTier1RunOptions('template', 'mesh_match_t1_template')
-    const tier_1_sa_run_options = this.props.buildTier1RunOptions('selected_area', 'mesh_match_t1_selected_area')
-    const tier_1_osa_run_options = this.props.buildTier1RunOptions('ocr_scene_analysis', 'mesh_match_t1_osa')
-    const tier_1_mesh_match_run_options = this.props.buildTier1RunOptions('mesh_match', 'mesh_match_t1_mesh_match')
-
-    return (
-      <div className='d-inline'>
-        <button
-            className='btn btn-primary ml-2 dropdown-toggle'
-            type='button'
-            id='scanMeshMatchDropdownButton'
-            data-toggle='dropdown'
-            area-haspopup='true'
-            area-expanded='false'
-        >
-          Run
-        </button>
-        <div className='dropdown-menu' aria-labelledby='scanMeshMatchDropdownButton'>
-          <button className='dropdown-item'
-              onClick={() => this.props.submitInsightsJob('mesh_match_current_frame')}
-          >
-            Frame
-          </button>
-          <button className='dropdown-item'
-              onClick={() => this.props.submitInsightsJob('mesh_match_current_movie')}
-          >
-            Movie
-          </button>
-          <button className='dropdown-item'
-              onClick={() => this.props.submitInsightsJob('mesh_match_all_movies')}
-          >
-            All Movies
-          </button>
-          {tier_1_template_run_options}
-          {tier_1_sa_run_options}
-          {tier_1_osa_run_options}
-          {tier_1_mesh_match_run_options}
-        </div>
-      </div>
+    return buildRunButton(
+      this.props.tier_1_scanners, 'mesh_match', this.props.buildTier1RunOptions, this.props.submitInsightsJob
     )
   }
 
@@ -599,7 +563,7 @@ class MeshMatchControls extends React.Component {
     const clear_maximum_zones_button = this.buildClearMaximumZonesButton()
     const add_origin_location_button = this.buildAddOriginLocationButton()
     const clear_origin_location_button = this.buildClearOriginLocationButton()
-    const run_button = this.buildRunButton()
+    const run_button = this.buildRunButtonWrapper()
     const delete_button = this.buildDeleteButton()
     const save_to_db_button = this.buildSaveToDatabaseButton()
     const clear_matches_button = this.buildClearMatchesButton2()

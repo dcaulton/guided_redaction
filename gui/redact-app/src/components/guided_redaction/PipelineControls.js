@@ -7,6 +7,7 @@ import {
   buildAttributesAddRow,
   buildTier1DeleteButton,
   buildTier1LoadButton,
+  buildRunButton,
   buildIdString,
 } from './SharedControls'
 
@@ -160,6 +161,18 @@ class PipelineControls extends React.Component {
     let extra_data = ''
     if (this.state.json && scope === 'input_json') {
         extra_data = this.state.json
+    } else if (scope.match(/^t1_matches:/)) {
+      const match_obj = scope.match(/^t1_matches:(\w*):(\w*)/)
+      const scanner_type = match_obj[1]
+      const scanner_id = match_obj[2]
+      let build_movies = {source: {}}
+      const t1_match_obj = this.props.tier_1_matches[scanner_type][scanner_id]
+      for (let i=0; i < Object.keys(t1_match_obj['movies']).length; i++) {
+        const movie_url = Object.keys(t1_match_obj['movies'])[i]
+        build_movies[movie_url] = t1_match_obj
+        build_movies['source'][movie_url] = this.props.movies[movie_url]
+      }
+      extra_data = {movies: build_movies}
     }
     this.props.dispatchPipeline(
       {
@@ -319,10 +332,42 @@ class PipelineControls extends React.Component {
     return buildTier1DeleteButton('pipeline', this.props.pipelines, this.deletePipeline)
   }
 
+  buildT1PipelineRunOptions() {
+    const scanner_types = [
+      'template', 'selected_area', 'ocr_scene_analysis', 'ocr', 'mesh_match', 'selection_grower', 'data_sifter'
+    ]
+    return (
+      <div>
+        {scanner_types.map((scanner_type, scanner_index) => {
+          const matches = this.props.tier_1_matches[scanner_type]
+          return (
+            <div key={scanner_index}>
+              {Object.keys(matches).map((scanner_id, match_index) => {
+                const scanner = this.props.tier_1_scanners[scanner_type][scanner_id]
+                const desc = 'matches for ' + scanner_type + ' : ' +  scanner['name']
+                const run_key = 't1_matches:' + scanner_type + ':' + scanner_id
+                return (
+                  <button
+                      key={match_index}
+                      className='dropdown-item'
+                      onClick={() => this.doRun(run_key)}
+                  >
+                    {desc}
+                  </button>
+                )
+              })}
+            </div>
+          )
+        })}
+      </div>
+    )
+  }
+
   buildRunButton() {
     if (!this.state.id) {
       return ''
     }
+    const t1_scan_options = this.buildT1PipelineRunOptions()
     return (
       <div className='d-inline'>
         <button
@@ -369,6 +414,7 @@ class PipelineControls extends React.Component {
           >
             Input JSON
           </button>
+          {t1_scan_options}
         </div>
       </div>
     )

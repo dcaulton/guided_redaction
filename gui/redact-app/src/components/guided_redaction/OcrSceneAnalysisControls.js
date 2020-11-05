@@ -9,6 +9,7 @@ import {
   buildLabelAndTextInput,
   buildIdString,
   buildAttributesAddRow,
+  buildRunButton,
   buildAttributesAsRows,
 } from './SharedControls'
 
@@ -229,41 +230,13 @@ class OcrSceneAnalysisControls extends React.Component {
     )
   }
 
-  buildRunButton() {
+  buildRunButtonWrapper() {
     if (!Object.keys(this.props.tier_1_scanners['ocr_scene_analysis']).includes(this.state.id)) {
       return ''                                                                 
     }
-    return (
-      <div className='d-inline'>
-        <button
-            className='btn btn-primary ml-2 dropdown-toggle'
-            type='button'
-            id='scanSelectedAreaDropdownButton'
-            data-toggle='dropdown'
-            area-haspopup='true'
-            area-expanded='false'
-        >
-          Run
-        </button>
-        <div className='dropdown-menu' aria-labelledby='scanSelectedAreaDropdownButton'>
-          <button className='dropdown-item'
-              onClick={() => this.props.submitInsightsJob('ocr_scene_analysis_current_frame')}
-          >
-            Frame
-          </button>
-          <button className='dropdown-item'
-              onClick={() => this.props.submitInsightsJob('ocr_scene_analysis_current_movie')}
-          >
-            Movie
-          </button>
-          <button className='dropdown-item'
-              onClick={() => this.props.submitInsightsJob('ocr_scene_analysis_all_movies')}
-          >
-            All Movies
-          </button>
-        </div>
-      </div>
-    )
+    return buildRunButton(                                                      
+      this.props.tier_1_scanners, 'ocr_scene_analysis', this.props.buildTier1RunOptions, this.props.submitInsightsJob
+    )                                                                           
   }
 
   updateApps(apps_string) {
@@ -367,7 +340,7 @@ class OcrSceneAnalysisControls extends React.Component {
     const debugging_output_field = this.buildDebuggingOutputField()
     const load_button = this.buildLoadButton()
     const delete_button = this.buildDeleteButton()
-    const run_button = this.buildRunButton()
+    const run_button = this.buildRunButtonWrapper()
     const attributes_list = this.buildAttributesList()
 
 

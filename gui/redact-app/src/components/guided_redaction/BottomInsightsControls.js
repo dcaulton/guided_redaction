@@ -322,6 +322,7 @@ class BottomInsightsControls extends React.Component {
         />
 
         <OcrSceneAnalysisControls
+          buildTier1RunOptions={this.buildTier1RunOptions}
           displayInsightsMessage={this.props.displayInsightsMessage}
           submitInsightsJob={this.props.submitInsightsJob}
           app_codebooks={this.props.app_codebooks}
@@ -350,6 +351,7 @@ class BottomInsightsControls extends React.Component {
           setGlobalStateVar={this.props.setGlobalStateVar}
           movies={this.props.movies}
           tier_1_scanners={this.props.tier_1_scanners}
+          tier_1_matches={this.props.tier_1_matches}
           redact_rules={this.props.redact_rules}
         />
 

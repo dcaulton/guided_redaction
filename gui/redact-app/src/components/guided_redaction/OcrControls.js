@@ -12,6 +12,7 @@ import {
   buildClearMatchesButton,
   clearTier1Matches,
   buildAttributesAsRows,
+  buildRunButton,
   buildAttributesAddRow,
 } from './SharedControls'
 
@@ -276,53 +277,12 @@ class OcrControls extends React.Component {
     return ocr_rule
   }
 
-// TODO make this a shared module
-  buildRunButton() {
+  buildRunButtonWrapper() {
     if (!Object.keys(this.props.tier_1_scanners['ocr']).includes(this.state.id)) {
       return ''
     }
-    const tier_1_template_run_options = this.props.buildTier1RunOptions('template', 'ocr_t1_template')
-    const tier_1_selected_area_run_options = this.props.buildTier1RunOptions('selected_area', 'ocr_t1_selected_area')
-    const tier_1_ocr_run_options = this.props.buildTier1RunOptions('ocr', 'ocr_t1_ocr')
-    const tier_1_osa_run_options = this.props.buildTier1RunOptions('ocr_scene_analysis', 'ocr_t1_osa')
-    const tier_1_telemetry_run_options = this.props.buildTier1RunOptions('telemetry', 'ocr_t1_telemetry')
-    const movie_set_run_options = this.props.buildMovieSetOptions('ocr_movie_set')
-    return (
-      <div className='d-inline ml-2'>
-        <button
-            className='btn btn-primary dropdown-toggle'
-            type='button'
-            id='runOcrDropdownButton'
-            data-toggle='dropdown'
-            area-haspopup='true'
-            area-expanded='false'
-        >
-          Run
-        </button>
-        <div className='dropdown-menu' aria-labelledby='RunOcrDropdownButton'>
-          <button className='dropdown-item'
-              onClick={() => this.props.submitInsightsJob('ocr_current_frame')}
-          >
-            Frame
-          </button>
-          <button className='dropdown-item'
-              onClick={() => this.props.submitInsightsJob('ocr_current_movie')}
-          >
-            Movie
-          </button>
-          <button className='dropdown-item'
-              onClick={() => this.props.submitInsightsJob('ocr_all_movies')}
-          >
-            All Movies
-          </button>
-          {movie_set_run_options}
-          {tier_1_template_run_options}
-          {tier_1_selected_area_run_options}
-          {tier_1_ocr_run_options}
-          {tier_1_osa_run_options}
-          {tier_1_telemetry_run_options}
-        </div>
-      </div>
+    return buildRunButton(
+      this.props.tier_1_scanners, 'ocr', this.props.buildTier1RunOptions, this.props.submitInsightsJob
     )
   }
 
@@ -548,7 +508,7 @@ class OcrControls extends React.Component {
     }
     const pick_button = this.buildPickCornersButton()
     const id_string = buildIdString(this.state.id, 'ocr_rule', this.state.unsaved_changes)
-    const run_button = this.buildRunButton()
+    const run_button = this.buildRunButtonWrapper()
     const load_button = this.buildLoadButton()
     const save_button = this.buildSaveButton()
     const delete_button = this.buildDeleteButton()

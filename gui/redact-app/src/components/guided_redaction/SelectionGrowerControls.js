@@ -11,6 +11,7 @@ import {
   buildIdString,
   clearTier1Matches,
   buildClearMatchesButton,
+  buildRunButton,
   doTier1Save,
 } from './SharedControls'
 
@@ -325,34 +326,12 @@ class SelectionGrowerControls extends React.Component {
     )
   }
 
-  buildRunButton() {
+  buildRunButtonWrapper() {
     if (!Object.keys(this.props.tier_1_scanners['selection_grower']).includes(this.state.id)) {
       return ''
     }
-    const tier_1_sa_run_options = this.props.buildTier1RunOptions('selected_area', 'selection_grower_t1_selected_area')
-    const tier_1_osa_run_options = this.props.buildTier1RunOptions('ocr_scene_analysis', 'selection_grower_t1_osa')
-    const tier_1_mesh_match_run_options = this.props.buildTier1RunOptions('mesh_match', 'selection_grower_t1_mesh_match')
-    const tier_1_sg_run_options = this.props.buildTier1RunOptions('selection_grower', 'selection_grower_t1_selection_grower')
-
-    return (
-      <div className='d-inline'>
-        <button
-            className='btn btn-primary ml-2 dropdown-toggle'
-            type='button'
-            id='scanSelectionGrowerDropdownButton'
-            data-toggle='dropdown'
-            area-haspopup='true'
-            area-expanded='false'
-        >
-          Run
-        </button>
-        <div className='dropdown-menu' aria-labelledby='scanSelectionGrowerDropdownButton'>
-          {tier_1_sa_run_options}
-          {tier_1_osa_run_options}
-          {tier_1_mesh_match_run_options}
-          {tier_1_sg_run_options}
-        </div>
-      </div>
+    return buildRunButton(
+      this.props.tier_1_scanners, 'selection_grower', this.props.buildTier1RunOptions, this.props.submitInsightsJob
     )
   }
 
@@ -506,7 +485,7 @@ class SelectionGrowerControls extends React.Component {
     const id_string = buildIdString(this.state.id, 'selection_grower', false)
     const name_field = this.buildNameField()
     const attributes_list = this.buildAttributesList()
-    const run_button = this.buildRunButton()
+    const run_button = this.buildRunButtonWrapper()
     const delete_button = this.buildDeleteButton()
     const save_to_db_button = this.buildSaveToDatabaseButton()
     const clear_matches_button = this.buildClearMatchesButton2()

@@ -11,6 +11,7 @@ import {
   clearTier1Matches,
   buildClearMatchesButton,
   buildT1ScannerScaleDropdown,
+  buildRunButton,
   doTier1Save,
 } from './SharedControls'
 
@@ -415,55 +416,13 @@ class TemplateControls extends React.Component {
     return return_arr
   }
 
-// TODO make this a shared module 
-  buildRunButton() {
+  buildRunButtonWrapper() {
     if (!Object.keys(this.props.tier_1_scanners['template']).includes(this.state.id)) {
       return ''
     }
-    const tier_1_template_run_options = this.props.buildTier1RunOptions('template', 'template_t1_template')
-    const tier_1_selected_area_run_options = this.props.buildTier1RunOptions('selected_area', 'template_t1_selected_area')
-    const tier_1_ocr_run_options = this.props.buildTier1RunOptions('ocr', 'template_t1_ocr')
-    const tier_1_telemetry_run_options = this.props.buildTier1RunOptions('telemetry', 'template_t1_telemetry')
-    const tier_1_osa_run_options = this.props.buildTier1RunOptions('ocr_scene_analysis', 'template_t1_osa')
-    const movie_set_run_options = this.props.buildMovieSetOptions('template_movie_set')
-
-    return (
-      <div className='d-inline'>
-        <button
-            className='btn btn-primary ml-2 dropdown-toggle'
-            type='button'
-            id='scanTemplateDropdownButton'
-            data-toggle='dropdown'
-            area-haspopup='true'
-            area-expanded='false'
-        >
-          Run
-        </button>
-        <div className='dropdown-menu' aria-labelledby='scanTemplateDropdownButton'>
-          <button className='dropdown-item'
-              onClick={() => this.props.submitInsightsJob('template_current_frame')}
-          >
-            Frame
-          </button>
-          <button className='dropdown-item'
-              onClick={() => this.props.submitInsightsJob('template_current_movie')}
-          >
-            Movie
-          </button>
-          <button className='dropdown-item'
-              onClick={() => this.props.submitInsightsJob('template_all_movies')}
-          >
-            All Movies
-          </button>
-          {movie_set_run_options} 
-          {tier_1_template_run_options}
-          {tier_1_selected_area_run_options}
-          {tier_1_ocr_run_options}
-          {tier_1_osa_run_options}
-          {tier_1_telemetry_run_options}
-        </div>
-      </div>
-    ) 
+    return buildRunButton(
+      this.props.tier_1_scanners, 'template', this.props.buildTier1RunOptions, this.props.submitInsightsJob
+    )
   }
 
   clearAnchors() {
@@ -705,7 +664,7 @@ class TemplateControls extends React.Component {
     const delete_button = this.buildDeleteButton()
     const download_button = this.buildDownloadButton()
     const anchor_pics = this.buildAnchorPics()
-    const run_button = this.buildRunButton()
+    const run_button = this.buildRunButtonWrapper()
     const template_name = this.buildNameField()
     const attributes_list = this.buildAttributesList()
     const scale_dropdown = this.buildScaleDropdown() 
