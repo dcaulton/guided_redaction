@@ -18,8 +18,8 @@ class Job(models.Model):
     operation = models.CharField(max_length=255)
     sequence = models.IntegerField()
     percent_complete = models.FloatField(default=0)
-    request_data = models.TextField(null=True)
-    response_data = models.TextField(null=True)
+    request_data = models.BinaryField(max_length=4000000000, null=True)
+    response_data = models.BinaryField(max_length=4000000000, null=True)
     parent = models.ForeignKey(
         'Job', on_delete=models.CASCADE, null=True, related_name="children"
     )
@@ -44,6 +44,11 @@ class Job(models.Model):
         percent_complete = self.get_percent_complete()
         if percent_complete != self.percent_complete:
             self.percent_complete = percent_complete
+
+        if type(self.request_data) == str:
+            self.request_data = bytes(self.request_data, encoding='utf8')
+        if type(self.response_data) == str:
+            self.response_data = bytes(self.response_data, encoding='utf8')
 
         super(Job, self).save(*args, **kwargs)
 
