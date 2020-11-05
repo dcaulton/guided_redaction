@@ -772,13 +772,20 @@ class RedactApplication extends React.Component {
         when_done(new_movie)
       )
     }
-    this.addToCampaignMovies(new_movie_url)
+    this.addToCampaignMovies([new_movie_url])
   }
 
-  addToCampaignMovies(movie_url) {
-    if (!this.state.campaign_movies.includes(movie_url)) {
-      let deepCopyCampaignMovies= JSON.parse(JSON.stringify(this.state.campaign_movies))
-      deepCopyCampaignMovies.push(movie_url)
+  addToCampaignMovies(movie_urls) {
+    let something_changed = false
+    let deepCopyCampaignMovies= JSON.parse(JSON.stringify(this.state.campaign_movies))
+    for (let i=0; i < movie_urls.length; i++) {
+      const movie_url = movie_urls[i]
+      if (!this.state.campaign_movies.includes(movie_url)) {
+        deepCopyCampaignMovies.push(movie_url)
+        something_changed = true
+      }
+    }
+    if (something_changed) {
       this.setGlobalStateVar('campaign_movies', deepCopyCampaignMovies)
     }
   }
@@ -805,7 +812,7 @@ class RedactApplication extends React.Component {
                   }
 
     */
-    this.addToCampaignMovies(data_in['url'])
+    this.addToCampaignMovies([data_in['url']])
   }
 
   getImageBlob(url) {
@@ -1270,7 +1277,7 @@ class RedactApplication extends React.Component {
   }
 
   addMovieAndSetActive(movie_url, movies, theCallback=(()=>{})) {
-    this.addToCampaignMovies(movie_url)
+    this.addToCampaignMovies(Object.keys(movies))
     let frameset_hash = ''
     let deepCopyMovies = movies
     if (
