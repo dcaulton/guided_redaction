@@ -10,6 +10,7 @@ from .controller_t1_diff import T1DiffController
 from .controller_dispatch import DispatchController
 
 
+
 class PipelinesViewSet(viewsets.ViewSet):
     def list(self, request):
         pipelines_list = []
