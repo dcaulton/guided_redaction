@@ -34,8 +34,8 @@ from guided_redaction.analyze.api import (
 )
 
 
-osa_batch_size = 5
-ocr_batch_size = 5
+osa_batch_size = 10
+ocr_batch_size = 10
 
 def dispatch_parent_job(job):
     if job.parent_id:

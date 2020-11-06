@@ -32,7 +32,7 @@ class OcrSceneAnalysisController(T1Controller):
             build_statistics['movies'][movie_url] = {'framesets': {}}
             movie = movies[movie_url]
             for index, fs_hash in enumerate(movie['framesets']):
-                if index % skip_frames == 0:
+                if skip_frames == 0 or index >= skip_frames:
                     if 'images' in movie['framesets'][fs_hash] and movie['framesets'][fs_hash]['images']:
                         img_url = movie['framesets'][fs_hash]['images'][0]
                     else:

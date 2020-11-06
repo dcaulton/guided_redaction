@@ -26,19 +26,30 @@ class OcrController(T1Controller):
         if 'source' in movies:
             source_movies = movies['source']
             del movies['source']
+
+        number_considered = 0
+        if 'skip_frames' in ocr_rule:
+            skip_frames = int(ocr_rule['skip_frames'])
+        else:
+            skip_frames = 0
+
         for movie_url in movies:
             movie = movies[movie_url]
             for frameset_hash in movie['framesets']:
+                number_considered += 1
+                if skip_frames != 0 and number_considered < skip_frames:
+                    print('ocr skipping {}'.format(frameset_hash))
+                    continue
                 if 'images' in movie['framesets'][frameset_hash]:
                     image_url = movie['framesets'][frameset_hash]['images'][0]
                 else:
                     image_url = source_movies[movie_url]['framesets'][frameset_hash]['images'][0]
 
-            found_areas = self.scan_ocr(image_url, ocr_rule)
-            if found_areas:
-                if movie_url not in response_data['movies']:
-                    response_data['movies'][movie_url] = {'framesets': {}}
-                response_data['movies'][movie_url]['framesets'][frameset_hash] = found_areas
+                found_areas = self.scan_ocr(image_url, ocr_rule)
+                if found_areas:
+                    if movie_url not in response_data['movies']:
+                        response_data['movies'][movie_url] = {'framesets': {}}
+                    response_data['movies'][movie_url]['framesets'][frameset_hash] = found_areas
 
         return response_data
 
