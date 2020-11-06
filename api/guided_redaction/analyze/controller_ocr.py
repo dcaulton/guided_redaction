@@ -38,11 +38,14 @@ class OcrController(T1Controller):
         adjusted_coords = self.adjust_start_end_origin_for_t1(
             box_coords, request_data.get('tier_1_data'), ocr_rule
         )
-        # this assumes there will be just one origin in each frame to work with.  
-        # If we want to ocr against multi boxes in the frame, or when there are multiple boxes
-        #   in the frame, but only one is the app we want OCR to target, we need new logic here
+
         start = adjusted_coords['start']
+        if not start:
+            start = (0, 0)
         end = adjusted_coords['end']
+        if not end:
+            end = (cv2_image.shape[1], cv2_image.shape[0])
+
         origin = adjusted_coords['origin']
         if ocr_rule['skip_east']:
             tight_image = cv2_image[
