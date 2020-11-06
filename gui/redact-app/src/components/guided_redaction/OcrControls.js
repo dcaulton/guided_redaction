@@ -25,6 +25,7 @@ class OcrControls extends React.Component {
       name: '',
       match_text: [],
       match_percent: 90,
+      skip_frames: 0,
       skip_east: false,
       scan_level: 'tier_1',
       start: [],
@@ -218,6 +219,7 @@ class OcrControls extends React.Component {
         name: ocr_rule['name'],
         match_text: ocr_rule['match_text'],
         match_percent: ocr_rule['match_percent'],
+        skip_frames: ocr_rule['skip_frames'],
         skip_east: ocr_rule['skip_east'],
         scan_level: ocr_rule['scan_level'],
         start: ocr_rule['start'],
@@ -247,6 +249,7 @@ class OcrControls extends React.Component {
       name: '',
       match_text: [],
       match_percent: 90,
+      skip_frames: 0,
       skip_east: false,
       scan_level: 'tier_1',
       start: [],
@@ -269,6 +272,7 @@ class OcrControls extends React.Component {
       movie: this.state.movie,
       match_text: this.state.match_text,
       match_percent: this.state.match_percent,
+      skip_frames: this.state.skip_frames,
       skip_east: this.state.skip_east,
       scan_level: this.state.scan_level,
       attributes: this.state.attributes,
@@ -286,13 +290,6 @@ class OcrControls extends React.Component {
     )
   }
 
-  updateMatchText(rows_as_string) {
-    const match_text = rows_as_string.split('\n')
-    this.setState({
-      match_text: match_text,
-    })
-  }
-
   buildMatchText() {
     return (
       <div className='ml-2 mt-2'>
@@ -307,17 +304,11 @@ class OcrControls extends React.Component {
              cols='60'
              rows='3'
              value={this.state.match_text.join('\n')}
-             onChange={(event) => this.updateMatchText(event.target.value)}
+            onChange={(event) => this.setLocalStateVar('match_text', event.target.value)}
           />
         </div>
       </div>
     )
-  }
-
-  updateMatchPercent(match_percent) {
-    this.setState({
-      match_percent: match_percent,
-    })
   }
 
   buildMatchPercent() {
@@ -333,7 +324,27 @@ class OcrControls extends React.Component {
             id='match_percent'
             size='4'
             value={this.state.match_percent}
-            onChange={(event) => this.updateMatchPercent(event.target.value)}
+            onChange={(event) => this.setLocalStateVar('match_percent', event.target.value)}
+          />
+        </div>
+      </div>
+    )
+  }
+
+  buildSkipFrames() {
+    return (
+      <div
+        className='d-inline ml-2 mt-2'
+      >   
+        <div className='d-inline'>
+          Skip Frames:
+        </div>
+        <div className='d-inline ml-2'>
+          <input 
+            id='skip_frames'
+            size='4'
+            value={this.state.skip_frames}
+            onChange={(event) => this.setLocalStateVar('skip_frames', event.target.value)}
           />
         </div>
       </div>
@@ -516,6 +527,7 @@ class OcrControls extends React.Component {
     const clear_matches_button = this.buildClearMatchesButton2()
     const match_text = this.buildMatchText()
     const match_percent = this.buildMatchPercent()
+    const skip_frames = this.buildSkipFrames()
     const skip_east = this.buildSkipEast()
     const scan_level = this.buildScanLevel()
     const attributes_list = this.buildAttributesList()
@@ -574,6 +586,10 @@ class OcrControls extends React.Component {
 
                 <div className='row bg-light'>
                   {match_percent}
+                </div>
+
+                <div className='row bg-light'>
+                  {skip_frames}
                 </div>
 
                 <div className='row bg-light'>
