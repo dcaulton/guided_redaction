@@ -14,6 +14,7 @@ import {
   buildAttributesAsRows,
   buildRunButton,
   buildAttributesAddRow,
+  buildSkipCountDropdown,
 } from './SharedControls'
 
 class OcrControls extends React.Component {
@@ -260,22 +261,10 @@ class OcrControls extends React.Component {
   }
 
   buildSkipFrames() {
-    return (
-      <div
-        className='d-inline ml-2 mt-2'
-      >   
-        <div className='d-inline'>
-          Skip Frames:
-        </div>
-        <div className='d-inline ml-2'>
-          <input 
-            id='skip_frames'
-            size='4'
-            value={this.state.skip_frames}
-            onChange={(event) => this.setLocalStateVar('skip_frames', event.target.value)}
-          />
-        </div>
-      </div>
+    return buildSkipCountDropdown(
+      'skip_frames',
+      this.state.skip_frames,
+      ((value)=>{this.setLocalStateVar('skip_frames', value)})
     )
   }
 

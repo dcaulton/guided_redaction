@@ -11,6 +11,7 @@ import {
   buildAttributesAddRow,
   buildRunButton,
   buildAttributesAsRows,
+  buildSkipCountDropdown,
 } from './SharedControls'
 
 class OcrSceneAnalysisControls extends React.Component {
@@ -20,7 +21,7 @@ class OcrSceneAnalysisControls extends React.Component {
     this.state = {
       id: '',
       name: '',
-      skip_frames: 10,
+      skip_frames: 0,
       scan_level: 'tier_1',
       debugging_output: false,
       apps: {},
@@ -109,12 +110,9 @@ class OcrSceneAnalysisControls extends React.Component {
   }
 
   buildSkipFramesField() {
-    return buildLabelAndTextInput(
+    return buildSkipCountDropdown(
+      'osa_skip_frames',
       this.state.skip_frames,
-      'Skip frames',
-      'ocr_scene_analysis_skip_frames',
-      'skip_frames',
-      5,
       ((value)=>{this.setLocalStateVar('skip_frames', value)})
     )
   }
@@ -183,7 +181,7 @@ class OcrSceneAnalysisControls extends React.Component {
     this.setState({
       id: the_id,
       name: '',
-      skip_frames: 10,
+      skip_frames: 0,
       scan_level: 'tier_1',
       debugging_output: false,
       apps: {},

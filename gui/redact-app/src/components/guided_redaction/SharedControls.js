@@ -46,6 +46,32 @@ export function buildRunButton(tier_1_scanners, scanner_type, buildTier1RunOptio
   )
 }
 
+export function buildSkipCountDropdown(
+  name, 
+  value, 
+  onchange
+) {
+  const scale_values = [
+    {'0': '0'},
+    {'1': '1'},
+    {'2': '2'},
+    {'3': '3'},
+    {'4': '4'},
+    {'5': '5'},
+    {'6': '6'},
+    {'7': '7'},
+    {'8': '8'},
+    {'9': '9'},
+  ]
+  return buildLabelAndDropdown(
+    scale_values,
+    'Skip Frames (out of 10)',
+    value,
+    name,
+    onchange
+  )
+}
+
 export function buildT1ScannerScaleDropdown(
   name, 
   value, 
