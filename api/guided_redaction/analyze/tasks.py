@@ -48,10 +48,8 @@ def dispatch_parent_job(job):
             build_data_sifter.delay(parent_job.id)
         if parent_job.app == 'analyze' and parent_job.operation == 'get_timestamp_threaded':
             get_timestamp_threaded.delay(parent_job.id)
-        if parent_job.app == 'analyze' and parent_job.operation == 'scan_ocr_movie':
-            scan_ocr_movie.delay(parent_job.id)
-        if parent_job.app == 'analyze' and parent_job.operation == 'scan_ocr':
-            scan_ocr_movie.delay(parent_job.id)
+        if parent_job.app == 'analyze' and parent_job.operation == 'scan_ocr_threaded':
+            scan_ocr_threaded.delay(parent_job.id)
         if parent_job.app == 'analyze' and parent_job.operation == 'selected_area_threaded':
             selected_area_threaded.delay(parent_job.id)
         if parent_job.app == 'analyze' and parent_job.operation == 'mesh_match_threaded':
@@ -217,13 +215,10 @@ def generic_worker_call(job_uuid, operation, worker_class):
 
 def generic_threaded(job_uuid, child_operation, title, build_and_dispatch_func, finish_func):
     if Job.objects.filter(pk=job_uuid).exists():
-        print('pippa 01')
         job = Job.objects.get(pk=job_uuid)
         if job.status in ['success', 'failed']:
             return
-        print('pippa 02')
         children = Job.objects.filter(parent=job)
-        print('pippa 03', title, child_operation)
         next_step = evaluate_children(title, child_operation, children)
         print('next step is {}'.format(next_step))
         if next_step == 'build_child_tasks':
@@ -434,7 +429,7 @@ def dispatch_ds_scan_ocr(parent_job):
         )
         job.save()
         print('dispatch ds scan ocr kids: dispatching job for movie {}'.format(movie_url))
-        scan_ocr_movie.delay(job.id)
+        scan_ocr_threaded.delay(job.id)
 
 @shared_task
 def compile_data_sifter(job_uuid):
@@ -680,86 +675,48 @@ def build_and_dispatch_scan_ocr_threaded_children(parent_job):
         finish_ocr_threaded,
         scan_ocr
     )
-#MAMA
-#    
-#    parent_job.status = 'running'
-#    parent_job.save()
-#    request_data = json.loads(parent_job.request_data)
-#    movies = request_data['movies']
-#    source_movies = {}
-#    if 'source' in movies:
-#        source_movies = movies['source']
-#        del movies['source']
-#    for movie_url in movies:
-#        movie = movies[movie_url]
-#        for index, frameset_hash in enumerate(movie['framesets'].keys()):
-#            frameset = movie['framesets'][frameset_hash]
-#            if 'images' in frameset:
-#                first_image_url = frameset['images'][0]
-#            else:
-#                first_image_url = source_movies[movie_url]['framesets'][frameset_hash]['images'][0]
-#            child_job_request_data = json.dumps({
-#                'movie_url': movie_url,
-#                'image_url': first_image_url,
-#                'frameset_hash': frameset_hash,
-#                'tier_1_scanners': {
-#                    'ocr': request_data['tier_1_scanners']['ocr'],
-#                },
-#                'tier_1_data': frameset,
-#            })
-#            job = Job(
-#                request_data=child_job_request_data,
-#                status='created',
-#                description='scan_ocr for frameset {}'.format(frameset_hash),
-#                app='analyze',
-#                operation='scan_ocr_image',
-#                sequence=0,
-#                parent=parent_job,
-#            )
-#            job.save()
-#            the_str = 'build_and_dispatch_scan_ocr_movie_children: dispatching job for frameset {}'
-#            print(the_str.format(frameset_hash))
-#            scan_ocr_image.delay(job.id)
 
 def wrap_up_scan_ocr_threaded(parent_job, children):
-# TODO see if we can merge this with the other logic now, I've normalized this scanner recently
     parent_request_data = json.loads(parent_job.request_data)
     ocr_rule_id = list(parent_request_data['tier_1_scanners']['ocr'].keys())[0]
     ocr_rule = parent_request_data['tier_1_scanners']['ocr'][ocr_rule_id]
-    aggregate_response_data = {}
+    build_movies = {'movies': {}}
     aggregate_stats = {'movies': {}}
     for child in children:
         child_response_data = json.loads(child.response_data)
         if not child_response_data:
             continue
-        child_request_data = json.loads(child.request_data)
-        frameset_hash = child_request_data['frameset_hash']
-        movie_url = child_request_data['movie_url']
-        if ('movies' not in aggregate_response_data):
-            aggregate_response_data['movies'] = {}
-        areas_to_redact = child_response_data
-        if (ocr_rule['match_text'] and ocr_rule['match_percent']):
-            if 'match_percent' not in aggregate_stats:
-                aggregate_stats['match_percent'] = ocr_rule['match_percent']
-            if movie_url not in aggregate_stats['movies']:
-                aggregate_stats['match_percent'] = ocr_rule['match_percent']
-                aggregate_stats['movies'][movie_url] = {'framesets': {}}
-            (areas_to_redact, match_percentages) = find_relevant_areas_from_response(
-                ocr_rule['match_text'], 
-                int(ocr_rule['match_percent']), 
-                areas_to_redact
-            )
-            aggregate_stats['movies'][movie_url]['framesets'][frameset_hash] = match_percentages
-            if len(areas_to_redact) == 0:
-                continue
-        if (movie_url not in aggregate_response_data['movies']):
-            aggregate_response_data['movies'][movie_url] = {}
-            aggregate_response_data['movies'][movie_url]['framesets'] = {}
-        aggregate_response_data['movies'][movie_url]['framesets'][frameset_hash] = areas_to_redact
-    aggregate_response_data['statistics'] = aggregate_stats
+        for movie_url in child_response_data['movies']:
+            if movie_url not in build_movies:
+                build_movies[movie_url] = {'framesets': {}}
+            resp_movie = child_response_data['movies'][movie_url]
+            for frameset_hash in resp_movie['framesets']:
+                areas_to_redact = resp_movie['framesets'][frameset_hash]
+
+                if (ocr_rule['match_text'] and ocr_rule['match_percent']):
+                    if 'match_percent' not in aggregate_stats:
+                        aggregate_stats['match_percent'] = ocr_rule['match_percent']
+                    if movie_url not in aggregate_stats['movies']:
+                        aggregate_stats['movies'][movie_url] = {'framesets': {}}
+                    (areas_to_redact, match_percentages) = find_relevant_areas_from_response(
+                        ocr_rule['match_text'], 
+                        int(ocr_rule['match_percent']), 
+                        areas_to_redact
+                    )
+                    aggregate_stats['movies'][movie_url]['framesets'][frameset_hash] = match_percentages
+                    if len(areas_to_redact) == 0:
+                        continue
+
+                build_movies[movie_url]['framesets'][frameset_hash] = areas_to_redact
+
+    return_data = {
+        'movies': build_movies,
+        'statistics': aggregate_stats,
+    }
+
     print('wrap_up_scan_ocr_threaded: wrapping up parent job')
     parent_job.status = 'success'
-    parent_job.response_data = json.dumps(aggregate_response_data)
+    parent_job.response_data = json.dumps(return_data)
     parent_job.save()
 
 def find_relevant_areas_from_response(match_strings, match_percent, areas_to_redact):

@@ -32,25 +32,17 @@ class AnalyzeViewSetOcr(viewsets.ViewSet):
         return self.process_create_request(request_data)
 
     def process_create_request(self, request_data):
-        if not request_data.get("image_url"):
-            return self.error("image_url is required", status_code=400)
         if not request_data.get("tier_1_scanners"):
-            return self.error("tier_1_scanners is required", status_code=400)
-        t1s = request_data.get("tier_1_scanners")
-        if 'ocr' not in t1s:
-            return self.error("tier_1_scanners must have an ocr child", status_code=400)
-        pic_response = requests.get(
-          request_data["image_url"],
-          verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
-        )
-        image = pic_response.content
-        if not image:
-            return self.error("couldnt read image data", status_code=422)
+            return self.error("tier_1_scanners is required")
+        if not request_data.get("movies"):
+            return self.error("movies is required")
+        if 'ocr' not in request_data['tier_1_scanners']:
+            return self.error("tier_1_scanners > ocr is required")
 
         worker = OcrController()
-        recognized_text_areas = worker.scan_ocr(request_data)
+        matches = worker.scan_ocr_all(request_data)
 
-        return Response(recognized_text_areas)
+        return Response(matches)
 
 
 class AnalyzeViewSetScanTemplate(viewsets.ViewSet):
@@ -59,7 +51,6 @@ class AnalyzeViewSetScanTemplate(viewsets.ViewSet):
         return self.process_create_request(request_data)
 
     def process_create_request(self, request_data):
-        matches = {'movies': {}}
         if not request_data.get("tier_1_scanners"):
             return self.error("tier_1_scanners is required")
         if not request_data.get("movies"):
@@ -79,7 +70,6 @@ class AnalyzeViewSetSelectedArea(viewsets.ViewSet):
         return self.process_create_request(request_data)
 
     def process_create_request(self, request_data):
-        response_movies = {}
         if not request_data.get("movies"):
             return self.error("movies is required")
         if not request_data.get("tier_1_scanners"):
@@ -100,7 +90,6 @@ class AnalyzeViewSetSelectionGrower(viewsets.ViewSet):
         return self.process_create_request(request_data)
 
     def process_create_request(self, request_data):
-        response_movies = {}
         if not request_data.get("movies"):
             return self.error("movies is required")
         if not request_data.get("tier_1_scanners"):
@@ -124,7 +113,6 @@ class AnalyzeViewSetMeshMatch(viewsets.ViewSet):
         return self.process_create_request(request_data)
 
     def process_create_request(self, request_data):
-        response_movies = {}
         if not request_data.get("movies"):
             return self.error("movies is required")
         if not request_data.get("tier_1_scanners"):

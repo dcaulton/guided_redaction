@@ -215,6 +215,10 @@ class OcrControls extends React.Component {
   }
 
   buildMatchText() {
+    let the_value = ''
+    if (this.state.match_text && this.state.match_text.length > 0) {
+        the_value = this.state.match_text.join('\n')
+    }
     return (
       <div className='ml-2 mt-2'>
         <div>
@@ -227,8 +231,8 @@ class OcrControls extends React.Component {
              id='match_text'
              cols='60'
              rows='3'
-             value={this.state.match_text.join('\n')}
-            onChange={(event) => this.setLocalStateVar('match_text', event.target.value)}
+             value={the_value}
+            onChange={(event) => this.setLocalStateVar('match_text', event.target.value.split('\n'))}
           />
         </div>
       </div>
