@@ -37,7 +37,7 @@ class OcrController(T1Controller):
             movie = movies[movie_url]
             for frameset_hash in movie['framesets']:
                 number_considered += 1
-                if skip_frames != 0 and number_considered < skip_frames:
+                if skip_frames != 0 and number_considered < skip_frames + 1:
                     print('ocr skipping {}'.format(frameset_hash))
                     continue
                 if 'images' in movie['framesets'][frameset_hash]:
