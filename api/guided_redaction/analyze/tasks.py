@@ -35,6 +35,7 @@ from guided_redaction.analyze.api import (
 
 
 osa_batch_size = 5
+ocr_batch_size = 5
 
 def dispatch_parent_job(job):
     if job.parent_id:
@@ -63,6 +64,91 @@ def dispatch_parent_job(job):
             train_hog_threaded.delay(parent_job.id)
         if parent_job.app == 'analyze' and parent_job.operation == 'oma_first_scan_threaded':
             oma_first_scan_threaded.delay(parent_job.id)
+
+def build_and_dispatch_generic_batched_threaded_children(
+    parent_job,
+    scanner_type,
+    batch_size,
+    operation_name,
+    finish_operation_function,
+    child_task
+):
+    parent_job.status = 'running'
+    parent_job.save()
+    request_data = json.loads(parent_job.request_data)
+    scanners = request_data['tier_1_scanners'][scanner_type]
+    movies = request_data['movies']
+    source_movies = {}
+
+    if 'source' in movies:
+        source_movies = movies['source']
+        del movies['source']
+
+    if len(movies) == 0:
+        finish_operation_function(parent_job)
+        return
+
+    for scanner_id in scanners:
+        scanner = scanners[scanner_id]
+        build_t1_scanner_obj = {}
+        build_t1_scanner_obj[scanner_type] = {scanner_id: scanner}
+        for index, movie_url in enumerate(movies.keys()):
+            if movie_url == 'source':
+                continue
+            movie = movies[movie_url]
+            num_jobs = math.ceil(len(movie['framesets']) / batch_size)
+            if 'frames' in movie and movie['frames']:
+                frames = movie['frames']
+                framesets = movie['framesets']
+            elif movie_url in source_movies:
+                frames = source_movies[movie_url]['frames']
+                framesets = source_movies[movie_url]['framesets']
+            else:
+                return # nothing to work on
+            hashes_in_order = get_frameset_hashes_in_order(frames, framesets, movie)
+
+            for i in range(num_jobs):
+                start_point = i * batch_size
+                end_point = ((i+1) * batch_size)
+                if i == (num_jobs-1):
+                    end_point = len(movie['framesets'])
+                build_obj = {
+                    'tier_1_scanners': build_t1_scanner_obj,
+                    'movies': {},
+                }
+                build_obj['movies'][movie_url] = {
+                    'framesets': {},
+                    'frames': [],
+                }
+
+                hashes_to_use = hashes_in_order[start_point:end_point]
+                for frameset_hash in hashes_to_use:
+                    build_obj['movies'][movie_url]['framesets'][frameset_hash] = \
+                        movie['framesets'][frameset_hash]
+                    if movie_is_full_movie(movie):
+                        build_obj['movies'][movie_url]['frames'] += movie['framesets'][frameset_hash]['images']
+                    else:
+                        build_obj['movies'][movie_url]['frames'] += \
+                            source_movies[movie_url]['framesets'][frameset_hash]['images']
+                if not movie_is_full_movie(movie):
+                    build_obj['movies']['source'] = {}
+                    build_obj['movies']['source'][movie_url] = source_movies[movie_url]
+
+                build_request_data = json.dumps(build_obj)
+                job = Job(
+                    request_data=build_request_data,
+                    status='created',
+                    description=operation_name + ' for movie {}'.format(movie_url),
+                    app='analyze',
+                    operation=operation_name,
+                    sequence=0,
+                    parent=parent_job,
+                )
+                job.save()
+                the_str = 'build_and_dispatch batched threaded children for ' +\
+                    scanner_type + ': dispatching job for movie {}'
+                print(the_str.format(movie_url))
+                child_task.delay(job.id)
 
 def build_and_dispatch_generic_threaded_children(parent_job, scanner_type, operation, child_task, finish_func):
     parent_job.status = 'running'
@@ -131,10 +217,13 @@ def generic_worker_call(job_uuid, operation, worker_class):
 
 def generic_threaded(job_uuid, child_operation, title, build_and_dispatch_func, finish_func):
     if Job.objects.filter(pk=job_uuid).exists():
+        print('pippa 01')
         job = Job.objects.get(pk=job_uuid)
         if job.status in ['success', 'failed']:
             return
+        print('pippa 02')
         children = Job.objects.filter(parent=job)
+        print('pippa 03', title, child_operation)
         next_step = evaluate_children(title, child_operation, children)
         print('next step is {}'.format(next_step))
         if next_step == 'build_child_tasks':
@@ -274,7 +363,7 @@ def scan_template(job_uuid):
 def make_and_dispatch_cds_task(parent_job):
     prd = json.loads(parent_job.request_data)
     build_movies = {}
-    children = Job.objects.filter(parent=parent_job).filter(operation='scan_ocr_movie')
+    children = Job.objects.filter(parent=parent_job).filter(operation='scan_ocr_threaded')
     for child in children:
         crd = json.loads(child.response_data)
         for movie_url in crd['movies']:
@@ -309,6 +398,7 @@ def dispatch_ds_scan_ocr(parent_job):
         'movie': '',
         'match_text': '', 
         'match_percent': 0,
+        'skip_frames': 0,
         'name': 'autogen ocr rule',
         'origin_entity_location': [],
         'scan_level': 'tier_1',
@@ -338,7 +428,7 @@ def dispatch_ds_scan_ocr(parent_job):
             status='created',
             description='scan_ocr for movie {}'.format(movie_url),
             app='analyze',
-            operation='scan_ocr_movie',
+            operation='scan_ocr_threaded',
             sequence=0,
             parent=parent_job,
         )
@@ -362,12 +452,12 @@ def build_data_sifter(job_uuid):
         job.save()
     children = Job.objects.filter(parent=job)                                   
                                                                                 
-    if not children.filter(operation='scan_ocr_movie').exists():  
+    if not children.filter(operation='scan_ocr_threaded').exists():  
         dispatch_ds_scan_ocr(job)
         return
     next_step = evaluate_children(
         'BUILD DATA SIFTER - SCAN OCR',
-        'scan_ocr_movie',
+        'scan_ocr_threaded',
         children
     )
     print('next step is {}'.format(next_step))
@@ -555,73 +645,84 @@ def wrap_up_scan_template_threaded(job, children):
     job.save()
 
 @shared_task
-def scan_ocr_image(job_uuid):
-    generic_worker_call(job_uuid, 'scan_ocr_image', AnalyzeViewSetOcr)
+def scan_ocr(job_uuid):
+    generic_worker_call(job_uuid, 'scan_ocr', AnalyzeViewSetOcr)
 
 @shared_task
 def telemetry_find_matching_frames(job_uuid):
     generic_worker_call(job_uuid, 'telemetry_find_matching_frames', AnalyzeViewSetTelemetry)
 
 @shared_task
-def scan_ocr_movie(job_uuid):
+def scan_ocr_threaded(job_uuid):
     generic_threaded(
         job_uuid, 
-        'scan_ocr_image', 
-        'SCAN OCR MOVIE', 
-        build_and_dispatch_scan_ocr_movie_children, 
-        finish_ocr_movie 
+        'scan_ocr', 
+        'SCAN OCR THREADED', 
+        build_and_dispatch_scan_ocr_threaded_children, 
+        finish_ocr_threaded
     )
 
-def finish_ocr_movie(job):
+def finish_ocr_threaded(job):
     children = Job.objects.filter(parent=job)
-    wrap_up_scan_ocr_movie(job, children)
+    wrap_up_scan_ocr_threaded(job, children)
     pipeline = get_pipeline_for_job(job.parent)
     if pipeline:
         worker = PipelinesViewSetDispatch()
         worker.handle_job_finished(job, pipeline)
     dispatch_parent_job(job)
 
-def build_and_dispatch_scan_ocr_movie_children(parent_job):
-    parent_job.status = 'running'
-    parent_job.save()
-    request_data = json.loads(parent_job.request_data)
-    movies = request_data['movies']
-    source_movies = {}
-    if 'source' in movies:
-        source_movies = movies['source']
-        del movies['source']
-    for movie_url in movies:
-        movie = movies[movie_url]
-        for index, frameset_hash in enumerate(movie['framesets'].keys()):
-            frameset = movie['framesets'][frameset_hash]
-            if 'images' in frameset:
-                first_image_url = frameset['images'][0]
-            else:
-                first_image_url = source_movies[movie_url]['framesets'][frameset_hash]['images'][0]
-            child_job_request_data = json.dumps({
-                'movie_url': movie_url,
-                'image_url': first_image_url,
-                'frameset_hash': frameset_hash,
-                'tier_1_scanners': {
-                    'ocr': request_data['tier_1_scanners']['ocr'],
-                },
-                'tier_1_data': frameset,
-            })
-            job = Job(
-                request_data=child_job_request_data,
-                status='created',
-                description='scan_ocr for frameset {}'.format(frameset_hash),
-                app='analyze',
-                operation='scan_ocr_image',
-                sequence=0,
-                parent=parent_job,
-            )
-            job.save()
-            the_str = 'build_and_dispatch_scan_ocr_movie_children: dispatching job for frameset {}'
-            print(the_str.format(frameset_hash))
-            scan_ocr_image.delay(job.id)
+def build_and_dispatch_scan_ocr_threaded_children(parent_job):
+    build_and_dispatch_generic_batched_threaded_children(
+        parent_job,
+        'ocr',
+        ocr_batch_size,
+        'scan_ocr',
+        finish_ocr_threaded,
+        scan_ocr
+    )
+#MAMA
+#    
+#    parent_job.status = 'running'
+#    parent_job.save()
+#    request_data = json.loads(parent_job.request_data)
+#    movies = request_data['movies']
+#    source_movies = {}
+#    if 'source' in movies:
+#        source_movies = movies['source']
+#        del movies['source']
+#    for movie_url in movies:
+#        movie = movies[movie_url]
+#        for index, frameset_hash in enumerate(movie['framesets'].keys()):
+#            frameset = movie['framesets'][frameset_hash]
+#            if 'images' in frameset:
+#                first_image_url = frameset['images'][0]
+#            else:
+#                first_image_url = source_movies[movie_url]['framesets'][frameset_hash]['images'][0]
+#            child_job_request_data = json.dumps({
+#                'movie_url': movie_url,
+#                'image_url': first_image_url,
+#                'frameset_hash': frameset_hash,
+#                'tier_1_scanners': {
+#                    'ocr': request_data['tier_1_scanners']['ocr'],
+#                },
+#                'tier_1_data': frameset,
+#            })
+#            job = Job(
+#                request_data=child_job_request_data,
+#                status='created',
+#                description='scan_ocr for frameset {}'.format(frameset_hash),
+#                app='analyze',
+#                operation='scan_ocr_image',
+#                sequence=0,
+#                parent=parent_job,
+#            )
+#            job.save()
+#            the_str = 'build_and_dispatch_scan_ocr_movie_children: dispatching job for frameset {}'
+#            print(the_str.format(frameset_hash))
+#            scan_ocr_image.delay(job.id)
 
-def wrap_up_scan_ocr_movie(parent_job, children):
+def wrap_up_scan_ocr_threaded(parent_job, children):
+# TODO see if we can merge this with the other logic now, I've normalized this scanner recently
     parent_request_data = json.loads(parent_job.request_data)
     ocr_rule_id = list(parent_request_data['tier_1_scanners']['ocr'].keys())[0]
     ocr_rule = parent_request_data['tier_1_scanners']['ocr'][ocr_rule_id]
@@ -656,7 +757,7 @@ def wrap_up_scan_ocr_movie(parent_job, children):
             aggregate_response_data['movies'][movie_url]['framesets'] = {}
         aggregate_response_data['movies'][movie_url]['framesets'][frameset_hash] = areas_to_redact
     aggregate_response_data['statistics'] = aggregate_stats
-    print('wrap_up_scan_template_threaded: wrapping up parent job')
+    print('wrap_up_scan_ocr_threaded: wrapping up parent job')
     parent_job.status = 'success'
     parent_job.response_data = json.dumps(aggregate_response_data)
     parent_job.save()
@@ -886,86 +987,16 @@ def get_frameset_hashes_in_order(frames, framesets, filter_movie):
         resp = [x for x in ret_arr if x in filter_movie['framesets']]
         return resp
 
+
 def build_and_dispatch_ocr_scene_analysis_threaded_children(parent_job):
-    parent_job.status = 'running'
-    parent_job.save()
-    request_data = json.loads(parent_job.request_data)
-    osas = request_data['tier_1_scanners']['ocr_scene_analysis']
-    movies = request_data['movies']
-    source_movies = {}
-
-    if 'source' in movies:
-        source_movies = movies['source']
-        del movies['source']
-
-    if len(movies) == 0:
-        finish_ocr_scene_analysis_threaded(parent_job)
-        return
-
-    for osa_id in osas:
-        osa = osas[osa_id]
-        build_t1_osa_obj = {
-            'ocr_scene_analysis': {
-                osa_id: osa,
-            },
-        }
-        for index, movie_url in enumerate(movies.keys()):
-            if movie_url == 'source':
-                continue
-            movie = movies[movie_url]
-            num_jobs = math.ceil(len(movie['framesets']) / osa_batch_size)
-            if 'frames' in movie and movie['frames']:
-                frames = movie['frames']
-                framesets = movie['framesets']
-            elif movie_url in source_movies:
-                frames = source_movies[movie_url]['frames']
-                framesets = source_movies[movie_url]['framesets']
-            else:
-                return # nothing to work on
-            hashes_in_order = get_frameset_hashes_in_order(frames, framesets, movie)
-
-            for i in range(num_jobs):
-                start_point = i * osa_batch_size
-                end_point = ((i+1) * osa_batch_size)
-                if i == (num_jobs-1):
-                    end_point = len(movie['framesets'])
-                build_obj = {
-                    'tier_1_scanners': build_t1_osa_obj,
-                    'movies': {},
-                }
-                build_obj['movies'][movie_url] = {
-                    'framesets': {},
-                    'frames': [],
-                }
-
-                hashes_to_use = hashes_in_order[start_point:end_point]
-                for frameset_hash in hashes_to_use:
-                    build_obj['movies'][movie_url]['framesets'][frameset_hash] = \
-                        movie['framesets'][frameset_hash]
-                    if movie_is_full_movie(movie):
-                        build_obj['movies'][movie_url]['frames'] += movie['framesets'][frameset_hash]['images']
-                    else:
-                        build_obj['movies'][movie_url]['frames'] += \
-                            source_movies[movie_url]['framesets'][frameset_hash]['images']
-                if not movie_is_full_movie(movie):
-                    build_obj['movies']['source'] = {}
-                    build_obj['movies']['source'][movie_url] = source_movies[movie_url]
-
-                build_request_data = json.dumps(build_obj)
-                job = Job(
-                    request_data=build_request_data,
-                    status='created',
-                    description='ocr scene analysis for movie {}'.format(movie_url),
-                    app='analyze',
-                    operation='ocr_scene_analysis',
-                    sequence=0,
-                    parent=parent_job,
-                )
-                job.save()
-                the_str = 'build_and_dispatch_ocr_scene_analysis_threaded_children: dispatching job for movie {}'
-                print(the_str.format(movie_url))
-                ocr_scene_analysis.delay(job.id)
-
+    build_and_dispatch_generic_batched_threaded_children(
+        parent_job,
+        'ocr_scene_analysis',
+        osa_batch_size,
+        'ocr_scene_analysis',
+        finish_ocr_scene_analysis_threaded,
+        ocr_scene_analysis
+    )
 
 def wrap_up_ocr_scene_analysis_threaded(job, children):
     aggregate_response_data = {

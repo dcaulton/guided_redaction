@@ -37,7 +37,6 @@ class InsightsPanel extends React.Component {
     this.currentImageIsTemplateAnchorImage=this.currentImageIsTemplateAnchorImage.bind(this)
     this.currentImageIsSelectedAreaAnchorImage=this.currentImageIsSelectedAreaAnchorImage.bind(this)
     this.currentImageIsMeshMatchAnchorImage=this.currentImageIsMeshMatchAnchorImage.bind(this)
-    this.currentImageIsOcrAnchorImage=this.currentImageIsOcrAnchorImage.bind(this)
     this.currentImageIsOsaMatchImage=this.currentImageIsOsaMatchImage.bind(this)
     this.currentImageIsSGAnchorImage=this.currentImageIsSGAnchorImage.bind(this)
     this.afterPingSuccess=this.afterPingSuccess.bind(this)
@@ -76,23 +75,6 @@ class InsightsPanel extends React.Component {
 
     const data = this.props.tier_1_matches['ocr_scene_analysis'][osa_key]['movies'][this.props.movie_url]['framesets'][frameset_hash]
     return data
-  }
-
-  currentImageIsOcrAnchorImage() {
-    if (this.props.tier_1_scanner_current_ids['ocr']) {
-      let key = this.props.tier_1_scanner_current_ids['ocr']
-      if (!Object.keys(this.props.tier_1_scanners['ocr']).includes(key)) {
-        return false
-      }
-      let ocr_rule = this.props.tier_1_scanners['ocr'][key]
-      if (!Object.keys(ocr_rule).includes('image')) {
-        return false
-      }
-      let cur_ocr_rule_anchor_image_name = ocr_rule['image']
-      return (cur_ocr_rule_anchor_image_name === this.state.insights_image)
-    } else {
-      return true // TODO I think this should be false, test it later
-    }
   }
 
   currentImageIsOsaMatchImage() {
@@ -349,7 +331,7 @@ class InsightsPanel extends React.Component {
 
     const scanner_operations = {
       template: 'scan_template_threaded',
-      ocr: 'scan_ocr',
+      ocr: 'scan_ocr_threaded',
       selected_area: 'selected_area_threaded',
       selection_grower: 'selection_grower_threaded',
       mesh_match: 'mesh_match_threaded',
@@ -1397,7 +1379,6 @@ class InsightsPanel extends React.Component {
               currentImageIsSelectedAreaAnchorImage={this.currentImageIsSelectedAreaAnchorImage}
               currentImageIsMeshMatchAnchorImage={this.currentImageIsMeshMatchAnchorImage}
               currentImageIsSGAnchorImage={this.currentImageIsSGAnchorImage}
-              currentImageIsOcrAnchorImage={this.currentImageIsOcrAnchorImage}
               currentImageIsOsaMatchImage={this.currentImageIsOsaMatchImage}
               insights_image_scale={this.state.insights_image_scale}
               getTier1ScannerMatches={this.getTier1ScannerMatches}
@@ -1418,7 +1399,6 @@ class InsightsPanel extends React.Component {
               getCurrentMeshMatchMaximumZones={(()=>this.runCallbackFunction('getCurrentMeshMatchMaximumZones'))}
               getCurrentSGColors={(()=>this.runCallbackFunction('getCurrentSGColors'))}
               getCurrentMeshMatchOriginLocation={(()=>this.runCallbackFunction('getCurrentMeshMatchOriginLocation'))}
-              getCurrentOcrOriginLocation={(()=>this.runCallbackFunction('getCurrentOcrOriginLocation'))}
               getCurrentOcrSceneAnalysisMatches={this.getCurrentOcrSceneAnalysisMatches}
               getCurrentPipelineMatches={this.getCurrentPipelineMatches}
             />

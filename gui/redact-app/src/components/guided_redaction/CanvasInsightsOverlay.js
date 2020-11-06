@@ -19,7 +19,6 @@ class CanvasInsightsOverlay extends React.Component {
     this.selected_area_color = '#2B9'
     this.mesh_match_color = '#C93'
     this.selected_area_center_color = '#9F3'
-    this.ocr_origin_location_color = '#51B'
     this.ocr_color = '#CC0'
     this.area_to_redact_color = '#D6D'
     this.ocr_window_color = '#DA9'
@@ -140,9 +139,6 @@ class CanvasInsightsOverlay extends React.Component {
   }
 
   drawOcrWindow() {
-    if (!this.props.currentImageIsOcrAnchorImage()) {
-      return
-    }
     const window = this.props.getCurrentOcrWindow()
     if (window) {
       this.drawBoxesAroundStartEndRecords(
@@ -315,16 +311,6 @@ class CanvasInsightsOverlay extends React.Component {
     }
   }
 
-  drawOcrOriginLocation() {
-    if (!this.props.currentImageIsOcrAnchorImage()) {
-      return
-    }
-    if (this.props.getCurrentOcrOriginLocation() && this.props.getCurrentOcrOriginLocation().length > 0) {
-      const origin = this.props.getCurrentOcrOriginLocation()
-      this.drawCrosshairsGeneric(origin, this.ocr_origin_location_color)
-    }
-  }
-
   drawTier1Matches(scanner_type, fill_color, edge_color) {
     let matches = this.props.getTier1ScannerMatches(scanner_type)
     fill_color = fill_color || this.template_match_color
@@ -449,7 +435,6 @@ class CanvasInsightsOverlay extends React.Component {
     this.drawMeshMatchMinimumZones()
     this.drawMeshMatchMaximumZones()
     this.drawMeshMatchOriginLocation()
-    this.drawOcrOriginLocation()
     this.drawTemplateAnchors()
     this.drawTemplateMaskZones()
     this.drawTemplateMatches()
@@ -474,7 +459,6 @@ class CanvasInsightsOverlay extends React.Component {
     this.drawMeshMatchMinimumZones()
     this.drawMeshMatchMaximumZones()
     this.drawMeshMatchOriginLocation()
-    this.drawOcrOriginLocation()
     this.drawTemplateAnchors()
     this.drawTemplateMaskZones()
     this.drawTemplateMatches()

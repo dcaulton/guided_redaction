@@ -952,7 +952,7 @@ class JobLogic extends React.Component {
         this.loadGetFramesetMatchChartResults(
           job, when_done, setGlobalStateVar, getGlobalStateVar
         )
-			} else if (job.app === 'analyze' && job.operation === 'scan_ocr') {
+			} else if (job.app === 'analyze' && job.operation === 'scan_ocr_threaded') {
         this.loadOcrResults(
           job, 
           when_done,

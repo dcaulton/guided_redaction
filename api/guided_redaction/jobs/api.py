@@ -136,10 +136,8 @@ def dispatch_job(job):
         analyze_tasks.scan_template_multi.delay(job_uuid)
     if job.app == 'analyze' and job.operation == 'filter':
         analyze_tasks.filter.delay(job_uuid)
-    if job.app == 'analyze' and job.operation == 'scan_ocr_movie':
-        analyze_tasks.scan_ocr_movie.delay(job_uuid)
-    if job.app == 'analyze' and job.operation == 'scan_ocr':
-        analyze_tasks.scan_ocr_movie.delay(job_uuid)
+    if job.app == 'analyze' and job.operation == 'scan_ocr_threaded':
+        analyze_tasks.scan_ocr_threaded.delay(job_uuid)
     if job.app == 'analyze' and job.operation == 'get_timestamp':
         analyze_tasks.get_timestamp.delay(job_uuid)
     if job.app == 'analyze' and job.operation == 'get_timestamp_threaded':

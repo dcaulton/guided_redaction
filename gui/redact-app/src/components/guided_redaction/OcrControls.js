@@ -30,72 +30,14 @@ class OcrControls extends React.Component {
       scan_level: 'tier_1',
       start: [],
       end: [],
-      image: '',
-      movie: '',
       attributes: {},
-      origin_entity_location: [],
       attribute_search_value: '',
       first_click_coords: [],
-      unsaved_changes: false,
     }
     this.addOcrZoneCallback=this.addOcrZoneCallback.bind(this)
     this.getOcrMetaFromState=this.getOcrMetaFromState.bind(this)
     this.setLocalStateVar=this.setLocalStateVar.bind(this)
-    this.setLocalStateVarNoWarning=this.setLocalStateVarNoWarning.bind(this)
     this.getOcrWindow=this.getOcrWindow.bind(this)
-    this.addOriginLocation=this.addOriginLocation.bind(this)
-    this.getCurrentOcrOriginLocation=this.getCurrentOcrOriginLocation.bind(this)
-  }
-
-  showSourceFrame(movie_url, image_frameset_index) {
-    this.props.setCurrentVideo(movie_url)
-    setTimeout((() => {this.props.setScrubberToIndex(image_frameset_index)}), 1000)
-  }
-
-  buildGotoSourceLink() {
-    if (this.state.movie && this.state.image) {
-      if (Object.keys(this.props.movies).includes(this.state.movie)) {
-        const the_movie = this.props.movies[this.state.movie]
-        const the_frameset = this.props.getFramesetHashForImageUrl(
-          this.state.image,
-          the_movie['framesets']
-        )
-        const movie_framesets = this.props.getFramesetHashesInOrder(the_movie)
-        const image_frameset_index = movie_framesets.indexOf(the_frameset)
-        return (
-          <div>
-            <button
-              className='bg-light border-0 text-primary'
-              onClick={() => this.showSourceFrame(this.state.movie, image_frameset_index)}
-            >
-              goto source frame
-            </button>
-          </div>
-        )
-      }
-    }
-  }
-
-  getCurrentOcrOriginLocation() {
-    return this.state.origin_entity_location
-  }
-
-  addOriginLocation(origin_coords) {
-    this.setState({
-      origin_entity_location: origin_coords,
-      image: this.props.insights_image,
-      movie: this.props.movie_url,
-    })
-    this.props.displayInsightsMessage('ocr origin location was added,')
-    this.props.handleSetMode('')
-  }
-
-  clearOriginLocation() {
-    this.setState({
-      origin_entity_location: [],
-      unsaved_changes: true,
-    })
-    this.props.displayInsightsMessage('Origin location has been cleared')
   }
 
   getOcrWindow() {
@@ -108,35 +50,30 @@ class OcrControls extends React.Component {
   componentDidMount() {
     this.props.addInsightsCallback('scan_ocr_2', this.addOcrZoneCallback)
     this.props.addInsightsCallback('getOcrWindow', this.getOcrWindow)
-    this.props.addInsightsCallback('add_ocr_origin_location_1', this.addOriginLocation)
-    this.props.addInsightsCallback('getCurrentOcrOriginLocation', this.getCurrentOcrOriginLocation)
     this.loadNewOcrRule()
   }
 
   setLocalStateVar(var_name, var_value, when_done=(()=>{})) {
-    this.setState({
-      [var_name]: var_value,
-      unsaved_changes: true,
-    },
-    when_done())
-  }
-
-  setLocalStateVarNoWarning(var_name, var_value, when_done=(()=>{})) {
-    this.setState({
-      [var_name]: var_value,
-      unsaved_changes: false,
-    },
-    when_done())
+    function anon_func() {
+      this.doSave()
+      when_done()
+    }
+    this.setState(
+      {
+        [var_name]: var_value,
+      },
+      anon_func
+    )
   }
 
   setAttribute(name, value) {
     let deepCopyAttributes = JSON.parse(JSON.stringify(this.state.attributes))
     deepCopyAttributes[name] = value
-    this.setState({
-      attributes: deepCopyAttributes,
-      unsaved_changes: true,
-    })
-    this.props.displayInsightsMessage('Attribute was added')
+    this.setLocalStateVar(
+      'attributes', 
+      deepCopyAttributes, 
+      (()=>this.props.displayInsightsMessage('Attribute was added'))
+    )
   }
 
   doAddAttribute() {
@@ -155,11 +92,11 @@ class OcrControls extends React.Component {
       return
     }
     delete deepCopyAttributes[name]
-    this.setState({
-      attributes: deepCopyAttributes,
-      unsaved_changes: true,
-    })
-    this.props.displayInsightsMessage('Attribute was deleted')
+    this.setLocalStateVar(
+      'attributes', 
+      deepCopyAttributes, 
+      (()=>this.props.displayInsightsMessage('Attribute was deleted'))
+    )
   }
 
   buildAttributesList() {
@@ -185,8 +122,6 @@ class OcrControls extends React.Component {
     this.setState({
       start: start,
       end: end,
-      image: this.props.insights_image,
-      movie: this.props.movie_url,
     })
     this.props.handleSetMode('')
     this.props.displayInsightsMessage('zone was successfully selected')
@@ -225,10 +160,6 @@ class OcrControls extends React.Component {
         start: ocr_rule['start'],
         end: ocr_rule['end'],
         attributes: ocr_rule['attributes'],
-        image: ocr_rule['image'],
-        movie: ocr_rule['movie'],
-        origin_entity_location: ocr_rule['origin_entity_location'],
-        unsaved_changes: false,
       })
       ocr_rule_id = ocr_rule['id']
     }
@@ -254,11 +185,7 @@ class OcrControls extends React.Component {
       scan_level: 'tier_1',
       start: [],
       end: [],
-      image: '',
-      movie: '',
       attributes: {},
-      origin_entity_location: [],
-      unsaved_changes: false,
     })                                                                          
   } 
 
@@ -268,15 +195,12 @@ class OcrControls extends React.Component {
       name: this.state.name,
       start: this.state.start,
       end: this.state.end,
-      image: this.state.image,
-      movie: this.state.movie,
       match_text: this.state.match_text,
       match_percent: this.state.match_percent,
       skip_frames: this.state.skip_frames,
       skip_east: this.state.skip_east,
       scan_level: this.state.scan_level,
       attributes: this.state.attributes,
-      origin_entity_location: this.state.origin_entity_location,
     }
     return ocr_rule
   }
@@ -353,9 +277,7 @@ class OcrControls extends React.Component {
 
   toggleSkipEast() {
     const new_value = (!this.state.skip_east)
-    this.setState({
-      skip_east: new_value,
-    })
+    this.setLocalStateVar('skip_east', new_value)
   }
 
   buildSkipEast() {
@@ -404,13 +326,6 @@ class OcrControls extends React.Component {
       'name',
       25,
       ((value)=>{this.setLocalStateVar('name', value)})
-    )
-  }
-
-  buildSaveButton() {
-    return buildInlinePrimaryButton(
-      'Save',
-      (()=>{this.doSave()})
     )
   }
 
@@ -492,36 +407,14 @@ class OcrControls extends React.Component {
     )
   }
 
-  buildAddOriginLocationButton() {
-    return buildInlinePrimaryButton(
-      'Set Origin Location',
-      (()=>{this.startAddOriginLocation()})
-    )
-  }
-
-  buildClearOriginLocationButton() {
-    return buildInlinePrimaryButton(
-      'Clear Origin Location',
-      (()=>{this.clearOriginLocation()})
-    )
-  }
-
-  startAddOriginLocation() {
-    this.setState({
-      unsaved_changes: true,
-    })
-    this.props.handleSetMode('add_ocr_origin_location_1')
-  }
-
   render() {
     if (!this.props.visibilityFlags['ocr']) {
       return([])
     }
     const pick_button = this.buildPickCornersButton()
-    const id_string = buildIdString(this.state.id, 'ocr_rule', this.state.unsaved_changes)
+    const id_string = buildIdString(this.state.id, 'ocr_rule', false)
     const run_button = this.buildRunButtonWrapper()
     const load_button = this.buildLoadButton()
-    const save_button = this.buildSaveButton()
     const delete_button = this.buildDeleteButton()
     const save_to_database_button = this.buildSaveToDatabaseButton()
     const clear_matches_button = this.buildClearMatchesButton2()
@@ -531,9 +424,6 @@ class OcrControls extends React.Component {
     const skip_east = this.buildSkipEast()
     const scan_level = this.buildScanLevel()
     const attributes_list = this.buildAttributesList()
-    const add_origin_location_button = this.buildAddOriginLocationButton()
-    const clear_origin_location_button = this.buildClearOriginLocationButton()
-    const goto_source_link = this.buildGotoSourceLink()
     const header_row = makeHeaderRow(
       'ocr',
       'ocr_body',
@@ -556,7 +446,6 @@ class OcrControls extends React.Component {
                 <div className='row bg-light'>
                   {load_button}
                   {delete_button}
-                  {save_button}
                   {save_to_database_button}
                   {clear_matches_button}
                   {run_button}
@@ -564,16 +453,10 @@ class OcrControls extends React.Component {
 
                 <div className='row mt-2 ml-0 bg-light'>
                   {pick_button}
-                  {add_origin_location_button}
-                  {clear_origin_location_button}
                 </div>
 
                 <div className='row bg-light'>
                   {id_string}
-                </div>
-
-                <div className='row bg-light'>
-                  {goto_source_link}
                 </div>
 
                 <div className='row bg-light'>

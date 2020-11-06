@@ -114,7 +114,7 @@ class ResultsControls extends React.Component {
           job['operation'] === 'scan_template_threaded') {
         eligible_jobs.push(job)
       } else if (this.state.type === 'ocr_match_chart' && 
-          job['operation'] === 'scan_ocr') {
+          job['operation'] === 'scan_ocr_threaded') {
         eligible_jobs.push(job)
       } else if (this.state.type === 'ocr_scene_analysis_chart' && 
           job['operation'] === 'ocr_scene_analysis_threaded') {

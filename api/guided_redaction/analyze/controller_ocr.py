@@ -18,6 +18,7 @@ class OcrController(T1Controller):
         pass
 
     def scan_ocr(self, request_data):
+        print('black mamba request data is ', request_data.keys(), request_data)
         pic_response = requests.get(
           request_data["image_url"],
           verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,

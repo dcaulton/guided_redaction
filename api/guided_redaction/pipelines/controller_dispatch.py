@@ -568,7 +568,7 @@ class DispatchController:
         elif scanner_type == 'selected_area':
             operation = 'selected_area_threaded'
         elif scanner_type == 'ocr':
-            operation = 'scan_ocr'
+            operation = 'scan_ocr_threaded'
         elif scanner_type == 'ocr_scene_analysis':
             operation = 'ocr_scene_analysis_threaded'
         elif scanner_type == 'mesh_match':
