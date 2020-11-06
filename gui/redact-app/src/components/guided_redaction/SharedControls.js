@@ -65,7 +65,7 @@ export function buildSkipCountDropdown(
   ]
   return buildLabelAndDropdown(
     scale_values,
-    'Skip Frames (out of 10)',
+    'Skip this many Frames out of 10',
     value,
     name,
     onchange
