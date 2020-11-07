@@ -5,6 +5,7 @@ from django.conf import settings
 from django.db import models
 
 from guided_redaction.attributes.models import Attribute
+from guided_redaction.utils.classes.FileWriter import FileWriter
 
 
 class Job(models.Model):
@@ -19,7 +20,9 @@ class Job(models.Model):
     sequence = models.IntegerField()
     percent_complete = models.FloatField(default=0)
     request_data = models.BinaryField(max_length=4000000000, null=True)
+    request_data_path = models.CharField(max_length=255, null=True)
     response_data = models.BinaryField(max_length=4000000000, null=True)
+    response_data_path = models.CharField(max_length=255, null=True)
     parent = models.ForeignKey(
         'Job', on_delete=models.CASCADE, null=True, related_name="children"
     )
@@ -41,9 +44,20 @@ class Job(models.Model):
         return disp_hash.__str__()
 
     def save(self, *args, **kwargs):
+        print('Gumball saving a job with {} bytes of response_data'.format(len(self.response_data)))
         percent_complete = self.get_percent_complete()
         if percent_complete != self.percent_complete:
             self.percent_complete = percent_complete
+
+        if len(self.response_data) > 10000000: # 10MB
+            print('saving job response data to disk, its big')
+            self.response_data_path = self.save_data_to_disk(self.response_data, 'response')
+            self.response_data = b'{}'
+
+        if len(self.request_data) > 10000000: # 10MB
+            print('saving job request data to disk, its big')
+            self.request_data_path = self.save_data_to_disk(self.request_data, 'request')
+            self.request_data = b'{}'
 
         if type(self.request_data) == str:
             self.request_data = bytes(self.request_data, encoding='utf8')
@@ -58,6 +72,38 @@ class Job(models.Model):
             if hasattr(settings,'SUPPRESS_WEBSOCKETS') and settings.SUPPRESS_WEBSOCKETS:
                 return
             self.broadcast_percent_complete()
+
+    def get_data_from_disk(self):
+        if self.request_data_path or self.response_data_path:
+            fw = FileWriter(
+                working_dir=settings.REDACT_FILE_STORAGE_DIR,
+                base_url=settings.REDACT_FILE_BASE_URL,
+                image_request_verify_headers=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
+            )
+            if self.request_data_path:
+                self.request_data = fw.get_text_data_from_filepath(self.request_data_path)
+            if self.response_data_path:
+                self.response_data = fw.get_text_data_from_filepath(self.response_data_path)
+
+    @classmethod
+    def from_db(cls, db, field_names, values):
+        instance = cls(*values)
+        instance.get_data_from_disk()
+        return instance
+
+    def save_data_to_disk(self, data, request_or_response='request'):
+        the_uuid = str(uuid.uuid4())
+        fw = FileWriter(
+            working_dir=settings.REDACT_FILE_STORAGE_DIR,
+            base_url=settings.REDACT_FILE_BASE_URL,
+            image_request_verify_headers=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
+        )
+        workdir = fw.create_unique_directory(the_uuid)
+        file_name = request_or_response + '_data.json'
+        outfilepath = fw.build_file_fullpath_for_uuid_and_filename(the_uuid, file_name)
+        fw.write_text_data_to_filepath(data, outfilepath)
+
+        return outfilepath
 
     def broadcast_percent_complete(self):
         from channels.layers import get_channel_layer

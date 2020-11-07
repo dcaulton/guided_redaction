@@ -58,12 +58,12 @@ def get_jobs_info():
     for key, attr_var in (("file_dirs", file_dir_attrs), ("owners", owner_attrs)):
         sub_data = info_data[key]
         for attr in attr_var:
-            if attr.job.id in sub_data:
+            if attr.job and attr.job.id in sub_data:
                 if key == "file_dirs":
                     sub_data[str(attr.job.id)].add(attr.value.split(":")[-2])
                 else:
                     sub_data[str(attr.job.id)].add(attr.value)
-            else:
+            elif attr.job:
                 if key == "file_dirs":
                     sub_data[str(attr.job.id)] = set([attr.value.split(":")[-2]])
                 else:
@@ -300,6 +300,9 @@ class JobsViewSet(viewsets.ViewSet):
                     attrs[attribute.name] = attribute.value
                 if attribute.name == 'pipeline_job_link':
                     attrs[attribute.name] = attribute.pipeline_id
+            response_data_size = len(job.response_data)
+            if job.response_data_path:
+                response_data_size = 'very large'
             job_obj = {
                 'id': job_id,
                 'status': job.status,
@@ -314,6 +317,7 @@ class JobsViewSet(viewsets.ViewSet):
                 'workbook_id': job.workbook_id,
                 'owner': owner,
                 'children': child_ids,
+                'response_size': response_data_size,
             }
             if job_id in file_dirs:
                 job_obj['file_dirs'] = file_dirs[job_id]
