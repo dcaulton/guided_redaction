@@ -445,8 +445,8 @@ class JobCard extends React.Component {
 
   buildLargeWarning() {
     if (
-      this.props.job_data['response_size'] == 'very large' ||
-      this.props.job_data['request_size'] == 'very large'
+      this.props.job_data['response_size'] === 'very large' ||
+      this.props.job_data['request_size'] === 'very large'
     ) {
       return (
         <div className='col bg-danger rounded text-light font-weight-bold'>

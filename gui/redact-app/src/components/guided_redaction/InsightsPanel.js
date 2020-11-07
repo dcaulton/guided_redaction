@@ -663,98 +663,63 @@ class InsightsPanel extends React.Component {
       return
     }
     if (
-        job_string === 'ocr_current_frame' || 
-        job_string === 'ocr_t1_template' || 
-        job_string === 'ocr_t1_selected_area' || 
-        job_string === 'ocr_t1_ocr' || 
-        job_string === 'ocr_t1_osa' || 
-        job_string === 'ocr_t1_telemetry' || 
-        job_string === 'ocr_current_movie' || 
-        job_string === 'ocr_all_movies'
-    ) {
-      let job_data = this.buildTier1JobData('ocr', job_string, extra_data)
-      this.props.submitJob({
-        job_data: job_data,
-      })
-    } else if (
-        job_string === 'template_current_frame' || 
-        job_string === 'template_t1_template' || 
-        job_string === 'template_t1_selected_area' || 
-        job_string === 'template_t1_ocr' || 
-        job_string === 'template_t1_osa' || 
-        job_string === 'template_t1_telemetry' || 
-        job_string === 'template_current_movie' || 
-        job_string === 'template_all_movies'
-    ) {
-      let job_data = this.buildTier1JobData('template', job_string, extra_data)
-      this.props.submitJob({
-        job_data: job_data,
-      })
-    } else if (
-        job_string === 'selected_area_t1_template' || 
-        job_string === 'selected_area_t1_ocr' || 
-        job_string === 'selected_area_t1_osa' || 
-        job_string === 'selected_area_current_frame' || 
-        job_string === 'selected_area_current_movie' || 
-        job_string === 'selected_area_all_movies' || 
-        job_string === 'selected_area_t1_selected_area' || 
-        job_string === 'selected_area_movie_set'
-    ) {
-      let job_data = this.buildTier1JobData('selected_area', job_string, extra_data)
-      this.props.submitJob({
-        job_data: job_data,
-      })
-    } else if (
-        job_string === 'mesh_match_t1_template' || 
-        job_string === 'mesh_match_t1_ocr' || 
-        job_string === 'mesh_match_t1_osa' || 
-        job_string === 'mesh_match_current_frame' || 
-        job_string === 'mesh_match_current_movie' || 
-        job_string === 'mesh_match_all_movies' || 
-        job_string === 'mesh_match_t1_selected_area' || 
-        job_string === 'mesh_match_t1_mesh_match'
-    ) {
-      let job_data = this.buildTier1JobData('mesh_match', job_string, extra_data)
-      this.props.submitJob({
-        job_data: job_data,
-      })
-    } else if (
-        job_string === 'selection_grower_t1_osa' || 
-        job_string === 'selection_grower_t1_selected_area' || 
-        job_string === 'selection_grower_t1_selection_grower' || 
-        job_string === 'selection_grower_t1_mesh_match'
-    ) {
-      let job_data = this.buildTier1JobData('selection_grower', job_string, extra_data)
-      this.props.submitJob({
-        job_data: job_data,
-      })
-    } else if (
-        job_string === 'ocr_scene_analysis_current_frame' ||
-        job_string === 'ocr_scene_analysis_current_movie' ||
-        job_string === 'ocr_scene_analysis_all_movies'
+        job_string.startsWith('ocr_scene_analysis_')
     ) {
       let job_data = this.buildTier1JobData('ocr_scene_analysis', job_string, extra_data)
       this.props.submitJob({
         job_data: job_data,
       })
     } else if (
-        job_string === 'data_sifter_build_t1_selected_area'
+        job_string.startsWith('ocr_')
+    ) {
+      let job_data = this.buildTier1JobData('ocr', job_string, extra_data)
+      this.props.submitJob({
+        job_data: job_data,
+      })
+    } else if (
+        job_string.startsWith('template_')
+    ) {
+      let job_data = this.buildTier1JobData('template', job_string, extra_data)
+      this.props.submitJob({
+        job_data: job_data,
+      })
+    } else if (
+        job_string.startsWith('selected_area_')
+    ) {
+      let job_data = this.buildTier1JobData('selected_area', job_string, extra_data)
+      this.props.submitJob({
+        job_data: job_data,
+      })
+    } else if (
+        job_string.startsWith('mesh_match_')
+    ) {
+      let job_data = this.buildTier1JobData('mesh_match', job_string, extra_data)
+      this.props.submitJob({
+        job_data: job_data,
+      })
+    } else if (
+        job_string.startsWith('selection_grower_')
+    ) {
+      let job_data = this.buildTier1JobData('selection_grower', job_string, extra_data)
+      this.props.submitJob({
+        job_data: job_data,
+      })
+    } else if (
+        job_string.startsWith('data_sifter_build_')
     ) {
       let job_data = this.buildDataSifterBuildJobData(job_string, extra_data)
       this.props.submitJob({
         job_data: job_data,
       })
     } else if (
-        job_string === 'redact_current_movie' ||
-        job_string === 'redact_all_movies'
+        job_string.startsWith('redact_')
     ) {
       let job_data = this.buildRedactJobData(job_string, extra_data)
       this.props.submitJob({
         job_data: job_data,
       })
     } else if (
-        job_string === 'zip_current_movie' ||
-        job_string === 'zip_all_movies'
+        job_string.startsWith('zip_')
     ) {
       let job_data = this.buildZipJobData(job_string, extra_data)
       this.props.submitJob({
