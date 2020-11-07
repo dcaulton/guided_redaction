@@ -73,6 +73,8 @@ def build_and_dispatch_generic_batched_threaded_children(
 ):
     parent_job.status = 'running'
     parent_job.save()
+    if parent_job.request_data_path and len(parent_job.request_data) < 3:
+        parent_job.get_data_from_disk()
     request_data = json.loads(parent_job.request_data)
     scanners = request_data['tier_1_scanners'][scanner_type]
     movies = request_data['movies']
@@ -85,6 +87,12 @@ def build_and_dispatch_generic_batched_threaded_children(
     if len(movies) == 0:
         finish_operation_function(parent_job)
         return
+
+    num_jobs = 0
+    for index, movie_url in enumerate(movies.keys()):
+        movie = movies[movie_url]
+        num_jobs += math.ceil(len(movie['framesets']) / batch_size)
+    print('dispatch generic batched threaded: preparing to dispatch {} jobs'.format(num_jobs))
 
     for scanner_id in scanners:
         scanner = scanners[scanner_id]
@@ -680,7 +688,7 @@ def wrap_up_scan_ocr_threaded(parent_job, children):
     parent_request_data = json.loads(parent_job.request_data)
     ocr_rule_id = list(parent_request_data['tier_1_scanners']['ocr'].keys())[0]
     ocr_rule = parent_request_data['tier_1_scanners']['ocr'][ocr_rule_id]
-    build_movies = {'movies': {}}
+    build_movies = {}
     aggregate_stats = {'movies': {}}
     for child in children:
         child_response_data = json.loads(child.response_data)

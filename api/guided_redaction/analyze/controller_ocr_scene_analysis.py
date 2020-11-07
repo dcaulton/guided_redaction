@@ -32,7 +32,7 @@ class OcrSceneAnalysisController(T1Controller):
             build_statistics['movies'][movie_url] = {'framesets': {}}
             movie = movies[movie_url]
             for index, fs_hash in enumerate(movie['framesets']):
-                if skip_frames == 0 or index >= skip_frames:
+                if skip_frames == 0  or index >= skip_frames:
                     if 'images' in movie['framesets'][fs_hash] and movie['framesets'][fs_hash]['images']:
                         img_url = movie['framesets'][fs_hash]['images'][0]
                     else:
@@ -43,9 +43,11 @@ class OcrSceneAnalysisController(T1Controller):
                             source_movies[movie_url]['framesets'][fs_hash]['images']:
                             img_url = source_movies[movie_url]['framesets'][fs_hash]['images'][0]
                     if not img_url:
-                        print('no image found for osa frame {} in {}'.format(fs_hash, movie_Url))
+                        print('no image found for osa frame {} in {}'.format(fs_hash, movie_url))
                         continue
-                    resp_obj = self.analyze_one_frame(img_url, osa, movie['framesets'][fs_hash])
+                    resp_obj = self.analyze_one_frame(
+                        img_url, osa, movie['framesets'][fs_hash]
+                    )
                     if resp_obj:
                         (response, statistics) = resp_obj
                     for app_name in response:
@@ -58,30 +60,45 @@ class OcrSceneAnalysisController(T1Controller):
         build_response_data['statistics'] = build_statistics
         return build_response_data
 
+    def get_image_and_dimensions(self, img_url):
+        pic_response = requests.get(
+          img_url,
+          verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
+        )
+        image = pic_response.content
+        if not image:
+            return 
+
+        nparr = np.fromstring(image, np.uint8)
+        cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        frame_dimensions = [cv2_image.shape[1], cv2_image.shape[0]]
+        return frame_dimensions, cv2_image
+
     def analyze_one_frame(self, img_url, osa_rule, frameset):
         frameset_has_ocr_output = False
         for match_id in frameset:
             match_obj = frameset[match_id]
-            if match_obj['source'] == 'ocr':
+            if 'scanner_type' in match_obj and match_obj['scanner_type'] == 'ocr':
                 frameset_has_ocr_output = True
-                
             
+        frame_dimensions, cv2_image = self.get_image_and_dimensions(img_url)
         if frameset_has_ocr_output:
-            print('GETTING RTAS FROM PREVIOUS SCAN')
-            raw_recognized_text_areas = [frameset[area_key] for area_key in frameset.keys()]
+            print('getting rtas from previous scan')
+            raw_recognized_text_areas = []
+            for area_key in frameset.keys():
+                # this feels a little icky, TODO: have ocr raw otuput be t1 compliant and use start/end
+                rta = frameset[area_key]
+                rta['start'] = rta['location']
+                rta['end'] = [
+                  rta['location'][0] + rta['size'][0],
+                  rta['location'][1] + rta['size'][1]
+                ]
+                rta['origin'] = [0, 0]
+                rta['scale'] = 1
+                rta['id'] = area_key
+                raw_recognized_text_areas.append(rta)
         else:
-            pic_response = requests.get(
-              img_url,
-              verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
-            )
-            image = pic_response.content
-            if not image:
-                return 
-
             analyzer = EastPlusTessGuidedAnalyzer()
-            nparr = np.fromstring(image, np.uint8)
-            cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-            frame_dimensions = [cv2_image.shape[1], cv2_image.shape[0]]
             start = (0, 0)
             end = (cv2_image.shape[1], cv2_image.shape[0])
 
