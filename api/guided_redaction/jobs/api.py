@@ -303,6 +303,9 @@ class JobsViewSet(viewsets.ViewSet):
             response_data_size = len(job.response_data)
             if job.response_data_path:
                 response_data_size = 'very large'
+            request_data_size = len(job.request_data)
+            if job.request_data_path:
+                request_data_size = 'very large'
             job_obj = {
                 'id': job_id,
                 'status': job.status,
@@ -318,6 +321,7 @@ class JobsViewSet(viewsets.ViewSet):
                 'owner': owner,
                 'children': child_ids,
                 'response_size': response_data_size,
+                'request_size': request_data_size,
             }
             if job_id in file_dirs:
                 job_obj['file_dirs'] = file_dirs[job_id]

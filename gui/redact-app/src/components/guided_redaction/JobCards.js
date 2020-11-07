@@ -443,6 +443,19 @@ class JobCard extends React.Component {
     )
   }
 
+  buildLargeWarning() {
+    if (
+      this.props.job_data['response_size'] == 'very large' ||
+      this.props.job_data['request_size'] == 'very large'
+    ) {
+      return (
+        <div className='col bg-danger rounded text-light font-weight-bold'>
+          XL Payloads
+        </div>
+      )
+    }
+  }
+
   render() {
     let small_style = {
       'fontSize': 'small',
@@ -461,6 +474,7 @@ class JobCard extends React.Component {
     const job_status = this.buildJobStatus()
     const wrap_up_link = this.buildWrapUpLink()
     const attach_link = this.buildAttachLink()
+    const large_warning = this.buildLargeWarning()
 
     return (
       <div className='row pl-1 mt-2 card'>
@@ -503,6 +517,10 @@ class JobCard extends React.Component {
             >
               {wrap_up_link}
               {attach_link}
+            </div>
+
+            <div className='row mt-1 mb-1'>
+              {large_warning}
             </div>
 
             <div className='row mt-1 mb-1'>
