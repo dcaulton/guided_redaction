@@ -300,10 +300,15 @@ class JobsViewSet(viewsets.ViewSet):
                     attrs[attribute.name] = attribute.value
                 if attribute.name == 'pipeline_job_link':
                     attrs[attribute.name] = attribute.pipeline_id
-            response_data_size = len(job.response_data)
+
+            response_data_size = 0
+            if job.response_data:
+                response_data_size = len(job.response_data)
             if job.response_data_path:
                 response_data_size = 'very large'
-            request_data_size = len(job.request_data)
+            request_data_size = 0
+            if job.request_data:
+                request_data_size = len(job.request_data)
             if job.request_data_path:
                 request_data_size = 'very large'
             job_obj = {

@@ -31,6 +31,7 @@ class Job(models.Model):
     )
 
     MIN_PERCENT_COMPLETE_INCREMENT = .05
+    MAX_DB_PAYLOAD_SIZE = 10000000  # 10MB
 
     def __str__(self):
         disp_hash = {
@@ -44,19 +45,20 @@ class Job(models.Model):
         return disp_hash.__str__()
 
     def save(self, *args, **kwargs):
-        print('Gumball saving a job with {} bytes of response_data'.format(len(self.response_data)))
         percent_complete = self.get_percent_complete()
         if percent_complete != self.percent_complete:
             self.percent_complete = percent_complete
 
-        if len(self.response_data) > 10000000: # 10MB
+        if self.response_data and len(self.response_data) > self.MAX_DB_PAYLOAD_SIZE:
             print('saving job response data to disk, its big')
-            self.response_data_path = self.save_data_to_disk(self.response_data, 'response')
+            directory = self.get_current_directory('response')
+            self.response_data_path = self.save_data_to_disk(self.response_data, directory, 'response')
             self.response_data = b'{}'
 
-        if len(self.request_data) > 10000000: # 10MB
+        if self.request_data and len(self.request_data) > self.MAX_DB_PAYLOAD_SIZE:
             print('saving job request data to disk, its big')
-            self.request_data_path = self.save_data_to_disk(self.request_data, 'request')
+            directory = self.get_current_directory('request')
+            self.request_data_path = self.save_data_to_disk(self.request_data, directory, 'request')
             self.request_data = b'{}'
 
         if type(self.request_data) == str:
@@ -72,6 +74,12 @@ class Job(models.Model):
             if hasattr(settings,'SUPPRESS_WEBSOCKETS') and settings.SUPPRESS_WEBSOCKETS:
                 return
             self.broadcast_percent_complete()
+
+    def get_current_directory(self, request_or_response):
+        if request_or_response == 'request' and self.request_data_path:
+            return self.request_data_path.split('/')[-2]
+        if request_or_response == 'response' and self.response_data_path:
+            return self.response_data_path.split('/')[-2]
 
     def get_data_from_disk(self):
         if self.request_data_path or self.response_data_path:
@@ -91,16 +99,18 @@ class Job(models.Model):
         instance.get_data_from_disk()
         return instance
 
-    def save_data_to_disk(self, data, request_or_response='request'):
-        the_uuid = str(uuid.uuid4())
+    def save_data_to_disk(self, data, directory, request_or_response='request'):
         fw = FileWriter(
             working_dir=settings.REDACT_FILE_STORAGE_DIR,
             base_url=settings.REDACT_FILE_BASE_URL,
             image_request_verify_headers=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
         )
-        workdir = fw.create_unique_directory(the_uuid)
-        file_name = request_or_response + '_data.json'
-        outfilepath = fw.build_file_fullpath_for_uuid_and_filename(the_uuid, file_name)
+        if not directory:
+            directory = str(uuid.uuid4())
+            fw.create_unique_directory(directory)
+        filename_uuid = str(uuid.uuid4())
+        file_name = request_or_response + '_' + filename_uuid + '_data.json'
+        outfilepath = fw.build_file_fullpath_for_uuid_and_filename(directory, file_name)
         fw.write_text_data_to_filepath(data, outfilepath)
 
         return outfilepath

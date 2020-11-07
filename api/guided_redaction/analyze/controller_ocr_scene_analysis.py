@@ -45,7 +45,7 @@ class OcrSceneAnalysisController(T1Controller):
                     if not img_url:
                         print('no image found for osa frame {} in {}'.format(fs_hash, movie_Url))
                         continue
-                    resp_obj = self.analyze_one_frame(img_url, osa)
+                    resp_obj = self.analyze_one_frame(img_url, osa, movie['framesets'][fs_hash])
                     if resp_obj:
                         (response, statistics) = resp_obj
                     for app_name in response:
@@ -58,25 +58,36 @@ class OcrSceneAnalysisController(T1Controller):
         build_response_data['statistics'] = build_statistics
         return build_response_data
 
-    def analyze_one_frame(self, img_url, osa_rule):
-        pic_response = requests.get(
-          img_url,
-          verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
-        )
-        image = pic_response.content
-        if not image:
-            return 
+    def analyze_one_frame(self, img_url, osa_rule, frameset):
+        frameset_has_ocr_output = False
+        for match_id in frameset:
+            match_obj = frameset[match_id]
+            if match_obj['source'] == 'ocr':
+                frameset_has_ocr_output = True
+                
+            
+        if frameset_has_ocr_output:
+            print('GETTING RTAS FROM PREVIOUS SCAN')
+            raw_recognized_text_areas = [frameset[area_key] for area_key in frameset.keys()]
+        else:
+            pic_response = requests.get(
+              img_url,
+              verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
+            )
+            image = pic_response.content
+            if not image:
+                return 
 
-        analyzer = EastPlusTessGuidedAnalyzer()
-        nparr = np.fromstring(image, np.uint8)
-        cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-        frame_dimensions = [cv2_image.shape[1], cv2_image.shape[0]]
-        start = (0, 0)
-        end = (cv2_image.shape[1], cv2_image.shape[0])
+            analyzer = EastPlusTessGuidedAnalyzer()
+            nparr = np.fromstring(image, np.uint8)
+            cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+            frame_dimensions = [cv2_image.shape[1], cv2_image.shape[0]]
+            start = (0, 0)
+            end = (cv2_image.shape[1], cv2_image.shape[0])
 
-        raw_recognized_text_areas = analyzer.analyze_text(
-            cv2_image, [start, end]
-        )
+            raw_recognized_text_areas = analyzer.analyze_text(
+                cv2_image, [start, end]
+            )
 
         ocr_scene_analyzer = OcrSceneAnalyzer(raw_recognized_text_areas, osa_rule, frame_dimensions)
 
