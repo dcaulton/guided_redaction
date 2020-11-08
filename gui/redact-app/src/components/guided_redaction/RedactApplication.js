@@ -1515,6 +1515,8 @@ class RedactApplication extends React.Component {
     } else if (input_obj.scope === 'current_movie_as_frames') {
       build_movies[this.state.movie_url] = this.state.movies[this.state.movie_url]
       specified_input['movies'] = build_movies
+    } else if (input_obj.scope.match(/^t1_matches:/)) {
+        specified_input = input_obj.extra_data
     } else if (input_obj.scope === 'input_json') {
       if (typeof(input_obj) === 'string') {
         specified_input = JSON.parse(input_obj.extra_data)

@@ -92,6 +92,8 @@ def build_and_dispatch_generic_batched_threaded_children(
     for index, movie_url in enumerate(movies.keys()):
         movie = movies[movie_url]
         num_jobs += math.ceil(len(movie['framesets']) / batch_size)
+    if not job_has_anticipated_operation_count_attribute(parent_job) and num_jobs > 1:
+        make_anticipated_operation_count_attribute_for_job(parent_job, num_jobs)
     print('dispatch generic batched threaded: preparing to dispatch {} jobs'.format(num_jobs))
 
     for scanner_id in scanners:

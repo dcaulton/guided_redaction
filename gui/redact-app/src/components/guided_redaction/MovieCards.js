@@ -118,15 +118,21 @@ class MovieCard extends React.Component {
       if (!nickname) {
         nickname = this.getShortMovieData(movie_url)
       }
+      const div_style = {
+        fontSize: '.8em',
+        overflow: 'scroll',
+      }
       return_arr.push(
+        <div style={div_style}>
         <input
             className='movie_card_nickname'
             key='1922'
             value={nickname}
-            size='24'
+            size='26'
             title={movie_url}
             onChange={(event) => this.props.setMovieNickname(movie_url, event.target.value)}
         /> 
+        </div>
       )
     }
     return return_arr
@@ -199,27 +205,32 @@ class MovieCard extends React.Component {
     return ''
   }
 
-  buildMovieHeader(movie, movie_body_id, nickname_block) {
+  buildMovieHeader(movie, movie_body_id) {
+    const nickname_block = this.buildNicknameBlock(this.props.this_cards_movie_url, this.props.movies)
     let style = {
       'fontSize': 'small',
       'padding': 0,
     }
     return (
       <div
-        className='d-inline'
+        className='row'
       >
-        {nickname_block}
-        <button
-            style={style}
-            className='btn btn-link'
-            aria-expanded='false'
-            data-target={'#'+movie_body_id}
-            aria-controls={movie_body_id}
-            data-toggle='collapse'
-            type='button'
-        >
-          +/-
-        </button>
+        <div className='col-9'>
+          {nickname_block}
+        </div>
+        <div className='col-3 ml-0'>
+          <button
+              style={style}
+              className='btn btn-link p-0'
+              aria-expanded='false'
+              data-target={'#'+movie_body_id}
+              aria-controls={movie_body_id}
+              data-toggle='collapse'
+              type='button'
+          >
+            +/-
+          </button>
+        </div>
       </div>
     )
   }
@@ -552,7 +563,6 @@ class MovieCard extends React.Component {
     }
 
     let queue_job_button = this.buildQueueJobLink()
-    const nickname_block = this.buildNicknameBlock(this.props.this_cards_movie_url, this.props.movies)
     const framesets_count_message = this.getFramesetsCountMessage(this.props.this_cards_movie_url)
     const make_active_button = this.buildMakeActiveButton(this.props.this_cards_movie_url)
     const template_matches_string = this.getTier1MatchesString('template')
@@ -569,7 +579,7 @@ class MovieCard extends React.Component {
     }
     const movie_body_id = 'movie_body_' + this.props.index
     const movie = this.props.movies[this.props.this_cards_movie_url]
-    const movie_header = this.buildMovieHeader(movie, movie_body_id, nickname_block)
+    const movie_header = this.buildMovieHeader(movie, movie_body_id)
     const has_timestamp_info = this.buildHasTimestampInfo()
     const has_telemetry_info = this.buildHasTelemetryInfo()
     const video_source_object = this.buildVideoSourceObject()

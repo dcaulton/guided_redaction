@@ -533,6 +533,9 @@ class DispatchController:
         parent_job, 
         previous_job
     ):
+        if parent_job.request_data_path and len(parent_job.request_data) < 3:
+            parent_job.get_data_from_disk()
+
         parent_request_data = json.loads(parent_job.request_data)
         desc_string = 'scan ' + scanner_type + ' threaded '
         build_scanners = {}

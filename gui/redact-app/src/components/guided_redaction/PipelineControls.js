@@ -7,7 +7,6 @@ import {
   buildAttributesAddRow,
   buildTier1DeleteButton,
   buildTier1LoadButton,
-  buildRunButton,
   buildIdString,
 } from './SharedControls'
 
@@ -169,7 +168,7 @@ class PipelineControls extends React.Component {
       const t1_match_obj = this.props.tier_1_matches[scanner_type][scanner_id]
       for (let i=0; i < Object.keys(t1_match_obj['movies']).length; i++) {
         const movie_url = Object.keys(t1_match_obj['movies'])[i]
-        build_movies[movie_url] = t1_match_obj
+        build_movies[movie_url] = t1_match_obj['movies'][movie_url]
         build_movies['source'][movie_url] = this.props.movies[movie_url]
       }
       extra_data = {movies: build_movies}
