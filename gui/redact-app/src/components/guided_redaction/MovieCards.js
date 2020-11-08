@@ -123,7 +123,7 @@ class MovieCard extends React.Component {
         overflow: 'scroll',
       }
       return_arr.push(
-        <div style={div_style}>
+        <div style={div_style} key='a8283'>
         <input
             className='movie_card_nickname'
             key='1922'

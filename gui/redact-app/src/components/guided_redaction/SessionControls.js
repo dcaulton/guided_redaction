@@ -396,6 +396,10 @@ class SessionControls extends React.Component {
     if (this.props.visibilityFlags['selection_grower']) {
       show_selection_grower_checked = 'checked'
     }
+    let show_import_export_checked = ''
+    if (this.props.visibilityFlags['import_export']) {
+      show_import_export_checked = 'checked'
+    }
     let show_movie_sets_checked = ''
     if (this.props.visibilityFlags['movieSets']) {
       show_movie_sets_checked = 'checked'
@@ -505,6 +509,16 @@ class SessionControls extends React.Component {
             onChange={() => this.props.toggleShowVisibility('selection_grower')}
           />
           Show Selection Grower
+        </div>
+
+        <div className='row mt-3 bg-light rounded'>
+          <input
+            className='ml-2 mr-2 mt-1'
+            checked={show_import_export_checked}
+            type='checkbox'
+            onChange={() => this.props.toggleShowVisibility('import_export')}
+          />
+          Show Import / Export
         </div>
 
         <div className='row mt-3 bg-light rounded'>

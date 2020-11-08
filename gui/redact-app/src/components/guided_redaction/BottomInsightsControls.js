@@ -15,6 +15,7 @@ import MeshMatchControls from './MeshMatchControls'
 import SelectionGrowerControls from './SelectionGrowerControls'
 import TelemetryControls from './TelemetryControls'
 import OcrSceneAnalysisControls from './OcrSceneAnalysisControls'
+import ImportExportControls from './ImportExportControls'
 
 class BottomInsightsControls extends React.Component {
 
@@ -414,6 +415,16 @@ class BottomInsightsControls extends React.Component {
           submitInsightsJob={this.props.submitInsightsJob}
           buildMovieMetadata={this.buildMovieMetadata}
           dispatchFetchSplitAndHash={this.props.dispatchFetchSplitAndHash}
+        />
+
+        <ImportExportControls
+          visibilityFlags={this.props.visibilityFlags}
+          toggleShowVisibility={this.props.toggleShowVisibility}
+          displayInsightsMessage={this.props.displayInsightsMessage}
+          submitInsightsJob={this.props.submitInsightsJob}
+          jobs={this.props.jobs}
+          pipelines={this.props.pipelines}
+          movies={this.props.movies}
         />
 
         <SessionControls
