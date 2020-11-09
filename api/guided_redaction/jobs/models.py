@@ -21,10 +21,12 @@ class Job(models.Model):
     operation = models.CharField(max_length=255)
     sequence = models.IntegerField()
     percent_complete = models.FloatField(default=0)
-    request_data = models.BinaryField(max_length=4000000000, null=True)
+    request_data = models.TextField(null=True)
     request_data_path = models.CharField(max_length=255, null=True)
-    response_data = models.BinaryField(max_length=4000000000, null=True)
+    request_data_checksum= models.CharField(max_length=255, null=True)
+    response_data = models.TextField(null=True)
     response_data_path = models.CharField(max_length=255, null=True)
+    response_data_checksum= models.CharField(max_length=255, null=True)
     parent = models.ForeignKey(
         'Job', on_delete=models.CASCADE, null=True, related_name="children"
     )
@@ -55,18 +57,13 @@ class Job(models.Model):
             print('saving job response data to disk, its big')
             directory = self.get_current_directory('response')
             self.response_data_path = self.save_data_to_disk(self.response_data, directory, 'response')
-            self.response_data = b'{}'
+            self.response_data = '{}'
 
         if self.request_data and len(self.request_data) > self.MAX_DB_PAYLOAD_SIZE:
             print('saving job request data to disk, its big')
             directory = self.get_current_directory('request')
             self.request_data_path = self.save_data_to_disk(self.request_data, directory, 'request')
-            self.request_data = b'{}'
-
-        if type(self.request_data) == str:
-            self.request_data = bytes(self.request_data, encoding='utf8')
-        if type(self.response_data) == str:
-            self.response_data = bytes(self.response_data, encoding='utf8')
+            self.request_data = '{}'
 
         super(Job, self).save(*args, **kwargs)
 
