@@ -4,7 +4,6 @@ import random
 import time
 import uuid
 from django.conf import settings
-from guided_redaction.utils.classes.FileWriter import FileWriter
 import json
 import os
 from fuzzywuzzy import fuzz

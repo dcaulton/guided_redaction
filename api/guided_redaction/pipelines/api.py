@@ -48,21 +48,7 @@ class PipelinesViewSet(viewsets.ViewSet):
 
     def retrieve(self, request, pk):
         pipeline = Pipeline.objects.get(pk=pk)
-        build_attributes = {}
-        if Attribute.objects.filter(pipeline=pipeline).exists():
-            attributes = Attribute.objects.filter(pipeline=pipeline)
-            for attribute in attributes:
-                build_attributes[attribute.name] = attribute.value
-        p_data = {
-            'id': pipeline.id,
-            'name': pipeline.name,
-            'description': pipeline.description,
-            'created_on': pipeline.created_on,
-            'updated_on': pipeline.updated_on,
-            'attributes': build_attributes,
-            'content': pipeline.content,
-        }
-        return Response({"pipeline": p_data})
+        return Response({"pipeline": pipeline.as_dict()})
 
     def create(self, request):
         request_content = request.data.get('content')

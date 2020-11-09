@@ -9,6 +9,9 @@ import requests
 from rest_framework.response import Response
 from base import viewsets
 from guided_redaction.utils.classes.FileWriter import FileWriter
+from zipfile import ZipFile
+from guided_redaction.jobs.models import Job
+from guided_redaction.pipelines.models import Pipeline
 
 
 class FilesViewSet(viewsets.ViewSet):
@@ -65,15 +68,68 @@ class FilesViewSetExport(viewsets.ViewSet):
             return self.error("movies is required")
 
         try:
-            download_url = 'fancy'
-            print('look at me steve, Im exporting!')
-#            from secure_files.controller import get_file
-#            build_urls = {}
-#            for recording_id in request_data.get('recording_ids'):
-#                data = get_file(recording_id)
-#                filename = recording_id + '.mp4'
-#                file_url = make_url_from_file(filename, data['content'])
-#                build_urls[file_url] = {}
+            filename = 'export_' + str(uuid.uuid4()) + '.zip'
+            fw = FileWriter(
+                working_dir=settings.REDACT_FILE_STORAGE_DIR,
+                base_url=settings.REDACT_FILE_BASE_URL,
+                image_request_verify_headers=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
+            )
+            workdir_uuid = str(uuid.uuid4())
+            workdir = fw.create_unique_directory(workdir_uuid)
+            file_fullpath = fw.build_file_fullpath_for_uuid_and_filename(workdir_uuid, filename)
+#            fw.write_binary_data_to_filepath(b'hey buddy', file_fullpath)
+
+            self.build_zip_file(fw, file_fullpath, request_data, workdir_uuid)
+
+            download_url = fw.get_url_for_file_path(file_fullpath)
+
+            return Response({"archive_url": download_url})
+        except Exception as e:
+            return self.error(e, status_code=400)
+
+    def build_zip_file(self, fw, output_file_fullpath, request_data, workdir_uuid):
+        print('look at me steve, Im exporting!')
+        build_obj = {}
+
+        build_obj['jobs'] = {}
+        if request_data['job_ids']:
+            for job_id in request_data['job_ids']:
+                job = Job.objects.get(pk=job_id)
+                build_obj['jobs'][job_id] = job.as_dict()
+#        print('barry willy this is the jobs', build_obj)
+
+        build_obj['pipelines'] = {}
+        if request_data['pipeline_ids']:
+            for pipeline_id in request_data['pipeline_ids']:
+                pipeline = Pipeline.objects.get(pk=pipeline_id)
+                build_obj['pipelines'][pipeline_id] = pipeline.as_dict()
+
+        build_obj['movies'] = {}
+        if request_data['movies']:
+            for movie_url in request_data['movies']:
+                build_obj['movies'][movie_url] = request_data['movies'][movie_url]
+
+        json_filename = 'export_' + str(uuid.uuid4()) + '.json'
+        json_file_fullpath = fw.build_file_fullpath_for_uuid_and_filename(workdir_uuid, json_filename)
+        text_data = json.dumps(build_obj)
+        x = fw.write_text_data_to_filepath(text_data, json_file_fullpath)
+        zipObj = ZipFile(output_file_fullpath, 'w')
+        zipObj.write(json_file_fullpath)
+
+        for movie_url in build_obj['movies']:
+            movie = build_obj['movies'][movie_url]
+            movie_url_fullpath = fw.get_file_path_for_url(movie_url)
+            zipObj.write(movie_url_fullpath)
+            if 'frames' in movie:
+                for image_url in movie['frames']:
+                    image_fullpath = fw.get_file_path_for_url(image_url)
+                    zipObj.write(image_fullpath)
+
+        zipObj.close()
+        print('zip written')
+
+        
+
 # export obj:
 #  a zip file with the following files:
 #    scanners.json
@@ -82,10 +138,6 @@ class FilesViewSetExport(viewsets.ViewSet):
 #    jobs.json
 #    pipelines.json
 #    attributes.json
-
-            return Response({"archive_url": download_url})
-        except Exception as e:
-            return self.error(e, status_code=400)
 
 
 class FilesViewSetDownloadSecureFile(viewsets.ViewSet):

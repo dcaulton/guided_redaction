@@ -197,48 +197,6 @@ def dispatch_job(job):
 
 
 class JobsViewSet(viewsets.ViewSet):
-    def pretty_date(self, time=False):
-        """
-        Get a datetime object or a int() Epoch timestamp and return a
-        pretty string like 'an hour ago', 'Yesterday', '3 months ago',
-        'just now', etc
-        """
-        now = datetime.utcnow()
-        now = now.replace(tzinfo=pytz.utc)
-        if type(time) is int:
-            diff = now - datetime.fromtimestamp(time)
-        elif isinstance(time,datetime):
-            diff = now - time
-        elif not time:
-            diff = now - now
-        second_diff = diff.seconds
-        day_diff = diff.days
-
-        if day_diff < 0:
-            return ''
-
-        if day_diff == 0:
-            if second_diff < 10:
-                return "just now"
-            if second_diff < 60:
-                return str(second_diff) + " seconds ago"
-            if second_diff < 120:
-                return "a minute ago"
-            if second_diff < 3600:
-                return str(second_diff // 60) + " minutes ago"
-            if second_diff < 7200:
-                return "an hour ago"
-            if second_diff < 86400:
-                return str(second_diff // 3600) + " hours ago"
-        if day_diff == 1:
-            return "yesterday"
-        if day_diff < 7:
-            return str(day_diff) + " days ago"
-        if day_diff < 31:
-            return str(day_diff // 7) + " weeks ago"
-        if day_diff < 365:
-            return str(day_diff // 30) + " months ago"
-        return str(day_diff // 365) + " years ago"
 
     def partial_update(self, request, pk=None):
         job = Job.objects.get(pk=pk)
@@ -286,7 +244,7 @@ class JobsViewSet(viewsets.ViewSet):
         for job in jobs:
             job_id = str(job.id)
             child_ids = [child.id for child in job.children.order_by('created_on').all()]
-            pretty_time = self.pretty_date(job.created_on)
+            pretty_time = job.pretty_date(job.created_on)
             wall_clock_run_time = str(job.updated - job.created_on)
             owner = owners[job_id] if job_id in owners else ""
             if user_id and owner != user_id:
@@ -337,29 +295,7 @@ class JobsViewSet(viewsets.ViewSet):
 
     def retrieve(self, request, pk):
         job = Job.objects.get(pk=pk)
-        children = Job.objects.filter(parent_id=job.id).order_by('sequence')
-        child_ids = [str(child.id) + ' : ' + child.operation for child in children]
-        pretty_time = self.pretty_date(job.created_on)
-        wall_clock_run_time = str(job.updated - job.created_on)
-
-        job_data = {
-            'id': job.id,
-            'status': job.status,
-            'description': job.description,
-            'created_on': job.created_on,
-            'updated': job.updated,
-            'pretty_created_on': pretty_time,
-            'percent_complete': job.percent_complete,
-            'wall_clock_run_time': wall_clock_run_time,
-            'app': job.app,
-            'operation': job.operation,
-            'workbook_id': job.workbook_id,
-            'parent_id': job.parent_id,
-            'request_data': job.request_data,
-            'response_data': job.response_data,
-            'children': child_ids,
-        }
-
+        job_data = job.as_dict()
         owner = get_job_owner(job)
         attrs = {}
         if Attribute.objects.filter(job=job).exists():
