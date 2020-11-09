@@ -5,6 +5,9 @@ from guided_redaction.files import api
 router = get_router()
 
 router.register(
+    r"v1/files/export", api.FilesViewSetExport, basename="HughJackman"
+)
+router.register(
     r"v1/files/make-url", api.FilesViewSetMakeUrl, basename="JackTorrance"
 )
 router.register(

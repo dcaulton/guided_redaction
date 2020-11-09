@@ -51,6 +51,43 @@ class FilesViewSet(viewsets.ViewSet):
             return self.error(e, status_code=400)
 
 
+class FilesViewSetExport(viewsets.ViewSet):
+    def create(self, request):
+        request_data = request.data
+        return self.process_create_request(request_data)
+
+    def process_create_request(self, request_data):
+        if 'job_ids' not in request_data:
+            return self.error("job_ids is required")
+        if 'pipeline_ids' not in request_data:
+            return self.error("pipeline_ids is required")
+        if 'movies' not in request_data:
+            return self.error("movies is required")
+
+        try:
+            download_url = 'fancy'
+            print('look at me steve, Im exporting!')
+#            from secure_files.controller import get_file
+#            build_urls = {}
+#            for recording_id in request_data.get('recording_ids'):
+#                data = get_file(recording_id)
+#                filename = recording_id + '.mp4'
+#                file_url = make_url_from_file(filename, data['content'])
+#                build_urls[file_url] = {}
+# export obj:
+#  a zip file with the following files:
+#    scanners.json
+#    movies_parsed.json
+#    movies_raw.zip  # a directory structure with source images and movies
+#    jobs.json
+#    pipelines.json
+#    attributes.json
+
+            return Response({"archive_url": download_url})
+        except Exception as e:
+            return self.error(e, status_code=400)
+
+
 class FilesViewSetDownloadSecureFile(viewsets.ViewSet):
     def create(self, request):
         request_data = request.data
