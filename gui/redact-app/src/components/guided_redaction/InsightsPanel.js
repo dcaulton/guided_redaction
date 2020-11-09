@@ -1449,6 +1449,7 @@ class InsightsPanel extends React.Component {
             job_polling_interval_seconds={this.props.job_polling_interval_seconds}
             telemetry_data={this.props.telemetry_data}
             getJobResultData={this.props.getJobResultData}
+            runExportTask={this.props.runExportTask}
           />
         </div>
 

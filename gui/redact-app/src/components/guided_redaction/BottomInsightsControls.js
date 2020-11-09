@@ -425,6 +425,7 @@ class BottomInsightsControls extends React.Component {
           jobs={this.props.jobs}
           pipelines={this.props.pipelines}
           movies={this.props.movies}
+          runExportTask={this.props.runExportTask}
         />
 
         <SessionControls

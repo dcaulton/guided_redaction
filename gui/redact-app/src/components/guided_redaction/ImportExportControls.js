@@ -11,8 +11,10 @@ class ImportExportControls extends React.Component {
       job_ids: [],
       pipeline_ids: [],
       movie_urls: [],
+      archive_url: '',
     }
     this.setLocalStateVar=this.setLocalStateVar.bind(this)
+    this.exportDone=this.exportDone.bind(this)
   }
 
   setLocalStateVar(var_name, var_value, when_done=(()=>{})) {
@@ -165,8 +167,52 @@ class ImportExportControls extends React.Component {
     )
   }
 
+
   startExport() {
-console.log('starting export')
+    let build_movies = {}
+    for (let i=0; i < this.state.movie_urls.length; i++) {
+      const movie_url = this.state.movie_urls[i]
+      build_movies[movie_url] = this.props.movies[movie_url]
+    }
+    const build_obj = {
+      job_ids: this.state.job_ids,
+      pipeline_ids: this.state.pipeline_ids,
+      movies: build_movies,
+    }
+    this.props.runExportTask(
+      build_obj,
+      this.exportDone
+    )
+  }
+  
+  exportDone(responseJson) {
+    this.setLocalStateVar('archive_url', responseJson['archive_url'])
+  }
+
+  buildDownloadArchiveLink() {
+    if (!this.state.archive_url) {
+      return
+    }
+    const div_style = {
+      backgroundColor: '#CFD'
+    }
+    return (
+      <div 
+        style={div_style}
+        className='h5 rounded m-2 p-2'
+      >
+        <div className='d-inline'>
+          your archive is ready, 
+        </div>
+        <div className='d-inline ml-2'>
+          <a
+            href={this.state.archive_url}
+          >
+            Download
+          </a>
+        </div>
+      </div>
+    )
   }
 
   render() {
@@ -183,6 +229,7 @@ console.log('starting export')
     const pipelines_picker = this.buildPipelinesPicker()
     const movies_picker = this.buildMoviesPicker()
     const export_button = this.buildExportButton()
+    const download_archive_link = this.buildDownloadArchiveLink()
     return (
         <div className='row bg-light rounded mt-3'>
           <div className='col'>
@@ -209,6 +256,10 @@ console.log('starting export')
 
                 <div id='row mt-2'>
                   {export_button}
+                </div>
+
+                <div id='row mt-2'>
+                  {download_archive_link}
                 </div>
 
               </div>

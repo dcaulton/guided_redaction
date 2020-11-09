@@ -143,6 +143,7 @@ class RedactApplication extends React.Component {
       },
     }
 
+    this.runExportTask=this.runExportTask.bind(this)
     this.handleMergeFramesets=this.handleMergeFramesets.bind(this)
     this.setImageScale=this.setImageScale.bind(this)
     this.doPing=this.doPing.bind(this)
@@ -582,6 +583,8 @@ class RedactApplication extends React.Component {
       return api_server_url + 'v1/scanners'
     } else if (url_name === 'files_url') {
       return api_server_url + 'v1/files'
+    } else if (url_name === 'export_url') {
+      return api_server_url + 'v1/files/export'
     } else if (url_name === 'pipelines_url') {
       return api_server_url + 'v1/pipelines'
     } else if (url_name === 'attributes_url') {
@@ -918,6 +921,22 @@ class RedactApplication extends React.Component {
     .catch((error) => {
       console.error(error);
     })
+  }
+
+  async runExportTask(export_spec, when_done=(()=>{})) {
+    let response = await fetch(this.getUrl('export_url'), {
+      method: 'POST',
+      headers: this.buildJsonHeaders(),
+      body: JSON.stringify(export_spec),
+    })
+    .then((response) => response.json())
+    .then((responseJson) => {
+      when_done(responseJson)
+    })
+    .catch((error) => {
+      console.error(error)
+    })
+    await response
   }
 
   async saveScannerToDatabase(scanner_type, scanner_obj, when_done=(()=>{})) {
@@ -2294,6 +2313,7 @@ class RedactApplication extends React.Component {
                 dispatchFetchSplitAndHash={this.dispatchFetchSplitAndHash}
                 deleteOldJobs={this.deleteOldJobsWrapper}
                 setActiveWorkflow={this.setActiveWorkflow}
+                runExportTask={this.runExportTask}
                 job_polling_interval_seconds={this.state.job_polling_interval_seconds}
               />
             </Route>
