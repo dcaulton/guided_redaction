@@ -41,7 +41,7 @@ class ImportExportControls extends React.Component {
 
   buildJobsPicker() {
     return (
-      <div className='col'>
+      <div className='col mb-3'>
         <div className='row h5'>
           Jobs
         </div>
@@ -77,7 +77,7 @@ class ImportExportControls extends React.Component {
 
   buildPipelinesPicker() {
     return (
-      <div className='col'>
+      <div className='col mb-3'>
         <div className='row h5'>
           Pipelines
         </div>
@@ -88,10 +88,15 @@ class ImportExportControls extends React.Component {
           if (this.state.pipeline_ids.includes(pipeline_id)) {
             pipeline_checked = 'checked'
           }
+          const the_style = {fontSize: '.8em'}
           return (
-            <div className='row' key={index}>
+            <div 
+              style={the_style}
+              className='row' 
+              key={index}
+            >
 
-              <div className='d-inline'>
+              <div className='d-inline '>
                 <input
                   className='ml-2 mr-2 mt-1'
                   id={pipeline_id}
@@ -114,7 +119,7 @@ class ImportExportControls extends React.Component {
 
   buildMoviesPicker() {
     return (
-      <div className='col'>
+      <div className='col mb-3'>
         <div className='row h5'>
           Movies
         </div>
@@ -188,7 +193,7 @@ console.log('starting export')
                 id='import_export_body' 
                 className='row collapse'
             >
-              <div id='zip_main' className='col pb-2'>
+              <div id='zip_main' className='col'>
 
                 <div id='row mt-2'>
                   {jobs_picker}

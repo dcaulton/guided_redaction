@@ -42,7 +42,7 @@ class RedactApplication extends React.Component {
       bypass_whoami: false,
       jobs: [],
       jobs_last_checked: '',
-      job_polling_interval_seconds: 2,
+      job_polling_interval_seconds: 5,
       scanners: [],
       files: {},
       subsequences: {},
