@@ -453,7 +453,11 @@ class MeshMatchControls extends React.Component {
       return ''
     }
     return buildRunButton(
-      this.props.tier_1_scanners, 'mesh_match', this.props.buildTier1RunOptions, this.props.submitInsightsJob
+      this.props.tier_1_scanners, 
+      'mesh_match', 
+      this.props.buildTier1RunOptions, 
+      this.props.submitInsightsJob,
+      false
     )
   }
 

@@ -1,6 +1,12 @@
 import React from 'react';
 
-export function buildRunButton(tier_1_scanners, scanner_type, buildTier1RunOptions, submitInsightsJob) {
+export function buildRunButton(
+    tier_1_scanners, 
+    scanner_type, 
+    buildTier1RunOptions, 
+    submitInsightsJob, 
+    useFrameMovieMovies=true
+) {
   const tier_1_template_run_options = buildTier1RunOptions('template', scanner_type + '_t1_template')
   const tier_1_selected_area_run_options = buildTier1RunOptions('selected_area', scanner_type + '_t1_selected_area')
   const tier_1_ocr_run_options = buildTier1RunOptions('ocr', scanner_type + '_t1_ocr')
@@ -8,6 +14,28 @@ export function buildRunButton(tier_1_scanners, scanner_type, buildTier1RunOptio
   const tier_1_osa_run_options = buildTier1RunOptions('ocr_scene_analysis', scanner_type + '_t1_osa')
 
   const dropdown_id = 'scan_' + scanner_type + '_DropdownButton'
+  let frame_movie_movies = (
+    <div>
+      <button className='dropdown-item'
+          onClick={() => submitInsightsJob(scanner_type + '_current_frame')}
+      >
+        Frame
+      </button>
+      <button className='dropdown-item'
+          onClick={() => submitInsightsJob(scanner_type + '_current_movie')}
+      >
+        Movie
+      </button>
+      <button className='dropdown-item'
+          onClick={() => submitInsightsJob(scanner_type + '_all_movies')}
+      >
+        All Movies
+      </button>
+    </div>
+  )
+  if (!useFrameMovieMovies) {
+    frame_movie_movies = ''
+  }
   return (
     <div className='d-inline'>
       <button
@@ -21,21 +49,7 @@ export function buildRunButton(tier_1_scanners, scanner_type, buildTier1RunOptio
         Run
       </button>
       <div className='dropdown-menu' aria-labelledby={dropdown_id}>
-        <button className='dropdown-item'
-            onClick={() => submitInsightsJob(scanner_type + '_current_frame')}
-        >
-          Frame
-        </button>
-        <button className='dropdown-item'
-            onClick={() => submitInsightsJob(scanner_type + '_current_movie')}
-        >
-          Movie
-        </button>
-        <button className='dropdown-item'
-            onClick={() => submitInsightsJob(scanner_type + '_all_movies')}
-        >
-          All Movies
-        </button>
+        {frame_movie_movies}
         {tier_1_template_run_options}
         {tier_1_selected_area_run_options}
         {tier_1_ocr_run_options}

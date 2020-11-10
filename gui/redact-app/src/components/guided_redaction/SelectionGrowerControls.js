@@ -3,6 +3,7 @@ import ScannerSearchControls from './ScannerSearchControls'
 import {
   buildAttributesAddRow, 
   buildLabelAndTextInput,
+  buildLabelAndDropdown,
   buildInlinePrimaryButton, 
   buildTier1LoadButton, 
   buildTier1DeleteButton,
@@ -38,6 +39,8 @@ class SelectionGrowerControls extends React.Component {
         west: 0,
       },
       colors: [],
+      capture_grid: false,
+      ocr_job_id: '',
       attribute_search_name: '',
       attribute_search_value: '',
       first_click_coords: [],
@@ -118,6 +121,8 @@ class SelectionGrowerControls extends React.Component {
         directions: sam['directions'],
         offsets: sam['offsets'],
         colors: sam['colors'],
+        capture_grid: sam['capture_grid'],
+        ocr_job_id: sam['ocr_job_id'],
       })
     }
     let deepCopyIds = JSON.parse(JSON.stringify(this.props.tier_1_scanner_current_ids))
@@ -150,6 +155,8 @@ class SelectionGrowerControls extends React.Component {
         west: 0,
       },
       colors: [],
+      capture_grid: false,
+      ocr_job_id: '',
     })
   }
 
@@ -162,6 +169,8 @@ class SelectionGrowerControls extends React.Component {
       directions: this.state.directions,
       offsets: this.state.offsets,
       colors: this.state.colors,
+      capture_grid: this.state.capture_grid,
+      ocr_job_id: this.state.ocr_job_id,
     }
     return meta
   }
@@ -237,6 +246,28 @@ class SelectionGrowerControls extends React.Component {
     )
   }
 
+  buildCaptureGridField() {
+    let checked_val = ''
+    if (this.state.capture_grid) {
+      checked_val = 'checked'
+    }
+    return (
+      <div>
+        <div className='d-inline'>
+          <input 
+            className='mr-2'
+            checked={checked_val}
+            type='checkbox'
+            onChange={() => this.setLocalStateVar('capture_grid', !this.state.capture_grid)}
+          />
+        </div>
+        <div className='d-inline'>
+          Capture Grid
+        </div>
+      </div>
+    )
+  }
+
   setOffset(direction, value) {
     let deepCopyOffs = JSON.parse(JSON.stringify(this.state.offsets))
     deepCopyOffs[direction] = value
@@ -271,6 +302,28 @@ class SelectionGrowerControls extends React.Component {
           )
         })}
       </div>
+    )
+  }
+
+  buildOcrJobIdField() {
+    let ocr_jobs = []
+    for (let i=0; i < this.props.jobs.length; i++) {
+      const job = this.props.jobs[i]
+      if (job['operation'] != 'scan_ocr_threaded') {
+        continue
+      }
+      const display_label = job['id'] + ':' + job['description']
+      const td = {}
+      td[job['id']] = display_label
+      ocr_jobs.push(td)
+    }
+
+    return buildLabelAndDropdown(
+      ocr_jobs,
+      'Ocr Job Id',
+      this.state.ocr_job_id,
+      'ocr_job_id',
+      ((value)=>{this.setLocalStateVar('ocr_job_id', value)})
     )
   }
 
@@ -331,7 +384,11 @@ class SelectionGrowerControls extends React.Component {
       return ''
     }
     return buildRunButton(
-      this.props.tier_1_scanners, 'selection_grower', this.props.buildTier1RunOptions, this.props.submitInsightsJob
+      this.props.tier_1_scanners, 
+      'selection_grower', 
+      this.props.buildTier1RunOptions, 
+      this.props.submitInsightsJob,
+      false
     )
   }
 
@@ -492,6 +549,8 @@ class SelectionGrowerControls extends React.Component {
     const directions_field = this.buildDirectionsField()
     const offsets_field = this.buildOffsetsField()
     const colors_field = this.buildColorsField()
+    const capture_grid_field = this.buildCaptureGridField()
+    const ocr_id_field = this.buildOcrJobIdField()
     const add_color_centers_button = this.buildAddColorCentersButton()
     const header_row = makeHeaderRow(
       'selection grower',
@@ -537,6 +596,14 @@ class SelectionGrowerControls extends React.Component {
 
                 <div className='row mt-2'>
                   {offsets_field}
+                </div>
+
+                <div className='row mt-2'>
+                  {capture_grid_field}
+                </div>
+
+                <div className='row mt-2'>
+                  {ocr_id_field}
                 </div>
 
                 <div className='row mt-2'>
