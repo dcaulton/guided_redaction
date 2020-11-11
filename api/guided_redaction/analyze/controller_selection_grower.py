@@ -37,11 +37,17 @@ class SelectionGrowerController(T1Controller):
         statistics['movies'][movie_url] = {'framesets': {}}
         for frameset_hash in ordered_hashes:
             image_url = source_movies[movie_url]['framesets'][frameset_hash]['images'][0]
-            if self.debug:
-                image_name = image_url.split('/')[-1]
-                pstr = 'selection grower trying image {} with mr hash {}'
-                print(pstr.format(image_name, most_recent_t1_frameset_hash))
-            cv2_image = self.get_cv2_image(image_url)
+            if frameset_hash in movies[movie_url]['framesets']:
+                if self.debug:
+                    image_name = image_url.split('/')[-1]
+                    pstr = 'selection grower trying image {} with mr hash {}'
+                    print(pstr.format(image_name, most_recent_t1_frameset_hash))
+                cv2_image = self.get_cv2_image(image_url)
+                t1_match_data = movies[movie_url]['framesets'][frameset_hash]
+                grown_selection, stats = grower.grow_selection(t1_match_data, cv2_image)
+                if grown_selection:
+                    response_movies[movie_url]['framesets'][frameset_hash] = grown_selection
+                statistics['movies'][movie_url]['framesets'][frameset_hash] = stats
         return response_movies, statistics
 
     def get_cv2_image(self, image_url):

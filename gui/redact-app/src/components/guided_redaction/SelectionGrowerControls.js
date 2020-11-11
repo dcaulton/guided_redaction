@@ -307,6 +307,7 @@ class SelectionGrowerControls extends React.Component {
 
   buildOcrJobIdField() {
     let ocr_jobs = []
+    ocr_jobs.push({'': ''})
     for (let i=0; i < this.props.jobs.length; i++) {
       const job = this.props.jobs[i]
       if (job['operation'] !== 'scan_ocr_threaded') {
