@@ -309,7 +309,7 @@ class SelectionGrowerControls extends React.Component {
     let ocr_jobs = []
     for (let i=0; i < this.props.jobs.length; i++) {
       const job = this.props.jobs[i]
-      if (job['operation'] != 'scan_ocr_threaded') {
+      if (job['operation'] !== 'scan_ocr_threaded') {
         continue
       }
       const display_label = job['id'] + ':' + job['description']

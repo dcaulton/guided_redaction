@@ -12,6 +12,7 @@ class ImportExportControls extends React.Component {
       pipeline_ids: [],
       movie_urls: [],
       archive_url: '',
+      include_child_jobs: true,
     }
     this.setLocalStateVar=this.setLocalStateVar.bind(this)
     this.exportDone=this.exportDone.bind(this)
@@ -42,10 +43,29 @@ class ImportExportControls extends React.Component {
 
 
   buildJobsPicker() {
+    let include_child_jobs_checked = ''
+    if (this.state.include_child_jobs) {
+      include_child_jobs_checked = 'checked'
+    }
     return (
       <div className='col mb-3'>
-        <div className='row h5'>
-          Jobs
+        <div className='row h5 border-top'>
+          <div className='col'>
+            Jobs
+          </div>
+        </div>
+        <div className='row border-bottom'>
+          <div className='d-inline'>
+            <input
+              className='ml-2 mr-2 mt-1'
+              checked={include_child_jobs_checked}
+              type='checkbox'
+              onChange={() => this.setLocalStateVar('include_child_jobs', !this.state.include_child_jobs)}
+            />
+          </div>
+          <div className='d-inline'>
+            include all child jobs
+          </div>
         </div>
         {this.props.jobs.map((job, index) => {
           const disp_name = job.id + ' - ' + job.operation
@@ -178,6 +198,7 @@ class ImportExportControls extends React.Component {
       job_ids: this.state.job_ids,
       pipeline_ids: this.state.pipeline_ids,
       movies: build_movies,
+      include_child_jobs: this.state.include_child_jobs,
     }
     this.props.runExportTask(
       build_obj,

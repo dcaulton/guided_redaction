@@ -66,6 +66,8 @@ class FilesViewSetExport(viewsets.ViewSet):
             return self.error("pipeline_ids is required")
         if 'movies' not in request_data:
             return self.error("movies is required")
+        if 'include_child_jobs' not in request_data:
+            return self.error("include_child_jobs is required")
 
         try:
             filename = 'export_' + str(uuid.uuid4()) + '.zip'
@@ -77,9 +79,8 @@ class FilesViewSetExport(viewsets.ViewSet):
             workdir_uuid = str(uuid.uuid4())
             workdir = fw.create_unique_directory(workdir_uuid)
             file_fullpath = fw.build_file_fullpath_for_uuid_and_filename(workdir_uuid, filename)
-#            fw.write_binary_data_to_filepath(b'hey buddy', file_fullpath)
 
-            self.build_zip_file(fw, file_fullpath, request_data, workdir_uuid)
+            self.build_zip_file(fw, file_fullpath, request_data, workdir_uuid, request_data['include_child_jobs'])
 
             download_url = fw.get_url_for_file_path(file_fullpath)
 
@@ -87,7 +88,16 @@ class FilesViewSetExport(viewsets.ViewSet):
         except Exception as e:
             return self.error(e, status_code=400)
 
-    def build_zip_file(self, fw, output_file_fullpath, request_data, workdir_uuid):
+    def add_job_to_dict(self, job, build_dict, include_child_jobs):
+        if job.id not in build_dict:
+            print('adding job {}'.format(job.id))
+            build_dict[str(job.id)] = job.as_dict()
+            if include_child_jobs:
+                children = Job.objects.filter(parent=job)
+                for child in children:
+                    self.add_job_to_dict(child, build_dict, include_child_jobs)
+
+    def build_zip_file(self, fw, output_file_fullpath, request_data, workdir_uuid, include_child_jobs):
         print('look at me steve, Im exporting!')
         build_obj = {}
 
@@ -95,8 +105,7 @@ class FilesViewSetExport(viewsets.ViewSet):
         if request_data['job_ids']:
             for job_id in request_data['job_ids']:
                 job = Job.objects.get(pk=job_id)
-                build_obj['jobs'][job_id] = job.as_dict()
-#        print('barry willy this is the jobs', build_obj)
+                self.add_job_to_dict(job, build_obj['jobs'], include_child_jobs)
 
         build_obj['pipelines'] = {}
         if request_data['pipeline_ids']:
