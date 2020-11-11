@@ -98,40 +98,41 @@ class FilesViewSetExport(viewsets.ViewSet):
 
     def build_zip_file(self, fw, output_file_fullpath, request_data, workdir_uuid):
         print('starting export')
-        build_obj = {}
+        build_obj = {
+            'jobs': {},
+            'tier_1_scanners': {},
+            'movies': {},
+            'pipelines': {},
+        }
         zipObj = ZipFile(output_file_fullpath, 'w')
 
-        build_obj['jobs'] = {}
-        build_obj['tier_1_scanners'] = {}
         if request_data['job_ids']:
             for job_id in request_data['job_ids']:
                 job = Job.objects.get(pk=job_id)
                 self.add_job_to_dict(
                     job, 
-                    build_obj['jobs'], 
-                    build_obj['tier_1_scanners'], 
-                    request_data['include_child_jobs']
+                    build_obj,
+                    zipObj, 
+                    request_data,
+                    fw
                 )
 
-        build_obj['pipelines'] = {}
         if request_data['pipeline_ids']:
             for pipeline_id in request_data['pipeline_ids']:
                 pipeline = Pipeline.objects.get(pk=pipeline_id)
                 self.add_pipeline_to_dict(
                     pipeline, 
-                    build_obj['pipelines'], 
-                    build_obj['tier_1_scanners']
+                    build_obj
                 )
 
-        build_obj['movies'] = {}
         if request_data['movies']:
             for movie_url in request_data['movies']:
                 self.add_movie_to_dict_and_zip(
                     movie_url, 
                     request_data['movies'][movie_url], 
-                    build_obj['movies'], 
+                    build_obj, 
                     zipObj, 
-                    request_data['include_child_movie_frames'],
+                    request_data,
                     fw
                 )
 
@@ -144,49 +145,77 @@ class FilesViewSetExport(viewsets.ViewSet):
         zipObj.close()
         print('zip written')
 
-    def add_job_to_dict(self, job, build_dict, build_scanners, include_child_jobs):
-        if job.id not in build_dict:
-            print('adding job {}'.format(job.id))
-            build_dict[str(job.id)] = job.as_dict()
-            if job.request_data:
-                rd = json.loads(job.request_data)
-                if 'tier_1_scanners' in rd:
-                    for scanner_type in rd['tier_1_scanners']:
-                        for scanner_id in rd['tier_1_scanners'][scanner_type]:
-                            print('adding {} scanner {}'.format(scanner_type, scanner_id))
-                            if scanner_type not in build_scanners:
-                                build_scanners[scanner_type] = {}
-                            build_scanners[scanner_type][scanner_id] = \
-                                rd['tier_1_scanners'][scanner_type][scanner_id]
+    def add_job_to_dict(self, job, build_dict, zipObj, request_data, fw):
+        if job.id in build_dict['jobs']:
+            return
+        print('adding job {}'.format(job.id))
+        build_dict['jobs'][str(job.id)] = job.as_dict()
+        if job.request_data:
+            reqd = json.loads(job.request_data)
+            if 'tier_1_scanners' in reqd:
+                for scanner_type in reqd['tier_1_scanners']:
+                    for scanner_id in reqd['tier_1_scanners'][scanner_type]:
+                        print('adding {} scanner {}'.format(scanner_type, scanner_id))
+                        if scanner_type not in build_dict['tier_1_scanners']:
+                            build_dict['tier_1_scanners'][scanner_type] = {}
+                        build_dict['tier_1_scanners'][scanner_type][scanner_id] = \
+                            reqd['tier_1_scanners'][scanner_type][scanner_id]
+            if 'movies' in reqd:
+                for movie_url in reqd['movies']:
+                    if movie_url == 'source':
+                        for source_movie_url in reqd['movies']['source']:
+                            self.add_movie_to_dict_and_zip(
+                                source_movie_url, 
+                                reqd['movies']['source'][source_movie_url]
+                                build_obj, 
+                                zipObj, 
+                                request_data,
+                                fw
+                            )
+                        continue
+                    movie = reqd['movies'][movie_url]
+                    if 'frames' in movie and movie['frames']:
+                        self.add_movie_to_dict_and_zip(
+                            movie_url, 
+                            movie,
+                            build_obj, 
+                            zipObj, 
+                            request_data,
+                            fw
+                        )
+        if request_data['include_child_jobs']:
+            children = Job.objects.filter(parent=job)
+            for child in children:
+                self.add_job_to_dict(child, build_dict, request_data)
 
-            if include_child_jobs:
-                children = Job.objects.filter(parent=job)
-                for child in children:
-                    self.add_job_to_dict(child, build_dict, include_child_jobs)
-
-    def add_movie_to_dict_and_zip(self, movie_url, movie, build_dict, zipObj, include_child_movie_frames, fw):
-        build_dict[movie_url] = movie
+    def add_movie_to_dict_and_zip(self, movie_url, movie, build_dict, zipObj, request_data, fw):
+        if movie_url in build_dict['movies']:
+            return
+        build_dict['movies'][movie_url] = movie
         movie_url_fullpath = fw.get_file_path_for_url(movie_url)
         print('adding movie file {}'.format(movie_url))
         zipObj.write(movie_url_fullpath)
-        if 'frames' in movie and include_child_movie_frames:
+        if 'frames' in movie and request_data['include_child_movie_frames']:
             for image_url in movie['frames']:
                 image_fullpath = fw.get_file_path_for_url(image_url)
                 print('adding image file {}'.format(image_url))
                 zipObj.write(image_fullpath)
 
-    def add_pipeline_to_dict(self, pipeline, build_pipeline_dict, build_t1_scanners_dict):
+    def add_pipeline_to_dict(self, pipeline, build_dict):
         print('adding pipeline {}'.format(pipeline.id))
-        build_pipeline_dict[str(pipeline.id)] = pipeline.as_dict()
+        build_dict['pipelines'][str(pipeline.id)] = pipeline.as_dict()
         if pipeline.content:
             content = json.loads(pipeline.content)
             for scanner_type in content['node_metadata']['tier_1_scanners']:
                 for scanner_id in content['node_metadata']['tier_1_scanners'][scanner_type]:
-                    if scanner_type not in build_t1_scanners_dict:
-                        build_t1_scanners_dict[scanner_type] = {}
+                    if scanner_type not in build_dict['tier_1_scanners']:
+                        build_dict['tier_1_scanners'][scanner_type] = {}
                     scanner = content['node_metadata']['tier_1_scanners'][scanner_type][scanner_id]
                     print('adding {} {}'.format(scanner_type, scanner_id))
-                    build_t1_scanners_dict[scanner_type][scanner_id] = scanner
+                    build_dict['tier_1_scanners'][scanner_type][scanner_id] = scanner
+            for node in content['node_metadata']['node']:
+                if node['type'] == 'pipeline':
+                    print('we have a pipeline to export')
 
 
 class FilesViewSetDownloadSecureFile(viewsets.ViewSet):
