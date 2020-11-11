@@ -40,7 +40,7 @@ class SelectionGrowerControls extends React.Component {
       },
       colors: [],
       capture_grid: false,
-      ocr_job_id: '',
+      ocr_match_id: '',
       attribute_search_name: '',
       attribute_search_value: '',
       first_click_coords: [],
@@ -122,7 +122,7 @@ class SelectionGrowerControls extends React.Component {
         offsets: sam['offsets'],
         colors: sam['colors'],
         capture_grid: sam['capture_grid'],
-        ocr_job_id: sam['ocr_job_id'],
+        ocr_match_id: sam['ocr_match_id'],
       })
     }
     let deepCopyIds = JSON.parse(JSON.stringify(this.props.tier_1_scanner_current_ids))
@@ -156,7 +156,7 @@ class SelectionGrowerControls extends React.Component {
       },
       colors: [],
       capture_grid: false,
-      ocr_job_id: '',
+      ocr_match_id: '',
     })
   }
 
@@ -170,7 +170,7 @@ class SelectionGrowerControls extends React.Component {
       offsets: this.state.offsets,
       colors: this.state.colors,
       capture_grid: this.state.capture_grid,
-      ocr_job_id: this.state.ocr_job_id,
+      ocr_match_id: this.state.ocr_match_id,
     }
     return meta
   }
@@ -305,26 +305,24 @@ class SelectionGrowerControls extends React.Component {
     )
   }
 
-  buildOcrJobIdField() {
-    let ocr_jobs = []
-    ocr_jobs.push({'': ''})
-    for (let i=0; i < this.props.jobs.length; i++) {
-      const job = this.props.jobs[i]
-      if (job['operation'] !== 'scan_ocr_threaded') {
-        continue
-      }
-      const display_label = job['id'] + ':' + job['description']
+  buildOcrMatchIdField() {
+    let ocr_matches = []
+    ocr_matches.push({'': ''})
+    for (let i=0; i < Object.keys(this.props.tier_1_matches['ocr']).length; i++) {
+      const match_id = Object.keys(this.props.tier_1_matches['ocr'])[i]
+      const ocr_rule = this.props.tier_1_scanners['ocr']
+      const display_label = match_id + ':' + ocr_rule['name']
       const td = {}
-      td[job['id']] = display_label
-      ocr_jobs.push(td)
+      td[match_id] = display_label
+      ocr_matches.push(td)
     }
 
     return buildLabelAndDropdown(
-      ocr_jobs,
-      'Ocr Job Id',
-      this.state.ocr_job_id,
-      'ocr_job_id',
-      ((value)=>{this.setLocalStateVar('ocr_job_id', value)})
+      ocr_matches,
+      'Ocr Match Id',
+      this.state.ocr_match_id,
+      'ocr_match_id',
+      ((value)=>{this.setLocalStateVar('ocr_match_id', value)})
     )
   }
 
@@ -551,7 +549,7 @@ class SelectionGrowerControls extends React.Component {
     const offsets_field = this.buildOffsetsField()
     const colors_field = this.buildColorsField()
     const capture_grid_field = this.buildCaptureGridField()
-    const ocr_id_field = this.buildOcrJobIdField()
+    const ocr_id_field = this.buildOcrMatchIdField()
     const add_color_centers_button = this.buildAddColorCentersButton()
     const header_row = makeHeaderRow(
       'selection grower',
