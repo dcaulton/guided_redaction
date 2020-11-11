@@ -13,6 +13,7 @@ class ImportExportControls extends React.Component {
       movie_urls: [],
       archive_url: '',
       include_child_jobs: true,
+      include_child_movie_frames: true,
     }
     this.setLocalStateVar=this.setLocalStateVar.bind(this)
     this.exportDone=this.exportDone.bind(this)
@@ -47,11 +48,33 @@ class ImportExportControls extends React.Component {
     if (this.state.include_child_jobs) {
       include_child_jobs_checked = 'checked'
     }
+    let include_child_movie_frames_checked = ''
+    if (this.state.include_child_movie_frames) {
+      include_child_movie_frames_checked = 'checked'
+    }
     return (
       <div className='col mb-3'>
         <div className='row h5 border-top'>
           <div className='col'>
             Jobs
+          </div>
+        </div>
+        <div className='row'>
+          <div className='d-inline'>
+            <input
+              className='ml-2 mr-2 mt-1'
+              checked={include_child_movie_frames_checked}
+              type='checkbox'
+              onChange={
+                () => this.setLocalStateVar(
+                  'include_child_movie_frames', 
+                  !this.state.include_child_movie_frames
+                )
+              }
+            />
+          </div>
+          <div className='d-inline'>
+            include all child movie frames
           </div>
         </div>
         <div className='row border-bottom'>
@@ -199,6 +222,7 @@ class ImportExportControls extends React.Component {
       pipeline_ids: this.state.pipeline_ids,
       movies: build_movies,
       include_child_jobs: this.state.include_child_jobs,
+      include_child_movie_frames: this.state.include_child_movie_frames,
     }
     this.props.runExportTask(
       build_obj,
