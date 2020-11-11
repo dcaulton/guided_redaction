@@ -215,7 +215,8 @@ class FilesViewSetExport(viewsets.ViewSet):
                     scanner = content['node_metadata']['tier_1_scanners'][scanner_type][scanner_id]
                     print('adding {} {}'.format(scanner_type, scanner_id))
                     build_dict['tier_1_scanners'][scanner_type][scanner_id] = scanner
-            for node in content['node_metadata']['node']:
+            for node_id in content['node_metadata']['node']:
+                node = content['node_metadata']['node'][node_id]
                 if node['type'] == 'pipeline':
                     print('we have a pipeline to export')
 
