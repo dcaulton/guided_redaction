@@ -155,9 +155,11 @@ class FilesViewSetExport(viewsets.ViewSet):
             if 'tier_1_scanners' in reqd:
                 for scanner_type in reqd['tier_1_scanners']:
                     for scanner_id in reqd['tier_1_scanners'][scanner_type]:
-                        print('adding {} scanner {}'.format(scanner_type, scanner_id))
                         if scanner_type not in build_dict['tier_1_scanners']:
                             build_dict['tier_1_scanners'][scanner_type] = {}
+                        if scanner_id in build_dict['tier_1_scanners'][scanner_type]:
+                            continue
+                        print('adding {} scanner {}'.format(scanner_type, scanner_id))
                         build_dict['tier_1_scanners'][scanner_type][scanner_id] = \
                             reqd['tier_1_scanners'][scanner_type][scanner_id]
             if 'movies' in reqd:
@@ -166,7 +168,7 @@ class FilesViewSetExport(viewsets.ViewSet):
                         for source_movie_url in reqd['movies']['source']:
                             self.add_movie_to_dict_and_zip(
                                 source_movie_url, 
-                                reqd['movies']['source'][source_movie_url]
+                                reqd['movies']['source'][source_movie_url],
                                 build_obj, 
                                 zipObj, 
                                 request_data,
@@ -178,7 +180,7 @@ class FilesViewSetExport(viewsets.ViewSet):
                         self.add_movie_to_dict_and_zip(
                             movie_url, 
                             movie,
-                            build_obj, 
+                            build_dict, 
                             zipObj, 
                             request_data,
                             fw
@@ -186,7 +188,7 @@ class FilesViewSetExport(viewsets.ViewSet):
         if request_data['include_child_jobs']:
             children = Job.objects.filter(parent=job)
             for child in children:
-                self.add_job_to_dict(child, build_dict, request_data)
+                self.add_job_to_dict(child, build_dict, zipObj, request_data, fw)
 
     def add_movie_to_dict_and_zip(self, movie_url, movie, build_dict, zipObj, request_data, fw):
         if movie_url in build_dict['movies']:
