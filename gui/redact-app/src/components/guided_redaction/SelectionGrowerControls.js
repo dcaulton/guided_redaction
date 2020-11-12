@@ -216,7 +216,7 @@ class SelectionGrowerControls extends React.Component {
   }
 
   buildDirectionsField() {
-    const directions = ['north', 'south', 'east', 'west']
+    const directions = ['south', 'west']
     return (
       <div>
         <div className='h5'>
