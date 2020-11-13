@@ -97,6 +97,7 @@ class ResultsControls extends React.Component {
             <option value='selected_area_chart'>selected area chart</option>
             <option value='ocr_match_chart'>ocr match chart</option>
             <option value='ocr_scene_analysis_chart'>ocr scene analysis chart</option>
+            <option value='selection_grower_chart'>selection grower chart</option>
           </select>
         </div>
       </div>
@@ -121,6 +122,9 @@ class ResultsControls extends React.Component {
         eligible_jobs.push(job)
       } else if (this.state.type === 'selected_area_chart' && 
           job['operation'] === 'selected_area_threaded') {
+        eligible_jobs.push(job)
+      } else if (this.state.type === 'selection_grower_chart' && 
+          job['operation'] === 'selection_grower_threaded') {
         eligible_jobs.push(job)
       }
     }

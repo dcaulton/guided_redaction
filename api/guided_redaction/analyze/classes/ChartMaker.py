@@ -14,6 +14,17 @@ class ChartMaker:
         self.file_writer = file_writer
         self.verify_file_url = verify_file_url
 
+    def get_cv2_image(self, image_url):
+        cv2_image = None
+        image = requests.get(
+          image_url,
+          verify=self.verify_file_url,
+        ).content
+        if image:
+            nparr = np.fromstring(image, np.uint8)
+            cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        return cv2_image
+
     def make_charts(self):
         if self.chart_info['chart_type'] == 'template_match':
             return self.make_template_match_charts()
@@ -23,6 +34,8 @@ class ChartMaker:
             return self.make_selected_area_charts()
         elif self.chart_info['chart_type'] == 'ocr_scene_analysis_match':
             return self.make_ocr_scene_analysis_charts()
+        elif self.chart_info['chart_type'] == 'selection_grower':
+            return self.make_selection_grower_charts()
         raise Exception('unrecognized chart type')
 
     def get_frameset_hash_for_image(self, movie, image_url):
@@ -156,6 +169,89 @@ class ChartMaker:
             movies[movie_url] = [plot_url]
         return movies
 
+    def make_selection_grower_charts(self):
+        build_chart_data = {}
+        chart_storage_uuid = str(uuid.uuid4())
+        self.file_writer.create_unique_directory(chart_storage_uuid)
+        for job_id in self.job_data:
+            job_req_data = self.job_data[job_id]['request_data']
+            job_resp_data = self.job_data[job_id]['response_data']
+            stats = job_resp_data['statistics']
+            for movie_url in stats['movies']:
+                if movie_url not in job_req_data['movies']['source']:
+                    print('expected to find source, cant make a movie for {}'.format(movie_url))
+                    continue
+                source_movie = job_req_data['movies']['source'][movie_url]
+                build_chart_data[movie_url] = {'framesets': {}}
+                stats_framesets = stats['movies'][movie_url]['framesets']
+                if not stats_framesets: 
+                    continue
+                for frameset_hash in stats_framesets:
+                    build_chart_data[movie_url]['framesets'][frameset_hash] = {}
+                    if 'grid_capture' in stats_framesets[frameset_hash]:
+                        for direction in stats_framesets[frameset_hash]['grid_capture']:
+                            if 'friends' in stats_framesets[frameset_hash]['grid_capture'][direction]:
+                                print('bollywood')
+                                self.make_friends_graph(
+                                    stats_framesets[frameset_hash]['grid_capture'][direction]['friends'],
+                                    source_movie['framesets'][frameset_hash]['images'][0],
+                                    movie_url,
+                                    build_chart_data[movie_url]['framesets'][frameset_hash],
+                                    frameset_hash,
+                                    chart_storage_uuid
+                                )
+        return build_chart_data
+
+    def make_friends_graph(
+        self, 
+        friends_list, 
+        image_url, 
+        movie_url, 
+        build_data_this_frameset, 
+        frameset_hash, 
+        chart_storage_uuid
+    ):
+        movie_name = movie_url.split('/')[-1]
+        movie_uuid = movie_name.split('.')[0]
+        cv2_image = self.get_cv2_image(image_url)
+
+        for friend_coords in friends_list:
+            start_coords = tuple(friend_coords[0])
+            end_coords = (
+                friend_coords[1][0],
+                friend_coords[0][1]
+            )
+            cv2.circle(
+                cv2_image,
+                start_coords,
+                5,
+                (0, 0, 255),
+                2
+            )
+            cv2.circle(
+                cv2_image,
+                end_coords,
+                5,
+                (0, 0, 255),
+                2
+            )
+
+        cv2.putText(
+            cv2_image,
+            "Friends for "+frameset_hash,
+            (200, 50),
+            cv2.FONT_HERSHEY_SIMPLEX, #font
+            1, #fontScale,
+            (0,0,255), #fontColor,
+            3 #lineType
+        )
+        file_fullpath = self.file_writer.build_file_fullpath_for_uuid_and_filename(
+            chart_storage_uuid, 
+            'friends_' + movie_uuid + '_' + frameset_hash + '.png')
+        cv2.imwrite(file_fullpath, cv2_image)  
+        plot_url = self.file_writer.get_url_for_file_path(file_fullpath)
+        build_data_this_frameset['friends_chart'] = plot_url
+
     def make_ocr_scene_analysis_charts(self):
         build_chart_data = {}
         for job_id in self.job_data:
@@ -171,16 +267,16 @@ class ChartMaker:
                 stats_framesets = stats['movies'][movie_url]['framesets']
                 if not stats_framesets: 
                     continue
-                for frameset_hash in stats['movies'][movie_url]['framesets']:
+                for frameset_hash in stats_framesets:
                     frameset_image = job_req_data['movies'][movie_url]['framesets'][frameset_hash]['images'][0]
-                    frame_dimensions = stats['movies'][movie_url]['framesets'][frameset_hash]['frame_dimensions']
+                    frame_dimensions = stats_framesets[frameset_hash]['frame_dimensions']
                     build_chart_data[movie_url][frameset_hash] = {}
                     app_hits_for_hash = {}
                     if movie_url in job_resp_data['movies'] and \
                             frameset_hash in job_resp_data['movies'][movie_url]['framesets']:
                         app_hits_for_hash = job_resp_data['movies'][movie_url]['framesets'][frameset_hash]
-                    ordered_rtas = stats['movies'][movie_url]['framesets'][frameset_hash]['ordered_rtas']
-                    rta_scores = stats['movies'][movie_url]['framesets'][frameset_hash]['rta_scores']
+                    ordered_rtas = stats_framesets[frameset_hash]['ordered_rtas']
+                    rta_scores = stats_framesets[frameset_hash]['rta_scores']
                     for app_name in rta_scores: 
                         app_info = {}
                         matched_score = 0

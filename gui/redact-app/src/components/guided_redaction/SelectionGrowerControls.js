@@ -41,6 +41,7 @@ class SelectionGrowerControls extends React.Component {
       colors: [],
       capture_grid: false,
       ocr_match_id: '',
+      debug: false,
       attribute_search_name: '',
       attribute_search_value: '',
       first_click_coords: [],
@@ -123,6 +124,7 @@ class SelectionGrowerControls extends React.Component {
         colors: sam['colors'],
         capture_grid: sam['capture_grid'],
         ocr_match_id: sam['ocr_match_id'],
+        debug: sam['debug'],
       })
     }
     let deepCopyIds = JSON.parse(JSON.stringify(this.props.tier_1_scanner_current_ids))
@@ -157,6 +159,7 @@ class SelectionGrowerControls extends React.Component {
       colors: [],
       capture_grid: false,
       ocr_match_id: '',
+      debug: false,
     })
   }
 
@@ -171,6 +174,7 @@ class SelectionGrowerControls extends React.Component {
       colors: this.state.colors,
       capture_grid: this.state.capture_grid,
       ocr_match_id: this.state.ocr_match_id,
+      debug: this.state.debug,
     }
     return meta
   }
@@ -213,6 +217,28 @@ class SelectionGrowerControls extends React.Component {
     let deepCopyDirs = JSON.parse(JSON.stringify(this.state.directions))
     deepCopyDirs[direction_name] = new_value
     this.setLocalStateVar('directions', deepCopyDirs)
+  }
+
+  buildDebugField() {
+    let checked_value = ''
+    if (this.state.debug) {
+      checked_value = 'checked'
+    }
+    return (
+      <div>
+        <div className='d-inline'>
+          <input
+            className='ml-2 mr-2 mt-1'
+            checked={checked_value}
+            type='checkbox'
+            onChange={() => this.setLocalStateVar('debug', !this.state.debug)}
+          />
+        </div>
+        <div className='d-inline'>
+          Debug
+        </div>
+      </div>
+    )
   }
 
   buildDirectionsField() {
@@ -546,6 +572,7 @@ class SelectionGrowerControls extends React.Component {
     const save_to_db_button = this.buildSaveToDatabaseButton()
     const clear_matches_button = this.buildClearMatchesButton2()
     const directions_field = this.buildDirectionsField()
+    const debug_field = this.buildDebugField()
     const offsets_field = this.buildOffsetsField()
     const colors_field = this.buildColorsField()
     const capture_grid_field = this.buildCaptureGridField()
@@ -607,6 +634,10 @@ class SelectionGrowerControls extends React.Component {
 
                 <div className='row mt-2'>
                   {colors_field}
+                </div>
+
+                <div className='row mt-2'>
+                  {debug_field}
                 </div>
 
                 <div className='row mt-1 mr-1 ml-1 border-top'>

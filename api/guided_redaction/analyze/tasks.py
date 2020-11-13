@@ -896,6 +896,10 @@ def template_match_chart(job_uuid):
     generic_chart(job_uuid, 'template_match')
 
 @shared_task
+def selection_grower_chart(job_uuid):
+    generic_chart(job_uuid, 'selection_grower')
+
+@shared_task
 def ocr_match_chart(job_uuid):
     generic_chart(job_uuid, 'ocr_match')
 

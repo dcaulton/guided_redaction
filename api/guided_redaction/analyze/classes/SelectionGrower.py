@@ -11,7 +11,7 @@ class SelectionGrower:
 
     def __init__(self, sg_meta):
         self.selection_grower_meta = sg_meta
-        self.debug = True
+        self.debug = self.selection_grower_meta['debug']
         self.alignment_tolerance = 10
         self.hist_grid_size = 10
         self.row_column_threshold = 4
@@ -29,36 +29,27 @@ class SelectionGrower:
                 ocr_match_objs[match_key] = tier_1_match_data[match_key]
 
         if self.selection_grower_meta['capture_grid'] and ocr_match_objs:
-            grid_results = self.capture_grid(selected_area, ocr_match_objs, cv2_image)
+            grid_results, grid_stats = self.capture_grid(selected_area, ocr_match_objs, cv2_image)
             if grid_results:
                 for gr_key in grid_results:
                     match_obj[gr_key] = grid_results[gr_key]
+            if grid_stats:
+                match_stats['grid_capture'] = grid_stats
 
         return match_obj, match_stats
 
     def capture_grid(self, selected_area, ocr_match_objs, cv2_image):
         new_areas = {}
+        statistics = {}
         for growth_direction in ['south', 'west']:
             if not self.selection_grower_meta['directions'][growth_direction]:
                 continue
+            statistics[growth_direction] = {}
             growth_roi = self.build_roi(growth_direction, selected_area, cv2_image)
-            if self.debug:
-                print('roi zone is {} {}'.format(growth_roi['start'], growth_roi['end']))
+            statistics[growth_direction]['roi'] = growth_roi
             ocr_matches_in_zone = self.filter_by_region(ocr_match_objs, growth_roi)
-            if self.debug:
-                print('{} ocr matches in this direction are {}'.format(len(ocr_match_objs), len(ocr_matches_in_zone)))
             ocr_matches_on_grid = self.find_points_on_grid(ocr_matches_in_zone)
-            if self.debug:
-                print('limiting by friends brings ocr matches down to {}'.format(len(ocr_matches_on_grid)))
-            # TODO save friend matches and detected rows/cols to statistics
-            if self.debug:
-                self.print_matches_image(
-                    ocr_matches_on_grid, 
-                    cv2_image, 
-                    'friends_' + str(uuid.uuid4()), 
-                    (60, 60, 250) ,
-                    'OCR hits with Friends'
-                )
+            self.save_friends(ocr_matches_on_grid, statistics, growth_direction)
             hist_x, hist_y = self.build_position_histograms(ocr_matches_on_grid)
             grid_x_values = []
             grid_y_values = []
@@ -71,15 +62,28 @@ class SelectionGrower:
                     y_pos = index * self.hist_grid_size
                     grid_y_values.append(y_pos)
             first_y, last_y = self.gather_clustered_y_rows(grid_y_values)
-            if self.debug:
-                print('x captured grid values are {}'.format(grid_x_values))
-                print('y captured grid values are {}'.format(grid_y_values))
+            statistics[growth_direction]['x_captured_grid_values'] = grid_x_values
+            statistics[growth_direction]['y_captured_grid_values'] = grid_y_values
+            statistics[growth_direction]['x_hist'] = hist_x.tolist()
+            statistics[growth_direction]['y_hist'] = hist_y.tolist()
             if grid_x_values and last_y - first_y:
-                print('x range is {} to {}'.format(grid_x_values[0], grid_x_values[-1]))
-                print('y range is {} to {}'.format(first_y, last_y))
                 new_area = self.build_new_area(growth_direction, selected_area, grid_x_values, first_y, last_y)
                 new_areas[new_area['id']] = new_area
-        return new_areas
+        return new_areas, statistics
+
+    def save_friends(self, ocr_matches_on_grid, statistics, growth_direction):
+        for match_id in ocr_matches_on_grid:
+            if 'friends' not in statistics[growth_direction]:
+                statistics[growth_direction]['friends'] = []
+            match_obj = ocr_matches_on_grid[match_id]
+            build_obj = (
+                match_obj['location'],
+                (
+                    match_obj['location'][0] + match_obj['size'][0],
+                    match_obj['location'][1] + match_obj['size'][1]
+                )
+            )
+            statistics[growth_direction]['friends'].append(build_obj)
 
     def build_new_area(self, growth_direction, selected_area, grid_x_values, first_y, last_y):
         if growth_direction == 'south': 
@@ -138,14 +142,10 @@ class SelectionGrower:
         num_x_bins = math.ceil(max(x_vals) / self.hist_grid_size)
         x_bins_list = list(range(0, self.hist_grid_size*(num_x_bins + 1), self.hist_grid_size))
         x_hist, bin_edges = np.histogram(x_vals, x_bins_list)
-#        print('minchie ')
-#        print(x_hist)
         y_vals = [ocr_matches[key]['location'][1] for key in ocr_matches]
         num_y_bins = math.ceil(max(y_vals) / self.hist_grid_size)
         y_bins_list = list(range(0, self.hist_grid_size*(num_y_bins + 1), self.hist_grid_size))
         y_hist, bin_edges = np.histogram(y_vals, y_bins_list)
-#        print('poochy ')
-#        print(y_hist)
         if self.debug:
             plt.hist(x_vals, bins=num_x_bins+1)
             plt.title("x Histogram")
@@ -154,29 +154,6 @@ class SelectionGrower:
             plt.title("y Histogram")
             plt.savefig('/Users/dcaulton/Desktop/y_hist.png')
         return x_hist, y_hist
-
-    def print_matches_image(self, matches, cv2_image, filename, color, title):
-        copy = cv2_image.copy()
-        for match_key in matches:
-            match_obj = matches[match_key]
-            cv2.circle(
-                copy, 
-                tuple(match_obj['location']), 
-                5,
-                color,
-                2
-            )
-
-        cv2.putText(
-            copy,
-            title,
-            (200, 50),
-            cv2.FONT_HERSHEY_SIMPLEX, #font
-            1, #fontScale,
-            (0,0,255), #fontColor,
-            3 #lineType
-        )
-        cv2.imwrite('/Users/dcaulton/Desktop/' + filename + '.png', copy)
 
     def find_points_on_grid(self, ocr_matches_in_zone):
         build_obj = {}

@@ -146,6 +146,8 @@ def dispatch_job(job):
         analyze_tasks.template_match_chart.delay(job_uuid)
     if job.app == 'analyze' and job.operation == 'ocr_match_chart':
         analyze_tasks.ocr_match_chart.delay(job_uuid)
+    if job.app == 'analyze' and job.operation == 'selection_grower_chart':
+        analyze_tasks.selection_grower_chart.delay(job_uuid)
     if job.app == 'analyze' and job.operation == 'selected_area_threaded':
         analyze_tasks.selected_area_threaded.delay(job_uuid)
     if job.app == 'analyze' and job.operation == 'mesh_match_threaded':
