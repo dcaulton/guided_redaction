@@ -18,6 +18,7 @@ class CanvasInsightsOverlay extends React.Component {
     this.template_match_color = '#3F3'
     this.selected_area_color = '#2B9'
     this.mesh_match_color = '#C93'
+    this.selection_grower_fill_color = '#A83'
     this.selected_area_center_color = '#9F3'
     this.ocr_color = '#CC0'
     this.area_to_redact_color = '#D6D'
@@ -68,6 +69,10 @@ class CanvasInsightsOverlay extends React.Component {
         this.selected_area_maximum_zone_color
       )
     }
+  }
+
+  drawSelectionGrowerZones() {
+    this.drawTier1Matches('selection_grower', this.selection_grower_fill_color, this.red_color) 
   }
 
   drawMeshMatchMinimumZones() {
@@ -444,6 +449,7 @@ class CanvasInsightsOverlay extends React.Component {
     this.drawOsaMatches()
     this.drawPipelineMatches()
     this.drawAreasToRedact()
+    this.drawSelectionGrowerZones()
   }
 
   componentDidUpdate() {
@@ -468,6 +474,7 @@ class CanvasInsightsOverlay extends React.Component {
     this.drawOsaMatches()
     this.drawPipelineMatches()
     this.drawAreasToRedact()
+    this.drawSelectionGrowerZones()
   }
 
   render() {

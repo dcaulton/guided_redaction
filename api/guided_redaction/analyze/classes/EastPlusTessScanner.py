@@ -53,9 +53,12 @@ class EastPlusTessScanner(EastScanner):
                 "id": "rta_" + str(uuid.uuid4()),
                 "start": upper_left,
                 "end": lower_right,
+                "location": upper_left,
+                "size": (w, h),
                 "text": text,
                 "centroid": centroid,
                 "source": "ocr: east+tess",
+                "scanner_type": "ocr",
             }
             text_regions.append(recognized_text_area)
 

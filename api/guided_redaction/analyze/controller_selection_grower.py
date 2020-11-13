@@ -5,6 +5,9 @@ import requests
 from .controller_t1 import T1Controller
 
 from guided_redaction.analyze.classes.SelectionGrower import SelectionGrower
+from guided_redaction.analyze.classes.EastPlusTessGuidedAnalyzer import (
+    EastPlusTessGuidedAnalyzer,
+)
 
 requests.packages.urllib3.disable_warnings()
 
@@ -43,11 +46,30 @@ class SelectionGrowerController(T1Controller):
                     print('selection grower trying image {}'.format(image_name))
                 cv2_image = self.get_cv2_image(image_url)
                 t1_match_data = movies[movie_url]['framesets'][frameset_hash]
+                if not self.match_data_contains_ocr(t1_match_data):
+                    self.add_ocr_to_match_data(t1_match_data, cv2_image)
                 grown_selection, stats = grower.grow_selection(t1_match_data, cv2_image)
                 if grown_selection:
                     response_movies[movie_url]['framesets'][frameset_hash] = grown_selection
                 statistics['movies'][movie_url]['framesets'][frameset_hash] = stats
         return response_movies, statistics
+
+    def match_data_contains_ocr(self, t1_match_data):
+        for match_key in t1_match_data:
+            if t1_match_data[match_key]['scanner_type'] == 'ocr':
+                return True
+        return False
+
+    def add_ocr_to_match_data(self, t1_match_data, cv2_image):
+        analyzer = EastPlusTessGuidedAnalyzer()
+        start = (0, 0)
+        end = (cv2_image.shape[1], cv2_image.shape[0])
+        raw_rtas = analyzer.analyze_text(
+            cv2_image,
+            [start, end]
+        )
+        for rta in raw_rtas:
+            t1_match_data[rta['id']] = rta
 
     def get_cv2_image(self, image_url):
         cv2_image = None

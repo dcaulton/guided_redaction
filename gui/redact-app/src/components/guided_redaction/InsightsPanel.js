@@ -63,6 +63,7 @@ class InsightsPanel extends React.Component {
     this.setModalImage=this.setModalImage.bind(this)
     this.getCurrentOcrMatches=this.getCurrentOcrMatches.bind(this)
     this.getCurrentPipelineMatches=this.getCurrentPipelineMatches.bind(this)
+    this.getCurrentSelectionGrowerZones=this.getCurrentSelectionGrowerZones.bind(this)
     this.getCurrentAreasToRedact=this.getCurrentAreasToRedact.bind(this)
     this.setScrubberToIndex=this.setScrubberToIndex.bind(this)
     this.getCurrentOcrSceneAnalysisMatches=this.getCurrentOcrSceneAnalysisMatches.bind(this)
@@ -137,6 +138,30 @@ class InsightsPanel extends React.Component {
       const this_pipeline_matches = this.props.tier_1_matches['pipeline'][this.props.tier_1_scanner_current_ids['pipeline']]  
       if (Object.keys(this_pipeline_matches['movies']).includes(this.props.movie_url)) {
         const this_movies_matches = this_pipeline_matches['movies'][this.props.movie_url]
+        const frameset_hash = this.props.getFramesetHashForImageUrl(this.state.insights_image)
+        if (Object.keys(this_movies_matches['framesets']).includes(frameset_hash)) {
+          const this_framesets_matches = this_movies_matches['framesets'][frameset_hash]
+          if (Object.keys(this_framesets_matches).length) {
+            let return_arr = []
+            for (let i=0; i < Object.keys(this_framesets_matches).length; i++) {
+              const ocr_hit_key = Object.keys(this_framesets_matches)[i]
+              const ocr_hit_record = this_framesets_matches[ocr_hit_key]
+              return_arr.push(ocr_hit_record)
+            }
+            return return_arr
+          }
+        }
+      }
+    }
+    return []
+  }
+
+  getCurrentSelectionGrowerZones() {
+    const sg_id = this.props.tier_1_scanner_current_ids['selection_grower']
+    if (Object.keys(this.props.tier_1_matches['selection_grower']).includes(sg_id)) {
+      const matches = this.props.tier_1_matches['selection_grower'][sg_id]  
+      if (Object.keys(matches['movies']).includes(this.props.movie_url)) {
+        const this_movies_matches = matches['movies'][this.props.movie_url]
         const frameset_hash = this.props.getFramesetHashForImageUrl(this.state.insights_image)
         if (Object.keys(this_movies_matches['framesets']).includes(frameset_hash)) {
           const this_framesets_matches = this_movies_matches['framesets'][frameset_hash]
@@ -1398,6 +1423,7 @@ class InsightsPanel extends React.Component {
               getCurrentMeshMatchOriginLocation={(()=>this.runCallbackFunction('getCurrentMeshMatchOriginLocation'))}
               getCurrentOcrSceneAnalysisMatches={this.getCurrentOcrSceneAnalysisMatches}
               getCurrentPipelineMatches={this.getCurrentPipelineMatches}
+              getCurrentSelectionGrowerZones={this.getCurrentSelectionGrowerZones}
             />
           </div>
 

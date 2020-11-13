@@ -1,4 +1,5 @@
 import cv2
+import uuid
 import matplotlib.pyplot as plt
 import random
 import math
@@ -27,7 +28,7 @@ class SelectionGrower:
             else:
                 ocr_match_objs[match_key] = tier_1_match_data[match_key]
 
-        if self.selection_grower_meta['capture_grid']:
+        if self.selection_grower_meta['capture_grid'] and ocr_match_objs:
             grid_results = self.capture_grid(selected_area, ocr_match_objs, cv2_image)
             if grid_results:
                 for gr_key in grid_results:
@@ -51,7 +52,13 @@ class SelectionGrower:
                 print('limiting by friends brings ocr matches down to {}'.format(len(ocr_matches_on_grid)))
             # TODO save friend matches and detected rows/cols to statistics
             if self.debug:
-                self.print_friend_matches(ocr_matches_on_grid, cv2_image)
+                self.print_matches_image(
+                    ocr_matches_on_grid, 
+                    cv2_image, 
+                    'friends_' + str(uuid.uuid4()), 
+                    (60, 60, 250) ,
+                    'OCR hits with Friends'
+                )
             hist_x, hist_y = self.build_position_histograms(ocr_matches_on_grid)
             grid_x_values = []
             grid_y_values = []
@@ -117,6 +124,7 @@ class SelectionGrower:
                 max_count = step_value['count']
                 max_y_position = step_value['first_location']
                 max_value = step_value_key
+        print('bazinga {} {} {} '.format(max_count, max_y_position, max_value))
         first_y = max_y_position
         last_y = max_y_position + ((max_count+1) * max_value)
         return first_y, last_y
@@ -147,18 +155,28 @@ class SelectionGrower:
             plt.savefig('/Users/dcaulton/Desktop/y_hist.png')
         return x_hist, y_hist
 
-    def print_friend_matches(self, matches, cv2_image):
+    def print_matches_image(self, matches, cv2_image, filename, color, title):
         copy = cv2_image.copy()
         for match_key in matches:
             match_obj = matches[match_key]
             cv2.circle(
                 copy, 
                 tuple(match_obj['location']), 
-                20,
-                (60, 60, 250), 
+                5,
+                color,
                 2
             )
-        cv2.imwrite('/Users/dcaulton/Desktop/bingo.png', copy)
+
+        cv2.putText(
+            copy,
+            title,
+            (200, 50),
+            cv2.FONT_HERSHEY_SIMPLEX, #font
+            1, #fontScale,
+            (0,0,255), #fontColor,
+            3 #lineType
+        )
+        cv2.imwrite('/Users/dcaulton/Desktop/' + filename + '.png', copy)
 
     def find_points_on_grid(self, ocr_matches_in_zone):
         build_obj = {}

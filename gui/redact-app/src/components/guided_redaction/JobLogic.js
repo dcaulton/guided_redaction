@@ -478,6 +478,20 @@ class JobLogic extends React.Component {
     )
   }
 
+  static loadSelectionGrowerResults(
+    job, 
+    when_done, 
+    setGlobalStateVar, 
+    getGlobalStateVar
+  ) {
+    this.loadScannersMoviesAndMatchesFromTier1(
+      job, 
+      'selection_grower',
+      setGlobalStateVar, 
+      getGlobalStateVar
+    )
+  }
+
   static loadT1PipelineResults(
     job, 
     when_done, 
@@ -968,6 +982,13 @@ class JobLogic extends React.Component {
         )
 			} else if (job.app === 'analyze' && job.operation === 'mesh_match_threaded') {
         this.loadMeshMatchResults(
+          job, 
+          when_done, 
+          setGlobalStateVar, 
+          getGlobalStateVar
+        )
+			} else if (job.app === 'analyze' && job.operation === 'selection_grower_threaded') {
+        this.loadSelectionGrowerResults(
           job, 
           when_done, 
           setGlobalStateVar, 
