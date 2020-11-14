@@ -87,18 +87,20 @@ class SelectionGrower:
 
     def build_new_area(self, growth_direction, selected_area, grid_x_values, first_y, last_y):
         if growth_direction == 'south': 
-            sa_end_y = selected_area['location'][1] + selected_area['size'][1]
+            start_y_value = first_y
+            if first_y > selected_area['location'][1] + selected_area['size'][1]:
+                start_y_value = selected_area['location'][1] + selected_area['size'][1]
             new_area = {
                 'scanner_type': 'selection_grower',
                 'id': 'selection_grower_' + str(random.randint(1, 999999999)),
                 'scale': 1,
                 'location': [
                     grid_x_values[0],
-                    sa_end_y
+                    start_y_value
                 ],
                 'size': [
-                    grid_x_values[-1],
-                    last_y
+                    grid_x_values[-1] - grid_x_values[0],
+                    last_y - start_y_value,
                 ],
             }
             return new_area
@@ -118,7 +120,6 @@ class SelectionGrower:
                 # TODO if there is a hit at one 'diff' above, that is we want contiguous
                 step_values[diff]['count'] += 1
             prev_val = val
-        print('missy', step_values)
         max_count = 0
         max_value = 0
         max_y_position = 0
@@ -128,7 +129,6 @@ class SelectionGrower:
                 max_count = step_value['count']
                 max_y_position = step_value['first_location']
                 max_value = step_value_key
-        print('bazinga {} {} {} '.format(max_count, max_y_position, max_value))
         first_y = max_y_position
         last_y = max_y_position + ((max_count+1) * max_value)
         return first_y, last_y
@@ -146,13 +146,13 @@ class SelectionGrower:
         num_y_bins = math.ceil(max(y_vals) / self.hist_grid_size)
         y_bins_list = list(range(0, self.hist_grid_size*(num_y_bins + 1), self.hist_grid_size))
         y_hist, bin_edges = np.histogram(y_vals, y_bins_list)
-        if self.debug:
-            plt.hist(x_vals, bins=num_x_bins+1)
-            plt.title("x Histogram")
-            plt.savefig('/Users/dcaulton/Desktop/x_hist.png')
-            plt.hist(y_vals, bins=num_y_bins+1)
-            plt.title("y Histogram")
-            plt.savefig('/Users/dcaulton/Desktop/y_hist.png')
+#        if self.debug:
+#            plt.hist(x_vals, bins=num_x_bins+1)
+#            plt.title("x Histogram")
+#            plt.savefig('/Users/dcaulton/Desktop/x_hist.png')
+#            plt.hist(y_vals, bins=num_y_bins+1)
+#            plt.title("y Histogram")
+#            plt.savefig('/Users/dcaulton/Desktop/y_hist.png')
         return x_hist, y_hist
 
     def find_points_on_grid(self, ocr_matches_in_zone):
