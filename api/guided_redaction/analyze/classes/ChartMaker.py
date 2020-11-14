@@ -191,9 +191,11 @@ class ChartMaker:
                     if 'grid_capture' in stats_framesets[frameset_hash]:
                         for direction in stats_framesets[frameset_hash]['grid_capture']:
                             if 'friends' in stats_framesets[frameset_hash]['grid_capture'][direction]:
-                                print('bollywood')
-                                self.make_friends_graph(
+                                self.make_grid_capture_graph(
                                     stats_framesets[frameset_hash]['grid_capture'][direction]['friends'],
+                                    stats_framesets[frameset_hash]['grid_capture'][direction]['x_captured_grid_values'],
+                                    stats_framesets[frameset_hash]['grid_capture'][direction]['y_captured_grid_values'],
+                                    stats_framesets[frameset_hash]['grid_capture'][direction]['roi'],
                                     source_movie['framesets'][frameset_hash]['images'][0],
                                     movie_url,
                                     build_chart_data[movie_url]['framesets'][frameset_hash],
@@ -202,9 +204,12 @@ class ChartMaker:
                                 )
         return build_chart_data
 
-    def make_friends_graph(
+    def make_grid_capture_graph(
         self, 
         friends_list, 
+        x_grid_values,
+        y_grid_values,
+        roi,
         image_url, 
         movie_url, 
         build_data_this_frameset, 
@@ -213,6 +218,7 @@ class ChartMaker:
     ):
         movie_name = movie_url.split('/')[-1]
         movie_uuid = movie_name.split('.')[0]
+        image_name = image_url.split('/')[-1]
         cv2_image = self.get_cv2_image(image_url)
 
         for friend_coords in friends_list:
@@ -238,19 +244,65 @@ class ChartMaker:
 
         cv2.putText(
             cv2_image,
-            "Friends for "+frameset_hash,
+            "Grid Capture for mov " + movie_uuid,
             (200, 50),
             cv2.FONT_HERSHEY_SIMPLEX, #font
             1, #fontScale,
             (0,0,255), #fontColor,
             3 #lineType
         )
+        cv2.putText(
+            cv2_image,
+            " frame " +frameset_hash +' / ' + image_name,
+            (230, 80),
+            cv2.FONT_HERSHEY_SIMPLEX, #font
+            1, #fontScale,
+            (0,0,255), #fontColor,
+            3 #lineType
+        )
+
+        for x_value in x_grid_values:
+            start = (x_value, 0)
+            end = (x_value, cv2_image.shape[0])
+            cv2.line(cv2_image, start, end, (44, 255, 170), 2)
+
+        for y_value in y_grid_values:
+            start = (0, y_value)
+            end = (cv2_image.shape[1], y_value)
+            cv2.line(cv2_image, start, end, (184, 255, 70), 2)
+
+        sub_img = cv2_image[
+            roi['start'][1]: roi['end'][1],
+            roi['start'][0]: roi['end'][0]
+        ]
+        blue_rect = sub_img.copy()
+        cv2.rectangle(
+            blue_rect,
+            (0, 0),
+            (blue_rect.shape[1], blue_rect.shape[0]),
+            (200, 200, 255),
+            -1
+        )
+
+        res = cv2.addWeighted(
+            sub_img, 
+            0.5, 
+            blue_rect, 
+            0.5, 
+            1.0
+        )
+
+        cv2_image[
+            roi['start'][1]: roi['end'][1],
+            roi['start'][0]: roi['end'][0]
+        ] = res
+
         file_fullpath = self.file_writer.build_file_fullpath_for_uuid_and_filename(
             chart_storage_uuid, 
-            'friends_' + movie_uuid + '_' + frameset_hash + '.png')
+            'grid_capture_' + movie_uuid + '_' + frameset_hash + '.png')
         cv2.imwrite(file_fullpath, cv2_image)  
         plot_url = self.file_writer.get_url_for_file_path(file_fullpath)
-        build_data_this_frameset['friends_chart'] = plot_url
+        build_data_this_frameset['grid_capture_chart'] = plot_url
 
     def make_ocr_scene_analysis_charts(self):
         build_chart_data = {}
