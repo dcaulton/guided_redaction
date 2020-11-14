@@ -321,17 +321,6 @@ class ResultsControls extends React.Component {
     )
   }
 
-  buildShowChartInModalLink(chart_url) {
-    return (
-      <button
-        className='border-0 text-primary'
-        onClick={() => this.props.setModalImage(chart_url)}
-      >
-        show
-      </button>
-    )
-  }
-
   buildFramesetChartsForMovie(movie_url) {
     if (!Object.keys(this.props.results['movies'][movie_url]).includes('framesets')) {
       return
@@ -357,15 +346,11 @@ class ResultsControls extends React.Component {
                 frameset {frameset_hash}
               </div>
               {charts.map((chart_url, chart_index) => {
-                const show_in_modal_link = this.buildShowChartInModalLink(chart_url)
                 const img_id = this.getIdFromChartUrl(chart_url)
                 return (
                   <div
                     key={chart_index}
                   >
-                    <div>
-                      {show_in_modal_link}
-                    </div>
                     <img
                         key={chart_index}
                         id={img_id}

@@ -958,12 +958,14 @@ class JobLogic extends React.Component {
         )
 			} else if ((job.app === 'analyze' && job.operation === 'template_match_chart')  ||
           (job.app === 'analyze' && job.operation === 'selected_area_chart') ||
-          (job.app === 'analyze' && job.operation === 'selection_grower_chart') ||
           (job.app === 'analyze' && job.operation === 'ocr_match_chart')) {
         this.loadGetMovieMatchChartResults(
           job, when_done, setGlobalStateVar, getGlobalStateVar
         )
-			} else if (job.app === 'analyze' && job.operation === 'ocr_scene_analysis_chart') {
+			} else if (
+        (job.app === 'analyze' && job.operation === 'ocr_scene_analysis_chart') ||
+        (job.app === 'analyze' && job.operation === 'selection_grower_chart')
+      ) {
         this.loadGetFramesetMatchChartResults(
           job, when_done, setGlobalStateVar, getGlobalStateVar
         )

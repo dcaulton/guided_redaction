@@ -302,7 +302,9 @@ class ChartMaker:
             'grid_capture_' + movie_uuid + '_' + frameset_hash + '.png')
         cv2.imwrite(file_fullpath, cv2_image)  
         plot_url = self.file_writer.get_url_for_file_path(file_fullpath)
-        build_data_this_frameset['grid_capture_chart'] = plot_url
+        if 'charts' not in build_data_this_frameset:
+            build_data_this_frameset['charts'] = []
+        build_data_this_frameset['charts'].append(plot_url)
 
     def make_ocr_scene_analysis_charts(self):
         build_chart_data = {}
