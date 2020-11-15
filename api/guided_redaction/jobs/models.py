@@ -36,7 +36,7 @@ class Job(models.Model):
     )
 
     MIN_PERCENT_COMPLETE_INCREMENT = .05
-    MAX_DB_PAYLOAD_SIZE = 5000000  # 10MB
+    MAX_DB_PAYLOAD_SIZE = 5000000  
 
     def __str__(self):
         disp_hash = {
@@ -55,7 +55,7 @@ class Job(models.Model):
             self.percent_complete = percent_complete
 
         if self.response_data and len(self.response_data) > self.MAX_DB_PAYLOAD_SIZE:
-            checksum = hashlib.md5(self.response_data).hexdigest()
+            checksum = hashlib.md5(self.response_data.encode('utf-8')).hexdigest()
             if self.response_data_checksum != checksum:
                 print('saving job response data to disk, its {} bytes'.format(len(self.response_data)))
                 self.response_data_checksum = checksum
@@ -65,7 +65,7 @@ class Job(models.Model):
                 self.response_data = '{}'
 
         if self.request_data and len(self.request_data) > self.MAX_DB_PAYLOAD_SIZE:
-            checksum = hashlib.md5(self.request_data).hexdigest()
+            checksum = hashlib.md5(self.request_data.encode('utf-8')).hexdigest()
             if self.request_data_checksum != checksum:
                 self.request_data_checksum = checksum
                 print('saving job request data to disk, its {} bytes'.format(len(self.request_data)))
@@ -73,7 +73,6 @@ class Job(models.Model):
                 self.request_data_path = self.save_data_to_disk(self.request_data, directory, 'request')
                 self.request_data = '{}'
 
-        print('tammy', self.as_dict())
         super(Job, self).save(*args, **kwargs)
 
         if self.parent:

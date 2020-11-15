@@ -120,7 +120,6 @@ class ChartMaker:
                     #for debugging, remove when mask offset problem is fixed
                     movie_name = movie_url.split('/')[-1]
                     movie_uuid = movie_name.split('.')[0]
-#                    cv2.imwrite('/Users/dcaulton/Desktop/junk/frameset_'+movie_uuid+'__'+frameset_hash+'_debug.png', mask)
 
         charts = self.make_selected_area_charts_from_build_data(build_chart_data)
         return charts
@@ -295,8 +294,8 @@ class ChartMaker:
     def draw_roi(self, cv2_image, roi):
         if roi:
             sub_img = cv2_image[
-                int(roi['start'][1]): int(roi['end'][1]),
-                int(roi['start'][0]): int(roi['end'][0])
+                int(roi['location'][1]): int(roi['location'][1]) + int(roi['size'][1]),
+                int(roi['location'][0]): int(roi['location'][0]) + int(roi['size'][0])
             ]
             blue_rect = sub_img.copy()
             cv2.rectangle(
@@ -316,8 +315,8 @@ class ChartMaker:
             )
 
             cv2_image[
-                int(roi['start'][1]): int(roi['end'][1]),
-                int(roi['start'][0]): int(roi['end'][0])
+                int(roi['location'][1]): int(roi['location'][1]) + int(roi['size'][1]),
+                int(roi['location'][0]): int(roi['location'][0]) + int(roi['size'][0])
             ] = res
 
     def draw_grid_lines(self, cv2_image, x_grid_values, y_grid_values, x_hist, y_hist):
@@ -342,14 +341,6 @@ class ChartMaker:
             end = (cv2_image.shape[1], y_value)
             cv2.line(copy, start, end, (184, 255, 70), thickness)
         return copy 
-
-#        cv2_image = cv2.addWeighted(
-#            copy, 
-#            0.5, 
-#            cv2_image, 
-#            0.5, 
-#            1.0
-#        )
 
     def make_ocr_scene_analysis_charts(self):
         build_chart_data = {}

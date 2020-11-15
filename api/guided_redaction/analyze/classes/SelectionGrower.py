@@ -46,7 +46,6 @@ class SelectionGrower:
                 continue
             statistics[growth_direction] = {}
             growth_roi = self.build_roi(growth_direction, selected_area, cv2_image)
-            statistics[growth_direction]['roi'] = growth_roi
             ocr_matches_in_zone = self.filter_by_region(ocr_match_objs, growth_roi)
             ocr_matches_on_grid = self.find_points_on_grid(ocr_matches_in_zone)
             self.save_friends(ocr_matches_on_grid, statistics, growth_direction)
@@ -69,6 +68,7 @@ class SelectionGrower:
             if grid_x_values and last_y - first_y:
                 new_area = self.build_new_area(growth_direction, selected_area, grid_x_values, first_y, last_y)
                 new_areas[new_area['id']] = new_area
+                statistics[growth_direction]['roi'] = new_area
         return new_areas, statistics
 
     def save_friends(self, ocr_matches_on_grid, statistics, growth_direction):
