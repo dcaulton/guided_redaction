@@ -1343,6 +1343,12 @@ class InsightsPanel extends React.Component {
       width: this.props.image_width,
       height: this.props.image_height,
     }
+    let the_message = this.props.message
+    let message_style = {}
+    if (!the_message || the_message == '.') {
+      the_message = '.'
+      message_style['color'] = 'white'
+    }
     return (
     <div className='container'>
       <div id='insights_panel' className='row mt-5'>
@@ -1381,8 +1387,8 @@ class InsightsPanel extends React.Component {
               <div className='row' id='insights_title'>
                 {this.state.insights_title}
               </div>
-              <div className='row' id='message'>
-                {this.props.message}
+              <div className='row' id='message' style={message_style}>
+                {the_message}
               </div>
             </div>
           </div>

@@ -95,6 +95,8 @@ class FileWriter():
         return 0
 
     def get_text_data_from_filepath(self, file_fullpath):
+        if not os.path.exists(file_fullpath):
+            return ''
         fh = open(file_fullpath, 'r')
         text_data = fh.read()
         fh.close()
