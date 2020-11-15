@@ -158,9 +158,10 @@ def build_and_dispatch_generic_batched_threaded_children(
                 child_task.delay(job.id)
 
 def build_and_dispatch_generic_threaded_children(parent_job, scanner_type, operation, child_task, finish_func):
+    request_data = json.loads(parent_job.request_data)
     parent_job.status = 'running'
     parent_job.save()
-    request_data = json.loads(parent_job.request_data)
+
     scanner_metas = request_data['tier_1_scanners'][scanner_type]
     movies = request_data['movies']
 

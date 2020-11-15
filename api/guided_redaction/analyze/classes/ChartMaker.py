@@ -1,4 +1,5 @@
 import numpy as np
+import math
 import cv2
 import random
 import requests
@@ -196,6 +197,8 @@ class ChartMaker:
                                     stats_framesets[frameset_hash]['grid_capture'][direction]['x_captured_grid_values'],
                                     stats_framesets[frameset_hash]['grid_capture'][direction]['y_captured_grid_values'],
                                     stats_framesets[frameset_hash]['grid_capture'][direction]['roi'],
+                                    stats_framesets[frameset_hash]['grid_capture'][direction]['x_hist'],
+                                    stats_framesets[frameset_hash]['grid_capture'][direction]['y_hist'],
                                     source_movie['framesets'][frameset_hash]['images'][0],
                                     movie_url,
                                     build_chart_data[movie_url]['framesets'][frameset_hash],
@@ -210,6 +213,8 @@ class ChartMaker:
         x_grid_values,
         y_grid_values,
         roi,
+        x_hist,
+        y_hist,
         image_url, 
         movie_url, 
         build_data_this_frameset, 
@@ -218,9 +223,33 @@ class ChartMaker:
     ):
         movie_name = movie_url.split('/')[-1]
         movie_uuid = movie_name.split('.')[0]
-        image_name = image_url.split('/')[-1]
         cv2_image = self.get_cv2_image(image_url)
 
+        self.draw_grid_title(movie_uuid, image_url, frameset_hash, cv2_image)
+
+        self.draw_roi(cv2_image, roi)
+
+        lines_image = self.draw_grid_lines(cv2_image, x_grid_values, y_grid_values, x_hist, y_hist)
+        cv2_image = cv2.addWeighted(
+            lines_image, 
+            0.5, 
+            cv2_image, 
+            0.5, 
+            1.0
+        )
+
+        self.draw_friend_circles(cv2_image, friends_list)
+
+        file_fullpath = self.file_writer.build_file_fullpath_for_uuid_and_filename(
+            chart_storage_uuid, 
+            'grid_capture_' + movie_uuid + '_' + frameset_hash + '.png')
+        cv2.imwrite(file_fullpath, cv2_image)  
+        plot_url = self.file_writer.get_url_for_file_path(file_fullpath)
+        if 'charts' not in build_data_this_frameset:
+            build_data_this_frameset['charts'] = []
+        build_data_this_frameset['charts'].append(plot_url)
+
+    def draw_friend_circles(self, cv2_image, friends_list):
         for friend_coords in friends_list:
             start_coords = tuple(friend_coords[0])
             end_coords = (
@@ -242,6 +271,8 @@ class ChartMaker:
                 2
             )
 
+    def draw_grid_title(self, movie_uuid, image_url, frameset_hash, cv2_image):
+        image_name = image_url.split('/')[-1]
         cv2.putText(
             cv2_image,
             "Grid Capture for mov " + movie_uuid,
@@ -261,50 +292,64 @@ class ChartMaker:
             3 #lineType
         )
 
+    def draw_roi(self, cv2_image, roi):
+        if roi:
+            sub_img = cv2_image[
+                int(roi['start'][1]): int(roi['end'][1]),
+                int(roi['start'][0]): int(roi['end'][0])
+            ]
+            blue_rect = sub_img.copy()
+            cv2.rectangle(
+                blue_rect,
+                (0, 0),
+                (blue_rect.shape[1], blue_rect.shape[0]),
+                (200, 200, 255),
+                -1
+            )
+
+            res = cv2.addWeighted(
+                sub_img, 
+                0.5, 
+                blue_rect, 
+                0.5, 
+                1.0
+            )
+
+            cv2_image[
+                int(roi['start'][1]): int(roi['end'][1]),
+                int(roi['start'][0]): int(roi['end'][0])
+            ] = res
+
+    def draw_grid_lines(self, cv2_image, x_grid_values, y_grid_values, x_hist, y_hist):
+        copy = cv2_image.copy()
         for x_value in x_grid_values:
+            bin_num = math.floor(x_value / 10)
+            thickness = 2
+            if bin_num < len(x_hist):
+                thickness = int(x_hist[bin_num])
+
             start = (x_value, 0)
             end = (x_value, cv2_image.shape[0])
-            cv2.line(cv2_image, start, end, (44, 255, 170), 2)
+            cv2.line(copy, start, end, (44, 255, 170), thickness)
 
         for y_value in y_grid_values:
+            bin_num = math.floor(y_value / 10)
+            thickness = 2
+            if bin_num < len(y_hist):
+                thickness = int(y_hist[bin_num])
+
             start = (0, y_value)
             end = (cv2_image.shape[1], y_value)
-            cv2.line(cv2_image, start, end, (184, 255, 70), 2)
+            cv2.line(copy, start, end, (184, 255, 70), thickness)
+        return copy 
 
-        sub_img = cv2_image[
-            roi['start'][1]: roi['end'][1],
-            roi['start'][0]: roi['end'][0]
-        ]
-        blue_rect = sub_img.copy()
-        cv2.rectangle(
-            blue_rect,
-            (0, 0),
-            (blue_rect.shape[1], blue_rect.shape[0]),
-            (200, 200, 255),
-            -1
-        )
-
-        res = cv2.addWeighted(
-            sub_img, 
-            0.5, 
-            blue_rect, 
-            0.5, 
-            1.0
-        )
-
-        cv2_image[
-            roi['start'][1]: roi['end'][1],
-            roi['start'][0]: roi['end'][0]
-        ] = res
-
-        file_fullpath = self.file_writer.build_file_fullpath_for_uuid_and_filename(
-            chart_storage_uuid, 
-            'grid_capture_' + movie_uuid + '_' + frameset_hash + '.png')
-        cv2.imwrite(file_fullpath, cv2_image)  
-        plot_url = self.file_writer.get_url_for_file_path(file_fullpath)
-        if 'charts' not in build_data_this_frameset:
-            build_data_this_frameset['charts'] = []
-        build_data_this_frameset['charts'].append(plot_url)
+#        cv2_image = cv2.addWeighted(
+#            copy, 
+#            0.5, 
+#            cv2_image, 
+#            0.5, 
+#            1.0
+#        )
 
     def make_ocr_scene_analysis_charts(self):
         build_chart_data = {}

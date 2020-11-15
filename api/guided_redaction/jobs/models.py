@@ -1,5 +1,6 @@
 import uuid
 import pytz
+import hashlib
 import json
 from datetime import datetime
 
@@ -23,10 +24,10 @@ class Job(models.Model):
     percent_complete = models.FloatField(default=0)
     request_data = models.TextField(null=True)
     request_data_path = models.CharField(max_length=255, null=True)
-    request_data_checksum= models.CharField(max_length=255, null=True)
+    request_data_checksum = models.CharField(max_length=255, null=True)
     response_data = models.TextField(null=True)
     response_data_path = models.CharField(max_length=255, null=True)
-    response_data_checksum= models.CharField(max_length=255, null=True)
+    response_data_checksum = models.CharField(max_length=255, null=True)
     parent = models.ForeignKey(
         'Job', on_delete=models.CASCADE, null=True, related_name="children"
     )
@@ -35,7 +36,7 @@ class Job(models.Model):
     )
 
     MIN_PERCENT_COMPLETE_INCREMENT = .05
-    MAX_DB_PAYLOAD_SIZE = 10000000  # 10MB
+    MAX_DB_PAYLOAD_SIZE = 5000000  # 10MB
 
     def __str__(self):
         disp_hash = {
@@ -54,17 +55,25 @@ class Job(models.Model):
             self.percent_complete = percent_complete
 
         if self.response_data and len(self.response_data) > self.MAX_DB_PAYLOAD_SIZE:
-            print('saving job response data to disk, its big')
-            directory = self.get_current_directory('response')
-            self.response_data_path = self.save_data_to_disk(self.response_data, directory, 'response')
-            self.response_data = '{}'
+            checksum = hashlib.md5(self.response_data).hexdigest()
+            if self.response_data_checksum != checksum:
+                print('saving job response data to disk, its {} bytes'.format(len(self.response_data)))
+                self.response_data_checksum = checksum
+                directory = self.get_current_directory('response')
+                self.response_data_path = \
+                    self.save_data_to_disk(self.response_data, directory, 'response')
+                self.response_data = '{}'
 
         if self.request_data and len(self.request_data) > self.MAX_DB_PAYLOAD_SIZE:
-            print('saving job request data to disk, its big')
-            directory = self.get_current_directory('request')
-            self.request_data_path = self.save_data_to_disk(self.request_data, directory, 'request')
-            self.request_data = '{}'
+            checksum = hashlib.md5(self.request_data).hexdigest()
+            if self.request_data_checksum != checksum:
+                self.request_data_checksum = checksum
+                print('saving job request data to disk, its {} bytes'.format(len(self.request_data)))
+                directory = self.get_current_directory('request')
+                self.request_data_path = self.save_data_to_disk(self.request_data, directory, 'request')
+                self.request_data = '{}'
 
+        print('tammy', self.as_dict())
         super(Job, self).save(*args, **kwargs)
 
         if self.parent:
@@ -87,11 +96,7 @@ class Job(models.Model):
                 build_attributes[attribute.name] = attribute.value
 
         build_request_data = str(self.request_data)
-        if build_request_data and build_request_data[0:2] == "b'":
-            build_request_data = build_request_data[2:-1]
         build_response_data = str(self.response_data)
-        if build_response_data and build_response_data[0:2] == "b'":
-            build_response_data = build_response_data[2:-1]
 
         job_data = {
             'id': str(self.id),

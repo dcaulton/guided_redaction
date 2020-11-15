@@ -42,6 +42,7 @@ class SelectionGrowerControls extends React.Component {
       capture_grid: false,
       ocr_match_id: '',
       debug: false,
+      skip_if_ocr_needed: false,
       attribute_search_name: '',
       attribute_search_value: '',
       first_click_coords: [],
@@ -125,6 +126,7 @@ class SelectionGrowerControls extends React.Component {
         capture_grid: sam['capture_grid'],
         ocr_match_id: sam['ocr_match_id'],
         debug: sam['debug'],
+        skip_if_ocr_needed: sam['skip_if_ocr_needed'],
       })
     }
     let deepCopyIds = JSON.parse(JSON.stringify(this.props.tier_1_scanner_current_ids))
@@ -160,6 +162,7 @@ class SelectionGrowerControls extends React.Component {
       capture_grid: false,
       ocr_match_id: '',
       debug: false,
+      skip_if_ocr_needed: false,
     })
   }
 
@@ -175,6 +178,7 @@ class SelectionGrowerControls extends React.Component {
       capture_grid: this.state.capture_grid,
       ocr_match_id: this.state.ocr_match_id,
       debug: this.state.debug,
+      skip_if_ocr_needed: this.state.skip_if_ocr_needed,
     }
     return meta
   }
@@ -217,6 +221,28 @@ class SelectionGrowerControls extends React.Component {
     let deepCopyDirs = JSON.parse(JSON.stringify(this.state.directions))
     deepCopyDirs[direction_name] = new_value
     this.setLocalStateVar('directions', deepCopyDirs)
+  }
+
+  buildSkipIfOcrNeededField() {
+    let checked_value = ''
+    if (this.state.skip_if_ocr_needed) {
+      checked_value = 'checked'
+    }
+    return (
+      <div>
+        <div className='d-inline'>
+          <input
+            className='ml-2 mr-2 mt-1'
+            checked={checked_value}
+            type='checkbox'
+            onChange={() => this.setLocalStateVar('skip_if_ocr_needed', !this.state.skip_if_ocr_needed)}
+          />
+        </div>
+        <div className='d-inline'>
+          Skip If Ocr Needed
+        </div>
+      </div>
+    )
   }
 
   buildDebugField() {
@@ -573,6 +599,7 @@ class SelectionGrowerControls extends React.Component {
     const clear_matches_button = this.buildClearMatchesButton2()
     const directions_field = this.buildDirectionsField()
     const debug_field = this.buildDebugField()
+    const skip_if_ocr_needed_field = this.buildSkipIfOcrNeededField()
     const offsets_field = this.buildOffsetsField()
     const colors_field = this.buildColorsField()
     const capture_grid_field = this.buildCaptureGridField()
@@ -638,6 +665,10 @@ class SelectionGrowerControls extends React.Component {
 
                 <div className='row mt-2'>
                   {debug_field}
+                </div>
+
+                <div className='row mt-2'>
+                  {skip_if_ocr_needed_field}
                 </div>
 
                 <div className='row mt-1 mr-1 ml-1 border-top'>
