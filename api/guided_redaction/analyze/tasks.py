@@ -220,6 +220,8 @@ def generic_worker_call(job_uuid, operation, worker_class):
     job = Job.objects.get(pk=job_uuid)
     job.response_data = json.dumps(response.data)
     job.status = 'success'
+    if 'errors' in job.response_data:
+        job.status = 'failed'
     job.save()
     dispatch_parent_job(job)
 

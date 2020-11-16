@@ -7,6 +7,7 @@ from guided_redaction.pipelines.api import PipelinesViewSetDispatch
 from guided_redaction.attributes.models import Attribute
 from guided_redaction.files.api import (
     FilesViewSetMovieMetadata,
+    FilesViewSetUnzipArchive,
     FilesViewSetDownloadSecureFile
 )
 from guided_redaction.utils.task_shared import (
@@ -80,3 +81,24 @@ def load_movie_metadata(job_uuid):
     job.response_data = json.dumps(response.data)
     job.status = 'success'
     job.save()
+
+@shared_task
+def unzip_archive(job_uuid):
+    print('CALLING UNZIP ARCHIVE TASK')
+    if not Job.objects.filter(pk=job_uuid).exists():
+        print('calling unzip_archive on nonexistent job: '+ job_uuid)
+        return
+    job = Job.objects.get(pk=job_uuid)
+    job.status = 'running'
+    job.save()
+    print('running unzip_archive for job {}'.format(job_uuid))
+    worker = FilesViewSetUnzipArchive()
+    response = worker.process_unzip_request(json.loads(job.request_data))
+    if not Job.objects.filter(pk=job_uuid).exists():
+        return
+    job = Job.objects.get(pk=job_uuid)
+    job.response_data = json.dumps(response.data)
+    if 'errors' in job.response_data:
+        job.status = 'failed'
+    job.save()
+

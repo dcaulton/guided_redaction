@@ -36,7 +36,7 @@ class Job(models.Model):
     )
 
     MIN_PERCENT_COMPLETE_INCREMENT = .05
-    MAX_DB_PAYLOAD_SIZE = 5000000  
+    MAX_DB_PAYLOAD_SIZE = 1000000  
 
     def __str__(self):
         disp_hash = {
@@ -112,6 +112,7 @@ class Job(models.Model):
             'parent_id': str(self.parent_id),
             'request_data': build_request_data,
             'response_data': build_response_data,
+            'sequence': self.sequence,
             'children': child_ids,
             'attributes': build_attributes,
         }

@@ -13,6 +13,7 @@ from zipfile import ZipFile
 from guided_redaction.jobs.models import Job
 from guided_redaction.pipelines.models import Pipeline
 from guided_redaction.scanners.models import Scanner
+from guided_redaction.files import tasks as files_tasks
 
 
 class FilesViewSet(viewsets.ViewSet):
@@ -51,6 +52,137 @@ class FilesViewSet(viewsets.ViewSet):
         try:
             shutil.rmtree(dirpath)
             return Response('', status=204)
+        except Exception as e:
+            return self.error(e, status_code=400)
+
+class FilesViewSetUnzipArchive(viewsets.ViewSet):
+    def process_unzip_request(self, request_data):
+        archive_url = request_data['archive_url']
+        fw = FileWriter(
+            working_dir=settings.REDACT_FILE_STORAGE_DIR,
+            base_url=settings.REDACT_FILE_BASE_URL,
+            image_request_verify_headers=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
+        )
+        archive_filepath = fw.get_file_path_for_url(archive_url)
+        (x_part, archive_file_part) = os.path.split(archive_filepath)
+        if os.path.splitext(archive_file_part)[-1] != '.zip':
+            return self.error(['non-zip file uploaded, cannot unzip'], status_code=400)
+        (y_part, workdir_uuid) = os.path.split(x_part)
+        unzip_dir = fw.build_file_fullpath_for_uuid_and_filename(workdir_uuid, '')
+        zipObj = ZipFile(archive_filepath, 'r')
+        zipObj.extractall(unzip_dir)
+        nest_dir = os.path.join(unzip_dir, 'guided_redaction', 'work')
+        master_json_path = os.path.join(nest_dir, 'export_master.json')
+        with open(master_json_path) as fh:
+            master_json = json.load(fh)
+        # first, add jobs
+        job_count = 0
+        scanner_count = 0
+        pipeline_count = 0
+        movie_count = 0
+        for job_id in master_json['jobs']:
+            print('adding job {}'.format(job_id))
+            if Job.objects.filter(pk=job_id).exists():
+                print('  job already exists, clearing it out')
+                Job.objects.get(pk=job_id).delete()
+            job = master_json['jobs'][job_id]
+            job = Job(
+                id=job_id,
+                request_data=json.dumps(job['request_data']),
+                response_data=json.dumps(job['response_data']),
+                status=job['status'],
+                percent_complete=job['percent_complete'],
+                description=job['description'],
+                app=job['app'],
+                operation=job['operation'],
+                sequence=job['sequence'],
+            )
+            job.save()
+            job_count += 1
+        # second, add relations between jobs
+        for job_id in master_json['jobs']:
+            job_imported = master_json['jobs'][job_id]
+            if 'parent_id' in job_imported and \
+                job_imported['parent_id'] and \
+                job_imported['parent_id'] != 'None':
+                print('adding links for job {} {}'.format(job_id, job_imported['parent_id']))
+                job = Job.objects.get(pk=job_id)
+                job.parent_id = job_imported['parent_id']
+                job.save()
+
+        for scanner_type in master_json['tier_1_scanners']:
+            for scanner_id in master_json['tier_1_scanners'][scanner_type]:
+                scanner = master_json['tier_1_scanners'][scanner_type][scanner_id]
+                if Scanner.objects.filter(name=scanner['name']).exists():
+                    Scanner.objects.filter(name=scanner['name']).delete()
+
+                scanner = Scanner(
+                    type=scanner_type,
+                    name=scanner['name'],
+                    content=json.dumps(scanner),
+                )
+                scanner.save()
+                scanner_count += 1
+
+        for pipeline_id in master_json['pipelines']:
+            input_pipeline = master_json['pipelines'][pipeline_id]
+            pipeline = Pipeline(
+                name=input_pipeline['name'],
+                description=input_pipeline['description'],
+                content=json.dumps(input_pipeline),
+            )
+            pipeline.save()
+            pipeline_count += 1
+
+        for item in os.listdir(nest_dir):
+            if item != 'export_master.json': 
+                item_fullpath = os.path.join(nest_dir, item)
+                (y_part, workdir_uuid) = os.path.split(item_fullpath)
+                target_dir = fw.build_file_fullpath_for_uuid_and_filename(workdir_uuid, '')
+                shutil.rmtree(target_dir)
+                print('copying dir {} to {}'.format(item_fullpath, target_dir))
+                shutil.copytree(item_fullpath, target_dir)
+
+
+        return Response({
+            'jobs': job_count,
+            'scanners': scanner_count,
+            'pipelines': pipeline_count,
+            'movies': movie_count,
+        })
+
+class FilesViewSetImportArchive(viewsets.ViewSet):
+    def create(self, request):
+        request_data = request.data
+        return self.process_create_request(request_data)
+
+    def process_create_request(self, request_data):
+        if 'data_uri' not in request_data:
+            return self.error("data_uri is required")
+        if 'filename' not in request_data:
+            return self.error("filename is required")
+        try:
+            filename = request_data.get("filename")
+            data_uri = request_data.get('data_uri')
+            header, image_data= data_uri.split(",", 1)
+            image_binary = base64.b64decode(image_data)
+            file_url = make_url_from_file(filename, image_binary)
+
+            build_request_data = {
+                "archive_url": file_url,
+            }
+            job = Job(
+                request_data=json.dumps(build_request_data),
+                response_data = '{}',
+                status='created',
+                description='unzip archive',
+                app='files',
+                operation='unzip_archive',
+                sequence=0,
+            )
+            job.save()
+            files_tasks.unzip_archive.delay(job.id)
+            return Response({"job_id": job.id})
         except Exception as e:
             return self.error(e, status_code=400)
 
@@ -136,11 +268,12 @@ class FilesViewSetExport(viewsets.ViewSet):
                     fw
                 )
 
-        json_filename = 'export_' + str(uuid.uuid4()) + '.json'
+        json_filename = 'export_master.json'
+        json_archive_path = os.path.join('guided_redaction', 'work', json_filename)
         json_file_fullpath = fw.build_file_fullpath_for_uuid_and_filename(workdir_uuid, json_filename)
         text_data = json.dumps(build_obj)
         x = fw.write_text_data_to_filepath(text_data, json_file_fullpath)
-        zipObj.write(json_file_fullpath)
+        zipObj.write(json_file_fullpath, json_archive_path)
 
         zipObj.close()
         print('zip written')
@@ -169,7 +302,7 @@ class FilesViewSetExport(viewsets.ViewSet):
                             self.add_movie_to_dict_and_zip(
                                 source_movie_url, 
                                 reqd['movies']['source'][source_movie_url],
-                                build_obj, 
+                                build_dict, 
                                 zipObj, 
                                 request_data,
                                 fw
