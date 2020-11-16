@@ -427,6 +427,8 @@ class BottomInsightsControls extends React.Component {
           pipelines={this.props.pipelines}
           movies={this.props.movies}
           runExportTask={this.props.runExportTask}
+          postImportArchiveCall={this.props.postImportArchiveCall}
+          setGlobalStateVar={this.props.setGlobalStateVar}
         />
 
         <SessionControls

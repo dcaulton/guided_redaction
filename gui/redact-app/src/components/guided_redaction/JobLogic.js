@@ -902,7 +902,9 @@ class JobLogic extends React.Component {
     })
     .then((response) => response.json())
     .then((responseJson) => {
+console.log('dingus request', responseJson['job'])
       const request = JSON.parse(responseJson['job']['request_data'])
+console.log('poopy request', request)
       const pretty_request = JSON.stringify(request, undefined, 2)
       const response = JSON.parse(responseJson['job']['response_data'])
       const pretty_response = JSON.stringify(response, undefined, 2)

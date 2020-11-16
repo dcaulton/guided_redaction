@@ -1345,7 +1345,7 @@ class InsightsPanel extends React.Component {
     }
     let the_message = this.props.message
     let message_style = {}
-    if (!the_message || the_message == '.') {
+    if (!the_message || the_message === '.') {
       the_message = '.'
       message_style['color'] = 'white'
     }
@@ -1514,6 +1514,7 @@ class InsightsPanel extends React.Component {
             telemetry_data={this.props.telemetry_data}
             getJobResultData={this.props.getJobResultData}
             runExportTask={this.props.runExportTask}
+            postImportArchiveCall={this.props.postImportArchiveCall}
           />
         </div>
 

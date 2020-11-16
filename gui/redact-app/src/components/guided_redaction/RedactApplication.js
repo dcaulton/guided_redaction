@@ -219,6 +219,7 @@ class RedactApplication extends React.Component {
     this.removeFramesetHash=this.removeFramesetHash.bind(this)
     this.truncateAtFramesetHash=this.truncateAtFramesetHash.bind(this)
     this.getPipelineJobStatus=this.getPipelineJobStatus.bind(this)
+    this.postImportArchiveCall=this.postImportArchiveCall.bind(this)
   }
 
   seedRedactRule() {
@@ -595,6 +596,8 @@ class RedactApplication extends React.Component {
       return api_server_url + 'v1/delete-old-jobs'
     } else if (url_name === 'delete_old_workbooks_url') {
       return api_server_url + 'v1/delete-old-workbooks'
+    } else if (url_name === 'import_archive_url') {
+      return api_server_url + 'v1/files/import-archive'
     }
   }
 
@@ -960,6 +963,30 @@ class RedactApplication extends React.Component {
     })
     .catch((error) => {
       console.error(error)
+    })
+    await response
+  }
+
+  async postImportArchiveCall(hash_in) {
+    let image_data = hash_in.hasOwnProperty('data_uri')? hash_in['data_uri'] : ''
+    let image_name = hash_in.hasOwnProperty('filename')? hash_in['filename'] : 'no filename'
+    let when_done = hash_in.hasOwnProperty('when_done')? hash_in['when_done'] : (()=>{})
+    let when_failed = hash_in.hasOwnProperty('when_failed')? hash_in['when_failed'] : (()=>{})
+    let response = await fetch(this.getUrl('import_archive_url'), {
+      method: 'POST',
+      headers: this.buildJsonHeaders(),
+      body: JSON.stringify({
+        data_uri: image_data,
+        filename: image_name,
+      }),
+    })
+    .then((response) => response.json())
+    .then((responseJson) => {
+      when_done(responseJson)
+    })
+    .catch((error) => {
+      console.error(error)
+      when_failed(error)
     })
     await response
   }
@@ -2315,6 +2342,7 @@ class RedactApplication extends React.Component {
                 setActiveWorkflow={this.setActiveWorkflow}
                 runExportTask={this.runExportTask}
                 job_polling_interval_seconds={this.state.job_polling_interval_seconds}
+                postImportArchiveCall={this.postImportArchiveCall}
               />
             </Route>
             <Route path='/redact/pipeline'>

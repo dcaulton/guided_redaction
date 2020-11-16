@@ -260,6 +260,47 @@ class ImportExportControls extends React.Component {
     )
   }
 
+
+  handleDroppedMovie(event) {
+    event.preventDefault()
+    event.stopPropagation()
+    if (event.dataTransfer.files && event.dataTransfer.files.length > 0) {
+      for (let i=0; i < event.dataTransfer.files.length; i++) {
+        this.handleDownloadedArchive(event.dataTransfer.files[i])
+      }
+    }
+  }
+
+  async handleDownloadedArchive(the_file) {
+    let reader = new FileReader()
+    let app_this = this
+    reader.onload = function(e) {
+      app_this.props.postImportArchiveCall({
+        data_uri: e.target.result,
+        filename: the_file.name,
+        when_done: ((x)=>{app_this.props.setGlobalStateVar('archive upload initiated')}),
+        when_failed: (err) => {app_this.props.setGlobalStateVar('archive upload failed')},
+      })
+    }
+    reader.readAsDataURL(the_file)
+    this.setState({
+      uploadMovie: false,
+    })
+  }
+
+  buildUploadArchiveLink() {
+    return (
+      <div
+        className='border m-5 p-5 '
+        draggable='true'
+        onDragOver={(event) => event.preventDefault()}
+        onDrop={(event) => this.handleDroppedMovie(event)}
+      >
+        Drop Archive File here to Upload
+      </div>
+    )
+  }
+
   render() {
     if (!this.props.visibilityFlags['import_export']) {
       return([])
@@ -275,6 +316,7 @@ class ImportExportControls extends React.Component {
     const movies_picker = this.buildMoviesPicker()
     const export_button = this.buildExportButton()
     const download_archive_link = this.buildDownloadArchiveLink()
+    const upload_archive_link = this.buildUploadArchiveLink()
     return (
         <div className='row bg-light rounded mt-3'>
           <div className='col'>
@@ -305,6 +347,10 @@ class ImportExportControls extends React.Component {
 
                 <div id='row mt-2'>
                   {download_archive_link}
+                </div>
+
+                <div id='row mt-2'>
+                  {upload_archive_link}
                 </div>
 
               </div>
