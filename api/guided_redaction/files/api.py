@@ -63,23 +63,66 @@ class FilesViewSetUnzipArchive(viewsets.ViewSet):
             base_url=settings.REDACT_FILE_BASE_URL,
             image_request_verify_headers=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
         )
+
         archive_filepath = fw.get_file_path_for_url(archive_url)
         (x_part, archive_file_part) = os.path.split(archive_filepath)
         if os.path.splitext(archive_file_part)[-1] != '.zip':
             return self.error(['non-zip file uploaded, cannot unzip'], status_code=400)
         (y_part, workdir_uuid) = os.path.split(x_part)
         unzip_dir = fw.build_file_fullpath_for_uuid_and_filename(workdir_uuid, '')
+
         zipObj = ZipFile(archive_filepath, 'r')
         zipObj.extractall(unzip_dir)
         nest_dir = os.path.join(unzip_dir, 'guided_redaction', 'work')
         master_json_path = os.path.join(nest_dir, 'export_master.json')
         with open(master_json_path) as fh:
             master_json = json.load(fh)
-        # first, add jobs
-        job_count = 0
-        scanner_count = 0
-        pipeline_count = 0
+
+        job_count = self.add_jobs(master_json)
+        scanner_count = self.add_scanners(master_json)
+        pipeline_count = self.add_pipelines(master_json)
+        build_movies = self.add_movie_files(fw, nest_dir, master_json)
+
         movie_count = 0
+        for movie_url in master_json['movies']:
+            build_movies[movie_url] = master_json['movies'][movie_url]
+            movie_count += 1
+
+        return Response({
+            'job_count': job_count,
+            'scanner_count': scanner_count,
+            'pipeline_count': pipeline_count,
+            'movie_count': movie_count,
+            'movies': build_movies,
+        })
+
+    def add_movie_files(self, fw, nest_dir, master_json):
+        build_movies = {}
+        for item in os.listdir(nest_dir):
+            if item != 'export_master.json': 
+                item_fullpath = os.path.join(nest_dir, item)
+                (y_part, workdir_uuid) = os.path.split(item_fullpath)
+                target_dir = fw.build_file_fullpath_for_uuid_and_filename(workdir_uuid, '')
+                if os.path.exists(target_dir):
+                    shutil.rmtree(target_dir)
+                print('copying dir {} to {}'.format(item_fullpath, target_dir))
+                shutil.copytree(item_fullpath, target_dir)
+                split_files_exist = False
+                movie_name = ''
+                for created_item_name in os.listdir(target_dir):
+                    if created_item_name.endswith('.mp4'):
+                        movie_name = created_item_name
+                    elif created_item_name.endswith('.png'):
+                        split_files_exist = True
+                if not split_files_exist and movie_name:
+                    the_filepath = os.path.join(target_dir, movie_name)
+                    movie_url = fw.get_url_for_file_path(the_filepath)
+                    if movie_url not in build_movies:
+                        build_movies[movie_url] = {}
+        return build_movies
+
+    def add_jobs(self, master_json):
+        job_count = 0
         for job_id in master_json['jobs']:
             print('adding job {}'.format(job_id))
             if Job.objects.filter(pk=job_id).exists():
@@ -88,8 +131,8 @@ class FilesViewSetUnzipArchive(viewsets.ViewSet):
             job = master_json['jobs'][job_id]
             job = Job(
                 id=job_id,
-                request_data=json.dumps(job['request_data']),
-                response_data=json.dumps(job['response_data']),
+                request_data=job['request_data'],
+                response_data=job['response_data'],
                 status=job['status'],
                 percent_complete=job['percent_complete'],
                 description=job['description'],
@@ -109,7 +152,10 @@ class FilesViewSetUnzipArchive(viewsets.ViewSet):
                 job = Job.objects.get(pk=job_id)
                 job.parent_id = job_imported['parent_id']
                 job.save()
+        return job_count
 
+    def add_scanners(self, master_json):
+        scanner_count = 0
         for scanner_type in master_json['tier_1_scanners']:
             for scanner_id in master_json['tier_1_scanners'][scanner_type]:
                 scanner = master_json['tier_1_scanners'][scanner_type][scanner_id]
@@ -123,7 +169,10 @@ class FilesViewSetUnzipArchive(viewsets.ViewSet):
                 )
                 scanner.save()
                 scanner_count += 1
+        return scanner_count
 
+    def add_pipelines(self, master_json):
+        pipeline_count = 0
         for pipeline_id in master_json['pipelines']:
             input_pipeline = master_json['pipelines'][pipeline_id]
             pipeline = Pipeline(
@@ -133,23 +182,8 @@ class FilesViewSetUnzipArchive(viewsets.ViewSet):
             )
             pipeline.save()
             pipeline_count += 1
+        return pipeline_count
 
-        for item in os.listdir(nest_dir):
-            if item != 'export_master.json': 
-                item_fullpath = os.path.join(nest_dir, item)
-                (y_part, workdir_uuid) = os.path.split(item_fullpath)
-                target_dir = fw.build_file_fullpath_for_uuid_and_filename(workdir_uuid, '')
-                shutil.rmtree(target_dir)
-                print('copying dir {} to {}'.format(item_fullpath, target_dir))
-                shutil.copytree(item_fullpath, target_dir)
-
-
-        return Response({
-            'jobs': job_count,
-            'scanners': scanner_count,
-            'pipelines': pipeline_count,
-            'movies': movie_count,
-        })
 
 class FilesViewSetImportArchive(viewsets.ViewSet):
     def create(self, request):

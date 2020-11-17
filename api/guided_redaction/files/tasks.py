@@ -13,6 +13,7 @@ from guided_redaction.files.api import (
 from guided_redaction.utils.task_shared import (
     build_file_directory_user_attributes_from_movies
 )
+from guided_redaction.parse.tasks import split_and_hash_threaded
 
 
 def get_pipeline_for_job(job):
@@ -96,9 +97,35 @@ def unzip_archive(job_uuid):
     response = worker.process_unzip_request(json.loads(job.request_data))
     if not Job.objects.filter(pk=job_uuid).exists():
         return
+    dispatch_movie_split_jobs(response.data)
     job = Job.objects.get(pk=job_uuid)
     job.response_data = json.dumps(response.data)
-    if 'errors' in job.response_data:
+    job.status = 'success'
+    if 'errors' in response.data:
         job.status = 'failed'
     job.save()
 
+def dispatch_movie_split_jobs(response_data):
+    movies_to_dispatch = []
+    if 'movies' in response_data:
+        for movie_url in response_data['movies']:
+            movies_to_dispatch.append(movie_url)
+    if movies_to_dispatch:
+        build_request_data = {
+            'movie_urls': movies_to_dispatch,
+            'preserve_movie_audio': True,
+            'frameset_discriminator': 'gray8',
+        }
+        job = Job(
+            request_data=json.dumps(build_request_data),
+            status='created',
+            description='split and hash movies from imported archive',
+            app='parse',
+            operation='split_and_hash_threaded',
+            sequence=0,
+        )
+        job.save()
+
+        split_and_hash_threaded.delay(job.id)
+
+    
