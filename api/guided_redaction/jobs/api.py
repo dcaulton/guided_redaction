@@ -529,7 +529,7 @@ class JobsViewSetWrapUp(viewsets.ViewSet):
 
     def clear_out_job_recursive(self, job):
         if job.status != 'success':
-            job.status = 'created'
+            job.status = 'running'
             job.percent_complete = 0
             job.response_data = '{}'
             job.response_data_path = ''
