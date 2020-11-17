@@ -188,6 +188,7 @@ class RedactApplication extends React.Component {
     this.getImageUrl=this.getImageUrl.bind(this)
     this.setFramesetHash=this.setFramesetHash.bind(this)
     this.getJobResultDataWrapper=this.getJobResultDataWrapper.bind(this)
+    this.getJobFailedTasksWrapper=this.getJobFailedTasksWrapper.bind(this)
     this.setGlobalStateVar=this.setGlobalStateVar.bind(this)
     this.getGlobalStateVar=this.getGlobalStateVar.bind(this)
     this.toggleGlobalStateVar=this.toggleGlobalStateVar.bind(this)
@@ -197,7 +198,7 @@ class RedactApplication extends React.Component {
     this.importScanner=this.importScanner.bind(this)
     this.importRedactRule=this.importRedactRule.bind(this)
     this.wrapUpJobWrapper=this.wrapUpJobWrapper.bind(this)
-    this.restartJobWrapper=this.restartJobWrapper.bind(this)
+    this.restartPipelineJobWrapper=this.restartPipelineJobWrapper.bind(this)
     this.attachToJobWrapper=this.attachToJobWrapper.bind(this)
     this.toggleShowVisibility=this.toggleShowVisibility.bind(this)
     this.impersonateUser=this.impersonateUser.bind(this)
@@ -568,8 +569,10 @@ class RedactApplication extends React.Component {
       return api_server_url + 'v1/jobs'
     } else if (url_name === 'wrap_up_job_url') {
       return api_server_url + 'v1/wrap-up-jobs'
-    } else if (url_name === 'restart_job_url') {
-      return api_server_url + 'v1/restart-job'
+    } else if (url_name === 'job_failed_tasks_url') {
+      return api_server_url + 'v1/job-failed-tasks'
+    } else if (url_name === 'restart_pipeline_job_url') {
+      return api_server_url + 'v1/restart-pipeline-job'
     } else if (url_name === 'pipeline_job_status_url') {
       return api_server_url + 'v1/jobs/pipeline-job-status'
     } else if (url_name === 'workbooks_url') {
@@ -1410,6 +1413,10 @@ class RedactApplication extends React.Component {
     JobLogic.getJobResultData(job_id, when_done, this.getUrl, fetch, this.buildJsonHeaders)
   }
 
+  async getJobFailedTasksWrapper(job_id, when_done=(()=>{})) {
+    JobLogic.getJobFailedTasks(job_id, when_done, this.getUrl, fetch, this.buildJsonHeaders)
+  }
+
   async getPipelineJobStatus(job_id, when_done=(()=>{})) {
     JobLogic.getPipelineJobStatus(
       job_id,
@@ -1468,8 +1475,8 @@ class RedactApplication extends React.Component {
     JobLogic.wrapUpJob(job_id, this.getUrl, fetch, this.buildJsonHeaders, this.getJobs)
   }
 
-  async restartJobWrapper(job_id, when_done=(()=>{})) {
-    JobLogic.restartJob(job_id, this.getUrl, fetch, this.buildJsonHeaders, when_done)
+  async restartPipelineJobWrapper(job_id, when_done=(()=>{})) {
+    JobLogic.restartPipelineJob(job_id, this.getUrl, fetch, this.buildJsonHeaders, when_done)
   }
 
   attachToJobWrapper(job_id) {
@@ -2308,6 +2315,7 @@ class RedactApplication extends React.Component {
                 tier_1_matches={this.state.tier_1_matches}
                 telemetry_data={this.state.telemetry_data}
                 getJobResultData={this.getJobResultDataWrapper}
+                getJobFailedTasks={this.getJobFailedTasksWrapper}
                 saveScannerToDatabase={this.saveScannerToDatabase}
                 scanners={this.state.scanners}
                 getScanners={this.getScanners}
@@ -2356,7 +2364,7 @@ class RedactApplication extends React.Component {
                 loadJobResults={this.loadJobResultsWrapper}
                 getPipelineJobStatus={this.getPipelineJobStatus}
                 getJobResultData={this.getJobResultDataWrapper}
-                restartJob={this.restartJobWrapper}
+                restartPipelineJob={this.restartPipelineJobWrapper}
               />
             </Route>
             <Route path={['/redact/compose', '/redact']}>

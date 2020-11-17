@@ -82,6 +82,12 @@ class Job(models.Model):
                 return
             self.broadcast_percent_complete()
 
+    def re_initialize_as_running(self):
+        self.status = 'running'
+        self.percent_complete = 0
+        self.response_data = '{}'
+        self.response_data_path = ''
+
     def as_dict(self):
         children = Job.objects.filter(parent_id=self.id).order_by('sequence')
         child_ids = [str(child.id) + ' : ' + child.operation for child in children]

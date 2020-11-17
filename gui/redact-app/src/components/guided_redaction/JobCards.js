@@ -74,9 +74,10 @@ class JobCardList extends React.Component {
               loadInsightsJobResults={this.props.loadInsightsJobResults}
               cancelJob={this.props.cancelJob}
               workbooks={this.props.workbooks}
+              jobs={this.props.jobs}
               index={index}
               getJobResultData={this.props.getJobResultData}
-              setModalData={this.props.setModalData}
+              getJobFailedTasks={this.props.getJobFailedTasks}
               wrapUpJob={this.props.wrapUpJob}
               attachToJob={this.props.attachToJob}
               attached_job={this.props.attached_job}
@@ -382,7 +383,7 @@ class JobCard extends React.Component {
           <button
               type="button"
               className="border-0 bg-white"
-              onClick={() => this.showJobResultsInModal(this.props.job_data['id'])}
+              onClick={() => this.showJobResults(this.props.job_data['id'], this.jobIsLarge())}
               data-toggle="modal"
               data-target="#insightsPanelModal"
           >
@@ -393,8 +394,17 @@ class JobCard extends React.Component {
     )
   }
 
-  showJobResultsInModal(job_id) {
-    this.props.getJobResultData(job_id, this.displayInNewTab)
+  showJobResults(job_id, job_is_large=false) {
+    if (job_is_large) {
+      for (let i=0; i < this.props.jobs.length; i++) {
+        if (this.props.jobs[i]['id'] === job_id) {
+          const job = this.props.jobs[i]
+          this.displayInNewTab(JSON.stringify(job, undefined, 2))
+        }
+      }
+    } else {
+      this.props.getJobResultData(job_id, this.displayInNewTab)
+    }
   }
 
   displayInNewTab(page_data) {
@@ -405,7 +415,7 @@ class JobCard extends React.Component {
   }
 
   buildWrapUpLink() {
-    if (this.props.job_data['status'] !== 'running') {
+    if (this.props.job_data['status'] === 'success') {
       return ''
     }
     return (
@@ -443,17 +453,36 @@ class JobCard extends React.Component {
     )
   }
 
-  buildLargeWarning() {
+  jobIsLarge() {
     if (
       this.props.job_data['response_size'] === 'very large' ||
       this.props.job_data['request_size'] === 'very large'
     ) {
+      return true
+    }
+  }
+  buildLargeWarning() {
+    if (this.jobIsLarge()) {
       return (
         <div className='col bg-danger rounded text-light font-weight-bold'>
           XL Payloads
         </div>
       )
     }
+  }
+
+  buildViewFailedTasksLink() {
+    if (this.props.job_data['status'] !== 'failed') {
+      return ''
+    }
+    return (
+      <button
+        className='btn btn-link border-none p-0 mt-0'
+        onClick={() => this.props.getJobFailedTasks(this.props.job_data['id'], this.displayInNewTab)}
+      >
+        view failed tasks
+      </button>
+    )
   }
 
   render() {
@@ -475,6 +504,7 @@ class JobCard extends React.Component {
     const wrap_up_link = this.buildWrapUpLink()
     const attach_link = this.buildAttachLink()
     const large_warning = this.buildLargeWarning()
+    const view_failed_tasks_link = this.buildViewFailedTasksLink()
 
     return (
       <div className='row pl-1 mt-2 card'>
@@ -501,7 +531,7 @@ class JobCard extends React.Component {
             </div>
 
             <div 
-                className='row mt-1'
+                className='row'
                 style={small_style}
             >
               {job_created_on_data}
@@ -512,14 +542,18 @@ class JobCard extends React.Component {
             </div>
 
             <div 
-                className='row mt-1'
+                className='row'
                 style={small_style}
             >
               {wrap_up_link}
               {attach_link}
             </div>
 
-            <div className='row mt-1 mb-1'>
+            <div className='row'>
+              {view_failed_tasks_link}
+            </div>
+
+            <div className='row'>
               {large_warning}
             </div>
 

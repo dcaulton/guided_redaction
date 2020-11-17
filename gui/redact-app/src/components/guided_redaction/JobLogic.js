@@ -413,17 +413,17 @@ class JobLogic extends React.Component {
     setGlobalStateVar, 
     getGlobalStateVar
   ) {
-    const response_data = JSON.parse(job.response_data)
+    let response_data = JSON.parse(job.response_data)
     const tier_1_scanners = getGlobalStateVar('tier_1_scanners')
     const tier_1_scanner_current_ids = getGlobalStateVar('tier_1_scanner_current_ids')
     const tier_1_matches = getGlobalStateVar('tier_1_matches')
     if (!response_data) {
       return
     }
+    let request_data = JSON.parse(job.request_data)
     if (!Object.keys(response_data).includes('movies')) {
       return
     }
-    const request_data = JSON.parse(job.request_data)
 
     this.loadTier1ScannersFromTier1Request(
       scanner_type, 
@@ -894,6 +894,18 @@ class JobLogic extends React.Component {
     })
   }
 
+  static async getJobFailedTasks(job_id, when_done=(()=>{}), getUrl, fetch, buildJsonHeaders) {
+    let job_url = getUrl('job_failed_tasks_url') + '/' + job_id
+    await fetch(job_url, {
+      method: 'GET',
+      headers: buildJsonHeaders(),
+    })
+    .then((response) => response.json())
+    .then((responseJson) => when_done(
+      JSON.stringify(responseJson, undefined, 2))
+    )
+  }
+
   static async getJobResultData(job_id, when_done=(()=>{}), getUrl, fetch, buildJsonHeaders) {
     let job_url = getUrl('jobs_url') + '/' + job_id
     await fetch(job_url, {
@@ -902,9 +914,7 @@ class JobLogic extends React.Component {
     })
     .then((response) => response.json())
     .then((responseJson) => {
-console.log('dingus request', responseJson['job'])
       const request = JSON.parse(responseJson['job']['request_data'])
-console.log('poopy request', request)
       const pretty_request = JSON.stringify(request, undefined, 2)
       const response = JSON.parse(responseJson['job']['response_data'])
       const pretty_response = JSON.stringify(response, undefined, 2)
@@ -1150,7 +1160,7 @@ console.log('poopy request', request)
   }
 
   static async restartJob(job_id, getUrl, fetch_func, buildJsonHeaders, when_done=(()=>{})) {
-    await fetch_func(getUrl('restart_job_url'), {
+    await fetch_func(getUrl('restart_pipeline_job_url'), {
       method: 'POST',
       headers: buildJsonHeaders(),
       body: JSON.stringify({

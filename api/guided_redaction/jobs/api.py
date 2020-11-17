@@ -117,14 +117,18 @@ def dispatch_job_wrapper(job, restart_unfinished_children=True):
             if Job.objects.filter(parent=child_to_restart).exists():
                 grandchildren = Job.objects.filter(parent=child_to_restart)
                 for grandchild in grandchildren:
-                    if grandchild.status not in ['success', 'failed']:
+                    if grandchild.status != 'success':
+                        grandchild.re_initialize_as_running()
+                        grandchild.save()
                         log.info(
                             're-displatching grandchild job {}'.format(grandchild)
                         )
                         dispatch_job(grandchild)
             else:
-                if child_to_restart.status not in ['success', 'failed']:
+                if child_to_restart.status != 'success':
                     log.info('re-displatching child job {}'.format(child_to_restart))
+                    child_to_restart.re_initialize_as_running()
+                    child_to_restart.save()
                     dispatch_job(child_to_restart)
     dispatch_job(job)
 
@@ -138,6 +142,8 @@ def dispatch_job(job):
         analyze_tasks.filter.delay(job_uuid)
     if job.app == 'analyze' and job.operation == 'scan_ocr_threaded':
         analyze_tasks.scan_ocr_threaded.delay(job_uuid)
+    if job.app == 'analyze' and job.operation == 'scan_ocr':
+        analyze_tasks.scan_ocr.delay(job_uuid)
     if job.app == 'analyze' and job.operation == 'get_timestamp':
         analyze_tasks.get_timestamp.delay(job_uuid)
     if job.app == 'analyze' and job.operation == 'get_timestamp_threaded':
@@ -481,15 +487,38 @@ class JobsViewSet(viewsets.ViewSet):
             self.rebase_jobs(job.id)
 
 
+class JobsViewSetFailedTasks(viewsets.ViewSet):
+    def retrieve(self, request, pk):
+        build_data = {}
+        job = Job.objects.get(pk=pk)
+        self.add_errors_for_job(job, build_data)
+        return Response(build_data)
+
+    def add_errors_for_job(self, job, build_data):
+        if job.status == 'failed':
+            build_obj = {
+                'operation': job.operation,
+            }
+            if job.response_data:
+                resp_data = json.loads(job.response_data)
+                if 'errors' in resp_data:
+                    build_obj['errors'] = resp_data['errors']
+            build_data[str(job.id)] = build_obj,
+            children = Job.objects.filter(parent=job)
+            for child in children:
+                self.add_errors_for_job(child, build_data)
+
+
 class JobsViewSetWrapUp(viewsets.ViewSet):
     def create(self, request):
         if not request.data.get("job_id"):
             return self.error("job_id is required")
         job = Job.objects.get(pk=request.data.get('job_id'))
+        self.clear_out_job_recursive(job)
         children = Job.objects.filter(parent=job)
         unfinished_children_exist = False
         for child in children:
-            if child.status not in ['success', 'failed']:
+            if child.status != 'success':
                 unfinished_children_exist = True
         if unfinished_children_exist:
             dispatch_job_wrapper(job, restart_unfinished_children=True)
@@ -498,8 +527,19 @@ class JobsViewSetWrapUp(viewsets.ViewSet):
             
         return Response({'job_id': job.id})
 
+    def clear_out_job_recursive(self, job):
+        if job.status != 'success':
+            job.status = 'created'
+            job.percent_complete = 0
+            job.response_data = '{}'
+            job.response_data_path = ''
+            job.save()
+            children = Job.objects.filter(parent=job)
+            for child in children:
+                if child.status != 'success':
+                    self.clear_out_job_recursive(child)
 
-class JobsViewSetRestart(viewsets.ViewSet):
+class JobsViewSetRestartPipelineJob(viewsets.ViewSet):
     def create(self, request):
         if not request.data.get("job_id"):
             return self.error("job_id is required")

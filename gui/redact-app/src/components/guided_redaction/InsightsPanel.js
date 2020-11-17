@@ -24,8 +24,6 @@ class InsightsPanel extends React.Component {
       draggedId: null,
       imageTypeToDisplay: '',
       callbacks: {},
-      modal_data: '',
-      modal_image: '',
     }
     this.getAnnotations=this.getAnnotations.bind(this)
     this.setCurrentVideo=this.setCurrentVideo.bind(this)
@@ -59,8 +57,6 @@ class InsightsPanel extends React.Component {
     this.afterMovieSplitInsightsJobLoaded=this.afterMovieSplitInsightsJobLoaded.bind(this)
     this.setImageTypeToDisplay=this.setImageTypeToDisplay.bind(this)
     this.addInsightsCallback=this.addInsightsCallback.bind(this)
-    this.setModalData=this.setModalData.bind(this)
-    this.setModalImage=this.setModalImage.bind(this)
     this.getCurrentOcrMatches=this.getCurrentOcrMatches.bind(this)
     this.getCurrentPipelineMatches=this.getCurrentPipelineMatches.bind(this)
     this.getCurrentSelectionGrowerZones=this.getCurrentSelectionGrowerZones.bind(this)
@@ -201,18 +197,6 @@ class InsightsPanel extends React.Component {
       }
     }
     return []
-  }
-
-  setModalData(the_data) {
-    this.setState({
-      modal_data: the_data,
-    })
-  }
-
-  setModalImage(the_url) {
-    this.setState({
-      modal_image: the_url,
-    })
   }
 
   addInsightsCallback(the_key, the_callback) {
@@ -1205,57 +1189,6 @@ class InsightsPanel extends React.Component {
     return bottom_y
   }
 
-  buildInsightsModal() {
-    if (this.state.modal_data) {
-      return (
-        <div className="modal" id='insightsPanelModal' tabIndex="-1" role="dialog">
-          <div className="modal-dialog modal-xl" id='insightsPanelModalInner' role="document">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">Viewing Job Data</h5>
-                <button type="button" className="close" data-dismiss="modal" aria-label="Close">
-                  <span aria-hidden="true">&times;</span>
-                </button>
-              </div>
-              <div className="modal-body">
-                <pre>
-                {this.state.modal_data}
-                </pre>
-              </div>
-              <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" data-dismiss="modal">Close</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )
-    } else if (this.state.modal_image) {
-      return (
-        <div className="modal" id='insightsPanelModal' tabIndex="-1" role="dialog">
-          <div className="modal-dialog modal-xl" id='insightsPanelModalInner' role="document">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">Viewing Image</h5>
-              </div>
-              <div className="modal-body">
-                <img
-                    id='insights_modal_image'
-                    src={this.state.modal_image}
-                    alt='stuff'
-                />
-              </div>
-              <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" data-dismiss="modal">Close</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )
-    } else {
-      return ''
-    }
-  }
-
   getInsightsImage() {
     if (this.state.insights_image) {
       return this.state.insights_image
@@ -1329,8 +1262,6 @@ class InsightsPanel extends React.Component {
   }
 
   render() {
-    const insights_modal = this.buildInsightsModal()
-
     document.body.onkeydown = this.handleKeyDown
     let workbook_name = this.props.current_workbook_name
     const insights_image = this.getInsightsImage()
@@ -1352,9 +1283,6 @@ class InsightsPanel extends React.Component {
     return (
     <div className='container'>
       <div id='insights_panel' className='row mt-5'>
-
-        {insights_modal}
-
         <div id='insights_left' className='col-lg-2'>
           <MovieCardList 
             setCurrentVideo={this.setCurrentVideo}
@@ -1502,7 +1430,6 @@ class InsightsPanel extends React.Component {
             app_codebooks={this.props.app_codebooks}
             tier_1_scanners={this.props.tier_1_scanners}
             tier_1_scanner_current_ids={this.props.tier_1_scanner_current_ids}
-            setModalImage={this.setModalImage}
             redact_rules={this.props.redact_rules}
             redact_rule_current_id={this.props.redact_rule_current_id}
             impersonateUser={this.props.impersonateUser}
@@ -1526,7 +1453,7 @@ class InsightsPanel extends React.Component {
             cancelJob={this.props.cancelJob}
             workbooks={this.props.workbooks}
             getJobResultData={this.props.getJobResultData}
-            setModalData={this.setModalData}
+            getJobFailedTasks={this.props.getJobFailedTasks}
             wrapUpJob={this.props.wrapUpJob}
             attachToJob={this.props.attachToJob}
             attached_job={this.props.attached_job}

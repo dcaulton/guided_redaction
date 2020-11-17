@@ -11,7 +11,10 @@ router.register(
     r"v1/wrap-up-jobs", api.JobsViewSetWrapUp, basename="MichaelJFox"
 )
 router.register(
-    r"v1/restart-job", api.JobsViewSetRestart, basename="TommyIommi"
+    r"v1/job-failed-tasks", api.JobsViewSetFailedTasks, basename="DannyElfman"
+)
+router.register(
+    r"v1/restart-pipeline-job", api.JobsViewSetRestartPipelineJob, basename="TommyIommi"
 )
 router.register(
     r"v1/delete-old-jobs", api.JobsViewSetDeleteOld, basename="BillBurr"

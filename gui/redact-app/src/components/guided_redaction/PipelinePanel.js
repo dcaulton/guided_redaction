@@ -202,7 +202,7 @@ class PipelinePanel extends React.Component {
             <div className='d-inline ml-2'>
               <button
                 className='btn btn-primary ml-1 p-1'
-                onClick={()=>this.props.restartJob(status_obj['job_id'], this.restartJobCompleted)}
+                onClick={()=>this.props.restartPipelineJob(status_obj['job_id'], this.restartJobCompleted)}
               >
                 Restart
               </button>
@@ -218,7 +218,7 @@ class PipelinePanel extends React.Component {
           <div className='d-inline'>
             <button
               className='btn btn-primary ml-1 p-1'
-              onClick={()=>this.props.restartJob(status_obj['job_id'], this.restartJobCompleted)}
+              onClick={()=>this.props.restartPipelineJob(status_obj['job_id'], this.restartJobCompleted)}
             >
               Restart
             </button>
