@@ -78,6 +78,12 @@ class FilesViewSetUnzipArchive(viewsets.ViewSet):
         with open(master_json_path) as fh:
             master_json = json.load(fh)
 
+        old_base_url = master_json['meta']['base_url']
+        new_base_url = fw.base_url
+        old_working_dir = master_json['meta']['working_dir']
+        new_working_dir = fw.working_dir
+
+        # TODO translate the urls and file paths for these objs to new urls/dirs before loading them.
         job_count = self.add_jobs(master_json)
         scanner_count = self.add_scanners(master_json)
         pipeline_count = self.add_pipelines(master_json)
@@ -269,8 +275,12 @@ class FilesViewSetExport(viewsets.ViewSet):
             'tier_1_scanners': {},
             'movies': {},
             'pipelines': {},
+            'meta': {},
         }
         zipObj = ZipFile(output_file_fullpath, 'w')
+
+        meta['base_url'] = fw.base_url
+        meta['working_dir'] = fw.working_dir
 
         if request_data['job_ids']:
             for job_id in request_data['job_ids']:

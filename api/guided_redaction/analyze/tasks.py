@@ -1,5 +1,5 @@
-from celery import shared_task
 import math
+from celery import shared_task
 import random
 import time
 import uuid
@@ -35,6 +35,7 @@ from guided_redaction.analyze.api import (
 
 osa_batch_size = 10
 ocr_batch_size = 10
+sg_batch_size = 10
 
 def dispatch_parent_job(job):
     if job.parent_id:
@@ -97,6 +98,10 @@ def build_and_dispatch_generic_batched_threaded_children(
 
     for scanner_id in scanners:
         scanner = scanners[scanner_id]
+##########
+        if target_wants_ocr_data(operation_name, scanner):
+            prescanned_ocr_results = get_prescanned_ocr_data(scanner)
+##########
         build_t1_scanner_obj = {}
         build_t1_scanner_obj[scanner_type] = {scanner_id: scanner}
         for index, movie_url in enumerate(movies.keys()):
@@ -140,7 +145,10 @@ def build_and_dispatch_generic_batched_threaded_children(
                 if not movie_is_full_movie(movie):
                     build_obj['movies']['source'] = {}
                     build_obj['movies']['source'][movie_url] = source_movies[movie_url]
-
+###########
+                if target_wants_ocr_data(operation_name, scanner):
+                    add_ocr_data(build_obj['movies'], prescanned_ocr_results)
+##########
                 build_request_data = json.dumps(build_obj)
                 job = Job(
                     request_data=build_request_data,
@@ -157,7 +165,35 @@ def build_and_dispatch_generic_batched_threaded_children(
                 print(the_str.format(movie_url))
                 child_task.delay(job.id)
 
-def build_and_dispatch_generic_threaded_children(parent_job, scanner_type, operation, child_task, finish_func):
+def target_wants_ocr_data(operation, t1_scanner):
+    if operation == 'selection_grower' and \
+        'ocr_job_id' in t1_scanner and \
+        t1_scanner['ocr_job_id']:
+        return True
+
+def get_prescanned_ocr_data(t1_scanner):
+    job = Job.objects.get(pk=t1_scanner['ocr_job_id'])
+    return json.loads(job.response_data)['movies']
+
+def add_ocr_data(build_movies, prescanned_ocr_results):
+    for movie_url in build_movies:
+        if movie_url == 'source':
+            continue
+        for frameset_hash in build_movies[movie_url]['framesets']:
+            if movie_url in prescanned_ocr_results and \
+                frameset_hash in prescanned_ocr_results[movie_url]['framesets']:
+                ocr_matches = prescanned_ocr_results[movie_url]['framesets'][frameset_hash]
+                for match_id in ocr_matches:
+                    ocr_match = ocr_matches[match_id]
+                    build_movies[movie_url]['framesets'][frameset_hash][match_id] = ocr_match
+
+def build_and_dispatch_generic_threaded_children(
+        parent_job, 
+        scanner_type, 
+        operation, 
+        child_task, 
+        finish_func
+    ):
     request_data = json.loads(parent_job.request_data)
     parent_job.status = 'running'
     parent_job.save()
@@ -175,7 +211,12 @@ def build_and_dispatch_generic_threaded_children(parent_job, scanner_type, opera
         return
 
     for scanner_meta_id in scanner_metas:
-        build_scanner_meta = {scanner_meta_id: scanner_metas[scanner_meta_id]}
+        t1_scanner = scanner_metas[scanner_meta_id]
+##########
+        if target_wants_ocr_data(operation, t1_scanner):
+            prescanned_ocr_results = get_prescanned_ocr_data(t1_scanner)
+##########
+        build_scanner_meta = {scanner_meta_id: t1_scanner}
         for index, movie_url in enumerate(movies.keys()):
             movie = movies[movie_url]
             build_movies = {}
@@ -183,6 +224,10 @@ def build_and_dispatch_generic_threaded_children(parent_job, scanner_type, opera
             if source_movies:
                 build_movies['source'] = {}
                 build_movies['source'][movie_url] = source_movies[movie_url]
+###########
+            if target_wants_ocr_data(operation, t1_scanner):
+                add_ocr_data(build_movies, prescanned_ocr_results)
+##########
             build_request_data = json.dumps({
                 'movies': build_movies,
                 'tier_1_scanners': {
@@ -259,8 +304,17 @@ def wrap_up_generic_threaded(job, children, scanner_type):
             aggregate_response_data['statistics']['movies'][movie_url] = child_response_stats['movies'][movie_url]
 
         if len(child_response_movies.keys()) > 0:
-            movie_url = list(child_response_movies.keys())[0]
-            aggregate_response_data['movies'][movie_url] = child_response_movies[movie_url]
+            for movie_url in child_response_movies:
+                if movie_url not in aggregate_response_data['movies']:
+                    aggregate_response_data['movies'][movie_url] = {'framesets': {}}
+                for frameset_hash in child_response_data['movies'][movie_url]['framesets']:
+                    frameset = child_response_data['movies'][movie_url]['framesets'][frameset_hash]
+                    if frameset_hash not in aggregate_response_data['movies'][movie_url]['framesets']:
+                        aggregate_response_data['movies'][movie_url]['framesets'][frameset_hash] = {}
+                    agg_data_this_frameset = \
+                        aggregate_response_data['movies'][movie_url]['framesets'][frameset_hash] 
+                    for match_key in frameset:
+                       agg_data_this_frameset[match_key] = frameset[match_key]
 
     print('wrap_up_' + scanner_type + '_threaded: wrapping up parent job')
     job.status = 'success'
@@ -782,12 +836,13 @@ def selection_grower_threaded(job_uuid):
     )
 
 def build_and_dispatch_selection_grower_threaded_children(parent_job):
-    build_and_dispatch_generic_threaded_children(
-        parent_job, 
-        'selection_grower', 
-        'selection_grower', 
-        selection_grower, 
-        finish_selection_grower_threaded
+    build_and_dispatch_generic_batched_threaded_children(
+        parent_job,
+        'selection_grower',
+        sg_batch_size,
+        'selection_grower',
+        finish_selection_grower_threaded,
+        selection_grower
     )
 
 def wrap_up_selection_grower_threaded(job, children):

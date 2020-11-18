@@ -40,7 +40,7 @@ class SelectionGrowerControls extends React.Component {
       },
       colors: [],
       capture_grid: false,
-      ocr_match_id: '',
+      ocr_job_id: '',
       debug: false,
       skip_if_ocr_needed: false,
       attribute_search_name: '',
@@ -124,7 +124,7 @@ class SelectionGrowerControls extends React.Component {
         offsets: sam['offsets'],
         colors: sam['colors'],
         capture_grid: sam['capture_grid'],
-        ocr_match_id: sam['ocr_match_id'],
+        ocr_job_id: sam['ocr_job_id'],
         debug: sam['debug'],
         skip_if_ocr_needed: sam['skip_if_ocr_needed'],
       })
@@ -160,7 +160,7 @@ class SelectionGrowerControls extends React.Component {
       },
       colors: [],
       capture_grid: false,
-      ocr_match_id: '',
+      ocr_job_id: '',
       debug: false,
       skip_if_ocr_needed: false,
     })
@@ -176,7 +176,7 @@ class SelectionGrowerControls extends React.Component {
       offsets: this.state.offsets,
       colors: this.state.colors,
       capture_grid: this.state.capture_grid,
-      ocr_match_id: this.state.ocr_match_id,
+      ocr_job_id: this.state.ocr_job_id,
       debug: this.state.debug,
       skip_if_ocr_needed: this.state.skip_if_ocr_needed,
     }
@@ -360,21 +360,23 @@ class SelectionGrowerControls extends React.Component {
   buildOcrMatchIdField() {
     let ocr_matches = []
     ocr_matches.push({'': ''})
-    for (let i=0; i < Object.keys(this.props.tier_1_matches['ocr']).length; i++) {
-      const match_id = Object.keys(this.props.tier_1_matches['ocr'])[i]
-      const ocr_rule = this.props.tier_1_scanners['ocr']
-      const display_label = match_id + ':' + ocr_rule['name']
-      const td = {}
-      td[match_id] = display_label
-      ocr_matches.push(td)
+    for (let i=0; i < this.props.jobs.length; i++) {
+      const job = this.props.jobs[i]
+      if (job['operation'] !== 'scan_ocr_threaded') {
+        continue
+      }
+      const build_obj = {}
+      const desc = job['description'] + ' ' + job['id'].slice(0,3) + '...'
+      build_obj[job['id']] = desc
+      ocr_matches.push(build_obj)
     }
 
     return buildLabelAndDropdown(
       ocr_matches,
-      'Ocr Match Id',
-      this.state.ocr_match_id,
-      'ocr_match_id',
-      ((value)=>{this.setLocalStateVar('ocr_match_id', value)})
+      'Ocr Job Id',
+      this.state.ocr_job_id,
+      'ocr_job_id',
+      ((value)=>{this.setLocalStateVar('ocr_job_id', value)})
     )
   }
 

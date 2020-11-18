@@ -333,38 +333,6 @@ class InsightsPanel extends React.Component {
     return job_data
   }
 
-  buildSelectionGrowerJobData(scanner_type, scope, extra_data) {
-    let job_data = this.buildTier1JobData('selection_grower', scope, extra_data)
-    const sg_id = Object.keys(job_data['request_data']['tier_1_scanners']['selection_grower'])[0]
-    const sg = job_data['request_data']['tier_1_scanners']['selection_grower'][sg_id]
-    if (sg['ocr_match_id'] && Object.keys(this.props.tier_1_matches['ocr']).includes(sg['ocr_match_id'])) {
-      const match_data = this.props.tier_1_matches['ocr'][sg['ocr_match_id']]['movies']
-      const req_movies = job_data['request_data']['movies']
-      for (let i=0; i < Object.keys(req_movies).length; i++) {
-        const movie_url = Object.keys(req_movies)[i]
-        if (movie_url === 'source') {
-          continue
-        }
-        const movie = req_movies[movie_url]
-        for (let j=0; j < Object.keys(movie['framesets']).length; j++) {
-          const frameset_hash = Object.keys(movie['framesets'])[j]
-          if (
-            Object.keys(match_data).includes(movie_url) && 
-            Object.keys(match_data[movie_url]['framesets']).includes(frameset_hash)
-          ) {
-            for (let k=0; k < Object.keys(match_data[movie_url]['framesets'][frameset_hash]).length; k++) {
-              const match_key = Object.keys(match_data[movie_url]['framesets'][frameset_hash])[k]
-              let jd_fsh = job_data['request_data']['movies'][movie_url]['framesets'][frameset_hash]
-              jd_fsh[match_key] = match_data[movie_url]['framesets'][frameset_hash][match_key]
-
-            }
-          }
-        }
-      }
-    }
-    return job_data
-  }
-
   buildTier1JobData(scanner_type, scope, extra_data) {
     let job_data = {
       request_data: {},
@@ -741,7 +709,7 @@ class InsightsPanel extends React.Component {
     } else if (
         job_string.startsWith('selection_grower_')
     ) {
-      let job_data = this.buildSelectionGrowerJobData('selection_grower', job_string, extra_data)
+      let job_data = this.buildTier1JobData('selection_grower', job_string, extra_data)
       this.props.submitJob({
         job_data: job_data,
       })
