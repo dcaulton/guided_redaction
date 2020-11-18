@@ -71,6 +71,7 @@ class MovieCardList extends React.Component {
               active_movie_url={this.props.movie_url}
               this_cards_movie_url={value}
               movies={this.props.movies}
+              campaign_movies={this.props.campaign_movies}
               submitInsightsJob={this.props.submitInsightsJob}
               setMovieNickname={this.props.setMovieNickname}
               setDraggedId={this.props.setDraggedId}
@@ -136,6 +137,17 @@ class MovieCard extends React.Component {
       )
     }
     return return_arr
+  }
+
+  buildRemoveButton(this_cards_movie_url) {
+    return (
+      <button
+        className='btn btn-link m-0 p-0'
+        onClick={() => this.removeVideo(this_cards_movie_url)}
+      >
+        rm
+      </button>
+    )
   }
 
   buildMakeActiveButton(this_cards_movie_url) {
@@ -559,6 +571,38 @@ class MovieCard extends React.Component {
     }
   }
 
+  removeVideo(movie_url) {
+console.log('removing movie ', movie_url)
+    const new_campaign_movies = []
+    for (let i=0; i < this.props.campaign_movies.length; i++) {
+      if (this.props.campaign_movies[i] !== movie_url) {
+        new_campaign_movies.push(this.props.campaign_movies[i])
+      }
+    }
+    let deepCopyMovies = JSON.parse(JSON.stringify(this.props.movies))
+    delete deepCopyMovies[movie_url]
+    let deepCopyTier1Matches = JSON.parse(JSON.stringify(this.props.tier_1_matches))
+    for (let i=0; i < Object.keys(this.props.tier_1_matches).length; i++) {
+      const scanner_type = Object.keys(this.props.tier_1_matches)[i]
+      for (let j=0; j < Object.keys(this.props.tier_1_matches[scanner_type]).length; j++) {
+        const scanner_id = Object.keys(this.props.tier_1_matches[scanner_type])[j]
+        const match_obj = this.props.tier_1_matches[scanner_type][scanner_id]
+        if (
+          Object.keys(match_obj).includes('movies') && 
+          Object.keys(match_obj['movies']).includes(movie_url)
+        ) {
+          delete deepCopyTier1Matches[scanner_type][scanner_id]['movies'][movie_url]
+        }
+      }
+    }
+
+    this.props.setGlobalStateVar({
+      'movies': deepCopyMovies,
+      'tier_1_matches': deepCopyTier1Matches,
+      'campaign_movies': new_campaign_movies,
+    })
+  }
+
   render() {
     let dd_style = {
       'fontSize': 'small',
@@ -567,6 +611,7 @@ class MovieCard extends React.Component {
     let queue_job_button = this.buildQueueJobLink()
     const framesets_count_message = this.getFramesetsCountMessage(this.props.this_cards_movie_url)
     const make_active_button = this.buildMakeActiveButton(this.props.this_cards_movie_url)
+    const remove_button = this.buildRemoveButton(this.props.this_cards_movie_url)
     const template_matches_string = this.getTier1MatchesString('template')
     const ocr_matches_string = this.getTier1MatchesString('ocr')
     const ocr_scene_analysis_matches_string = this.getTier1MatchesString('ocr_scene_analysis')
@@ -611,6 +656,7 @@ class MovieCard extends React.Component {
               <div className='row'>
                 {make_active_button}
                 {queue_job_button}
+                {remove_button}
               </div>
 
               <div 

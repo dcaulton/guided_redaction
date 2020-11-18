@@ -15,6 +15,7 @@ class SelectionGrower:
         self.alignment_tolerance = 10
         self.hist_grid_size = 10
         self.row_column_threshold = 4
+        self.min_grid_aspect_ratio = 1.0
 
     def grow_selection(self, tier_1_match_data, cv2_image):
         match_obj = {}
@@ -67,6 +68,8 @@ class SelectionGrower:
             statistics[growth_direction]['y_hist'] = hist_y.tolist()
             if grid_x_values and last_y - first_y:
                 new_area = self.build_new_area(growth_direction, selected_area, grid_x_values, first_y, last_y)
+                if new_area['size'][0] / new_area['size'][1] < self.min_grid_aspect_ratio:
+                    continue
                 new_areas[new_area['id']] = new_area
                 statistics[growth_direction]['roi'] = new_area
         return new_areas, statistics

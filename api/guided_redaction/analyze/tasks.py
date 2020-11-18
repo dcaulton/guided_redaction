@@ -251,6 +251,7 @@ def build_and_dispatch_generic_threaded_children(
 def generic_worker_call(job_uuid, operation, worker_class):
     if not Job.objects.filter(pk=job_uuid).exists():
         print('calling ' + operation + ' on nonexistent job: {}'.format(job_uuid))
+        return
     job = Job.objects.get(pk=job_uuid)
     if job.status in ['success', 'failed']:                                     
         return                                                                  
