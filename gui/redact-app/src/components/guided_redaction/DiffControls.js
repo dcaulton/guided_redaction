@@ -6,7 +6,6 @@ import {
 class DiffControls extends React.Component {
 
   buildDiffRunButton() {
-    let movie_set_keys = Object.keys(this.props.movie_sets)
     return (
       <div className='d-inline'>
         <button
@@ -35,17 +34,6 @@ class DiffControls extends React.Component {
           >
             All Movies
           </button>
-    {movie_set_keys.map((value, index) => {
-      return (
-        <button
-            className='dropdown-item'
-            key={index}
-            onClick={() => this.props.submitInsightsJob('diffs_movie_set', value)}
-        >
-          MovieSet '{this.props.movie_sets[value]['name']}'
-        </button>
-      )
-    })}
         </div>
       </div>
     )

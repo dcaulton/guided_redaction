@@ -4,7 +4,6 @@ import DataSifterControls from './DataSifterControls'
 import OcrControls from './OcrControls'
 import RedactControls from './RedactControls'
 import ZipControls from './ZipControls'
-import MovieSetsControls from './MovieSetsControls'
 import ResultsControls from './ResultsControls'
 import FilesystemControls from './FilesystemControls'
 import PipelineControls from './PipelineControls'
@@ -23,7 +22,6 @@ class BottomInsightsControls extends React.Component {
     super(props)
     this.buildMovieMetadata=this.buildMovieMetadata.bind(this)
     this.buildTier1RunOptions=this.buildTier1RunOptions.bind(this)
-    this.buildMovieSetOptions=this.buildMovieSetOptions.bind(this)
   }
 
   buildMovieMetadata(movie_url='') {
@@ -38,28 +36,6 @@ class BottomInsightsControls extends React.Component {
       templates: this.props.tier_1_scanners['template'],
       selected_area_metas: this.props.tier_1_scanners['selected_area'],
     }
-  }
-
-  buildMovieSetOptions(insights_job_name) {
-    const movie_set_keys = Object.keys(this.props.movie_sets)
-    if (!movie_set_keys) {
-      return ''
-    }
-    return (
-      <div>
-        {movie_set_keys.map((value, index) => {
-          return (
-            <button
-                className='dropdown-item'
-                key={index}
-                onClick={() => this.packageAndCallSubmitJob(insights_job_name, value)}
-            >
-              MovieSet '{this.props.movie_sets[value]['name']}' as Job
-            </button>
-          )
-        })}
-      </div>
-    )
   }
 
   buildTier1RunOptions(scanner_type, insights_job_name) {
@@ -115,7 +91,6 @@ class BottomInsightsControls extends React.Component {
           submitInsightsJob={this.props.submitInsightsJob}
           displayInsightsMessage={this.props.displayInsightsMessage}
           cropImage={this.props.cropImage}
-          buildMovieSetOptions={this.buildMovieSetOptions}
           buildTier1RunOptions={this.buildTier1RunOptions}
           visibilityFlags={this.props.visibilityFlags}
           toggleShowVisibility={this.props.toggleShowVisibility}
@@ -141,10 +116,7 @@ class BottomInsightsControls extends React.Component {
         <DataSifterControls 
           setGlobalStateVar={this.props.setGlobalStateVar}
           handleSetMode={this.props.handleSetMode}
-//          submitInsightsJob={this.props.submitInsightsJob}
           displayInsightsMessage={this.props.displayInsightsMessage}
-//          cropImage={this.props.cropImage}
-//          buildMovieSetOptions={this.buildMovieSetOptions}
           buildTier1RunOptions={this.buildTier1RunOptions}
           visibilityFlags={this.props.visibilityFlags}
           toggleShowVisibility={this.props.toggleShowVisibility}
@@ -152,11 +124,7 @@ class BottomInsightsControls extends React.Component {
           insights_image={this.props.insights_image}
           movie_url={this.props.movie_url}
           clicked_coords={this.props.clicked_coords}
-//          setScrubberToIndex={this.props.setScrubberToIndex}
-//          getFramesetHashForImageUrl={this.props.getFramesetHashForImageUrl}
-//          getFramesetHashesInOrder={this.props.getFramesetHashesInOrder}
           movies={this.props.movies}
-//          setCurrentVideo={this.props.setCurrentVideo}
           saveScannerToDatabase={this.props.saveScannerToDatabase}
           scanners={this.props.scanners}
           getScanners={this.props.getScanners}
@@ -196,7 +164,6 @@ class BottomInsightsControls extends React.Component {
 
         <SelectedAreaControls
           setGlobalStateVar={this.props.setGlobalStateVar}
-          buildMovieSetOptions={this.buildMovieSetOptions}
           buildTier1RunOptions={this.buildTier1RunOptions}
           handleSetMode={this.props.handleSetMode}
           insights_image={this.props.insights_image}
@@ -225,7 +192,6 @@ class BottomInsightsControls extends React.Component {
 
         <MeshMatchControls
           setGlobalStateVar={this.props.setGlobalStateVar}
-          buildMovieSetOptions={this.buildMovieSetOptions}
           buildTier1RunOptions={this.buildTier1RunOptions}
           handleSetMode={this.props.handleSetMode}
           insights_image={this.props.insights_image}
@@ -254,7 +220,6 @@ class BottomInsightsControls extends React.Component {
 
         <SelectionGrowerControls
           setGlobalStateVar={this.props.setGlobalStateVar}
-          buildMovieSetOptions={this.buildMovieSetOptions}
           buildTier1RunOptions={this.buildTier1RunOptions}
           handleSetMode={this.props.handleSetMode}
           insights_image={this.props.insights_image}
@@ -291,7 +256,6 @@ class BottomInsightsControls extends React.Component {
           handleSetMode={this.props.handleSetMode}
           clicked_coords={this.props.clicked_coords}
           buildTier1RunOptions={this.buildTier1RunOptions}
-          buildMovieSetOptions={this.buildMovieSetOptions}
           setGlobalStateVar={this.props.setGlobalStateVar}
           scanners={this.props.scanners}
           getScanners={this.props.getScanners}
@@ -312,7 +276,6 @@ class BottomInsightsControls extends React.Component {
 
         <TelemetryControls
           displayInsightsMessage={this.props.displayInsightsMessage}
-          movie_sets={this.props.movie_sets}
           submitInsightsJob={this.props.submitInsightsJob}
           telemetry_data={this.props.telemetry_data}
           setTelemetryData={this.props.setTelemetryData}
@@ -379,15 +342,6 @@ class BottomInsightsControls extends React.Component {
           toggleShowVisibility={this.props.toggleShowVisibility}
           submitInsightsJob={this.props.submitInsightsJob}
           movies={this.props.movies}
-        />
-
-        <MovieSetsControls
-          setGlobalStateVar={this.props.setGlobalStateVar}
-          displayInsightsMessage={this.props.displayInsightsMessage}
-          movie_sets={this.props.movie_sets}
-          draggedId={this.props.draggedId}
-          visibilityFlags={this.props.visibilityFlags}
-          toggleShowVisibility={this.props.toggleShowVisibility}
         />
 
         <ResultsControls

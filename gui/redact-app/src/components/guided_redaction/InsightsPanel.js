@@ -1357,7 +1357,6 @@ class InsightsPanel extends React.Component {
             setKeyDownCallback={this.setKeyDownCallback}
             getAnnotations={this.getAnnotations}
             cropImage={this.props.cropImage}
-            movie_sets={this.props.movie_sets}
             draggedId={this.state.draggedId}
             visibilityFlags={this.props.visibilityFlags}
             toggleShowVisibility={this.props.toggleShowVisibility}

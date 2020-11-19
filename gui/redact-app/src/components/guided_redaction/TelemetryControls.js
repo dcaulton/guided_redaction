@@ -443,7 +443,6 @@ class TelemetryControls extends React.Component {
   }
 
   buildScanForTimestampButton() {
-    let movie_set_keys = Object.keys(this.props.movie_sets)
     return (
       <div className='d-inline'>
         <button
@@ -467,24 +466,12 @@ class TelemetryControls extends React.Component {
           >
             All Movies
           </button>
-            {movie_set_keys.map((value, index) => {
-              return (
-                <button
-                    className='dropdown-item'
-                    key={index}
-                    onClick={() => this.props.submitInsightsJob('telemetry_movie_set', value)}
-                >
-                  MovieSet '{this.props.movie_sets[value]['name']}' as Job
-                </button>
-              )
-            })}
         </div>
       </div>
     )
   }
 
   buildRunButton() {
-    let movie_set_keys = Object.keys(this.props.movie_sets)
     return (
       <div className='d-inline'>
         <button
@@ -508,17 +495,6 @@ class TelemetryControls extends React.Component {
           >
             All Movies
           </button>
-            {movie_set_keys.map((value, index) => {
-              return (
-                <button
-                    className='dropdown-item'
-                    key={index}
-                    onClick={() => this.props.submitInsightsJob('telemetry_movie_set', value)}
-                >
-                  MovieSet '{this.props.movie_sets[value]['name']}' as Job
-                </button>
-              )
-            })}
         </div>
       </div>
     )

@@ -192,12 +192,7 @@ class ChartMaker:
                         for direction in stats_framesets[frameset_hash]['grid_capture']:
                             if 'friends' in stats_framesets[frameset_hash]['grid_capture'][direction]:
                                 self.make_grid_capture_graph(
-                                    stats_framesets[frameset_hash]['grid_capture'][direction]['friends'],
-                                    stats_framesets[frameset_hash]['grid_capture'][direction]['x_captured_grid_values'],
-                                    stats_framesets[frameset_hash]['grid_capture'][direction]['y_captured_grid_values'],
-                                    stats_framesets[frameset_hash]['grid_capture'][direction]['roi'],
-                                    stats_framesets[frameset_hash]['grid_capture'][direction]['x_hist'],
-                                    stats_framesets[frameset_hash]['grid_capture'][direction]['y_hist'],
+                                    stats_framesets[frameset_hash]['grid_capture'][direction],
                                     source_movie['framesets'][frameset_hash]['images'][0],
                                     movie_url,
                                     build_chart_data[movie_url]['framesets'][frameset_hash],
@@ -208,25 +203,46 @@ class ChartMaker:
 
     def make_grid_capture_graph(
         self, 
-        friends_list, 
-        x_grid_values,
-        y_grid_values,
-        roi,
-        x_hist,
-        y_hist,
+        stats,
         image_url, 
         movie_url, 
         build_data_this_frameset, 
         frameset_hash, 
         chart_storage_uuid
     ):
+        friends_list = stats['friends'] if 'friends' in stats else []
+        x_grid_values = stats['x_captured_grid_values'] if 'x_captured_grid_values' in stats else []
+        y_grid_values = stats['y_captured_grid_values'] if 'y_captured_grid_values' in stats else []
+        roi = stats['roi'] if 'roi' in stats else []
+        outer_roi = stats['outer_roi'] if 'outer_roi' in stats else []
+        x_hist = stats['x_hist'] if 'x_hist' in stats else []
+        y_hist = stats['y_hist'] if 'y_hist' in stats else []
+
         movie_name = movie_url.split('/')[-1]
         movie_uuid = movie_name.split('.')[0]
         cv2_image = self.get_cv2_image(image_url)
 
         self.draw_grid_title(movie_uuid, image_url, frameset_hash, cv2_image)
 
-        self.draw_roi(cv2_image, roi)
+        outer_roi_image = self.draw_roi(cv2_image, outer_roi, (205, 255, 170))
+        if outer_roi_image.__class__.__name__ == 'ndarray':
+            cv2_image = cv2.addWeighted(
+                outer_roi_image, 
+                0.5, 
+                cv2_image, 
+                0.5, 
+                1.0
+            )
+
+        inner_roi_image = self.draw_roi(cv2_image, roi, (200, 200, 255))
+        if inner_roi_image.__class__.__name__ == 'ndarray':
+            cv2_image = cv2.addWeighted(
+                inner_roi_image, 
+                0.5, 
+                cv2_image, 
+                0.5, 
+                1.0
+            )
 
         lines_image = self.draw_grid_lines(cv2_image, x_grid_values, y_grid_values, x_hist, y_hist)
         cv2_image = cv2.addWeighted(
@@ -291,18 +307,36 @@ class ChartMaker:
             3 #lineType
         )
 
-    def draw_roi(self, cv2_image, roi):
+    def draw_roi(self, cv2_image, roi, color):
         if roi:
+            copy = cv2_image.copy()
+            if 'location' in roi:
+                start = roi['location']
+                end = [
+                    int(roi['location'][0]) + int(roi['size'][0]),
+                    int(roi['location'][1]) + int(roi['size'][1])
+                ]
+            if 'start' in roi:
+                start = roi['start']
+                end = roi['end']
+
+            if start[0] < 0: start[0] = 0
+            if start[1] < 0: start[1] = 0
+            if end[0] > cv2_image.shape[1]:
+                end[0] = cv2_image.shape[1]
+            if end[1] > cv2_image.shape[0]:
+                end[1] = cv2_image.shape[0]
+
             sub_img = cv2_image[
-                int(roi['location'][1]): int(roi['location'][1]) + int(roi['size'][1]),
-                int(roi['location'][0]): int(roi['location'][0]) + int(roi['size'][0])
+                start[1]: end[1],
+                start[0]: end[0]
             ]
             blue_rect = sub_img.copy()
             cv2.rectangle(
                 blue_rect,
                 (0, 0),
                 (blue_rect.shape[1], blue_rect.shape[0]),
-                (200, 200, 255),
+                color,
                 -1
             )
 
@@ -314,10 +348,11 @@ class ChartMaker:
                 1.0
             )
 
-            cv2_image[
-                int(roi['location'][1]): int(roi['location'][1]) + int(roi['size'][1]),
-                int(roi['location'][0]): int(roi['location'][0]) + int(roi['size'][0])
+            copy[
+                start[1]: end[1],
+                start[0]: end[0]
             ] = res
+            return copy
 
     def draw_grid_lines(self, cv2_image, x_grid_values, y_grid_values, x_hist, y_hist):
         copy = cv2_image.copy()

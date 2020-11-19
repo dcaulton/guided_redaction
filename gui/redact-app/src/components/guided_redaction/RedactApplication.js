@@ -36,7 +36,6 @@ class RedactApplication extends React.Component {
       current_workbook_id: '',
       workbooks: [],
       movies: {},
-      movie_sets: {},
       breadcrumbs_title: '',
       breadcrumbs_subtitle: '',
       bypass_whoami: false,
@@ -2301,7 +2300,6 @@ class RedactApplication extends React.Component {
                 current_workbook_id={this.state.current_workbook_id}
                 cropImage={this.cropImage}
                 setMovieNickname={this.setMovieNickname}
-                movie_sets={this.state.movie_sets}
                 frameset_discriminator={this.state.frameset_discriminator}
                 setActiveMovie={this.setActiveMovie}
                 updateGlobalState={this.updateGlobalState}

@@ -66,10 +66,11 @@ class SelectionGrower:
             statistics[growth_direction]['y_captured_grid_values'] = grid_y_values
             statistics[growth_direction]['x_hist'] = hist_x.tolist()
             statistics[growth_direction]['y_hist'] = hist_y.tolist()
+            statistics[growth_direction]['outer_roi'] = growth_roi
             if grid_x_values and last_y - first_y:
                 new_area = self.build_new_area(growth_direction, selected_area, grid_x_values, first_y, last_y)
-                if new_area['size'][0] / new_area['size'][1] < self.min_grid_aspect_ratio:
-                    continue
+#                if new_area['size'][0] / new_area['size'][1] < self.min_grid_aspect_ratio:
+#                    continue
                 new_areas[new_area['id']] = new_area
                 statistics[growth_direction]['roi'] = new_area
         return new_areas, statistics
@@ -137,6 +138,8 @@ class SelectionGrower:
         return first_y, last_y
 
     def build_position_histograms(self, ocr_matches):
+        if not ocr_matches:
+            return np.array([]), np.array([])
         x_left_vals = [ocr_matches[key]['location'][0] for key in ocr_matches]
         x_right_vals = [
             ocr_matches[key]['location'][0] + ocr_matches[key]['size'][0] for key in ocr_matches

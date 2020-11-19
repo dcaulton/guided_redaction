@@ -572,7 +572,6 @@ class MovieCard extends React.Component {
   }
 
   removeVideo(movie_url) {
-console.log('removing movie ', movie_url)
     const new_campaign_movies = []
     for (let i=0; i < this.props.campaign_movies.length; i++) {
       if (this.props.campaign_movies[i] !== movie_url) {
