@@ -1167,17 +1167,7 @@ class InsightsPanel extends React.Component {
               clicked_coords={this.state.clicked_coords}
               getCurrentAreasToRedact={this.getCurrentAreasToRedact}
               movie_url={this.props.movie_url}
-              getCurrentTemplateAnchors={(()=>this.runCallbackFunction('getCurrentTemplateAnchors'))}
-              getCurrentTemplateMaskZones={(()=>this.runCallbackFunction('getCurrentTemplateMaskZones'))}
-              getCurrentOcrWindow={(()=>this.runCallbackFunction('getOcrWindow'))}
-              getCurrentSelectedAreaCenters={(()=>this.runCallbackFunction('getCurrentSelectedAreaCenters'))}
-              getCurrentSelectedAreaMinimumZones={(()=>this.runCallbackFunction('getCurrentSelectedAreaMinimumZones'))}
-              getCurrentSelectedAreaMaximumZones={(()=>this.runCallbackFunction('getCurrentSelectedAreaMaximumZones'))}
-              getCurrentSelectedAreaOriginLocation={(()=>this.runCallbackFunction('getCurrentSelectedAreaOriginLocation'))}
-              getCurrentMeshMatchMinimumZones={(()=>this.runCallbackFunction('getCurrentMeshMatchMinimumZones'))}
-              getCurrentMeshMatchMaximumZones={(()=>this.runCallbackFunction('getCurrentMeshMatchMaximumZones'))}
-              getCurrentSGColors={(()=>this.runCallbackFunction('getCurrentSGColors'))}
-              getCurrentMeshMatchOriginLocation={(()=>this.runCallbackFunction('getCurrentMeshMatchOriginLocation'))}
+              runCallbackFunction={this.runCallbackFunction}
               getCurrentOcrSceneAnalysisMatches={this.getCurrentOcrSceneAnalysisMatches}
               getCurrentPipelineMatches={this.getCurrentPipelineMatches}
             />

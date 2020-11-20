@@ -36,7 +36,7 @@ class CanvasInsightsOverlay extends React.Component {
     if (!this.props.currentImageIsT1ScannerRootImage('template', ['anchors'])) {
       return
     }
-    const anchors = this.props.getCurrentTemplateAnchors()
+    const anchors = this.props.runCallbackFunction('getCurrentTemplateAnchors')
     if (anchors) {
       this.drawBoxesAroundStartEndRecords(
         anchors,
@@ -49,7 +49,7 @@ class CanvasInsightsOverlay extends React.Component {
     if (!this.props.currentImageIsT1ScannerRootImage('selected_area', ['minimum_zones', 'maximum_zones', 'areas'])) {
       return
     }
-    const selected_area_min_zones = this.props.getCurrentSelectedAreaMinimumZones()
+    const selected_area_min_zones = this.props.runCallbackFunction('getCurrentSelectedAreaMinimumZones')
     if (selected_area_min_zones) {
       this.drawBoxesAroundStartEndRecords(
         selected_area_min_zones,
@@ -62,7 +62,7 @@ class CanvasInsightsOverlay extends React.Component {
     if (!this.props.currentImageIsT1ScannerRootImage('selected_area', ['minimum_zones', 'maximum_zones', 'areas'])) {
       return
     }
-    const selected_area_min_zones = this.props.getCurrentSelectedAreaMaximumZones()
+    const selected_area_min_zones = this.props.runCallbackFunction('getCurrentSelectedAreaMaximumZones')
     if (selected_area_min_zones) {
       this.drawBoxesAroundStartEndRecords(
         selected_area_min_zones,
@@ -79,7 +79,7 @@ class CanvasInsightsOverlay extends React.Component {
     if (!this.props.currentImageIsT1ScannerRootImage('mesh_match', ['minimum_zones', 'maximum_zones'])) {
       return
     }
-    const mm_min_zones = this.props.getCurrentMeshMatchMinimumZones()
+    const mm_min_zones = this.props.runCallbackFunction('getCurrentMeshMatchMinimumZones')
     if (mm_min_zones) {
       this.drawBoxesAroundStartEndRecords(
         mm_min_zones,
@@ -92,7 +92,7 @@ class CanvasInsightsOverlay extends React.Component {
     if (!this.props.currentImageIsT1ScannerRootImage('mesh_match', ['minimum_zones', 'maximum_zones'])) {
       return
     }
-    const mm_min_zones = this.props.getCurrentMeshMatchMaximumZones()
+    const mm_min_zones = this.props.runCallbackFunction('getCurrentMeshMatchMaximumZones')
     if (mm_min_zones) {
       this.drawBoxesAroundStartEndRecords(
         mm_min_zones,
@@ -144,7 +144,7 @@ class CanvasInsightsOverlay extends React.Component {
   }
 
   drawOcrWindow() {
-    const window = this.props.getCurrentOcrWindow()
+    const window = this.props.runCallbackFunction('getOcrWindow')
     if (window) {
       this.drawBoxesAroundStartEndRecords(
         [window],
@@ -189,7 +189,7 @@ class CanvasInsightsOverlay extends React.Component {
     if (!this.props.currentImageIsT1ScannerRootImage('template', ['anchors'])) {
       return
     }
-    const mask_zones = this.props.getCurrentTemplateMaskZones()
+    const mask_zones = this.props.runCallbackFunction('getCurrentTemplateMaskZones')
     if (mask_zones) {
       this.drawBoxesAroundStartEndRecords(
         mask_zones,
@@ -246,8 +246,8 @@ class CanvasInsightsOverlay extends React.Component {
     if (!this.props.currentImageIsT1ScannerRootImage('selected_area', ['minimum_zones', 'maximum_zones', 'areas'])) {
       return
     }
-    if (this.props.getCurrentSelectedAreaCenters() && this.props.getCurrentSelectedAreaCenters().length > 0) {
-      const selected_area_centers = this.props.getCurrentSelectedAreaCenters()
+    const selected_area_centers = this.props.runCallbackFunction('getCurrentSelectedAreaCenters')
+    if (selected_area_centers && selected_area_centers.length > 0) {
       for (let i = 0; i < selected_area_centers.length; i++) {
         const center = selected_area_centers[i]
         this.drawCrosshairsGeneric(center['center'], this.selected_area_center_color)
@@ -259,8 +259,8 @@ class CanvasInsightsOverlay extends React.Component {
     if (!this.props.currentImageIsT1ScannerRootImage('selection_grower', ['colors'])) {
       return
     }
-    if (this.props.getCurrentSGColors() && this.props.getCurrentSGColors().length > 0) {
-      const colors = this.props.getCurrentSGColors()
+    const colors = this.props.runCallbackFunction('getCurrentSGColors')
+    if (colors && colors.length > 0) {
       for (let i=0; i < colors.length; i++) {
         const color = colors[i]
         this.drawCrosshairsGeneric(color['location'], this.sg_color)
@@ -297,21 +297,15 @@ class CanvasInsightsOverlay extends React.Component {
   }
 
   drawSelectedAreaOriginLocation() {
-    if (!this.props.currentImageIsT1ScannerRootImage('selected_area', ['minimum_zones', 'maximum_zones', 'areas'])) {
-      return
-    }
-    if (this.props.getCurrentSelectedAreaOriginLocation() && this.props.getCurrentSelectedAreaOriginLocation().length > 0) {
-      const origin = this.props.getCurrentSelectedAreaOriginLocation()
+    const origin = this.props.runCallbackFunction('getCurrentSelectedAreaOriginLocation')
+    if (origin && origin.length > 0) {
       this.drawCrosshairsGeneric(origin, this.selected_area_origin_location_color)
     }
   }
 
   drawMeshMatchOriginLocation() {
-    if (!this.props.currentImageIsT1ScannerRootImage('mesh_match', ['minimum_zones', 'maximum_zones'])) {
-      return
-    }
-    if (this.props.getCurrentMeshMatchOriginLocation() && this.props.getCurrentMeshMatchOriginLocation().length > 0) {
-      const origin = this.props.getCurrentMeshMatchOriginLocation()
+    const origin = this.props.runCallbackFunction('getCurrentMeshMatchOriginLocation')
+    if (origin && origin.length > 0) {
       this.drawCrosshairsGeneric(origin, this.mesh_match_origin_location_color)
     }
   }
