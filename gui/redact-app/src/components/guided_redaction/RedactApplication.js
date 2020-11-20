@@ -45,9 +45,6 @@ class RedactApplication extends React.Component {
       scanners: [],
       files: {},
       subsequences: {},
-      showMovieParserLink: true,
-      showInsightsLink: true,
-      showComposeLink: true,
       whenJobLoaded: {},
       whenDoneTarget: 'learn_dev',
       campaign_movies: [],
@@ -61,7 +58,6 @@ class RedactApplication extends React.Component {
         status: '',
         percent_complete: '',
       },
-      sideNavIsCollapsed: false,
       preserveAllJobs: false,
       pipelines: {},
       results: {},
@@ -97,6 +93,10 @@ class RedactApplication extends React.Component {
         'pipelines': true,
         'import_export': true,
         'redaction_borders': true,
+        'movie_parser_link': true,
+        'insights_link': true,
+        'compose_link': true,
+        'side_nav': true,
       },
       tier_1_scanners: {
         'ocr': {},
@@ -1226,13 +1226,13 @@ class RedactApplication extends React.Component {
     this.startWebSocket()
     this.deleteOldJobsWrapper()
     this.deleteOldWorkbooks()
-    if (!this.state.showMovieParserLink) {
+    if (!this.state.visibilityFlags['movie_parser_link']) {
       document.getElementById('movie_panel_link').style.display = 'none'
     }
-    if (!this.state.showInsightsLink) {
+    if (!this.state.visibilityFlags['insights_link']) {
       document.getElementById('insights_link').style.display = 'none'
     }
-    if (!this.state.showComposeLink) {
+    if (!this.state.visibilityFlags['compose_link']) {
       document.getElementById('compose_link').style.display = 'none'
     }
     this.checkForInboundGetParameters()
@@ -1952,11 +1952,13 @@ class RedactApplication extends React.Component {
 
   handleSetMovieUrl = (the_url) => {
     // TODO have this check campaign_movies  to see if we already have framesets and frames
+    let deepCopyVFs= JSON.parse(JSON.stringify(this.state.visibilityFlags))
+    deepCopyVFs['movie_parser_link'] = true
     this.setState({
       movie_url: the_url,
       image_url: '',
       frameset_hash: '',
-      showMovieParserLink: true,
+      visibilityFlags: deepCopyVFs,
     })
     document.getElementById('movie_panel_link').style.display = 'block'
   }
@@ -2092,7 +2094,7 @@ class RedactApplication extends React.Component {
     let collapse_nav_link_words = '<<'
     let left_div_classname = 'col-4'
     let right_div_classname = 'col-8'
-    if (this.state.sideNavIsCollapsed) {
+    if (!this.state.visibilityFlags['side_nav']) {
       collapse_nav_words = 'Expand'
       collapse_nav_link_words = '>>'
       left_div_classname = 'col-1'
@@ -2109,7 +2111,7 @@ class RedactApplication extends React.Component {
           <div className='d-inline'>
             <button
               className='btn text-light btn-link pt-1 pl-0'
-              onClick={(()=>this.toggleGlobalStateVar('sideNavIsCollapsed'))}
+              onClick={(()=>this.toggleShowVisibility('side_nav'))}
             >
               {collapse_nav_words}
             </button>
@@ -2117,7 +2119,7 @@ class RedactApplication extends React.Component {
           <div className='d-inline'>
             <button
               className='btn text-light btn-link pt-1 pr-0 pl-0'
-              onClick={(()=>this.toggleGlobalStateVar('sideNavIsCollapsed'))}
+              onClick={(()=>this.toggleShowVisibility('side_nav'))}
             >
               {collapse_nav_link_words}
             </button>
@@ -2138,7 +2140,7 @@ class RedactApplication extends React.Component {
     let insights_name = 'Insights'
     let pipeline_name = 'Pipeline'
     let top_div_classnames = 'h-100 col-2 bg-dark navbar-dark pl-4 font-weight-bold'
-    if (this.state.sideNavIsCollapsed) {
+    if (!this.state.visibilityFlags['side_nav']) {
       pl_name = 'PL'
       mr_name = 'MR'
       insights_name = 'In'
@@ -2203,7 +2205,7 @@ class RedactApplication extends React.Component {
 
   render() {
     const button_bar = this.buildWorkflowButtonBar()
-    if (document.getElementById('movie_panel_link') && this.state.showMovieParserLink) {
+    if (document.getElementById('movie_panel_link') && this.state.visibilityFlags['movie_parser_link']) {
       document.getElementById('movie_panel_link').style.display = 'block'
     }
     const side_nav = this.buildSideNav()
