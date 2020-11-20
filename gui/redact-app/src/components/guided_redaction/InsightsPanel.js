@@ -25,6 +25,14 @@ class InsightsPanel extends React.Component {
       imageTypeToDisplay: '',
       callbacks: {},
     }
+    this.tier_1_scanner_types = [
+      'selected_area',
+      'ocr',
+      'ocr_scene_analysis',
+      'mesh_match',
+      'template',
+      'selection_grower'
+    ]
     this.getAnnotations=this.getAnnotations.bind(this)
     this.setCurrentVideo=this.setCurrentVideo.bind(this)
     this.setInsightsImage=this.setInsightsImage.bind(this)
@@ -45,7 +53,6 @@ class InsightsPanel extends React.Component {
     this.callGetVersion=this.callGetVersion.bind(this)
     this.submitInsightsJob=this.submitInsightsJob.bind(this)
     this.setSelectedAreaTemplateAnchor=this.setSelectedAreaTemplateAnchor.bind(this)
-    this.getCurrentSelectedAreaMeta=this.getCurrentSelectedAreaMeta.bind(this)
     this.displayInsightsMessage=this.displayInsightsMessage.bind(this)
     this.saveAnnotation=this.saveAnnotation.bind(this)
     this.deleteAnnotation=this.deleteAnnotation.bind(this)
@@ -57,9 +64,7 @@ class InsightsPanel extends React.Component {
     this.afterMovieSplitInsightsJobLoaded=this.afterMovieSplitInsightsJobLoaded.bind(this)
     this.setImageTypeToDisplay=this.setImageTypeToDisplay.bind(this)
     this.addInsightsCallback=this.addInsightsCallback.bind(this)
-    this.getCurrentOcrMatches=this.getCurrentOcrMatches.bind(this)
     this.getCurrentPipelineMatches=this.getCurrentPipelineMatches.bind(this)
-    this.getCurrentSelectionGrowerZones=this.getCurrentSelectionGrowerZones.bind(this)
     this.getCurrentAreasToRedact=this.getCurrentAreasToRedact.bind(this)
     this.setScrubberToIndex=this.setScrubberToIndex.bind(this)
     this.getCurrentOcrSceneAnalysisMatches=this.getCurrentOcrSceneAnalysisMatches.bind(this)
@@ -134,53 +139,6 @@ class InsightsPanel extends React.Component {
       const this_pipeline_matches = this.props.tier_1_matches['pipeline'][this.props.tier_1_scanner_current_ids['pipeline']]  
       if (Object.keys(this_pipeline_matches['movies']).includes(this.props.movie_url)) {
         const this_movies_matches = this_pipeline_matches['movies'][this.props.movie_url]
-        const frameset_hash = this.props.getFramesetHashForImageUrl(this.state.insights_image)
-        if (Object.keys(this_movies_matches['framesets']).includes(frameset_hash)) {
-          const this_framesets_matches = this_movies_matches['framesets'][frameset_hash]
-          if (Object.keys(this_framesets_matches).length) {
-            let return_arr = []
-            for (let i=0; i < Object.keys(this_framesets_matches).length; i++) {
-              const ocr_hit_key = Object.keys(this_framesets_matches)[i]
-              const ocr_hit_record = this_framesets_matches[ocr_hit_key]
-              return_arr.push(ocr_hit_record)
-            }
-            return return_arr
-          }
-        }
-      }
-    }
-    return []
-  }
-
-  getCurrentSelectionGrowerZones() {
-    const sg_id = this.props.tier_1_scanner_current_ids['selection_grower']
-    if (Object.keys(this.props.tier_1_matches['selection_grower']).includes(sg_id)) {
-      const matches = this.props.tier_1_matches['selection_grower'][sg_id]  
-      if (Object.keys(matches['movies']).includes(this.props.movie_url)) {
-        const this_movies_matches = matches['movies'][this.props.movie_url]
-        const frameset_hash = this.props.getFramesetHashForImageUrl(this.state.insights_image)
-        if (Object.keys(this_movies_matches['framesets']).includes(frameset_hash)) {
-          const this_framesets_matches = this_movies_matches['framesets'][frameset_hash]
-          if (Object.keys(this_framesets_matches).length) {
-            let return_arr = []
-            for (let i=0; i < Object.keys(this_framesets_matches).length; i++) {
-              const ocr_hit_key = Object.keys(this_framesets_matches)[i]
-              const ocr_hit_record = this_framesets_matches[ocr_hit_key]
-              return_arr.push(ocr_hit_record)
-            }
-            return return_arr
-          }
-        }
-      }
-    }
-    return []
-  }
-
-  getCurrentOcrMatches() {
-    if (Object.keys(this.props.tier_1_matches['ocr']).includes(this.props.tier_1_scanner_current_ids['ocr'])) {
-      const this_ocr_rule_matches = this.props.tier_1_matches['ocr'][this.props.tier_1_scanner_current_ids['ocr']]  
-      if (Object.keys(this_ocr_rule_matches['movies']).includes(this.props.movie_url)) {
-        const this_movies_matches = this_ocr_rule_matches['movies'][this.props.movie_url]
         const frameset_hash = this.props.getFramesetHashForImageUrl(this.state.insights_image)
         if (Object.keys(this_movies_matches['framesets']).includes(frameset_hash)) {
           const this_framesets_matches = this_movies_matches['framesets'][frameset_hash]
@@ -274,16 +232,6 @@ class InsightsPanel extends React.Component {
         }
       }
     }
-  }
-
-  getCurrentSelectedAreaMeta() {
-    if (this.props.tier_1_scanner_current_ids['selected_area'] && 
-        Object.keys(this.props.tier_1_scanners['selected_area']).includes(
-          this.props.tier_1_scanner_current_ids['selected_area']
-        )) {
-      return this.props.tier_1_scanners['selected_area'][this.props.tier_1_scanner_current_ids['selected_area']]
-    }
-    return {}
   }
 
   setSelectedAreaTemplateAnchor(the_anchor_id) {
@@ -671,45 +619,20 @@ class InsightsPanel extends React.Component {
       this.displayInsightsMessage('no movie loaded, cannot submit a job')
       return
     }
-    if (
-        job_string.startsWith('ocr_scene_analysis_')
-    ) {
-      let job_data = this.buildTier1JobData('ocr_scene_analysis', job_string, extra_data)
-      this.props.submitJob({
-        job_data: job_data,
-      })
-    } else if (
-        job_string.startsWith('ocr_')
-    ) {
-      let job_data = this.buildTier1JobData('ocr', job_string, extra_data)
-      this.props.submitJob({
-        job_data: job_data,
-      })
-    } else if (
-        job_string.startsWith('template_')
-    ) {
-      let job_data = this.buildTier1JobData('template', job_string, extra_data)
-      this.props.submitJob({
-        job_data: job_data,
-      })
-    } else if (
-        job_string.startsWith('selected_area_')
-    ) {
-      let job_data = this.buildTier1JobData('selected_area', job_string, extra_data)
-      this.props.submitJob({
-        job_data: job_data,
-      })
-    } else if (
-        job_string.startsWith('mesh_match_')
-    ) {
-      let job_data = this.buildTier1JobData('mesh_match', job_string, extra_data)
-      this.props.submitJob({
-        job_data: job_data,
-      })
-    } else if (
-        job_string.startsWith('selection_grower_')
-    ) {
-      let job_data = this.buildTier1JobData('selection_grower', job_string, extra_data)
+
+    let is_t1_job = false
+    let t1_job_type = ''
+    for (let i=0; i < this.tier_1_scanner_types.length; i++) {
+      const scanner_type = this.tier_1_scanner_types[i]
+      if (job_string.startsWith(scanner_type + '_')) {
+        is_t1_job = true
+        t1_job_type = scanner_type
+        break
+      }
+    }
+
+    if (is_t1_job) {
+      let job_data = this.buildTier1JobData(t1_job_type, job_string, extra_data)
       this.props.submitJob({
         job_data: job_data,
       })
@@ -1309,7 +1232,6 @@ class InsightsPanel extends React.Component {
               getAnnotations={this.getAnnotations}
               mode={this.state.mode}
               clicked_coords={this.state.clicked_coords}
-              getCurrentOcrMatches={this.getCurrentOcrMatches}
               getCurrentAreasToRedact={this.getCurrentAreasToRedact}
               movie_url={this.props.movie_url}
               getCurrentTemplateAnchors={(()=>this.runCallbackFunction('getCurrentTemplateAnchors'))}
@@ -1325,7 +1247,6 @@ class InsightsPanel extends React.Component {
               getCurrentMeshMatchOriginLocation={(()=>this.runCallbackFunction('getCurrentMeshMatchOriginLocation'))}
               getCurrentOcrSceneAnalysisMatches={this.getCurrentOcrSceneAnalysisMatches}
               getCurrentPipelineMatches={this.getCurrentPipelineMatches}
-              getCurrentSelectionGrowerZones={this.getCurrentSelectionGrowerZones}
             />
           </div>
 
@@ -1344,7 +1265,6 @@ class InsightsPanel extends React.Component {
             saveWorkbook={this.props.saveWorkbook}
             saveWorkbookName={this.props.saveWorkbookName}
             setSelectedAreaTemplateAnchor={this.setSelectedAreaTemplateAnchor}
-            getCurrentSelectedAreaMeta={this.getCurrentSelectedAreaMeta}
             current_workbook_name={this.props.current_workbook_name}
             current_workbook_id={this.props.current_workbook_id}
             workbooks={this.props.workbooks}

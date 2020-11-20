@@ -170,7 +170,6 @@ class BottomInsightsControls extends React.Component {
           getFramesetHashForImageUrl={this.props.getFramesetHashForImageUrl}
           movie_url={this.props.movie_url}
           setSelectedAreaTemplateAnchor={this.props.setSelectedAreaTemplateAnchor}
-          getCurrentSelectedAreaMeta={this.props.getCurrentSelectedAreaMeta}
           visibilityFlags={this.props.visibilityFlags}
           toggleShowVisibility={this.props.toggleShowVisibility}
           displayInsightsMessage={this.props.displayInsightsMessage}
@@ -198,7 +197,6 @@ class BottomInsightsControls extends React.Component {
           getFramesetHashForImageUrl={this.props.getFramesetHashForImageUrl}
           movie_url={this.props.movie_url}
           setSelectedAreaTemplateAnchor={this.props.setSelectedAreaTemplateAnchor}
-          getCurrentSelectedAreaMeta={this.props.getCurrentSelectedAreaMeta}
           visibilityFlags={this.props.visibilityFlags}
           toggleShowVisibility={this.props.toggleShowVisibility}
           displayInsightsMessage={this.props.displayInsightsMessage}
@@ -226,7 +224,6 @@ class BottomInsightsControls extends React.Component {
           getFramesetHashForImageUrl={this.props.getFramesetHashForImageUrl}
           movie_url={this.props.movie_url}
           setSelectedAreaTemplateAnchor={this.props.setSelectedAreaTemplateAnchor}
-          getCurrentSelectedAreaMeta={this.props.getCurrentSelectedAreaMeta}
           visibilityFlags={this.props.visibilityFlags}
           toggleShowVisibility={this.props.toggleShowVisibility}
           displayInsightsMessage={this.props.displayInsightsMessage}
