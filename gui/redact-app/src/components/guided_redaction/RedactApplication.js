@@ -84,7 +84,6 @@ class RedactApplication extends React.Component {
         'selectedArea': true,
         'mesh_match': true,
         'selection_grower': true,
-        'annotate': true,
         'telemetry': true,
         'filesystem': true,
         'ocr': true,

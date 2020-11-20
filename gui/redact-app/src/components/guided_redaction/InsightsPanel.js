@@ -33,7 +33,6 @@ class InsightsPanel extends React.Component {
       'template',
       'selection_grower'
     ]
-    this.getAnnotations=this.getAnnotations.bind(this)
     this.setCurrentVideo=this.setCurrentVideo.bind(this)
     this.setInsightsImage=this.setInsightsImage.bind(this)
     this.movieSplitDone=this.movieSplitDone.bind(this)
@@ -51,9 +50,6 @@ class InsightsPanel extends React.Component {
     this.submitInsightsJob=this.submitInsightsJob.bind(this)
     this.setSelectedAreaTemplateAnchor=this.setSelectedAreaTemplateAnchor.bind(this)
     this.displayInsightsMessage=this.displayInsightsMessage.bind(this)
-    this.saveAnnotation=this.saveAnnotation.bind(this)
-    this.deleteAnnotation=this.deleteAnnotation.bind(this)
-    this.handleKeyDown=this.handleKeyDown.bind(this)
     this.setKeyDownCallback=this.setKeyDownCallback.bind(this)
     this.keyDownCallbacks = {}
     this.setDraggedId=this.setDraggedId.bind(this)
@@ -220,17 +216,6 @@ class InsightsPanel extends React.Component {
     this.keyDownCallbacks[key_code] = the_function
   }
   
-  handleKeyDown(e) {
-    if (this.state.mode === 'add_annotations_interactive') {
-      for (let i=0; i < Object.keys(this.keyDownCallbacks).length; i++) {
-        let key = parseInt(Object.keys(this.keyDownCallbacks)[i], 10)
-        if (e.keyCode === key) {
-          this.keyDownCallbacks[key]()
-        }
-      }
-    }
-  }
-
   setSelectedAreaTemplateAnchor(the_anchor_id) {
     this.setState({
       selected_area_template_anchor: the_anchor_id,
@@ -764,10 +749,6 @@ class InsightsPanel extends React.Component {
       the_message = "Mask zone was successfully added"
     } else if (the_mode === 'add_template_mask_zone_1') {
       the_message = 'Select the first corner of the mask zone'
-    } else if (the_mode === 'add_annotations_interactive') {
-      the_message = 'press space to annotate/deannotate, left/right to advance through framesets'
-    } else if (the_mode === 'add_annotations_ocr_start') {
-      the_message = 'Select the first corner of the region the text area'
     } else if (the_mode === 'add_sa_origin_location_1') {
       the_message = 'Select the origin location'
     } else if (the_mode === 'add_ocr_origin_location_1') {
@@ -784,8 +765,6 @@ class InsightsPanel extends React.Component {
       the_message = 'pick the second corner of the anchor'
     } else if (the_mode === 'add_template_mask_zone_2') {
       the_message = 'pick the second corner of the mask zone'
-    } else if (the_mode === 'add_annotations_ocr_end') {
-      the_message = 'pick the second corner of the text area'
     } else if (the_mode === 'scan_ocr_2') {
       the_message = 'click second corner'
     } else if (the_mode === 'oma_pick_app') {
@@ -862,69 +841,6 @@ class InsightsPanel extends React.Component {
       this.handleSetMode('add_template_mask_zone_2') 
     } else if (this.state.mode === 'scan_ocr_1') {
       this.handleSetMode('scan_ocr_2') 
-    } else if (this.state.mode === 'add_annotations_ocr_start') {
-      this.handleSetMode('add_annotations_ocr_end') 
-    } else if (this.state.mode === 'add_annotations_ocr_end') {
-      this.handleSetMode('add_annotations_ocr_end') 
-    }
-  }
-
-  saveAnnotation(annotation_data, when_done=(()=>{})) {
-    const cur_frameset_hash = this.getScrubberFramesetHash()
-    let deepCopyAnnotations = JSON.parse(JSON.stringify(this.props.annotations))
-
-    if (annotation_data['type'] && annotation_data['type'] === 'template') {
-      let template_obj = {}
-      if (Object.keys(deepCopyAnnotations).includes(annotation_data['template_id'])) {
-        template_obj = deepCopyAnnotations[annotation_data['template_id']]
-      }
-      let movie_obj = {}
-      if (Object.keys(template_obj).includes(this.props.movie_url)) {
-        movie_obj = template_obj[this.props.movie_url]
-      }
-      let frameset_obj = {}
-      if (Object.keys(movie_obj).includes(cur_frameset_hash)) {
-        frameset_obj = movie_obj[cur_frameset_hash]
-      }
-      let anchor_obj = {}
-      if (Object.keys(frameset_obj).includes(annotation_data['template_anchor_id'])) {
-        anchor_obj = frameset_obj[annotation_data['template_anchor_id']]
-      }
-      anchor_obj['data'] = annotation_data['data']
-      frameset_obj[annotation_data['template_anchor_id']] = anchor_obj
-      movie_obj[cur_frameset_hash] = frameset_obj
-      template_obj[this.props.movie_url] = movie_obj
-      deepCopyAnnotations[annotation_data['template_id']] = template_obj
-      this.props.setGlobalStateVar('annotations', deepCopyAnnotations)
-      when_done()
-    }
-    if (annotation_data['type'] && annotation_data['type'] === 'ocr') {
-      let annotation_key = 'ocr:' + annotation_data['data']['match_string']
-
-      let annotation_obj = {}
-      if (Object.keys(deepCopyAnnotations).includes(annotation_key)) {
-        annotation_obj = deepCopyAnnotations[annotation_key]
-      } 
-      let movie_obj = {}
-      if (Object.keys(annotation_obj).includes(this.props.movie_url)) {
-        movie_obj = annotation_obj[this.props.movie_url]
-      }
-      let new_data = {
-        'match_percent': 90,
-      }
-      movie_obj[cur_frameset_hash] = new_data
-      annotation_obj[this.props.movie_url] = movie_obj
-      deepCopyAnnotations[annotation_key] = annotation_obj
-
-      this.props.setGlobalStateVar('annotations', deepCopyAnnotations)
-      when_done()
-    }
-
-  }
-
-  deleteAnnotation(scope='all') {
-    if (scope === 'all') {
-     this.props.setGlobalStateVar('annotations', {})
     }
   }
 
@@ -988,22 +904,6 @@ class InsightsPanel extends React.Component {
       return
     }
     return cur_movies_matches['framesets'][insight_image_hash]
-  }
-
-  getAnnotations() {
-    if (!Object.keys(this.props.annotations).includes(this.props.tier_1_scanner_current_ids['template'])) {
-      return
-    }
-    const cur_templates_matches = this.props.annotations[this.props.tier_1_scanner_current_ids['template']]
-    if (!Object.keys(cur_templates_matches).includes(this.props.movie_url)) {
-      return
-    }
-    const cur_movies_matches = cur_templates_matches[this.props.movie_url]
-    const frameset_hash = this.getScrubberFramesetHash() 
-    if (!Object.keys(cur_movies_matches).includes(frameset_hash)) {
-      return
-    }
-    return cur_movies_matches[frameset_hash]
   }
 
   getScrubberHeight() {
@@ -1089,7 +989,6 @@ class InsightsPanel extends React.Component {
   }
 
   render() {
-    document.body.onkeydown = this.handleKeyDown
     let workbook_name = this.props.current_workbook_name
     const insights_image = this.getInsightsImage()
     const image_element = this.buildImageElement(insights_image)
@@ -1162,7 +1061,6 @@ class InsightsPanel extends React.Component {
               currentImageIsT1ScannerRootImage={this.currentImageIsT1ScannerRootImage}
               insights_image_scale={this.state.insights_image_scale}
               getTier1ScannerMatches={this.getTier1ScannerMatches}
-              getAnnotations={this.getAnnotations}
               mode={this.state.mode}
               clicked_coords={this.state.clicked_coords}
               getCurrentAreasToRedact={this.getCurrentAreasToRedact}
@@ -1194,11 +1092,7 @@ class InsightsPanel extends React.Component {
             loadWorkbook={this.props.loadWorkbook}
             deleteWorkbook={this.props.deleteWorkbook}
             displayInsightsMessage={this.displayInsightsMessage}
-            saveAnnotation={this.saveAnnotation}
-            deleteAnnotation={this.deleteAnnotation}
-            annotations={this.props.annotations}
             setKeyDownCallback={this.setKeyDownCallback}
-            getAnnotations={this.getAnnotations}
             cropImage={this.props.cropImage}
             draggedId={this.state.draggedId}
             visibilityFlags={this.props.visibilityFlags}

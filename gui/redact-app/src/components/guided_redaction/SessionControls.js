@@ -408,10 +408,6 @@ class SessionControls extends React.Component {
     if (this.props.visibilityFlags['filesystem']) {
       show_filesystem_checked = 'checked'
     }
-    let show_annotate_checked = ''
-    if (this.props.visibilityFlags['annotate']) {
-      show_annotate_checked = 'checked'
-    }
     let show_telemetry_checked = ''
     if (this.props.visibilityFlags['telemetry']) {
       show_telemetry_checked = 'checked'
@@ -515,16 +511,6 @@ class SessionControls extends React.Component {
             onChange={() => this.props.toggleShowVisibility('import_export')}
           />
           Show Import / Export
-        </div>
-
-        <div className='row mt-3 bg-light rounded'>
-          <input
-            className='ml-2 mr-2 mt-1'
-            checked={show_annotate_checked}
-            type='checkbox'
-            onChange={() => this.props.toggleShowVisibility('annotate')}
-          />
-          Show Annotate
         </div>
 
         <div className='row mt-3 bg-light rounded'>
