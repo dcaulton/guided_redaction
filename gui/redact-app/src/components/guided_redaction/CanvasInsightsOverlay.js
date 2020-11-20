@@ -33,7 +33,7 @@ class CanvasInsightsOverlay extends React.Component {
   }
 
   drawTemplateAnchors() {
-    if (!this.props.currentImageIsTemplateAnchorImage()) {
+    if (!this.props.currentImageIsT1ScannerRootImage('template', ['anchors'])) {
       return
     }
     const anchors = this.props.getCurrentTemplateAnchors()
@@ -46,7 +46,7 @@ class CanvasInsightsOverlay extends React.Component {
   }
 
   drawSelectedAreaMinimumZones() {
-    if (!this.props.currentImageIsSelectedAreaAnchorImage()) {
+    if (!this.props.currentImageIsT1ScannerRootImage('selected_area', ['minimum_zones', 'maximum_zones', 'areas'])) {
       return
     }
     const selected_area_min_zones = this.props.getCurrentSelectedAreaMinimumZones()
@@ -59,7 +59,7 @@ class CanvasInsightsOverlay extends React.Component {
   }
 
   drawSelectedAreaMaximumZones() {
-    if (!this.props.currentImageIsSelectedAreaAnchorImage()) {
+    if (!this.props.currentImageIsT1ScannerRootImage('selected_area', ['minimum_zones', 'maximum_zones', 'areas'])) {
       return
     }
     const selected_area_min_zones = this.props.getCurrentSelectedAreaMaximumZones()
@@ -76,7 +76,7 @@ class CanvasInsightsOverlay extends React.Component {
   }
 
   drawMeshMatchMinimumZones() {
-    if (!this.props.currentImageIsMeshMatchAnchorImage()) {
+    if (!this.props.currentImageIsT1ScannerRootImage('mesh_match', ['minimum_zones', 'maximum_zones'])) {
       return
     }
     const mm_min_zones = this.props.getCurrentMeshMatchMinimumZones()
@@ -89,7 +89,7 @@ class CanvasInsightsOverlay extends React.Component {
   }
 
   drawMeshMatchMaximumZones() {
-    if (!this.props.currentImageIsMeshMatchAnchorImage()) {
+    if (!this.props.currentImageIsT1ScannerRootImage('mesh_match', ['minimum_zones', 'maximum_zones'])) {
       return
     }
     const mm_min_zones = this.props.getCurrentMeshMatchMaximumZones()
@@ -186,7 +186,7 @@ class CanvasInsightsOverlay extends React.Component {
   }
 
   drawTemplateMaskZones() {
-    if (!this.props.currentImageIsTemplateAnchorImage()) {
+    if (!this.props.currentImageIsT1ScannerRootImage('template', ['anchors'])) {
       return
     }
     const mask_zones = this.props.getCurrentTemplateMaskZones()
@@ -243,7 +243,7 @@ class CanvasInsightsOverlay extends React.Component {
   }
 
   drawSelectedAreaCenters() {
-    if (!this.props.currentImageIsSelectedAreaAnchorImage()) {
+    if (!this.props.currentImageIsT1ScannerRootImage('selected_area', ['minimum_zones', 'maximum_zones', 'areas'])) {
       return
     }
     if (this.props.getCurrentSelectedAreaCenters() && this.props.getCurrentSelectedAreaCenters().length > 0) {
@@ -256,7 +256,7 @@ class CanvasInsightsOverlay extends React.Component {
   }
 
   drawSGColors() {
-    if (!this.props.currentImageIsSGAnchorImage()) {
+    if (!this.props.currentImageIsT1ScannerRootImage('selection_grower', ['colors'])) {
       return
     }
     if (this.props.getCurrentSGColors() && this.props.getCurrentSGColors().length > 0) {
@@ -297,7 +297,7 @@ class CanvasInsightsOverlay extends React.Component {
   }
 
   drawSelectedAreaOriginLocation() {
-    if (!this.props.currentImageIsSelectedAreaAnchorImage()) {
+    if (!this.props.currentImageIsT1ScannerRootImage('selected_area', ['minimum_zones', 'maximum_zones', 'areas'])) {
       return
     }
     if (this.props.getCurrentSelectedAreaOriginLocation() && this.props.getCurrentSelectedAreaOriginLocation().length > 0) {
@@ -307,7 +307,7 @@ class CanvasInsightsOverlay extends React.Component {
   }
 
   drawMeshMatchOriginLocation() {
-    if (!this.props.currentImageIsMeshMatchAnchorImage()) {
+    if (!this.props.currentImageIsT1ScannerRootImage('mesh_match', ['minimum_zones', 'maximum_zones'])) {
       return
     }
     if (this.props.getCurrentMeshMatchOriginLocation() && this.props.getCurrentMeshMatchOriginLocation().length > 0) {

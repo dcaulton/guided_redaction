@@ -40,11 +40,8 @@ class InsightsPanel extends React.Component {
     this.scrubberOnChange=this.scrubberOnChange.bind(this)
     this.handleSetMode=this.handleSetMode.bind(this)
     this.getTier1ScannerMatches=this.getTier1ScannerMatches.bind(this)
-    this.currentImageIsTemplateAnchorImage=this.currentImageIsTemplateAnchorImage.bind(this)
-    this.currentImageIsSelectedAreaAnchorImage=this.currentImageIsSelectedAreaAnchorImage.bind(this)
-    this.currentImageIsMeshMatchAnchorImage=this.currentImageIsMeshMatchAnchorImage.bind(this)
+    this.currentImageIsT1ScannerRootImage=this.currentImageIsT1ScannerRootImage.bind(this)
     this.currentImageIsOsaMatchImage=this.currentImageIsOsaMatchImage.bind(this)
-    this.currentImageIsSGAnchorImage=this.currentImageIsSGAnchorImage.bind(this)
     this.afterPingSuccess=this.afterPingSuccess.bind(this)
     this.afterPingFailure=this.afterPingFailure.bind(this)
     this.afterGetVersionSuccess=this.afterGetVersionSuccess.bind(this)
@@ -695,89 +692,28 @@ class InsightsPanel extends React.Component {
     }
   }
   
-  currentImageIsTemplateAnchorImage() {
-    if (this.props.tier_1_scanner_current_ids['template']) {
-      let key = this.props.tier_1_scanner_current_ids['template']
-      if (!Object.keys(this.props.tier_1_scanners['template']).includes(key)) {
+  currentImageIsT1ScannerRootImage(scanner_type, anchor_names) {
+    if (this.props.tier_1_scanner_current_ids[scanner_type]) {
+      let key = this.props.tier_1_scanner_current_ids[scanner_type]
+      if (!Object.keys(this.props.tier_1_scanners[scanner_type]).includes(key)) {
         return false
       }
-      let template = this.props.tier_1_scanners['template'][key]
-      if (!Object.keys(template).includes('anchors')) {
-        return false
+      let scanner = this.props.tier_1_scanners[scanner_type][key]
+      for (let i=0; i < anchor_names.length; i++) {
+        const anchor_name = anchor_names[i]
+        if (!Object.keys(scanner).includes(anchor_name)) {
+          return false
+        }
+        for (let j=0; j < scanner[anchor_name].length; j++) {
+          const anchor = scanner[anchor_name][j]
+          if (
+            Object.keys(anchor).includes('image') && 
+            anchor['image'] === this.state.insights_image
+          ) {
+            return true
+          }
+        }
       }
-      if (!template['anchors'].length) {
-        return false
-      }
-      let cur_template_anchor_image_name = template['anchors'][0]['image']
-      return (cur_template_anchor_image_name === this.state.insights_image)
-    } else {
-      return true
-    }
-  }
-
-// todo push this into SelectedAreaController, with a callback, same for template stuff
-  currentImageIsSelectedAreaAnchorImage() {
-    if (this.props.tier_1_scanner_current_ids['selected_area']) {
-      let key = this.props.tier_1_scanner_current_ids['selected_area']
-      if (!Object.keys(this.props.tier_1_scanners['selected_area']).includes(key)) {
-        return false
-      }
-      let sam = this.props.tier_1_scanners['selected_area'][key]
-      if (!Object.keys(sam).includes('areas')) {
-        return false
-      }
-      if (!sam['areas'].length && !sam['minimum_zones'].length) {
-        return false
-      }
-      let cur_sam_anchor_image_name = ''
-      if (sam['areas'].length > 0) {
-        cur_sam_anchor_image_name = sam['areas'][0]['image']
-      } else if (sam['minimum_zones'].length > 0) {
-        cur_sam_anchor_image_name = sam['minimum_zones'][0]['image']
-      }
-      return (cur_sam_anchor_image_name === this.state.insights_image)
-    } else {
-      return true
-    }
-  }
-
-  currentImageIsMeshMatchAnchorImage() {
-    if (this.props.tier_1_scanner_current_ids['mesh_match']) {
-      let key = this.props.tier_1_scanner_current_ids['mesh_match']
-      if (!Object.keys(this.props.tier_1_scanners['mesh_match']).includes(key)) {
-        return false
-      }
-      let sam = this.props.tier_1_scanners['mesh_match'][key]
-      if (!sam['maximum_zones'].length && !sam['minimum_zones'].length) {
-        return false
-      }
-      let cur_sam_anchor_image_name = ''
-      if (sam['minimum_zones'].length > 0) {
-        cur_sam_anchor_image_name = sam['minimum_zones'][0]['image']
-      } else if (sam['maximum_zones'].length > 0) {
-        cur_sam_anchor_image_name = sam['maximum_zones'][0]['image']
-      }
-      return (cur_sam_anchor_image_name === this.state.insights_image)
-    } else {
-      return true
-    }
-  }
-
-  currentImageIsSGAnchorImage() {
-    if (this.props.tier_1_scanner_current_ids['selection_grower']) {
-      let key = this.props.tier_1_scanner_current_ids['selection_grower']
-      if (!Object.keys(this.props.tier_1_scanners['selection_grower']).includes(key)) {
-        return false
-      }
-      let sam = this.props.tier_1_scanners['selection_grower'][key]
-      if (!sam['colors'].length && !sam['colors'].length) {
-        return false
-      }
-      let cur_sam_anchor_image_name = ''
-      if (sam['colors'].length > 0) {
-        cur_sam_anchor_image_name = sam['colors'][0]['image']
-      }
-      return (cur_sam_anchor_image_name === this.state.insights_image)
     } else {
       return true
     }
@@ -1222,11 +1158,8 @@ class InsightsPanel extends React.Component {
               width={this.state.image_width}
               height={this.state.image_height}
               clickCallback={this.handleImageClick}
-              currentImageIsTemplateAnchorImage={this.currentImageIsTemplateAnchorImage}
-              currentImageIsSelectedAreaAnchorImage={this.currentImageIsSelectedAreaAnchorImage}
-              currentImageIsMeshMatchAnchorImage={this.currentImageIsMeshMatchAnchorImage}
-              currentImageIsSGAnchorImage={this.currentImageIsSGAnchorImage}
               currentImageIsOsaMatchImage={this.currentImageIsOsaMatchImage}
+              currentImageIsT1ScannerRootImage={this.currentImageIsT1ScannerRootImage}
               insights_image_scale={this.state.insights_image_scale}
               getTier1ScannerMatches={this.getTier1ScannerMatches}
               getAnnotations={this.getAnnotations}
