@@ -248,19 +248,22 @@ class RedactApplication extends React.Component {
   }
 
   truncateAtFramesetHash(frameset_hash) {
+console.log('pocky 02')
     const hashes = this.getFramesetHashesInOrder()
+    const movie_url = this.state.movie_url
     if (!hashes.includes(frameset_hash)) {
       return
     }
     const hash_ind = hashes.indexOf(frameset_hash)
     const trunc_hashes = hashes.slice(0, hash_ind)
+    const hashes_to_delete = hashes.slice(hash_ind)
 
     let deepCopyMovies = JSON.parse(JSON.stringify(this.state.movies))
-    let deepCopyMovie = JSON.parse(JSON.stringify(this.state.movies[this.state.movie_url]))
+    let deepCopyMovie = JSON.parse(JSON.stringify(this.state.movies[movie_url]))
     if (!Object.keys(deepCopyMovie['framesets']).includes(frameset_hash)) {
       return
     }
-    const movie = this.state.movies[this.state.movie_url]
+    const movie = this.state.movies[movie_url]
     let build_frames = []
     let build_framesets = {}
     for (let i=0; i < trunc_hashes.length; i++) {
@@ -277,14 +280,41 @@ class RedactApplication extends React.Component {
 
     deepCopyMovie['frames'] = build_frames
     deepCopyMovie['framesets'] = build_framesets
-    deepCopyMovies[this.state.movie_url] = deepCopyMovie
+    deepCopyMovies[movie_url] = deepCopyMovie
 
-    this.setGlobalStateVar('movies', deepCopyMovies)
+
+    let deepCopyTier1Matches = JSON.parse(JSON.stringify(this.state.tier_1_matches))
+    for (let i=0; i < Object.keys(this.state.tier_1_matches).length; i++) {
+      const scanner_type = Object.keys(this.state.tier_1_matches)[i]
+      for (let j=0; j < Object.keys(this.state.tier_1_matches[scanner_type]).length; j++) {
+        const scanner_id = Object.keys(this.state.tier_1_matches[scanner_type])[j]
+        const match_obj = this.state.tier_1_matches[scanner_type][scanner_id]
+        if (
+          Object.keys(match_obj).includes('movies') &&
+          Object.keys(match_obj['movies']).includes(movie_url) &&
+          Object.keys(match_obj['movies'][movie_url]).includes('framesets')
+        ) {
+
+          for (let k=0; k < hashes_to_delete.length; k++) {
+            const fs_hash = hashes_to_delete[k]
+            if (Object.keys(match_obj['movies'][movie_url]['framesets']).includes(fs_hash)) {
+              delete deepCopyTier1Matches[scanner_type][scanner_id]['movies'][movie_url]['framesets'][fs_hash]
+            }
+          }
+        }
+      }
+    }
+
+    this.setGlobalStateVar({
+      'movies': deepCopyMovies,
+      'tier_1_matches': deepCopyTier1Matches,
+    })
   }
 
   removeFramesetHash(frameset_hash) {
+    const movie_url = this.state.movie_url
     let deepCopyMovies = JSON.parse(JSON.stringify(this.state.movies))
-    let deepCopyMovie = JSON.parse(JSON.stringify(this.state.movies[this.state.movie_url]))
+    let deepCopyMovie = JSON.parse(JSON.stringify(this.state.movies[movie_url]))
     if (!Object.keys(deepCopyMovie['framesets']).includes(frameset_hash)) {
       return
     }
@@ -301,9 +331,31 @@ class RedactApplication extends React.Component {
     if (Object.keys(deepCopyMovie).includes('frameset_hashes_in_order')) {
       delete deepCopyMovie['frameset_hashes_in_order']
     }
-    deepCopyMovies[this.state.movie_url] = deepCopyMovie
+    deepCopyMovies[movie_url] = deepCopyMovie
 
-    this.setGlobalStateVar('movies', deepCopyMovies)
+
+    let deepCopyTier1Matches = JSON.parse(JSON.stringify(this.state.tier_1_matches))
+    for (let i=0; i < Object.keys(this.state.tier_1_matches).length; i++) {
+      const scanner_type = Object.keys(this.state.tier_1_matches)[i]
+      for (let j=0; j < Object.keys(this.state.tier_1_matches[scanner_type]).length; j++) {
+        const scanner_id = Object.keys(this.state.tier_1_matches[scanner_type])[j]
+        const match_obj = this.state.tier_1_matches[scanner_type][scanner_id]
+        if (
+          Object.keys(match_obj).includes('movies') &&
+          Object.keys(match_obj['movies']).includes(movie_url) &&
+          Object.keys(match_obj['movies'][movie_url]).includes('framesets') &&
+          Object.keys(match_obj['movies'][movie_url]['framesets']).includes(frameset_hash) 
+        ) {
+          delete deepCopyTier1Matches[scanner_type][scanner_id]['movies'][movie_url]['framesets'][frameset_hash]
+        }
+      }
+    }
+
+    this.setGlobalStateVar({
+      'movies': deepCopyMovies,
+      'tier_1_matches': deepCopyTier1Matches,
+    })
+
   }
 
   buildOcrRedactPipelineObject(ocr_rule, pipeline_name) {
