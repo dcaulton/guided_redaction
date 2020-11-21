@@ -94,7 +94,8 @@ class SelectionGrower:
     def build_new_area(self, growth_direction, selected_area, grid_x_values, first_y, last_y):
         if growth_direction == 'south': 
             start_y_value = first_y
-            if first_y < selected_area['location'][1] + selected_area['size'][1]:
+            if first_y < selected_area['location'][1] + selected_area['size'][1] or \
+                self.selection_grower_meta['tie_grid_to_selected_area']:
                 start_y_value = selected_area['location'][1] + selected_area['size'][1]
             new_area = {
                 'scanner_type': 'selection_grower',
