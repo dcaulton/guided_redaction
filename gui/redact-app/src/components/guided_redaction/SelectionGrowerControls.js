@@ -41,6 +41,7 @@ class SelectionGrowerControls extends React.Component {
       colors: [],
       capture_grid: false,
       capture_form: false,
+      include_input_in_response: false,
       ocr_job_id: '',
       debug: false,
       skip_if_ocr_needed: false,
@@ -126,6 +127,7 @@ class SelectionGrowerControls extends React.Component {
         colors: sam['colors'],
         capture_grid: sam['capture_grid'],
         capture_form: sam['capture_form'],
+        include_input_in_response: sam['include_input_in_response'],
         ocr_job_id: sam['ocr_job_id'],
         debug: sam['debug'],
         skip_if_ocr_needed: sam['skip_if_ocr_needed'],
@@ -163,6 +165,7 @@ class SelectionGrowerControls extends React.Component {
       colors: [],
       capture_grid: false,
       capture_form: false,
+      include_input_in_response: false,
       ocr_job_id: '',
       debug: false,
       skip_if_ocr_needed: false,
@@ -180,6 +183,7 @@ class SelectionGrowerControls extends React.Component {
       colors: this.state.colors,
       capture_grid: this.state.capture_grid,
       capture_form: this.state.capture_form,
+      include_input_in_response: this.state.include_input_in_response,
       ocr_job_id: this.state.ocr_job_id,
       debug: this.state.debug,
       skip_if_ocr_needed: this.state.skip_if_ocr_needed,
@@ -298,6 +302,28 @@ class SelectionGrowerControls extends React.Component {
             </div>
           )
         })}
+      </div>
+    )
+  }
+
+  buildIncludeInputInResponseField() {
+    let checked_val = ''
+    if (this.state.include_input_in_response) {
+      checked_val = 'checked'
+    }
+    return (
+      <div>
+        <div className='d-inline'>
+          <input 
+            className='mr-2'
+            checked={checked_val}
+            type='checkbox'
+            onChange={() => this.setLocalStateVar('include_input_in_response', !this.state.include_input_in_response)}
+          />
+        </div>
+        <div className='d-inline'>
+          Include Input in Response
+        </div>
       </div>
     )
   }
@@ -632,6 +658,7 @@ class SelectionGrowerControls extends React.Component {
     const colors_field = this.buildColorsField()
     const capture_grid_field = this.buildCaptureGridField()
     const capture_form_field = this.buildCaptureFormField()
+    const include_input_field = this.buildIncludeInputInResponseField()
     const ocr_id_field = this.buildOcrMatchIdField()
     const add_color_centers_button = this.buildAddColorCentersButton()
     const header_row = makeHeaderRow(
@@ -686,6 +713,10 @@ class SelectionGrowerControls extends React.Component {
 
                 <div className='row mt-2'>
                   {capture_form_field}
+                </div>
+
+                <div className='row mt-2'>
+                  {include_input_field}
                 </div>
 
                 <div className='row mt-2'>

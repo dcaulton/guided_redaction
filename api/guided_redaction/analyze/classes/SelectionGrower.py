@@ -14,7 +14,7 @@ class SelectionGrower:
         self.debug = self.selection_grower_meta['debug']
         self.alignment_tolerance = 10
         self.hist_grid_size = 10
-        self.row_column_threshold = 4
+        self.row_column_threshold = 2
         self.min_grid_aspect_ratio = 1.0
 
     def grow_selection(self, tier_1_match_data, cv2_image):
@@ -26,6 +26,8 @@ class SelectionGrower:
         for match_key in tier_1_match_data:
             if tier_1_match_data[match_key]['scanner_type'] != 'ocr':
                 selected_area = tier_1_match_data[match_key]
+                if self.selection_grower_meta['include_input_in_response']:
+                    match_obj[match_key] = selected_area
             else:
                 ocr_match_objs[match_key] = tier_1_match_data[match_key]
 
@@ -92,7 +94,7 @@ class SelectionGrower:
     def build_new_area(self, growth_direction, selected_area, grid_x_values, first_y, last_y):
         if growth_direction == 'south': 
             start_y_value = first_y
-            if first_y > selected_area['location'][1] + selected_area['size'][1]:
+            if first_y < selected_area['location'][1] + selected_area['size'][1]:
                 start_y_value = selected_area['location'][1] + selected_area['size'][1]
             new_area = {
                 'scanner_type': 'selection_grower',
@@ -182,7 +184,7 @@ class SelectionGrower:
                 target_x_end = target_obj['location'][0] + target_obj['size'][0]
                 if abs(target_x_end - source_x_end) < self.alignment_tolerance:
                     x_end_matched = True
-                if y_matched and (x_start_matched or x_end_matched): 
+                if y_matched or (x_start_matched or x_end_matched): 
                     build_obj[source_key] = source_obj
                     continue
 
