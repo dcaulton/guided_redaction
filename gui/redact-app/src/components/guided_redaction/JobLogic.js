@@ -225,7 +225,7 @@ class JobLogic extends React.Component {
     scanner_type, 
     request_data, 
     tier_1_scanners, 
-    tier_1_scanner_current_ids, 
+    current_ids, 
     setGlobalStateVar, 
     getGlobalStateVar, 
     force_add=false
@@ -243,11 +243,11 @@ class JobLogic extends React.Component {
     }
     if (something_changed) {
       deepCopyScanners[scanner_type] = deepCopyThisScanners
-      let deepCopyScannerIds = JSON.parse(JSON.stringify(tier_1_scanner_current_ids))
-      deepCopyScannerIds[scanner_type] = scanner_id
+      let deepCopyIds = JSON.parse(JSON.stringify(current_ids))
+      deepCopyIds['t1_scanner'][scanner_type] = scanner_id
       setGlobalStateVar({
         tier_1_scanners: deepCopyScanners,
-        tier_1_scanner_current_ids: deepCopyScannerIds,
+        current_ids: deepCopyIds,
       })
     }
   }
@@ -415,7 +415,7 @@ class JobLogic extends React.Component {
   ) {
     let response_data = JSON.parse(job.response_data)
     const tier_1_scanners = getGlobalStateVar('tier_1_scanners')
-    const tier_1_scanner_current_ids = getGlobalStateVar('tier_1_scanner_current_ids')
+    const current_ids = getGlobalStateVar('current_ids')
     const tier_1_matches = getGlobalStateVar('tier_1_matches')
     if (!response_data) {
       return
@@ -429,7 +429,7 @@ class JobLogic extends React.Component {
       scanner_type, 
       request_data, 
       tier_1_scanners, 
-      tier_1_scanner_current_ids, 
+      current_ids, 
       setGlobalStateVar,
       getGlobalStateVar
     )
@@ -538,9 +538,9 @@ class JobLogic extends React.Component {
       })
     }
 
-    const t1s_cids = getGlobalStateVar('tier_1_scanner_current_ids')
+    const t1s_cids = getGlobalStateVar('current_ids')
     let deepCopyT1SCIDs = JSON.parse(JSON.stringify(t1s_cids))
-    deepCopyT1SCIDs['pipeline'] = job['id']
+    deepCopyT1SCIDs['t1_scanner']['pipeline'] = job['id']
 
     const tier_1_matches = getGlobalStateVar('tier_1_matches')
     let deepCopyTier1Matches = JSON.parse(JSON.stringify(tier_1_matches))
@@ -549,7 +549,7 @@ class JobLogic extends React.Component {
     deepCopyTier1Matches['pipeline'] = deepCopyMatches
     setGlobalStateVar({
       'tier_1_matches': deepCopyTier1Matches,
-      'tier_1_scanner_current_ids': deepCopyT1SCIDs,
+      'current_ids': deepCopyT1SCIDs,
     })
   }
 

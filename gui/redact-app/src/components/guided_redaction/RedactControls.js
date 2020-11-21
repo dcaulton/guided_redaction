@@ -88,12 +88,14 @@ class RedactControls extends React.Component {
 
   doSave(when_done=(()=>{})) {
     let deepCopyRRs = JSON.parse(JSON.stringify(this.props.redact_rules))
+    let deepCopyIDs = JSON.parse(JSON.stringify(this.props.current_ids))
     const rr = this.getRedactRuleFromState()
     const rr_id = rr['id']
     deepCopyRRs[rr_id] = rr
+    deepCopyIDs['redact_rule'] = rr_id
     const build_dict = {
       redact_rules: deepCopyRRs,
-      redact_rule_current_id: rr_id,
+      current_ids: deepCopyIDs,
     }
     this.props.setGlobalStateVar(build_dict)
     return rr
@@ -126,7 +128,9 @@ class RedactControls extends React.Component {
   }
 
   loadNewRedactRule() {
-    this.props.setGlobalStateVar('redact_rule_current_id', '')
+    let deepCopyIDs = JSON.parse(JSON.stringify(this.props.current_ids))
+    deepCopyIDs['redact_rule'] = ''
+    this.props.setGlobalStateVar('current_ids', deepCopyIDs)
     const the_id = 'redact_rule_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
 
     this.setState({
@@ -245,8 +249,10 @@ class RedactControls extends React.Component {
     let build_obj = {
       redact_rules: deepCopyRRs,
     }
-    if (rr_id === this.props.redact_rule_current_id) {
-      build_obj['redact_rule_current_id'] = ''
+    if (rr_id === this.props.current_ids['redact_rule']) {
+      let deepCopyIDs = JSON.parse(JSON.stringify(this.props.current_ids))
+      deepCopyIDs['redact_rule'] = ''
+      build_obj['current_ids'] = deepCopyIDs
     }
     this.props.setGlobalStateVar(build_obj)
     this.props.displayInsightsMessage('Redact Rule was deleted')

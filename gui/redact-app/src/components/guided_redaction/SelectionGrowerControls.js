@@ -131,16 +131,16 @@ class SelectionGrowerControls extends React.Component {
         skip_if_ocr_needed: sam['skip_if_ocr_needed'],
       })
     }
-    let deepCopyIds = JSON.parse(JSON.stringify(this.props.tier_1_scanner_current_ids))
-    deepCopyIds['selection_grower'] = sg_meta_id
-    this.props.setGlobalStateVar('tier_1_scanner_current_ids', deepCopyIds)
+    let deepCopyIds = JSON.parse(JSON.stringify(this.props.current_ids))
+    deepCopyIds['t1_scanner']['selection_grower'] = sg_meta_id
+    this.props.setGlobalStateVar('current_ids', deepCopyIds)
     this.props.displayInsightsMessage('Selection Grower meta has been loaded')
   }
 
   loadNewSelectionGrowerMeta() {
-    let deepCopyIds = JSON.parse(JSON.stringify(this.props.tier_1_scanner_current_ids))
-    deepCopyIds['selection_grower'] = ''
-    this.props.setGlobalStateVar('tier_1_scanner_current_ids', deepCopyIds)
+    let deepCopyIds = JSON.parse(JSON.stringify(this.props.current_ids))
+    deepCopyIds['t1_scanner']['selection_grower'] = ''
+    this.props.setGlobalStateVar('current_ids', deepCopyIds)
     const the_id = 'selection_grower_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
 
     this.setState({
@@ -193,7 +193,7 @@ class SelectionGrowerControls extends React.Component {
       this.getSelectionGrowerMetaFromState,
       this.props.displayInsightsMessage,
       this.props.tier_1_scanners,
-      this.props.tier_1_scanner_current_ids,
+      this.props.current_ids,
       this.props.setGlobalStateVar,
       when_done
     )
@@ -485,10 +485,10 @@ class SelectionGrowerControls extends React.Component {
     delete deepCopyMMs[sam_id]
     deepCopyScanners['selection_grower'] = deepCopyMMs
     this.props.setGlobalStateVar('tier_1_scanners', deepCopyScanners)
-    if (sam_id === this.props.tier_1_scanner_current_ids['selection_grower']) {
-      let deepCopyIds = JSON.parse(JSON.stringify(this.props.tier_1_scanner_current_ids))
-      deepCopyIds['selection_grower'] = ''
-      this.props.setGlobalStateVar('tier_1_scanner_current_ids', deepCopyIds)
+    if (sam_id === this.props.current_ids['t1_scanner']['selection_grower']) {
+      let deepCopyIds = JSON.parse(JSON.stringify(this.props.current_ids))
+      deepCopyIds['t1_scanner']['selection_grower'] = ''
+      this.props.setGlobalStateVar('current_ids', deepCopyIds)
     }
     this.props.displayInsightsMessage('Selection Grower was deleted')
   }
@@ -497,7 +497,7 @@ class SelectionGrowerControls extends React.Component {
     return clearTier1Matches(
       'selection_grower',
       this.props.tier_1_matches,
-      this.props.tier_1_scanner_current_ids['selection_grower'],
+      this.props.current_ids['t1_scanner']['selection_grower'],
       this.props.movie_url,
       ((a,b)=>{this.props.setGlobalStateVar(a,b)}),
       ((a)=>{this.props.displayInsightsMessage(a)}),

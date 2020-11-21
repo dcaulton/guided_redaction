@@ -199,16 +199,16 @@ class MeshMatchControls extends React.Component {
         mesh_size: sam['mesh_size'],
       })
     }
-    let deepCopyIds = JSON.parse(JSON.stringify(this.props.tier_1_scanner_current_ids))
-    deepCopyIds['mesh_match'] = mesh_match_meta_id
-    this.props.setGlobalStateVar('tier_1_scanner_current_ids', deepCopyIds)
+    let deepCopyIds = JSON.parse(JSON.stringify(this.props.current_ids))
+    deepCopyIds['t1_scanner']['mesh_match'] = mesh_match_meta_id
+    this.props.setGlobalStateVar('current_ids', deepCopyIds)
     this.props.displayInsightsMessage('Mesh Match meta has been loaded')
   }
 
   loadNewMeshMatchMeta() {
-    let deepCopyIds = JSON.parse(JSON.stringify(this.props.tier_1_scanner_current_ids))
-    deepCopyIds['mesh_match'] = ''
-    this.props.setGlobalStateVar('tier_1_scanner_current_ids', deepCopyIds)
+    let deepCopyIds = JSON.parse(JSON.stringify(this.props.current_ids))
+    deepCopyIds['t1_scanner']['mesh_match'] = ''
+    this.props.setGlobalStateVar('current_ids', deepCopyIds)
     const the_id = 'mesh_match_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
 
     this.setState({
@@ -249,7 +249,7 @@ class MeshMatchControls extends React.Component {
       this.getMeshMatchMetaFromState,
       this.props.displayInsightsMessage,
       this.props.tier_1_scanners,
-      this.props.tier_1_scanner_current_ids,
+      this.props.current_ids,
       this.props.setGlobalStateVar,
       when_done
     )
@@ -475,10 +475,10 @@ class MeshMatchControls extends React.Component {
     delete deepCopyMMs[sam_id]
     deepCopyScanners['mesh_match'] = deepCopyMMs
     this.props.setGlobalStateVar('tier_1_scanners', deepCopyScanners)
-    if (sam_id === this.props.tier_1_scanner_current_ids['mesh_match']) {
-      let deepCopyIds = JSON.parse(JSON.stringify(this.props.tier_1_scanner_current_ids))
-      deepCopyIds['mesh_match'] = ''
-      this.props.setGlobalStateVar('tier_1_scanner_current_ids', deepCopyIds)
+    if (sam_id === this.props.current_ids['t1_scanner']['mesh_match']) {
+      let deepCopyIds = JSON.parse(JSON.stringify(this.props.current_ids))
+      deepCopyIds['t1_scanner']['mesh_match'] = ''
+      this.props.setGlobalStateVar('current_ids', deepCopyIds)
     }
     this.props.displayInsightsMessage('Mesh Match was deleted')
   }
@@ -534,7 +534,7 @@ class MeshMatchControls extends React.Component {
     return clearTier1Matches(
       'mesh_match',
       this.props.tier_1_matches,
-      this.props.tier_1_scanner_current_ids['mesh_match'],
+      this.props.current_ids['current_ids']['mesh_match'],
       this.props.movie_url,
       ((a,b)=>{this.props.setGlobalStateVar(a,b)}),
       ((a)=>{this.props.displayInsightsMessage(a)}),

@@ -82,7 +82,7 @@ class OcrSceneAnalysisControls extends React.Component {
       this.getOcrSceneAnalysisRuleFromState,
       this.props.displayInsightsMessage,
       this.props.tier_1_scanners,
-      this.props.tier_1_scanner_current_ids,
+      this.props.current_ids,
       this.props.setGlobalStateVar,
       when_done,
     )
@@ -166,16 +166,16 @@ class OcrSceneAnalysisControls extends React.Component {
         unsaved_changes: false,
       })
     }
-    let deepCopyIds = JSON.parse(JSON.stringify(this.props.tier_1_scanner_current_ids))
-    deepCopyIds['ocr_scene_analysis'] = ocr_scene_analysis_meta_id
-    this.props.setGlobalStateVar('tier_1_scanner_current_ids', deepCopyIds)
+    let deepCopyIds = JSON.parse(JSON.stringify(this.props.current_ids))
+    deepCopyIds['t1_scanner']['ocr_scene_analysis'] = ocr_scene_analysis_meta_id
+    this.props.setGlobalStateVar('current_ids', deepCopyIds)
     this.props.displayInsightsMessage('Ocr screen analysis meta has been loaded')
   }
 
   loadNewOcrSceneAnalysisMeta() {
-    let deepCopyIds = JSON.parse(JSON.stringify(this.props.tier_1_scanner_current_ids))
-    deepCopyIds['ocr_scene_analysis'] = ''
-    this.props.setGlobalStateVar('tier_1_scanner_current_ids', deepCopyIds)
+    let deepCopyIds = JSON.parse(JSON.stringify(this.props.current_ids))
+    deepCopyIds['t1_scanner']['ocr_scene_analysis'] = ''
+    this.props.setGlobalStateVar('current_ids', deepCopyIds)
     const the_id = 'ocr_scene_analysis_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
 
     this.setState({
@@ -208,10 +208,10 @@ class OcrSceneAnalysisControls extends React.Component {
     delete deepCopyOcrSceneAnalysisMetas[osa_id]
     deepCopyScanners['ocr_scene_analysis'] = deepCopyOcrSceneAnalysisMetas
     this.props.setGlobalStateVar('tier_1_scanners', deepCopyScanners)
-    if (osa_id === this.props.tier_1_scanner_current_ids['ocr_scene_analysis']) {
-      let deepCopyIds = JSON.parse(JSON.stringify(this.props.tier_1_scanner_current_ids))
-      deepCopyIds['ocr_scene_analysis'] = ''
-      this.props.setGlobalStateVar('tier_1_scanner_current_ids', deepCopyIds)
+    if (osa_id === this.props.current_ids['t1_scanner']['ocr_scene_analysis']) {
+      let deepCopyIds = JSON.parse(JSON.stringify(this.props.current_ids))
+      deepCopyIds['t1_scanner']['ocr_scene_analysis'] = ''
+      this.props.setGlobalStateVar('current_ids', deepCopyIds)
     }
     this.props.displayInsightsMessage('Ocr scene analysis meta was deleted')
   }

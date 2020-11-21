@@ -106,9 +106,9 @@ class SimpleTemplateBuilderControls extends React.Component {
   }
 
   loadNewTemplate() {
-    let deepCopyIds = JSON.parse(JSON.stringify(this.props.tier_1_scanner_current_ids))
-    deepCopyIds['template'] = ''
-    this.props.setGlobalStateVar('tier_1_scanner_current_ids', deepCopyIds)
+    let deepCopyIds = JSON.parse(JSON.stringify(this.props.current_ids))
+    deepCopyIds['t1_scanner']['template'] = ''
+    this.props.setGlobalStateVar('current_ids', deepCopyIds)
     const the_id = 'template_' + this.makeRandomIntToString()
 
     this.setState({
@@ -145,9 +145,9 @@ class SimpleTemplateBuilderControls extends React.Component {
         unsaved_changes: false,
       })
     }
-    let deepCopyIds = JSON.parse(JSON.stringify(this.props.tier_1_scanner_current_ids))
-    deepCopyIds['template'] = template_id
-    this.props.setGlobalStateVar('tier_1_scanner_current_ids', deepCopyIds)
+    let deepCopyIds = JSON.parse(JSON.stringify(this.props.current_ids))
+    deepCopyIds['t1_scanner']['template'] = template_id
+    this.props.setGlobalStateVar('current_ids', deepCopyIds)
   }
 
   buildNameField() {
@@ -236,7 +236,7 @@ class SimpleTemplateBuilderControls extends React.Component {
         this.getTemplateFromState,
         this.props.setMessage,
         this.props.tier_1_scanners,
-        this.props.tier_1_scanner_current_ids,
+        this.props.current_ids,
         this.props.setGlobalStateVar,
       )
       return template
@@ -271,10 +271,10 @@ class SimpleTemplateBuilderControls extends React.Component {
     delete deepCopyTemplates[template_id]
     deepCopyScanners['template'] = deepCopyTemplates
     this.props.setGlobalStateVar('tier_1_scanners', deepCopyScanners)
-    if (template_id === this.props.tier_1_scanner_current_ids['template']) {
-      let deepCopyIds = JSON.parse(JSON.stringify(this.props.tier_1_scanner_current_ids))
-      deepCopyIds['template'] = ''
-      this.props.setGlobalStateVar('tier_1_scanner_current_ids', deepCopyIds)
+    if (template_id === this.props.current_ids['t1_scanner']['template']) {
+      let deepCopyIds = JSON.parse(JSON.stringify(this.props.current_ids))
+      deepCopyIds['t1_scanner']['template'] = ''
+      this.props.setGlobalStateVar('current_ids', deepCopyIds)
     }
     setTimeout((() => {this.props.setGlobalStateVar('message', 'Template was deleted')}), 500)
   }

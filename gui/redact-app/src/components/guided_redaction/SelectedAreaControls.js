@@ -218,16 +218,16 @@ class SelectedAreaControls extends React.Component {
         tolerance: sam['tolerance'],
       })
     }
-    let deepCopyIds = JSON.parse(JSON.stringify(this.props.tier_1_scanner_current_ids))
-    deepCopyIds['selected_area'] = selected_area_meta_id
-    this.props.setGlobalStateVar('tier_1_scanner_current_ids', deepCopyIds)
+    let deepCopyIds = JSON.parse(JSON.stringify(this.props.current_ids))
+    deepCopyIds['t1_scanner']['selected_area'] = selected_area_meta_id
+    this.props.setGlobalStateVar('current_ids', deepCopyIds)
     this.props.displayInsightsMessage('Selected area meta has been loaded')
   }
 
   loadNewSelectedAreaMeta() {
-    let deepCopyIds = JSON.parse(JSON.stringify(this.props.tier_1_scanner_current_ids))
-    deepCopyIds['selected_area'] = ''
-    this.props.setGlobalStateVar('tier_1_scanner_current_ids', deepCopyIds)
+    let deepCopyIds = JSON.parse(JSON.stringify(this.props.current_ids))
+    deepCopyIds['t1_scanner']['selected_area'] = ''
+    this.props.setGlobalStateVar('current_ids', deepCopyIds)
     const the_id = 'selected_area_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
 
     this.setState({
@@ -274,7 +274,7 @@ class SelectedAreaControls extends React.Component {
       this.getSelectedAreaMetaFromState,
       this.props.displayInsightsMessage,
       this.props.tier_1_scanners,
-      this.props.tier_1_scanner_current_ids,
+      this.props.current_ids,
       this.props.setGlobalStateVar,
       when_done
     )
@@ -560,10 +560,10 @@ class SelectedAreaControls extends React.Component {
     delete deepCopySelectedAreas[sam_id]
     deepCopyScanners['selected_area'] = deepCopySelectedAreas
     this.props.setGlobalStateVar('tier_1_scanners', deepCopyScanners)
-    if (sam_id === this.props.tier_1_scanner_current_ids['selected_area']) {
-      let deepCopyIds = JSON.parse(JSON.stringify(this.props.tier_1_scanner_current_ids))
-      deepCopyIds['selected_area'] = ''
-      this.props.setGlobalStateVar('tier_1_scanner_current_ids', deepCopyIds)
+    if (sam_id === this.props.current_ids['t1_scanner']['selected_area']) {
+      let deepCopyIds = JSON.parse(JSON.stringify(this.props.current_ids))
+      deepCopyIds['t1_scanner']['selected_area'] = ''
+      this.props.setGlobalStateVar('current_ids', deepCopyIds)
     }
     this.props.displayInsightsMessage('Selected Area was deleted')
   }
@@ -631,7 +631,7 @@ class SelectedAreaControls extends React.Component {
     return clearTier1Matches(
       'selected_area',
       this.props.tier_1_matches,
-      this.props.tier_1_scanner_current_ids['selected_area'],
+      this.props.current_ids['t1_scanner']['selected_area'],
       this.props.movie_url,
       ((a,b)=>{this.props.setGlobalStateVar(a,b)}),
       ((a)=>{this.props.displayInsightsMessage(a)}),

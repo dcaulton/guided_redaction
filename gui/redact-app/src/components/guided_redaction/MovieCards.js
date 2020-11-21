@@ -77,7 +77,7 @@ class MovieCardList extends React.Component {
               setDraggedId={this.props.setDraggedId}
               index={index}
               tier_1_matches={this.props.tier_1_matches}
-              tier_1_scanner_current_ids={this.props.tier_1_scanner_current_ids}
+              current_ids={this.props.current_ids}
               getFramesetHashForImageUrl={this.props.getFramesetHashForImageUrl}
               getFramesetHashesInOrder={this.props.getFramesetHashesInOrder}
               setScrubberToIndex={this.props.setScrubberToIndex}
@@ -260,10 +260,10 @@ class MovieCard extends React.Component {
 
   getTier1MatchHashesForMovie(scanner_type, movie_url) {
     let hashes = []
-    if (!this.props.tier_1_scanner_current_ids) {
+    if (!this.props.current_ids['t1_scanner']) {
       return []
     }
-    const current_rule_id = this.props.tier_1_scanner_current_ids[scanner_type]
+    const current_rule_id = this.props.current_ids['t1_scanner'][scanner_type]
     if (!current_rule_id) {
       return []
     }
@@ -324,7 +324,7 @@ class MovieCard extends React.Component {
 
   clearTier1Matches(scanner_type) {
     let deepCopyTier1Matches= JSON.parse(JSON.stringify(this.props.tier_1_matches))
-    const current_scanner_id = this.props.tier_1_scanner_current_ids[scanner_type]
+    const current_scanner_id = this.props.current_ids['t1_scanner'][scanner_type]
     delete deepCopyTier1Matches[scanner_type][current_scanner_id]
     this.props.setGlobalStateVar('tier_1_matches', deepCopyTier1Matches)
     this.props.displayInsightsMessage(scanner_type+' matches have been removed')
@@ -500,11 +500,11 @@ class MovieCard extends React.Component {
   }
 
   buildHasTelemetryInfo() {
-    if (!this.props.tier_1_scanner_current_ids) {
+    if (!this.props.current_ids['t1_scanner']) {
       return ''
     }
-    if (Object.keys(this.props.tier_1_matches['telemetry']).includes(this.props.tier_1_scanner_current_ids['telemetry'])) {
-      const tel_matches = this.props.tier_1_matches['telemetry'][this.props.tier_1_scanner_current_ids['telemetry']]
+    if (Object.keys(this.props.tier_1_matches['telemetry']).includes(this.props.current_ids['t1_scanner']['telemetry'])) {
+      const tel_matches = this.props.tier_1_matches['telemetry'][this.props.current_ids['t1_scanner']['telemetry']]
       if (Object.keys(tel_matches['movies']).includes(this.props.this_cards_movie_url)) {
         const offset = tel_matches['movies'][this.props.this_cards_movie_url][0]
         return (

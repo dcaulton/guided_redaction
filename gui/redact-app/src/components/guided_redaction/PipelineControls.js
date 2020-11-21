@@ -138,9 +138,11 @@ class PipelineControls extends React.Component {
 
   afterPipelineSaved(pipeline_response_obj) {
     if (Object.keys(pipeline_response_obj).includes('pipeline_id')) {
+      let deepCopyIDs = JSON.parse(JSON.stringify(this.props.current_ids))
       const pipeline_id = pipeline_response_obj['pipeline_id']
       this.setState({'id': pipeline_id})
-      this.props.setGlobalStateVar('current_pipeline_id', pipeline_id)
+      deepCopyIDs['pipeline'] = pipeline_id
+      this.props.setGlobalStateVar('current_ids', deepCopyIDs)
     }
   }
 
@@ -175,7 +177,7 @@ class PipelineControls extends React.Component {
     }
     this.props.dispatchPipeline(
       {
-        pipeline_id: this.props.current_pipeline_id, 
+        pipeline_id: this.props.current_ids['pipeline'], 
         scope: scope, 
         extra_data: extra_data,
         use_parsed_movies: this.state.use_parsed_movies,
@@ -192,7 +194,9 @@ class PipelineControls extends React.Component {
   }
 
   loadNewPipeline() {
-    this.props.setGlobalStateVar('current_pipeline_id', '')
+    let deepCopyIDs = JSON.parse(JSON.stringify(this.props.current_ids))
+    deepCopyIDs['pipeline'] = ''
+    this.props.setGlobalStateVar('current_ids', deepCopyIDs)
     this.setState({
       id: '',
       name: '',
@@ -272,32 +276,13 @@ class PipelineControls extends React.Component {
         this.props.setGlobalStateVar('redact_rules', deepCopyRRs) 
       }
     }
-    this.props.setGlobalStateVar('current_pipeline_id', pipeline_id)
+    let deepCopyIDs = JSON.parse(JSON.stringify(this.props.current_ids))
+    deepCopyIDs['pipeline'] = pipeline_id
+    this.props.setGlobalStateVar('current_ids', deepCopyIDs)
     this.props.displayInsightsMessage('pipeline has been loaded')
   }
 
   setLocalStateVar(var_name, var_value, when_done=(()=>{})) {
-//    function anon_func() {
-//      this.doSave()
-//      when_done()
-//    }
-//    if (typeof var_name === 'string' || var_name instanceof String) {           
-//      // we have been given one key and one value                               
-//      this.setState(                                                          
-//        {                                                                     
-//          [var_name]: var_value,                                              
-//        },                                                                    
-//        anon_func()                                                           
-//      )                                                                       
-//    } else {                                                                    
-//      // var_name is actaully a dict                                            
-//      this.setState(                                                            
-//        var_name,                                                               
-//        anon_func()                                                             
-//      )                                                                         
-//    }
-//
-//
     function anon_func() {
       this.doSave()
       when_done()

@@ -235,7 +235,7 @@ class HogControls extends React.Component {
       this.getHogRuleFromState,
       this.props.displayInsightsMessage,
       this.props.tier_1_scanners,
-      this.props.tier_1_scanner_current_ids,
+      this.props.current_ids,
       this.props.setGlobalStateVar,
       when_done,
     )
@@ -454,17 +454,17 @@ class HogControls extends React.Component {
         unsaved_changes: false,
       })
     }
-    let deepCopyIds = JSON.parse(JSON.stringify(this.props.tier_1_scanner_current_ids))
-    deepCopyIds['hog'] = hog_id
-    this.props.setGlobalStateVar('tier_1_scanner_current_ids', deepCopyIds)
+    let deepCopyIds = JSON.parse(JSON.stringify(this.props.current_ids))
+    deepCopyIds['t1_scanner']['hog'] = hog_id
+    this.props.setGlobalStateVar('current_ids', deepCopyIds)
     this.props.displayInsightsMessage('Hog meta has been loaded')
   }
 
   loadNewHogMeta() {
-    let deepCopyIds = JSON.parse(JSON.stringify(this.props.tier_1_scanner_current_ids))
-    deepCopyIds['hog'] = ''
+    let deepCopyIds = JSON.parse(JSON.stringify(this.props.current_ids))
+    deepCopyIds['t1_scanner']['hog'] = ''
+    this.props.setGlobalStateVar('current_ids', deepCopyIds)
     const hog_id = 'hog_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
-    this.props.setGlobalStateVar('tier_1_scanner_current_ids', deepCopyIds)
     this.setState({
       id: hog_id,
       name: '',
@@ -519,10 +519,10 @@ class HogControls extends React.Component {
     delete deepCopyHogs[ef_id]
     deepCopyScanners['hog'] = deepCopyHogs
     this.props.setGlobalStateVar('tier_1_scanners', deepCopyScanners)
-    if (ef_id === this.props.tier_1_scanner_current_ids['hog']) {
-      let deepCopyIds = JSON.parse(JSON.stringify(this.props.tier_1_scanner_current_ids))
-      deepCopyIds['hog'] = ''
-      this.props.setGlobalStateVar('tier_1_scanner_current_ids', deepCopyIds)
+    if (ef_id === this.props.current_ids['t1_scanner']['hog']) {
+      let deepCopyIds = JSON.parse(JSON.stringify(this.props.current_ids))
+      deepCopyIds['t1_scanner']['hog'] = ''
+      this.props.setGlobalStateVar('current_ids', deepCopyIds)
     }
     this.props.displayInsightsMessage('Hog meta was deleted')
   }

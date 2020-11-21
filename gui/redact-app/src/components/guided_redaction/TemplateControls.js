@@ -80,8 +80,8 @@ class TemplateControls extends React.Component {
   }
 
   componentDidMount() {
-    if (this.props.tier_1_scanner_current_ids['template']) {
-      let template = this.props.tier_1_scanners['template'][this.props.tier_1_scanner_current_ids['template']]
+    if (this.props.current_ids['t1_scanner']['template']) {
+      let template = this.props.tier_1_scanners['template'][this.props.current_ids['t1_scanner']['template']]
       this.setLocalVarsFromTemplate(template)
     }
     this.props.addInsightsCallback('getCurrentTemplateAnchors', this.getCurrentAnchors)
@@ -105,9 +105,9 @@ class TemplateControls extends React.Component {
       deepCopyTemplates[template['id']] = template
       deepCopyScanners['template'] = deepCopyTemplates
       app_this.props.setGlobalStateVar('tier_1_scanners', deepCopyScanners)
-      let deepCopyIds = JSON.parse(JSON.stringify(app_this.props.tier_1_scanner_current_ids))
-      deepCopyIds['template'] = template['id']
-      app_this.props.setGlobalStateVar('tier_1_scanner_current_ids', deepCopyIds)
+      let deepCopyIds = JSON.parse(JSON.stringify(app_this.props.current_ids))
+      deepCopyIds['t1_scanner']['template'] = template['id']
+      app_this.props.setGlobalStateVar('current_ids', deepCopyIds)
     })
     reader.readAsBinaryString(files[0]);
   }
@@ -121,9 +121,9 @@ class TemplateControls extends React.Component {
   } 
 
   loadNewTemplate() {
-    let deepCopyIds = JSON.parse(JSON.stringify(this.props.tier_1_scanner_current_ids))
-    deepCopyIds['template'] = ''
-    this.props.setGlobalStateVar('tier_1_scanner_current_ids', deepCopyIds)
+    let deepCopyIds = JSON.parse(JSON.stringify(this.props.current_ids))
+    deepCopyIds['t1_scanner']['template'] = ''
+    this.props.setGlobalStateVar('current_ids', deepCopyIds)
     const the_id = 'template_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
 
     this.setState({
@@ -158,9 +158,9 @@ class TemplateControls extends React.Component {
         download_link: '',
       })
     }
-    let deepCopyIds = JSON.parse(JSON.stringify(this.props.tier_1_scanner_current_ids))
-    deepCopyIds['template'] = template_id
-    this.props.setGlobalStateVar('tier_1_scanner_current_ids', deepCopyIds)
+    let deepCopyIds = JSON.parse(JSON.stringify(this.props.current_ids))
+    deepCopyIds['t1_scanner']['template'] = template_id
+    this.props.setGlobalStateVar('current_ids', deepCopyIds)
     this.props.displayInsightsMessage('Template has been loaded')
   }
 
@@ -264,10 +264,10 @@ class TemplateControls extends React.Component {
     delete deepCopyTemplates[template_id]
     deepCopyScanners['template'] = deepCopyTemplates
     this.props.setGlobalStateVar('tier_1_scanners', deepCopyScanners)
-    if (template_id === this.props.tier_1_scanner_current_ids['template']) {
-      let deepCopyIds = JSON.parse(JSON.stringify(this.props.tier_1_scanner_current_ids))
-      deepCopyIds['template'] = ''
-      this.props.setGlobalStateVar('tier_1_scanner_current_ids', deepCopyIds)
+    if (template_id === this.props.current_ids['t1_scanner']['template']) {
+      let deepCopyIds = JSON.parse(JSON.stringify(this.props.current_ids))
+      deepCopyIds['t1_scanner']['template'] = ''
+      this.props.setGlobalStateVar('current_ids', deepCopyIds)
     }
     this.props.displayInsightsMessage('Template was deleted')
   }
@@ -335,7 +335,7 @@ class TemplateControls extends React.Component {
         this.getTemplateFromState,
         this.props.displayInsightsMessage,
         this.props.tier_1_scanners,
-        this.props.tier_1_scanner_current_ids,
+        this.props.current_ids,
         this.props.setGlobalStateVar,
       )
       return template
@@ -439,7 +439,7 @@ class TemplateControls extends React.Component {
     return clearTier1Matches(
       'template',
       this.props.tier_1_matches,
-      this.props.tier_1_scanner_current_ids['template'],
+      this.props.current_ids['t1_scanner']['template'],
       this.props.movie_url,
       ((a,b)=>{this.props.setGlobalStateVar(a,b)}),
       ((a)=>{this.props.displayInsightsMessage(a)}),

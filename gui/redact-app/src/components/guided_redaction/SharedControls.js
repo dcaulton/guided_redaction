@@ -523,9 +523,9 @@ export function doTier1Save(
   deepCopyThisScannerType[scanner_id] = scanner
   deepCopyScanners[scanner_type] = deepCopyThisScannerType
   globalSetStateVar('tier_1_scanners', deepCopyScanners)
-  let deepCopyScannerIds = JSON.parse(JSON.stringify(globalScannerIdsDict))
-  deepCopyScannerIds[scanner_type] = scanner['id']
-  globalSetStateVar('tier_1_scanner_current_ids', deepCopyScannerIds)
+  let deepCopyIds = JSON.parse(JSON.stringify(globalScannerIdsDict))
+  deepCopyIds['t1_scanner'][scanner_type] = scanner['id']
+  globalSetStateVar('current_ids', deepCopyIds)
   displayMessageFunction(scanner_type + ' has been saved')
   when_done(scanner)
   return scanner

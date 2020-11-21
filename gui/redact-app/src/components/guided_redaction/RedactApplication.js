@@ -26,7 +26,6 @@ class RedactApplication extends React.Component {
       api_key: api_key,
       frameset_discriminator: 'gray8',
       redact_rules: {},
-      redact_rule_current_id: '',
       movie_url: '',
       frameset_hash: '',
       image_width: 0,
@@ -61,7 +60,6 @@ class RedactApplication extends React.Component {
       preserveAllJobs: false,
       pipelines: {},
       results: {},
-      current_pipeline_id: '',
       preserve_movie_audio: true,
       app_codebooks: {},
       telemetry_data: {
@@ -109,16 +107,20 @@ class RedactApplication extends React.Component {
         'mesh_match': {},
         'selection_grower': {},
       },
-      tier_1_scanner_current_ids: {
-        'ocr': '',
-        'hog': '',
-        'ocr_scene_analysis': '',
-        'template': '',
-        'data_sifter': '',
-        'telemetry': '',
-        'selected_area': '',
-        'mesh_match': '',
-        'selection_grower': '',
+      current_ids: {
+        't1_scanner': {
+          'ocr': '',
+          'hog': '',
+          'ocr_scene_analysis': '',
+          'template': '',
+          'data_sifter': '',
+          'telemetry': '',
+          'selected_area': '',
+          'mesh_match': '',
+          'selection_grower': '',
+          'pipeline': '',
+        },
+        'redact_rule': '',
         'pipeline': '',
       },
       tier_1_matches: {
@@ -237,9 +239,11 @@ class RedactApplication extends React.Component {
     let build_rrs = {}
     build_rrs[rr_id] = redact_rule
 
+    let deepCopyCurrentIds = JSON.parse(JSON.stringify(this.state.current_ids))
+    deepCopyCurrentIds['redact_rule'] = rr_id
     this.setState({
       redact_rules: build_rrs,
-      redact_rule_current_id: rr_id,
+      current_ids: deepCopyCurrentIds,
     })
   }
 
@@ -319,10 +323,10 @@ class RedactApplication extends React.Component {
       movies: movies_to_process
     }
     if (
-      this.state.redact_rule_current_id && 
-      Object.keys(this.state.redact_rules).includes(this.state.redact_rule_current_id)
+      this.state.current_ids['redact_rule'] && 
+      Object.keys(this.state.redact_rules).includes(this.state.current_ids['redact_rule'])
     ) {
-      input_obj['redact_rule'] = this.state.redact_rules[this.state.redact_rule_current_id]
+      input_obj['redact_rule'] = this.state.redact_rules[this.state.current_ids['redact_rule']]
     }
 
     const pipeline_name = 'scan_ocr_and_redact_' + ocr_rule['id'].toString()
@@ -371,10 +375,10 @@ class RedactApplication extends React.Component {
       movies: the_build_movie,
     }
     if (
-      this.state.redact_rule_current_id && 
-      Object.keys(this.state.redact_rules).includes(this.state.redact_rule_current_id)
+      this.state.current_ids['redact_rule'] && 
+      Object.keys(this.state.redact_rules).includes(this.state.current_ids['redact_rule'])
     ) {
-      input_obj['redact_rule'] = this.state.redact_rules[this.state.redact_rule_current_id]
+      input_obj['redact_rule'] = this.state.redact_rules[this.state.current_ids['redact_rule']]
     }
 
     const pipeline_name = 'scan_template_and_redact_' + template_id.toString()
@@ -2233,7 +2237,7 @@ class RedactApplication extends React.Component {
                 getCurrentFramesets={this.getCurrentFramesets}
                 getCurrentFrames={this.getCurrentFrames}
                 redact_rules={this.state.redact_rules}
-                redact_rule_current_id={this.state.redact_rule_current_id}
+                current_ids={this.state.current_ids}
                 setFramesetHash={this.setFramesetHash}
                 getRedactionFromFrameset={this.getRedactionFromFrameset}
                 getImageFromFrameset={this.getImageFromFrameset}
@@ -2245,7 +2249,6 @@ class RedactApplication extends React.Component {
                 getRedactedMovieUrl={this.getRedactedMovieUrl}
                 templates={this.state.tier_1_scanners['template']}
                 tier_1_scanners={this.state.tier_1_scanners}
-                tier_1_scanner_current_ids={this.state.tier_1_scanner_current_ids}
                 getFramesetHashesInOrder={this.getFramesetHashesInOrder}
                 getJobs={this.getJobs}
                 submitJob={this.submitJobWrapper}
@@ -2325,7 +2328,6 @@ class RedactApplication extends React.Component {
                 attachToJob={this.attachToJobWrapper}
                 preserve_movie_audio={this.state.preserve_movie_audio}
                 pipelines={this.state.pipelines}
-                current_pipeline_id={this.state.current_pipeline_id}
                 getPipelines={this.getPipelines}
                 dispatchPipeline={this.dispatchPipeline}
                 deletePipeline={this.deletePipeline}
@@ -2333,9 +2335,8 @@ class RedactApplication extends React.Component {
                 results={this.state.results}
                 app_codebooks={this.state.app_codebooks}
                 tier_1_scanners={this.state.tier_1_scanners}
-                tier_1_scanner_current_ids={this.state.tier_1_scanner_current_ids}
                 redact_rules={this.state.redact_rules}
-                redact_rule_current_id={this.state.redact_rule_current_id}
+                current_ids={this.state.current_ids}
                 visibilityFlags={this.state.visibilityFlags}
                 toggleShowVisibility={this.toggleShowVisibility}
                 impersonateUser={this.impersonateUser}
@@ -2399,10 +2400,9 @@ class RedactApplication extends React.Component {
                 addWorkflowCallbacks={this.addWorkflowCallbacks}
                 clearCurrentFramesetChanges={this.clearCurrentFramesetChanges}
                 redact_rules={this.state.redact_rules}
-                redact_rule_current_id={this.state.redact_rule_current_id}
+                current_ids={this.state.current_ids}
                 cropImage={this.cropImage}
                 tier_1_scanners={this.state.tier_1_scanners}
-                tier_1_scanner_current_ids={this.state.tier_1_scanner_current_ids}
                 illustrateParameters={this.state.illustrateParameters}
                 setIllustrateParameters={this.setIllustrateParameters}
                 clearCurrentIllustrations={this.clearCurrentIllustrations}

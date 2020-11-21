@@ -653,10 +653,10 @@ class ComposePanel extends React.Component {
     }
     
     if (
-      this.props.redact_rule_current_id &&
-      Object.keys(this.props.redact_rules).includes(this.props.redact_rule_current_id)
+      this.props.current_ids['redact_rule'] &&
+      Object.keys(this.props.redact_rules).includes(this.props.current_ids['redact_rule'])
     ) {
-      job_data['request_data']['redact_rule'] = this.props.redact_rules[this.props.redact_rule_current_id]
+      job_data['request_data']['redact_rule'] = this.props.redact_rules[this.props.current_ids['redact_rule']]
     }
 
     if (Object.keys(extra_data).includes('areas_to_redact')) {
@@ -1228,7 +1228,7 @@ class ComposePanel extends React.Component {
         setMessage={this.setMessage}
         addCallback={this.addCallback}
         tier_1_scanners={this.props.tier_1_scanners}
-        tier_1_scanner_current_ids={this.props.tier_1_scanner_current_ids}
+        current_ids={this.props.current_ids}
         setGlobalStateVar={this.props.setGlobalStateVar}
         cropImage={this.props.cropImage}
       />
@@ -1246,7 +1246,7 @@ class ComposePanel extends React.Component {
       <ComposeImageInfoControls
         getImageUrl={this.props.getImageUrl}
         redact_rules={this.props.redact_rules}
-        redact_rule_current_id={this.props.redact_rule_current_id}
+        redact_rule_id={this.props.current_ids['redact_rule']}
         setGlobalStateVar={this.props.setGlobalStateVar}
         getFramesetHashForImageUrl={this.props.getFramesetHashForImageUrl}
         setIllustrateParameters={this.props.setIllustrateParameters}
@@ -1270,8 +1270,8 @@ class ComposePanel extends React.Component {
   }
 
   currentImageIsTemplateAnchorImage() {
-    if (this.props.tier_1_scanner_current_ids['template']) {
-      let key = this.props.tier_1_scanner_current_ids['template']
+    if (this.props.current_ids['t1_scanner']['template']) {
+      let key = this.props.current_ids['t1_scanner']['template']
       if (!Object.keys(this.props.tier_1_scanners['template']).includes(key)) {
         return false
       }
@@ -1297,7 +1297,7 @@ class ComposePanel extends React.Component {
   }
 
   getCurrentTemplateAnchors() {
-    const template_id = this.props.tier_1_scanner_current_ids['template']
+    const template_id = this.props.current_ids['t1_scanner']['template']
     const template = this.props.tier_1_scanners['template'][template_id]
     if (template) {
       return template['anchors']
@@ -1306,7 +1306,7 @@ class ComposePanel extends React.Component {
   }
 
   getCurrentTemplateMaskZones() {
-    const template_id = this.props.tier_1_scanner_current_ids['template']
+    const template_id = this.props.current_ids['t1_scanner']['template']
     const template = this.props.tier_1_scanners['template'][template_id]
     if (template) {
       return template['mask_zones']

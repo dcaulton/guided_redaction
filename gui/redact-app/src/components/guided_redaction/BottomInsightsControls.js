@@ -109,7 +109,7 @@ class BottomInsightsControls extends React.Component {
           deleteScanner={this.props.deleteScanner}
           importScanner={this.props.importScanner}
           tier_1_scanners={this.props.tier_1_scanners}
-          tier_1_scanner_current_ids={this.props.tier_1_scanner_current_ids}
+          current_ids={this.props.current_ids}
           tier_1_matches={this.props.tier_1_matches}
         />
 
@@ -131,7 +131,7 @@ class BottomInsightsControls extends React.Component {
           deleteScanner={this.props.deleteScanner}
           importScanner={this.props.importScanner}
           tier_1_scanners={this.props.tier_1_scanners}
-          tier_1_scanner_current_ids={this.props.tier_1_scanner_current_ids}
+          current_ids={this.props.current_ids}
           tier_1_matches={this.props.tier_1_matches}
         />
 
@@ -142,7 +142,7 @@ class BottomInsightsControls extends React.Component {
           visibilityFlags={this.props.visibilityFlags}
           toggleShowVisibility={this.props.toggleShowVisibility}
           tier_1_scanners={this.props.tier_1_scanners}
-          tier_1_scanner_current_ids={this.props.tier_1_scanner_current_ids}
+          current_ids={this.props.current_ids}
           tier_1_matches={this.props.tier_1_matches}
           scanners={this.props.scanners}
           getScanners={this.props.getScanners}
@@ -185,7 +185,7 @@ class BottomInsightsControls extends React.Component {
           setScrubberToIndex={this.props.setScrubberToIndex}
           getFramesetHashesInOrder={this.props.getFramesetHashesInOrder}
           tier_1_scanners={this.props.tier_1_scanners}
-          tier_1_scanner_current_ids={this.props.tier_1_scanner_current_ids}
+          current_ids={this.props.current_ids}
           tier_1_matches={this.props.tier_1_matches}
         />
 
@@ -212,7 +212,7 @@ class BottomInsightsControls extends React.Component {
           setScrubberToIndex={this.props.setScrubberToIndex}
           getFramesetHashesInOrder={this.props.getFramesetHashesInOrder}
           tier_1_scanners={this.props.tier_1_scanners}
-          tier_1_scanner_current_ids={this.props.tier_1_scanner_current_ids}
+          current_ids={this.props.current_ids}
           tier_1_matches={this.props.tier_1_matches}
         />
 
@@ -239,7 +239,7 @@ class BottomInsightsControls extends React.Component {
           setScrubberToIndex={this.props.setScrubberToIndex}
           getFramesetHashesInOrder={this.props.getFramesetHashesInOrder}
           tier_1_scanners={this.props.tier_1_scanners}
-          tier_1_scanner_current_ids={this.props.tier_1_scanner_current_ids}
+          current_ids={this.props.current_ids}
           tier_1_matches={this.props.tier_1_matches}
           jobs={this.props.jobs}
         />
@@ -267,7 +267,7 @@ class BottomInsightsControls extends React.Component {
           getFramesetHashesInOrder={this.props.getFramesetHashesInOrder}
           getFramesetHashForImageUrl={this.props.getFramesetHashForImageUrl}
           tier_1_scanners={this.props.tier_1_scanners}
-          tier_1_scanner_current_ids={this.props.tier_1_scanner_current_ids}
+          current_ids={this.props.current_ids}
           tier_1_matches={this.props.tier_1_matches}
         />
 
@@ -280,7 +280,7 @@ class BottomInsightsControls extends React.Component {
           visibilityFlags={this.props.visibilityFlags}
           toggleShowVisibility={this.props.toggleShowVisibility}
           tier_1_scanners={this.props.tier_1_scanners}
-          tier_1_scanner_current_ids={this.props.tier_1_scanner_current_ids}
+          current_ids={this.props.current_ids}
         />
 
         <OcrSceneAnalysisControls
@@ -292,7 +292,7 @@ class BottomInsightsControls extends React.Component {
           visibilityFlags={this.props.visibilityFlags}
           toggleShowVisibility={this.props.toggleShowVisibility}
           tier_1_scanners={this.props.tier_1_scanners}
-          tier_1_scanner_current_ids={this.props.tier_1_scanner_current_ids}
+          current_ids={this.props.current_ids}
           scanners={this.props.scanners}
           getScanners={this.props.getScanners}
           deleteScanner={this.props.deleteScanner}
@@ -304,7 +304,7 @@ class BottomInsightsControls extends React.Component {
           visibilityFlags={this.props.visibilityFlags}
           toggleShowVisibility={this.props.toggleShowVisibility}
           pipelines={this.props.pipelines}
-          current_pipeline_id={this.props.current_pipeline_id}
+          current_ids={this.props.current_ids}
           getPipelines={this.props.getPipelines}
           dispatchPipeline={this.props.dispatchPipeline}
           deletePipeline={this.props.deletePipeline}
@@ -323,7 +323,7 @@ class BottomInsightsControls extends React.Component {
           toggleShowVisibility={this.props.toggleShowVisibility}
           submitInsightsJob={this.props.submitInsightsJob}
           redact_rules={this.props.redact_rules}
-          redact_rule_current_id={this.props.redact_rule_current_id}
+          current_ids={this.props.current_ids}
           movies={this.props.movies}
           setGlobalStateVar={this.props.setGlobalStateVar}
           scanners={this.props.scanners}

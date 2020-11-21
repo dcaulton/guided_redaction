@@ -65,7 +65,7 @@ class InsightsPanel extends React.Component {
   }
 
   getCurrentOcrSceneAnalysisMatches() {
-    const osa_key = this.props.tier_1_scanner_current_ids['ocr_scene_analysis']
+    const osa_key = this.props.current_ids['t1_scanner']['ocr_scene_analysis']
     const frameset_hash = this.props.getFramesetHashForImageUrl(this.state.insights_image)
 
     const data = this.props.tier_1_matches['ocr_scene_analysis'][osa_key]['movies'][this.props.movie_url]['framesets'][frameset_hash]
@@ -79,8 +79,8 @@ class InsightsPanel extends React.Component {
     if (!this.props.tier_1_matches['ocr_scene_analysis']) {
       return
     }
-    if (this.props.tier_1_scanner_current_ids['ocr_scene_analysis']) {
-      let osa_key = this.props.tier_1_scanner_current_ids['ocr_scene_analysis']
+    if (this.props.current_ids['t1_scanner']['ocr_scene_analysis']) {
+      let osa_key = this.props.current_ids['t1_scanner']['ocr_scene_analysis']
       if (!Object.keys(this.props.tier_1_scanners['ocr_scene_analysis']).includes(osa_key)) {
         return false
       }
@@ -128,8 +128,8 @@ class InsightsPanel extends React.Component {
   }
 
   getCurrentPipelineMatches() {
-    if (Object.keys(this.props.tier_1_matches['pipeline']).includes(this.props.tier_1_scanner_current_ids['pipeline'])) {
-      const this_pipeline_matches = this.props.tier_1_matches['pipeline'][this.props.tier_1_scanner_current_ids['pipeline']]  
+    if (Object.keys(this.props.tier_1_matches['pipeline']).includes(this.props.current_ids['t1_scanner']['pipeline'])) {
+      const this_pipeline_matches = this.props.tier_1_matches['pipeline'][this.props.current_ids['t1_scanner']['pipeline']]  
       if (Object.keys(this_pipeline_matches['movies']).includes(this.props.movie_url)) {
         const this_movies_matches = this_pipeline_matches['movies'][this.props.movie_url]
         const frameset_hash = this.props.getFramesetHashForImageUrl(this.state.insights_image)
@@ -238,7 +238,7 @@ class InsightsPanel extends React.Component {
     job_data['app'] = 'analyze'
     job_data['operation'] = 'build_data_sifter'
 
-    const data_sifter_id = this.props.tier_1_scanner_current_ids['data_sifter']
+    const data_sifter_id = this.props.current_ids['t1_scanner']['data_sifter']
     const data_sifter = this.props.tier_1_scanners['data_sifter'][data_sifter_id]
     job_data['request_data']['tier_1_scanners'] = {}
     job_data['request_data']['tier_1_scanners']['data_sifter'] = {}
@@ -276,13 +276,13 @@ class InsightsPanel extends React.Component {
       mesh_match: 'mesh_match_threaded',
       ocr_scene_analysis: 'ocr_scene_analysis_threaded',
     }
-    if (!this.props.tier_1_scanner_current_ids[scanner_type]) {
+    if (!this.props.current_ids['t1_scanner'][scanner_type]) {
       this.displayInsightsMessage('no ' + scanner_type + ' rule selected, cannot submit a job')
       return
     }
     job_data['app'] = 'analyze'
     job_data['operation'] = scanner_operations[scanner_type]
-    const cur_scanner_id = this.props.tier_1_scanner_current_ids[scanner_type]
+    const cur_scanner_id = this.props.current_ids['t1_scanner'][scanner_type]
     const cur_scanner = this.props.tier_1_scanners[scanner_type][cur_scanner_id]
     job_data['request_data']['tier_1_scanners'] = {}
     job_data['request_data']['tier_1_scanners'][scanner_type] = {}
@@ -441,10 +441,10 @@ class InsightsPanel extends React.Component {
     job_data['operation'] = 'redact'
 
     if (
-      this.props.redact_rule_current_id &&
-      Object.keys(this.props.redact_rules).includes(this.props.redact_rule_current_id)
+      this.props.current_ids['redact_rule'] &&
+      Object.keys(this.props.redact_rules).includes(this.props.current_ids['redact_rule'])
     ) {
-      job_data['request_data']['redact_rule'] = this.props.redact_rules[this.props.redact_rule_current_id]
+      job_data['request_data']['redact_rule'] = this.props.redact_rules[this.props.current_ids['redact_rule']]
     }
 
     job_data['request_data']['meta'] = {
@@ -678,8 +678,8 @@ class InsightsPanel extends React.Component {
   }
   
   currentImageIsT1ScannerRootImage(scanner_type, anchor_names) {
-    if (this.props.tier_1_scanner_current_ids[scanner_type]) {
-      let key = this.props.tier_1_scanner_current_ids[scanner_type]
+    if (this.props.current_ids['t1_scanner'][scanner_type]) {
+      let key = this.props.current_ids['t1_scanner'][scanner_type]
       if (!Object.keys(this.props.tier_1_scanners[scanner_type]).includes(key)) {
         return false
       }
@@ -887,7 +887,7 @@ class InsightsPanel extends React.Component {
     if (!this.state.insights_image) {
       return
     }
-    const current_scanner_id = this.props.tier_1_scanner_current_ids[scanner_type]
+    const current_scanner_id = this.props.current_ids['t1_scanner'][scanner_type]
     const scanner_matches = this.props.tier_1_matches[scanner_type]
     if (!Object.keys(scanner_matches).includes(current_scanner_id)) {
       return
@@ -1019,7 +1019,7 @@ class InsightsPanel extends React.Component {
             setMovieNickname={this.props.setMovieNickname}
             setDraggedId={this.setDraggedId}
             tier_1_matches={this.props.tier_1_matches}
-            tier_1_scanner_current_ids={this.props.tier_1_scanner_current_ids}
+            current_ids={this.props.current_ids}
             getFramesetHashForImageUrl={this.props.getFramesetHashForImageUrl}
             getFramesetHashesInOrder={this.props.getFramesetHashesInOrder}
             setScrubberToIndex={this.setScrubberToIndex}
@@ -1124,7 +1124,6 @@ class InsightsPanel extends React.Component {
             importRedactRule={this.props.importRedactRule}
             preserve_movie_audio={this.props.preserve_movie_audio}
             pipelines={this.props.pipelines}
-            current_pipeline_id={this.props.current_pipeline_id}
             getPipelines={this.props.getPipelines}
             dispatchPipeline={this.props.dispatchPipeline}
             deletePipeline={this.props.deletePipeline}
@@ -1133,9 +1132,8 @@ class InsightsPanel extends React.Component {
             results={this.props.results}
             app_codebooks={this.props.app_codebooks}
             tier_1_scanners={this.props.tier_1_scanners}
-            tier_1_scanner_current_ids={this.props.tier_1_scanner_current_ids}
             redact_rules={this.props.redact_rules}
-            redact_rule_current_id={this.props.redact_rule_current_id}
+            current_ids={this.props.current_ids}
             impersonateUser={this.props.impersonateUser}
             cv_workers={this.props.cv_workers}
             queryCvWorker={this.props.queryCvWorker}

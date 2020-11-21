@@ -110,8 +110,8 @@ class MoviePanel extends React.Component {
   }
 
   currentImageIsTemplateAnchorImage() {
-    if (this.props.tier_1_scanner_current_ids['template']) {
-      let key = this.props.tier_1_scanner_current_ids['template']
+    if (this.props.current_ids['t1_scanner']['template']) {
+      let key = this.props.current_ids['t1_scanner']['template']
       if (!Object.keys(this.props.tier_1_scanners['template']).includes(key)) {
         return false
       }
@@ -137,7 +137,7 @@ class MoviePanel extends React.Component {
   }
 
   getCurrentTemplateAnchors() {
-    const template_id = this.props.tier_1_scanner_current_ids['template']
+    const template_id = this.props.current_ids['t1_scanner']['template']
     const template = this.props.tier_1_scanners['template'][template_id]
     if (template) {
       return template['anchors']
@@ -146,7 +146,7 @@ class MoviePanel extends React.Component {
   }
 
   getCurrentTemplateMaskZones() {
-    const template_id = this.props.tier_1_scanner_current_ids['template']
+    const template_id = this.props.current_ids['t1_scanner']['template']
     const template = this.props.tier_1_scanners['template'][template_id]
     if (template) {
       return template['mask_zones']
@@ -477,10 +477,10 @@ class MoviePanel extends React.Component {
 
   getRedactRule() {
     if (
-      this.props.redact_rule_current_id &&
-      Object.keys(this.props.redact_rules).includes(this.props.redact_rule_current_id)
+      this.props.current_ids['redact_rule'] &&
+      Object.keys(this.props.redact_rules).includes(this.props.current_ids['redact_rule'])
     ) {
-      return this.props.redact_rules[this.props.redact_rule_current_id]
+      return this.props.redact_rules[this.props.current_ids['redact_rule']]
     }
   }
 
@@ -1081,7 +1081,7 @@ class MoviePanel extends React.Component {
             toggleGlobalStateVar={this.props.toggleGlobalStateVar}
             submitMovieJob={this.submitMovieJob}
             redact_rules={this.props.redact_rules}
-            redact_rule_current_id={this.props.redact_rule_current_id}
+            redact_rule_id={this.props.current_ids['redact_rule']}
             frameset_discriminator={this.props.frameset_discriminator}
             changeMovieResolutionNew={this.changeMovieResolutionNew}
             movie_resolution_new={this.state.movie_resolution_new}
@@ -1125,7 +1125,7 @@ class MoviePanel extends React.Component {
             setMessage={this.setMessage}
             addCallback={this.addCallback}
             tier_1_scanners={this.props.tier_1_scanners}
-            tier_1_scanner_current_ids={this.props.tier_1_scanner_current_ids}
+            current_ids={this.props.current_ids}
             setGlobalStateVar={this.props.setGlobalStateVar}
             cropImage={this.props.cropImage}
             collapsible={true}
@@ -1407,7 +1407,7 @@ class MoviePanelAdvancedControls extends React.Component {
 
     const redaction_rule_controls = buildRedactionRuleControls(
       this.props.redact_rules,
-      this.props.redact_rule_current_id,
+      this.props.redact_rule_id,
       this.props.setGlobalStateVar
     )
 
