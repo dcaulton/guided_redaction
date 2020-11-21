@@ -43,6 +43,7 @@ class SelectionGrowerControls extends React.Component {
       capture_form: false,
       include_input_in_response: false,
       tie_grid_to_selected_area: true,
+      row_column_threshold: 2,
       ocr_job_id: '',
       debug: false,
       skip_if_ocr_needed: false,
@@ -130,6 +131,7 @@ class SelectionGrowerControls extends React.Component {
         capture_form: sam['capture_form'],
         include_input_in_response: sam['include_input_in_response'],
         tie_grid_to_selected_area: sam['tie_grid_to_selected_area'],
+        row_column_threshold: sam['row_column_threshold'],
         ocr_job_id: sam['ocr_job_id'],
         debug: sam['debug'],
         skip_if_ocr_needed: sam['skip_if_ocr_needed'],
@@ -169,6 +171,7 @@ class SelectionGrowerControls extends React.Component {
       capture_form: false,
       include_input_in_response: false,
       tie_grid_to_selected_area: true,
+      row_column_threshold: 2,
       ocr_job_id: '',
       debug: false,
       skip_if_ocr_needed: false,
@@ -188,6 +191,7 @@ class SelectionGrowerControls extends React.Component {
       capture_form: this.state.capture_form,
       include_input_in_response: this.state.include_input_in_response,
       tie_grid_to_selected_area: this.state.tie_grid_to_selected_area,
+      row_column_threshold: this.state.row_column_threshold,
       ocr_job_id: this.state.ocr_job_id,
       debug: this.state.debug,
       skip_if_ocr_needed: this.state.skip_if_ocr_needed,
@@ -402,6 +406,24 @@ class SelectionGrowerControls extends React.Component {
     let deepCopyOffs = JSON.parse(JSON.stringify(this.state.offsets))
     deepCopyOffs[direction] = value
     this.setLocalStateVar('offsets', deepCopyOffs)
+  }
+
+  buildRowColumnThresholdField() {
+    return (
+      <div>
+        <div className='d-inline'>
+          <input
+            className='ml-2 mr-2 mt-1'
+            size='3'
+            value={this.state.row_column_threshold}
+            onChange={(event) => this.setLocalStateVar('row_column_threshold', event.target.value)}
+          />
+        </div>
+        <div className='d-inline'>
+          Row Column Threshold
+        </div>
+      </div>
+    )
   }
 
   buildOffsetsField() {
@@ -686,6 +708,7 @@ class SelectionGrowerControls extends React.Component {
     const capture_form_field = this.buildCaptureFormField()
     const include_input_field = this.buildIncludeInputInResponseField()
     const tie_grid_field = this.buildTieGridToSelectedAreaField()
+    const row_column_threshold_field = this.buildRowColumnThresholdField()
     const ocr_id_field = this.buildOcrMatchIdField()
     const add_color_centers_button = this.buildAddColorCentersButton()
     const header_row = makeHeaderRow(
@@ -732,6 +755,10 @@ class SelectionGrowerControls extends React.Component {
 
                 <div className='row mt-2'>
                   {offsets_field}
+                </div>
+
+                <div className='row mt-2'>
+                  {row_column_threshold_field}
                 </div>
 
                 <div className='row mt-2'>

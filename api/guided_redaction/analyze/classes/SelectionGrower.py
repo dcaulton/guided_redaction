@@ -14,7 +14,7 @@ class SelectionGrower:
         self.debug = self.selection_grower_meta['debug']
         self.alignment_tolerance = 10
         self.hist_grid_size = 10
-        self.row_column_threshold = 2
+        self.row_column_threshold = int(self.selection_grower_meta['row_column_threshold'])
         self.min_grid_aspect_ratio = 1.0
 
     def grow_selection(self, tier_1_match_data, cv2_image):
