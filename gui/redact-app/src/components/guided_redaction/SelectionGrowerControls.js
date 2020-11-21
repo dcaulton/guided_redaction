@@ -41,7 +41,7 @@ class SelectionGrowerControls extends React.Component {
       colors: [],
       capture_grid: false,
       capture_form: false,
-      include_input_in_response: false,
+      merge_response: true,
       tie_grid_to_selected_area: true,
       row_column_threshold: 2,
       ocr_job_id: '',
@@ -129,7 +129,7 @@ class SelectionGrowerControls extends React.Component {
         colors: sam['colors'],
         capture_grid: sam['capture_grid'],
         capture_form: sam['capture_form'],
-        include_input_in_response: sam['include_input_in_response'],
+        merge_response: sam['merge_response'],
         tie_grid_to_selected_area: sam['tie_grid_to_selected_area'],
         row_column_threshold: sam['row_column_threshold'],
         ocr_job_id: sam['ocr_job_id'],
@@ -169,7 +169,7 @@ class SelectionGrowerControls extends React.Component {
       colors: [],
       capture_grid: false,
       capture_form: false,
-      include_input_in_response: false,
+      merge_response: true,
       tie_grid_to_selected_area: true,
       row_column_threshold: 2,
       ocr_job_id: '',
@@ -189,7 +189,7 @@ class SelectionGrowerControls extends React.Component {
       colors: this.state.colors,
       capture_grid: this.state.capture_grid,
       capture_form: this.state.capture_form,
-      include_input_in_response: this.state.include_input_in_response,
+      merge_response: this.state.merge_response,
       tie_grid_to_selected_area: this.state.tie_grid_to_selected_area,
       row_column_threshold: this.state.row_column_threshold,
       ocr_job_id: this.state.ocr_job_id,
@@ -336,9 +336,9 @@ class SelectionGrowerControls extends React.Component {
     )
   }
 
-  buildIncludeInputInResponseField() {
+  buildMergeResponseField() {
     let checked_val = ''
-    if (this.state.include_input_in_response) {
+    if (this.state.merge_response) {
       checked_val = 'checked'
     }
     return (
@@ -348,11 +348,11 @@ class SelectionGrowerControls extends React.Component {
             className='mr-2'
             checked={checked_val}
             type='checkbox'
-            onChange={() => this.setLocalStateVar('include_input_in_response', !this.state.include_input_in_response)}
+            onChange={() => this.setLocalStateVar('merge_response', !this.state.merge_response)}
           />
         </div>
         <div className='d-inline'>
-          Include Input in Response
+          Merge Response with Input 
         </div>
       </div>
     )
@@ -706,7 +706,7 @@ class SelectionGrowerControls extends React.Component {
     const colors_field = this.buildColorsField()
     const capture_grid_field = this.buildCaptureGridField()
     const capture_form_field = this.buildCaptureFormField()
-    const include_input_field = this.buildIncludeInputInResponseField()
+    const merge_response_field = this.buildMergeResponseField()
     const tie_grid_field = this.buildTieGridToSelectedAreaField()
     const row_column_threshold_field = this.buildRowColumnThresholdField()
     const ocr_id_field = this.buildOcrMatchIdField()
@@ -770,7 +770,7 @@ class SelectionGrowerControls extends React.Component {
                 </div>
 
                 <div className='row mt-2'>
-                  {include_input_field}
+                  {merge_response_field}
                 </div>
 
                 <div className='row mt-2'>

@@ -15,7 +15,6 @@ class SelectionGrower:
         self.alignment_tolerance = 10
         self.hist_grid_size = 10
         self.row_column_threshold = int(self.selection_grower_meta['row_column_threshold'])
-        self.min_grid_aspect_ratio = 1.0
 
     def grow_selection(self, tier_1_match_data, cv2_image):
         match_obj = {}
@@ -26,8 +25,6 @@ class SelectionGrower:
         for match_key in tier_1_match_data:
             if tier_1_match_data[match_key]['scanner_type'] != 'ocr':
                 selected_area = tier_1_match_data[match_key]
-                if self.selection_grower_meta['include_input_in_response']:
-                    match_obj[match_key] = selected_area
             else:
                 ocr_match_objs[match_key] = tier_1_match_data[match_key]
 
@@ -71,8 +68,6 @@ class SelectionGrower:
             statistics[growth_direction]['outer_roi'] = growth_roi
             if grid_x_values and last_y - first_y:
                 new_area = self.build_new_area(growth_direction, selected_area, grid_x_values, first_y, last_y)
-#                if new_area['size'][0] / new_area['size'][1] < self.min_grid_aspect_ratio:
-#                    continue
                 new_areas[new_area['id']] = new_area
                 statistics[growth_direction]['roi'] = new_area
         return new_areas, statistics
@@ -97,6 +92,9 @@ class SelectionGrower:
             if first_y < selected_area['location'][1] + selected_area['size'][1] or \
                 self.selection_grower_meta['tie_grid_to_selected_area']:
                 start_y_value = selected_area['location'][1] + selected_area['size'][1]
+            if self.selection_grower_meta['merge_response']:
+                start_y_value = selected_area['location'][1]
+
             new_area = {
                 'scanner_type': 'selection_grower',
                 'id': 'selection_grower_' + str(random.randint(1, 999999999)),

@@ -224,7 +224,7 @@ class ChartMaker:
 
         self.draw_grid_title(movie_uuid, image_url, frameset_hash, cv2_image)
 
-        outer_roi_image = self.draw_roi(cv2_image, outer_roi, (205, 255, 170))
+        outer_roi_image = self.draw_roi(cv2_image, outer_roi, (255, 50, 50))
         if outer_roi_image.__class__.__name__ == 'ndarray':
             cv2_image = cv2.addWeighted(
                 outer_roi_image, 
@@ -234,7 +234,7 @@ class ChartMaker:
                 1.0
             )
 
-        inner_roi_image = self.draw_roi(cv2_image, roi, (200, 200, 255))
+        inner_roi_image = self.draw_roi(cv2_image, roi, (255, 220, 100))
         if inner_roi_image.__class__.__name__ == 'ndarray':
             cv2_image = cv2.addWeighted(
                 inner_roi_image, 
@@ -338,6 +338,13 @@ class ChartMaker:
                 (blue_rect.shape[1], blue_rect.shape[0]),
                 color,
                 -1
+            )
+            cv2.rectangle(
+                blue_rect,
+                (0, 0),
+                (blue_rect.shape[1], blue_rect.shape[0]),
+                (color[0]*.5, color[1]*.5, color[2]*.5),
+                4
             )
 
             res = cv2.addWeighted(
