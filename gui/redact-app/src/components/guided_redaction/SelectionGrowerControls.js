@@ -286,9 +286,12 @@ class SelectionGrowerControls extends React.Component {
   buildDirectionsField() {
     const directions = ['south', 'west']
     return (
-      <div>
+      <div className='border-top ml-2'>
         <div className='h5'>
           Directions
+        </div>
+        <div className='font-italic'>
+          these indicate which direction you intend to grow the selection
         </div>
         {directions.map((direction, index) => {
           const id_name = 'toggle_dir_' + direction
@@ -429,9 +432,13 @@ class SelectionGrowerControls extends React.Component {
   buildOffsetsField() {
     const directions = ['north', 'south', 'east', 'west']
     return (
-      <div>
+      <div className='border-top ml-2'>
         <div className='h5'>
           Offsets
+        </div>
+        <div className='font-italic'>
+          these say how much extra pixels to add to the n/s/e/w edge of the source selected area
+          to define the 'field of play' as you project in your intended direction
         </div>
         {directions.map((direction, index) => {
           const id_name = 'set_offset_' + direction
@@ -611,6 +618,14 @@ class SelectionGrowerControls extends React.Component {
   }
 
   buildColorsField() {
+    if (this.state.colors.length < 1) {
+      return (
+        <div className='font-italic'>
+          no colors selected
+        </div>
+      )
+    }
+
     return (
       <div className='col'>
         <div className='h5 row'>
@@ -738,10 +753,6 @@ class SelectionGrowerControls extends React.Component {
                 </div>
 
                 <div className='row mt-2'>
-                  {add_color_centers_button}
-                </div>
-
-                <div className='row mt-2'>
                   {id_string}
                 </div>
 
@@ -757,40 +768,68 @@ class SelectionGrowerControls extends React.Component {
                   {offsets_field}
                 </div>
 
-                <div className='row mt-2'>
-                  {row_column_threshold_field}
+                <div className='row ml-2 mt-4 mr-2'>
+                  <div className='col'>
+                    <div className='row h5 border-top border-bottom bg-gray'>
+                      Color Projection
+                    </div>
+
+                    <div className='row font-italic'>
+                      grow in a direction, subject to background and border colors
+                    </div>
+
+                    <div className='row mt-2'>
+                      {add_color_centers_button}
+                    </div>
+
+                    <div className='row mt-2'>
+                      {colors_field}
+                    </div>
+                  </div>
                 </div>
 
-                <div className='row mt-2'>
-                  {capture_grid_field}
-                </div>
+                <div className='row ml-2 mt-4 mr-2'>
+                  <div className='col'>
+                    <div className='row h5 border-top border-bottom bg-gray'>
+                      Grid Capture
+                    </div>
 
-                <div className='row mt-2'>
-                  {capture_form_field}
-                </div>
+                    <div className='row font-italic'>
+                      grow in a direction to capture a box around a grid of data
+                    </div>
 
-                <div className='row mt-2'>
-                  {merge_response_field}
-                </div>
+                    <div className='row mt-2'>
+                      {row_column_threshold_field}
+                    </div>
 
-                <div className='row mt-2'>
-                  {tie_grid_field}
-                </div>
+                    <div className='row mt-2'>
+                      {capture_grid_field}
+                    </div>
 
-                <div className='row mt-2'>
-                  {ocr_id_field}
-                </div>
+                    <div className='row mt-2'>
+                      {capture_form_field}
+                    </div>
 
-                <div className='row mt-2'>
-                  {colors_field}
+                    <div className='row mt-2'>
+                      {merge_response_field}
+                    </div>
+
+                    <div className='row mt-2'>
+                      {tie_grid_field}
+                    </div>
+
+                    <div className='row mt-2'>
+                      {ocr_id_field}
+                    </div>
+
+                    <div className='row mt-2'>
+                      {skip_if_ocr_needed_field}
+                    </div>
+                  </div>
                 </div>
 
                 <div className='row mt-2'>
                   {debug_field}
-                </div>
-
-                <div className='row mt-2'>
-                  {skip_if_ocr_needed_field}
                 </div>
 
                 <div className='row mt-1 mr-1 ml-1 border-top'>
