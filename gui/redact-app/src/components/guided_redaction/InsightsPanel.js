@@ -1144,6 +1144,7 @@ class InsightsPanel extends React.Component {
             getJobResultData={this.props.getJobResultData}
             runExportTask={this.props.runExportTask}
             postImportArchiveCall={this.props.postImportArchiveCall}
+            getColorAtPixel={this.props.getColorAtPixel}
           />
         </div>
 

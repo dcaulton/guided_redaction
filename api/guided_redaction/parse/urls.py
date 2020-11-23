@@ -26,3 +26,6 @@ router.register(r"v1/parse/ping", api.ParseViewSetPing, basename="MarlinPerkins"
 router.register(
     r"v1/parse/crop-image", api.ParseViewSetCropImage, basename="BillyBob"
 )
+router.register(
+    r"v1/parse/get-color-at-pixel", api.ParseViewSetGetColorAtPixel, basename="SonOfSvengoolie"
+)

@@ -526,3 +526,31 @@ class ParseViewSetRenderSubsequence(viewsets.ViewSet):
         #add the rendered image name to output['rendered_image']
         subsequence['rendered_image'] = fw.get_url_for_file_path(output_file_fullpath)
         return Response({'subsequence': subsequence})
+
+class ParseViewSetGetColorAtPixel(viewsets.ViewSet):
+    def create(self, request):
+        request_data = request.data
+        return self.process_create_request(request_data)
+
+    def process_create_request(self, request_data):
+        if not request_data.get("image_url"):
+            return self.error("image_url is required")
+        if not request_data.get("location"):
+            return self.error("location is required")
+        location = request_data['location']
+
+        return_color = (0, 0, 0)
+        try:
+            pic_response = requests.get(
+              request_data['image_url'],
+              verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
+            )
+            img_binary = pic_response.content
+            if img_binary:
+                nparr = np.fromstring(img_binary, np.uint8)
+                cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+                color = cv2_image[location[1]][location[0]]
+                return_color = (int(color[2]), int(color[1]), int(color[0]))
+            return Response({'color': return_color})
+        except Exception as err:
+            return self.error('exception getting color at pixel: {}'.format(err))

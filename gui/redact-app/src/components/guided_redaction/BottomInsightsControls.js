@@ -223,7 +223,6 @@ class BottomInsightsControls extends React.Component {
           insights_image={this.props.insights_image}
           getFramesetHashForImageUrl={this.props.getFramesetHashForImageUrl}
           movie_url={this.props.movie_url}
-          setSelectedAreaTemplateAnchor={this.props.setSelectedAreaTemplateAnchor}
           visibilityFlags={this.props.visibilityFlags}
           toggleShowVisibility={this.props.toggleShowVisibility}
           displayInsightsMessage={this.props.displayInsightsMessage}
@@ -242,6 +241,7 @@ class BottomInsightsControls extends React.Component {
           current_ids={this.props.current_ids}
           tier_1_matches={this.props.tier_1_matches}
           jobs={this.props.jobs}
+          getColorAtPixel={this.props.getColorAtPixel}
         />
 
         <OcrControls

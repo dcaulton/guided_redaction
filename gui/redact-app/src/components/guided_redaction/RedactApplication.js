@@ -221,6 +221,27 @@ class RedactApplication extends React.Component {
     this.truncateAtFramesetHash=this.truncateAtFramesetHash.bind(this)
     this.getPipelineJobStatus=this.getPipelineJobStatus.bind(this)
     this.postImportArchiveCall=this.postImportArchiveCall.bind(this)
+    this.getColorAtPixel=this.getColorAtPixel.bind(this)
+  }
+
+  async getColorAtPixel(the_image_url, the_location, when_done=(()=>{})) {
+    const payload = {
+      image_url: the_image_url,
+      location: the_location,
+    }
+    let response = await fetch(this.getUrl('get_color_at_pixel_url'), {
+      method: 'POST',
+      headers: this.buildJsonHeaders(),
+      body: JSON.stringify(payload),
+    })
+    .then((response) => response.json())
+    .then((responseJson) => {
+      when_done(responseJson)
+    })
+    .catch((error) => {
+      console.error(error)
+    })
+    await response
   }
 
   seedRedactRule() {
@@ -248,7 +269,6 @@ class RedactApplication extends React.Component {
   }
 
   truncateAtFramesetHash(frameset_hash) {
-console.log('pocky 02')
     const hashes = this.getFramesetHashesInOrder()
     const movie_url = this.state.movie_url
     if (!hashes.includes(frameset_hash)) {
@@ -655,6 +675,8 @@ console.log('pocky 02')
       return api_server_url + 'v1/delete-old-workbooks'
     } else if (url_name === 'import_archive_url') {
       return api_server_url + 'v1/files/import-archive'
+    } else if (url_name === 'get_color_at_pixel_url') {
+      return api_server_url + 'v1/parse/get-color-at-pixel'
     }
   }
 
@@ -2403,6 +2425,7 @@ console.log('pocky 02')
                 runExportTask={this.runExportTask}
                 job_polling_interval_seconds={this.state.job_polling_interval_seconds}
                 postImportArchiveCall={this.postImportArchiveCall}
+                getColorAtPixel={this.getColorAtPixel}
               />
             </Route>
             <Route path='/redact/pipeline'>

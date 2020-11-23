@@ -38,7 +38,7 @@ class SelectionGrowerControls extends React.Component {
         east: 0,
         west: 0,
       },
-      colors: [],
+      colors: {},
       capture_grid: false,
       capture_form: false,
       merge_response: true,
@@ -54,25 +54,44 @@ class SelectionGrowerControls extends React.Component {
     this.getSelectionGrowerMetaFromState=this.getSelectionGrowerMetaFromState.bind(this)
     this.setLocalStateVar=this.setLocalStateVar.bind(this)
     this.addColorCenterCallback=this.addColorCenterCallback.bind(this)
+    this.getColorAtPixelCallback=this.getColorAtPixelCallback.bind(this)
     this.getColors=this.getColors.bind(this)
+    this.buildColorKey=this.buildColorKey.bind(this)
   }
 
   getColors() {
     return this.state.colors
   }
 
-  addColorCenterCallback(clicked_coords) {
-    let deepCopyColors = JSON.parse(JSON.stringify(this.state.colors))
-    const the_id = 'color_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
-    let build_obj = {
-      'image': this.props.insights_image,
-      'movie': this.props.movie_url,
-      id: the_id,
-      location: clicked_coords,
-      tolerance: 25,
+  getColorAtPixelCallback(response_obj) {
+    if (!Object.keys(response_obj).includes('color')) {
+      return
     }
-    deepCopyColors.push(build_obj)
-    this.setLocalStateVar('colors', deepCopyColors)
+    let deepCopyColors = JSON.parse(JSON.stringify(this.state.colors))
+
+    let build_colors = {}
+    for (let i=0; i < Object.keys(this.state.colors).length; i++) {
+      const old_color_key = Object.keys(this.state.colors)[i]
+      build_colors[old_color_key] = this.state.colors[old_color_key]
+    }
+
+    const color_obj = {
+      whitelist_or_blacklist: 'whitelist',
+      thickness: 0,
+      tolerance: 25,
+      value: response_obj['color'],
+    }
+    const color_key = this.buildColorKey(response_obj['color'])
+    build_colors[color_key] = color_obj
+    this.setLocalStateVar('colors', build_colors)
+  }
+
+  buildColorKey(color) {
+    return color[0].toString() + '-' + color[1].toString() + '-' + color[2].toString()
+  }
+
+  addColorCenterCallback(clicked_coords) {
+    this.props.getColorAtPixel(this.props.insights_image, clicked_coords, this.getColorAtPixelCallback)
   }
 
   startAddColorCenters() {
@@ -82,7 +101,7 @@ class SelectionGrowerControls extends React.Component {
 
   buildAddColorCentersButton() {
     return buildInlinePrimaryButton(
-      'Add Color Centers',
+      'Add Colors',
       (()=>{this.startAddColorCenters()})
     )
   }
@@ -593,32 +612,22 @@ class SelectionGrowerControls extends React.Component {
     )
   }
 
-  clearColorCenter(color_id) {
-    let build_colors = []
-    for (let i=0; i < this.state.colors.length; i++) {
-      const color = this.state.colors[i]
-      if (color['id']  !== color_id) {
-        build_colors.push(color)
-      }
+  setColorTolerance(color_key, tolerance_value) {
+    let deepCopyColors = JSON.parse(JSON.stringify(this.state.colors))
+    if (Object.keys(this.state.colors).includes(color_key)) {
+      deepCopyColors[color_key]['tolerance'] = tolerance_value
+      this.setLocalStateVar('colors', deepCopyColors)
     }
-    this.setLocalStateVar('colors', build_colors)
   }
 
-  updateColorProperty(color_id, property_name, property_value) {
+  clearColor(color_key) {
     let deepCopyColors = JSON.parse(JSON.stringify(this.state.colors))
-    let build_colors = []
-    for (let i=0; i < this.state.colors.length; i++) {
-      const color_obj = deepCopyColors[i]
-      if (color_obj['id'] === color_id) {
-        color_obj[property_name] = property_value
-      }
-      build_colors.push(color_obj)
-    }
-    this.setLocalStateVar('colors', build_colors)
+    delete deepCopyColors[color_key]
+    this.setLocalStateVar('colors', deepCopyColors)
   }
 
   buildColorsField() {
-    if (this.state.colors.length < 1) {
+    if (Object.keys(this.state.colors).length < 1) {
       return (
         <div className='font-italic'>
           no colors selected
@@ -631,67 +640,54 @@ class SelectionGrowerControls extends React.Component {
         <div className='h5 row'>
           Colors
         </div>
-        {this.state.colors.map((color_obj, index) => {
-          const mar_left = '-' + String(color_obj['location'][0] - 25) + 'px'
-          const mar_top = '-' + String(color_obj['location'][1] - 25) + 'px'
+        {Object.keys(this.state.colors).map((color_key, index) => {
+          const color = this.state.colors[color_key]
+          const color_string = 'rgb(' + color['value'].join(',') + ')'
           const div_style = {
             width:'50px',
             height:'50px',
             overflow: 'hidden',
             border: '2px solid black',
+            backgroundColor: color_string,
           }
-          const img_style = {
-            marginLeft: mar_left,
-            marginTop: mar_top,
-          }
-          const color_img = (
-            <div 
-              style={div_style}
-            >
-              <img
-                style={img_style}
-                src={this.props.insights_image}
-                alt='whatever'
-              />
-            </div>
+          const color_div = (
+            <div style={div_style} />
           )
           return (
             <div key={index} className='row border-top mt-2'>
               <div className='col'>
 
-                <div className='row mt-2'>
-                  <div className='col-3'>
-                    {color_obj.id}
-                  </div>
+                <div className='row mt-2 ml-2'>
                   <div className='col-1'>
-                    {color_img}
-                  </div>
-                </div>
-
-                <div className='row mt-2'>
-                  <div className='d-inline'>
-                    <input
-                      size='4'
-                      value={color_obj['tolerance']}
-                      onChange={(event) => this.updateColorProperty(color_obj.id, 'tolerance', event.target.value)}
-                    />
-                  </div>
-                  <div className='d-inline'>
-                    Color Tolerance
+                    {color_div}
                   </div>
 
-                </div>
+                  <div className='col-3'>
+                    <div className='d-inline'>
+                      Tol
+                    </div>
+                    <div className='d-inline'>
+                      <input
+                        className='ml-2 mr-2 mt-1'
+                        size='3'
+                        value={color['tolerance']}
+                        onChange={(event) => this.setColorTolerance(color_key, event.target.value)}
+                      />
+                      
+                    </div>
+                  </div>
 
-                <div className='row'>
-                  <div className='col-2'>
+                  <div className='col-1'>
                     <button
-                      className='btn btn-primary p-1 m-1'
-                      onClick={() => this.clearColorCenter(color_obj.id)}
+                      className='btn btn-link ml-2'
+                      onClick={() => this.clearColor(color_key)}
                     >
-                      Delete
+                      clear
                     </button>
                   </div>
+
                 </div>
+
 
               </div>
             </div>
