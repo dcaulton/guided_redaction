@@ -42,7 +42,7 @@ class SelectionGrower:
         new_areas = {}
         statistics = {}
         for growth_direction in ['south', 'west']:
-            if not self.selection_grower_meta['directions'][growth_direction]:
+            if self.selection_grower_meta['direction'] != growth_direction:
                 continue
             statistics[growth_direction] = {}
             growth_roi = self.build_roi(growth_direction, selected_area, cv2_image)

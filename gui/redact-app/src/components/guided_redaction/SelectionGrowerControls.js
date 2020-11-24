@@ -26,12 +26,7 @@ class SelectionGrowerControls extends React.Component {
       name: '',
       attributes: {},
       scan_level: 'tier_1',
-      directions: {
-        north: false,
-        south: false,
-        east: false,
-        west: false,
-      },
+      direction: 'south',
       offsets: {
         north: 0,
         south: 0,
@@ -45,6 +40,7 @@ class SelectionGrowerControls extends React.Component {
       tie_grid_to_selected_area: true,
       row_column_threshold: 2,
       ocr_job_id: '',
+      usage_mode: 'color_projection',
       debug: false,
       skip_if_ocr_needed: false,
       attribute_search_name: '',
@@ -67,8 +63,6 @@ class SelectionGrowerControls extends React.Component {
     if (!Object.keys(response_obj).includes('color')) {
       return
     }
-    let deepCopyColors = JSON.parse(JSON.stringify(this.state.colors))
-
     let build_colors = {}
     for (let i=0; i < Object.keys(this.state.colors).length; i++) {
       const old_color_key = Object.keys(this.state.colors)[i]
@@ -110,6 +104,7 @@ class SelectionGrowerControls extends React.Component {
     this.props.addInsightsCallback('selection_grower_add_color_center', this.addColorCenterCallback)
     this.props.addInsightsCallback('getCurrentSGColors', this.getColors)
     this.loadNewSelectionGrowerMeta()
+    this.setUsageMode('color_projection')
   }
 
   setLocalStateVar(var_name, var_value, when_done=(()=>{})) {
@@ -143,7 +138,7 @@ class SelectionGrowerControls extends React.Component {
         name: sam['name'],
         attributes: sam['attributes'],
         scan_level: sam['scan_level'],
-        directions: sam['directions'],
+        direction: sam['direction'],
         offsets: sam['offsets'],
         colors: sam['colors'],
         capture_grid: sam['capture_grid'],
@@ -152,6 +147,7 @@ class SelectionGrowerControls extends React.Component {
         tie_grid_to_selected_area: sam['tie_grid_to_selected_area'],
         row_column_threshold: sam['row_column_threshold'],
         ocr_job_id: sam['ocr_job_id'],
+        usage_mode: sam['usage_mode'],
         debug: sam['debug'],
         skip_if_ocr_needed: sam['skip_if_ocr_needed'],
       })
@@ -173,12 +169,7 @@ class SelectionGrowerControls extends React.Component {
       name: '',
       attributes: {},
       scan_level: 'tier_1',
-      directions: {
-        north: false,
-        south: false,
-        east: false,
-        west: false,
-      },
+      direction: 'south',
       offsets: {
         north: 0,
         south: 0,
@@ -192,6 +183,7 @@ class SelectionGrowerControls extends React.Component {
       tie_grid_to_selected_area: true,
       row_column_threshold: 2,
       ocr_job_id: '',
+      usage_mode: 'color_projection',
       debug: false,
       skip_if_ocr_needed: false,
     })
@@ -203,7 +195,7 @@ class SelectionGrowerControls extends React.Component {
       name: this.state.name,
       attributes: this.state.attributes,
       scan_level: this.state.scan_level,
-      directions: this.state.directions,
+      direction: this.state.direction,
       offsets: this.state.offsets,
       colors: this.state.colors,
       capture_grid: this.state.capture_grid,
@@ -212,6 +204,7 @@ class SelectionGrowerControls extends React.Component {
       tie_grid_to_selected_area: this.state.tie_grid_to_selected_area,
       row_column_threshold: this.state.row_column_threshold,
       ocr_job_id: this.state.ocr_job_id,
+      usage_mode: this.state.usage_mode,
       debug: this.state.debug,
       skip_if_ocr_needed: this.state.skip_if_ocr_needed,
     }
@@ -249,13 +242,6 @@ class SelectionGrowerControls extends React.Component {
       25,
       ((value)=>{this.setLocalStateVar('name', value)})
     )
-  }
-
-  toggleDirections(direction_name) {
-    const new_value = (!this.state.directions[direction_name])
-    let deepCopyDirs = JSON.parse(JSON.stringify(this.state.directions))
-    deepCopyDirs[direction_name] = new_value
-    this.setLocalStateVar('directions', deepCopyDirs)
   }
 
   buildSkipIfOcrNeededField() {
@@ -302,28 +288,30 @@ class SelectionGrowerControls extends React.Component {
     )
   }
 
-  buildDirectionsField() {
+  buildDirectionField() {
     const directions = ['south', 'west']
     return (
       <div className='border-top ml-2'>
         <div className='h5'>
-          Directions
+          Direction
         </div>
         <div className='font-italic'>
           these indicate which direction you intend to grow the selection
         </div>
         {directions.map((direction, index) => {
-          const id_name = 'toggle_dir_' + direction
           const display_title = direction.charAt(0).toUpperCase() + direction.slice(1)
           return (
             <div key={index}>
-              <div className='d-inline'>
+              <div 
+                className='d-inline'
+              >
                 <input
                   className='ml-2 mr-2 mt-1'
-                  id={id_name}
-                  checked={this.state.directions[direction]}
-                  type='checkbox'
-                  onChange={() => this.toggleDirections(direction)}
+                  name='selection_grower_direction'
+                  type='radio'
+                  value={direction}
+                  checked={this.state.direction === direction}
+                  onChange={() => this.setLocalStateVar('direction', direction)}
                 />
               </div>
               <div className='d-inline'>
@@ -459,11 +447,12 @@ class SelectionGrowerControls extends React.Component {
           these say how much extra pixels to add to the n/s/e/w edge of the source selected area
           to define the 'field of play' as you project in your intended direction
         </div>
+        <div className='row'>
         {directions.map((direction, index) => {
           const id_name = 'set_offset_' + direction
           const display_title = direction.charAt(0).toUpperCase() + direction.slice(1)
           return (
-            <div key={index}>
+            <div className='col-3 border-right border-left' key={index}>
               <div className='d-inline'>
                 <input
                   className='ml-2 mr-2 mt-1'
@@ -479,6 +468,7 @@ class SelectionGrowerControls extends React.Component {
             </div>
           )
         })}
+        </div>
       </div>
     )
   }
@@ -698,6 +688,122 @@ class SelectionGrowerControls extends React.Component {
     )
   }
 
+  setUsageMode(the_usage_mode) {
+    this.setLocalStateVar('usage_mode', the_usage_mode)
+    if (the_usage_mode === 'color_projection') {
+      document.getElementById('color_projection_fields').style.display = 'block'
+      document.getElementById('grid_capture_fields').style.display = 'none'
+    } else {
+      document.getElementById('color_projection_fields').style.display = 'none'
+      document.getElementById('grid_capture_fields').style.display = 'block'
+    }
+  }
+
+  buildColorProjectionSection() {
+    const add_color_centers_button = this.buildAddColorCentersButton()
+    const colors_field = this.buildColorsField()
+    return (
+      <div className='col'>
+        <div className='row h5 border-top border-bottom bg-gray'>
+          <div 
+            className='d-inline'
+          >
+            <input
+              className='ml-2 mr-2 mt-1'
+              name='selection_grower_usage_mode'
+              type='radio'
+              value='color_projection'
+              checked={this.state.usage_mode === 'color_projection'}
+              onChange={() => this.setUsageMode('color_projection')}
+            />
+          </div>
+          <div className='d-inline'>
+            Color Projection
+          </div>
+        </div>
+
+        <div id='color_projection_fields'>
+          <div className='row font-italic'>
+            grow in a direction, subject to background and border colors
+          </div>
+
+          <div className='row mt-2'>
+            {add_color_centers_button}
+          </div>
+
+          <div className='row mt-2'>
+            {colors_field}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  buildGridCaptureSection() {
+    const row_column_threshold_field = this.buildRowColumnThresholdField()
+    const capture_grid_field = this.buildCaptureGridField()
+    const capture_form_field = this.buildCaptureFormField()
+    const merge_response_field = this.buildMergeResponseField()
+    const tie_grid_field = this.buildTieGridToSelectedAreaField()
+    const ocr_id_field = this.buildOcrMatchIdField()
+    const skip_if_ocr_needed_field = this.buildSkipIfOcrNeededField()
+    return (
+      <div className='col'>
+        <div className='row h5 border-top border-bottom bg-gray'>
+          <div 
+            className='d-inline'
+          >
+            <input
+              className='ml-2 mr-2 mt-1'
+              name='selection_grower_usage_mode'
+              type='radio'
+              value='grid_capture'
+              checked={this.state.usage_mode === 'grid_capture'}
+              onChange={() => this.setUsageMode('grid_capture')}
+            />
+          </div>
+          <div className='d-inline'>
+            Grid Capture
+          </div>
+        </div>
+
+        <div id='grid_capture_fields'>
+          <div className='row font-italic'>
+            grow in a direction to capture a box around a grid of data
+          </div>
+
+          <div className='row mt-2'>
+            {row_column_threshold_field}
+          </div>
+
+          <div className='row mt-2'>
+            {capture_grid_field}
+          </div>
+
+          <div className='row mt-2'>
+            {capture_form_field}
+          </div>
+
+          <div className='row mt-2'>
+            {merge_response_field}
+          </div>
+
+          <div className='row mt-2'>
+            {tie_grid_field}
+          </div>
+
+          <div className='row mt-2'>
+            {ocr_id_field}
+          </div>
+
+          <div className='row mt-2'>
+            {skip_if_ocr_needed_field}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   render() {
     if (!this.props.visibilityFlags['selection_grower']) {
       return([])
@@ -710,23 +816,16 @@ class SelectionGrowerControls extends React.Component {
     const delete_button = this.buildDeleteButton()
     const save_to_db_button = this.buildSaveToDatabaseButton()
     const clear_matches_button = this.buildClearMatchesButton2()
-    const directions_field = this.buildDirectionsField()
+    const direction_field = this.buildDirectionField()
     const debug_field = this.buildDebugField()
-    const skip_if_ocr_needed_field = this.buildSkipIfOcrNeededField()
     const offsets_field = this.buildOffsetsField()
-    const colors_field = this.buildColorsField()
-    const capture_grid_field = this.buildCaptureGridField()
-    const capture_form_field = this.buildCaptureFormField()
-    const merge_response_field = this.buildMergeResponseField()
-    const tie_grid_field = this.buildTieGridToSelectedAreaField()
-    const row_column_threshold_field = this.buildRowColumnThresholdField()
-    const ocr_id_field = this.buildOcrMatchIdField()
-    const add_color_centers_button = this.buildAddColorCentersButton()
     const header_row = makeHeaderRow(
       'selection grower',
       'selection_grower_body',
       (() => this.props.toggleShowVisibility('selection_grower'))
     )
+    const color_projection_section = this.buildColorProjectionSection()
+    const grid_capture_section = this.buildGridCaptureSection()
 
     return (
         <div className='row bg-light rounded mt-3'>
@@ -757,7 +856,7 @@ class SelectionGrowerControls extends React.Component {
                 </div>
 
                 <div className='row mt-2'>
-                  {directions_field}
+                  {direction_field}
                 </div>
 
                 <div className='row mt-2'>
@@ -765,63 +864,11 @@ class SelectionGrowerControls extends React.Component {
                 </div>
 
                 <div className='row ml-2 mt-4 mr-2'>
-                  <div className='col'>
-                    <div className='row h5 border-top border-bottom bg-gray'>
-                      Color Projection
-                    </div>
-
-                    <div className='row font-italic'>
-                      grow in a direction, subject to background and border colors
-                    </div>
-
-                    <div className='row mt-2'>
-                      {add_color_centers_button}
-                    </div>
-
-                    <div className='row mt-2'>
-                      {colors_field}
-                    </div>
-                  </div>
+                  {color_projection_section}
                 </div>
 
                 <div className='row ml-2 mt-4 mr-2'>
-                  <div className='col'>
-                    <div className='row h5 border-top border-bottom bg-gray'>
-                      Grid Capture
-                    </div>
-
-                    <div className='row font-italic'>
-                      grow in a direction to capture a box around a grid of data
-                    </div>
-
-                    <div className='row mt-2'>
-                      {row_column_threshold_field}
-                    </div>
-
-                    <div className='row mt-2'>
-                      {capture_grid_field}
-                    </div>
-
-                    <div className='row mt-2'>
-                      {capture_form_field}
-                    </div>
-
-                    <div className='row mt-2'>
-                      {merge_response_field}
-                    </div>
-
-                    <div className='row mt-2'>
-                      {tie_grid_field}
-                    </div>
-
-                    <div className='row mt-2'>
-                      {ocr_id_field}
-                    </div>
-
-                    <div className='row mt-2'>
-                      {skip_if_ocr_needed_field}
-                    </div>
-                  </div>
+                  {grid_capture_section}
                 </div>
 
                 <div className='row mt-2'>
