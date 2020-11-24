@@ -769,6 +769,12 @@ class InsightsPanel extends React.Component {
       the_message = 'click second corner'
     } else if (the_mode === 'oma_pick_app') {
       the_message = 'select the app'
+    } else if (the_mode === 'selection_grower_add_color_center') {
+      the_message = 'specify a point with the color you want'
+    } else if (the_mode === 'selection_grower_add_color_zone_1') {
+      the_message = 'Select the upper left corner of the zone'
+    } else if (the_mode === 'selection_grower_add_color_zone_2') {
+      the_message = 'Select the bottom right corner of the zone'
     }
     this.props.setGlobalStateVar('message', the_message)
     this.setState({
@@ -1145,6 +1151,7 @@ class InsightsPanel extends React.Component {
             runExportTask={this.props.runExportTask}
             postImportArchiveCall={this.props.postImportArchiveCall}
             getColorAtPixel={this.props.getColorAtPixel}
+            getColorsInZone={this.props.getColorsInZone}
           />
         </div>
 

@@ -29,3 +29,6 @@ router.register(
 router.register(
     r"v1/parse/get-color-at-pixel", api.ParseViewSetGetColorAtPixel, basename="SonOfSvengoolie"
 )
+router.register(
+    r"v1/parse/get-colors-in-zone", api.ParseViewSetGetColorsInZone, basename="PeterTosh"
+)

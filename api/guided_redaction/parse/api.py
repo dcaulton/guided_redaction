@@ -554,3 +554,34 @@ class ParseViewSetGetColorAtPixel(viewsets.ViewSet):
             return Response({'color': return_color})
         except Exception as err:
             return self.error('exception getting color at pixel: {}'.format(err))
+
+class ParseViewSetGetColorsInZone(viewsets.ViewSet):
+    def create(self, request):
+        request_data = request.data
+        return self.process_create_request(request_data)
+
+    def process_create_request(self, request_data):
+        if not request_data.get("image_url"):
+            return self.error("image_url is required")
+        if not request_data.get("start"):
+            return self.error("start is required")
+        if not request_data.get("end"):
+            return self.error("end is required")
+        start = request_data['start']
+        end = request_data['end']
+
+        return_colors = {'cheese': 'slices'}
+        try:
+            pic_response = requests.get(
+              request_data['image_url'],
+              verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
+            )
+            img_binary = pic_response.content
+            if img_binary:
+                nparr = np.fromstring(img_binary, np.uint8)
+                cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+#                color = cv2_image[location[1]][location[0]]
+#                return_color = (int(color[2]), int(color[1]), int(color[0]))
+            return Response({'colors': return_colors})
+        except Exception as err:
+            return self.error('exception getting color for zone: {}'.format(err))

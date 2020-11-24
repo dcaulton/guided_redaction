@@ -209,6 +209,7 @@ class CanvasInsightsOverlay extends React.Component {
       if ((this.props.mode === 'add_template_anchor_2') 
           || (this.props.mode === 'add_template_mask_zone_2')
           || (this.props.mode === 'selected_area_minimum_zones_2')
+          || (this.props.mode === 'selection_grower_add_color_zone_2')
           || (this.props.mode === 'selected_area_maximum_zones_2')
           || (this.props.mode === 'mesh_match_minimum_zones_2')
           || (this.props.mode === 'mesh_match_maximum_zones_2')

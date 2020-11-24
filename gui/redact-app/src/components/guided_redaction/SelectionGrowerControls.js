@@ -50,13 +50,20 @@ class SelectionGrowerControls extends React.Component {
     this.getSelectionGrowerMetaFromState=this.getSelectionGrowerMetaFromState.bind(this)
     this.setLocalStateVar=this.setLocalStateVar.bind(this)
     this.addColorCenterCallback=this.addColorCenterCallback.bind(this)
+    this.addColorZoneCallback1=this.addColorZoneCallback1.bind(this)
+    this.addColorZoneCallback2=this.addColorZoneCallback2.bind(this)
     this.getColorAtPixelCallback=this.getColorAtPixelCallback.bind(this)
+    this.getColorsInZoneCallback=this.getColorsInZoneCallback.bind(this)
     this.getColors=this.getColors.bind(this)
     this.buildColorKey=this.buildColorKey.bind(this)
   }
 
   getColors() {
     return this.state.colors
+  }
+
+  getColorsInZoneCallback(response_obj) {
+console.log('got a response with ', response_obj)
   }
 
   getColorAtPixelCallback(response_obj) {
@@ -88,20 +95,40 @@ class SelectionGrowerControls extends React.Component {
     this.props.getColorAtPixel(this.props.insights_image, clicked_coords, this.getColorAtPixelCallback)
   }
 
-  startAddColorCenters() {
-    this.props.handleSetMode('selection_grower_add_color_center')
-    this.props.displayInsightsMessage('specify a point with the color you want')
+  addColorZoneCallback1(clicked_coords) {
+    this.setLocalStateVar('first_click_coords', clicked_coords)
+    this.props.handleSetMode('selection_grower_add_color_zone_2')
+  }
+
+  addColorZoneCallback2(clicked_coords) {
+    this.props.getColorsInZone(
+      this.props.insights_image, 
+      this.state.first_click_coords, 
+      clicked_coords, 
+      this.getColorsInZoneCallback
+    )
+    this.props.handleSetMode('')
+    // TODO SUBMIT THE CALL HERE
   }
 
   buildAddColorCentersButton() {
     return buildInlinePrimaryButton(
-      'Add Colors',
-      (()=>{this.startAddColorCenters()})
+      'Add Colors by Point',
+      (()=>{this.props.handleSetMode('selection_grower_add_color_center')})
+    )
+  }
+
+  buildAddColorZonesButton() {
+    return buildInlinePrimaryButton(
+      'Add Colors by Zone',
+      (()=>{this.props.handleSetMode('selection_grower_add_color_zone_1')})
     )
   }
 
   componentDidMount() {
     this.props.addInsightsCallback('selection_grower_add_color_center', this.addColorCenterCallback)
+    this.props.addInsightsCallback('selection_grower_add_color_zone_1', this.addColorZoneCallback1)
+    this.props.addInsightsCallback('selection_grower_add_color_zone_2', this.addColorZoneCallback2)
     this.props.addInsightsCallback('getCurrentSGColors', this.getColors)
     this.loadNewSelectionGrowerMeta()
     this.setUsageMode('color_projection')
@@ -701,6 +728,7 @@ class SelectionGrowerControls extends React.Component {
 
   buildColorProjectionSection() {
     const add_color_centers_button = this.buildAddColorCentersButton()
+    const add_color_regions_button = this.buildAddColorZonesButton()
     const colors_field = this.buildColorsField()
     return (
       <div className='col'>
@@ -729,6 +757,7 @@ class SelectionGrowerControls extends React.Component {
 
           <div className='row mt-2'>
             {add_color_centers_button}
+            {add_color_regions_button}
           </div>
 
           <div className='row mt-2'>

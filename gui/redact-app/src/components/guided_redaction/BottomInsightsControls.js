@@ -242,6 +242,7 @@ class BottomInsightsControls extends React.Component {
           tier_1_matches={this.props.tier_1_matches}
           jobs={this.props.jobs}
           getColorAtPixel={this.props.getColorAtPixel}
+          getColorsInZone={this.props.getColorsInZone}
         />
 
         <OcrControls

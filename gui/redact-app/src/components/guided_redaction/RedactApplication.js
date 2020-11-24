@@ -222,6 +222,28 @@ class RedactApplication extends React.Component {
     this.getPipelineJobStatus=this.getPipelineJobStatus.bind(this)
     this.postImportArchiveCall=this.postImportArchiveCall.bind(this)
     this.getColorAtPixel=this.getColorAtPixel.bind(this)
+    this.getColorsInZone=this.getColorsInZone.bind(this)
+  }
+
+  async getColorsInZone(the_image_url, start, end, when_done=(()=>{})) {
+    const payload = {
+      image_url: the_image_url,
+      start: start,
+      end: end,
+    }
+    let response = await fetch(this.getUrl('get_colors_in_zone_url'), {
+      method: 'POST',
+      headers: this.buildJsonHeaders(),
+      body: JSON.stringify(payload),
+    })
+    .then((response) => response.json())
+    .then((responseJson) => {
+      when_done(responseJson)
+    })
+    .catch((error) => {
+      console.error(error)
+    })
+    await response
   }
 
   async getColorAtPixel(the_image_url, the_location, when_done=(()=>{})) {
@@ -677,6 +699,8 @@ class RedactApplication extends React.Component {
       return api_server_url + 'v1/files/import-archive'
     } else if (url_name === 'get_color_at_pixel_url') {
       return api_server_url + 'v1/parse/get-color-at-pixel'
+    } else if (url_name === 'get_colors_in_zone_url') {
+      return api_server_url + 'v1/parse/get-colors-in-zone'
     }
   }
 
@@ -2426,6 +2450,7 @@ class RedactApplication extends React.Component {
                 job_polling_interval_seconds={this.state.job_polling_interval_seconds}
                 postImportArchiveCall={this.postImportArchiveCall}
                 getColorAtPixel={this.getColorAtPixel}
+                getColorsInZone={this.getColorsInZone}
               />
             </Route>
             <Route path='/redact/pipeline'>
