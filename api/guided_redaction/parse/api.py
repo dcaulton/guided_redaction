@@ -13,6 +13,7 @@ import ffmpeg
 import requests
 
 from guided_redaction.parse.classes.MovieParser import MovieParser
+from guided_redaction.parse.classes.ColorGetter import ColorGetter
 from guided_redaction.utils.classes.FileWriter import FileWriter
 from django.shortcuts import render
 from django.conf import settings
@@ -567,8 +568,6 @@ class ParseViewSetGetColorsInZone(viewsets.ViewSet):
             return self.error("start is required")
         if not request_data.get("end"):
             return self.error("end is required")
-        start = request_data['start']
-        end = request_data['end']
 
         return_colors = {'cheese': 'slices'}
         try:
@@ -580,8 +579,12 @@ class ParseViewSetGetColorsInZone(viewsets.ViewSet):
             if img_binary:
                 nparr = np.fromstring(img_binary, np.uint8)
                 cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-#                color = cv2_image[location[1]][location[0]]
-#                return_color = (int(color[2]), int(color[1]), int(color[0]))
-            return Response({'colors': return_colors})
+                color_getter = ColorGetter({
+                  'cv2_image': cv2_image,
+                  'start': request_data['start'],
+                  'end': request_data['end'],
+                })
+                colors = color_getter.get_colors()
+            return Response({'colors': colors})
         except Exception as err:
             return self.error('exception getting color for zone: {}'.format(err))
