@@ -43,6 +43,7 @@ class SelectionGrowerControls extends React.Component {
       usage_mode: 'color_projection',
       debug: false,
       skip_if_ocr_needed: false,
+      hist_bin_count: 8,
       attribute_search_name: '',
       attribute_search_value: '',
       first_click_coords: [],
@@ -63,7 +64,22 @@ class SelectionGrowerControls extends React.Component {
   }
 
   getColorsInZoneCallback(response_obj) {
-console.log('got a response with ', response_obj)
+    let something_changed = false
+    let build_colors = {}
+    for (let i=0; i < Object.keys(this.state.colors).length; i++) {
+      const old_color_key = Object.keys(this.state.colors)[i]
+      build_colors[old_color_key] = this.state.colors[old_color_key]
+    }
+    for (let j=0; j < Object.keys(response_obj['colors']).length; j++) {
+      const color_key = Object.keys(response_obj['colors'])[j]
+      if (!Object.keys(build_colors).includes(color_key)) {
+        build_colors[color_key] = response_obj['colors'][color_key]
+        something_changed = true
+      }
+    }
+    if (something_changed) {
+      this.setLocalStateVar('colors', build_colors)
+    }
   }
 
   getColorAtPixelCallback(response_obj) {
@@ -107,8 +123,7 @@ console.log('got a response with ', response_obj)
       clicked_coords, 
       this.getColorsInZoneCallback
     )
-    this.props.handleSetMode('')
-    // TODO SUBMIT THE CALL HERE
+    this.props.handleSetMode('selection_grower_add_color_zone_1')
   }
 
   buildAddColorCentersButton() {
@@ -177,6 +192,7 @@ console.log('got a response with ', response_obj)
         usage_mode: sam['usage_mode'],
         debug: sam['debug'],
         skip_if_ocr_needed: sam['skip_if_ocr_needed'],
+        hist_bin_count: sam['hist_bin_count'],
       })
     }
     let deepCopyIds = JSON.parse(JSON.stringify(this.props.current_ids))
@@ -213,6 +229,7 @@ console.log('got a response with ', response_obj)
       usage_mode: 'color_projection',
       debug: false,
       skip_if_ocr_needed: false,
+      hist_bin_count: 8,
     })
   }
 
@@ -234,6 +251,7 @@ console.log('got a response with ', response_obj)
       usage_mode: this.state.usage_mode,
       debug: this.state.debug,
       skip_if_ocr_needed: this.state.skip_if_ocr_needed,
+      hist_bin_count: this.state.hist_bin_count,
     }
     return meta
   }
@@ -258,6 +276,17 @@ console.log('got a response with ', response_obj)
         (()=>{this.props.displayInsightsMessage('Seletion Grower has been saved to database')})
       )
     }))
+  }
+
+  buildHistBinCountField() {
+    return buildLabelAndTextInput(
+      this.state.hist_bin_count,
+      'Color Bin Count per axis',
+      'selection_grower_hist_bin_count',
+      'hist_bin_count',
+      3,
+      ((value)=>{this.setLocalStateVar('hist_bin_count', value)})
+    )
   }
 
   buildNameField() {
@@ -637,11 +666,33 @@ console.log('got a response with ', response_obj)
     }
   }
 
+  setColorWhitelistBlacklist(color_key, value) {
+    let deepCopyColors = JSON.parse(JSON.stringify(this.state.colors))
+    if (Object.keys(this.state.colors).includes(color_key)) {
+      deepCopyColors[color_key]['whitelist_or_blacklist'] = value
+      this.setLocalStateVar('colors', deepCopyColors)
+    }
+  }
+
   clearColor(color_key) {
     let deepCopyColors = JSON.parse(JSON.stringify(this.state.colors))
     delete deepCopyColors[color_key]
     this.setLocalStateVar('colors', deepCopyColors)
   }
+
+  buildWhitelistBlacklist(color_key) {
+    const wl_bl = [
+      {'whitelist': 'whitelist'}, 
+      {'blacklist': 'blacklist'}, 
+    ]
+    return buildLabelAndDropdown(
+      wl_bl,
+      '',
+      this.state.colors[color_key]['whitelist_or_blacklist'],
+      'whitelist_or_blacklist',
+      ((value)=>{this.setColorWhitelistBlacklist(color_key, value)})
+    )
+  } 
 
   buildColorsField() {
     if (Object.keys(this.state.colors).length < 1) {
@@ -659,6 +710,7 @@ console.log('got a response with ', response_obj)
         </div>
         {Object.keys(this.state.colors).map((color_key, index) => {
           const color = this.state.colors[color_key]
+          const whitelist_blacklist = this.buildWhitelistBlacklist(color_key)
           const color_string = 'rgb(' + color['value'].join(',') + ')'
           const div_style = {
             width:'50px',
@@ -680,7 +732,7 @@ console.log('got a response with ', response_obj)
                   </div>
 
                   <div className='col-3'>
-                    <div className='d-inline'>
+                    <div className='d-inline ml-2'>
                       Tol
                     </div>
                     <div className='d-inline'>
@@ -690,8 +742,11 @@ console.log('got a response with ', response_obj)
                         value={color['tolerance']}
                         onChange={(event) => this.setColorTolerance(color_key, event.target.value)}
                       />
-                      
                     </div>
+                  </div>
+
+                  <div className='col-2'>
+                    {whitelist_blacklist}
                   </div>
 
                   <div className='col-1'>
@@ -730,6 +785,7 @@ console.log('got a response with ', response_obj)
     const add_color_centers_button = this.buildAddColorCentersButton()
     const add_color_regions_button = this.buildAddColorZonesButton()
     const colors_field = this.buildColorsField()
+    const hist_bin_count_field = this.buildHistBinCountField()
     return (
       <div className='col'>
         <div className='row h5 border-top border-bottom bg-gray'>
@@ -758,6 +814,10 @@ console.log('got a response with ', response_obj)
           <div className='row mt-2'>
             {add_color_centers_button}
             {add_color_regions_button}
+          </div>
+
+          <div className='row mt-2'>
+            {hist_bin_count_field}
           </div>
 
           <div className='row mt-2'>

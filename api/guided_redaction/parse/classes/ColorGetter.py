@@ -7,8 +7,8 @@ class ColorGetter:
         self.cv2_image = args.get("cv2_image")
         self.start = tuple(args.get("start", (0, 0)))
         self.end = tuple(args.get("end", (0, 0)))
-        self.hist_bin_size = int(args.get('hist_bin_size', 8))
-        self.min_num_pixels = int(args.get('min_num_pixels', 10))
+        self.hist_bin_count = int(args.get('hist_bin_count', 8))
+        self.min_num_pixels = int(args.get('min_num_pixels', 50))
 
     def get_colors(self):
         build_colors = {}
@@ -21,7 +21,7 @@ class ColorGetter:
             [copy], 
             [0, 1, 2],
             None,
-            (self.hist_bin_size, self.hist_bin_size, self.hist_bin_size),
+            (self.hist_bin_count, self.hist_bin_count, self.hist_bin_count),
             [0, 256, 0, 256, 0, 256]
         )
 
@@ -34,22 +34,22 @@ class ColorGetter:
                 break
             print('score for index {} is {}'.format(index, score))
                 
-            k = int(index / (self.hist_bin_size * self.hist_bin_size))
+            k = int(index / (self.hist_bin_count * self.hist_bin_count))
             if k < 0:
                 k = 0
-            j = int((index % (self.hist_bin_size * self.hist_bin_size)) / self.hist_bin_size)
+            j = int((index % (self.hist_bin_count * self.hist_bin_count)) / self.hist_bin_count)
             if j < 0:
                 j = 0
-            i = int(index - j * self.hist_bin_size - k * self.hist_bin_size * self.hist_bin_size)
+            i = int(index - j * self.hist_bin_count - k * self.hist_bin_count * self.hist_bin_count)
             if i < 0:
                 i = 0
             rgb_val = [
-                i * int(256 / self.hist_bin_size), 
-                j * int(256 / self.hist_bin_size), 
-                k * int(256 / self.hist_bin_size)
+                i * int(256 / self.hist_bin_count), 
+                j * int(256 / self.hist_bin_count), 
+                k * int(256 / self.hist_bin_count)
             ]
             color_key = str(rgb_val[0]) + '-' + str(rgb_val[1]) + '-' + str(rgb_val[2])
-            tolerance = int(( 3 * (256/self.hist_bin_size)**2 )**.5)
+            tolerance = int(( 3 * (256/self.hist_bin_count)**2 )**.5)
             build_obj = {
                 'whitelist_or_blacklist': 'whitelist',
                 'thickness': 0,
