@@ -44,9 +44,11 @@ class SelectionGrowerControls extends React.Component {
       debug: false,
       skip_if_ocr_needed: false,
       hist_bin_count: 8,
+      min_num_pixels: 50,
       attribute_search_name: '',
       attribute_search_value: '',
       first_click_coords: [],
+      dragged_id: '',
     }
     this.getSelectionGrowerMetaFromState=this.getSelectionGrowerMetaFromState.bind(this)
     this.setLocalStateVar=this.setLocalStateVar.bind(this)
@@ -57,6 +59,88 @@ class SelectionGrowerControls extends React.Component {
     this.getColorsInZoneCallback=this.getColorsInZoneCallback.bind(this)
     this.getColors=this.getColors.bind(this)
     this.buildColorKey=this.buildColorKey.bind(this)
+  }
+
+  handleDroppedColor(event, target_id) {
+    event.preventDefault()
+    event.stopPropagation()
+    this.mergeTwoColors(this.state.dragged_id, target_id)
+  }
+
+  getColorDistance(color1, color2) {
+    const diff = [
+      Math.abs(color1[0] - color2[0]),
+      Math.abs(color1[1] - color2[1]),
+      Math.abs(color1[2] - color2[2])
+    ]
+    return (diff[0]**2 + diff[1]**2 + diff[2]**2)**.5
+  }
+
+  mergeTwoColors(dragged_id, target_id) {
+    const dragged_color = this.state.colors[dragged_id]
+    const target_color = this.state.colors[target_id]
+    const delta = [
+      target_color['value'][0] - dragged_color['value'][0],
+      target_color['value'][1] - dragged_color['value'][1],
+      target_color['value'][2] - dragged_color['value'][2]
+    ]
+
+    const new_color = [
+      dragged_color['value'][0] + Math.floor(.5 * delta[0]),
+      dragged_color['value'][1] + Math.floor(.5 * delta[1]),
+      dragged_color['value'][2] + Math.floor(.5 * delta[2])
+    ]
+
+    const low_dragged_dist = this.getColorDistance(dragged_color['low_value'], new_color)
+    const low_target_dist = this.getColorDistance(target_color['low_value'], new_color)
+    const high_dragged_dist = this.getColorDistance(dragged_color['high_value'], new_color)
+    const high_target_dist = this.getColorDistance(target_color['high_value'], new_color)
+    let new_tolerance = 0
+    let new_low_value = dragged_color['low_value']
+    if (low_target_dist > low_dragged_dist) {
+      new_low_value = target_color['low_value']
+      new_tolerance = low_target_dist
+    } else {
+      new_tolerance = low_dragged_dist
+    }
+    let new_high_value = dragged_color['high_value']
+    if (high_target_dist > high_dragged_dist) {
+      new_high_value = target_color['high_value']
+    }
+    
+    let build_color = {
+      whitelist_or_blacklist: target_color['whitelist'],
+      thickness: target_color['thickness'],
+      tolerance: new_tolerance,
+      value: new_color,
+      low_value: new_low_value,
+      high_value: new_high_value,
+    }
+
+    const new_color_key = this.buildColorKey(new_color)
+
+    let build_colors = {}
+    for (let i=0; i < Object.keys(this.state.colors).length; i++) {
+      const old_color_key = Object.keys(this.state.colors)[i]
+      const old_color = this.state.colors[old_color_key]
+      if (old_color_key !== dragged_id && old_color_key !== target_id) {
+        // see if its in the merged range
+        if (
+          new_low_value[0] <= old_color['value'][0] &&
+          old_color['value'][0] <= new_high_value[0] &&
+          new_low_value[1] <= old_color['value'][1] &&
+          old_color['value'][1] <= new_high_value[1] &&
+          new_low_value[2] <= old_color['value'][2] &&
+          old_color['value'][2] <= new_high_value[2]
+        ) {
+          continue // do nothing, it's being subsumed in the new color
+        } else {
+          build_colors[old_color_key] = this.state.colors[old_color_key]
+        }
+      }
+    }
+    build_colors[new_color_key] = build_color
+    this.setLocalStateVar('colors', build_colors)
   }
 
   getColors() {
@@ -92,11 +176,24 @@ class SelectionGrowerControls extends React.Component {
       build_colors[old_color_key] = this.state.colors[old_color_key]
     }
 
+    const tolerance = parseInt( (3 * this.state.hist_bin_count**2)**.5 )
+    const low_color = [
+      Math.max(0, response_obj['color'][0] - tolerance),
+      Math.max(0, response_obj['color'][1] - tolerance),
+      Math.max(0, response_obj['color'][2] - tolerance)
+    ]
+    const high_color = [
+      Math.min(255, response_obj['color'][0] + tolerance),
+      Math.min(255, response_obj['color'][1] + tolerance),
+      Math.min(255, response_obj['color'][2] + tolerance)
+    ]
     const color_obj = {
       whitelist_or_blacklist: 'whitelist',
       thickness: 0,
-      tolerance: 25,
+      tolerance: 55,
       value: response_obj['color'],
+      low_value: low_color,
+      high_value: high_color,
     }
     const color_key = this.buildColorKey(response_obj['color'])
     build_colors[color_key] = color_obj
@@ -121,6 +218,7 @@ class SelectionGrowerControls extends React.Component {
       this.props.insights_image, 
       this.state.first_click_coords, 
       clicked_coords, 
+      this.getSelectionGrowerMetaFromState(),
       this.getColorsInZoneCallback
     )
     this.props.handleSetMode('selection_grower_add_color_zone_1')
@@ -137,6 +235,13 @@ class SelectionGrowerControls extends React.Component {
     return buildInlinePrimaryButton(
       'Add Colors by Zone',
       (()=>{this.props.handleSetMode('selection_grower_add_color_zone_1')})
+    )
+  }
+
+  buildClearColorsButton() {
+    return buildInlinePrimaryButton(
+      'Clear Colors',
+      (()=>{this.setLocalStateVar('colors', {})})
     )
   }
 
@@ -193,6 +298,7 @@ class SelectionGrowerControls extends React.Component {
         debug: sam['debug'],
         skip_if_ocr_needed: sam['skip_if_ocr_needed'],
         hist_bin_count: sam['hist_bin_count'],
+        min_num_pixels: sam['min_num_pixels'],
       })
     }
     let deepCopyIds = JSON.parse(JSON.stringify(this.props.current_ids))
@@ -230,6 +336,7 @@ class SelectionGrowerControls extends React.Component {
       debug: false,
       skip_if_ocr_needed: false,
       hist_bin_count: 8,
+      min_num_pixels: 50,
     })
   }
 
@@ -252,6 +359,7 @@ class SelectionGrowerControls extends React.Component {
       debug: this.state.debug,
       skip_if_ocr_needed: this.state.skip_if_ocr_needed,
       hist_bin_count: this.state.hist_bin_count,
+      min_num_pixels: this.state.min_num_pixels,
     }
     return meta
   }
@@ -276,6 +384,17 @@ class SelectionGrowerControls extends React.Component {
         (()=>{this.props.displayInsightsMessage('Seletion Grower has been saved to database')})
       )
     }))
+  }
+
+  buildMinNumPixelsField() {
+    return buildLabelAndTextInput(
+      this.state.min_num_pixels,
+      'Min num of pixels for a color to be detected',
+      'selection_grower_min_num_pixels',
+      'min_num_pixels',
+      3,
+      ((value)=>{this.setLocalStateVar('min_num_pixels', value)})
+    )
   }
 
   buildHistBinCountField() {
@@ -696,11 +815,7 @@ class SelectionGrowerControls extends React.Component {
 
   buildColorsField() {
     if (Object.keys(this.state.colors).length < 1) {
-      return (
-        <div className='font-italic'>
-          no colors selected
-        </div>
-      )
+      return ''
     }
 
     return (
@@ -722,8 +837,24 @@ class SelectionGrowerControls extends React.Component {
           const color_div = (
             <div style={div_style} />
           )
+          const low_string = 'L:' + color['low_value'][0].toString()
+              + ',' + color['low_value'][1].toString()
+              + ',' + color['low_value'][2].toString()
+          const val_string = 'C:' + color['value'][0].toString()
+              + ',' + color['value'][1].toString()
+              + ',' + color['value'][2].toString()
+          const high_string = 'H:' + color['high_value'][0].toString()
+              + ',' + color['high_value'][1].toString()
+              + ',' + color['high_value'][2].toString()
           return (
-            <div key={index} className='row border-top mt-2'>
+            <div 
+                key={index} 
+                className='row border-top mt-2'
+                draggable='true'
+                onDragOver={(event) => event.preventDefault()}
+                onDrop={(event) => this.handleDroppedColor(event, color_key)}
+                onDragStart={() => this.setLocalStateVar('dragged_id', color_key)}
+            >
               <div className='col'>
 
                 <div className='row mt-2 ml-2'>
@@ -747,6 +878,24 @@ class SelectionGrowerControls extends React.Component {
 
                   <div className='col-2'>
                     {whitelist_blacklist}
+                  </div>
+
+                  <div className='col-2 ml-2'>
+                    <div className='row'>
+                      <small>
+                        {low_string}
+                      </small>
+                    </div>
+                    <div className='row'>
+                      <small>
+                        {val_string}
+                      </small>
+                    </div>
+                    <div className='row'>
+                      <small>
+                        {high_string}
+                      </small>
+                    </div>
                   </div>
 
                   <div className='col-1'>
@@ -784,8 +933,10 @@ class SelectionGrowerControls extends React.Component {
   buildColorProjectionSection() {
     const add_color_centers_button = this.buildAddColorCentersButton()
     const add_color_regions_button = this.buildAddColorZonesButton()
+    const clear_colors_button = this.buildClearColorsButton()
     const colors_field = this.buildColorsField()
     const hist_bin_count_field = this.buildHistBinCountField()
+    const min_num_pixels_field = this.buildMinNumPixelsField()
     return (
       <div className='col'>
         <div className='row h5 border-top border-bottom bg-gray'>
@@ -814,10 +965,20 @@ class SelectionGrowerControls extends React.Component {
           <div className='row mt-2'>
             {add_color_centers_button}
             {add_color_regions_button}
+            {clear_colors_button}
           </div>
 
           <div className='row mt-2'>
-            {hist_bin_count_field}
+            <div className='col'>
+              {hist_bin_count_field}
+            </div>
+            <div className='col font-italic'>
+              i.e. 8 means 'represent all colors with a 8x8x8=512 value map'
+            </div>
+          </div>
+
+          <div className='row mt-2'>
+            {min_num_pixels_field}
           </div>
 
           <div className='row mt-2'>

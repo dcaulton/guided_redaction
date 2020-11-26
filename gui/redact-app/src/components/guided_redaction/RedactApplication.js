@@ -225,11 +225,12 @@ class RedactApplication extends React.Component {
     this.getColorsInZone=this.getColorsInZone.bind(this)
   }
 
-  async getColorsInZone(the_image_url, start, end, when_done=(()=>{})) {
+  async getColorsInZone(the_image_url, start, end, selection_grower_meta, when_done=(()=>{})) {
     const payload = {
       image_url: the_image_url,
       start: start,
       end: end,
+      selection_grower_meta: selection_grower_meta,
     }
     let response = await fetch(this.getUrl('get_colors_in_zone_url'), {
       method: 'POST',

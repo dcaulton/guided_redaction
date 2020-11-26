@@ -583,6 +583,7 @@ class ParseViewSetGetColorsInZone(viewsets.ViewSet):
                   'cv2_image': cv2_image,
                   'start': request_data['start'],
                   'end': request_data['end'],
+                  'selection_grower_meta': request_data['selection_grower_meta'],
                 })
                 colors = color_getter.get_colors()
             return Response({'colors': colors})
