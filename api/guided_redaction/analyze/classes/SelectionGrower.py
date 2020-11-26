@@ -47,14 +47,70 @@ class SelectionGrower:
 
         return match_obj, match_stats
 
+#    def rgb_to_hsv(self, rgb_in):
+#        r = rgb_in[0]
+#        g = rgb_in[1]
+#        b = rgb_in[2]
+#        r, g, b = r/255.0, g/255.0, b/255.0
+#        mx = max(r, g, b)
+#        mn = min(r, g, b)
+#        df = mx-mn
+#        if mx == mn:
+#            h = 0
+#        elif mx == r:
+#            h = (60 * ((g-b)/df) + 360) % 360
+#        elif mx == g:
+#            h = (60 * ((b-r)/df) + 120) % 360
+#        elif mx == b:
+#            h = (60 * ((r-g)/df) + 240) % 360
+#        if mx == 0:
+#            s = 0
+#        else:
+#            s = (df/mx)*100
+#        v = mx*100
+#        return h, s, v
+#
     def project_colors(self, selected_area, cv2_image):
         new_areas = {}
         statistics = {}
-        for growth_direction in ['south', 'west']:
+        src_copy = cv2_image.copy()
+        for growth_direction in ['south', 'east']:
             if self.selection_grower_meta['direction'] != growth_direction:
                 continue
             statistics[growth_direction] = {}
             growth_roi = self.build_roi(growth_direction, selected_area, cv2_image)
+            src_copy = src_copy[
+                growth_roi['start'][1]:growth_roi['end'][1],
+                growth_roi['start'][0]:growth_roi['end'][0]
+            ]
+
+            size = (
+                growth_roi['end'][1] - growth_roi['start'][1],
+                growth_roi['end'][0] - growth_roi['start'][0],
+                3
+            )
+            all_color_mask = np.zeros(src_copy.shape[:2], np.uint8)
+
+            for color_key in self.selection_grower_meta['colors']:
+                color = self.selection_grower_meta['colors'][color_key]
+                print('dinky growing color ', color)
+                low_rgb_val = (
+                    color['low_value'][2],
+                    color['low_value'][1],
+                    color['low_value'][0]
+                )
+                high_rgb_val = (
+                    color['high_value'][2],
+                    color['high_value'][1],
+                    color['high_value'][0]
+                )
+                mask2 = cv2.inRange(src_copy, low_rgb_val, high_rgb_val) 
+                print('shaper shapes: all color {} and mask2 {} '.format(all_color_mask.shape, mask2.shape))
+                all_color_mask = cv2.bitwise_or(all_color_mask, mask2)
+                cv2.imwrite('/Users/dcaulton/Desktop/'+color_key+'mask2.png', mask2)
+ 
+            cv2.imwrite('/Users/dcaulton/Desktop/all_color_mask.png', all_color_mask)
+
             size = [
                 growth_roi['end'][0] - growth_roi['start'][0],
                 growth_roi['end'][1] - growth_roi['start'][1]
@@ -72,7 +128,7 @@ class SelectionGrower:
     def capture_grid(self, selected_area, ocr_match_objs, cv2_image):
         new_areas = {}
         statistics = {}
-        for growth_direction in ['south', 'west']:
+        for growth_direction in ['south', 'east']:
             if self.selection_grower_meta['direction'] != growth_direction:
                 continue
             statistics[growth_direction] = {}
@@ -255,7 +311,7 @@ class SelectionGrower:
                end_coords[0] + int(self.selection_grower_meta['offsets']['east']),
                height
            ]
-        if direction == 'west': 
+        if direction == 'east': 
            top_left = [
                end_coords[0],
                start_coords[1] - int(self.selection_grower_meta['offsets']['north'])

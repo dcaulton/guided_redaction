@@ -176,7 +176,8 @@ class SelectionGrowerControls extends React.Component {
       build_colors[old_color_key] = this.state.colors[old_color_key]
     }
 
-    const tolerance = parseInt( (3 * this.state.hist_bin_count**2)**.5 )
+//    const tolerance = parseInt( (3 * this.state.hist_bin_count**2)**.5 )
+    const tolerance = 20
     const low_color = [
       Math.max(0, response_obj['color'][0] - tolerance),
       Math.max(0, response_obj['color'][1] - tolerance),
@@ -464,7 +465,7 @@ class SelectionGrowerControls extends React.Component {
   }
 
   buildDirectionField() {
-    const directions = ['south', 'west']
+    const directions = ['south', 'east']
     return (
       <div className='border-top ml-2'>
         <div className='h5'>
@@ -615,7 +616,7 @@ class SelectionGrowerControls extends React.Component {
     let directions = []
     if (this.state.direction === 'south') {
       directions = ['east', 'west']
-    } else if (this.state.direction === 'west') {
+    } else if (this.state.direction === 'east') {
       directions = ['north', 'south']
     }
     return (
