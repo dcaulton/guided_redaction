@@ -612,7 +612,12 @@ class SelectionGrowerControls extends React.Component {
   }
 
   buildOffsetsField() {
-    const directions = ['north', 'south', 'east', 'west']
+    let directions = []
+    if (this.state.direction === 'south') {
+      directions = ['east', 'west']
+    } else if (this.state.direction === 'west') {
+      directions = ['north', 'south']
+    }
     return (
       <div className='border-top ml-2'>
         <div className='h5'>

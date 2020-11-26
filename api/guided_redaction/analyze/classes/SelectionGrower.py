@@ -20,16 +20,16 @@ class SelectionGrower:
         match_obj = {}
         match_stats = {}
 
-        selected_area = {}
+        ocr_match_objs = {}
+        for match_key in tier_1_match_data:
+            if tier_1_match_data[match_key]['scanner_type'] in ['selected_area', 'selection_grower']:
+                selected_area = tier_1_match_data[match_key]
+            if tier_1_match_data[match_key]['scanner_type'] == 'ocr':
+                ocr_match_objs[match_key] = tier_1_match_data[match_key]
+        if not selected_area:
+            return match_obj, match_stats
 
         if self.selection_grower_meta['usage_mode'] == 'capture_grid':
-            ocr_match_objs = {}
-            for match_key in tier_1_match_data:
-                if tier_1_match_data[match_key]['scanner_type'] != 'ocr':
-                    selected_area = tier_1_match_data[match_key]
-                else:
-                    ocr_match_objs[match_key] = tier_1_match_data[match_key]
-
             if ocr_match_objs:
                 grid_results, grid_stats = self.capture_grid(selected_area, ocr_match_objs, cv2_image)
                 if grid_results:
@@ -38,11 +38,11 @@ class SelectionGrower:
                 if grid_stats:
                     match_stats['grid_capture'] = grid_stats
         elif self.selection_grower_meta['usage_mode'] == 'color_projection':
-            captured_areas, stats = self.capture_grid(selected_area, ocr_match_objs, cv2_image)
-            if captured_areas:
-                for key in captured_areas:
-                    match_obj[key] = captured_areas[key]
-            if grid_stats:
+            new_areas, stats = self.project_colors(selected_area, cv2_image)
+            if new_areas:
+                for key in new_areas:
+                    match_obj[key] = new_areas[key]
+            if stats:
                 match_stats['color_projection'] = stats
 
         return match_obj, match_stats
@@ -55,6 +55,18 @@ class SelectionGrower:
                 continue
             statistics[growth_direction] = {}
             growth_roi = self.build_roi(growth_direction, selected_area, cv2_image)
+            size = [
+                growth_roi['end'][0] - growth_roi['start'][0],
+                growth_roi['end'][1] - growth_roi['start'][1]
+            ]
+            new_area = {
+                'scanner_type': 'selection_grower',
+                'id': 'selection_grower_' + str(random.randint(1, 999999999)),
+                'scale': 1,
+                'location': growth_roi['start'],
+                'size': size,
+            }
+            new_areas[new_area['id']] = new_area
         return new_areas, statistics
 
     def capture_grid(self, selected_area, ocr_match_objs, cv2_image):

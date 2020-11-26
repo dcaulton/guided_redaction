@@ -46,7 +46,8 @@ class SelectionGrowerController(T1Controller):
                     print('selection grower trying image {}'.format(image_name))
                 cv2_image = self.get_cv2_image(image_url)
                 t1_match_data = movies[movie_url]['framesets'][frameset_hash]
-                if not self.match_data_contains_ocr(t1_match_data):
+                if sg_meta['usage_mode'] == 'capture_grid' and \
+                        not self.match_data_contains_ocr(t1_match_data):
                     if sg_meta['skip_if_ocr_needed']:
                         continue
                     self.add_ocr_to_match_data(t1_match_data, cv2_image)
