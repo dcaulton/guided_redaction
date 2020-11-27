@@ -1,4 +1,5 @@
 import cv2
+import base64
 import uuid
 import matplotlib.pyplot as plt
 import random
@@ -47,37 +48,20 @@ class SelectionGrower:
 
         return match_obj, match_stats
 
-#    def rgb_to_hsv(self, rgb_in):
-#        r = rgb_in[0]
-#        g = rgb_in[1]
-#        b = rgb_in[2]
-#        r, g, b = r/255.0, g/255.0, b/255.0
-#        mx = max(r, g, b)
-#        mn = min(r, g, b)
-#        df = mx-mn
-#        if mx == mn:
-#            h = 0
-#        elif mx == r:
-#            h = (60 * ((g-b)/df) + 360) % 360
-#        elif mx == g:
-#            h = (60 * ((b-r)/df) + 120) % 360
-#        elif mx == b:
-#            h = (60 * ((r-g)/df) + 240) % 360
-#        if mx == 0:
-#            s = 0
-#        else:
-#            s = (df/mx)*100
-#        v = mx*100
-#        return h, s, v
-#
+    def get_base64_image_string(self, cv2_image):
+        image_bytes = cv2.imencode(".png", cv2_image)[1].tostring()
+        image_base64 = base64.b64encode(image_bytes)
+        image_base64_string = image_base64.decode('utf-8')
+        return image_base64_string
+
     def project_colors(self, selected_area, cv2_image):
         new_areas = {}
-        statistics = {}
+        statistics = {'color_masks': {}}
         src_copy = cv2_image.copy()
         for growth_direction in ['south', 'east']:
             if self.selection_grower_meta['direction'] != growth_direction:
                 continue
-            statistics[growth_direction] = {}
+            statistics['color_masks'][growth_direction] = {}
             growth_roi = self.build_roi(growth_direction, selected_area, cv2_image)
             src_copy = src_copy[
                 growth_roi['start'][1]:growth_roi['end'][1],
@@ -93,7 +77,8 @@ class SelectionGrower:
 
             for color_key in self.selection_grower_meta['colors']:
                 color = self.selection_grower_meta['colors'][color_key]
-                print('dinky growing color ', color)
+                print('selection grower: growing color ', color)
+                # i think this is actually bgr, it works but the indexes got spun around
                 low_rgb_val = (
                     color['low_value'][2],
                     color['low_value'][1],
@@ -105,11 +90,14 @@ class SelectionGrower:
                     color['high_value'][0]
                 )
                 mask2 = cv2.inRange(src_copy, low_rgb_val, high_rgb_val) 
-                print('shaper shapes: all color {} and mask2 {} '.format(all_color_mask.shape, mask2.shape))
+                if self.debug:
+                    img_string = self.get_base64_image_string(mask2)
+                    statistics['color_masks'][growth_direction][color_key] = img_string
                 all_color_mask = cv2.bitwise_or(all_color_mask, mask2)
-                cv2.imwrite('/Users/dcaulton/Desktop/'+color_key+'mask2.png', mask2)
  
-            cv2.imwrite('/Users/dcaulton/Desktop/all_color_mask.png', all_color_mask)
+            if self.debug:
+                img_string = self.get_base64_image_string(all_color_mask)
+                statistics['color_masks'][growth_direction]['all'] = img_string
 
             size = [
                 growth_roi['end'][0] - growth_roi['start'][0],

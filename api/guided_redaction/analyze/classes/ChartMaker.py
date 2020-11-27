@@ -1,4 +1,5 @@
 import numpy as np
+import base64
 import math
 import cv2
 import random
@@ -199,7 +200,140 @@ class ChartMaker:
                                     frameset_hash,
                                     chart_storage_uuid
                                 )
+                    elif 'color_projection' in stats_framesets[frameset_hash] and \
+                        'color_masks' in stats_framesets[frameset_hash]['color_projection']:
+                        for direction in stats_framesets[frameset_hash]['color_projection']['color_masks']:
+                            self.make_color_masks_graph(
+                                stats_framesets[frameset_hash]['color_projection']['color_masks'][direction],
+                                source_movie['framesets'][frameset_hash]['images'][0],
+                                movie_url,
+                                build_chart_data[movie_url]['framesets'][frameset_hash],
+                                frameset_hash,
+                                chart_storage_uuid
+                            )
         return build_chart_data
+
+    def make_color_masks_graph(
+        self, 
+        stats,
+        image_url, 
+        movie_url, 
+        build_data_this_frameset, 
+        frameset_hash, 
+        chart_storage_uuid
+    ):
+        movie_name = movie_url.split('/')[-1]
+        movie_uuid = movie_name.split('.')[0]
+        mask_image = self.get_mask_image(stats, list(stats.keys())[0])
+        if type(mask_image) == type(None):
+            return
+        num_masks = len(stats)
+        total_height = 200 + num_masks * (mask_image.shape[0] + 100)
+        total_width = 200 + mask_image.shape[1]
+        cv2_image = np.ones((total_height, total_width, 3), dtype='uint8') * 255
+
+        self.draw_color_masks_title(movie_uuid, image_url, frameset_hash, cv2_image)
+
+        cur_y_start = 100
+        self.draw_color_mask(stats, cv2_image, 'all', (0, 0, 0), cur_y_start)
+        cur_y_start += mask_image.shape[0] + 100
+
+        for color_key in stats:
+            if color_key == 'all':
+                continue
+            color = self.get_color_for_key(color_key)
+            self.draw_color_mask(stats, cv2_image, color_key, color, cur_y_start)
+            cur_y_start += mask_image.shape[0] + 100
+
+        new_uuid = str(uuid.uuid4())
+        file_fullpath = self.file_writer.build_file_fullpath_for_uuid_and_filename(
+            chart_storage_uuid, 
+            'color_masks_' + new_uuid + '_' + movie_uuid + '_' + frameset_hash + '.png')
+        cv2.imwrite(file_fullpath, cv2_image)  
+        plot_url = self.file_writer.get_url_for_file_path(file_fullpath)
+        if 'charts' not in build_data_this_frameset:
+            build_data_this_frameset['charts'] = []
+        build_data_this_frameset['charts'].append(plot_url)
+
+
+    def draw_color_mask(self, stats, cv2_image, color_key, color_value, y_start):
+        mask = self.get_mask_image(stats, color_key)
+        if type(mask) == type(None):
+            return
+
+        y_end = y_start + mask.shape[0]
+        x_start = 100
+        x_end = x_start + mask.shape[1]
+        cv2_image[y_start:y_end,x_start:x_end] = mask
+        cv2.rectangle(
+            cv2_image,
+            (x_start-1, y_start-1),
+            (x_end, y_end),
+            (0, 0, 255),
+            1
+        )
+
+        word_start = (0,y_start+20)
+        rect_start = (25,y_start+25)
+        rect_end = (75,y_start+75)
+        cv2.rectangle(
+            cv2_image,
+            rect_start,
+            rect_end,
+            color_value,
+            -1
+        )
+        cv2.rectangle(
+            cv2_image,
+            rect_start,
+            rect_end,
+            (0,0,0),
+            1
+        )
+        cv2.putText(
+            cv2_image,
+            color_key,
+            word_start,
+            cv2.FONT_HERSHEY_DUPLEX, #font
+            .4, #fontScale,
+            (0,0,0), #fontColor,
+            2 #lineType
+        )
+
+    def get_color_for_key(self, color_key):
+        parts = color_key.split('-')
+        parts.reverse()
+        return [int(x) for x in parts]
+
+    def get_mask_image(self, stats, color_key):
+        if color_key not in stats:
+            return
+        img_base64 = stats[color_key]
+        img_bytes = base64.b64decode(img_base64)
+        nparr = np.fromstring(img_bytes, np.uint8)
+        cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        return cv2_image
+
+    def draw_color_masks_title(self, movie_uuid, image_url, frameset_hash, cv2_image):
+        image_name = image_url.split('/')[-1]
+        cv2.putText(
+            cv2_image,
+            "Color Masks for mov " + movie_uuid,
+            (200, 50),
+            cv2.FONT_HERSHEY_SIMPLEX, #font
+            1, #fontScale,
+            (0,0,0), #fontColor,
+            3 #lineType
+        )
+        cv2.putText(
+            cv2_image,
+            " frame " +frameset_hash +' / ' + image_name,
+            (230, 80),
+            cv2.FONT_HERSHEY_SIMPLEX, #font
+            1, #fontScale,
+            (0,0,0), #fontColor,
+            3 #lineType
+        )
 
     def make_grid_capture_graph(
         self, 
