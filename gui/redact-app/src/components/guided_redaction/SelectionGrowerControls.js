@@ -45,6 +45,7 @@ class SelectionGrowerControls extends React.Component {
       skip_if_ocr_needed: false,
       hist_bin_count: 8,
       min_num_pixels: 50,
+      region_build_mode: 'near_flood',
       attribute_search_name: '',
       attribute_search_value: '',
       first_click_coords: [],
@@ -60,6 +61,21 @@ class SelectionGrowerControls extends React.Component {
     this.getColors=this.getColors.bind(this)
     this.buildColorKey=this.buildColorKey.bind(this)
   }
+
+  buildRegionBuildModeField() {
+    const types = [
+      {'near_flood': 'near flood'}, 
+      {'contours': 'contours'}, 
+      {'furthest_edge': 'furthest edge'}, 
+    ]
+    return buildLabelAndDropdown(
+      types,
+      'Region Build Mode',
+      this.state.region_build_mode,
+      'region_build_mode',
+      ((value)=>{this.setLocalStateVar('region_build_mode', value)})
+    )
+  } 
 
   handleDroppedColor(event, target_id) {
     event.preventDefault()
@@ -300,6 +316,7 @@ class SelectionGrowerControls extends React.Component {
         skip_if_ocr_needed: sam['skip_if_ocr_needed'],
         hist_bin_count: sam['hist_bin_count'],
         min_num_pixels: sam['min_num_pixels'],
+        region_build_mode: sam['region_build_mode'],
       })
     }
     let deepCopyIds = JSON.parse(JSON.stringify(this.props.current_ids))
@@ -338,6 +355,7 @@ class SelectionGrowerControls extends React.Component {
       skip_if_ocr_needed: false,
       hist_bin_count: 8,
       min_num_pixels: 50,
+      region_build_mode: 'near_flood',
     })
   }
 
@@ -361,6 +379,7 @@ class SelectionGrowerControls extends React.Component {
       skip_if_ocr_needed: this.state.skip_if_ocr_needed,
       hist_bin_count: this.state.hist_bin_count,
       min_num_pixels: this.state.min_num_pixels,
+      region_build_mode: this.state.region_build_mode,
     }
     return meta
   }
@@ -943,6 +962,7 @@ class SelectionGrowerControls extends React.Component {
     const colors_field = this.buildColorsField()
     const hist_bin_count_field = this.buildHistBinCountField()
     const min_num_pixels_field = this.buildMinNumPixelsField()
+    const region_build_mode_field = this.buildRegionBuildModeField()
     return (
       <div className='col'>
         <div className='row h5 border-top border-bottom bg-gray'>
@@ -985,6 +1005,10 @@ class SelectionGrowerControls extends React.Component {
 
           <div className='row mt-2'>
             {min_num_pixels_field}
+          </div>
+
+          <div className='row mt-2'>
+            {region_build_mode_field}
           </div>
 
           <div className='row mt-2'>
