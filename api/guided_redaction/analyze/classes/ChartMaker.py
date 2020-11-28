@@ -273,7 +273,7 @@ class ChartMaker:
             1
         )
 
-        word_start = (0,y_start+20)
+        word_start = (3,y_start+20)
         rect_start = (25,y_start+25)
         rect_end = (75,y_start+75)
         cv2.rectangle(

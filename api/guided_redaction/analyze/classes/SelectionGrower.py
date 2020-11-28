@@ -55,7 +55,6 @@ class SelectionGrower:
         return image_base64_string
 
     def project_colors(self, selected_area, cv2_image):
-        new_areas = {}
         statistics = {'color_masks': {}}
         src_copy = cv2_image.copy()
         for growth_direction in ['south', 'east']:
@@ -78,18 +77,17 @@ class SelectionGrower:
             for color_key in self.selection_grower_meta['colors']:
                 color = self.selection_grower_meta['colors'][color_key]
                 print('selection grower: growing color ', color)
-                # i think this is actually bgr, it works but the indexes got spun around
-                low_rgb_val = (
+                low_bgr_val = (
                     color['low_value'][2],
                     color['low_value'][1],
                     color['low_value'][0]
                 )
-                high_rgb_val = (
+                high_bgr_val = (
                     color['high_value'][2],
                     color['high_value'][1],
                     color['high_value'][0]
                 )
-                mask2 = cv2.inRange(src_copy, low_rgb_val, high_rgb_val) 
+                mask2 = cv2.inRange(src_copy, low_bgr_val, high_bgr_val) 
                 if self.debug:
                     img_string = self.get_base64_image_string(mask2)
                     statistics['color_masks'][growth_direction][color_key] = img_string
@@ -99,19 +97,68 @@ class SelectionGrower:
                 img_string = self.get_base64_image_string(all_color_mask)
                 statistics['color_masks'][growth_direction]['all'] = img_string
 
-            size = [
-                growth_roi['end'][0] - growth_roi['start'][0],
-                growth_roi['end'][1] - growth_roi['start'][1]
-            ]
-            new_area = {
-                'scanner_type': 'selection_grower',
-                'id': 'selection_grower_' + str(random.randint(1, 999999999)),
-                'scale': 1,
-                'location': growth_roi['start'],
-                'size': size,
-            }
-            new_areas[new_area['id']] = new_area
-        return new_areas, statistics
+            build_regions = self.build_regions_from_mask(
+                growth_direction, 
+                all_color_mask, 
+                src_copy,
+                statistics
+            )
+            for region_key in build_regions:
+                build_regions[region_key]['location'] = [
+                    build_regions[region_key]['location'][0] + selected_area['location'][0] + selected_area['size'][0],
+                    build_regions[region_key]['location'][1] + selected_area['location'][1]
+                ]
+
+
+        return build_regions, statistics
+
+    def build_regions_from_mask(self, growth_direction, all_color_mask, src_copy, stats):
+        regions = {}
+        if self.selection_grower_meta['region_build_mode'] == 'near_flood':
+            if growth_direction == 'east':
+                start_point = (
+                    math.floor(src_copy.shape[1] * .5),
+                    0
+                )
+                all_color_3 = np.ones((all_color_mask.shape[0], all_color_mask.shape[1], 3), np.uint8) * 255
+                masked = cv2.bitwise_and(all_color_3, all_color_3, mask=all_color_mask)
+                x = cv2.floodFill(masked, None, start_point, (0, 255, 0))
+                flood_filled_img = x[1]
+
+                low_green = hi_green = np.array([0, 255, 0])
+                mask = cv2.inRange(flood_filled_img, low_green, hi_green)
+                cnts = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+                cnts = imutils.grab_contours(cnts)
+                biggest_contour = max(cnts, key=cv2.contourArea)
+                (box_x, box_y, box_w, box_h) = cv2.boundingRect(biggest_contour)
+                rect = ((box_x, box_y), (box_x + box_w, box_y + box_h))
+                the_id = 'selection_grower_' + str(random.randint(1, 999999999))
+                build_obj = {
+                    'scanner_type': 'selection_grower',
+                    'id': the_id,
+                    'scale': 1,
+                    'location': (box_x, box_y),
+                    'size': (box_w, box_h),
+                }
+                if self.debug:
+                    img_string = self.get_base64_image_string(flood_filled_img)
+                    if 'flood_fill' not in stats:
+                        stats['flood_fill'] = {}
+                    if growth_direction not in stats['flood_fill']:
+                        stats['flood_fill'][growth_direction] = img_string
+                regions[the_id] = build_obj
+        # if region_build_mode == 'near_flood':
+        #   if any pixel on the edge towards the selected area is white, start with that point
+        #   do a flood fill from that point
+        #   take the far right edge of what comes back
+        # if region_build_mode == 'furthest_edge':
+        #   start from the right edge, still gotta figure this out exactly
+        # if region_build_mode == 'contours':
+        #   erode and blur all color_mask
+        #   take the contours on the result, 
+        #   return anything bigger than say 25 pixels of area
+        return regions
+
 
     def capture_grid(self, selected_area, ocr_match_objs, cv2_image):
         new_areas = {}
