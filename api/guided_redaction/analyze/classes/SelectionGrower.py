@@ -76,7 +76,6 @@ class SelectionGrower:
 
             for color_key in self.selection_grower_meta['colors']:
                 color = self.selection_grower_meta['colors'][color_key]
-                print('selection grower: growing color ', color)
                 low_bgr_val = (
                     color['low_value'][2],
                     color['low_value'][1],
@@ -129,7 +128,11 @@ class SelectionGrower:
                 mask = cv2.inRange(flood_filled_img, low_green, hi_green)
                 cnts = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
                 cnts = imutils.grab_contours(cnts)
-                biggest_contour = max(cnts, key=cv2.contourArea)
+                left_edge_cnts = [cnt for cnt in cnts if cv2.boundingRect(cnt)[0] == 0]
+                if len(left_edge_cnts) == 0:
+                    return regions
+
+                biggest_contour = max(left_edge_cnts, key=cv2.contourArea)
                 (box_x, box_y, box_w, box_h) = cv2.boundingRect(biggest_contour)
                 rect = ((box_x, box_y), (box_x + box_w, box_y + box_h))
                 the_id = 'selection_grower_' + str(random.randint(1, 999999999))
@@ -141,11 +144,21 @@ class SelectionGrower:
                     'size': (box_w, box_h),
                 }
                 if self.debug:
+                    cv2.rectangle(
+                        flood_filled_img,
+                        (box_x, box_y),
+                        (box_x + box_w, box_y + box_h),
+                        (0, 0, 255),
+                        -1
+                    )
                     img_string = self.get_base64_image_string(flood_filled_img)
                     if 'flood_fill' not in stats:
                         stats['flood_fill'] = {}
+                    if 'source_location' not in stats:
+                        stats['source_location'] = {}
                     if growth_direction not in stats['flood_fill']:
                         stats['flood_fill'][growth_direction] = img_string
+                        stats['source_location'][growth_direction] = (box_x, box_y)
                 regions[the_id] = build_obj
         # if region_build_mode == 'near_flood':
         #   if any pixel on the edge towards the selected area is white, start with that point
@@ -158,7 +171,6 @@ class SelectionGrower:
         #   take the contours on the result, 
         #   return anything bigger than say 25 pixels of area
         return regions
-
 
     def capture_grid(self, selected_area, ocr_match_objs, cv2_image):
         new_areas = {}

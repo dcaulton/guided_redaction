@@ -202,47 +202,81 @@ class ChartMaker:
                                 )
                     elif 'color_projection' in stats_framesets[frameset_hash] and \
                         'color_masks' in stats_framesets[frameset_hash]['color_projection']:
-                        for direction in stats_framesets[frameset_hash]['color_projection']['color_masks']:
-                            self.make_color_masks_graph(
-                                stats_framesets[frameset_hash]['color_projection']['color_masks'][direction],
-                                source_movie['framesets'][frameset_hash]['images'][0],
-                                movie_url,
-                                build_chart_data[movie_url]['framesets'][frameset_hash],
-                                frameset_hash,
-                                chart_storage_uuid
-                            )
+                        direction = list(stats_framesets[frameset_hash]['color_projection']['color_masks'].keys())[0]
+                        self.make_color_masks_graph(
+                            stats_framesets[frameset_hash]['color_projection'],
+                            source_movie['framesets'][frameset_hash]['images'][0],
+                            movie_url,
+                            build_chart_data[movie_url]['framesets'][frameset_hash],
+                            frameset_hash,
+                            chart_storage_uuid,
+                            direction, 
+                        )
         return build_chart_data
 
     def make_color_masks_graph(
         self, 
-        stats,
+        color_projection_stats,
         image_url, 
         movie_url, 
         build_data_this_frameset, 
         frameset_hash, 
-        chart_storage_uuid
+        chart_storage_uuid,
+        direction
     ):
+        mask_stats = color_projection_stats['color_masks'][direction]
         movie_name = movie_url.split('/')[-1]
         movie_uuid = movie_name.split('.')[0]
-        mask_image = self.get_mask_image(stats, list(stats.keys())[0])
+
+        mask_image = self.get_mask_image(mask_stats, list(mask_stats.keys())[0])
         if type(mask_image) == type(None):
             return
-        num_masks = len(stats)
+        num_masks = len(mask_stats)
         total_height = 200 + num_masks * (mask_image.shape[0] + 100)
+
+        if 'source_location' in color_projection_stats:
+            total_height += (mask_image.shape[0] + 100)
+        if 'flood_fill' in color_projection_stats:
+            total_height += (mask_image.shape[0] + 100)
+
         total_width = 200 + mask_image.shape[1]
         cv2_image = np.ones((total_height, total_width, 3), dtype='uint8') * 255
 
         self.draw_color_masks_title(movie_uuid, image_url, frameset_hash, cv2_image)
 
         cur_y_start = 100
-        self.draw_color_mask(stats, cv2_image, 'all', (0, 0, 0), cur_y_start)
+
+        if 'source_location' in color_projection_stats and \
+            direction in color_projection_stats['source_location'] and \
+            color_projection_stats['source_location'][direction]:
+            self.draw_source_image(
+                color_projection_stats['source_location'][direction], 
+                mask_stats,
+                image_url, 
+                cv2_image, 
+                cur_y_start
+            )
+            cur_y_start += mask_image.shape[0] + 100
+
+        if 'flood_fill' in color_projection_stats and \
+            direction in color_projection_stats['flood_fill'] and \
+            color_projection_stats['flood_fill'][direction]:
+            self.draw_flood_fill_results(
+                color_projection_stats['flood_fill'][direction], 
+                cv2_image, 
+                cur_y_start
+            )
+            cur_y_start += mask_image.shape[0] + 100
+
+
+        self.draw_color_mask(mask_stats, cv2_image, 'all', (0, 0, 0), cur_y_start)
         cur_y_start += mask_image.shape[0] + 100
 
-        for color_key in stats:
+        for color_key in mask_stats:
             if color_key == 'all':
                 continue
             color = self.get_color_for_key(color_key)
-            self.draw_color_mask(stats, cv2_image, color_key, color, cur_y_start)
+            self.draw_color_mask(mask_stats, cv2_image, color_key, color, cur_y_start)
             cur_y_start += mask_image.shape[0] + 100
 
         new_uuid = str(uuid.uuid4())
@@ -255,6 +289,51 @@ class ChartMaker:
             build_data_this_frameset['charts'] = []
         build_data_this_frameset['charts'].append(plot_url)
 
+
+    def draw_flood_fill_results(self, flood_fill_image_base64, cv2_image, y_start):
+        ff_image = self.get_image_from_base64(flood_fill_image_base64)
+        if type(ff_image) == type(None):
+            return
+
+        y_end = y_start + ff_image.shape[0]
+        x_start = 100
+        x_end = x_start + ff_image.shape[1]
+        cv2_image[y_start:y_end,x_start:x_end] = ff_image
+
+
+    def draw_source_image(self, source_location, mask_stats, image_url, cv2_image, y_start):
+        # TODO get this working
+        return
+        one_mask = self.get_mask_image(mask_stats, 'all')
+        if type(one_mask) == type(None):
+            return
+        h, w = one_mask.shape[0], one_mask.shape[1]
+        image_np = self.get_np_image_from_url(image_url)
+        if type(image_np) == type(None):
+            return
+        image_cv2 = cv2.imdecode(image_np, cv2.IMREAD_COLOR)
+        y_end = y_start + h
+        x_start = 100
+        x_end = x_start + w
+
+        print('choppy ', y_start, y_end, x_start, x_end)
+        print('  -bhoppy ', source_location[1], source_location[1]+h, source_location[0], source_location[0]+w)
+        cv2_image[y_start:y_end,x_start:x_end] = \
+            image_cv2[
+                source_location[1]:source_location[1]+h, 
+                source_location[0]:source_location[0]+w
+            ]
+#MAMA
+        word_start = (3,y_start+20)
+        cv2.putText(
+            cv2_image,
+            'source',
+            word_start,
+            cv2.FONT_HERSHEY_DUPLEX, #font
+            .4, #fontScale,
+            (0,0,0), #fontColor,
+            2 #lineType
+        )
 
     def draw_color_mask(self, stats, cv2_image, color_key, color_value, y_start):
         mask = self.get_mask_image(stats, color_key)
@@ -309,6 +388,10 @@ class ChartMaker:
         if color_key not in stats:
             return
         img_base64 = stats[color_key]
+        cv2_image = self.get_image_from_base64(img_base64)
+        return cv2_image
+
+    def get_image_from_base64(self, img_base64):
         img_bytes = base64.b64decode(img_base64)
         nparr = np.fromstring(img_bytes, np.uint8)
         cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
