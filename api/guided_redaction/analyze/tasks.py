@@ -673,6 +673,8 @@ def build_and_dispatch_scan_template_threaded_children(parent_job):
 
 def aggregate_statistics_from_template_child(aggregate_response_data, child_response_data):
     if 'statistics' in child_response_data:
+        if 'movies' not in child_response_data['statistics']:
+            return
         for movie_url in child_response_data['statistics']['movies']:
             if movie_url not in aggregate_response_data['statistics']:
                 aggregate_response_data['statistics']['movies'][movie_url] = {'framesets': {}}

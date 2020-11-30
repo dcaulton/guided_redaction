@@ -228,6 +228,8 @@ class ChartMaker:
         movie_name = movie_url.split('/')[-1]
         movie_uuid = movie_name.split('.')[0]
 
+        if not mask_stats:
+            return
         mask_image = self.get_mask_image(mask_stats, list(mask_stats.keys())[0])
         if type(mask_image) == type(None):
             return
@@ -300,10 +302,18 @@ class ChartMaker:
         x_end = x_start + ff_image.shape[1]
         cv2_image[y_start:y_end,x_start:x_end] = ff_image
 
+        word_start = (3,y_start+20)
+        cv2.putText(
+            cv2_image,
+            'flood fill',
+            word_start,
+            cv2.FONT_HERSHEY_COMPLEX_SMALL, #font
+            .8, #fontScale,
+            (0,0,0), #fontColor,
+            1 #lineType
+        )
 
     def draw_source_image(self, source_location, mask_stats, image_url, cv2_image, y_start):
-        # TODO get this working
-        return
         one_mask = self.get_mask_image(mask_stats, 'all')
         if type(one_mask) == type(None):
             return
@@ -316,23 +326,24 @@ class ChartMaker:
         x_start = 100
         x_end = x_start + w
 
-        print('choppy ', y_start, y_end, x_start, x_end)
-        print('  -bhoppy ', source_location[1], source_location[1]+h, source_location[0], source_location[0]+w)
+# TODO we need to add the offset of the selected area to source_location
+#        print('choppy ', y_start, y_end, x_start, x_end)
+#        print('  -boppy ', source_location[1], source_location[1]+h, source_location[0], source_location[0]+w)
         cv2_image[y_start:y_end,x_start:x_end] = \
             image_cv2[
                 source_location[1]:source_location[1]+h, 
                 source_location[0]:source_location[0]+w
             ]
-#MAMA
+
         word_start = (3,y_start+20)
         cv2.putText(
             cv2_image,
             'source',
             word_start,
-            cv2.FONT_HERSHEY_DUPLEX, #font
-            .4, #fontScale,
+            cv2.FONT_HERSHEY_COMPLEX_SMALL, #font
+            .8, #fontScale,
             (0,0,0), #fontColor,
-            2 #lineType
+            1 #lineType
         )
 
     def draw_color_mask(self, stats, cv2_image, color_key, color_value, y_start):
@@ -373,10 +384,10 @@ class ChartMaker:
             cv2_image,
             color_key,
             word_start,
-            cv2.FONT_HERSHEY_DUPLEX, #font
-            .4, #fontScale,
+            cv2.FONT_HERSHEY_COMPLEX_SMALL, #font
+            .6, #fontScale,
             (0,0,0), #fontColor,
-            2 #lineType
+            1 #lineType
         )
 
     def get_color_for_key(self, color_key):

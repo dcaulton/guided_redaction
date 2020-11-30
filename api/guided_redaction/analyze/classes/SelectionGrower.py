@@ -12,7 +12,8 @@ class SelectionGrower:
 
     def __init__(self, sg_meta):
         self.selection_grower_meta = sg_meta
-        self.debug = self.selection_grower_meta['debug']
+#        self.debug = self.selection_grower_meta['debug']
+        self.debug = True
         self.alignment_tolerance = 10
         self.hist_grid_size = 10
         self.row_column_threshold = int(self.selection_grower_meta['row_column_threshold'])
@@ -160,6 +161,56 @@ class SelectionGrower:
                         stats['flood_fill'][growth_direction] = img_string
                         stats['source_location'][growth_direction] = (box_x, box_y)
                 regions[the_id] = build_obj
+        if self.selection_grower_meta['region_build_mode'] == 'furthest_edge':
+            if growth_direction == 'east':
+                cnts = cv2.findContours(all_color_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+                cnts = imutils.grab_contours(cnts)
+
+                furthest_east = 0
+                furthest_south = 0
+                for cnt in cnts:
+                    if type(cnt) != type(None) and \
+                        cv2.contourArea(cnt) >= int(self.selection_grower_meta['min_num_pixels']):
+                        (box_x, box_y, box_w, box_h) = cv2.boundingRect(cnt)
+                        (x, y, w, h) = cv2.boundingRect(cnt)
+                        if x + w > furthest_east:
+                            furthest_east = x + w
+                        if y + h > furthest_south:
+                            furthest_south = y + h
+                if furthest_east > 0:
+                    the_id = 'selection_grower_' + str(random.randint(1, 999999999))
+                    build_obj = {
+                        'scanner_type': 'selection_grower',
+                        'id': the_id,
+                        'scale': 1,
+                        'location': (x, y),
+                        'size': (furthest_east-x, furthest_south-y),
+                    }
+                    regions[the_id] = build_obj
+        if self.selection_grower_meta['region_build_mode'] == 'contours':
+            # this is an exception to how SG works.  I really want to have it return just one area - 
+            #   the 'growth' of the selection.   But in this case it's broken down into several, each one
+            #   matching a contour
+            if growth_direction == 'east':
+                cnts = cv2.findContours(all_color_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+                cnts = imutils.grab_contours(cnts)
+
+                for cnt in cnts:
+                    if type(cnt) != type(None) and \
+                        cv2.contourArea(cnt) >= int(self.selection_grower_meta['min_num_pixels']):
+                        (box_x, box_y, box_w, box_h) = cv2.boundingRect(cnt)
+                        (x, y, w, h) = cv2.boundingRect(cnt)
+                        the_id = 'selection_grower_' + str(random.randint(1, 999999999))
+                        build_obj = {
+                            'scanner_type': 'selection_grower',
+                            'id': the_id,
+                            'scale': 1,
+                            'location': (x, y),
+                            'size': (w, h),
+                        }
+                        regions[the_id] = build_obj
+
+
         # if region_build_mode == 'near_flood':
         #   if any pixel on the edge towards the selected area is white, start with that point
         #   do a flood fill from that point
