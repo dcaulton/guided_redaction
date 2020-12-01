@@ -34,12 +34,11 @@ class SelectionGrowerControls extends React.Component {
         west: 0,
       },
       colors: {},
-      capture_grid: false,
-      capture_form: false,
       merge_response: true,
       tie_grid_to_selected_area: true,
       row_column_threshold: 2,
       ocr_job_id: '',
+      template_id: '',
       usage_mode: 'color_projection',
       debug: false,
       skip_if_ocr_needed: false,
@@ -305,12 +304,11 @@ class SelectionGrowerControls extends React.Component {
         direction: sam['direction'],
         offsets: sam['offsets'],
         colors: sam['colors'],
-        capture_grid: sam['capture_grid'],
-        capture_form: sam['capture_form'],
         merge_response: sam['merge_response'],
         tie_grid_to_selected_area: sam['tie_grid_to_selected_area'],
         row_column_threshold: sam['row_column_threshold'],
         ocr_job_id: sam['ocr_job_id'],
+        template_id: sam['template_id'],
         usage_mode: sam['usage_mode'],
         debug: sam['debug'],
         skip_if_ocr_needed: sam['skip_if_ocr_needed'],
@@ -344,12 +342,11 @@ class SelectionGrowerControls extends React.Component {
         west: 0,
       },
       colors: [],
-      capture_grid: false,
-      capture_form: false,
       merge_response: true,
       tie_grid_to_selected_area: true,
       row_column_threshold: 2,
       ocr_job_id: '',
+      template_id: '',
       usage_mode: 'color_projection',
       debug: false,
       skip_if_ocr_needed: false,
@@ -368,12 +365,11 @@ class SelectionGrowerControls extends React.Component {
       direction: this.state.direction,
       offsets: this.state.offsets,
       colors: this.state.colors,
-      capture_grid: this.state.capture_grid,
-      capture_form: this.state.capture_form,
       merge_response: this.state.merge_response,
       tie_grid_to_selected_area: this.state.tie_grid_to_selected_area,
       row_column_threshold: this.state.row_column_threshold,
       ocr_job_id: this.state.ocr_job_id,
+      template_id: this.state.template_id,
       usage_mode: this.state.usage_mode,
       debug: this.state.debug,
       skip_if_ocr_needed: this.state.skip_if_ocr_needed,
@@ -558,50 +554,6 @@ class SelectionGrowerControls extends React.Component {
         </div>
         <div className='d-inline'>
           Merge Response with Input 
-        </div>
-      </div>
-    )
-  }
-
-  buildCaptureFormField() {
-    let checked_val = ''
-    if (this.state.capture_form) {
-      checked_val = 'checked'
-    }
-    return (
-      <div>
-        <div className='d-inline'>
-          <input 
-            className='mr-2'
-            checked={checked_val}
-            type='checkbox'
-            onChange={() => this.setLocalStateVar('capture_form', !this.state.capture_form)}
-          />
-        </div>
-        <div className='d-inline'>
-          Capture Form
-        </div>
-      </div>
-    )
-  }
-
-  buildCaptureGridField() {
-    let checked_val = ''
-    if (this.state.capture_grid) {
-      checked_val = 'checked'
-    }
-    return (
-      <div>
-        <div className='d-inline'>
-          <input 
-            className='mr-2'
-            checked={checked_val}
-            type='checkbox'
-            onChange={() => this.setLocalStateVar('capture_grid', !this.state.capture_grid)}
-          />
-        </div>
-        <div className='d-inline'>
-          Capture Grid
         </div>
       </div>
     )
@@ -949,9 +901,15 @@ class SelectionGrowerControls extends React.Component {
     if (the_usage_mode === 'color_projection') {
       document.getElementById('color_projection_fields').style.display = 'block'
       document.getElementById('grid_capture_fields').style.display = 'none'
+      document.getElementById('template_capture_fields').style.display = 'none'
+    } else if (the_usage_mode === 'template_capture') {
+      document.getElementById('color_projection_fields').style.display = 'none'
+      document.getElementById('grid_capture_fields').style.display = 'none'
+      document.getElementById('template_capture_fields').style.display = 'block'
     } else {
       document.getElementById('color_projection_fields').style.display = 'none'
       document.getElementById('grid_capture_fields').style.display = 'block'
+      document.getElementById('template_capture_fields').style.display = 'none'
     }
   }
 
@@ -1019,10 +977,63 @@ class SelectionGrowerControls extends React.Component {
     )
   }
 
+  buildTemplateIdField() {
+    let templates = []
+    templates.push({'': ''})
+    for (let i=0; i < Object.keys(this.props.tier_1_scanners['template']).length; i++) {
+      const template_id = Object.keys(this.props.tier_1_scanners['template'])[i]
+      const template = this.props.tier_1_scanners['template'][template_id]
+      const build_obj = {}
+      build_obj[template['id']] = template['name'] + ' - ' + template['id']
+      templates.push(build_obj)
+    }
+
+    return buildLabelAndDropdown(
+      templates,
+      'Template Id',
+      this.state.template_id,
+      'template_id',
+      ((value)=>{this.setLocalStateVar('template_id', value)})
+    )
+  }
+
+  buildTemplateCaptureSection() {
+    const template_id_field = this.buildTemplateIdField()
+    return (
+      <div className='col'>
+        <div className='row h5 border-top border-bottom bg-gray'>
+          <div 
+            className='d-inline'
+          >
+            <input
+              className='ml-2 mr-2 mt-1'
+              name='selection_grower_usage_mode'
+              type='radio'
+              value='template_capture'
+              checked={this.state.usage_mode === 'template_capture'}
+              onChange={() => this.setUsageMode('template_capture')}
+            />
+          </div>
+          <div className='d-inline'>
+            Template Capture
+          </div>
+        </div>
+
+        <div id='template_capture_fields'>
+          <div className='row font-italic'>
+            grow in a direction to capture a template
+          </div>
+
+          <div className='row mt-2'>
+            {template_id_field}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   buildGridCaptureSection() {
     const row_column_threshold_field = this.buildRowColumnThresholdField()
-    const capture_grid_field = this.buildCaptureGridField()
-    const capture_form_field = this.buildCaptureFormField()
     const merge_response_field = this.buildMergeResponseField()
     const tie_grid_field = this.buildTieGridToSelectedAreaField()
     const ocr_id_field = this.buildOcrMatchIdField()
@@ -1054,14 +1065,6 @@ class SelectionGrowerControls extends React.Component {
 
           <div className='row mt-2'>
             {row_column_threshold_field}
-          </div>
-
-          <div className='row mt-2'>
-            {capture_grid_field}
-          </div>
-
-          <div className='row mt-2'>
-            {capture_form_field}
           </div>
 
           <div className='row mt-2'>
@@ -1106,6 +1109,7 @@ class SelectionGrowerControls extends React.Component {
     )
     const color_projection_section = this.buildColorProjectionSection()
     const grid_capture_section = this.buildGridCaptureSection()
+    const template_capture_section = this.buildTemplateCaptureSection()
 
     return (
         <div className='row bg-light rounded mt-3'>
@@ -1149,6 +1153,10 @@ class SelectionGrowerControls extends React.Component {
 
                 <div className='row ml-2 mt-4 mr-2'>
                   {grid_capture_section}
+                </div>
+
+                <div className='row ml-2 mt-4 mr-2'>
+                  {template_capture_section}
                 </div>
 
                 <div className='row mt-2'>
