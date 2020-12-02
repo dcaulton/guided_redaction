@@ -23,41 +23,170 @@ class SelectionGrower:
         match_stats = {}
 
         ocr_match_objs = {}
+        template_match_objs = {}
         for match_key in tier_1_match_data:
             if tier_1_match_data[match_key]['scanner_type'] in ['selected_area', 'selection_grower']:
                 selected_area = tier_1_match_data[match_key]
             if tier_1_match_data[match_key]['scanner_type'] == 'ocr':
                 ocr_match_objs[match_key] = tier_1_match_data[match_key]
+            if tier_1_match_data[match_key]['scanner_type'] == 'template':
+                template_match_objs[match_key] = tier_1_match_data[match_key]
         if not selected_area:
             return match_obj, match_stats
 
-        if self.selection_grower_meta['usage_mode'] == 'capture_grid':
-            if ocr_match_objs:
-                grid_results, grid_stats = self.capture_grid(selected_area, ocr_match_objs, cv2_image)
-                if grid_results:
-                    for gr_key in grid_results:
-                        match_obj[gr_key] = grid_results[gr_key]
-                if grid_stats:
-                    match_stats['grid_capture'] = grid_stats
+        if self.selection_grower_meta['usage_mode'] == 'capture_grid' and ocr_match_objs:
+            match_obj, match_stats['grid_capture'] = \
+                self.capture_grid(selected_area, ocr_match_objs, cv2_image)
         elif self.selection_grower_meta['usage_mode'] == 'color_projection':
-            new_areas, stats = self.project_colors(selected_area, cv2_image)
-            if new_areas:
-                for key in new_areas:
-                    match_obj[key] = new_areas[key]
-            if stats:
-                match_stats['color_projection'] = stats
-        elif self.selection_grower_meta['usage_mode'] == 'template_capture':
-            temp_results, temp_stats = self.capture_template(
-                selected_area, 
-                self.selection_grower_meta['template'], 
-                cv2_image
-            )
+            match_obj, match_stats['color_projection'] = self.project_colors(selected_area, cv2_image)
+        elif self.selection_grower_meta['usage_mode'] == 'template_capture' and template_match_objs:
+            match_obj, match_stats['template_capture'] = \
+                self.capture_template(selected_area, template_match_objs, cv2_image)
 
         return match_obj, match_stats
 
-    def capture_template(self, selected_area, template, cv2_image):
-        print('---- oh don piano ', selected_area, template)
-        return {}, {}
+    def capture_template(self, selected_area, template_match_objs, cv2_image):
+        statistics = {}
+        matches = {}
+        for growth_direction in ['south', 'east']:
+            if self.selection_grower_meta['direction'] != growth_direction:
+                continue
+            statistics[growth_direction] = {}
+            growth_roi = self.build_roi(growth_direction, selected_area, cv2_image)
+
+            sg_match = self.extend_selected_area_to_eligible_template(
+                selected_area, 
+                template_match_objs, 
+                growth_direction, 
+                growth_roi,
+                statistics[growth_direction]
+            )
+
+            if sg_match:
+                matches[sg_match['id']] = sg_match
+        return matches, statistics
+
+    def extend_selected_area_to_eligible_template(
+        self, 
+        selected_area, 
+        template_match_objs, 
+        growth_direction, 
+        growth_roi,
+        stats_this_direction
+    ):
+        for tmo_key in template_match_objs:
+            tmo = template_match_objs[tmo_key]
+            if self.object_overlaps_roi(tmo, growth_roi):
+                tmo_end = [
+                    tmo['location'][0] + tmo['size'][0],
+                    tmo['location'][1] + tmo['size'][1]
+                ]
+                sg_match = self.extend_selected_area_to_box(
+                    selected_area, 
+                    tmo['location'], 
+                    tmo_end, 
+                    growth_direction, 
+                    growth_roi,
+                    stats_this_direction
+                )
+                return sg_match
+
+
+    def object_overlaps_roi(self, mo, roi):
+        mo_end = [
+            mo['location'][0] + mo['size'][0],
+            mo['location'][1] + mo['size'][1]
+        ]
+        mo_start = mo['location']
+        if mo_start[0] <= roi['end'][0] and \
+            mo_start[1] <= roi['end'][1] and \
+            mo_end[0] >= roi['start'][0] and \
+            mo_end[1] >= roi['start'][1]:
+            return True
+
+    def extend_selected_area_to_box(
+            self, 
+            selected_area, 
+            box_start,
+            box_end,
+            direction, 
+            growth_roi,
+            stats_this_direction
+        ):
+        # TODO set endpoint smart for partial roi overlaps
+        print('ponch expanding to box')
+        if direction == 'south':
+            if self.selection_grower_meta['merge_response']:
+                start_y_value = selected_area['location'][1]
+            else:
+                start_y_value = selected_area['location'][1] + selected_area['size'][1]
+            end_y_value = box_end[1]
+            start_x_value = selected_area['location'][0]
+            end_x_value = selected_area['location'][0] + selected_area['size'][0]
+            stats_this_direction['template_match_coords'] = [box_start, box_end]
+            new_area = {
+                'scanner_type': 'selection_grower',
+                'id': 'selection_grower_' + str(random.randint(1, 999999999)),
+                'scale': 1,
+                'location': [
+                    start_x_value,
+                    start_y_value
+                ],
+                'size': [
+                    end_x_value - start_x_value,
+                    end_y_value - start_y_value
+                ],
+            }
+            return new_area
+        elif direction == 'east':
+            if self.selection_grower_meta['merge_response']:
+                start_x_value = selected_area['location'][0]
+            else:
+                start_x_value = selected_area['location'][0] + selected_area['size'][0]
+            end_x_value = box_end[0]
+            start_y_value = selected_area['location'][1]
+            end_y_value = selected_area['location'][1] + selected_area['size'][1]
+            stats_this_direction['template_match_coords'] = [box_start, box_end]
+            new_area = {
+                'scanner_type': 'selection_grower',
+                'id': 'selection_grower_' + str(random.randint(1, 999999999)),
+                'scale': 1,
+                'location': [
+                    start_x_value,
+                    start_y_value
+                ],
+                'size': [
+                    end_x_value - start_x_value,
+                    end_y_value - start_y_value
+                ],
+            }
+            return new_area
+
+    def build_new_area(self, growth_direction, selected_area, grid_x_values, first_y, last_y):
+        if growth_direction == 'south': 
+            start_y_value = first_y
+            if first_y < selected_area['location'][1] + selected_area['size'][1] or \
+                self.selection_grower_meta['tie_grid_to_selected_area']:
+                start_y_value = selected_area['location'][1] + selected_area['size'][1]
+            if self.selection_grower_meta['merge_response']:
+                start_y_value = selected_area['location'][1]
+
+            new_area = {
+                'scanner_type': 'selection_grower',
+                'id': 'selection_grower_' + str(random.randint(1, 999999999)),
+                'scale': 1,
+                'location': [
+                    grid_x_values[0],
+                    start_y_value
+                ],
+                'size': [
+                    grid_x_values[-1] - grid_x_values[0],
+                    last_y - start_y_value,
+                ],
+            }
+            return new_area
+
+            
 
     def get_base64_image_string(self, cv2_image):
         image_bytes = cv2.imencode(".png", cv2_image)[1].tostring()

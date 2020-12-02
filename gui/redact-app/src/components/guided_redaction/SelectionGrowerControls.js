@@ -543,7 +543,7 @@ class SelectionGrowerControls extends React.Component {
       checked_val = 'checked'
     }
     return (
-      <div>
+      <div className='ml-2'>
         <div className='d-inline'>
           <input 
             className='mr-2'
@@ -1047,7 +1047,6 @@ class SelectionGrowerControls extends React.Component {
 
   buildGridCaptureSection() {
     const row_column_threshold_field = this.buildRowColumnThresholdField()
-    const merge_response_field = this.buildMergeResponseField()
     const tie_grid_field = this.buildTieGridToSelectedAreaField()
     const ocr_id_field = this.buildOcrMatchIdField()
     const skip_if_ocr_needed_field = this.buildSkipIfOcrNeededField()
@@ -1081,10 +1080,6 @@ class SelectionGrowerControls extends React.Component {
           </div>
 
           <div className='row mt-2'>
-            {merge_response_field}
-          </div>
-
-          <div className='row mt-2'>
             {tie_grid_field}
           </div>
 
@@ -1113,6 +1108,7 @@ class SelectionGrowerControls extends React.Component {
     const save_to_db_button = this.buildSaveToDatabaseButton()
     const clear_matches_button = this.buildClearMatchesButton2()
     const direction_field = this.buildDirectionField()
+    const merge_response_field = this.buildMergeResponseField()
     const debug_field = this.buildDebugField()
     const offsets_field = this.buildOffsetsField()
     const header_row = makeHeaderRow(
@@ -1160,6 +1156,14 @@ class SelectionGrowerControls extends React.Component {
                   {offsets_field}
                 </div>
 
+                <div className='row mt-2'>
+                  {merge_response_field}
+                </div>
+
+                <div className='row mt-2'>
+                  {debug_field}
+                </div>
+
                 <div className='row ml-2 mt-4 mr-2'>
                   {color_projection_section}
                 </div>
@@ -1170,10 +1174,6 @@ class SelectionGrowerControls extends React.Component {
 
                 <div className='row ml-2 mt-4 mr-2'>
                   {template_capture_section}
-                </div>
-
-                <div className='row mt-2'>
-                  {debug_field}
                 </div>
 
                 <div className='row mt-1 mr-1 ml-1 border-top'>
