@@ -8,6 +8,7 @@ from guided_redaction.analyze.classes.SelectionGrower import SelectionGrower
 from guided_redaction.analyze.classes.EastPlusTessGuidedAnalyzer import (
     EastPlusTessGuidedAnalyzer,
 )
+from guided_redaction.analyze.classes.TemplateMatcher import TemplateMatcher
 
 requests.packages.urllib3.disable_warnings()
 
@@ -47,21 +48,47 @@ class SelectionGrowerController(T1Controller):
                 cv2_image = self.get_cv2_image(image_url)
                 t1_match_data = movies[movie_url]['framesets'][frameset_hash]
                 if sg_meta['usage_mode'] == 'capture_grid' and \
-                        not self.match_data_contains_ocr(t1_match_data):
+                        not self.match_data_contains_scanner_type('ocr',          t1_match_data):
                     if sg_meta['skip_if_ocr_needed']:
                         continue
                     self.add_ocr_to_match_data(t1_match_data, cv2_image)
+                if sg_meta['usage_mode'] == 'template_capture' and \
+                        not self.match_data_contains_scanner_type('template', t1_match_data):
+                    self.add_template_to_match_data(t1_match_data, sg_meta['template'], cv2_image)
+                    if not self.match_data_contains_scanner_type('template', t1_match_data):
+                        continue
                 grown_selection, stats = grower.grow_selection(t1_match_data, cv2_image)
                 if grown_selection:
                     response_movies[movie_url]['framesets'][frameset_hash] = grown_selection
                 statistics['movies'][movie_url]['framesets'][frameset_hash] = stats
         return response_movies, statistics
 
-    def match_data_contains_ocr(self, t1_match_data):
+    def match_data_contains_scanner_type(self, scanner_type, t1_match_data):
         for match_key in t1_match_data:
-            if t1_match_data[match_key]['scanner_type'] == 'ocr':
+            if t1_match_data[match_key]['scanner_type'] == scanner_type:
                 return True
         return False
+
+    def add_template_to_match_data(self, t1_match_data, template, cv2_image):
+        template_matcher = TemplateMatcher(template)
+        for anchor in template.get("anchors"):
+            match_image = template_matcher.get_match_image_for_anchor(anchor)
+            match_obj = template_matcher.get_template_coords(cv2_image, match_image, anchor['id'])
+            if match_obj['match_found']:
+                print('adding a template scan to selection grower data')
+                build_obj = {}
+                (temp_coords, temp_scale) = match_obj['match_coords']
+                anchor_size = [
+                    temp_scale * (anchor['end'][0] - anchor['start'][0]),
+                    temp_scale * (anchor['end'][1] - anchor['start'][1])
+                ]
+                build_obj['location'] = temp_coords
+                build_obj['size'] = anchor_size
+                build_obj['scale'] = temp_scale
+                build_obj['scanner_type'] = 'template'
+                t1_match_data[anchor['id']] = build_obj
+            else:
+                print('no match found for template for sg template capture')
 
     def add_ocr_to_match_data(self, t1_match_data, cv2_image):
         analyzer = EastPlusTessGuidedAnalyzer()

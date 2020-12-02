@@ -38,7 +38,7 @@ class SelectionGrowerControls extends React.Component {
       tie_grid_to_selected_area: true,
       row_column_threshold: 2,
       ocr_job_id: '',
-      template_id: '',
+      template: {},
       usage_mode: 'color_projection',
       debug: false,
       skip_if_ocr_needed: false,
@@ -308,7 +308,7 @@ class SelectionGrowerControls extends React.Component {
         tie_grid_to_selected_area: sam['tie_grid_to_selected_area'],
         row_column_threshold: sam['row_column_threshold'],
         ocr_job_id: sam['ocr_job_id'],
-        template_id: sam['template_id'],
+        template: sam['template'],
         usage_mode: sam['usage_mode'],
         debug: sam['debug'],
         skip_if_ocr_needed: sam['skip_if_ocr_needed'],
@@ -346,7 +346,7 @@ class SelectionGrowerControls extends React.Component {
       tie_grid_to_selected_area: true,
       row_column_threshold: 2,
       ocr_job_id: '',
-      template_id: '',
+      template: {},
       usage_mode: 'color_projection',
       debug: false,
       skip_if_ocr_needed: false,
@@ -369,7 +369,7 @@ class SelectionGrowerControls extends React.Component {
       tie_grid_to_selected_area: this.state.tie_grid_to_selected_area,
       row_column_threshold: this.state.row_column_threshold,
       ocr_job_id: this.state.ocr_job_id,
-      template_id: this.state.template_id,
+      template: this.state.template,
       usage_mode: this.state.usage_mode,
       debug: this.state.debug,
       skip_if_ocr_needed: this.state.skip_if_ocr_needed,
@@ -988,13 +988,26 @@ class SelectionGrowerControls extends React.Component {
       templates.push(build_obj)
     }
 
+    let cur_temp_id = ''
+    if (this.state.template) {
+      cur_temp_id = this.state.template.id
+    }
     return buildLabelAndDropdown(
       templates,
       'Template Id',
-      this.state.template_id,
+      cur_temp_id,
       'template_id',
-      ((value)=>{this.setLocalStateVar('template_id', value)})
+      ((value)=>{this.setTemplate(value)})
     )
+  }
+
+  setTemplate(template_id) {
+    let template = {}
+    if (Object.keys(this.props.tier_1_scanners['template']).includes(template_id)) {
+      template = this.props.tier_1_scanners['template'][template_id]
+    }
+
+    this.setLocalStateVar('template', template) 
   }
 
   buildTemplateCaptureSection() {

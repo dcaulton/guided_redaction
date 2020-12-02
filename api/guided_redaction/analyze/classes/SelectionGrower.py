@@ -46,8 +46,18 @@ class SelectionGrower:
                     match_obj[key] = new_areas[key]
             if stats:
                 match_stats['color_projection'] = stats
+        elif self.selection_grower_meta['usage_mode'] == 'template_capture':
+            temp_results, temp_stats = self.capture_template(
+                selected_area, 
+                self.selection_grower_meta['template'], 
+                cv2_image
+            )
 
         return match_obj, match_stats
+
+    def capture_template(self, selected_area, template, cv2_image):
+        print('---- oh don piano ', selected_area, template)
+        return {}, {}
 
     def get_base64_image_string(self, cv2_image):
         image_bytes = cv2.imencode(".png", cv2_image)[1].tostring()
