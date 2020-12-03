@@ -34,6 +34,7 @@ class SelectedAreaControls extends React.Component {
       minimum_zones: [],
       maximum_zones: [],
       tolerance: 5,
+      everything_direction: '',
       attribute_search_name: '',
       attribute_search_value: '',
       first_click_coords: [],
@@ -216,6 +217,7 @@ class SelectedAreaControls extends React.Component {
         minimum_zones : sam['minimum_zones'],
         maximum_zones : sam['maximum_zones'],
         tolerance: sam['tolerance'],
+        everything_direction: sam['everything_direction'],
       })
     }
     let deepCopyIds = JSON.parse(JSON.stringify(this.props.current_ids))
@@ -245,6 +247,7 @@ class SelectedAreaControls extends React.Component {
       minimum_zones: [],
       maximum_zones: [],
       tolerance: 5,
+      everything_direction: '',
     })
   }
 
@@ -264,6 +267,7 @@ class SelectedAreaControls extends React.Component {
       minimum_zones: this.state.minimum_zones,
       maximum_zones: this.state.maximum_zones,
       tolerance: this.state.tolerance,
+      everything_direction: this.state.everything_direction,
     }
     return selected_area_meta
   }
@@ -326,6 +330,78 @@ class SelectedAreaControls extends React.Component {
       'name',
       25,
       ((value)=>{this.setLocalStateVar('name', value)})
+    )
+  }
+
+  buildEverythingField() {
+    let none_checked = ''
+    if (this.state.everything_direction === '') {
+      none_checked = 'checked'
+    }
+    return (
+      <div className='col'>
+        <div className='row'>
+          <div className='col'>
+            <input
+              className='mr-2'
+              type='radio'
+              value='none'
+              checked={none_checked}
+              onChange={()=> this.setLocalStateVar('everything_direction', '')}
+            />
+            Don't go exclusively in any one direction
+          </div>
+        </div>
+        <div className='row'>
+          <div className='d-inline'>
+            Go exclusively
+          </div>
+          <div className='d-inline ml-2'>
+            <input
+              className='mr-2'
+              type='radio'
+              value='north'
+              checked={this.state.everything_direction === 'north'}
+              onChange={()=> this.setLocalStateVar('everything_direction', 'north')}
+            />
+            North
+          </div>
+
+          <div className='d-inline ml-4'>
+            <input
+              className='mr-2'
+              type='radio'
+              value='south'
+              checked={this.state.everything_direction === 'south'}
+              onChange={()=> this.setLocalStateVar('everything_direction', 'south')}
+            />
+            South
+          </div>
+
+          <div className='d-inline ml-4'>
+            <input
+              className='mr-2'
+              type='radio'
+              value='east'
+              checked={this.state.everything_direction === 'east'}
+              onChange={()=> this.setLocalStateVar('everything_direction', 'east')}
+            />
+            East
+          </div>
+
+          <div className='d-inline ml-4'>
+            <input
+              className='mr-2'
+              type='radio'
+              value='west'
+              checked={this.state.everything_direction === 'west'}
+              onChange={()=> this.setLocalStateVar('everything_direction', 'west')}
+            />
+            West
+          </div>
+
+        </div>
+      </div>
     )
   }
 
@@ -646,6 +722,37 @@ class SelectedAreaControls extends React.Component {
     )
   }
 
+  buildNonExclusiveFields() {
+    const merge_dropdown = this.buildMergeDropdown()
+    const select_type_dropdown = this.buildSelectTypeDropdown()
+    const interior_or_exterior_dropdown = this.buildInteriorOrExteriorDropdown()
+    const tolerance_field = this.buildToleranceField()
+    if (this.state.everything_direction !== '') {
+      return ''
+    }
+    return (
+      <div>
+        <div className='row mt-2'>
+          {merge_dropdown}
+        </div>
+
+        <div className='row mt-2'>
+          {select_type_dropdown}
+        </div>
+
+        <div className='row mt-2'>
+          {interior_or_exterior_dropdown}
+        </div>
+
+        <div className='row mt-2'>
+          {tolerance_field}
+        </div>
+
+      </div>
+    )
+  }
+
+
   render() {
     if (!this.props.visibilityFlags['selectedArea']) {
       return([])
@@ -653,10 +760,7 @@ class SelectedAreaControls extends React.Component {
     const load_button = this.buildLoadButton()
     const id_string = buildIdString(this.state.id, 'selected area meta', false)
     const name_field = this.buildNameField()
-    const tolerance_field = this.buildToleranceField()
-    const merge_dropdown = this.buildMergeDropdown()
-    const select_type_dropdown = this.buildSelectTypeDropdown()
-    const interior_or_exterior_dropdown = this.buildInteriorOrExteriorDropdown()
+    const everything_field = this.buildEverythingField()
     const attributes_list = this.buildAttributesList()
     const scan_level_dropdown = this.buildScanLevelDropdown2()
     const origin_entity_type_dropdown = this.buildOriginEntityTypeDropdown()
@@ -674,6 +778,7 @@ class SelectedAreaControls extends React.Component {
     const save_to_db_button = this.buildSaveToDatabaseButton()
     const clear_matches_button = this.buildClearMatchesButton2()
     const goto_source_link = this.buildGotoSourceLink()
+    const nonexclusive_fields = this.buildNonExclusiveFields()
     const header_row = makeHeaderRow(
       'selected area',
       'selected_area_body',
@@ -727,20 +832,10 @@ class SelectedAreaControls extends React.Component {
                 </div>
 
                 <div className='row mt-2'>
-                  {merge_dropdown}
+                  {everything_field}
                 </div>
 
-                <div className='row mt-2'>
-                  {select_type_dropdown}
-                </div>
-
-                <div className='row mt-2'>
-                  {interior_or_exterior_dropdown}
-                </div>
-
-                <div className='row mt-2'>
-                  {tolerance_field}
-                </div>
+                {nonexclusive_fields}
 
                 <div className='row mt-2'>
                   {scan_level_dropdown}

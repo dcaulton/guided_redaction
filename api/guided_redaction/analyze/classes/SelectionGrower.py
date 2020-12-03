@@ -91,7 +91,6 @@ class SelectionGrower:
                 )
                 return sg_match
 
-
     def object_overlaps_roi(self, mo, roi):
         mo_end = [
             mo['location'][0] + mo['size'][0],
@@ -114,7 +113,6 @@ class SelectionGrower:
             stats_this_direction
         ):
         # TODO set endpoint smart for partial roi overlaps
-        print('ponch expanding to box')
         if direction == 'south':
             if self.selection_grower_meta['merge_response']:
                 start_y_value = selected_area['location'][1]
@@ -161,32 +159,6 @@ class SelectionGrower:
                 ],
             }
             return new_area
-
-    def build_new_area(self, growth_direction, selected_area, grid_x_values, first_y, last_y):
-        if growth_direction == 'south': 
-            start_y_value = first_y
-            if first_y < selected_area['location'][1] + selected_area['size'][1] or \
-                self.selection_grower_meta['tie_grid_to_selected_area']:
-                start_y_value = selected_area['location'][1] + selected_area['size'][1]
-            if self.selection_grower_meta['merge_response']:
-                start_y_value = selected_area['location'][1]
-
-            new_area = {
-                'scanner_type': 'selection_grower',
-                'id': 'selection_grower_' + str(random.randint(1, 999999999)),
-                'scale': 1,
-                'location': [
-                    grid_x_values[0],
-                    start_y_value
-                ],
-                'size': [
-                    grid_x_values[-1] - grid_x_values[0],
-                    last_y - start_y_value,
-                ],
-            }
-            return new_area
-
-            
 
     def get_base64_image_string(self, cv2_image):
         image_bytes = cv2.imencode(".png", cv2_image)[1].tostring()
