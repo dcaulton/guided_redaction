@@ -15,6 +15,8 @@ class ExtentsFinder:
         img_height = gray.shape[0]
         img_width = gray.shape[1]
         im2 = cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR)
+        if x < 0 or x > im2.shape[1] or y < 0 or y > im2.shape[0]:
+            return ((0,0), (0,0)) # point is outside image extents
         x = cv2.floodFill(im2, None, (x, y), (0, 255, 0), (tol, tol, tol, tol))
         flood_filled_img = x[1]
         low_green = np.array([0, 250, 0])

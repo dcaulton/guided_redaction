@@ -38,19 +38,20 @@ class SelectedAreaController:
             ) 
             regions_for_image = self.build_sa_regions(frameset, cv2_image, selected_area_meta, finder)
             regions_as_hashes = {}
-            for region in regions_for_image:
-                size = [
-                    region['regions'][1][0] - region['regions'][0][0], 
-                    region['regions'][1][1] - region['regions'][0][1]
-                ]
-                region_hash = {
-                    'location': region['regions'][0],
-                    'origin': region['origin'],
-                    'scale': 1,
-                    'size': size,
-                    "scanner_type": "selected_area",
-                }
-                regions_as_hashes[region['sam_area_id']] = region_hash
+            if regions_for_image:
+                for region in regions_for_image:
+                    size = [
+                        region['regions'][1][0] - region['regions'][0][0], 
+                        region['regions'][1][1] - region['regions'][0][1]
+                    ]
+                    region_hash = {
+                        'location': region['regions'][0],
+                        'origin': region['origin'],
+                        'scale': 1,
+                        'size': size,
+                        "scanner_type": "selected_area",
+                    }
+                    regions_as_hashes[region['sam_area_id']] = region_hash
             # TODO: GET TEMPLATE ANCHOR OFFSET HERE IF NEEDED
             #   it prolly makes sense to return it from process_t1_results
             if regions_as_hashes:
@@ -398,12 +399,12 @@ class SelectedAreaController:
                     cv2_image.shape[0]
                 ]
 
-        regions_for_image = [
-            {
+        regions_for_image = []
+        if new_end[0] != new_start[0] and new_end[1] != new_start[1]:
+            regions_for_image.append({
                 'regions': (new_start, new_end), 
                 'origin': start_point,
-            }
-        ]
+            })
         return regions_for_image
 
     def process_virgin_image(self, cv2_image, selected_area_meta, finder):
