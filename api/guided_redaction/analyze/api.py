@@ -12,6 +12,7 @@ from .controller_ocr_scene_analysis import OcrSceneAnalysisController
 from .controller_template import TemplateController
 from .controller_filter import FilterController
 from .controller_timestamp import TimestampController
+from .controller_intersect import IntersectController
 import json
 import numpy as np
 from django.conf import settings
@@ -347,3 +348,17 @@ class AnalyzeViewSetCompileDataSifter(viewsets.ViewSet) :
         results = worker.compile()
 
         return Response(results)
+
+class AnalyzeViewSetIntersect(viewsets.ViewSet) :
+    def create(self, request):
+        request_data = request.data
+        return self.process_create_request(request_data)
+
+    def process_create_request(self, request_data):
+        if not request_data.get("job_ids"):
+            return self.error("job_ids is required", status_code=400)
+
+        worker = IntersectController()
+        response_data = worker.intersect_jobs(request_data)
+
+        return Response(response_data)

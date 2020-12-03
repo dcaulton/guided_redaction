@@ -344,6 +344,8 @@ class MovieCard extends React.Component {
       scanner_type_short = 'mm'
     } else if (scanner_type === 'pipeline') {
       scanner_type_short = 'pip'
+    } else if (scanner_type === 'intersect') {
+      scanner_type_short = 'int'
     } else if (scanner_type === 'selection_grower') {
       scanner_type_short = 'sg'
     } else if (scanner_type === 'ocr_scene_analysis') {
@@ -618,6 +620,7 @@ class MovieCard extends React.Component {
     const mesh_match_string = this.getTier1MatchesString('mesh_match')
     const selection_grower_string = this.getTier1MatchesString('selection_grower')
     const pipeline_match_string = this.getTier1MatchesString('pipeline')
+    const intersect_match_string = this.getTier1MatchesString('intersect')
     const areas_to_redact_string = this.getAreasToRedactString()
     const dims_string = this.getMovieDimensions(this.props.this_cards_movie_url, this.props.movies)
     let top_div_classname = "row mt-2 card"
@@ -689,6 +692,9 @@ class MovieCard extends React.Component {
                   </div>
                   <div className='row'>
                     {pipeline_match_string}
+                  </div>
+                  <div className='row'>
+                    {intersect_match_string}
                   </div>
                   <div className='row'>
                     {has_timestamp_info}

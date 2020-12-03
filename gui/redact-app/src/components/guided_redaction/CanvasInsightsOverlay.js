@@ -8,6 +8,7 @@ class CanvasInsightsOverlay extends React.Component {
     this.sg_color = '#2F8'
     this.mask_zone_color = '#B6B'
     this.pipeline_color = '#F44'
+    this.intersect_color = '#81D'
     this.selected_area_minimum_zone_color = '#3EA'
     this.selected_area_maximum_zone_color = '#A3A'
     this.selected_area_origin_location_color = '#40D'
@@ -139,6 +140,16 @@ class CanvasInsightsOverlay extends React.Component {
       this.drawBoxesAroundStartEndRecords(
         window,
         this.pipeline_color
+      )
+    }
+  }
+
+  drawIntersectMatches() {
+    const window = this.props.getCurrentIntersectMatches()
+    if (window) {
+      this.drawBoxesAroundStartEndRecords(
+        window,
+        this.intersect_color
       )
     }
   }
@@ -443,6 +454,7 @@ class CanvasInsightsOverlay extends React.Component {
     this.drawOcrWindow()
     this.drawOsaMatches()
     this.drawPipelineMatches()
+    this.drawIntersectMatches()
     this.drawAreasToRedact()
     this.drawSelectionGrowerZones()
   }
@@ -468,6 +480,7 @@ class CanvasInsightsOverlay extends React.Component {
     this.drawOcrWindow()
     this.drawOsaMatches()
     this.drawPipelineMatches()
+    this.drawIntersectMatches()
     this.drawAreasToRedact()
     this.drawSelectionGrowerZones()
   }

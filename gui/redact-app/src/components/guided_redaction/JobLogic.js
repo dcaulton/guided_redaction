@@ -492,7 +492,7 @@ class JobLogic extends React.Component {
     )
   }
 
-  static loadT1PipelineResults(
+  static loadPseudoTier1Results(
     job, 
     when_done, 
     setGlobalStateVar, 
@@ -506,47 +506,49 @@ class JobLogic extends React.Component {
     let movie_url = ''
     let deepCopyMovies= JSON.parse(JSON.stringify(movies))
     let something_changed = false
-    if (Object.keys(request_data['movies']).includes('source')) {
-      for (let i=0; i < Object.keys(request_data['movies']['source']).length; i++) {
-        movie_url = Object.keys(request_data['movies']['source'])[i]
-        if (Object.keys(deepCopyMovies).includes(movie_url)) {
-          continue
-        }
-        something_changed = true
-        campaign_movies.push(movie_url)
-        deepCopyMovies[movie_url] = request_data['movies']['source'][movie_url]
-      }
-    } else {
-      for (let i=0; i < Object.keys(request_data['movies']).length; i++) {
-        const movie_url = Object.keys(request_data['movies'])[i]
-        const movie = request_data['movies'][movie_url]
-        if (Object.keys(deepCopyMovies).includes(movie_url)) {
-          continue
-        }
-        if (Object.keys(movie).includes('frames') && movie['frames'].length > 0) {
-          deepCopyMovies[movie_url] = movie
+    if (Object.keys(request_data).includes('movies')) {
+      if (Object.keys(request_data['movies']).includes('source')) {
+        for (let i=0; i < Object.keys(request_data['movies']['source']).length; i++) {
+          movie_url = Object.keys(request_data['movies']['source'])[i]
+          if (Object.keys(deepCopyMovies).includes(movie_url)) {
+            continue
+          }
           something_changed = true
           campaign_movies.push(movie_url)
+          deepCopyMovies[movie_url] = request_data['movies']['source'][movie_url]
+        }
+      } else {
+        for (let i=0; i < Object.keys(request_data['movies']).length; i++) {
+          const movie_url = Object.keys(request_data['movies'])[i]
+          const movie = request_data['movies'][movie_url]
+          if (Object.keys(deepCopyMovies).includes(movie_url)) {
+            continue
+          }
+          if (Object.keys(movie).includes('frames') && movie['frames'].length > 0) {
+            deepCopyMovies[movie_url] = movie
+            something_changed = true
+            campaign_movies.push(movie_url)
+          }
         }
       }
-    }
-    if (something_changed) {
-      setGlobalStateVar({
-        campaign_movies: campaign_movies,
-        movies: deepCopyMovies,
-        movie_url: movie_url,
-      })
+      if (something_changed) {
+        setGlobalStateVar({
+          campaign_movies: campaign_movies,
+          movies: deepCopyMovies,
+          movie_url: movie_url,
+        })
+      }
     }
 
     const t1s_cids = getGlobalStateVar('current_ids')
     let deepCopyT1SCIDs = JSON.parse(JSON.stringify(t1s_cids))
-    deepCopyT1SCIDs['t1_scanner']['pipeline'] = job['id']
+    deepCopyT1SCIDs['t1_scanner'][job.operation] = job['id']
 
     const tier_1_matches = getGlobalStateVar('tier_1_matches')
     let deepCopyTier1Matches = JSON.parse(JSON.stringify(tier_1_matches))
-    let deepCopyMatches = deepCopyTier1Matches['pipeline']
+    let deepCopyMatches = deepCopyTier1Matches[job.operation]
     deepCopyMatches[job['id']] = response_data
-    deepCopyTier1Matches['pipeline'] = deepCopyMatches
+    deepCopyTier1Matches[job.operation] = deepCopyMatches
     setGlobalStateVar({
       'tier_1_matches': deepCopyTier1Matches,
       'current_ids': deepCopyT1SCIDs,
@@ -1093,9 +1095,12 @@ class JobLogic extends React.Component {
         this.loadIllustrateResults(
           job, when_done, setGlobalStateVar, getGlobalStateVar
         )
-			} else if (job.app === 'pipeline' && job.operation === 'pipeline') {
+			} else if (
+        (job.app === 'pipeline' && job.operation === 'pipeline') ||
+			  (job.app === 'analyze' && job.operation === 'intersect') 
+      ) {
           if (this.jobHasT1Output(job)) {
-            this.loadT1PipelineResults(
+            this.loadPseudoTier1Results(
               job, 
               when_done, 
               setGlobalStateVar, 

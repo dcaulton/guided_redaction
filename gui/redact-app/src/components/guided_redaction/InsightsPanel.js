@@ -58,6 +58,7 @@ class InsightsPanel extends React.Component {
     this.setImageTypeToDisplay=this.setImageTypeToDisplay.bind(this)
     this.addInsightsCallback=this.addInsightsCallback.bind(this)
     this.getCurrentPipelineMatches=this.getCurrentPipelineMatches.bind(this)
+    this.getCurrentIntersectMatches=this.getCurrentIntersectMatches.bind(this)
     this.getCurrentAreasToRedact=this.getCurrentAreasToRedact.bind(this)
     this.setScrubberToIndex=this.setScrubberToIndex.bind(this)
     this.getCurrentOcrSceneAnalysisMatches=this.getCurrentOcrSceneAnalysisMatches.bind(this)
@@ -128,8 +129,28 @@ class InsightsPanel extends React.Component {
   }
 
   getCurrentPipelineMatches() {
-    if (Object.keys(this.props.tier_1_matches['pipeline']).includes(this.props.current_ids['t1_scanner']['pipeline'])) {
-      const this_pipeline_matches = this.props.tier_1_matches['pipeline'][this.props.current_ids['t1_scanner']['pipeline']]  
+    return this.getCurrentPseudoTier1Matches('pipeline')
+  }
+
+  getCurrentIntersectMatches() {
+    const ks = Object.keys(this.props.tier_1_matches['intersect'])
+    if (ks.length > 0) {
+      const cur_matches = this.props.tier_1_matches['intersect'][ks[0]]  
+      if (Object.keys(cur_matches['movies']).includes(this.props.movie_url)) {
+        const this_movies_matches = cur_matches['movies'][this.props.movie_url]
+        const frameset_hash = this.props.getFramesetHashForImageUrl(this.state.insights_image)
+        if (Object.keys(this_movies_matches['framesets']).includes(frameset_hash)) {
+          const this_framesets_matches = this_movies_matches['framesets'][frameset_hash]
+          return [this_framesets_matches]
+        }
+      }
+    }
+  }
+
+  getCurrentPseudoTier1Matches(scanner_type) {
+    const scanner_id = this.props.current_ids['t1_scanner'][scanner_type]
+    if (Object.keys(this.props.tier_1_matches[scanner_type]).includes(scanner_id)) {
+      const this_pipeline_matches = this.props.tier_1_matches[scanner_type][scanner_id]  
       if (Object.keys(this_pipeline_matches['movies']).includes(this.props.movie_url)) {
         const this_movies_matches = this_pipeline_matches['movies'][this.props.movie_url]
         const frameset_hash = this.props.getFramesetHashForImageUrl(this.state.insights_image)
@@ -1084,6 +1105,7 @@ class InsightsPanel extends React.Component {
               runCallbackFunction={this.runCallbackFunction}
               getCurrentOcrSceneAnalysisMatches={this.getCurrentOcrSceneAnalysisMatches}
               getCurrentPipelineMatches={this.getCurrentPipelineMatches}
+              getCurrentIntersectMatches={this.getCurrentIntersectMatches}
             />
           </div>
 

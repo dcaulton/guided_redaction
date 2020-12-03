@@ -29,6 +29,7 @@ from guided_redaction.analyze.api import (
     AnalyzeViewSetTrainHog,
     AnalyzeViewSetTestHog,
     AnalyzeViewSetCompileDataSifter,
+    AnalyzeViewSetIntersect,
     AnalyzeViewSetOcr
 )
 
@@ -1247,3 +1248,8 @@ def get_training_image_urls(hog_rule):
             resp_data[hn['movie_url']] = {}
         resp_data[hn['movie_url']][hn['image_url']] = 1
     return resp_data
+
+@shared_task
+def intersect(job_uuid):
+    generic_worker_call(job_uuid, 'intersect', AnalyzeViewSetIntersect)
+

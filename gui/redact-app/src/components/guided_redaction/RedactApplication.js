@@ -135,6 +135,7 @@ class RedactApplication extends React.Component {
         'mesh_match': {},
         'selection_grower': {},
         'pipeline': {},
+        'intersect': {},
       },
       workflow_callbacks: {},
       workflows: {
