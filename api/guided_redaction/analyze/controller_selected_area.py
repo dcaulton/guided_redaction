@@ -274,6 +274,12 @@ class SelectedAreaController:
             else:
                 match_data = frameset[scanner_matcher_id]
 
+            if selected_area_meta['everything_direction']:
+                regions_for_image = self.get_everything_fill_for_t1(
+                    match_data, cv2_image, selected_area_meta['everything_direction']
+                )
+                return regions_for_image
+
             for area in selected_area_meta['areas']:
                 area_scanner_key = area['id'] + '-' + scanner_matcher_id
                 selected_point = area['center']
@@ -299,6 +305,60 @@ class SelectedAreaController:
                         'origin': selected_point,
                         'sam_area_id': area_scanner_key,
                     })
+        return regions_for_image
+
+    def get_everything_fill_for_t1(self, match_data, cv2_image, direction):
+        if 'location' in match_data:
+            start_point = match_data['location']
+            if direction in ['south', 'east']:
+                start_point = [
+                    start_point[0] + match_data['size'][0],
+                    start_point[1] + match_data['size'][1]
+                ]
+        if 'start' in match_data:
+            start_point = match_data['start']
+            if direction in ['south', 'east']:
+                start_point = match_data['end']
+
+        if direction == 'north':
+            new_start = [0, 0]
+            new_end = [
+                cv2_image.shape[1],
+                start_point[1]
+            ]
+        elif direction == 'south':
+            new_start = [
+                0,
+                start_point[1]
+            ]
+            new_end = [
+                cv2_image.shape[1],
+                cv2_image.shape[0]
+            ]
+        elif direction == 'east':
+            new_start = [
+                start_point[0],
+                0
+            ]
+            new_end = [
+                cv2_image.shape[1],
+                cv2_image.shape[0]
+            ]
+        elif direction == 'west':
+            new_start = [
+                0,
+                0
+            ]
+            new_end = [
+                start_point[0],
+                cv2_image.shape[0]
+            ]
+        regions_for_image = [
+            {
+                'regions': (new_start, new_end), 
+                'origin': start_point,
+            }
+        ]
         return regions_for_image
 
     def process_virgin_image(self, cv2_image, selected_area_meta, finder):
