@@ -916,7 +916,13 @@ class JobLogic extends React.Component {
     .then((responseJson) => {
       const request = JSON.parse(responseJson['job']['request_data'])
       const pretty_request = JSON.stringify(request, undefined, 2)
-      const response = JSON.parse(responseJson['job']['response_data'])
+      let response = ''
+      if (Object.keys(responseJson['job']).includes('response_data')) {
+        const rd_string = responseJson['job']['response_data']
+        if (rd_string !== 'None') {
+          response = JSON.parse(responseJson['job']['response_data'])
+        }
+      }
       const pretty_response = JSON.stringify(response, undefined, 2)
       delete responseJson['job']['request_data']
       delete responseJson['job']['response_data']

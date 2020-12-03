@@ -520,6 +520,17 @@ class InsightsPanel extends React.Component {
     return job_data
   }
 
+  buildIntersectData(extra_data) {
+    let job_data = {
+      request_data: {},
+    }
+    job_data['app'] = 'analyze'
+    job_data['operation'] = 'intersect'
+    job_data['request_data']['job_ids'] = extra_data['job_ids']
+    job_data['description'] = 'intersection of ' + extra_data['job_ids'].length.toString() + ' jobs'
+    return job_data
+  }
+
   buildGetTimestampJobData(scope, extra_data) {
     let job_data = {
       request_data: {},
@@ -591,6 +602,11 @@ class InsightsPanel extends React.Component {
       this.props.submitJob({
         job_data: job_data,
       })
+    } else if (job_string === 'intersect') {
+      let job_data = this.buildIntersectData(extra_data)
+      this.props.submitJob({
+        job_data: job_data,
+      })
     } else if (job_string === 'ping_cv_worker') {
       let job_data = this.buildPingCvWorkerJobData(extra_data)
       this.props.submitJob({
@@ -618,23 +634,17 @@ class InsightsPanel extends React.Component {
       this.props.submitJob({
         job_data: job_data,
       })
-    } else if (
-        job_string.startsWith('data_sifter_build_')
-    ) {
+    } else if (job_string.startsWith('data_sifter_build_')) {
       let job_data = this.buildDataSifterBuildJobData(job_string, extra_data)
       this.props.submitJob({
         job_data: job_data,
       })
-    } else if (
-        job_string.startsWith('redact_')
-    ) {
+    } else if (job_string.startsWith('redact_')) {
       let job_data = this.buildRedactJobData(job_string, extra_data)
       this.props.submitJob({
         job_data: job_data,
       })
-    } else if (
-        job_string.startsWith('zip_')
-    ) {
+    } else if (job_string.startsWith('zip_')) {
       let job_data = this.buildZipJobData(job_string, extra_data)
       this.props.submitJob({
         job_data: job_data,

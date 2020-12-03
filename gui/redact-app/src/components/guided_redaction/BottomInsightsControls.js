@@ -360,6 +360,9 @@ class BottomInsightsControls extends React.Component {
         <SetToolsControls
           visibilityFlags={this.props.visibilityFlags}
           toggleShowVisibility={this.props.toggleShowVisibility}
+          submitInsightsJob={this.props.submitInsightsJob}
+          displayInsightsMessage={this.props.displayInsightsMessage}
+          jobs={this.props.jobs}
         />
 
         <FilesystemControls
