@@ -35,6 +35,7 @@ class SelectedAreaControls extends React.Component {
       maximum_zones: [],
       tolerance: 5,
       everything_direction: '',
+      respect_source_dimensions: true,
       attribute_search_name: '',
       attribute_search_value: '',
       first_click_coords: [],
@@ -218,6 +219,7 @@ class SelectedAreaControls extends React.Component {
         maximum_zones : sam['maximum_zones'],
         tolerance: sam['tolerance'],
         everything_direction: sam['everything_direction'],
+        respect_source_dimensions: sam['respect_source_dimensions'],
       })
     }
     let deepCopyIds = JSON.parse(JSON.stringify(this.props.current_ids))
@@ -248,6 +250,7 @@ class SelectedAreaControls extends React.Component {
       maximum_zones: [],
       tolerance: 5,
       everything_direction: '',
+      respect_source_dimensions: true,
     })
   }
 
@@ -268,6 +271,7 @@ class SelectedAreaControls extends React.Component {
       maximum_zones: this.state.maximum_zones,
       tolerance: this.state.tolerance,
       everything_direction: this.state.everything_direction,
+      respect_source_dimensions: this.state.respect_source_dimensions,
     }
     return selected_area_meta
   }
@@ -722,6 +726,28 @@ class SelectedAreaControls extends React.Component {
     )
   }
 
+  buildExclusiveFields() {
+    let checked_value = ''
+    if (this.state.respect_source_dimensions) {
+      checked_value = 'checked'
+    }
+    return (
+      <div>
+        <div className='d-inline'>
+          <input
+            className='ml-2 mr-2 mt-1'
+            checked={checked_value}
+            type='checkbox'
+            onChange={() => this.setLocalStateVar('respect_source_dimensions', !this.state.respect_source_dimensions)}
+          />
+        </div>
+        <div className='d-inline'>
+          Respect Source Dimensions
+        </div>
+      </div>
+    )
+  }
+
   buildNonExclusiveFields() {
     const merge_dropdown = this.buildMergeDropdown()
     const select_type_dropdown = this.buildSelectTypeDropdown()
@@ -779,6 +805,7 @@ class SelectedAreaControls extends React.Component {
     const clear_matches_button = this.buildClearMatchesButton2()
     const goto_source_link = this.buildGotoSourceLink()
     const nonexclusive_fields = this.buildNonExclusiveFields()
+    const exclusive_fields = this.buildExclusiveFields()
     const header_row = makeHeaderRow(
       'selected area',
       'selected_area_body',
@@ -836,6 +863,8 @@ class SelectedAreaControls extends React.Component {
                 </div>
 
                 {nonexclusive_fields}
+
+                {exclusive_fields}
 
                 <div className='row mt-2'>
                   {scan_level_dropdown}
