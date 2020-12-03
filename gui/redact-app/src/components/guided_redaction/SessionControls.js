@@ -400,6 +400,10 @@ class SessionControls extends React.Component {
     if (this.props.visibilityFlags['import_export']) {
       show_import_export_checked = 'checked'
     }
+    let show_set_tools_checked = ''
+    if (this.props.visibilityFlags['set_tools']) {
+      show_set_tools_checked = 'checked'
+    }
     let show_results_checked = ''
     if (this.props.visibilityFlags['results']) {
       show_results_checked = 'checked'
@@ -591,6 +595,16 @@ class SessionControls extends React.Component {
             onChange={() => this.props.toggleShowVisibility('ocr_movie_analysis')}
           />
           Show Ocr Movie Analysis
+        </div>
+
+        <div className='row mt-3 bg-light rounded'>
+          <input
+            className='ml-2 mr-2 mt-1'
+            checked={show_set_tools_checked}
+            type='checkbox'
+            onChange={() => this.props.toggleShowVisibility('set_tools')}
+          />
+          Show Set Tools
         </div>
 
         <div className='row mt-3 bg-light rounded'>

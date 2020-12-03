@@ -15,6 +15,7 @@ import SelectionGrowerControls from './SelectionGrowerControls'
 import TelemetryControls from './TelemetryControls'
 import OcrSceneAnalysisControls from './OcrSceneAnalysisControls'
 import ImportExportControls from './ImportExportControls'
+import SetToolsControls from './SetToolsControls'
 
 class BottomInsightsControls extends React.Component {
 
@@ -354,6 +355,11 @@ class BottomInsightsControls extends React.Component {
           movie_url={this.props.movie_url}
           setCurrentVideo={this.props.setCurrentVideo}
           setGlobalStateVar={this.props.setGlobalStateVar}
+        />
+
+        <SetToolsControls
+          visibilityFlags={this.props.visibilityFlags}
+          toggleShowVisibility={this.props.toggleShowVisibility}
         />
 
         <FilesystemControls

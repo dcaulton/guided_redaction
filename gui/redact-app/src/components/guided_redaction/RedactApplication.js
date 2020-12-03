@@ -83,7 +83,7 @@ class RedactApplication extends React.Component {
         'ocr': true,
         'ocr_scene_analysis': true,
         'ocr_movie_analysis': true,
-        'movieSets': true,
+        'set_tools': true,
         'results': true,
         'diffs': true,
         'redact': true,
