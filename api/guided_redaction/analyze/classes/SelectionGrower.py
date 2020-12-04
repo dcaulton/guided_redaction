@@ -21,6 +21,8 @@ class SelectionGrower:
     def grow_selection(self, tier_1_match_data, cv2_image):
         match_obj = {}
         match_stats = {}
+        if type(cv2_image) == type(None):
+            return match_obj, match_stats
 
         ocr_match_objs = {}
         template_match_objs = {}
@@ -169,6 +171,7 @@ class SelectionGrower:
         return image_base64_string
 
     def project_colors(self, selected_area, cv2_image):
+        build_regions = {}
         statistics = {'color_masks': {}}
         src_copy = cv2_image.copy()
         for growth_direction in ['north', 'south', 'east', 'west']:
@@ -218,22 +221,52 @@ class SelectionGrower:
                 statistics
             )
             for r_key in build_regions:
-                if growth_direction == 'south': 
+                br_loc = build_regions[r_key]['location']
+                br_size = build_regions[r_key]['size']
+                sa_loc = selected_area['location']
+                sa_size = selected_area['size']
+                if growth_direction == 'north': 
                     build_regions[r_key]['location'] = [
-                        build_regions[r_key]['location'][0] + selected_area['location'][0],
-                        build_regions[r_key]['location'][1] + selected_area['location'][1] + selected_area['size'][1]
+                        br_loc[0] + sa_loc[0],
+                        br_loc[1]
                     ]
+                    if self.selection_grower_meta['merge_response']:
+                        build_regions[r_key]['size'] = [
+                            br_size[0],
+                            br_size[1] + sa_size[1] 
+                        ]
+                elif growth_direction == 'south': 
+                    build_regions[r_key]['location'] = [
+                        br_loc[0] + sa_loc[0],
+                        br_loc[1] + sa_loc[1] + sa_size[1]
+                    ]
+                    if self.selection_grower_meta['merge_response']:
+                        build_regions[r_key]['location'] = sa_loc
+                        build_regions[r_key]['size'] = [
+                            br_size[0],
+                            br_size[1] + sa_size[1],
+                        ]
                 elif growth_direction == 'east': 
                     build_regions[r_key]['location'] = [
-                        build_regions[r_key]['location'][0] + selected_area['location'][0] + selected_area['size'][0],
-                        build_regions[r_key]['location'][1] + selected_area['location'][1]
+                        br_loc[0] + sa_loc[0] + sa_size[0],
+                        br_loc[1] + sa_loc[1]
                     ]
+                    if self.selection_grower_meta['merge_response']:
+                        build_regions[r_key]['location'] = sa_loc
+                        build_regions[r_key]['size'] = [
+                            br_size[0] + sa_size[0],
+                            br_size[1]
+                        ]
                 elif growth_direction == 'west': 
                     build_regions[r_key]['location'] = [
-                        build_regions[r_key]['location'][0],
-                        build_regions[r_key]['location'][1] + selected_area['location'][1]
+                        br_loc[0],
+                        br_loc[1] + sa_loc[1]
                     ]
-
+                    if self.selection_grower_meta['merge_response']:
+                        build_regions[r_key]['size'] = [
+                            br_size[0] + sa_size[0],
+                            br_size[1]
+                        ]
 
         return build_regions, statistics
 
@@ -425,7 +458,9 @@ class SelectionGrower:
             statistics[growth_direction]['y_hist'] = hist_y.tolist()
             statistics[growth_direction]['outer_roi'] = growth_roi
             if grid_x_values and last_y - first_y:
-                new_area = self.build_new_area(growth_direction, selected_area, grid_x_values, first_y, last_y)
+                new_area = self.build_new_grid_area(
+                    growth_direction, selected_area, grid_x_values, first_y, last_y
+                )
                 new_areas[new_area['id']] = new_area
                 statistics[growth_direction]['roi'] = new_area
         return new_areas, statistics
@@ -444,29 +479,39 @@ class SelectionGrower:
             )
             statistics[growth_direction]['friends'].append(build_obj)
 
-    def build_new_area(self, growth_direction, selected_area, grid_x_values, first_y, last_y):
-        if growth_direction == 'south': 
-            start_y_value = first_y
-            if first_y < selected_area['location'][1] + selected_area['size'][1] or \
-                self.selection_grower_meta['tie_grid_to_selected_area']:
-                start_y_value = selected_area['location'][1] + selected_area['size'][1]
-            if self.selection_grower_meta['merge_response']:
+    def build_new_grid_area(self, growth_direction, selected_area, grid_x_values, first_y, last_y):
+        # only works for south right now
+        start_x_value = grid_x_values[0]
+        start_y_value = first_y
+        size_x = grid_x_values[-1] - grid_x_values[0]
+        size_y = last_y - start_y_value
+        if first_y < selected_area['location'][1] + selected_area['size'][1] or \
+            self.selection_grower_meta['tie_grid_to_selected_area']:
+            start_y_value = selected_area['location'][1] + selected_area['size'][1]
+        if self.selection_grower_meta['merge_response']:
+            if growth_direction == 'north':
+                size_y = size_y + selected_area['size'][1]
+            elif growth_direction == 'south':
                 start_y_value = selected_area['location'][1]
+            elif growth_direction == 'east':
+                start_x_value = selected_area['location'][0]
+            elif growth_direction == 'west':
+                size_x = size_x + selected_area['size'][0]
 
-            new_area = {
-                'scanner_type': 'selection_grower',
-                'id': 'selection_grower_' + str(random.randint(1, 999999999)),
-                'scale': 1,
-                'location': [
-                    grid_x_values[0],
-                    start_y_value
-                ],
-                'size': [
-                    grid_x_values[-1] - grid_x_values[0],
-                    last_y - start_y_value,
-                ],
-            }
-            return new_area
+        new_area = {
+            'scanner_type': 'selection_grower',
+            'id': 'selection_grower_' + str(random.randint(1, 999999999)),
+            'scale': 1,
+            'location': [
+                start_x_value,
+                start_y_value
+            ],
+            'size': [
+                size_x,
+                size_y
+            ],
+        }
+        return new_area
                     
     def gather_clustered_y_rows(self, grid_y_values):
         step_values = {}
