@@ -141,7 +141,7 @@ class InsightsPanel extends React.Component {
         const frameset_hash = this.props.getFramesetHashForImageUrl(this.state.insights_image)
         if (Object.keys(this_movies_matches['framesets']).includes(frameset_hash)) {
           const this_framesets_matches = this_movies_matches['framesets'][frameset_hash]
-          return [this_framesets_matches]
+          return this_framesets_matches
         }
       }
     }

@@ -41,6 +41,7 @@ class PipelineControls extends React.Component {
       addends: {},
       minuends: {},
       subtrahends: {},
+      intersect_feeds: {},
       redact_rule_edges: {},
       attribute_search_value: '',
       use_parsed_movies: false,
@@ -129,6 +130,7 @@ class PipelineControls extends React.Component {
       addends: this.state.addends,
       minuends: this.state.minuends,
       subtrahends: this.state.subtrahends,
+      intersect_feeds: this.state.intersect_feeds,
       redact_rule_edges: this.state.redact_rule_edges,
       node_metadata: this.state.node_metadata,
       movies: build_movies,
@@ -232,6 +234,10 @@ class PipelineControls extends React.Component {
       if (Object.keys(content).includes('subtrahends')) {
         subtrahends = content['subtrahends']
       }
+      let intersect_feeds = {}
+      if (Object.keys(content).includes('intersect_feeds')) {
+        intersect_feeds = content['intersect_feeds']
+      }
       let redact_rule_edges = {}
       if (Object.keys(content).includes('redact_rule_edges')) {
         redact_rule_edges= content['redact_rule_edges']
@@ -251,6 +257,7 @@ class PipelineControls extends React.Component {
         addends: addends,
         minuends: minuends,
         subtrahends: subtrahends,
+        intersect_feeds: intersect_feeds,
         redact_rule_edges: redact_rule_edges,
         node_metadata: content['node_metadata'],
       })
@@ -590,6 +597,7 @@ class PipelineControls extends React.Component {
                       addends={this.state.addends}
                       minuends={this.state.minuends}
                       subtrahends={this.state.subtrahends}
+                      intersect_feeds={this.state.intersect_feeds}
                       addNode={this.addNode}
                       deleteNode={this.deleteNode}
                       updateNodeValue={this.updateNodeValue}
@@ -654,6 +662,7 @@ class NodeCardList extends React.Component {
                   addends={this.props.addends}
                   minuends={this.props.minuends}
                   subtrahends={this.props.subtrahends}
+                  intersect_feeds={this.props.intersect_feeds}
                   setLocalStateVar={this.props.setLocalStateVar}
                   deleteNode={this.props.deleteNode}
                   redact_rule_edges={this.props.redact_rule_edges}
@@ -914,6 +923,12 @@ class NodeCard extends React.Component {
     ) {
       return ''
     }
+    if (
+      this.props.node_metadata['node'][this.props.node_id]['type'] !== 'intersect'
+      && ms_type === 'intersect_feeds'
+    ) {
+      return ''
+    }
     const id_types = [
       'template', 'selected_area', 'mesh_match', 'selection_grower', 'ocr', 'telemetry', 'ocr_scene_analysis'
     ]
@@ -922,6 +937,8 @@ class NodeCard extends React.Component {
       title = 'Subtrahends'
     } else if (ms_type === 'addends') {
       title = 'Addends'
+    } else if (ms_type === 'intersect_feeds') {
+      title = 'Intersect Jobs'
     } 
 
     let select_none_comment = ''
@@ -1047,6 +1064,7 @@ class NodeCard extends React.Component {
             <option value='pipeline'>pipeline</option>
             <option value='t1_sum'>sum t1 outputs</option>
             <option value='t1_diff'>difference of t1 outputs</option>
+            <option value='intersect'>intersection of t1 outputs</option>
             <option value='redact'>redact</option>
             <option value='zip'>zip</option>
             <option value='noop'>noop</option>
@@ -1220,6 +1238,7 @@ class NodeCard extends React.Component {
     const minuends_field = this.buildMinuendsSubtrahendsAddendsField('minuends')
     const subtrahends_field = this.buildMinuendsSubtrahendsAddendsField('subtrahends')
     const addends_field = this.buildMinuendsSubtrahendsAddendsField('addends')
+    const intersect_feeds_field = this.buildMinuendsSubtrahendsAddendsField('intersect_feeds')
     const redaction_rules_field = this.buildRedactionRulesField()
     const entity_id_field = this.buildEntityIdField()
     const first_indicator = this.buildFirstIndicator()
@@ -1267,6 +1286,9 @@ class NodeCard extends React.Component {
         </div>
         <div className='row'>
           {addends_field}
+        </div>
+        <div className='row'>
+          {intersect_feeds_field}
         </div>
         <div className='row'>
           {redaction_rules_field}

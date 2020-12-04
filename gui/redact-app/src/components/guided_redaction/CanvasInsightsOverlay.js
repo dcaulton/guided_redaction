@@ -8,7 +8,7 @@ class CanvasInsightsOverlay extends React.Component {
     this.sg_color = '#2F8'
     this.mask_zone_color = '#B6B'
     this.pipeline_color = '#F44'
-    this.intersect_color = '#81D'
+    this.intersect_color = '#DE7'
     this.selected_area_minimum_zone_color = '#3EA'
     this.selected_area_maximum_zone_color = '#A3A'
     this.selected_area_origin_location_color = '#40D'
@@ -145,12 +145,18 @@ class CanvasInsightsOverlay extends React.Component {
   }
 
   drawIntersectMatches() {
-    const window = this.props.getCurrentIntersectMatches()
-    if (window) {
-      this.drawBoxesAroundStartEndRecords(
-        window,
-        this.intersect_color
-      )
+    const matches = this.props.getCurrentIntersectMatches()
+    if (!matches) {
+      return
+    }
+    for (let i=0; i < Object.keys(matches).length; i++) {
+      const key = Object.keys(matches)[i]
+      const match = matches[key]
+      const end = [
+        match['location'][0] + match['size'][0],
+        match['location'][1] + match['size'][1]
+      ]
+      this.drawShadedRectangleWithLabel(match['location'], end, this.intersect_color, '')
     }
   }
 

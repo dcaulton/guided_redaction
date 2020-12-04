@@ -41,13 +41,17 @@ class IntersectController():
             if 'movies' in job_resp:
                 for movie_url in job_resp['movies']:
                     movie = job_resp['movies'][movie_url]
+                    print('intersecting with frames from movie {}'.format(movie_url))
                     if 'framesets' in movie:
                         for frameset_hash in movie['framesets']:
+                            if frameset_hash not in self.build_masks[movie_url]['framesets']:
+                                continue
                             this_frames_mask = self.make_mask(movie['framesets'][frameset_hash])
                             cur_mask = self.build_masks[movie_url]['framesets'][frameset_hash]
                             new_mask = cv2.bitwise_and(this_frames_mask, cur_mask)
                             self.build_masks[movie_url]['framesets'][frameset_hash] = new_mask
 
+        print('fetching contours and preparing results')
         for movie_url in self.build_masks:
             for frameset_hash in self.build_masks[movie_url]['framesets']:
                 mask = self.build_masks[movie_url]['framesets'][frameset_hash]
@@ -68,6 +72,7 @@ class IntersectController():
                         'size': (box_w, box_h),
                     }
                     response_movies[movie_url]['framesets'][frameset_hash][the_id] = build_obj
+        print('intersect complete')
         return {
             'movies': response_movies, 
             'statistics': statistics,
