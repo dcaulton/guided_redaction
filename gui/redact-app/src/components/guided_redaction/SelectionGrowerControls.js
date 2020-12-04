@@ -480,7 +480,7 @@ class SelectionGrowerControls extends React.Component {
   }
 
   buildDirectionField() {
-    const directions = ['south', 'east']
+    const directions = ['north', 'south', 'east', 'west']
     return (
       <div className='border-top ml-2'>
         <div className='h5'>
@@ -585,9 +585,9 @@ class SelectionGrowerControls extends React.Component {
 
   buildOffsetsField() {
     let directions = []
-    if (this.state.direction === 'south') {
+    if (this.state.direction === 'south' || this.state.direction === 'north') {
       directions = ['east', 'west']
-    } else if (this.state.direction === 'east') {
+    } else if (this.state.direction === 'east' || this.state.direction === 'west') {
       directions = ['north', 'south']
     }
     return (

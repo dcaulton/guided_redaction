@@ -201,6 +201,7 @@ class ChartMaker:
                                     chart_storage_uuid
                                 )
                     elif 'color_projection' in stats_framesets[frameset_hash] and \
+                        'source_location' in stats_framesets[frameset_hash]['color_projection'] and \
                         'color_masks' in stats_framesets[frameset_hash]['color_projection']:
                         direction = list(stats_framesets[frameset_hash]['color_projection']['color_masks'].keys())[0]
                         self.make_color_masks_graph(
@@ -326,9 +327,6 @@ class ChartMaker:
         x_start = 100
         x_end = x_start + w
 
-# TODO we need to add the offset of the selected area to source_location
-#        print('choppy ', y_start, y_end, x_start, x_end)
-#        print('  -boppy ', source_location[1], source_location[1]+h, source_location[0], source_location[0]+w)
         cv2_image[y_start:y_end,x_start:x_end] = \
             image_cv2[
                 source_location[1]:source_location[1]+h, 

@@ -48,7 +48,7 @@ class SelectionGrower:
     def capture_template(self, selected_area, template_match_objs, cv2_image):
         statistics = {}
         matches = {}
-        for growth_direction in ['south', 'east']:
+        for growth_direction in ['north', 'south', 'east', 'west']:
             if self.selection_grower_meta['direction'] != growth_direction:
                 continue
             statistics[growth_direction] = {}
@@ -113,6 +113,7 @@ class SelectionGrower:
             stats_this_direction
         ):
         # TODO set endpoint smart for partial roi overlaps
+        stats_this_direction['template_match_coords'] = [box_start, box_end]
         if direction == 'south':
             if self.selection_grower_meta['merge_response']:
                 start_y_value = selected_area['location'][1]
@@ -121,21 +122,14 @@ class SelectionGrower:
             end_y_value = box_end[1]
             start_x_value = selected_area['location'][0]
             end_x_value = selected_area['location'][0] + selected_area['size'][0]
-            stats_this_direction['template_match_coords'] = [box_start, box_end]
-            new_area = {
-                'scanner_type': 'selection_grower',
-                'id': 'selection_grower_' + str(random.randint(1, 999999999)),
-                'scale': 1,
-                'location': [
-                    start_x_value,
-                    start_y_value
-                ],
-                'size': [
-                    end_x_value - start_x_value,
-                    end_y_value - start_y_value
-                ],
-            }
-            return new_area
+        elif direction == 'north':
+            start_y_value = box_start[1]
+            if self.selection_grower_meta['merge_response']:
+                end_y_value = selected_area['location'][1] + selected_area['size'][1]
+            else:
+                end_y_value = selected_area['location'][1]
+            start_x_value = selected_area['location'][0]
+            end_x_value = selected_area['location'][0] + selected_area['size'][0]
         elif direction == 'east':
             if self.selection_grower_meta['merge_response']:
                 start_x_value = selected_area['location'][0]
@@ -144,21 +138,29 @@ class SelectionGrower:
             end_x_value = box_end[0]
             start_y_value = selected_area['location'][1]
             end_y_value = selected_area['location'][1] + selected_area['size'][1]
-            stats_this_direction['template_match_coords'] = [box_start, box_end]
-            new_area = {
-                'scanner_type': 'selection_grower',
-                'id': 'selection_grower_' + str(random.randint(1, 999999999)),
-                'scale': 1,
-                'location': [
-                    start_x_value,
-                    start_y_value
-                ],
-                'size': [
-                    end_x_value - start_x_value,
-                    end_y_value - start_y_value
-                ],
-            }
-            return new_area
+        elif direction == 'west':
+            start_x_value = box_start[0]
+            if self.selection_grower_meta['merge_response']:
+                end_x_value = selected_area['location'][0] + selected_area['size'][0]
+            else:
+                end_x_value = selected_area['location'][0]
+            start_y_value = selected_area['location'][1]
+            end_y_value = selected_area['location'][1] + selected_area['size'][1]
+
+        new_area = {
+            'scanner_type': 'selection_grower',
+            'id': 'selection_grower_' + str(random.randint(1, 999999999)),
+            'scale': 1,
+            'location': [
+                start_x_value,
+                start_y_value
+            ],
+            'size': [
+                end_x_value - start_x_value,
+                end_y_value - start_y_value
+            ],
+        }
+        return new_area
 
     def get_base64_image_string(self, cv2_image):
         image_bytes = cv2.imencode(".png", cv2_image)[1].tostring()
@@ -169,7 +171,7 @@ class SelectionGrower:
     def project_colors(self, selected_area, cv2_image):
         statistics = {'color_masks': {}}
         src_copy = cv2_image.copy()
-        for growth_direction in ['south', 'east']:
+        for growth_direction in ['north', 'south', 'east', 'west']:
             if self.selection_grower_meta['direction'] != growth_direction:
                 continue
             statistics['color_masks'][growth_direction] = {}
@@ -212,66 +214,118 @@ class SelectionGrower:
                 growth_direction, 
                 all_color_mask, 
                 src_copy,
+                selected_area,
                 statistics
             )
-            for region_key in build_regions:
-                build_regions[region_key]['location'] = [
-                    build_regions[region_key]['location'][0] + selected_area['location'][0] + selected_area['size'][0],
-                    build_regions[region_key]['location'][1] + selected_area['location'][1]
-                ]
+            for r_key in build_regions:
+                if growth_direction == 'south': 
+                    build_regions[r_key]['location'] = [
+                        build_regions[r_key]['location'][0] + selected_area['location'][0],
+                        build_regions[r_key]['location'][1] + selected_area['location'][1] + selected_area['size'][1]
+                    ]
+                elif growth_direction == 'east': 
+                    build_regions[r_key]['location'] = [
+                        build_regions[r_key]['location'][0] + selected_area['location'][0] + selected_area['size'][0],
+                        build_regions[r_key]['location'][1] + selected_area['location'][1]
+                    ]
 
 
         return build_regions, statistics
 
-    def build_regions_from_mask(self, growth_direction, all_color_mask, src_copy, stats):
+    def do_flood_fill_for_all_color_mask(
+        self, 
+        growth_direction, 
+        all_color_mask, 
+        src_copy_shape, 
+        selected_area, 
+        stats
+    ):
+        regions = {}
+        if growth_direction == 'north':
+            start_point = (
+                math.floor(src_copy_shape[1] * .5),
+                src_copy_shape[0]
+                
+            )
+        elif growth_direction == 'south':
+            start_point = (
+                math.floor(src_copy_shape[1] * .5),
+                0
+            )
+        elif growth_direction == 'east':
+            start_point = (
+                0,
+                math.floor(src_copy_shape[0] * .5)
+            )
+        elif growth_direction == 'west':
+            start_point = (
+                src_copy_shape[1],
+                math.floor(src_copy_shape[0] * .5)
+            )
+
+        all_color_3 = np.ones((all_color_mask.shape[0], all_color_mask.shape[1], 3), np.uint8) * 255
+        masked = cv2.bitwise_and(all_color_3, all_color_3, mask=all_color_mask)
+        x = cv2.floodFill(masked, None, start_point, (0, 255, 0))
+        flood_filled_img = x[1]
+
+        low_green = hi_green = np.array([0, 255, 0])
+        mask = cv2.inRange(flood_filled_img, low_green, hi_green)
+        cnts = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        cnts = imutils.grab_contours(cnts)
+        if growth_direction == 'north':
+            edge_cnts = [
+                cnt for cnt in cnts 
+                if cv2.boundingRect(cnt)[1] + cv2.boundingRect(cnt)[3] == src_copy_shape[0]
+            ]
+        elif growth_direction == 'south':
+            edge_cnts = [cnt for cnt in cnts if cv2.boundingRect(cnt)[1] == 0]
+        elif growth_direction == 'east':
+            edge_cnts = [cnt for cnt in cnts if cv2.boundingRect(cnt)[0] == 0]
+        elif growth_direction == 'west':
+            edge_cnts = [
+                cnt for cnt in cnts 
+                if cv2.boundingRect(cnt)[0] + cv2.boundingRect(cnt)[2] == src_copy_shape[1]
+            ]
+
+        if len(edge_cnts) == 0:
+            return regions
+
+        biggest_contour = max(edge_cnts, key=cv2.contourArea)
+        (box_x, box_y, box_w, box_h) = cv2.boundingRect(biggest_contour)
+        rect = ((box_x, box_y), (box_x + box_w, box_y + box_h))
+        the_id = 'selection_grower_' + str(random.randint(1, 999999999))
+        build_obj = {
+            'scanner_type': 'selection_grower',
+            'id': the_id,
+            'scale': 1,
+            'location': (box_x, box_y),
+            'size': (box_w, box_h),
+        }
+        if self.debug:
+            cv2.rectangle(
+                flood_filled_img,
+                (box_x, box_y),
+                (box_x + box_w, box_y + box_h),
+                (0, 0, 255),
+                -1
+            )
+            img_string = self.get_base64_image_string(flood_filled_img)
+            if 'flood_fill' not in stats:
+                stats['flood_fill'] = {}
+            if 'source_location' not in stats:
+                stats['source_location'] = {}
+            if growth_direction not in stats['flood_fill']:
+                stats['flood_fill'][growth_direction] = img_string
+                stats['source_location'][growth_direction] = selected_area['location']
+        regions[the_id] = build_obj
+        return regions
+
+    def build_regions_from_mask(self, growth_direction, all_color_mask, src_copy, selected_area, stats):
         regions = {}
         if self.selection_grower_meta['region_build_mode'] == 'near_flood':
-            if growth_direction == 'east':
-                start_point = (
-                    math.floor(src_copy.shape[1] * .5),
-                    0
-                )
-                all_color_3 = np.ones((all_color_mask.shape[0], all_color_mask.shape[1], 3), np.uint8) * 255
-                masked = cv2.bitwise_and(all_color_3, all_color_3, mask=all_color_mask)
-                x = cv2.floodFill(masked, None, start_point, (0, 255, 0))
-                flood_filled_img = x[1]
-
-                low_green = hi_green = np.array([0, 255, 0])
-                mask = cv2.inRange(flood_filled_img, low_green, hi_green)
-                cnts = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-                cnts = imutils.grab_contours(cnts)
-                left_edge_cnts = [cnt for cnt in cnts if cv2.boundingRect(cnt)[0] == 0]
-                if len(left_edge_cnts) == 0:
-                    return regions
-
-                biggest_contour = max(left_edge_cnts, key=cv2.contourArea)
-                (box_x, box_y, box_w, box_h) = cv2.boundingRect(biggest_contour)
-                rect = ((box_x, box_y), (box_x + box_w, box_y + box_h))
-                the_id = 'selection_grower_' + str(random.randint(1, 999999999))
-                build_obj = {
-                    'scanner_type': 'selection_grower',
-                    'id': the_id,
-                    'scale': 1,
-                    'location': (box_x, box_y),
-                    'size': (box_w, box_h),
-                }
-                if self.debug:
-                    cv2.rectangle(
-                        flood_filled_img,
-                        (box_x, box_y),
-                        (box_x + box_w, box_y + box_h),
-                        (0, 0, 255),
-                        -1
-                    )
-                    img_string = self.get_base64_image_string(flood_filled_img)
-                    if 'flood_fill' not in stats:
-                        stats['flood_fill'] = {}
-                    if 'source_location' not in stats:
-                        stats['source_location'] = {}
-                    if growth_direction not in stats['flood_fill']:
-                        stats['flood_fill'][growth_direction] = img_string
-                        stats['source_location'][growth_direction] = (box_x, box_y)
-                regions[the_id] = build_obj
+            regions = self.do_flood_fill_for_all_color_mask(
+                growth_direction, all_color_mask, src_copy.shape, selected_area, stats
+            )
         if self.selection_grower_meta['region_build_mode'] == 'furthest_edge':
             if growth_direction == 'east':
                 cnts = cv2.findContours(all_color_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -337,7 +391,7 @@ class SelectionGrower:
     def capture_grid(self, selected_area, ocr_match_objs, cv2_image):
         new_areas = {}
         statistics = {}
-        for growth_direction in ['south', 'east']:
+        for growth_direction in ['north', 'south', 'east', 'west']:
             if self.selection_grower_meta['direction'] != growth_direction:
                 continue
             statistics[growth_direction] = {}
@@ -501,7 +555,6 @@ class SelectionGrower:
                 build_obj[key] = ocr_match_obj
         return build_obj
     
-    # FOR NOW THIS IS ONLY SUPPORTED FOR SOUTH AND WEST GRID CAPTURE
     def build_roi(self, direction, selected_area, cv2_image):
         top_left = bottom_right = (0, 0)
         width, height = cv2_image.shape[1], cv2_image.shape[0]
@@ -520,13 +573,31 @@ class SelectionGrower:
                end_coords[0] + int(self.selection_grower_meta['offsets']['east']),
                height
            ]
-        if direction == 'east': 
+        elif direction == 'north': 
+           top_left = [
+               start_coords[0] - int(self.selection_grower_meta['offsets']['west']),
+               0
+           ]
+           bottom_right = [
+               end_coords[0] + int(self.selection_grower_meta['offsets']['east']),
+               start_coords[1]
+           ]
+        elif direction == 'east': 
            top_left = [
                end_coords[0],
                start_coords[1] - int(self.selection_grower_meta['offsets']['north'])
            ]
            bottom_right = [
                width,
+               end_coords[1] + int(self.selection_grower_meta['offsets']['south'])
+           ]
+        elif direction == 'west': 
+           top_left = [
+               0,
+               start_coords[1] - int(self.selection_grower_meta['offsets']['north'])
+           ]
+           bottom_right = [
+               start_coords[0],
                end_coords[1] + int(self.selection_grower_meta['offsets']['south'])
            ]
 
