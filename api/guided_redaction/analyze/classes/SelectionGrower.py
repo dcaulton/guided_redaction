@@ -228,6 +228,11 @@ class SelectionGrower:
                         build_regions[r_key]['location'][0] + selected_area['location'][0] + selected_area['size'][0],
                         build_regions[r_key]['location'][1] + selected_area['location'][1]
                     ]
+                elif growth_direction == 'west': 
+                    build_regions[r_key]['location'] = [
+                        build_regions[r_key]['location'][0],
+                        build_regions[r_key]['location'][1] + selected_area['location'][1]
+                    ]
 
 
         return build_regions, statistics
@@ -244,7 +249,7 @@ class SelectionGrower:
         if growth_direction == 'north':
             start_point = (
                 math.floor(src_copy_shape[1] * .5),
-                src_copy_shape[0]
+                src_copy_shape[0] - 1
                 
             )
         elif growth_direction == 'south':
@@ -259,7 +264,7 @@ class SelectionGrower:
             )
         elif growth_direction == 'west':
             start_point = (
-                src_copy_shape[1],
+                src_copy_shape[1] - 1,
                 math.floor(src_copy_shape[0] * .5)
             )
 
@@ -314,9 +319,12 @@ class SelectionGrower:
                 stats['flood_fill'] = {}
             if 'source_location' not in stats:
                 stats['source_location'] = {}
+            if 'source_size' not in stats:
+                stats['source_size'] = {}
             if growth_direction not in stats['flood_fill']:
                 stats['flood_fill'][growth_direction] = img_string
                 stats['source_location'][growth_direction] = selected_area['location']
+                stats['source_size'][growth_direction] = selected_area['size']
         regions[the_id] = build_obj
         return regions
 

@@ -251,12 +251,17 @@ class ChartMaker:
 
         if 'source_location' in color_projection_stats and \
             direction in color_projection_stats['source_location'] and \
-            color_projection_stats['source_location'][direction]:
+            color_projection_stats['source_location'][direction] and \
+           'source_size' in color_projection_stats and \
+            direction in color_projection_stats['source_size'] and \
+            color_projection_stats['source_size'][direction]:
             self.draw_source_image(
                 color_projection_stats['source_location'][direction], 
+                color_projection_stats['source_size'][direction], 
                 mask_stats,
                 image_url, 
                 cv2_image, 
+                direction,
                 cur_y_start
             )
             cur_y_start += mask_image.shape[0] + 100
@@ -314,7 +319,7 @@ class ChartMaker:
             1 #lineType
         )
 
-    def draw_source_image(self, source_location, mask_stats, image_url, cv2_image, y_start):
+    def draw_source_image(self, source_location, source_size, mask_stats, image_url, cv2_image, direction, y_start):
         one_mask = self.get_mask_image(mask_stats, 'all')
         if type(one_mask) == type(None):
             return
@@ -327,10 +332,31 @@ class ChartMaker:
         x_start = 100
         x_end = x_start + w
 
+        if direction == 'north':
+            source_start_x = source_location[0]
+            source_start_y = 0
+            source_end_x = source_start_x + w
+            source_end_y = source_start_y + h
+        elif direction == 'south': 
+            source_start_x = source_location[0] + source_size[0]
+            source_start_y = source_location[1] + source_size[1]
+            source_end_x = source_start_x + w
+            source_end_y = source_start_y + h
+        elif direction == 'east': 
+            source_start_x = source_location[0] + source_size[0]
+            source_start_y = source_location[1]
+            source_end_x = source_start_x + w
+            source_end_y = source_start_y + h
+        elif direction == 'west': 
+            source_start_x = 0
+            source_start_y = source_location[1]
+            source_end_x = source_start_x + w
+            source_end_y = source_start_y + h
+
         cv2_image[y_start:y_end,x_start:x_end] = \
             image_cv2[
-                source_location[1]:source_location[1]+h, 
-                source_location[0]:source_location[0]+w
+                source_start_y:source_end_y,
+                source_start_x:source_end_x
             ]
 
         word_start = (3,y_start+20)
