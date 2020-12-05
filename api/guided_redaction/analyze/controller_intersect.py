@@ -5,6 +5,7 @@ import numpy as np
 import requests
 import json
 import random
+import copy
 
 from guided_redaction.jobs.models import Job
 
@@ -82,11 +83,12 @@ class IntersectController():
         if 'movies' not in response_data:
             self.build_masks = {}
         resp_movies = response_data['movies']
-        for movie_url in self.build_masks:
+        bm_copy = copy.deepcopy(self.build_masks)
+        for movie_url in bm_copy:
             if movie_url not in response_data['movies']:
                 del self.build_masks[movie_url]
             else:
-                for frameset_hash in self.build_masks[movie_url]['framesets']:
+                for frameset_hash in bm_copy[movie_url]['framesets']:
                     if frameset_hash not in response_data['movies'][movie_url]['framesets']:
                         del self.build_masks[movie_url]['framesets'][frameset_hash]
 
@@ -100,15 +102,20 @@ class IntersectController():
                     start[0] + match_object['size'][0],
                     start[1] + match_object['size'][1]
                 ]
-            if 'start' in match_object:
+            elif 'start' in match_object:
                 start = match_object['start']
                 end = match_object['end']
-            cv2.rectangle(
-                mask,
-                tuple(start),
-                tuple(end),
-                255,
-                -1
-            )
+            start = [int(start[0]), int(start[1])]
+            end = [int(end[0]), int(end[1])]
+
+            if start and end:
+                print('start and end are {} - {}'.format(start, end))
+                cv2.rectangle(
+                    mask,
+                    tuple(start),
+                    tuple(end),
+                    255,
+                    -1
+                )
         return mask
 

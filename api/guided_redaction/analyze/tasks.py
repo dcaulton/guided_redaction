@@ -1252,4 +1252,9 @@ def get_training_image_urls(hog_rule):
 @shared_task
 def intersect(job_uuid):
     generic_worker_call(job_uuid, 'intersect', AnalyzeViewSetIntersect)
+    job = Job.objects.get(pk=job_uuid)
+    pipeline = get_pipeline_for_job(job.parent)
+    if pipeline:
+        worker = PipelinesViewSetDispatch()
+        worker.handle_job_finished(job, pipeline)
 

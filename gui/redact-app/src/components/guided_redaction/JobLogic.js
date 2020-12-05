@@ -1170,7 +1170,7 @@ class JobLogic extends React.Component {
     })
   }
 
-  static async restartJob(job_id, getUrl, fetch_func, buildJsonHeaders, when_done=(()=>{})) {
+  static async restartPipelineJob(job_id, getUrl, fetch_func, buildJsonHeaders, when_done=(()=>{})) {
     await fetch_func(getUrl('restart_pipeline_job_url'), {
       method: 'POST',
       headers: buildJsonHeaders(),
