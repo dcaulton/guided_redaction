@@ -5,6 +5,7 @@ import InsightsPanel from './InsightsPanel';
 import PipelinePanel from './PipelinePanel';
 import Workflows from './Workflows';
 import JobLogic from './JobLogic';
+import MovieUtils from './MovieUtils';
 import Workbooks from './Workbooks';
 import ComposePanel from './ComposePanel';
 import {getUrlVars} from './redact_utils.js'
@@ -145,7 +146,7 @@ class RedactApplication extends React.Component {
     }
 
     this.runExportTask=this.runExportTask.bind(this)
-    this.handleMergeFramesets=this.handleMergeFramesets.bind(this)
+    this.handleMergeFramesetsWrapper=this.handleMergeFramesetsWrapper.bind(this)
     this.setImageScale=this.setImageScale.bind(this)
     this.doPing=this.doPing.bind(this)
     this.getUrl=this.getUrl.bind(this)
@@ -173,7 +174,7 @@ class RedactApplication extends React.Component {
     this.getCurrentFrames=this.getCurrentFrames.bind(this)
     this.setActiveMovie=this.setActiveMovie.bind(this)
     this.getRedactedMovieUrl=this.getRedactedMovieUrl.bind(this)
-    this.clearCurrentFramesetChanges=this.clearCurrentFramesetChanges.bind(this)
+    this.clearCurrentFramesetChangesWrapper=this.clearCurrentFramesetChangesWrapper.bind(this)
     this.getFramesetHashesInOrder=this.getFramesetHashesInOrder.bind(this)
     this.getImageFromFrameset=this.getImageFromFrameset.bind(this)
     this.getRedactedImageFromFrameset=this.getRedactedImageFromFrameset.bind(this)
@@ -182,7 +183,7 @@ class RedactApplication extends React.Component {
     this.updateSingleImageMovie=this.updateSingleImageMovie.bind(this)
     this.postMakeUrlCall=this.postMakeUrlCall.bind(this)
     this.establishNewMovie=this.establishNewMovie.bind(this)
-    this.establishNewEmptyMovie=this.establishNewEmptyMovie.bind(this)
+    this.establishNewEmptyMovieWrapper=this.establishNewEmptyMovieWrapper.bind(this)
     this.setCampaignMovies=this.setCampaignMovies.bind(this)
     this.addImageToMovie=this.addImageToMovie.bind(this)
     this.setIllustrateParameters=this.setIllustrateParameters.bind(this)
@@ -218,8 +219,8 @@ class RedactApplication extends React.Component {
     this.buildWorkflowBottomNav=this.buildWorkflowBottomNav.bind(this)
     this.addMovieAndSetActive=this.addMovieAndSetActive.bind(this)
     this.saveStateCheckpoint=this.saveStateCheckpoint.bind(this)
-    this.removeFramesetHash=this.removeFramesetHash.bind(this)
-    this.truncateAtFramesetHash=this.truncateAtFramesetHash.bind(this)
+    this.removeFramesetHashWrapper=this.removeFramesetHashWrapper.bind(this)
+    this.truncateAtFramesetHashWrapper=this.truncateAtFramesetHashWrapper.bind(this)
     this.getPipelineJobStatus=this.getPipelineJobStatus.bind(this)
     this.postImportArchiveCall=this.postImportArchiveCall.bind(this)
     this.getColorAtPixel=this.getColorAtPixel.bind(this)
@@ -292,114 +293,25 @@ class RedactApplication extends React.Component {
     })
   }
 
-  truncateAtFramesetHash(frameset_hash) {
-    const hashes = this.getFramesetHashesInOrder()
-    const movie_url = this.state.movie_url
-    if (!hashes.includes(frameset_hash)) {
-      return
-    }
-    const hash_ind = hashes.indexOf(frameset_hash)
-    const trunc_hashes = hashes.slice(0, hash_ind)
-    const hashes_to_delete = hashes.slice(hash_ind)
-
-    let deepCopyMovies = JSON.parse(JSON.stringify(this.state.movies))
-    let deepCopyMovie = JSON.parse(JSON.stringify(this.state.movies[movie_url]))
-    if (!Object.keys(deepCopyMovie['framesets']).includes(frameset_hash)) {
-      return
-    }
-    const movie = this.state.movies[movie_url]
-    let build_frames = []
-    let build_framesets = {}
-    for (let i=0; i < trunc_hashes.length; i++) {
-      const hash = trunc_hashes[i]
-      const frameset = movie['framesets'][hash]
-      build_framesets[hash] = frameset
-
-      for (let j=0; j < frameset['images'].length; j++) {
-        build_frames.push(frameset['images'][j])
-      }
-      build_frames.concat(frameset['images'])
-    }
-    build_frames.sort()
-
-    deepCopyMovie['frames'] = build_frames
-    deepCopyMovie['framesets'] = build_framesets
-    deepCopyMovies[movie_url] = deepCopyMovie
-
-
-    let deepCopyTier1Matches = JSON.parse(JSON.stringify(this.state.tier_1_matches))
-    for (let i=0; i < Object.keys(this.state.tier_1_matches).length; i++) {
-      const scanner_type = Object.keys(this.state.tier_1_matches)[i]
-      for (let j=0; j < Object.keys(this.state.tier_1_matches[scanner_type]).length; j++) {
-        const scanner_id = Object.keys(this.state.tier_1_matches[scanner_type])[j]
-        const match_obj = this.state.tier_1_matches[scanner_type][scanner_id]
-        if (
-          Object.keys(match_obj).includes('movies') &&
-          Object.keys(match_obj['movies']).includes(movie_url) &&
-          Object.keys(match_obj['movies'][movie_url]).includes('framesets')
-        ) {
-
-          for (let k=0; k < hashes_to_delete.length; k++) {
-            const fs_hash = hashes_to_delete[k]
-            if (Object.keys(match_obj['movies'][movie_url]['framesets']).includes(fs_hash)) {
-              delete deepCopyTier1Matches[scanner_type][scanner_id]['movies'][movie_url]['framesets'][fs_hash]
-            }
-          }
-        }
-      }
-    }
-
-    this.setGlobalStateVar({
-      'movies': deepCopyMovies,
-      'tier_1_matches': deepCopyTier1Matches,
-    })
+  truncateAtFramesetHashWrapper(frameset_hash) {
+    MovieUtils.truncateAtFramesetHash(
+      frameset_hash,
+      this.getFramesetHashesInOrder,
+      this.state.movie_url,
+      this.state.movies,
+      this.state.tier_1_matches,
+      this.setGlobalStateVar
+    )
   }
 
-  removeFramesetHash(frameset_hash) {
-    const movie_url = this.state.movie_url
-    let deepCopyMovies = JSON.parse(JSON.stringify(this.state.movies))
-    let deepCopyMovie = JSON.parse(JSON.stringify(this.state.movies[movie_url]))
-    if (!Object.keys(deepCopyMovie['framesets']).includes(frameset_hash)) {
-      return
-    }
-    const frameset = deepCopyMovie['framesets'][frameset_hash]
-    let build_frames = []
-    for (let i=0; i < deepCopyMovie['frames'].length; i++) {
-      const frame_url = deepCopyMovie['frames'][i]
-      if (!frameset['images'].includes(frame_url)) {
-        build_frames.push(frame_url)
-      }
-    }
-    deepCopyMovie['frames'] = build_frames
-    delete deepCopyMovie['framesets'][frameset_hash]
-    if (Object.keys(deepCopyMovie).includes('frameset_hashes_in_order')) {
-      delete deepCopyMovie['frameset_hashes_in_order']
-    }
-    deepCopyMovies[movie_url] = deepCopyMovie
-
-
-    let deepCopyTier1Matches = JSON.parse(JSON.stringify(this.state.tier_1_matches))
-    for (let i=0; i < Object.keys(this.state.tier_1_matches).length; i++) {
-      const scanner_type = Object.keys(this.state.tier_1_matches)[i]
-      for (let j=0; j < Object.keys(this.state.tier_1_matches[scanner_type]).length; j++) {
-        const scanner_id = Object.keys(this.state.tier_1_matches[scanner_type])[j]
-        const match_obj = this.state.tier_1_matches[scanner_type][scanner_id]
-        if (
-          Object.keys(match_obj).includes('movies') &&
-          Object.keys(match_obj['movies']).includes(movie_url) &&
-          Object.keys(match_obj['movies'][movie_url]).includes('framesets') &&
-          Object.keys(match_obj['movies'][movie_url]['framesets']).includes(frameset_hash) 
-        ) {
-          delete deepCopyTier1Matches[scanner_type][scanner_id]['movies'][movie_url]['framesets'][frameset_hash]
-        }
-      }
-    }
-
-    this.setGlobalStateVar({
-      'movies': deepCopyMovies,
-      'tier_1_matches': deepCopyTier1Matches,
-    })
-
+  removeFramesetHashWrapper(frameset_hash) {
+    MovieUtils.removeFramesetHash(
+      frameset_hash,
+      this.state.movie_url,
+      this.state.movies,
+      this.state.tier_1_matches,
+      this.setGlobalStateVar
+    )
   }
 
   buildOcrRedactPipelineObject(ocr_rule, pipeline_name) {
@@ -534,40 +446,19 @@ class RedactApplication extends React.Component {
   }
 
   clearCurrentIllustrations() {
-    if (!this.state.movie_url || !this.state.movies) {
-      return
-    }
-    let deepCopyMovies = JSON.parse(JSON.stringify(this.state.movies))
-    let deepCopyMovie = JSON.parse(JSON.stringify(this.state.movies[this.state.movie_url]))
-
-    for (let i=0; i < Object.keys(deepCopyMovie.framesets).length; i++) {
-      const frameset_hash = Object.keys(deepCopyMovie.framesets)[i]
-      if (Object.keys(deepCopyMovie.framesets[frameset_hash]).includes('illustrated_image')) {
-        delete deepCopyMovie.framesets[frameset_hash].illustrated_image
-      }
-    }
-    deepCopyMovies[this.state.movie_url] = deepCopyMovie
-    this.setGlobalStateVar('movies', deepCopyMovies)
+    MovieUtils.clearCurrentIllustrations(
+      this.state.movie_url,
+      this.state.movies,
+      this.setGlobalStateVar
+    )
   }
 
   clearCurrentRedactions() {
-    if (!this.state.movie_url || !this.state.movies) {
-      return
-    }
-    let deepCopyMovies = JSON.parse(JSON.stringify(this.state.movies))
-    let deepCopyMovie = JSON.parse(JSON.stringify(this.state.movies[this.state.movie_url]))
-
-    for (let i=0; i < Object.keys(deepCopyMovie.framesets).length; i++) {
-      const frameset_hash = Object.keys(deepCopyMovie.framesets)[i]
-      if (Object.keys(deepCopyMovie.framesets[frameset_hash]).includes('redacted_image')) {
-        delete deepCopyMovie.framesets[frameset_hash].redacted_image
-      }
-      if (Object.keys(deepCopyMovie.framesets[frameset_hash]).includes('areas_to_redact')) {
-        delete deepCopyMovie.framesets[frameset_hash].areas_to_redact
-      }
-    }
-    deepCopyMovies[this.state.movie_url] = deepCopyMovie
-    this.setGlobalStateVar('movies', deepCopyMovies)
+    MovieUtils.clearCurrentRedactions(
+      this.state.movie_url,
+      this.state.movies,
+      this.setGlobalStateVar
+    )
   }
 
   addWorkflowCallbacks(the_dict, when_done=(()=>{})) {
@@ -860,31 +751,15 @@ class RedactApplication extends React.Component {
     }
   }
 
-  establishNewEmptyMovie(new_movie_url='whatever', make_active=true, when_done=(()=>{})) {
-    this.setGlobalStateVar('movies', {})
-    let new_movie = {
-      frames: [],
-      framesets: {},
-    }
-    let deepCopyMovies= JSON.parse(JSON.stringify(this.state.movies))
-    deepCopyMovies[new_movie_url] = new_movie
-    if (make_active) {
-      this.setState(
-        {
-          movie_url: new_movie_url,
-          movies: deepCopyMovies,
-        },
-        when_done()
-      )
-    } else {
-      this.setState(
-        {
-          movies: deepCopyMovies,
-        },
-        when_done(new_movie)
-      )
-    }
-    this.addToCampaignMovies([new_movie_url])
+  establishNewEmptyMovieWrapper(new_movie_url='whatever', make_active=true, when_done=(()=>{})) {
+    MovieUtils.establishNewEmptyMovie(
+      new_movie_url,
+      make_active,
+      when_done,
+      this.setGlobalStateVar,
+      this.state.movies,
+      this.addToCampaignMovies
+    )
   }
 
   addToCampaignMovies(movie_urls) {
@@ -1235,18 +1110,15 @@ class RedactApplication extends React.Component {
     this.setGlobalStateVar('movies', deepCopyMovies)
   }
 
-  clearCurrentFramesetChanges(when_done=(()=>{})) {
-    const the_hash = this.getFramesetHashForImageUrl(this.getImageUrl())
-    let deepCopyMovies= JSON.parse(JSON.stringify(this.state.movies))
-    if (Object.keys(deepCopyMovies).includes(this.state.movie_url)) {
-      if (Object.keys(deepCopyMovies[this.state.movie_url]['framesets']).includes(the_hash)) {
-        delete deepCopyMovies[this.state.movie_url]['framesets'][the_hash]['areas_to_redact']
-        delete deepCopyMovies[this.state.movie_url]['framesets'][the_hash]['redacted_image']
-        delete deepCopyMovies[this.state.movie_url]['framesets'][the_hash]['illustrated_image']
-        deepCopyMovies[this.state.movie_url]['framesets'][the_hash]['areas_to_redact'] = []
-        this.setGlobalStateVar('movies', deepCopyMovies)
-      }
-    }
+  clearCurrentFramesetChangesWrapper(when_done=(()=>{})) {
+    MovieUtils.clearCurrentFramesetChanges(
+      when_done,
+      this.getFramesetHashForImageUrl,
+      this.getImageUrl,
+      this.state.movies,
+      this.state.movie_url,
+      this.setGlobalStateVar
+    )
   }
 
   getRedactedMovieUrl() {
@@ -2073,27 +1945,15 @@ class RedactApplication extends React.Component {
     this.setGlobalStateVar('movies', deepCopyMovies)
   }
 
-  handleMergeFramesets = (target_hash, source_hash) => {
-    let deepCopyFramesets = JSON.parse(JSON.stringify(this.getCurrentFramesets()))
-    const source_frameset = deepCopyFramesets[source_hash]
-    let new_target_frameset = deepCopyFramesets[target_hash]
-    let new_target_images = new_target_frameset['images'].concat(source_frameset['images'])
-    if (new_target_frameset['areas_to_redact']) {
-      if (source_frameset['areas_to_redact']) {
-        let new_a2r = new_target_frameset['areas_to_redact'].concat(source_frameset['areas_to_redact'])
-        new_target_frameset['areas_to_redact'] = new_a2r
-      }
-    } else if (source_frameset['areas_to_redact']) {
-      new_target_frameset['areas_to_redact'] = source_frameset['areas_to_redact']
-    }
-    new_target_frameset['images'] = new_target_images
-    deepCopyFramesets[target_hash] = new_target_frameset
-    delete deepCopyFramesets[source_hash]
-    let deepCopyMovies = JSON.parse(JSON.stringify(this.state.movies))
-    let cur_movie = deepCopyMovies[this.state.movie_url]
-    cur_movie['framesets'] = deepCopyFramesets
-    deepCopyMovies[this.state.movie_url] = cur_movie
-    this.setGlobalStateVar('movies', deepCopyMovies)
+  handleMergeFramesetsWrapper(target_hash, source_hash) {
+    MovieUtils.handleMergeFramesets(
+      target_hash,
+      source_hash,
+      this.getCurrentFramesets,
+      this.state.movies,
+      this.state.movie_url,
+      this.setGlobalStateVar
+    )
   }
 
   getRedactionFromFrameset = (frameset_hash) => {
@@ -2343,7 +2203,7 @@ class RedactApplication extends React.Component {
                 getImageFromFrameset={this.getImageFromFrameset}
                 getRedactedImageFromFrameset={this.getRedactedImageFromFrameset}
                 getFramesetHashForImageUrl={this.getFramesetHashForImageUrl}
-                handleMergeFramesets={this.handleMergeFramesets}
+                handleMergeFramesets={this.handleMergeFramesetsWrapper}
                 movies={this.state.movies}
                 frameset_discriminator={this.state.frameset_discriminator}
                 getRedactedMovieUrl={this.getRedactedMovieUrl}
@@ -2363,7 +2223,7 @@ class RedactApplication extends React.Component {
                 image_scale={this.state.image_scale}
                 getImageUrl={this.getImageUrl}
                 active_frameset_hash={this.state.frameset_hash}
-                clearCurrentFramesetChanges={this.clearCurrentFramesetChanges}
+                clearCurrentFramesetChanges={this.clearCurrentFramesetChangesWrapper}
                 runTemplateRedactPipelineJob={this.runTemplateRedactPipelineJob}
                 runOcrRedactPipelineJob={this.runOcrRedactPipelineJob}
                 cropImage={this.cropImage}
@@ -2371,10 +2231,10 @@ class RedactApplication extends React.Component {
                 toggleShowVisibility={this.toggleShowVisibility}
                 visibilityFlags={this.state.visibilityFlags}
                 attached_job={this.state.attached_job}
-                establishNewEmptyMovie={this.establishNewEmptyMovie}
+                establishNewEmptyMovie={this.establishNewEmptyMovieWrapper}
                 attachToJob={this.attachToJobWrapper}
-                removeFramesetHash={this.removeFramesetHash}
-                truncateAtFramesetHash={this.truncateAtFramesetHash}
+                removeFramesetHash={this.removeFramesetHashWrapper}
+                truncateAtFramesetHash={this.truncateAtFramesetHashWrapper}
               />
             </Route>
             <Route path='/redact/insights'>
@@ -2473,7 +2333,7 @@ class RedactApplication extends React.Component {
               <ComposePanel 
                 setGlobalStateVar={this.setGlobalStateVar}
                 movies={this.state.movies}
-                establishNewEmptyMovie={this.establishNewEmptyMovie}
+                establishNewEmptyMovie={this.establishNewEmptyMovieWrapper}
                 addImageToMovie={this.addImageToMovie}
                 movie_url = {this.state.movie_url}
                 workflows = {this.state.workflows}
@@ -2500,7 +2360,7 @@ class RedactApplication extends React.Component {
                 templates={this.state.tier_1_scanners['template']}
                 workflow_callbacks={this.state.workflow_callbacks}
                 addWorkflowCallbacks={this.addWorkflowCallbacks}
-                clearCurrentFramesetChanges={this.clearCurrentFramesetChanges}
+                clearCurrentFramesetChanges={this.clearCurrentFramesetChangesWrapper}
                 redact_rules={this.state.redact_rules}
                 current_ids={this.state.current_ids}
                 cropImage={this.cropImage}
