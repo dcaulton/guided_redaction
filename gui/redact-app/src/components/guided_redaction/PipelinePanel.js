@@ -193,7 +193,7 @@ class PipelinePanel extends React.Component {
     if (!this.state.restart_safety || statuses_needing_restart.includes(status_obj['status'])) {
       let restart_button = ''
       if (statuses_needing_restart.includes(status_obj['status'])) {
-      if (parseInt(status_obj['minutes_since_last_updated']) > 10) {
+      if (parseInt(status_obj['minutes_since_last_updated']) > 1) {
         restart_button = (
           <div className='d-inline'>
             <div className='d-inline ml-5 font-weight-italic'>

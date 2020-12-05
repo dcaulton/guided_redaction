@@ -124,20 +124,21 @@ class TemplateController:
                     (0, 0, 0),
                     -1,
                 )
-                cv2.rectangle(
-                    target_image,
-                    (0,0),
-                    (width, start[1]),
-                    (0, 0, 0),
-                    -1,
-                )
-                cv2.rectangle(
-                    target_image,
-                    (start[0],end[1]),
-                    (end[0], height),
-                    (0, 0, 0),
-                    -1,
-                )
+                if len(start) > 1 and type(start[1]) == int:
+                    cv2.rectangle(
+                        target_image,
+                        (0,0),
+                        (width, start[1]),
+                        (0, 0, 0),
+                        -1,
+                    )
+                    cv2.rectangle(
+                        target_image,
+                        (start[0],end[1]),
+                        (end[0], height),
+                        (0, 0, 0),
+                        -1,
+                    )
                 return target_image
         return target_image
 

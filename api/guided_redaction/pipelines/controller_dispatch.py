@@ -218,6 +218,8 @@ class DispatchController:
             return self.build_noop_job(content, node, parent_job, previous_job)
         elif node['type'] == 'pipeline':
             return self.build_pipeline_job(content, node, parent_job, previous_job)
+        elif node['type'] == 'intersect':
+            return self.build_intersect_job(content, node, parent_job)
         else:
             raise Exception('UNRECOGNIZED PIPELINE JOB TYPE: {}'.format(node['type']))
 
@@ -285,6 +287,35 @@ class DispatchController:
             description='t1 sum for pipeline',
             app='pipeline',
             operation='t1_sum',
+            sequence=0,
+            request_data=json.dumps(build_request_data),
+            parent=parent_job,
+        )
+        job.save()
+        Attribute(
+            name='node_id',
+            value=node['id'],
+            job=job,
+        ).save()
+        return job
+
+    def build_intersect_job(self, content, node, parent_job):
+        input_node_ids = []
+        if 'intersect_feeds' in content and node['id'] in content['intersect_feeds']:
+            input_node_ids = content['intersect_feeds'][node['id']]
+        jobs = []
+        for node_id in input_node_ids:
+            job = get_job_for_node(node_id, parent_job)
+            jobs.append(str(job.id))
+
+        build_request_data = {
+            'job_ids': jobs,
+        }
+        job = Job(
+            status='created',
+            description='intersect for pipeline',
+            app='analyze',
+            operation='intersect',
             sequence=0,
             request_data=json.dumps(build_request_data),
             parent=parent_job,

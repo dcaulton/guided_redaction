@@ -206,6 +206,12 @@ class PipelineControls extends React.Component {
       attributes: {},
       steps: [],
       movie_urls: [],
+      edges: {},
+      addends: {},
+      minuends: {},
+      subtrahends: {},
+      intersect_feeds: {},
+      redact_rule_edges: {},
     })
   }
 
