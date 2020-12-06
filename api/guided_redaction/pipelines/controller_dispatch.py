@@ -580,17 +580,20 @@ class DispatchController:
         if parent_job.request_data:
             parent_job_request_data = json.loads(parent_job.request_data)
             if 'movies' in parent_job_request_data:
-                source_movies = parent_job_request_data['movies']
-        if 'movies' in content and not source_movies:
-            source_movies = parent_request_data['movies']
+                request_movies = parent_job_request_data['movies']
+                if 'source' in request_movies:
+                    # this is true where we are passing in t1 results to a pipeline, along
+                    #   with source movies (the use parsed movies checkbox on the pipeline controls)
+                    source_movies = request_movies['source']
 
         if previous_job:
             previous_result = json.loads(previous_job.response_data)
             build_movies = previous_result['movies']
-            if source_movies:
+            if source_movies and 'source' not in build_movies:
                 build_movies['source'] = source_movies
         else:
-            build_movies = source_movies
+            if parent_job_request_data and 'movies' in parent_job_request_data:
+                build_movies = parent_job_request_data['movies']
 
         build_request_data = {
             'movies': build_movies,
