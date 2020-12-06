@@ -361,6 +361,85 @@ class SelectionGrower:
         regions[the_id] = build_obj
         return regions
 
+    def do_furthest_edge_for_all_color_mask(
+            self,
+            growth_direction, 
+            all_color_mask, 
+            src_shape, 
+            selected_area, 
+            stats
+    ):
+        regions = {}
+        cnts = cv2.findContours(all_color_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        cnts = imutils.grab_contours(cnts)
+        furthest = {
+            'north': src_shape[0],
+            'south': 0,
+            'east': 0,
+            'west': src_shape[1],
+        }
+        for cnt in cnts:
+            if type(cnt) != type(None) and \
+                cv2.contourArea(cnt) >= int(self.selection_grower_meta['min_num_pixels']):
+                (x, y, w, h) = cv2.boundingRect(cnt)
+                start = (x, y)
+                end = (x+w, y+h)
+                if growth_direction == 'north':
+                    if start[1] < furthest['north']:
+                        furthest['north'] = start[1]
+                elif growth_direction == 'south':
+                    if end[1] > furthest['south']:
+                        furthest['south'] = end[1]
+                elif growth_direction == 'east':
+                    if end[0] > furthest['east']:
+                        furthest['east'] = end[0]
+                elif growth_direction == 'west':
+                    if start[0] < furthest['west']:
+                        furthest['west'] = start[0]
+
+        the_id = 'selection_grower_' + str(random.randint(1, 999999999))
+        build_obj = {
+            'scanner_type': 'selection_grower',
+            'id': the_id,
+            'scale': 1,
+        }
+        if growth_direction == 'north' and furthest['north'] < src_shape[0]:
+            build_obj['location'] = [
+                0,
+                furthest['north']
+            ]
+            build_obj['size'] = [
+                selected_area['size'][0],
+                selected_area['location'][1] - furthest['north']
+            ]
+            regions[the_id] = build_obj
+        elif growth_direction == 'south' and furthest['south'] > 0:
+            build_obj['location'] = [
+                0,
+                0
+            ]
+            build_obj['size'] = [
+                selected_area['size'][0],
+                furthest['south']
+            ]
+            regions[the_id] = build_obj
+        elif growth_direction == 'east' and furthest['east'] > 0:
+            build_obj['location'] = [0, 0]
+            build_obj['size'] = [
+                furthest['east'],
+                selected_area['size'][1]
+            ]
+            regions[the_id] = build_obj
+        elif growth_direction == 'west' and furthest['west'] < src_shape[1]:
+            build_obj['location'] = [furthest['west'], 0]
+            build_obj['size'] = [
+                selected_area['location'][0] - furthest['west'],
+                selected_area['size'][1]
+            ]
+            regions[the_id] = build_obj
+
+        return regions
+
     def build_regions_from_mask(self, growth_direction, all_color_mask, src_copy, selected_area, stats):
         regions = {}
         if self.selection_grower_meta['region_build_mode'] == 'near_flood':
@@ -368,31 +447,9 @@ class SelectionGrower:
                 growth_direction, all_color_mask, src_copy.shape, selected_area, stats
             )
         if self.selection_grower_meta['region_build_mode'] == 'furthest_edge':
-            if growth_direction == 'east':
-                cnts = cv2.findContours(all_color_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-                cnts = imutils.grab_contours(cnts)
-
-                furthest_east = 0
-                furthest_south = 0
-                for cnt in cnts:
-                    if type(cnt) != type(None) and \
-                        cv2.contourArea(cnt) >= int(self.selection_grower_meta['min_num_pixels']):
-                        (box_x, box_y, box_w, box_h) = cv2.boundingRect(cnt)
-                        (x, y, w, h) = cv2.boundingRect(cnt)
-                        if x + w > furthest_east:
-                            furthest_east = x + w
-                        if y + h > furthest_south:
-                            furthest_south = y + h
-                if furthest_east > 0:
-                    the_id = 'selection_grower_' + str(random.randint(1, 999999999))
-                    build_obj = {
-                        'scanner_type': 'selection_grower',
-                        'id': the_id,
-                        'scale': 1,
-                        'location': (x, y),
-                        'size': (furthest_east-x, furthest_south-y),
-                    }
-                    regions[the_id] = build_obj
+            regions = self.do_furthest_edge_for_all_color_mask(
+                growth_direction, all_color_mask, src_copy.shape, selected_area, stats
+            )
         if self.selection_grower_meta['region_build_mode'] == 'contours':
             # this is an exception to how SG works.  I really want to have it return just one area - 
             #   the 'growth' of the selection.   But in this case it's broken down into several, each one
@@ -416,17 +473,6 @@ class SelectionGrower:
                         }
                         regions[the_id] = build_obj
 
-
-        # if region_build_mode == 'near_flood':
-        #   if any pixel on the edge towards the selected area is white, start with that point
-        #   do a flood fill from that point
-        #   take the far right edge of what comes back
-        # if region_build_mode == 'furthest_edge':
-        #   start from the right edge, still gotta figure this out exactly
-        # if region_build_mode == 'contours':
-        #   erode and blur all color_mask
-        #   take the contours on the result, 
-        #   return anything bigger than say 25 pixels of area
         return regions
 
     def capture_grid(self, selected_area, ocr_match_objs, cv2_image):

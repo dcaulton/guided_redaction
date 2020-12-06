@@ -246,6 +246,8 @@ class PipelineJobStatusController:
             return 'DIF'
         elif long_type == 'pipeline':
             return 'P'
+        elif long_type == 'intersect':
+            return 'IN'
         else:
             print('dont know about type {}'.format(long_type))
             return '?'
