@@ -27,11 +27,11 @@ class InsightsPanel extends React.Component {
     }
     this.tier_1_scanner_types = [
       'selected_area',
-      'ocr',
       'ocr_scene_analysis',
       'mesh_match',
       'template',
-      'selection_grower'
+      'selection_grower',
+      'ocr'
     ]
     this.setCurrentVideo=this.setCurrentVideo.bind(this)
     this.setInsightsImage=this.setInsightsImage.bind(this)

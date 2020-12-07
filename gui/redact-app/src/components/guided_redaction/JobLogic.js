@@ -1132,6 +1132,9 @@ class JobLogic extends React.Component {
   }
 
   static jobHasT1Output(job) {
+    if (job['response_data'] === 'None') {
+      return
+    }
     const rd = JSON.parse(job['response_data'])
     if (
       rd &&

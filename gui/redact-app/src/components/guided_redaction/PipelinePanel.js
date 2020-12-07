@@ -19,6 +19,7 @@ class PipelinePanel extends React.Component {
     this.saveJobResultData=this.saveJobResultData.bind(this)
     this.updateActiveJobStatus=this.updateActiveJobStatus.bind(this)
     this.restartJobCompleted=this.restartJobCompleted.bind(this)
+    this.refreshJobStatus=this.refreshJobStatus.bind(this)
   }
 
   loadRelevantPipelines(gp_resp_obj) {
@@ -39,6 +40,7 @@ class PipelinePanel extends React.Component {
     this.props.getPipelines(((resp)=>this.loadRelevantPipelines(resp)))
     this.props.getJobs()
     document.getElementById('pipeline_link').classList.add('active')
+    this.refreshJobStatus()
   }
    
   saveJobResultData(response) {
@@ -59,7 +61,10 @@ class PipelinePanel extends React.Component {
 
   refreshJobStatus() {
     let active_job = this.getActiveJob()
-    this.props.getPipelineJobStatus(active_job.id, this.updateActiveJobStatus)
+    if (active_job) {
+        this.props.getPipelineJobStatus(active_job.id, this.updateActiveJobStatus)
+    }
+    setTimeout((() => {this.refreshJobStatus()}), 30000)
   }
 
   viewJob(job_id) {
@@ -508,14 +513,15 @@ class PipelinePanel extends React.Component {
   }
 
   buildRefreshStatusButton() {
-    return (
-      <button
-        className='btn btn-primary p-1'
-        onClick={()=>this.refreshJobStatus()}
-      >
-        Refresh
-      </button>
-    )
+    return ''
+//    return (
+//      <button
+//        className='btn btn-primary p-1'
+//        onClick={()=>this.refreshJobStatus()}
+//      >
+//        Refresh
+//      </button>
+//    )
   }
 
   buildJobView() {

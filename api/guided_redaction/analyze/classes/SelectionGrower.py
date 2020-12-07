@@ -182,8 +182,8 @@ class SelectionGrower:
             statistics['color_masks'][growth_direction] = {}
             growth_roi = self.build_roi(growth_direction, selected_area, cv2_image)
             src_copy = src_copy[
-                growth_roi['start'][1]:growth_roi['end'][1],
-                growth_roi['start'][0]:growth_roi['end'][0]
+                int(growth_roi['start'][1]):int(growth_roi['end'][1]),
+                int(growth_roi['start'][0]):int(growth_roi['end'][0])
             ]
             if src_copy.shape[0] == 0 or src_copy.shape[1] == 0:
                 print('roi is zero pixels on once side, dropping out')

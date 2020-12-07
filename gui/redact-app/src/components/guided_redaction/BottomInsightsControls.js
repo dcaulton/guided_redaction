@@ -300,6 +300,7 @@ class BottomInsightsControls extends React.Component {
           deleteScanner={this.props.deleteScanner}
           importScanner={this.props.importScanner}
           saveScannerToDatabase={this.props.saveScannerToDatabase}
+          jobs={this.props.jobs}
         />
 
         <PipelineControls

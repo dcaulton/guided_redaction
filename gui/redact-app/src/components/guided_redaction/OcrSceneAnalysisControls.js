@@ -11,6 +11,7 @@ import {
   buildAttributesAddRow,
   buildRunButton,
   buildAttributesAsRows,
+  buildLabelAndDropdown,
   buildSkipCountDropdown,
 } from './SharedControls'
 
@@ -25,28 +26,25 @@ class OcrSceneAnalysisControls extends React.Component {
       scan_level: 'tier_1',
       debugging_output: false,
       apps: {},
+      ocr_job_id: '',
       attributes: {},
       unsaved_changes: false,
     }
     this.setLocalStateVar=this.setLocalStateVar.bind(this)
     this.getOcrSceneAnalysisRuleFromState=this.getOcrSceneAnalysisRuleFromState.bind(this)
-    this.setLocalStateVarNoWarning=this.setLocalStateVarNoWarning.bind(this)
   }
 
   setLocalStateVar(var_name, var_value, when_done=(()=>{})) {
-    this.setState({
-      [var_name]: var_value,
-      unsaved_changes: true,
-    },
-    when_done())
-  }
-
-  setLocalStateVarNoWarning(var_name, var_value, when_done=(()=>{})) {
-    this.setState({
-      [var_name]: var_value,
-      unsaved_changes: false,
-    },
-    when_done())
+    function anon_func() {
+      this.doSave()
+      when_done()
+    }
+    this.setState(
+      {
+        [var_name]: var_value,
+      },
+      anon_func
+    )
   }
 
   buildSaveButton() {
@@ -71,6 +69,7 @@ class OcrSceneAnalysisControls extends React.Component {
       scan_level: this.state.scan_level,
       debugging_output: this.state.debugging_output,
       apps: this.state.apps,
+      ocr_job_id: this.state.ocr_job_id,
       attributes: this.state.attributes,
     }
     return ocr_rule
@@ -162,6 +161,7 @@ class OcrSceneAnalysisControls extends React.Component {
         scan_level: osa['scan_level'],
         debugging_output: osa['debugging_output'],
         apps: osa['apps'],
+        ocr_job_id: osa['ocr_job_id'],
         attributes: osa['attributes'],
         unsaved_changes: false,
       })
@@ -185,6 +185,7 @@ class OcrSceneAnalysisControls extends React.Component {
       scan_level: 'tier_1',
       debugging_output: false,
       apps: {},
+      ocr_job_id: '',
       attributes: {},
       unsaved_changes: false,
     })
@@ -320,6 +321,29 @@ class OcrSceneAnalysisControls extends React.Component {
     )
   }
 
+  buildOcrMatchIdField() {
+    let ocr_matches = []
+    ocr_matches.push({'': ''})
+    for (let i=0; i < this.props.jobs.length; i++) {
+      const job = this.props.jobs[i]
+      if (job['operation'] !== 'scan_ocr_threaded') {
+        continue
+      }
+      const build_obj = {}
+      const desc = job['description'] + ' ' + job['id'].slice(0,3) + '...'
+      build_obj[job['id']] = desc
+      ocr_matches.push(build_obj)
+    }
+
+    return buildLabelAndDropdown(
+      ocr_matches,
+      'Ocr Job Id',
+      this.state.ocr_job_id,
+      'ocr_job_id',
+      ((value)=>{this.setLocalStateVar('ocr_job_id', value)})
+    )
+  }
+
   render() {
     if (!this.props.visibilityFlags['ocr_scene_analysis']) {
       return([])
@@ -333,6 +357,7 @@ class OcrSceneAnalysisControls extends React.Component {
     const save_button = this.buildSaveButton()
     const save_to_db_button = this.buildSaveToDatabaseButton()
     const name_field = this.buildNameField()
+    const ocr_job_id_field = this.buildOcrMatchIdField()
     const apps_field = this.buildAppsField()
     const skip_frames_field = this.buildSkipFramesField()
     const debugging_output_field = this.buildDebuggingOutputField()
@@ -376,6 +401,10 @@ class OcrSceneAnalysisControls extends React.Component {
 
                 <div className='row bg-light'>
                   {debugging_output_field}
+                </div>
+
+                <div className='row bg-light'>
+                  {ocr_job_id_field}
                 </div>
 
                 <div className='row bg-light'>
