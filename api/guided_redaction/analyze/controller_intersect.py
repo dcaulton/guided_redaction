@@ -109,7 +109,6 @@ class IntersectController():
             end = [int(end[0]), int(end[1])]
 
             if start and end:
-                print('start and end are {} - {}'.format(start, end))
                 cv2.rectangle(
                     mask,
                     tuple(start),

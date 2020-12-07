@@ -174,6 +174,8 @@ class SelectionGrower:
         build_regions = {}
         statistics = {'color_masks': {}}
         src_copy = cv2_image.copy()
+        if src_copy.shape[0] == 0 or src_copy.shape[1] == 0:
+            return
         for growth_direction in ['north', 'south', 'east', 'west']:
             if self.selection_grower_meta['direction'] != growth_direction:
                 continue
@@ -183,6 +185,9 @@ class SelectionGrower:
                 growth_roi['start'][1]:growth_roi['end'][1],
                 growth_roi['start'][0]:growth_roi['end'][0]
             ]
+            if src_copy.shape[0] == 0 or src_copy.shape[1] == 0:
+                print('roi is zero pixels on once side, dropping out')
+                return build_regions, statistics
 
             size = (
                 growth_roi['end'][1] - growth_roi['start'][1],

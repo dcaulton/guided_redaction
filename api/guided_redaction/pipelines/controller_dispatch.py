@@ -336,13 +336,19 @@ class DispatchController:
             data_in = previous_job.response_data
         pipeline = Pipeline.objects.get(pk=node['entity_id'])
 
+        source_movies = self.get_source_movies_from_parent_job(parent_job)
+
+        build_data = json.loads(data_in)
+        if source_movies and 'source' not in build_data['movies']:
+            build_data['movies']['source'] = source_movies
+
         job = Job(
             status='created',
             description='job for pipeline ' + pipeline.name,
             app='pipeline',
             operation='pipeline',
             sequence=0,
-            request_data=data_in,
+            request_data=json.dumps(build_data),
             parent=parent_job,
         )
         job.save()
@@ -558,6 +564,23 @@ class DispatchController:
         ).save()
         return job
 
+    def get_source_movies_from_parent_job(self, parent_job):
+        source_movies = {}
+        if parent_job.request_data:
+            parent_job_request_data = json.loads(parent_job.request_data)
+            if 'movies' in parent_job_request_data:
+                request_movies = parent_job_request_data['movies']
+                if 'source' in request_movies:
+                    # this is true where we are passing in t1 results to a pipeline, along
+                    #   with source movies (the use parsed movies checkbox on the pipeline controls)
+                    source_movies = request_movies['source']
+                else:
+                    first_movie_url = list(request_movies.keys())[0]
+                    movie = request_movies[first_movie_url]
+                    if 'frames' in movie and movie['frames']:
+                        source_movies = request_movies
+        return source_movies
+
     def build_tier_1_scanner_job(
         self, 
         scanner_type, 
@@ -569,22 +592,14 @@ class DispatchController:
         if parent_job.request_data_path and len(parent_job.request_data) < 3:
             parent_job.get_data_from_disk()
 
-        parent_request_data = json.loads(parent_job.request_data)
+        parent_job_request_data = json.loads(parent_job.request_data)
         desc_string = 'scan ' + scanner_type + ' threaded '
         build_scanners = {}
         scanner = content['node_metadata']['tier_1_scanners'][scanner_type][node['entity_id']]
         build_scanners[node['entity_id']] = scanner
         build_movies = {}
 
-        source_movies = {}
-        if parent_job.request_data:
-            parent_job_request_data = json.loads(parent_job.request_data)
-            if 'movies' in parent_job_request_data:
-                request_movies = parent_job_request_data['movies']
-                if 'source' in request_movies:
-                    # this is true where we are passing in t1 results to a pipeline, along
-                    #   with source movies (the use parsed movies checkbox on the pipeline controls)
-                    source_movies = request_movies['source']
+        source_movies = self.get_source_movies_from_parent_job(parent_job)
 
         if previous_job:
             previous_result = json.loads(previous_job.response_data)
