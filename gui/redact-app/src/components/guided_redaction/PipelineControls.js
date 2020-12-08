@@ -936,7 +936,8 @@ class NodeCard extends React.Component {
       return ''
     }
     const id_types = [
-      'template', 'selected_area', 'mesh_match', 'selection_grower', 'ocr', 'telemetry', 'ocr_scene_analysis'
+      'template', 'selected_area', 'mesh_match', 'selection_grower', 'ocr', 
+      'telemetry', 'ocr_scene_analysis', 'pipeline', 'intersect', 't1_diff', 'tt1_sum'
     ]
     let title = 'Minuends'
     if (ms_type === 'subtrahends') {
@@ -963,9 +964,7 @@ class NodeCard extends React.Component {
           if (node_id === this.props.node_id) {
             return '' 
           }
-          if (!id_types.includes(
-            this.props.node_metadata['node'][node_id]['type']
-          )) {
+          if (!id_types.includes(this.props.node_metadata['node'][node_id]['type'])) {
             return ''
           }
           let ms_selected = false
