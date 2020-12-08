@@ -83,11 +83,11 @@ class OcrSceneAnalysisController(T1Controller):
             
         frame_dimensions, cv2_image = self.get_image_and_dimensions(img_url)
         if frameset_has_ocr_output:
-            print('getting rtas from previous scan')
             raw_recognized_text_areas = []
             for area_key in frameset.keys():
-                # this feels a little icky, TODO: have ocr raw otuput be t1 compliant and use start/end
                 rta = frameset[area_key]
+                if 'scanner_type' not in rta or rta['scanner_type'] != 'ocr':
+                    continue
                 rta['start'] = rta['location']
                 rta['end'] = [
                   rta['location'][0] + rta['size'][0],
