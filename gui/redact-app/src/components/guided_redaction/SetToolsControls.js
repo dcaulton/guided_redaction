@@ -99,8 +99,6 @@ class SetToolsControls extends React.Component {
           </thead>
           <tbody>
           {this.props.jobs.map((job, index) => {
-            const disp_name = job.id + ' - ' + job.operation
-            const disp_operation = job.id + ' - ' + job.operation
             let job_checked = ''
             if (this.state.job_ids.includes(job.id)) {
               job_checked = 'checked'

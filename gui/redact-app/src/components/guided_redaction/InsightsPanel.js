@@ -59,6 +59,7 @@ class InsightsPanel extends React.Component {
     this.addInsightsCallback=this.addInsightsCallback.bind(this)
     this.getCurrentPipelineMatches=this.getCurrentPipelineMatches.bind(this)
     this.getCurrentIntersectMatches=this.getCurrentIntersectMatches.bind(this)
+    this.getCurrentSumMatches=this.getCurrentSumMatches.bind(this)
     this.getCurrentAreasToRedact=this.getCurrentAreasToRedact.bind(this)
     this.setScrubberToIndex=this.setScrubberToIndex.bind(this)
     this.getCurrentOcrSceneAnalysisMatches=this.getCurrentOcrSceneAnalysisMatches.bind(this)
@@ -133,9 +134,17 @@ class InsightsPanel extends React.Component {
   }
 
   getCurrentIntersectMatches() {
-    const ks = Object.keys(this.props.tier_1_matches['intersect'])
+    return this.getCurrentPseudoTier1NoCurrentIdMatches('intersect')
+  }
+
+  getCurrentSumMatches() {
+    return this.getCurrentPseudoTier1NoCurrentIdMatches('t1_sum')
+  }
+
+  getCurrentPseudoTier1NoCurrentIdMatches(scanner_type) {
+    const ks = Object.keys(this.props.tier_1_matches[scanner_type])
     if (ks.length > 0) {
-      const cur_matches = this.props.tier_1_matches['intersect'][ks[0]]  
+      const cur_matches = this.props.tier_1_matches[scanner_type][ks[0]]  
       if (Object.keys(cur_matches['movies']).includes(this.props.movie_url)) {
         const this_movies_matches = cur_matches['movies'][this.props.movie_url]
         const frameset_hash = this.props.getFramesetHashForImageUrl(this.state.insights_image)
@@ -1123,6 +1132,7 @@ class InsightsPanel extends React.Component {
               getCurrentOcrSceneAnalysisMatches={this.getCurrentOcrSceneAnalysisMatches}
               getCurrentPipelineMatches={this.getCurrentPipelineMatches}
               getCurrentIntersectMatches={this.getCurrentIntersectMatches}
+              getCurrentSumMatches={this.getCurrentSumMatches}
             />
           </div>
 

@@ -137,6 +137,7 @@ class RedactApplication extends React.Component {
         'selection_grower': {},
         'pipeline': {},
         'intersect': {},
+        't1_sum': {},
       },
       workflow_callbacks: {},
       workflows: {

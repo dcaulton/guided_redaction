@@ -9,6 +9,7 @@ class CanvasInsightsOverlay extends React.Component {
     this.mask_zone_color = '#B6B'
     this.pipeline_color = '#F44'
     this.intersect_color = '#DE7'
+    this.sum_color = '#7ED'
     this.selected_area_minimum_zone_color = '#3EA'
     this.selected_area_maximum_zone_color = '#A3A'
     this.selected_area_origin_location_color = '#40D'
@@ -157,6 +158,30 @@ class CanvasInsightsOverlay extends React.Component {
         match['location'][1] + match['size'][1]
       ]
       this.drawShadedRectangleWithLabel(match['location'], end, this.intersect_color, '')
+    }
+  }
+
+  drawSumMatches() {
+    const matches = this.props.getCurrentSumMatches()
+    if (!matches) {
+      return
+    }
+    for (let i=0; i < Object.keys(matches).length; i++) {
+      const key = Object.keys(matches)[i]
+      const match = matches[key]
+      let start = [0, 0]
+      let end = [0, 0]
+      if (Object.keys(match).includes('location')) {
+        start = match['location']
+        end = [
+          match['location'][0] + match['size'][0],
+          match['location'][1] + match['size'][1]
+        ]
+      } else if (Object.keys(match).includes('start')) {
+        start = match['start']
+        end = match['end']
+      }
+      this.drawShadedRectangleWithLabel(start, end, this.sum_color, '')
     }
   }
 
@@ -461,6 +486,7 @@ class CanvasInsightsOverlay extends React.Component {
     this.drawOsaMatches()
     this.drawPipelineMatches()
     this.drawIntersectMatches()
+    this.drawSumMatches()
     this.drawAreasToRedact()
     this.drawSelectionGrowerZones()
   }
@@ -487,6 +513,7 @@ class CanvasInsightsOverlay extends React.Component {
     this.drawOsaMatches()
     this.drawPipelineMatches()
     this.drawIntersectMatches()
+    this.drawSumMatches()
     this.drawAreasToRedact()
     this.drawSelectionGrowerZones()
   }

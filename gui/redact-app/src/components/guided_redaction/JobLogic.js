@@ -1097,6 +1097,7 @@ class JobLogic extends React.Component {
         )
 			} else if (
         (job.app === 'pipeline' && job.operation === 'pipeline') ||
+        (job.app === 'pipeline' && job.operation === 't1_sum') ||
 			  (job.app === 'analyze' && job.operation === 'intersect') 
       ) {
           if (this.jobHasT1Output(job)) {
