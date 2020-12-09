@@ -315,12 +315,15 @@ class JobLogic extends React.Component {
       getGlobalStateVar
     )
 
-    const response_data = JSON.parse(job.response_data)
     const request_data = JSON.parse(job.request_data)
+    if (request_data['scan_level'] === 'tier_2') {
+      this.loadTier2RedactData(job, request_data, resp_obj, setGlobalStateVar)
+    } 
+  }
 
-    if (request_data['scan_level'] === 'tier_1') {
-      return
-    }
+  loadTier2RedactData(job, request_data, resp_obj, setGlobalStateVar) {
+    const response_data = JSON.parse(job.response_data)
+
     const movie_url = resp_obj['movie_url']
     let deepCopyMovies = resp_obj['deepCopyMovies']
 
@@ -350,6 +353,7 @@ class JobLogic extends React.Component {
         movie_url: movie_url,
       })
     }
+
   }
 
   static loadTemplateResults(
@@ -365,46 +369,10 @@ class JobLogic extends React.Component {
       getGlobalStateVar
     )
 
-    const response_data = JSON.parse(job.response_data)
     const request_data = JSON.parse(job.request_data)
-
-    if (request_data['scan_level'] === 'tier_1') {
-      return
-    }
-    let movie_url = resp_obj['movie_url']
-    let deepCopyMovies = resp_obj['deepCopyMovies']
-
-    let something_changed = false
-    for (let i=0; i < Object.keys(response_data['movies']).length; i++) {
-      movie_url = Object.keys(response_data['movies'])[i]
-      for (let j = 0; j < Object.keys(response_data['movies'][movie_url]['framesets']).length; j++) {
-        const frameset_hash = Object.keys(response_data['movies'][movie_url]['framesets'])[j]
-        const frameset = response_data['movies'][movie_url]['framesets'][frameset_hash]
-        let deepCopyFrameset = deepCopyMovies[movie_url]['framesets'][frameset_hash]
-        if (!Object.keys(deepCopyFrameset).includes('areas_to_redact')) {
-          deepCopyFrameset['areas_to_redact'] = []
-        }
-        for (let k=0; k < Object.keys(frameset).length; k++) {
-          const anchor_id = Object.keys(frameset)[k]
-          const match_obj = frameset[anchor_id]
-          const area_to_redact = {
-            start: match_obj['start'],
-            end: match_obj['end'],
-            source: 'template',
-            id: anchor_id,
-          }
-          deepCopyFrameset['areas_to_redact'].push(area_to_redact)
-          something_changed = true
-        }
-      }
-    }
-
-    if (something_changed) {
-      setGlobalStateVar({
-        movies: deepCopyMovies,
-        movie_url: movie_url,
-      })
-    }
+    if (request_data['scan_level'] === 'tier_2') {
+      this.loadTier2RedactData(job, request_data, resp_obj, setGlobalStateVar)
+    } 
   }
 
   static loadScannersMoviesAndMatchesFromTier1(
@@ -568,47 +536,10 @@ class JobLogic extends React.Component {
       getGlobalStateVar
     )
 
-    const response_data = JSON.parse(job.response_data)
     const request_data = JSON.parse(job.request_data)
-
-    if (request_data['scan_level'] === 'tier_1') {
-      return
-    }
-    const movie_url = resp_obj['movie_url']
-    let deepCopyMovies = resp_obj['deepCopyMovies']
-    let something_changed = false
-    for (let i=0; i < Object.keys(response_data['movies']).length; i++) {
-      const movie_url = Object.keys(response_data['movies'])[i]
-      for (let j = 0; j < Object.keys(response_data['movies'][movie_url]['framesets']).length; j++) {
-        const frameset_hash = Object.keys(response_data['movies'][movie_url]['framesets'])[j]
-        const selected_areas = response_data['movies'][movie_url]['framesets'][frameset_hash]
-        for (let k=0; k < Object.keys(selected_areas).length; k++) {
-          const key = Object.keys(selected_areas)[k]
-          const selected_area = selected_areas[key]
-          const end_point = [
-            selected_area['location'][0]+selected_area['size'][0],
-            selected_area['location'][1]+selected_area['size'][1]
-          ]
-          const build_a2r = {
-            start: selected_area['location'],
-            end: end_point,
-            source: 'selected area: ' + request_data['id'],
-          }
-          if (!Object.keys(deepCopyMovies[movie_url]['framesets'][frameset_hash]).includes('areas_to_redact')) {
-            deepCopyMovies[movie_url]['framesets'][frameset_hash]['areas_to_redact'] = []
-          }
-          deepCopyMovies[movie_url]['framesets'][frameset_hash]['areas_to_redact'].push(build_a2r)
-          something_changed = true
-        }
-      }
-    }
-
-    if (something_changed) {
-      setGlobalStateVar({
-        movies: deepCopyMovies,
-        movie_url: movie_url,
-      })
-    }
+    if (request_data['scan_level'] === 'tier_2') {
+      this.loadTier2RedactData(job, request_data, resp_obj, setGlobalStateVar)
+    } 
   }
 
   static loadMoviesFromJob(job, when_done=(()=>{}), addMovieAndSetActive, getGlobalStateVar) {
