@@ -552,6 +552,18 @@ class InsightsPanel extends React.Component {
     return job_data
   }
 
+  buildT1SumData(extra_data) {
+    let job_data = {
+      request_data: {},
+    }
+    job_data['app'] = 'pipeline'
+    job_data['operation'] = 't1_sum'
+    job_data['request_data']['job_ids'] = extra_data['job_ids']
+    job_data['request_data']['mandatory_job_ids'] = extra_data['mandatory_job_ids']
+    job_data['description'] = 't1 sum of ' + extra_data['job_ids'].length.toString() + ' jobs'
+    return job_data
+  }
+
   buildGetTimestampJobData(scope, extra_data) {
     let job_data = {
       request_data: {},
@@ -625,6 +637,11 @@ class InsightsPanel extends React.Component {
       })
     } else if (job_string === 'intersect') {
       let job_data = this.buildIntersectData(extra_data)
+      this.props.submitJob({
+        job_data: job_data,
+      })
+    } else if (job_string === 't1_sum') {
+      let job_data = this.buildT1SumData(extra_data)
       this.props.submitJob({
         job_data: job_data,
       })

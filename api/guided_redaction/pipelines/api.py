@@ -122,9 +122,10 @@ class PipelineT1SumViewSet(viewsets.ViewSet):
         if not request_data.get("job_ids"):
             return self.error("job_ids is required", status_code=400)
         job_ids = request_data.get('job_ids')
+        mandatory_job_ids = request_data.get('mandatory_job_ids', [])
 
         worker = T1SumController()
-        build_movies = worker.build_t1_sum(job_ids)
+        build_movies = worker.build_t1_sum(job_ids, mandatory_job_ids)
 
         return Response({'movies': build_movies})
 

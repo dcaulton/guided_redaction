@@ -10,12 +10,15 @@ class SetToolsControls extends React.Component {
     this.state = {
       operation: '',
       job_ids: [],
+      mandatory_job_ids: [],
     }
   }
 
   buildOperationField(){
     const operations = [
       'intersect',
+      't1_sum',
+      't1_diff',
     ]
     return (
       <div>
@@ -64,40 +67,89 @@ class SetToolsControls extends React.Component {
   }
 
   buildJobsPicker() {
-    if (this.state.operation !== 'intersect') {
+    let use_mandatory = false
+    let title = 'Jobs'
+    if ((this.state.operation !== 'intersect')  &&
+       (this.state.operation !== 't1_sum')) {
       return ''
+    }
+    if (this.state.operation === 't1_sum') {
+      title = 'Addends'
+      use_mandatory = true
+    }
+    let mandatory_header_column = <td></td>
+    if (use_mandatory) {
+      mandatory_header_column = (
+        <td>mandatory?</td>
+      )
     }
     return (
       <div>
         <div className='h5'>
-          Jobs
+          {title}
         </div>
-        {this.props.jobs.map((job, index) => {
-          const disp_name = job.id + ' - ' + job.operation
-          let job_checked = ''
-          if (this.state.job_ids.includes(job.id)) {
-            job_checked = 'checked'
-          }
-          return (
-            <div className='row' key={index}>
+        <table className='table table-striped'>
+          <thead>
+            <tr className='font-weight-bold p-2'>
+              <td>select</td>
+              <td>job id</td>
+              <td>operation</td>
+              {mandatory_header_column}
+            </tr>
+          </thead>
+          <tbody>
+          {this.props.jobs.map((job, index) => {
+            const disp_name = job.id + ' - ' + job.operation
+            const disp_operation = job.id + ' - ' + job.operation
+            let job_checked = ''
+            if (this.state.job_ids.includes(job.id)) {
+              job_checked = 'checked'
+            }
+            let mandatory_column = <td></td>
+            if (use_mandatory) {
+              let mandatory_job_checked = ''
+              if (this.state.mandatory_job_ids.includes(job.id)) {
+                mandatory_job_checked = 'checked'
+              }
+              mandatory_column = (
+                <td>
+                  <input
+                    className='ml-2 mr-2 mt-1'
+                    checked={mandatory_job_checked}
+                    type='checkbox'
+                    onChange={() => this.toggleLocalChecked('mandatory_job_ids', job.id)}
+                  />
+                </td>
+              )
+            }
 
-              <div className='d-inline'>
-                <input
-                  className='ml-2 mr-2 mt-1'
-                  id={job.id}
-                  checked={job_checked}
-                  type='checkbox'
-                  onChange={() => this.toggleLocalChecked('job_ids', job.id)}
-                />
-              </div>
+            return (
+              <tr key={index}>
 
-              <div className='d-inline'>
-              {disp_name}
-              </div>
+                <td>
+                  <input
+                    className='ml-2 mr-2 mt-1'
+                    checked={job_checked}
+                    type='checkbox'
+                    onChange={() => this.toggleLocalChecked('job_ids', job.id)}
+                  />
+                </td>
 
-            </div>
-          )
-        })}
+                <td>
+                  {job.id}
+                </td>
+
+                <td>
+                  {job.operation}
+                </td>
+
+                {mandatory_column}
+
+              </tr>
+            )
+          })}
+          </tbody>
+        </table>
       </div>
     )
   }
@@ -109,6 +161,11 @@ class SetToolsControls extends React.Component {
     if (this.state.operation === 'intersect') {
       pass_data['job_ids'] = this.state.job_ids
       this.props.submitInsightsJob('intersect', pass_data)
+    }
+    if (this.state.operation === 't1_sum') {
+      pass_data['job_ids'] = this.state.job_ids
+      pass_data['mandatory_job_ids'] = this.state.mandatory_job_ids
+      this.props.submitInsightsJob('t1_sum', pass_data)
     }
   }
 
