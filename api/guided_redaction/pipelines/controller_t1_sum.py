@@ -38,15 +38,19 @@ class T1SumController:
                     elif mandatory_job_ids and \
                         self.we_should_add_this_one(movie_url, frameset_hash, mandatory_jobs):
                         do_add = True
-                    if do_add:
-                        if frameset_hash not in build_movies[movie_url]['framesets']:
-                            build_movies[movie_url]['framesets'][frameset_hash] = {}
-                        frameset = movie_data['framesets'][frameset_hash]
-                        for key in frameset:
-                            match_obj = frameset[key]
+                    if not do_add:
+                        continue
+                    if frameset_hash not in build_movies[movie_url]['framesets']:
+                        build_movies[movie_url]['framesets'][frameset_hash] = {}
+                    frameset = movie_data['framesets'][frameset_hash]
+                    for key in frameset:
+                        match_obj = frameset[key]
+                        if key in build_movies[movie_url]['framesets'][frameset_hash]:
                             match_obj['id'] = key
                             new_key = 'sum_key_' + str(random.randint(9999, 99999999))
                             build_movies[movie_url]['framesets'][frameset_hash][new_key] = match_obj
+                        else:
+                            build_movies[movie_url]['framesets'][frameset_hash][key] = match_obj
 
         return build_movies
 

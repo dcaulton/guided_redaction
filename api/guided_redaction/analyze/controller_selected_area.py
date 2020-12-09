@@ -1,4 +1,5 @@
 import json
+import random
 import math
 import cv2
 from django.conf import settings
@@ -113,10 +114,11 @@ class SelectedAreaController:
                 all_end[0] = r_end[0]
             if r_end[1] > all_end[1]:
                 all_end[1] = r_end[1]
+        new_id = 'merged_' + str(random.randint(9999, 99999999))
         new_region = {
           'regions': (all_start, all_end),
           'origin': (0, 0),
-          'sam_area_id': 'merged',
+          'sam_area_id': new_id,
         }
         return [new_region]
 
