@@ -75,9 +75,17 @@ class T1DiffController:
                                     if frame_url not in del_images:
                                         build_frames.append(frame_url)
                                 build_movies[movie_url]['frames'] = build_frames
-                            del build_movies[movie_url]['framesets'][frameset_hash]
-                            if not build_movies[movie_url]['framesets']:
-                                del build_movies[movie_url]
+                                del build_movies[movie_url]['framesets'][frameset_hash]
+                            else: # its probably t1 output, no frames or images
+                                for mo_id in movie['framesets'][frameset_hash]:
+                                    if mo_id in build_movies[movie_url]['framesets'][frameset_hash]:
+                                        del build_movies[movie_url]['framesets'][frameset_hash][mo_id]
+                                    if not build_movies[movie_url]['framesets'][frameset_hash]:
+                                        del build_movies[movie_url]['framesets'][frameset_hash]
+
+        for movie_url in build_movies:
+            if not build_movies[movie_url]['framesets']:
+                del build_movies[movie_url]
 
         print('t1 diff knocked out {} frames '.format(counter))
 
