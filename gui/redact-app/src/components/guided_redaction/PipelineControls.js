@@ -901,7 +901,7 @@ class NodeCard extends React.Component {
     this.props.setLocalStateVar('edges', deepCopyEdges)
   }
 
-  addDeleteMinuendSubtrahendAddend(type, parent_node_id, minuend_node_id) {
+  toggleNodeInList(type, parent_node_id, minuend_node_id) {
     let deepCopyMins = JSON.parse(JSON.stringify(this.props[type]))
     if (Object.keys(deepCopyMins).includes(parent_node_id)) {
       if (deepCopyMins[parent_node_id].includes(minuend_node_id)) {
@@ -916,7 +916,7 @@ class NodeCard extends React.Component {
     this.props.setLocalStateVar(type, deepCopyMins)
   }
 
-  buildMinuendsSubtrahendsAddendsField(ms_type) {
+  buildNodePickerField(ms_type) {
     if (
       this.props.node_metadata['node'][this.props.node_id]['type'] !== 't1_diff'
       && (ms_type === 'minuends' || ms_type === 'subtrahends')
@@ -935,10 +935,6 @@ class NodeCard extends React.Component {
     ) {
       return ''
     }
-    const id_types = [
-      'template', 'selected_area', 'mesh_match', 'selection_grower', 'ocr', 
-      'telemetry', 'ocr_scene_analysis', 'pipeline', 'intersect', 't1_diff', 'tt1_sum'
-    ]
     let title = 'Minuends'
     if (ms_type === 'subtrahends') {
       title = 'Subtrahends'
@@ -952,6 +948,8 @@ class NodeCard extends React.Component {
     if (ms_type === 'minuends') {
       select_none_comment = 'selecting none means to use the input for the pipeline'
     } 
+    const primary_node_options = this.addOptionsForPrimaryNodes(ms_type)
+    const secondary_node_options = this.addOptionsForSecondaryNodes(ms_type)
     return (
       <div className='mt-2 mb-2'>
         <div className='font-weight-bold'>
@@ -960,11 +958,93 @@ class NodeCard extends React.Component {
         <div className='d-inline font-italic'>
           {select_none_comment}
         </div>
+
+        {primary_node_options}
+
+        {secondary_node_options}
+
+      </div>
+    )
+  }
+
+  addOptionsForSecondaryNodes(ms_type) {
+    let build_obj = []
+    for (let i=0; i < Object.keys(this.props.node_metadata['node']).length; i++) {
+      const node_id = Object.keys(this.props.node_metadata['node'])[i]
+      const node = this.props.node_metadata['node'][node_id]
+      if (node['type'] === 'pipeline') {
+        const prefix = node['name'] + ':'
+        const new_pipeline = this.props.pipelines[node['entity_id']]
+        const new_content = JSON.parse(new_pipeline['content'])
+        const child_nodes = new_content['node_metadata']['node']
+        this.buildPipelineDescendantNodeList(prefix, child_nodes, build_obj, ms_type)
+      }
+    }
+    return build_obj
+  }
+
+  buildPipelineDescendantNodeList(prefix, nodes, build_obj, ms_type) {
+    const node_dropdown_id_types = [
+      'template', 'selected_area', 'mesh_match', 'selection_grower', 'ocr', 
+      'telemetry', 'ocr_scene_analysis', 'pipeline', 'intersect', 't1_diff', 't1_sum'
+    ]
+    for (let i=0; i < Object.keys(nodes).length; i++) {
+      const node_id = Object.keys(nodes)[i]
+      const node_key = prefix + node_id
+      const node = nodes[node_id]
+      if (!node_dropdown_id_types.includes(node['type'])) {
+        continue
+      }
+      let selected = false
+      if (this.props
+          && this.props[ms_type]
+          && Object.keys(this.props[ms_type]).includes(this.props.node_id)
+          && this.props[ms_type][this.props.node_id].includes(node_key)
+      ) {
+        selected = true
+      }
+      const disp_name = node_key + ' - ' + node['type']
+
+      build_obj.push(
+        <div
+          key={node_key}
+        >
+          <div className='d-inline'>
+            <input
+              checked={selected}
+              type='checkbox'
+              onChange={() => this.toggleNodeInList(ms_type, this.props.node_id, node_key)}
+            />
+          </div>
+          <div className='d-inline ml-2'>
+            {disp_name}
+          </div>
+        </div>
+      )
+      if (node['type'] === 'pipeline') {
+        const new_prefix = prefix + node['name'] + ':'
+        const new_pipeline = this.props.pipelines[node['entity_id']]
+        const new_content = JSON.parse(new_pipeline['content'])
+        const child_nodes = new_content['node_metadata']['node']
+        this.buildPipelineDescendantNodeList(new_prefix, child_nodes, build_obj, ms_type)
+      } 
+    }
+  }
+
+  addOptionsForPrimaryNodes(ms_type) {
+    return (
+      <div>
         {Object.keys(this.props.node_metadata['node']).map((node_id, index) => {
           if (node_id === this.props.node_id) {
             return '' 
           }
-          if (!id_types.includes(this.props.node_metadata['node'][node_id]['type'])) {
+          const node_dropdown_id_types = [
+            'template', 'selected_area', 'mesh_match', 'selection_grower', 'ocr', 
+            'telemetry', 'ocr_scene_analysis', 'pipeline', 'intersect', 't1_diff', 't1_sum'
+          ]
+          if (
+            !node_dropdown_id_types.includes(this.props.node_metadata['node'][node_id]['type'])
+          ) {
             return ''
           }
           let ms_selected = false
@@ -987,7 +1067,7 @@ class NodeCard extends React.Component {
                 <input
                   checked={ms_selected}
                   type='checkbox'
-                  onChange={() => this.addDeleteMinuendSubtrahendAddend(ms_type, this.props.node_id, node_id)}
+                  onChange={() => this.toggleNodeInList(ms_type, this.props.node_id, node_id)}
                 />
               </div>
               <div className='d-inline ml-2'>
@@ -995,7 +1075,6 @@ class NodeCard extends React.Component {
               </div>
             </div>
           )
-
         })}
       </div>
     )
@@ -1240,10 +1319,10 @@ class NodeCard extends React.Component {
     const type_field = this.buildTypeField()
     const input_field = this.buildInputField()
     const edges_field = this.buildEdgesField()
-    const minuends_field = this.buildMinuendsSubtrahendsAddendsField('minuends')
-    const subtrahends_field = this.buildMinuendsSubtrahendsAddendsField('subtrahends')
-    const addends_field = this.buildMinuendsSubtrahendsAddendsField('addends')
-    const intersect_feeds_field = this.buildMinuendsSubtrahendsAddendsField('intersect_feeds')
+    const minuends_field = this.buildNodePickerField('minuends')
+    const subtrahends_field = this.buildNodePickerField('subtrahends')
+    const addends_field = this.buildNodePickerField('addends')
+    const intersect_feeds_field = this.buildNodePickerField('intersect_feeds')
     const redaction_rules_field = this.buildRedactionRulesField()
     const entity_id_field = this.buildEntityIdField()
     const first_indicator = this.buildFirstIndicator()
