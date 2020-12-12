@@ -42,6 +42,7 @@ class PipelineControls extends React.Component {
       minuends: {},
       subtrahends: {},
       intersect_feeds: {},
+      mandatory_nodes: {},
       redact_rule_edges: {},
       attribute_search_value: '',
       use_parsed_movies: false,
@@ -131,6 +132,7 @@ class PipelineControls extends React.Component {
       minuends: this.state.minuends,
       subtrahends: this.state.subtrahends,
       intersect_feeds: this.state.intersect_feeds,
+      mandatory_nodes: this.state.mandatory_nodes,
       redact_rule_edges: this.state.redact_rule_edges,
       node_metadata: this.state.node_metadata,
       movies: build_movies,
@@ -211,6 +213,7 @@ class PipelineControls extends React.Component {
       minuends: {},
       subtrahends: {},
       intersect_feeds: {},
+      mandatory_nodes: {},
       redact_rule_edges: {},
     })
   }
@@ -244,6 +247,10 @@ class PipelineControls extends React.Component {
       if (Object.keys(content).includes('intersect_feeds')) {
         intersect_feeds = content['intersect_feeds']
       }
+      let mandatory_nodes = {}
+      if (Object.keys(content).includes('mandatory_nodes')) {
+        mandatory_nodes = content['namdatory_nodes']
+      }
       let redact_rule_edges = {}
       if (Object.keys(content).includes('redact_rule_edges')) {
         redact_rule_edges= content['redact_rule_edges']
@@ -264,6 +271,7 @@ class PipelineControls extends React.Component {
         minuends: minuends,
         subtrahends: subtrahends,
         intersect_feeds: intersect_feeds,
+        mandatory_nodes: mandatory_nodes,
         redact_rule_edges: redact_rule_edges,
         node_metadata: content['node_metadata'],
       })
@@ -604,6 +612,7 @@ class PipelineControls extends React.Component {
                       minuends={this.state.minuends}
                       subtrahends={this.state.subtrahends}
                       intersect_feeds={this.state.intersect_feeds}
+                      mandatory_nodes={this.state.mandatory_nodes}
                       addNode={this.addNode}
                       deleteNode={this.deleteNode}
                       updateNodeValue={this.updateNodeValue}
@@ -641,6 +650,7 @@ class NodeCardList extends React.Component {
   }
   
   render() {
+console.log('lumpy2', this.props.mandatory_nodes)
     const add_button = this.buildAddStepButton() 
     return (
       <div className='col border-top m-2 p-2'>
@@ -669,6 +679,7 @@ class NodeCardList extends React.Component {
                   minuends={this.props.minuends}
                   subtrahends={this.props.subtrahends}
                   intersect_feeds={this.props.intersect_feeds}
+                  mandatory_nodes={this.props.mandatory_nodes}
                   setLocalStateVar={this.props.setLocalStateVar}
                   deleteNode={this.props.deleteNode}
                   redact_rule_edges={this.props.redact_rule_edges}
@@ -902,6 +913,7 @@ class NodeCard extends React.Component {
   }
 
   toggleNodeInList(type, parent_node_id, minuend_node_id) {
+console.log('dippy', type, this.props.mandatory_nodes)
     let deepCopyMins = JSON.parse(JSON.stringify(this.props[type]))
     if (Object.keys(deepCopyMins).includes(parent_node_id)) {
       if (deepCopyMins[parent_node_id].includes(minuend_node_id)) {
@@ -935,6 +947,12 @@ class NodeCard extends React.Component {
     ) {
       return ''
     }
+    if (
+      this.props.node_metadata['node'][this.props.node_id]['type'] !== 't1_sum'
+      && ms_type === 'mandatory_nodes'
+    ) {
+      return ''
+    }
     let title = 'Minuends'
     if (ms_type === 'subtrahends') {
       title = 'Subtrahends'
@@ -942,6 +960,8 @@ class NodeCard extends React.Component {
       title = 'Addends'
     } else if (ms_type === 'intersect_feeds') {
       title = 'Intersect Jobs'
+    } else if (ms_type === 'mandatory_nodes') {
+      title = 'Mandatory Nodes'
     } 
 
     let select_none_comment = ''
@@ -973,25 +993,36 @@ class NodeCard extends React.Component {
       const node_id = Object.keys(this.props.node_metadata['node'])[i]
       const node = this.props.node_metadata['node'][node_id]
       if (node['type'] === 'pipeline') {
-        const prefix = node['name'] + ':'
+        const prefix = node['id'] + ':'
+        const name_prefix = node['name'] + ':'
+        if (
+          !Object.keys(node).includes('entity_id') || 
+          !Object.keys(this.props.pipelines).includes(node['entity_id'])
+        ) {
+          continue
+        }
         const new_pipeline = this.props.pipelines[node['entity_id']]
+        if (!Object.keys(new_pipeline).includes('content')) {
+          continue
+        }
         const new_content = JSON.parse(new_pipeline['content'])
         const child_nodes = new_content['node_metadata']['node']
-        this.buildPipelineDescendantNodeList(prefix, child_nodes, build_obj, ms_type)
+        this.buildPipelineDescendantNodeList(prefix, name_prefix, child_nodes, build_obj, ms_type)
       }
     }
     return build_obj
   }
 
-  buildPipelineDescendantNodeList(prefix, nodes, build_obj, ms_type) {
+  buildPipelineDescendantNodeList(prefix, name_prefix, nodes, build_obj, ms_type) {
     const node_dropdown_id_types = [
       'template', 'selected_area', 'mesh_match', 'selection_grower', 'ocr', 
       'telemetry', 'ocr_scene_analysis', 'pipeline', 'intersect', 't1_diff', 't1_sum'
     ]
-    for (let i=0; i < Object.keys(nodes).length; i++) {
-      const node_id = Object.keys(nodes)[i]
+    let eligible_nodes = this.getEligibleNodes(ms_type, nodes, this.props.node_id, prefix)
+    for (let i=0; i < Object.keys(eligible_nodes).length; i++) {
+      const node_id = Object.keys(eligible_nodes)[i]
       const node_key = prefix + node_id
-      const node = nodes[node_id]
+      const node = eligible_nodes[node_id]
       if (!node_dropdown_id_types.includes(node['type'])) {
         continue
       }
@@ -1003,7 +1034,7 @@ class NodeCard extends React.Component {
       ) {
         selected = true
       }
-      const disp_name = node_key + ' - ' + node['type']
+      const disp_name = name_prefix + node['name'] + ' - ' + node['type']
 
       build_obj.push(
         <div
@@ -1022,19 +1053,41 @@ class NodeCard extends React.Component {
         </div>
       )
       if (node['type'] === 'pipeline') {
-        const new_prefix = prefix + node['name'] + ':'
+        const new_prefix = prefix + node['id'] + ':'
+        const new_name_prefix = name_prefix + node['name'] + ':'
         const new_pipeline = this.props.pipelines[node['entity_id']]
         const new_content = JSON.parse(new_pipeline['content'])
         const child_nodes = new_content['node_metadata']['node']
-        this.buildPipelineDescendantNodeList(new_prefix, child_nodes, build_obj, ms_type)
+        this.buildPipelineDescendantNodeList(new_prefix, new_name_prefix, child_nodes, build_obj, ms_type)
       } 
     }
   }
 
+  getEligibleNodes(ms_type, node_list, node_id, prefix='') {
+    let eligible_nodes = node_list
+    if (ms_type === 'mandatory_nodes') {
+      const my_addends = this.props.addends[node_id]
+      if (!my_addends || my_addends.length === 0) {
+        return ''
+      }
+      eligible_nodes = {}
+      for (let i=0; i < Object.keys(node_list).length; i++) {
+        const node_id = Object.keys(node_list)[i]
+        const node_key = prefix + node_id
+        if (my_addends.includes(node_key)) {
+          eligible_nodes[node_id] = node_list[node_id]
+        }
+      }
+    }
+    return eligible_nodes
+  }
+
   addOptionsForPrimaryNodes(ms_type) {
+    const child_nodes = this.props.node_metadata['node']
+    let eligible_nodes = this.getEligibleNodes(ms_type, child_nodes, this.props.node_id)
     return (
       <div>
-        {Object.keys(this.props.node_metadata['node']).map((node_id, index) => {
+        {Object.keys(eligible_nodes).map((node_id, index) => {
           if (node_id === this.props.node_id) {
             return '' 
           }
@@ -1323,6 +1376,7 @@ class NodeCard extends React.Component {
     const subtrahends_field = this.buildNodePickerField('subtrahends')
     const addends_field = this.buildNodePickerField('addends')
     const intersect_feeds_field = this.buildNodePickerField('intersect_feeds')
+    const mandatory_nodes_field = this.buildNodePickerField('mandatory_nodes')
     const redaction_rules_field = this.buildRedactionRulesField()
     const entity_id_field = this.buildEntityIdField()
     const first_indicator = this.buildFirstIndicator()
@@ -1373,6 +1427,9 @@ class NodeCard extends React.Component {
         </div>
         <div className='row'>
           {intersect_feeds_field}
+        </div>
+        <div className='row'>
+          {mandatory_nodes_field}
         </div>
         <div className='row'>
           {redaction_rules_field}
