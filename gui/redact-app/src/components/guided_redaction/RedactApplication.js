@@ -632,7 +632,7 @@ class RedactApplication extends React.Component {
       // var_name is actaully a dict
       this.setState(
         var_name, 
-        when_done()
+        when_done 
       )
     }
   }

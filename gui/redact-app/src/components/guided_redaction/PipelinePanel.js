@@ -6,7 +6,6 @@ class PipelinePanel extends React.Component {
     super(props)
     this.state = {
       id: '',
-      jobs: [],
       active_job_id: '',
       active_job_status_obj: {},
       active_job_request_data: '',
@@ -44,13 +43,19 @@ class PipelinePanel extends React.Component {
   }
    
   saveJobResultData(response) {
-    const job = response['job']
-    const job_resp = JSON.parse(job['response_data'])
-    const job_req = JSON.parse(job['request_data'])
-    this.setState({
-      active_job_response_data: job_resp,
-      active_job_request_data: job_req,
-    })
+    const job = response
+    let build_obj = {}
+    if (Object.keys(job).includes('response_data') && job['response_data'] !== 'None') {
+      const job_resp = JSON.parse(job['response_data'])
+      build_obj['active_job_response_data'] =  job_resp
+    }
+    if (Object.keys(job).includes('request_data') && job['request_data'] !== 'None') {
+      const job_req = JSON.parse(job['request_data'])
+      build_obj['active_job_request_data'] =  job_req
+    }
+    if (Object.keys(build_obj).length > 0) {
+      this.setState(build_obj)
+    }
   }
 
   updateActiveJobStatus(response) {
@@ -245,140 +250,200 @@ class PipelinePanel extends React.Component {
     return last_updated
   }
 
-  getNodeJobsList() {
-    let node_jobs_list = 'No Node Job Details Available'
-    if (
-      this.state.active_job_status_obj 
-      && Object.keys(this.state.active_job_status_obj).includes('node_statuses')
-      && this.state.active_job_status_obj['node_statuses']
-    ) {
-      const node_statuses = this.state.active_job_status_obj['node_statuses']
-      let job_details_style = {}
-      const jsi = document.getElementById('job_status_image')
-      if (jsi) {
-        job_details_style['height'] = jsi.clientHeight
-        job_details_style['overflow'] = 'scroll'
-      }
-
-      node_jobs_list = (
-        <div
-        >
-          <div className='row bg-light'>
-            <div className='col-3 h5'>
-              Job Details
-            </div>
-
-            <div className='col-3'>
-              <input
-                type='checkbox'
-                checked={!this.state.show_job_status_details}
-                onChange={() => this.toggleShowJobStatusDetails()}
-              />
-              <div className='d-inline ml-2'>
-                Hide
-              </div>
-            </div>
+  buildJobDetailsRightHeader() {
+    let cur_job_start = ''
+    const cur_job = this.getActiveJob()
+    if (cur_job) {
+      cur_job_start = cur_job['created_on']
+    }
+    return (
+      <div>
+        <div className='row bg-light'>
+          <div className='col-3 h5'>
+            Job Details
           </div>
 
-          <div className='row bg-light'>
+          <div className='col-3'>
             <input
-              className='m-1'
               type='checkbox'
-              checked={this.state.restart_safety}
-              onChange={() => this.toggleRestartSafety()}
+              checked={!this.state.show_job_status_details}
+              onChange={() => this.toggleShowJobStatusDetails()}
             />
             <div className='d-inline ml-2'>
-              Restart Safety 
-            </div>
-            <div className='d-inline font-italic ml-2'>
-              (disabling lets you restart any job)
+              Hide
             </div>
           </div>
+        </div>
 
-          <div
-          style={job_details_style}
+        <div className='row bg-light pl-2'>
+          Job Id: {this.state.active_job_id}
+        </div>
+
+        <div className='row bg-light pl-2'>
+          Initiated: {cur_job_start}
+        </div>
+
+        <div className='row bg-light pl-2'>
+          Status: {cur_job.status}
+        </div>
+
+        <div className='row bg-light pt-2'>
+          <input
+            className='m-1'
+            type='checkbox'
+            checked={this.state.restart_safety}
+            onChange={() => this.toggleRestartSafety()}
+          />
+          <div className='d-inline ml-2'>
+            Restart Safety 
+          </div>
+          <div className='d-inline font-italic ml-2'>
+            (disabling lets you restart any job)
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  buildJobDetailsRightButtons(job_id) {
+    return (
+      <div className='ml-5 mb-2'>
+        <div className='d-inline'>
+          <button
+            className='btn btn-primary'
+            onClick={
+              ()=>this.props.getJobResultData(job_id, this.displayInNewTab)
+            }
           >
-          {Object.keys(node_statuses).map((node_id, index) => {
-            if (!this.state.show_job_status_details) {
-              return ''
+            View Data
+          </button>
+        </div>
+
+        <div className='d-inline ml-2'>
+          <button
+            className='btn btn-primary'
+            onClick={
+              ()=>this.tryToCancelJob(job_id)
             }
-            const status_obj = node_statuses[node_id]
-            let percent_complete = (
-              <div>
-                <div className='d-inline'>
-                  Percent Complete:
-                </div>
-                <div className='d-inline ml-2'>
-                  {status_obj['percent_complete']}
-                </div>
-              </div>
-            )
-            if (status_obj['status'] !== 'running') {
-              percent_complete = ''
-            }
+          >
+            Delete Job
+          </button>
+        </div>
+      </div>
+    )
+  }
 
-            const last_updated = this.getLastUpdated(status_obj)
+  buildNodeDetailRightLines(status_obj) {
+    let percent_complete = (
+      <div>
+        <div className='d-inline'>
+          Percent Complete:
+        </div>
+        <div className='d-inline ml-2'>
+          {status_obj['percent_complete']}
+        </div>
+      </div>
+    )
+    if (status_obj['status'] !== 'running') {
+      percent_complete = ''
+    }
 
-            return (
-              <div key={index} className='border-top'>
-                <div>
-                  <div className='d-inline'>
-                    Node Name: 
-                  </div>
-                  <div className='d-inline ml-2'>
-                    {status_obj['name']}
-                  </div>
-                </div>
-                
-                <div>
-                  <div className='d-inline'>
-                    Operation:
-                  </div>
-                  <div className='d-inline ml-2'>
-                    {status_obj['operation']}
-                  </div>
-                </div>
-                
-                <div>
-                  <div className='d-inline'>
-                    Status:
-                  </div>
-                  <div className='d-inline ml-2'>
-                    {status_obj['status']}
-                  </div>
-                </div>
-                
-                {percent_complete}
-                
-                {last_updated}
+    const last_updated = this.getLastUpdated(status_obj)
 
-                <div>
-                  <div className='d-inline'>
-                    Framesets In / Out:
-                  </div>
-                  <div className='d-inline ml-2'>
-                    {status_obj['framesets_in']} / {status_obj['framesets_out']}
-                  </div>
-                </div>
-                
-                <div className='ml-5 mb-2'>
-                  <button
-                    className='btn btn-primary'
-                    onClick={
-                      ()=>this.props.getJobResultData(status_obj['job_id'], this.displayInNewTab)
-                    }
-                  >
-                    View
-                  </button>
-                </div>
-              </div>
-            )
-          })}
+    return (
+      <div>
+        <div>
+          <div className='d-inline'>
+            Node Name: 
           </div>
+          <div className='d-inline ml-2'>
+            {status_obj['name']}
+          </div>
+        </div>
+        
+        <div>
+          <div className='d-inline'>
+            Operation:
+          </div>
+          <div className='d-inline ml-2'>
+            {status_obj['operation']}
+          </div>
+        </div>
+        
+        <div>
+          <div className='d-inline'>
+            Status:
+          </div>
+          <div className='d-inline ml-2'>
+            {status_obj['status']}
+          </div>
+        </div>
+        
+        {percent_complete}
+        
+        {last_updated}
+
+        <div>
+          <div className='d-inline'>
+            Framesets In / Out:
+          </div>
+          <div className='d-inline ml-2'>
+            {status_obj['framesets_in']} / {status_obj['framesets_out']}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  getNodeJobsList() {
+    if (
+      !this.state.active_job_status_obj 
+      || !Object.keys(this.state.active_job_status_obj).includes('node_statuses')
+      || !this.state.active_job_status_obj['node_statuses']
+    ) {
+      return (
+        <div className='font-italic'>
+          No Node Job Details Available
         </div>
       )
     }
-    return node_jobs_list
+
+    const node_statuses = this.state.active_job_status_obj['node_statuses']
+    let job_details_style = {}
+    const jsi = document.getElementById('job_status_image')
+    if (jsi) {
+      job_details_style['height'] = jsi.clientHeight
+      job_details_style['overflow'] = 'scroll'
+    }
+
+    const details_right_header = this.buildJobDetailsRightHeader()
+    return (
+      <div>
+        {details_right_header}
+
+        <div
+        style={job_details_style}
+        >
+        {Object.keys(node_statuses).map((node_id, index) => {
+          if (!this.state.show_job_status_details) {
+            return ''
+          }
+          const status_obj = node_statuses[node_id]
+          const details_right_lines = this.buildNodeDetailRightLines(status_obj)
+          let job_buttons = ''
+          if (status_obj['job_id']) {
+            job_buttons = this.buildJobDetailsRightButtons(status_obj['job_id'])
+          }
+          return (
+            <div key={index} className='border-top'>
+              {details_right_lines}           
+              {job_buttons}
+            </div>
+          )
+        })}
+        </div>
+      </div>
+    )
   }
 
   displayInNewTab(page_data) {
@@ -414,10 +479,40 @@ class PipelinePanel extends React.Component {
     if (!this.state.active_job_request_data) {
       return
     }
-    const movies_summary = String(Object.keys(this.state.active_job_request_data['movies']).length) + ' movies'
+    let movies_title = String(Object.keys(this.state.active_job_request_data['movies']).length) + ' movies'
+    if (Object.keys(this.state.active_job_request_data['movies']).length === 1) {
+      movies_title = 'One Movie'
+    }
+    let build_movie_info = {}
+    for (let i=0; i < Object.keys(this.state.active_job_request_data['movies']).length; i++) {
+      const movie_url = Object.keys(this.state.active_job_request_data['movies'])[i]
+      const movie = this.state.active_job_request_data['movies'][movie_url]
+      build_movie_info[movie_url] = {
+        frames_count: Object.keys(movie['framesets']).length,
+      }
+    }
     return (
-      <div className='ml-2'>
-        {movies_summary}
+      <div className='col ml-2'>
+        <div className='row'>
+          {movies_title}
+        </div>
+
+        {Object.keys(build_movie_info).sort().map((movie_url, index) => {
+          const num_frames_msg = build_movie_info[movie_url]['frames_count'].toString() + ' frames'
+          const short_name = movie_url.split('/').slice(-1)[0]
+          return (
+            <div key={index} className='row border-top ml-2'>
+              <div className='col'>
+                <div className='row'>
+                  {short_name}
+                </div>
+                <div className='row ml-2'>
+                  {num_frames_msg}
+                </div>
+              </div>
+            </div>
+          )
+        })}
       </div>
     )
   }
@@ -524,11 +619,27 @@ class PipelinePanel extends React.Component {
 //    )
   }
 
+  buildPipelineDetailTitle(pipeline) {
+    return (
+      <div 
+        className='col border-top border-bottom h3'
+      >
+        <div 
+          className='row font-italic h3'
+        >
+          <div className='col-3'/>
+          <div className='col'>
+            {pipeline.name}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   buildJobView() {
     if (!this.state.active_job_id) {
       return
     }
-    let active_job = this.getActiveJob()
     const req_data_summary = this.buildRequestDataSummary()
     const status_summary = this.buildStatusSummary()
     const resp_data_summary = this.buildResponseDataSummary()
@@ -537,19 +648,13 @@ class PipelinePanel extends React.Component {
       return
     }
     const refresh_button = this.buildRefreshStatusButton()
-    let title = 'Pipeline ' + pipeline.name 
-    title += ', job ' + this.state.active_job_id
+
+    const title = this.buildPipelineDetailTitle(pipeline)
 
     return (
       <div className='col mt-5'>
-        <div className='row h2'>
-          Pipeline Run Detail
-        </div>
         <div className='row'>
           {title}
-        </div>
-        <div className='row'>
-          Status: {active_job.status}
         </div>
 
         <div className='row mt-2'>
@@ -652,13 +757,13 @@ class PipelinePanel extends React.Component {
                         className='btn btn-primary p-1'
                         onClick={()=>this.viewJob(job_obj.id)}
                       >
-                        View
+                        Show Details
                       </button>
                       <button
                         className='btn btn-primary ml-1 p-1'
                         onClick={()=>this.tryToCancelJob(job_obj.id)}
                       >
-                        Cancel
+                        Delete Job
                       </button>
                     </td>
                   </tr>

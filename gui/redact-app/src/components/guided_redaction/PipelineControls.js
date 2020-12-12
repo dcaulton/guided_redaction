@@ -650,7 +650,6 @@ class NodeCardList extends React.Component {
   }
   
   render() {
-console.log('lumpy2', this.props.mandatory_nodes)
     const add_button = this.buildAddStepButton() 
     return (
       <div className='col border-top m-2 p-2'>

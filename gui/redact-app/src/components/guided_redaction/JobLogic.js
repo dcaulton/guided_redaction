@@ -521,6 +521,7 @@ class JobLogic extends React.Component {
       'tier_1_matches': deepCopyTier1Matches,
       'current_ids': deepCopyT1SCIDs,
     })
+    when_done(job)
   }
 
   static loadSelectedAreaResults(
@@ -1038,6 +1039,8 @@ class JobLogic extends React.Component {
               setGlobalStateVar, 
               getGlobalStateVar
             )
+          } else {
+            when_done(job)
           }
       } else {
         when_done(responseJson)
