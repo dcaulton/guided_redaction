@@ -45,6 +45,8 @@ class IntersectController():
                     print('intersecting with frames from movie {}'.format(movie_url))
                     if 'framesets' in movie:
                         for frameset_hash in movie['framesets']:
+                            if movie_url not in self.build_masks:
+                                continue
                             if frameset_hash not in self.build_masks[movie_url]['framesets']:
                                 continue
                             this_frames_mask = self.make_mask(movie['framesets'][frameset_hash])

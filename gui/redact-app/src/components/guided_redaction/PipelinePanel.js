@@ -487,8 +487,30 @@ class PipelinePanel extends React.Component {
     for (let i=0; i < Object.keys(this.state.active_job_request_data['movies']).length; i++) {
       const movie_url = Object.keys(this.state.active_job_request_data['movies'])[i]
       const movie = this.state.active_job_request_data['movies'][movie_url]
+      let num_frames = 0
+      if (Object.keys(movie).includes('framesets')) {
+        num_frames = Object.keys(movie['framesets']).length
+      }
       build_movie_info[movie_url] = {
-        frames_count: Object.keys(movie['framesets']).length,
+        frames_count: num_frames,
+      }
+      if (movie_url === 'source') {
+        let build_children_obj = {}
+        let total_framesets = num_frames
+        for (let j=0; j < Object.keys(movie).length; j++) {
+          const child_movie_url = Object.keys(movie)[j]
+          const child_movie = movie[child_movie_url]
+          let num_child_frames = 0
+          if (Object.keys(child_movie).includes('framesets')) {
+            num_child_frames = Object.keys(child_movie['framesets']).length
+          }
+          total_framesets += num_child_frames
+          build_children_obj[child_movie_url] = {
+            frames_count: num_child_frames
+          }
+          build_movie_info[movie_url]['child_movies'] = build_children_obj
+          build_movie_info[movie_url]['frames_count'] = total_framesets
+        }
       }
     }
     return (
@@ -498,16 +520,36 @@ class PipelinePanel extends React.Component {
         </div>
 
         {Object.keys(build_movie_info).sort().map((movie_url, index) => {
-          const num_frames_msg = build_movie_info[movie_url]['frames_count'].toString() + ' frames'
+          const num_frames_msg = build_movie_info[movie_url]['frames_count'].toString()
           const short_name = movie_url.split('/').slice(-1)[0]
+          let child_movie_data = ''
+          if (Object.keys(build_movie_info[movie_url]).includes('child_movies')) {
+            child_movie_data = (
+              <div>
+              {Object.keys(build_movie_info[movie_url]['child_movies']).sort().map((child_movie_url, child_index) => {
+                const child_movie = build_movie_info[movie_url]['child_movies'][child_movie_url]
+                const child_short_name = child_movie_url.split('/').slice(-1)[0]
+                return (
+                  <div key={child_index} className='row'>
+                    <div className='col'>
+                      <div className='row pl-2'>
+                        {child_short_name}: {child_movie['frames_count']} frames
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+              </div>
+            )
+          }
           return (
             <div key={index} className='row border-top ml-2'>
               <div className='col'>
                 <div className='row'>
-                  {short_name}
+                  {short_name}: {num_frames_msg} frames
                 </div>
                 <div className='row ml-2'>
-                  {num_frames_msg}
+                  {child_movie_data}
                 </div>
               </div>
             </div>
@@ -525,7 +567,10 @@ class PipelinePanel extends React.Component {
       resp_movies = this.state.active_job_response_data
     }
     let movie_url = Object.keys(resp_movies)[0]
-    if (Object.keys(resp_movies[movie_url]).includes('redacted_movie_url')) {
+    if (
+      resp_movies[movie_url] &&
+      Object.keys(resp_movies[movie_url]).includes('redacted_movie_url')
+    ) {
       return String(Object.keys(resp_movies).length) + ' redacted movies'
     }
     let total_framesets = 0

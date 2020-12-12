@@ -21,6 +21,7 @@ class T1DiffController:
         return ret_arr
 
     def build_t1_diff(self, minuend_jobs, subtrahend_job_ids):
+        print('starting t1 diff')
         build_movies = {}
         for minuend_obj in minuend_jobs:
             job_id = minuend_obj['id']

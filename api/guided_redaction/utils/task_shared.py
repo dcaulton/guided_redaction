@@ -9,10 +9,13 @@ from guided_redaction.attributes.models import Attribute
 log = logging.getLogger(__name__)
 
 def get_job_for_node(node_id, parent_job):
+    if ':' in node_id:
+        node_id = node_id.split(':')[-1]
     if Attribute.objects.filter(name='node_id', value=node_id).exists():
         attrs = Attribute.objects.filter(name='node_id', value=node_id)
         for attr in attrs:
-            if attr.job and attr.job.parent == parent_job:
+            ancestor_ids = get_job_ancestor_ids(attr.job.parent)
+            if attr.job and str(parent_job.id) in ancestor_ids:
                 return attr.job
 
 def get_job_ancestor_ids(job):
