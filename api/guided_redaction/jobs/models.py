@@ -100,8 +100,8 @@ class Job(models.Model):
             for attribute in attributes:
                 build_attributes[attribute.name] = attribute.value
 
-        build_request_data = str(self.request_data)
-        build_response_data = str(self.response_data)
+        build_request_data = str(self.request_data or '{}')
+        build_response_data = str(self.response_data or '{}')
 
         job_data = {
             'id': str(self.id),
@@ -114,8 +114,8 @@ class Job(models.Model):
             'wall_clock_run_time': wall_clock_run_time,
             'app': self.app,
             'operation': self.operation,
-            'workbook_id': str(self.workbook_id),
-            'parent_id': str(self.parent_id),
+            'workbook_id': str(self.workbook_id or ''),
+            'parent_id': str(self.parent_id or ''),
             'request_data': build_request_data,
             'response_data': build_response_data,
             'sequence': self.sequence,
