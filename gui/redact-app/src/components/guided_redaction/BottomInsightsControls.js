@@ -422,6 +422,7 @@ class BottomInsightsControls extends React.Component {
           job_polling_interval_seconds={this.props.job_polling_interval_seconds}
           getJobResultData={this.props.getJobResultData}
           detectScreens={this.props.detectScreens}
+          insights_image={this.props.insights_image}
         />
 
       </div>

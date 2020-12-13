@@ -323,7 +323,7 @@ console.log('get screens came back with ', response)
       <div className='d-inline ml-2'>
         <button
             className='btn btn-primary'
-            onClick={() => this.props.detectScreens(this.afterScreensDetected)}
+            onClick={() => this.props.detectScreens(this.props.insights_image, this.afterScreensDetected)}
         >
           Detect Screens
         </button>

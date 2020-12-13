@@ -229,8 +229,10 @@ class RedactApplication extends React.Component {
     this.detectScreens=this.detectScreens.bind(this)
   }
 
-  async detectScreens(when_done=(()=>{})) {
-    const the_image_url = this.getImageUrl()
+  async detectScreens(the_image_url = '', when_done=(()=>{})) {
+    if (!the_image_url) {
+      the_image_url = this.getImageUrl()
+    }
     if (!the_image_url) {
       this.setState({'message': 'no image selected, get screens job not submitted'})
       return
