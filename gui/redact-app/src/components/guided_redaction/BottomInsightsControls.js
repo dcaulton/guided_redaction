@@ -421,6 +421,7 @@ class BottomInsightsControls extends React.Component {
           deleteOldJobs={this.props.deleteOldJobs}
           job_polling_interval_seconds={this.props.job_polling_interval_seconds}
           getJobResultData={this.props.getJobResultData}
+          detectScreens={this.props.detectScreens}
         />
 
       </div>

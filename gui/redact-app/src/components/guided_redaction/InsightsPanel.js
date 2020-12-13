@@ -1211,6 +1211,7 @@ class InsightsPanel extends React.Component {
             postImportArchiveCall={this.props.postImportArchiveCall}
             getColorAtPixel={this.props.getColorAtPixel}
             getColorsInZone={this.props.getColorsInZone}
+            detectScreens={this.props.detectScreens}
           />
         </div>
 

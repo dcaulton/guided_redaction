@@ -226,6 +226,31 @@ class RedactApplication extends React.Component {
     this.postImportArchiveCall=this.postImportArchiveCall.bind(this)
     this.getColorAtPixel=this.getColorAtPixel.bind(this)
     this.getColorsInZone=this.getColorsInZone.bind(this)
+    this.detectScreens=this.detectScreens.bind(this)
+  }
+
+  async detectScreens(when_done=(()=>{})) {
+    const the_image_url = this.getImageUrl()
+    if (!the_image_url) {
+      this.setState({'message': 'no image selected, get screens job not submitted'})
+      return
+    }
+    const payload = {
+      image_url: the_image_url,
+    }
+    let response = await fetch(this.getUrl('get_screens_url'), {
+      method: 'POST',
+      headers: this.buildJsonHeaders(),
+      body: JSON.stringify(payload),
+    })
+    .then((response) => response.json())
+    .then((responseJson) => {
+      when_done(responseJson)
+    })
+    .catch((error) => {
+      console.error(error)
+    })
+    await response
   }
 
   async getColorsInZone(the_image_url, start, end, selection_grower_meta, when_done=(()=>{})) {
@@ -595,6 +620,8 @@ class RedactApplication extends React.Component {
       return api_server_url + 'v1/parse/get-color-at-pixel'
     } else if (url_name === 'get_colors_in_zone_url') {
       return api_server_url + 'v1/parse/get-colors-in-zone'
+    } else if (url_name === 'get_screens_url') {
+      return api_server_url + 'v1/analyze/get-screens'
     }
   }
 
@@ -2314,6 +2341,7 @@ class RedactApplication extends React.Component {
                 postImportArchiveCall={this.postImportArchiveCall}
                 getColorAtPixel={this.getColorAtPixel}
                 getColorsInZone={this.getColorsInZone}
+                detectScreens={this.detectScreens}
               />
             </Route>
             <Route path='/redact/pipeline'>

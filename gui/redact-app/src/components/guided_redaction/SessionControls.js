@@ -17,6 +17,7 @@ class SessionControls extends React.Component {
       cv_worker_supported_operations: [],
     }
     this.recognizer = {}
+    this.afterScreensDetected=this.afterScreensDetected.bind(this)
   }
 
   setLocalStateVar(var_name, var_value, when_done=(()=>{})) {
@@ -308,6 +309,23 @@ class SessionControls extends React.Component {
             onClick={() => this.props.submitInsightsJob('rebase_jobs')}
         >
           Rebase Jobs
+        </button>
+      </div>
+    )
+  }
+
+  afterScreensDetected(response) {
+console.log('get screens came back with ', response)
+  }
+
+  buildDetectScreensButton() {
+    return (
+      <div className='d-inline ml-2'>
+        <button
+            className='btn btn-primary'
+            onClick={() => this.props.detectScreens(this.afterScreensDetected)}
+        >
+          Detect Screens
         </button>
       </div>
     )
@@ -887,6 +905,7 @@ class SessionControls extends React.Component {
     const workbook_save_button = this.buildWorkbookSaveButton()
     const rebase_movies_button = this.buildRebaseMoviesButton()
     const rebase_jobs_button = this.buildRebaseJobsButton()
+    const detect_screens_button = this.buildDetectScreensButton()
     const ping_cv_worker_button = this.buildPingCvWorkerButton()
     const delete_old_jobs_button = this.buildDeleteOldJobsButton()
     const frameset_discriminator = this.buildFramesetDiscriminator()
@@ -927,11 +946,11 @@ class SessionControls extends React.Component {
                   {delete_old_jobs_button}
 
                   <div className='d-inline'>
-                      {workbook_load_button}
+                    {workbook_load_button}
                   </div>
 
                   <div className='d-inline'>
-                      {workbook_delete_button}
+                    {workbook_delete_button}
                   </div>
                   {workbook_save_button}
 
@@ -940,6 +959,7 @@ class SessionControls extends React.Component {
                 <div className='mt-2'>
                   {rebase_movies_button}
                   {rebase_jobs_button}
+                  {detect_screens_button}
                 </div>
 
                 {workbook_name}
