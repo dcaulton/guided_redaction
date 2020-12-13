@@ -1,20 +1,21 @@
 import cv2 
 import imutils
+from django.conf import settings
 import numpy as np
+import requests
 import json
 import random
 import copy
 
-from guided_redaction.jobs.models import Job
 
 
-class IntersectController():
+class GetScreensController():
 
     def __init__(self):
         self.debug = True
         self.build_masks = {}
 
-    def intersect_jobs(self, request_data):
+    def get_screens(self, request_data):
         response_movies = {}
         statistics = {'movies': {}}
 

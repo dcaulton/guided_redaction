@@ -5,11 +5,6 @@ from guided_redaction.analyze.classes.EastPlusTessGuidedAnalyzer import (
     EastPlusTessGuidedAnalyzer,
 )
 from .controller_t1 import T1Controller
-import numpy as np
-from django.conf import settings
-import requests
-
-requests.packages.urllib3.disable_warnings()
 
 
 class OcrController(T1Controller):
@@ -54,15 +49,11 @@ class OcrController(T1Controller):
         return response_data
 
     def scan_ocr(self, image_url, ocr_rule):
-        pic_response = requests.get(
-          image_url,
-          verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
-        )
-        image = pic_response.content
-
         analyzer = EastPlusTessGuidedAnalyzer()
-        nparr = np.fromstring(image, np.uint8)
-        cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        cv2_image = self.get_cv2_image_from_url(image_url)
+        if type(cv2_image) == type(None):
+            print('error fetching image for ocr')
+            return {}
 
         if ocr_rule['start']:
             start = ocr_rule['start']

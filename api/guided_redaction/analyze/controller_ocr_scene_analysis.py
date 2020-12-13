@@ -1,20 +1,11 @@
-import cv2
 from guided_redaction.analyze.classes.EastPlusTessGuidedAnalyzer import (
     EastPlusTessGuidedAnalyzer,
 )
 from guided_redaction.analyze.classes.OcrSceneAnalyzer import OcrSceneAnalyzer
 from .controller_t1 import T1Controller
-import numpy as np
-from django.conf import settings
-import requests
-
-requests.packages.urllib3.disable_warnings()
 
 
 class OcrSceneAnalysisController(T1Controller):
-
-    def __init__(self):
-        pass
 
     def scan_scene(self, request_data):
         osa_id = list(request_data.get("tier_1_scanners")['ocr_scene_analysis'].keys())[0]
@@ -61,17 +52,12 @@ class OcrSceneAnalysisController(T1Controller):
         return build_response_data
 
     def get_image_and_dimensions(self, img_url):
-        pic_response = requests.get(
-          img_url,
-          verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
-        )
-        image = pic_response.content
-        if not image:
-            return 
-
-        nparr = np.fromstring(image, np.uint8)
-        cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-        frame_dimensions = [cv2_image.shape[1], cv2_image.shape[0]]
+        frame_dimensions = (0, 0)
+        cv2_image = self.get_cv2_image_from_url(img_url)
+        if type(cv2_image) == type(None):
+            print('could not load image for osa')
+        else:
+            frame_dimensions = [cv2_image.shape[1], cv2_image.shape[0]]
         return frame_dimensions, cv2_image
 
     def analyze_one_frame(self, img_url, osa_rule, frameset):
@@ -82,8 +68,9 @@ class OcrSceneAnalysisController(T1Controller):
                 frameset_has_ocr_output = True
             
         frame_dimensions, cv2_image = self.get_image_and_dimensions(img_url)
+        raw_recognized_text_areas = []
+
         if frameset_has_ocr_output:
-            raw_recognized_text_areas = []
             for area_key in frameset.keys():
                 rta = frameset[area_key]
                 if 'scanner_type' not in rta or rta['scanner_type'] != 'ocr':
@@ -98,13 +85,15 @@ class OcrSceneAnalysisController(T1Controller):
                 rta['id'] = area_key
                 raw_recognized_text_areas.append(rta)
         else:
-            analyzer = EastPlusTessGuidedAnalyzer()
-            start = (0, 0)
-            end = (cv2_image.shape[1], cv2_image.shape[0])
-
-            raw_recognized_text_areas = analyzer.analyze_text(
-                cv2_image, [start, end]
-            )
+            if type(cv2_image) == type(None):
+                print('bypassing detecting text, there is no image to work on')
+            else:
+                analyzer = EastPlusTessGuidedAnalyzer()
+                start = (0, 0)
+                end = (cv2_image.shape[1], cv2_image.shape[0])
+                raw_recognized_text_areas = analyzer.analyze_text(
+                    cv2_image, [start, end]
+                )
 
         ocr_scene_analyzer = OcrSceneAnalyzer(raw_recognized_text_areas, osa_rule, frame_dimensions)
 

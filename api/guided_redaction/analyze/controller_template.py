@@ -1,13 +1,9 @@
 import cv2
+from .controller_t1 import T1Controller
 from guided_redaction.analyze.classes.TemplateMatcher import TemplateMatcher
-import numpy as np
-from django.conf import settings
-import requests
-
-requests.packages.urllib3.disable_warnings()
 
 
-class TemplateController:
+class TemplateController(T1Controller):
 
     def __init__(self):
         pass
@@ -63,34 +59,31 @@ class TemplateController:
                         one_image_url = frameset["images"][0]
                     else:
                         one_image_url = source_movies[movie_url]['framesets'][frameset_hash]['images'][0]
-                    oi_response = requests.get(
-                      one_image_url,
-                      verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
+
+                    target_image = self.get_cv2_image_from_url(one_image_url)
+                    if type(target_image) == type(None):
+                        print('error loading template source image')
+                        continue
+                    target_image = self.trim_target_image_to_t1_inputs(target_image, frameset)
+                    match_obj = template_matcher.get_template_coords(
+                        target_image, match_image, anchor_id, movie_url
                     )
-                    one_image = oi_response.content
-                    if one_image:
-                        oi_nparr = np.fromstring(one_image, np.uint8)
-                        target_image = cv2.imdecode(oi_nparr, cv2.IMREAD_COLOR)
-                        target_image = self.trim_target_image_to_t1_inputs(target_image, frameset)
-                        match_obj = template_matcher.get_template_coords(
-                            target_image, match_image, anchor_id, movie_url
-                        )
-                        match_statistics['movies'][movie_url]['framesets'][frameset_hash][anchor_id] = \
-                            match_obj['match_metadata']
-                        if match_obj['match_found']:
-                            (temp_coords, temp_scale) = match_obj['match_coords']
-                            if movie_url not in matches['movies']:
-                                matches['movies'][movie_url] = {}
-                                matches['movies'][movie_url]['framesets'] = {}
-                            if frameset_hash not in matches['movies'][movie_url]['framesets']:
-                                matches['movies'][movie_url]['framesets'][frameset_hash] = {}
-                            matches['movies'][movie_url]['framesets'][frameset_hash][anchor_id] = {}
-                            matches_for_anchor = \
-                                matches['movies'][movie_url]['framesets'][frameset_hash][anchor_id]
-                            matches_for_anchor['location'] = temp_coords
-                            matches_for_anchor['size'] = size
-                            matches_for_anchor['scale'] = temp_scale
-                            matches_for_anchor['scanner_type'] = 'template'
+                    match_statistics['movies'][movie_url]['framesets'][frameset_hash][anchor_id] = \
+                        match_obj['match_metadata']
+                    if match_obj['match_found']:
+                        (temp_coords, temp_scale) = match_obj['match_coords']
+                        if movie_url not in matches['movies']:
+                            matches['movies'][movie_url] = {}
+                            matches['movies'][movie_url]['framesets'] = {}
+                        if frameset_hash not in matches['movies'][movie_url]['framesets']:
+                            matches['movies'][movie_url]['framesets'][frameset_hash] = {}
+                        matches['movies'][movie_url]['framesets'][frameset_hash][anchor_id] = {}
+                        matches_for_anchor = \
+                            matches['movies'][movie_url]['framesets'][frameset_hash][anchor_id]
+                        matches_for_anchor['location'] = temp_coords
+                        matches_for_anchor['size'] = size
+                        matches_for_anchor['scale'] = temp_scale
+                        matches_for_anchor['scanner_type'] = 'template'
         matches['statistics'] = match_statistics
         return matches
 

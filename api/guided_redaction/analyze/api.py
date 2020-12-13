@@ -1,4 +1,3 @@
-import cv2
 from guided_redaction.analyze.classes.TelemetryAnalyzer import TelemetryAnalyzer
 from guided_redaction.analyze.classes.TemplateMatcher import TemplateMatcher
 from guided_redaction.analyze.classes.ChartMaker import ChartMaker
@@ -13,8 +12,8 @@ from .controller_template import TemplateController
 from .controller_filter import FilterController
 from .controller_timestamp import TimestampController
 from .controller_intersect import IntersectController
+from .controller_get_screens import GetScreensController
 import json
-import numpy as np
 from django.conf import settings
 from django.shortcuts import render
 import re
@@ -360,5 +359,19 @@ class AnalyzeViewSetIntersect(viewsets.ViewSet) :
 
         worker = IntersectController()
         response_data = worker.intersect_jobs(request_data)
+
+        return Response(response_data)
+
+class AnalyzeViewSetGetScreens(viewsets.ViewSet) :
+    def create(self, request):
+        request_data = request.data
+        return self.process_create_request(request_data)
+
+    def process_create_request(self, request_data):
+        if not request_data.get("image_url"):
+            return self.error("image_url is required", status_code=400)
+
+        worker = GetScreensController()
+        response_data = worker.get_screens(request_data)
 
         return Response(response_data)

@@ -1,12 +1,5 @@
-import cv2 
-from django.conf import settings
-import numpy as np
-import requests
 from .controller_t1 import T1Controller
-
 from guided_redaction.analyze.classes.MeshMatchFinder import MeshMatchFinder
-
-requests.packages.urllib3.disable_warnings()
 
 
 class MeshMatchController(T1Controller):
@@ -49,10 +42,16 @@ class MeshMatchController(T1Controller):
             if self.debug:
                 image_name = image_url.split('/')[-1]
                 print('meshmmatch trying image {} with mr hash {}'.format(image_name, most_recent_t1_frameset_hash))
-            cv2_image = self.get_cv2_image(image_url)
+            cv2_image = self.get_cv2_image_from_url(image_url)
+            if type(cv2_image) == type(None):
+                print('error fetching first image for mesh match')
+                continue
             if most_recent_t1_frameset_hash not in meshes:
                 mr_image_url = source_movies[movie_url]['framesets'][most_recent_t1_frameset_hash]['images'][0]
-                mr_cv2_image = self.get_cv2_image(mr_image_url)
+                mr_cv2_image = self.get_cv2_image_from_url(mr_image_url)
+                if type(mr_cv2_image) == type(None):
+                    print('error fetching second image for mesh match')
+                    continue
                 meshes = {}  # this algo only cares about the most recent one anyway
                 meshes[most_recent_t1_frameset_hash] = finder.build_mesh(most_recent_t1_frameset, mr_cv2_image)
             match_obj, match_stats = finder.match_mesh(
@@ -65,14 +64,3 @@ class MeshMatchController(T1Controller):
                 response_movies[movie_url]['framesets'][frameset_hash][match_obj['id']] = match_obj
             mesh_statistics['movies'][movie_url]['framesets'][frameset_hash] = match_stats
         return response_movies, mesh_statistics
-
-    def get_cv2_image(self, image_url):
-        cv2_image = None
-        image = requests.get(
-          image_url,
-          verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
-        ).content
-        if image:
-            nparr = np.fromstring(image, np.uint8)
-            cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-        return cv2_image

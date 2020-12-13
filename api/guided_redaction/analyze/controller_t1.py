@@ -1,4 +1,21 @@
+import requests
+import cv2
+import numpy as np
+from django.conf import settings
+
+
 class T1Controller:
+
+    def get_cv2_image_from_url(self, image_url):
+        cv2_image = None
+        image = requests.get(
+          image_url,
+          verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
+        ).content
+        if image:
+            nparr = np.fromstring(image, np.uint8)
+            cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        return cv2_image
 
     def get_frameset_hash_for_frame(self, frame, framesets):
         for frameset_hash in framesets:

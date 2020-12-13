@@ -1,19 +1,11 @@
 import json
 import random
 import math
-import cv2
-from django.conf import settings
-import numpy as np
-import requests
 from guided_redaction.analyze.classes.ExtentsFinder import ExtentsFinder
+from .controller_t1 import T1Controller
 
-requests.packages.urllib3.disable_warnings()
 
-
-class SelectedAreaController:
-
-    def __init__(self):
-        pass
+class SelectedAreaController(T1Controller):
 
     def build_selected_areas(self, request_data):
         response_movies = {}
@@ -37,6 +29,9 @@ class SelectedAreaController:
             cv2_image = self.get_cv2_image_from_movies(
                 frameset, source_movies, movie_url, frameset_hash
             ) 
+            if type(cv2_image) == type(None):
+                print('error getting image for selected area')
+                continue
             regions_for_image = self.build_sa_regions(frameset, cv2_image, selected_area_meta, finder)
             regions_as_hashes = {}
             if regions_for_image:
@@ -123,19 +118,12 @@ class SelectedAreaController:
         return [new_region]
 
     def get_cv2_image_from_movies(self, frameset, source_movies, movie_url, frameset_hash):
-        cv2_image = None
         if 'images' in frameset:
             image_url = frameset['images'][0]
         else:
             image_url = source_movies[movie_url]['framesets'][frameset_hash]['images'][0]
-        image = requests.get(
-          image_url,
-          verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
-        ).content
-        if image:
-            nparr = np.fromstring(image, np.uint8)
-            cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-        return cv2_image
+
+        return self.get_cv2_image_from_url(image_url)
 
     def enforce_max_zones(self, selected_area_meta, regions, source_frameset):
         if 'maximum_zones' not in selected_area_meta or not selected_area_meta['maximum_zones']:
@@ -482,4 +470,3 @@ class SelectedAreaController:
             })
             return new_regions
         return regions_for_image
-

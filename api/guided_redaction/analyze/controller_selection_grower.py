@@ -1,7 +1,3 @@
-import cv2 
-from django.conf import settings
-import numpy as np
-import requests
 from .controller_t1 import T1Controller
 
 from guided_redaction.analyze.classes.SelectionGrower import SelectionGrower
@@ -9,8 +5,6 @@ from guided_redaction.analyze.classes.EastPlusTessGuidedAnalyzer import (
     EastPlusTessGuidedAnalyzer,
 )
 from guided_redaction.analyze.classes.TemplateMatcher import TemplateMatcher
-
-requests.packages.urllib3.disable_warnings()
 
 
 class SelectionGrowerController(T1Controller):
@@ -45,7 +39,9 @@ class SelectionGrowerController(T1Controller):
                 if self.debug:
                     image_name = image_url.split('/')[-1]
                     print('selection grower trying image {}'.format(image_name))
-                cv2_image = self.get_cv2_image(image_url)
+                cv2_image = self.get_cv2_image_from_url(image_url)
+                if type(cv2_image) == type(None):
+                    continue
                 t1_match_data = movies[movie_url]['framesets'][frameset_hash]
                 if sg_meta['usage_mode'] == 'capture_grid' and \
                         not self.match_data_contains_scanner_type('ocr',          t1_match_data):
@@ -100,14 +96,3 @@ class SelectionGrowerController(T1Controller):
         )
         for rta in raw_rtas:
             t1_match_data[rta['id']] = rta
-
-    def get_cv2_image(self, image_url):
-        cv2_image = None
-        image = requests.get(
-          image_url,
-          verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
-        ).content
-        if image:
-            nparr = np.fromstring(image, np.uint8)
-            cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-        return cv2_image

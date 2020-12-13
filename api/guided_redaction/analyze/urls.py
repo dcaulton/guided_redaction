@@ -5,10 +5,5 @@ from . import api
 router = get_router()
 
 router.register(
-    r"v1/analyze/east-tess", api.AnalyzeViewSetOcr, basename="GeorgeCarlin"
-)
-router.register(
-    r"v1/analyze/scan-template",
-    api.AnalyzeViewSetScanTemplate,
-    basename="GaryColeman",
+    r"v1/analyze/get-screens", api.AnalyzeViewSetGetScreens, basename="CousinGeri"
 )
