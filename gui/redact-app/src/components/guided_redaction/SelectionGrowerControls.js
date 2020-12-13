@@ -45,6 +45,7 @@ class SelectionGrowerControls extends React.Component {
       hist_bin_count: 8,
       min_num_pixels: 50,
       region_build_mode: 'near_flood',
+      whitelist_or_blacklist: 'whitelist',
       attribute_search_name: '',
       attribute_search_value: '',
       first_click_coords: [],
@@ -124,7 +125,6 @@ class SelectionGrowerControls extends React.Component {
     }
     
     let build_color = {
-      whitelist_or_blacklist: target_color['whitelist'],
       thickness: target_color['thickness'],
       tolerance: new_tolerance,
       value: new_color,
@@ -204,7 +204,6 @@ class SelectionGrowerControls extends React.Component {
       Math.min(255, response_obj['color'][2] + tolerance)
     ]
     const color_obj = {
-      whitelist_or_blacklist: 'whitelist',
       thickness: 0,
       tolerance: 55,
       value: response_obj['color'],
@@ -315,6 +314,7 @@ class SelectionGrowerControls extends React.Component {
         hist_bin_count: sam['hist_bin_count'],
         min_num_pixels: sam['min_num_pixels'],
         region_build_mode: sam['region_build_mode'],
+        whitelist_or_blacklist: sam['whitelist_or_blacklist'],
       })
     }
     let deepCopyIds = JSON.parse(JSON.stringify(this.props.current_ids))
@@ -353,6 +353,7 @@ class SelectionGrowerControls extends React.Component {
       hist_bin_count: 8,
       min_num_pixels: 50,
       region_build_mode: 'near_flood',
+      whitelist_or_blacklist: 'whitelist',
     })
   }
 
@@ -376,6 +377,7 @@ class SelectionGrowerControls extends React.Component {
       hist_bin_count: this.state.hist_bin_count,
       min_num_pixels: this.state.min_num_pixels,
       region_build_mode: this.state.region_build_mode,
+      whitelist_or_blacklist: this.state.whitelist_or_blacklist,
     }
     return meta
   }
@@ -762,14 +764,6 @@ class SelectionGrowerControls extends React.Component {
     }
   }
 
-  setColorWhitelistBlacklist(color_key, value) {
-    let deepCopyColors = JSON.parse(JSON.stringify(this.state.colors))
-    if (Object.keys(this.state.colors).includes(color_key)) {
-      deepCopyColors[color_key]['whitelist_or_blacklist'] = value
-      this.setLocalStateVar('colors', deepCopyColors)
-    }
-  }
-
   clearColor(color_key) {
     let deepCopyColors = JSON.parse(JSON.stringify(this.state.colors))
     delete deepCopyColors[color_key]
@@ -783,10 +777,10 @@ class SelectionGrowerControls extends React.Component {
     ]
     return buildLabelAndDropdown(
       wl_bl,
-      '',
-      this.state.colors[color_key]['whitelist_or_blacklist'],
+      'Whitelist or Blacklist',
+      this.state.whitelist_or_blacklist,
       'whitelist_or_blacklist',
-      ((value)=>{this.setColorWhitelistBlacklist(color_key, value)})
+      ((value)=>{this.setLocalStateVar('whitelist_or_blacklist', value)})
     )
   } 
 
@@ -802,7 +796,6 @@ class SelectionGrowerControls extends React.Component {
         </div>
         {Object.keys(this.state.colors).map((color_key, index) => {
           const color = this.state.colors[color_key]
-          const whitelist_blacklist = this.buildWhitelistBlacklist(color_key)
           const color_string = 'rgb(' + color['value'].join(',') + ')'
           const div_style = {
             width:'50px',
@@ -851,10 +844,6 @@ class SelectionGrowerControls extends React.Component {
                         onChange={(event) => this.setColorTolerance(color_key, event.target.value)}
                       />
                     </div>
-                  </div>
-
-                  <div className='col-2'>
-                    {whitelist_blacklist}
                   </div>
 
                   <div className='col-2 ml-2'>
@@ -921,6 +910,7 @@ class SelectionGrowerControls extends React.Component {
     const hist_bin_count_field = this.buildHistBinCountField()
     const min_num_pixels_field = this.buildMinNumPixelsField()
     const region_build_mode_field = this.buildRegionBuildModeField()
+    const whitelist_blacklist_field = this.buildWhitelistBlacklist()
     return (
       <div className='col'>
         <div className='row h5 border-top border-bottom bg-gray'>
@@ -967,6 +957,10 @@ class SelectionGrowerControls extends React.Component {
 
           <div className='row mt-2'>
             {region_build_mode_field}
+          </div>
+
+          <div className='row mt-2'>
+            {whitelist_blacklist_field}
           </div>
 
           <div className='row mt-2'>
