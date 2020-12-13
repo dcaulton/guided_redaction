@@ -48,6 +48,9 @@ class PipelineControls extends React.Component {
       use_parsed_movies: false,
       json: '',
     }
+    this.t1_scanner_types = [
+      'template', 'selected_area', 'mesh_match', 'selection_grower', 'ocr', 'ocr_scene_analysis', 'telemetry'
+    ]
     this.afterPipelineSaved=this.afterPipelineSaved.bind(this)
     this.deletePipeline=this.deletePipeline.bind(this)
     this.addNode=this.addNode.bind(this)
@@ -88,12 +91,10 @@ class PipelineControls extends React.Component {
 
   handleAddEntityId(deepCopyNodeMetadata, node_id, value) {
     const node = deepCopyNodeMetadata['node'][node_id]
-    // TODO can this become a two liner now?
-    const good_values = [
-      'template', 'selected_area', 'mesh_match', 'selection_grower', 'ocr', 'ocr_scene_analysis', 'telemetry'
-    ]
-    if (good_values.includes(node['type'])) {
+    if (this.t1_scanner_types.includes(node['type'])) {
       deepCopyNodeMetadata['tier_1_scanners'][node['type']][value] = this.props.tier_1_scanners[node['type']][value]
+    } else if (node['type'] === 'redact' && Object.keys(this.props.redact_rules).includes(value)) {
+      deepCopyNodeMetadata['redact_rules'][value] = this.props.redact_rules[value]
     }
   }
 
@@ -723,7 +724,6 @@ class NodeCard extends React.Component {
   getSelectForPipelineId() {
     return (
       <select
-          name='step_type'
           value={this.props.node_metadata['node'][this.props.node_id]['entity_id']}
           onChange={
             (event) => this.props.updateNodeValue(this.props.node_id, 'entity_id', event.target.value)
@@ -741,9 +741,31 @@ class NodeCard extends React.Component {
       </select>
     )
   }
+
+  getSelectForRedact() {
+    return (
+      <select
+          value={this.props.node_metadata['node'][this.props.node_id]['entity_id']}
+          onChange={
+            (event) => this.props.updateNodeValue(this.props.node_id, 'entity_id', event.target.value)
+          }
+      >
+        {Object.keys(this.props.redact_rules).map((redact_rule_id, index) => {
+          const redact_rule = this.props.redact_rules[redact_rule_id]
+          return (
+            <option value={redact_rule_id} key={index}>{redact_rule['name']}</option>
+          )
+        })}
+      </select>
+    )
+  }
+
   getSelectForEntityId() {
     if (this.props.node_metadata['node'][this.props.node_id]['type'] === 'pipeline') {
       return this.getSelectForPipelineId()
+    }
+    if (this.props.node_metadata['node'][this.props.node_id]['type'] === 'redact') {
+      return this.getSelectForRedact()
     }
     let options = []
     let added_ids = []
@@ -801,6 +823,7 @@ class NodeCard extends React.Component {
     if (
       !id_types.includes(this.props.node_metadata['node'][this.props.node_id]['type'])
       && this.props.node_metadata['node'][this.props.node_id]['type'] !== 'pipeline'
+      && this.props.node_metadata['node'][this.props.node_id]['type'] !== 'redact'
     ) {
       return ''
     }
@@ -912,7 +935,6 @@ class NodeCard extends React.Component {
   }
 
   toggleNodeInList(type, parent_node_id, minuend_node_id) {
-console.log('dippy', type, this.props.mandatory_nodes)
     let deepCopyMins = JSON.parse(JSON.stringify(this.props[type]))
     if (Object.keys(deepCopyMins).includes(parent_node_id)) {
       if (deepCopyMins[parent_node_id].includes(minuend_node_id)) {

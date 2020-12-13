@@ -35,6 +35,7 @@ class DispatchController:
         first_node_id = self.get_first_node_id(content)
         if first_node_id:
             child_job = self.build_job(content, first_node_id, parent_job)
+            print('pappy 02', child_job.request_data)
             if child_job:
                 self.dispatch_child(parent_job, child_job, input_data, workbook_id, owner)
         return parent_job.id
@@ -151,6 +152,7 @@ class DispatchController:
             request_data=json.dumps(build_request_data),
         )
         job.save()
+        print('diddy job {} gets {} bytes of request data'.format(job.id, len(build_request_data)))
 
         attribute = Attribute(
             name='pipeline_job_link',
@@ -339,9 +341,11 @@ class DispatchController:
         source_movies = self.get_source_movies_from_parent_job(parent_job)
 
         build_data = json.loads(data_in)
+        print('ninkey ', parent_job.request_data_path)
         if source_movies and 'source' not in build_data['movies']:
             build_data['movies']['source'] = source_movies
 
+        print('spikey ', pipeline.name, build_data)
         job = Job(
             status='created',
             description='job for pipeline ' + pipeline.name,
@@ -603,7 +607,8 @@ class DispatchController:
 
         if previous_job:
             previous_result = json.loads(previous_job.response_data)
-            build_movies = previous_result['movies']
+            if previous_result.get('movies'):
+                build_movies = previous_result['movies']
             if source_movies and 'source' not in build_movies:
                 build_movies['source'] = source_movies
         else:

@@ -14,11 +14,42 @@ class PipelinePanel extends React.Component {
       show_job_status_image: true,
       show_job_status_details: true,
       restart_safety: true,
+      cancel_jobs: [],
     }
     this.saveJobResultData=this.saveJobResultData.bind(this)
     this.updateActiveJobStatus=this.updateActiveJobStatus.bind(this)
     this.restartJobCompleted=this.restartJobCompleted.bind(this)
     this.refreshJobStatus=this.refreshJobStatus.bind(this)
+  }
+
+  toggleCancelJob(job_id) {
+    let new_cancel_jobs = []
+    let job_found = false
+    for (let i=0; i < this.state.cancel_jobs.length; i++) {
+      if (this.state.cancel_jobs[i] === job_id) {
+        job_found = true
+      } else {
+        new_cancel_jobs.push(this.state.cancel_jobs[i])
+      }
+    }
+    if (!job_found) {
+      new_cancel_jobs.push(job_id)
+    }
+    this.setState({'cancel_jobs': new_cancel_jobs})
+  }
+
+  tryToDoMultiDelete(job_id) {
+    let resp = window.confirm("Are you sure you want to delete these jobs?")
+    if (resp) {
+      this.doMultiDelete()
+    } 
+  }
+
+  doMultiDelete() {
+    for (let i=0; i < this.state.cancel_jobs.length; i++) {
+      const job_id = this.state.cancel_jobs[i]
+      this.props.cancelJob(job_id)
+    }
   }
 
   loadRelevantPipelines(gp_resp_obj) {
@@ -770,6 +801,14 @@ class PipelinePanel extends React.Component {
                 <td>Created</td>
                 <td>Status</td>
                 <td></td>
+                <td>
+                  <button
+                    className='btn btn-primary p-1'
+                    onClick={()=>this.tryToDoMultiDelete()}
+                  >
+                    Del
+                  </button>
+                </td>
               </tr>
             </thead>
             <tbody>
@@ -782,6 +821,10 @@ class PipelinePanel extends React.Component {
                 let status_line = job_obj.status
                 if (status_line === 'running') {
                   status_line += ' - ' + Math.floor(100 * parseFloat(job_obj.percent_complete)) + '% done'
+                }
+                let cancel_checked = ''
+                if (this.state.cancel_jobs && this.state.cancel_jobs.includes(job_obj.id)) {
+                  cancel_checked = 'checked'
                 }
                 return (
                   <tr 
@@ -810,6 +853,13 @@ class PipelinePanel extends React.Component {
                       >
                         Delete Job
                       </button>
+                    </td>
+                    <td>
+                      <input
+                        type='checkbox'
+                        checked={cancel_checked}
+                        onChange={() => this.toggleCancelJob(job_obj.id)}
+                      />
                     </td>
                   </tr>
                 )
