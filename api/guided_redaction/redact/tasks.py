@@ -40,21 +40,32 @@ def build_and_dispatch_redact_threaded_children(parent_job):
     job_counter = 0
     request_data = json.loads(parent_job.request_data)
     movies = request_data['movies']
+    source_movies = False
+    if 'source' in movies:
+        source_movies = movies['source']
+        del movies['source']
     for movie_url in movies:
         movie = movies[movie_url]
         for frameset_hash in movie['framesets']:
-            if 'areas_to_redact' in movie['framesets'][frameset_hash].keys():
+            frameset = movie['framesets'][frameset_hash]
+            if frameset_is_tier_2(frameset):
+                build_request_data = build_t2_image_request_data(
+                  movie_url, frameset_hash, frameset, request_data['redact_rule'], request_data['meta']
+                )
+            elif frameset_is_tier_1(frameset):
+                build_request_data = build_t1_image_request_data(
+                  movie_url, 
+                  frameset_hash, 
+                  frameset, 
+                  request_data['redact_rule'], 
+                  request_data['meta'], 
+                  source_movies
+                )
+
+            if build_request_data:
                 job_counter += 1
-                request_data = {
-                    'movie_url': movie_url,
-                    'frameset_hash': frameset_hash,
-                    'image_url': movie['framesets'][frameset_hash]['images'][0],
-                    'areas_to_redact': movie['framesets'][frameset_hash]['areas_to_redact'],
-                    'redact_rule': request_data['redact_rule'],
-                    'meta': request_data['meta'],
-                }
                 job = Job(
-                    request_data=json.dumps(request_data),
+                    request_data=json.dumps(build_request_data),
                     status='created',
                     description='redact image for frameset {}'.format(frameset_hash),
                     app='redact',
@@ -64,6 +75,43 @@ def build_and_dispatch_redact_threaded_children(parent_job):
                 )
                 job.save()
                 redact_single.delay(job.id)
+
+def frameset_is_tier_1(frameset):
+    if 'images' not in frameset.keys():
+        return True
+
+def frameset_is_tier_2(frameset):
+    if 'areas_to_redact' in frameset.keys():
+        return True
+
+def build_t1_image_request_data(movie_url, frameset_hash, frameset, redact_rule, meta, source_movies):
+    areas_to_redact = []
+    [areas_to_redact.append(frameset[match_key]) for match_key in frameset]
+    source_image_url = ''
+    if movie_url in source_movies and frameset_hash in source_movies[movie_url]['framesets']:
+        source_image_url = source_movies[movie_url]['framesets'][frameset_hash]['images'][0]
+
+    if source_image_url:
+        request_data = {
+            'movie_url': movie_url,
+            'frameset_hash': frameset_hash,
+            'image_url': source_image_url,
+            'areas_to_redact': areas_to_redact,
+            'redact_rule': redact_rule,
+            'meta': meta,
+        }
+        return request_data
+
+def build_t2_image_request_data(movie_url, frameset_hash, frameset, redact_rule, meta):
+    request_data = {
+        'movie_url': movie_url,
+        'frameset_hash': frameset_hash,
+        'image_url': frameset['images'][0],
+        'areas_to_redact': frameset['areas_to_redact'],
+        'redact_rule': redact_rule,
+        'meta': meta,
+    }
+    return request_data
 
 def wrap_up_redact_threaded(job, children):
     aggregate_response_data = {

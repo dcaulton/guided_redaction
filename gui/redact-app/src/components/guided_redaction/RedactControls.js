@@ -225,13 +225,13 @@ class RedactControls extends React.Component {
             <div key={index1}>
               {Object.keys(this.props.tier_1_matches[scanner_type]).map((scanner_id, index2) => {
                 const scanner = this.props.tier_1_scanners[scanner_type][scanner_id]
+                const desc = 'Frames matched by ' + scanner_type + ' job: ' + scanner['name']
                 const build_obj = {
                   source_type: 't1_scanner',
                   scanner_type: scanner_type,
                   source_id: scanner_id,
                   job_desc: desc,
                 }
-                const desc = 'Frames matched by ' + scanner_type + ' job: ' + scanner['name']
                 return (
                   <div key={index2}>
                     <button className='dropdown-item'
