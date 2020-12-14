@@ -334,6 +334,9 @@ class BottomInsightsControls extends React.Component {
           deleteScanner={this.props.deleteScanner}
           importRedactRule={this.props.importRedactRule}
           saveScannerToDatabase={this.props.saveScannerToDatabase}
+          tier_1_scanners={this.props.tier_1_scanners}
+          tier_1_matches={this.props.tier_1_matches}
+          jobs={this.props.jobs}
         />
 
         <ZipControls

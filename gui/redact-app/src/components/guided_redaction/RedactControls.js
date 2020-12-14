@@ -176,21 +176,96 @@ class RedactControls extends React.Component {
     )
   }
 
+  buildRedactPipelineOptions() {
+    if (!Object.keys(this.props.tier_1_matches).includes('pipeline')) {
+      return ''
+    }
+    return (
+      <div>
+        {Object.keys(this.props.tier_1_matches['pipeline']).map((match_id, index1) => {
+          let desc = 'unknown pipeline job ' + match_id
+          let job = false
+          for (let i=0; i < this.props.jobs.length; i++) {
+            const test_job = this.props.jobs[i]
+            if (test_job['id'] === match_id) {
+              job = test_job
+            }
+          }
+          if (job) {
+            desc = 'Frames matched by pipeline job: ' + job['description']
+          }
+
+          const build_obj = {
+            source_type: 'pipeline',
+            source_id: match_id,
+            job_desc: desc,
+          }
+          return (
+            <div key={index1}>
+              <button className='dropdown-item'
+                onClick={() => this.props.submitInsightsJob('redact_custom', build_obj)}
+              >
+                {desc}
+              </button>
+            </div>
+          )
+        })}
+      </div>
+    )
+  }
+
+  buildRedactT1Options() {
+    return (
+      <div>
+        {Object.keys(this.props.tier_1_matches).map((scanner_type, index1) => {
+          if (scanner_type === 'pipeline') {
+            return ''
+          }
+          return (
+            <div key={index1}>
+              {Object.keys(this.props.tier_1_matches[scanner_type]).map((scanner_id, index2) => {
+                const scanner = this.props.tier_1_scanners[scanner_type][scanner_id]
+                const build_obj = {
+                  source_type: 't1_scanner',
+                  scanner_type: scanner_type,
+                  source_id: scanner_id,
+                  job_desc: desc,
+                }
+                const desc = 'Frames matched by ' + scanner_type + ' job: ' + scanner['name']
+                return (
+                  <div key={index2}>
+                    <button className='dropdown-item'
+                      onClick={() => this.props.submitInsightsJob('redact_custom', build_obj)}
+                    >
+                      {desc}
+                    </button>
+                  </div>
+                )
+              })}
+            </div>
+          )
+        })}
+      </div>
+    )
+  }
+
   buildRedactButton() {
     if (Object.keys(this.props.movies).length === 0) {
       return
     }
+    const t1_options = this.buildRedactT1Options()
+    const pipeline_options = this.buildRedactPipelineOptions()
     return (
       <div className='d-inline'>
         <button
-            className='btn btn-primary ml-2 mt-2 dropdown-toggle'
+            className='btn btn-primary ml-2 dropdown-toggle'
             type='button'
             id='redactDropdownButton'
             data-toggle='dropdown'
             area-haspopup='true'
             area-expanded='false'
         >
-          Redact
+          Run
         </button>
         <div className='dropdown-menu' aria-labelledby='redactDropdownButton'>
           <button className='dropdown-item'
@@ -203,6 +278,9 @@ class RedactControls extends React.Component {
           >
             All Movies
           </button>
+
+          {t1_options}
+          {pipeline_options}
         </div>
       </div>
     )

@@ -488,6 +488,16 @@ class InsightsPanel extends React.Component {
     } else if (job_type === 'redact_all_movies') {
       job_data['request_data']['movies'] = this.props.movies
       job_data['description'] = 'redact all movies'
+    } else if (job_type === 'redact_custom') {
+      let tier_1_output = {}
+      if (extra_data['source_type'] === 'pipeline') {
+        tier_1_output = this.props.tier_1_matches['pipeline'][ extra_data['source_id']]['movies']
+      } else if (extra_data['source_type'] === 't1_scanner') {
+        tier_1_output = this.props.tier_1_matches[extra_data['scannr_type']][ extra_data['source_id']]['movies']
+      } 
+      job_data['description'] = 'redact on ' + extra_data['job_desc']
+      job_data['request_data']['movies'] = tier_1_output
+      job_data['request_data']['movies']['source'] = this.makeSourceForPassedT1Output(tier_1_output)
     }
     return job_data
   }
