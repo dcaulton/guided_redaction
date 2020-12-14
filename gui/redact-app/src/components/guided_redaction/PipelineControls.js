@@ -96,6 +96,29 @@ class PipelineControls extends React.Component {
     } else if (node['type'] === 'redact' && Object.keys(this.props.redact_rules).includes(value)) {
       deepCopyNodeMetadata['redact_rules'][value] = this.props.redact_rules[value]
     }
+    let entity_ids_used = []
+    for (let i=0; i < Object.keys(deepCopyNodeMetadata['node']).length; i++) {
+      const each_node_key = Object.keys(deepCopyNodeMetadata['node'])[i]
+      const each_node = deepCopyNodeMetadata['node'][each_node_key]
+      if (each_node['entity_id']) {
+        entity_ids_used.push(each_node['entity_id'])
+      }
+    }
+    for (let i=0; i < Object.keys(deepCopyNodeMetadata['tier_1_scanners']).length; i++) {
+      const scanner_type = Object.keys(deepCopyNodeMetadata['tier_1_scanners'])[i]
+      for (let j=0; j < Object.keys(deepCopyNodeMetadata['tier_1_scanners'][scanner_type]).length; j++) {
+        const scanner_id = Object.keys(deepCopyNodeMetadata['tier_1_scanners'][scanner_type])[j]
+        if (!entity_ids_used.includes(scanner_id)) {
+          delete deepCopyNodeMetadata['tier_1_scanners'][scanner_type][scanner_id]
+        }
+      }
+    }
+    for (let i=0; i < Object.keys(deepCopyNodeMetadata['redact_rules']).length; i++) {
+      const rr_id = Object.keys(deepCopyNodeMetadata['redact_rules'])[i]
+      if (!entity_ids_used.includes(rr_id)) {
+        delete deepCopyNodeMetadata['redact_rules'][rr_id]
+      }
+    }
   }
 
   updateNodeValue(node_id, field_name, value) {
