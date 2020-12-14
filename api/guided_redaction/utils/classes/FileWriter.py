@@ -94,6 +94,13 @@ class FileWriter():
         fh.close()
         return 0
 
+    def delete_item_at_filepath(self, file_fullpath):
+        if os.path.exists(file_fullpath):
+            os.remove(file_fullpath)
+            (file_dir, file_name) = os.path.split(file_fullpath)
+            if len(os.listdir(file_dir)) == 0:
+                shutil.rmtree(file_dir)
+
     def get_text_data_from_filepath(self, file_fullpath):
         if not os.path.exists(file_fullpath):
             return ''

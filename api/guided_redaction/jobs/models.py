@@ -54,12 +54,18 @@ class Job(models.Model):
         if percent_complete != self.percent_complete:
             self.percent_complete = percent_complete
 
+        old_files_to_clear_out_exist = False
+        old_response_path = ''
+        old_request_path = ''
         if self.response_data and len(self.response_data) > self.MAX_DB_PAYLOAD_SIZE:
             checksum = hashlib.md5(self.response_data.encode('utf-8')).hexdigest()
             if self.response_data_checksum != checksum:
                 print('saving job response data to disk, its {} bytes'.format(len(self.response_data)))
                 self.response_data_checksum = checksum
                 directory = self.get_current_directory('response')
+                if self.response_data_path:
+                    old_response_path = self.response_data_path
+                    old_files_to_clear_out_exist = True
                 self.response_data_path = \
                     self.save_data_to_disk(self.response_data, directory, 'response')
                 self.response_data = '{}'
@@ -70,8 +76,14 @@ class Job(models.Model):
                 self.request_data_checksum = checksum
                 print('saving job request data to disk, its {} bytes'.format(len(self.request_data)))
                 directory = self.get_current_directory('request')
+                if self.request_data_path:
+                    old_request_path = self.request_data_path
+                    old_files_to_clear_out_exist = True
                 self.request_data_path = self.save_data_to_disk(self.request_data, directory, 'request')
                 self.request_data = '{}'
+
+        if old_files_to_clear_out_exist:
+            self.delete_data_from_disk(old_request_path, old_response_path)
 
         super(Job, self).save(*args, **kwargs)
 
@@ -154,6 +166,18 @@ class Job(models.Model):
         instance.get_data_from_disk()
         return instance
 
+    def delete_data_from_disk(self, request_data_path, response_data_path):
+        if request_data_path or response_data_path:
+            fw = FileWriter(
+                working_dir=settings.REDACT_FILE_STORAGE_DIR,
+                base_url=settings.REDACT_FILE_BASE_URL,
+                image_request_verify_headers=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
+            )
+        if request_data_path:
+            fw.delete_item_at_filepath(request_data_path)
+        if response_data_path:
+            fw.delete_item_at_filepath(response_data_path)
+
     def save_data_to_disk(self, data, directory, request_or_response='request'):
         fw = FileWriter(
             working_dir=settings.REDACT_FILE_STORAGE_DIR,
@@ -190,6 +214,7 @@ class Job(models.Model):
             for keep_attr in keep_attrs:
                 keep_attr.job = None
                 keep_attr.save()
+        self.delete_data_from_disk(self.request_data_path, self.response_data_path)
         super(Job, self).delete()
 
     def add_owner(self, owner_id):
