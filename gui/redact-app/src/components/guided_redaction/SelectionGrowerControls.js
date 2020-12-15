@@ -887,6 +887,11 @@ class SelectionGrowerControls extends React.Component {
 
   setUsageMode(the_usage_mode) {
     this.setLocalStateVar('usage_mode', the_usage_mode)
+    if (!document.getElementById('color_projection_fields') ||
+        !document.getElementById('grid_capture_fields') ||
+        !document.getElementById('template_capture_fields')) {
+      return
+    }
     if (the_usage_mode === 'color_projection') {
       document.getElementById('color_projection_fields').style.display = 'block'
       document.getElementById('grid_capture_fields').style.display = 'none'

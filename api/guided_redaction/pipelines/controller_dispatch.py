@@ -18,9 +18,11 @@ class DispatchController:
         pass
 
     def dispatch_pipeline(self, pipeline_id, input_data, workbook_id=None, owner=None, parent_job=None):
+        print('TIPPY dispatching pipeline ', pipeline_id)
         pipeline = Pipeline.objects.get(pk=pipeline_id)
         content = json.loads(pipeline.content)
         child_job_count = self.get_number_of_child_jobs(content) 
+        print('bali input data is this long: ', len(input_data))
         if not parent_job:
             parent_job = self.build_parent_job(
               pipeline, 
@@ -29,13 +31,16 @@ class DispatchController:
               workbook_id, 
               owner
             )
+        print('bali2 built parent job has this length ', len(parent_job.request_data))
         make_anticipated_operation_count_attribute_for_job(parent_job, child_job_count)
         self.try_to_make_child_time_fractions_attribute(parent_job, pipeline)
 
         first_node_id = self.get_first_node_id(content)
+        print('polly 01')
         if first_node_id:
+            print('polly 02', parent_job)
             child_job = self.build_job(content, first_node_id, parent_job)
-            print('pappy 02', child_job.request_data)
+            print('polly 03', len(child_job.request_data))
             if child_job:
                 self.dispatch_child(parent_job, child_job, input_data, workbook_id, owner)
         return parent_job.id
@@ -152,7 +157,7 @@ class DispatchController:
             request_data=json.dumps(build_request_data),
         )
         job.save()
-        print('diddy job {} gets {} bytes of request data'.format(job.id, len(build_request_data)))
+        print('diddy job {} gets {} bytes of request data'.format(job.id, len(build_request_data)), job.request_data_path)
 
         attribute = Attribute(
             name='pipeline_job_link',
@@ -333,19 +338,22 @@ class DispatchController:
         return job
 
     def build_pipeline_job(self, content, node, parent_job, previous_job):
+        print('---SHARPY', parent_job)
         data_in = parent_job.request_data
+        print('silly 01 ', len(data_in))
         if previous_job and previous_job.response_data:
+            print('silly 02')
             data_in = previous_job.response_data
         pipeline = Pipeline.objects.get(pk=node['entity_id'])
 
+        print('silly 03')
         source_movies = self.get_source_movies_from_parent_job(parent_job)
+        print('silly 04', len(source_movies))
 
         build_data = json.loads(data_in)
-        print('ninkey ', parent_job.request_data_path)
         if source_movies and 'source' not in build_data['movies']:
             build_data['movies']['source'] = source_movies
 
-        print('spikey ', pipeline.name, build_data)
         job = Job(
             status='created',
             description='job for pipeline ' + pipeline.name,
@@ -356,6 +364,7 @@ class DispatchController:
             parent=parent_job,
         )
         job.save()
+        print('dingle ', job)
 
         Attribute(
             name='node_id',

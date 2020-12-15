@@ -192,7 +192,8 @@ class RedactControls extends React.Component {
             }
           }
           if (job) {
-            desc = 'Frames matched by pipeline job: ' + job['description']
+            const short_id = job['id'].substring(0, 4) + '...'
+            desc = 'Frames matched by pipeline job: ' + short_id + ' '+ job['description']
           }
 
           const build_obj = {
