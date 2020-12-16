@@ -329,7 +329,8 @@ class ParseViewSetHashFrames(viewsets.ViewSet):
         movie_url = list(request_data['movies'].keys())[0]
         frames = request_data['movies'][movie_url]['frames']
         disc = request_data['movies'][movie_url]['frameset_discriminator']
-        hash_to_grayscale = getattr(settings, "HASH_IMAGES_IN_COLOR", False)
+        hash_to_color = getattr(settings, "HASH_IMAGES_IN_COLOR", False)
+        hash_to_grayscale = not hash_to_color
         parser = MovieParser(
             {
                 "debug": False,

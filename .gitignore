@@ -105,3 +105,9 @@ venv.bak/
 
 #custom
 .DS_Store
+bin/
+include/
+share/
+pyvenv.cfg
+api/guided_redaction/work/
+gui/redact-app/package-lock.json

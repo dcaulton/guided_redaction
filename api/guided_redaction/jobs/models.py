@@ -195,18 +195,22 @@ class Job(models.Model):
         return outfilepath
 
     def broadcast_percent_complete(self):
-        from channels.layers import get_channel_layer
-        from asgiref.sync import async_to_sync
-        channel_layer = get_channel_layer()
-        async_to_sync(channel_layer.group_send)(
-            'redact-jobs',
-            {
-                'type': 'jobs_message',
-                'job_id': str(self.id),
-                'status': str(self.status),
-                'percent_complete': self.percent_complete,
-            }
-        )
+        try:
+            from channels.layers import get_channel_layer
+            from asgiref.sync import async_to_sync
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)(
+                'redact-jobs',
+                {
+                    'type': 'jobs_message',
+                    'job_id': str(self.id),
+                    'status': str(self.status),
+                    'percent_complete': self.percent_complete,
+                }
+            )
+
+        except Exception:
+            pass
 
     def delete(self):
         keep_attrs = Attribute.objects.filter(name='file_dir_user').filter(job=self)
