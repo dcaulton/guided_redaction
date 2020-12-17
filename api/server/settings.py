@@ -158,6 +158,7 @@ REDACT_IMAGE_STORAGE='file'  # file, redis,  mysql or azure_blob
 #REDACT_REDIS_DB=2
 REDACT_IMAGE_REQUEST_VERIFY_HEADERS = False
 HASH_IMAGES_IN_COLOR = False
+CELERY_BROKER_HEARTBEAT=0
 
 try:
     from local_settings import *

@@ -216,7 +216,7 @@ class PipelineJobStatusController:
             scanner = self.content['node_metadata']['tier_1_scanners'][node['type']][node['entity_id']]
             desc_part2 = ' - ' + scanner['name']
         elif node['type'] == 'pipeline': 
-            if Pipeline.objects.filter(pk=node['entity_id']).exists():
+            if node['entity_id'] and Pipeline.objects.filter(pk=node['entity_id']).exists():
                 desc_part2 = ' - ' + Pipeline.objects.get(pk=node['entity_id']).name
         return node['type'] + desc_part2
 

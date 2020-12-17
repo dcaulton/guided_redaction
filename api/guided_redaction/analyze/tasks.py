@@ -34,9 +34,10 @@ from guided_redaction.analyze.api import (
 )
 
 
-osa_batch_size = 10
-ocr_batch_size = 10
-sg_batch_size = 10
+osa_batch_size = 20
+ocr_batch_size = 20
+sg_batch_size_with_ocr = 10
+sg_batch_size_no_ocr = 100
 
 def dispatch_parent_job(job):
     if job.parent_id:
@@ -840,10 +841,18 @@ def selection_grower_threaded(job_uuid):
     )
 
 def build_and_dispatch_selection_grower_threaded_children(parent_job):
+    pj_request_data = json.loads(parent_job.request_data)
+    the_grower = {}
+    if 'tier_1_scanners' in pj_request_data:
+        first_key = list(pj_request_data['tier_1_scanners']['selection_grower'].keys())[0]
+        the_grower = pj_request_data['tier_1_scanners']['selection_grower'][first_key]
+    batch_size = sg_batch_size_no_ocr
+    if the_grower and the_grower['usage_mode'] == 'capture_grid':
+        batch_size = sg_batch_size_with_ocr
     build_and_dispatch_generic_batched_threaded_children(
         parent_job,
         'selection_grower',
-        sg_batch_size,
+        batch_size,
         'selection_grower',
         finish_selection_grower_threaded,
         selection_grower

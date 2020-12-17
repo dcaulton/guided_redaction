@@ -752,6 +752,7 @@ class NodeCard extends React.Component {
             (event) => this.props.updateNodeValue(this.props.node_id, 'entity_id', event.target.value)
           }
       >
+        <option value=''></option>
         {Object.keys(this.props.pipelines).map((pipeline_id, index) => {
           if (pipeline_id === this.props.pipeline_id) {
             return ''
