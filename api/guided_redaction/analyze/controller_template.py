@@ -1,4 +1,6 @@
 import cv2
+from django.conf import settings
+from guided_redaction.utils.classes.FileWriter import FileWriter
 from .controller_t1 import T1Controller
 from guided_redaction.analyze.classes.TemplateMatcher import TemplateMatcher
 
@@ -6,7 +8,11 @@ from guided_redaction.analyze.classes.TemplateMatcher import TemplateMatcher
 class TemplateController(T1Controller):
 
     def __init__(self):
-        pass
+        self.file_writer = FileWriter(
+            working_dir=settings.REDACT_FILE_STORAGE_DIR,
+            base_url=settings.REDACT_FILE_BASE_URL,
+            image_request_verify_headers=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
+        )
 
     def scan_template(self, request_data):
         matches = {'movies': {}}
@@ -60,7 +66,7 @@ class TemplateController(T1Controller):
                     else:
                         one_image_url = source_movies[movie_url]['framesets'][frameset_hash]['images'][0]
 
-                    target_image = self.get_cv2_image_from_url(one_image_url)
+                    target_image = self.get_cv2_image_from_url(one_image_url, self.file_writer)
                     if type(target_image) == type(None):
                         print('error loading template source image')
                         continue

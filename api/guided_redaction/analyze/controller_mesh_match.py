@@ -1,3 +1,5 @@
+from django.conf import settings
+from guided_redaction.utils.classes.FileWriter import FileWriter
 from .controller_t1 import T1Controller
 from guided_redaction.analyze.classes.MeshMatchFinder import MeshMatchFinder
 
@@ -6,6 +8,11 @@ class MeshMatchController(T1Controller):
 
     def __init__(self):
         self.debug = True
+        self.file_writer = FileWriter(
+            working_dir=settings.REDACT_FILE_STORAGE_DIR,
+            base_url=settings.REDACT_FILE_BASE_URL,
+            image_request_verify_headers=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
+        )
 
     def process_mesh_match(self, request_data):
         response_movies = {}
@@ -42,7 +49,7 @@ class MeshMatchController(T1Controller):
             if self.debug:
                 image_name = image_url.split('/')[-1]
                 print('meshmmatch trying image {} with mr hash {}'.format(image_name, most_recent_t1_frameset_hash))
-            cv2_image = self.get_cv2_image_from_url(image_url)
+            cv2_image = self.get_cv2_image_from_url(image_url, self.file_writer)
             if type(cv2_image) == type(None):
                 print('error fetching first image for mesh match')
                 continue

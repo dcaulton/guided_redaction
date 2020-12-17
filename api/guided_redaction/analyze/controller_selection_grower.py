@@ -1,5 +1,6 @@
+from django.conf import settings
+from guided_redaction.utils.classes.FileWriter import FileWriter
 from .controller_t1 import T1Controller
-
 from guided_redaction.analyze.classes.SelectionGrower import SelectionGrower
 from guided_redaction.analyze.classes.EastPlusTessGuidedAnalyzer import (
     EastPlusTessGuidedAnalyzer,
@@ -11,6 +12,11 @@ class SelectionGrowerController(T1Controller):
 
     def __init__(self):
         self.debug = True
+        self.file_writer = FileWriter(
+            working_dir=settings.REDACT_FILE_STORAGE_DIR,
+            base_url=settings.REDACT_FILE_BASE_URL,
+            image_request_verify_headers=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
+        )
 
     def process_selection_grower(self, request_data):
         response_movies = {}

@@ -1,11 +1,20 @@
 import json
 import random
 import math
+from django.conf import settings
 from guided_redaction.analyze.classes.ExtentsFinder import ExtentsFinder
 from .controller_t1 import T1Controller
+from guided_redaction.utils.classes.FileWriter import FileWriter
 
 
 class SelectedAreaController(T1Controller):
+
+    def __init__(self):
+        self.file_writer = FileWriter(
+            working_dir=settings.REDACT_FILE_STORAGE_DIR,
+            base_url=settings.REDACT_FILE_BASE_URL,
+            image_request_verify_headers=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
+        )
 
     def build_selected_areas(self, request_data):
         response_movies = {}
@@ -123,7 +132,7 @@ class SelectedAreaController(T1Controller):
         else:
             image_url = source_movies[movie_url]['framesets'][frameset_hash]['images'][0]
 
-        return self.get_cv2_image_from_url(image_url)
+        return self.get_cv2_image_from_url(image_url, self.file_writer)
 
     def enforce_max_zones(self, selected_area_meta, regions, source_frameset):
         if 'maximum_zones' not in selected_area_meta or not selected_area_meta['maximum_zones']:

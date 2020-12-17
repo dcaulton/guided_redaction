@@ -1,3 +1,5 @@
+from django.conf import settings
+from guided_redaction.utils.classes.FileWriter import FileWriter
 from guided_redaction.analyze.classes.EastPlusTessGuidedAnalyzer import (
     EastPlusTessGuidedAnalyzer,
 )
@@ -6,6 +8,13 @@ from .controller_t1 import T1Controller
 
 
 class OcrSceneAnalysisController(T1Controller):
+
+    def __init__(self):
+        self.file_writer = FileWriter(
+            working_dir=settings.REDACT_FILE_STORAGE_DIR,
+            base_url=settings.REDACT_FILE_BASE_URL,
+            image_request_verify_headers=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
+        )
 
     def scan_scene(self, request_data):
         osa_id = list(request_data.get("tier_1_scanners")['ocr_scene_analysis'].keys())[0]
@@ -53,7 +62,7 @@ class OcrSceneAnalysisController(T1Controller):
 
     def get_image_and_dimensions(self, img_url):
         frame_dimensions = (0, 0)
-        cv2_image = self.get_cv2_image_from_url(img_url)
+        cv2_image = self.get_cv2_image_from_url(img_url, self.file_writer)
         if type(cv2_image) == type(None):
             print('could not load image for osa')
         else:

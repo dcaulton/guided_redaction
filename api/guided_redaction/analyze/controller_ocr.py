@@ -1,6 +1,8 @@
 import cv2
 import random
 import os
+from django.conf import settings
+from guided_redaction.utils.classes.FileWriter import FileWriter
 from guided_redaction.analyze.classes.EastPlusTessGuidedAnalyzer import (
     EastPlusTessGuidedAnalyzer,
 )
@@ -8,6 +10,13 @@ from .controller_t1 import T1Controller
 
 
 class OcrController(T1Controller):
+
+    def __init__(self):
+        self.file_writer = FileWriter(
+            working_dir=settings.REDACT_FILE_STORAGE_DIR,
+            base_url=settings.REDACT_FILE_BASE_URL,
+            image_request_verify_headers=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
+        )
 
     def scan_ocr_all(self, request_data):
         ocr_rule_id = list(request_data['tier_1_scanners']['ocr'].keys())[0]
@@ -50,7 +59,7 @@ class OcrController(T1Controller):
 
     def scan_ocr(self, image_url, ocr_rule):
         analyzer = EastPlusTessGuidedAnalyzer()
-        cv2_image = self.get_cv2_image_from_url(image_url)
+        cv2_image = self.get_cv2_image_from_url(image_url, self.file_writer)
         if type(cv2_image) == type(None):
             print('error fetching image for ocr')
             return {}

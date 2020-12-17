@@ -403,6 +403,15 @@ class PipelinePanel extends React.Component {
         
         <div>
           <div className='d-inline'>
+            Job Id:
+          </div>
+          <div className='d-inline ml-2'>
+            {status_obj['job_id']}
+          </div>
+        </div>
+        
+        <div>
+          <div className='d-inline'>
             Status:
           </div>
           <div className='d-inline ml-2'>
