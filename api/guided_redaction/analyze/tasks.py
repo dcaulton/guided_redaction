@@ -100,10 +100,8 @@ def build_and_dispatch_generic_batched_threaded_children(
 
     for scanner_id in scanners:
         scanner = scanners[scanner_id]
-##########
         if target_wants_ocr_data(operation_name, scanner):
             prescanned_ocr_results = get_prescanned_ocr_data(scanner)
-##########
         build_t1_scanner_obj = {}
         build_t1_scanner_obj[scanner_type] = {scanner_id: scanner}
         for index, movie_url in enumerate(movies.keys()):
@@ -147,10 +145,8 @@ def build_and_dispatch_generic_batched_threaded_children(
                 if not movie_is_full_movie(movie):
                     build_obj['movies']['source'] = {}
                     build_obj['movies']['source'][movie_url] = source_movies[movie_url]
-###########
                 if target_wants_ocr_data(operation_name, scanner):
                     add_ocr_data(build_obj['movies'], prescanned_ocr_results)
-##########
                 build_request_data = json.dumps(build_obj)
                 job = Job(
                     request_data=build_request_data,
@@ -214,10 +210,8 @@ def build_and_dispatch_generic_threaded_children(
 
     for scanner_meta_id in scanner_metas:
         t1_scanner = scanner_metas[scanner_meta_id]
-##########
         if target_wants_ocr_data(operation, t1_scanner):
             prescanned_ocr_results = get_prescanned_ocr_data(t1_scanner)
-##########
         build_scanner_meta = {scanner_meta_id: t1_scanner}
         for index, movie_url in enumerate(movies.keys()):
             movie = movies[movie_url]
@@ -226,10 +220,8 @@ def build_and_dispatch_generic_threaded_children(
             if source_movies:
                 build_movies['source'] = {}
                 build_movies['source'][movie_url] = source_movies[movie_url]
-###########
             if target_wants_ocr_data(operation, t1_scanner):
                 add_ocr_data(build_movies, prescanned_ocr_results)
-##########
             build_request_data = json.dumps({
                 'movies': build_movies,
                 'tier_1_scanners': {

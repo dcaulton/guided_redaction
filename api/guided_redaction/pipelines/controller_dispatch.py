@@ -607,6 +607,10 @@ class DispatchController:
 
         if previous_job:
             previous_result = json.loads(previous_job.response_data)
+            if not previous_result and previous_job.response_data_path:
+                # this is a hack, not sure why it doesn't get picked up with the normal job fetch
+                previous_job.get_data_from_disk()
+                previous_result = json.loads(previous_job.response_data)
             if previous_result.get('movies'):
                 build_movies = previous_result['movies']
             if source_movies and 'source' not in build_movies:

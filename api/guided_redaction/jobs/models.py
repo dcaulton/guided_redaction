@@ -274,6 +274,8 @@ class Job(models.Model):
     def get_percent_complete(self):
         if self.status in ['success', 'failed']: 
             return 1
+        if self.status == 'created': 
+            return 0
 
         child_time_fractions = {}
         ctf_attr = Attribute.objects \
@@ -295,11 +297,11 @@ class Job(models.Model):
 
         percent_complete = 0
         for child in children:
-          multiplier = 1
-          if child_time_fractions and child.operation in child_time_fractions:
-              multiplier = child_time_fractions[child.operation]
-          this_childs_part = (child.percent_complete / child_operation_count) * multiplier
-          percent_complete += this_childs_part
+            multiplier = 1
+            if child_time_fractions and child.operation in child_time_fractions:
+                multiplier = child_time_fractions[child.operation]
+            this_childs_part = (child.percent_complete / child_operation_count) * multiplier
+            percent_complete += this_childs_part
 
         if self.change_is_big_enough(percent_complete):
             return percent_complete
