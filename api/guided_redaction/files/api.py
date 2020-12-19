@@ -279,8 +279,8 @@ class FilesViewSetExport(viewsets.ViewSet):
         }
         zipObj = ZipFile(output_file_fullpath, 'w')
 
-        meta['base_url'] = fw.base_url
-        meta['working_dir'] = fw.working_dir
+        build_obj['meta']['base_url'] = fw.base_url
+        build_obj['meta']['working_dir'] = fw.working_dir
 
         if request_data['job_ids']:
             for job_id in request_data['job_ids']:
