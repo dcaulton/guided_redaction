@@ -184,7 +184,7 @@ class FilesViewSetUnzipArchive(viewsets.ViewSet):
             pipeline = Pipeline(
                 name=input_pipeline['name'],
                 description=input_pipeline['description'],
-                content=json.dumps(input_pipeline),
+                content=input_pipeline['content'],
             )
             pipeline.save()
             pipeline_count += 1

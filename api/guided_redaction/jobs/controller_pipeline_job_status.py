@@ -75,6 +75,7 @@ class PipelineJobStatusController:
         parent_job = self.jobs[self.parent_job_id]
         pjrd = json.loads(parent_job.request_data)
         if 'movies' in pjrd:
+            movie_url = ''
             for movie_url in pjrd['movies'].keys():
                 if movie_url != 'source': 
                     break

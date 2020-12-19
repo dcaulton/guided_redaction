@@ -252,8 +252,10 @@ class PipelineControls extends React.Component {
       }
       const content = JSON.parse(pipeline['content'])
       let movie_urls = []
-      for (let i=0; i < Object.keys(content['movies']).length; i++) {
-        movie_urls.push(Object.keys(content['movies'])[i])
+      if (Object.keys(content).includes('movies')) {
+        for (let i=0; i < Object.keys(content['movies']).length; i++) {
+          movie_urls.push(Object.keys(content['movies'])[i])
+        }
       }
       let addends = {}
       if (Object.keys(content).includes('addends')) {
@@ -674,6 +676,9 @@ class NodeCardList extends React.Component {
   }
   
   render() {
+    if (!Object.keys(this.props.node_metadata).includes('node')) {
+        return ''
+    }
     const add_button = this.buildAddStepButton() 
     return (
       <div className='col border-top m-2 p-2'>

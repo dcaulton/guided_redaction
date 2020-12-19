@@ -519,9 +519,15 @@ class PipelinePanel extends React.Component {
     if (!this.state.active_job_request_data) {
       return
     }
-    let movies_title = String(Object.keys(this.state.active_job_request_data['movies']).length) + ' movies'
-    if (Object.keys(this.state.active_job_request_data['movies']).length === 1) {
-      movies_title = 'One Movie'
+
+    let movies_title = ''
+    if (!Object.keys(this.state.active_job_request_data).includes('movies')) {
+      movies_title = 'no movies'
+      this.state.active_job_request_data['movies'] = {}
+    } else if (Object.keys(this.state.active_job_request_data['movies']).length === 1) {
+      movies_title = 'one movie'
+    } else {
+      movies_title = String(Object.keys(this.state.active_job_request_data['movies']).length) + ' movies'
     }
     let build_movie_info = {}
     for (let i=0; i < Object.keys(this.state.active_job_request_data['movies']).length; i++) {
