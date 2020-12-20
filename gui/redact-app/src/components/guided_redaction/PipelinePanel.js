@@ -700,14 +700,6 @@ class PipelinePanel extends React.Component {
 
   buildRefreshStatusButton() {
     return ''
-//    return (
-//      <button
-//        className='btn btn-primary p-1'
-//        onClick={()=>this.refreshJobStatus()}
-//      >
-//        Refresh
-//      </button>
-//    )
   }
 
   buildPipelineDetailTitle(pipeline) {
@@ -740,6 +732,11 @@ class PipelinePanel extends React.Component {
     }
     const refresh_button = this.buildRefreshStatusButton()
 
+    let req_data_style = {}
+    if (req_data_summary) {
+      req_data_style['maxHeight'] = '200px'
+      req_data_style['overflow'] = 'scroll'
+    }
     const title = this.buildPipelineDetailTitle(pipeline)
 
     return (
@@ -752,7 +749,7 @@ class PipelinePanel extends React.Component {
           <div className='col-12 h4 border-top border-bottom mt-5 bg-light'>
             Data In
           </div>
-          <div className='col-12'>
+          <div className='col-12' style={req_data_style}>
             {req_data_summary}
           </div>
         </div>
