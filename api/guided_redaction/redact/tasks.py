@@ -48,6 +48,7 @@ def build_and_dispatch_redact_threaded_children(parent_job):
         movie = movies[movie_url]
         for frameset_hash in movie['framesets']:
             frameset = movie['framesets'][frameset_hash]
+            build_request_data = None
             if frameset_is_tier_2(frameset):
                 build_request_data = build_t2_image_request_data(
                   movie_url, frameset_hash, frameset, request_data['redact_rule'], request_data['meta']

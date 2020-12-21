@@ -523,7 +523,6 @@ class PipelinePanel extends React.Component {
     let movies_title = ''
     if (!Object.keys(this.state.active_job_request_data).includes('movies')) {
       movies_title = 'no movies'
-      this.state.active_job_request_data['movies'] = {}
     } else if (Object.keys(this.state.active_job_request_data['movies']).length === 1) {
       movies_title = 'one movie'
     } else {
