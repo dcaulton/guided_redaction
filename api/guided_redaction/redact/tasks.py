@@ -18,14 +18,24 @@ def dispatch_parent_job(job):
         if parent_job.app == 'redact' and parent_job.operation == 'redact':
             redact_threaded.delay(parent_job.id)
 
+def build_default_redact_rule(request_data):
+    request_data['redact_rule'] = {
+        'mask_method': 'black_rectangle',
+        'id': 'redact_rule_default_123',
+        'name': 'default',
+    }
+
 @shared_task
 def redact_single(job_uuid):
     job = Job.objects.get(pk=job_uuid)
     if job:
+        parsed_request_data = json.loads(job.request_data)
+        if 'redact_rule' not in parsed_request_data:
+            build_default_redact_rule(parsed_request_data)
         job.status = 'running'
         job.save()
         worker = RedactViewSetRedactImage()
-        response = worker.process_create_request(json.loads(job.request_data))
+        response = worker.process_create_request(parsed_request_data)
         job.response_data = json.dumps(response.data)
         job.status = 'success'
         job.save()
@@ -44,6 +54,8 @@ def build_and_dispatch_redact_threaded_children(parent_job):
     if 'source' in movies:
         source_movies = movies['source']
         del movies['source']
+    if 'redact_rule' not in request_data:
+        build_default_redact_rule(request_data)
     for movie_url in movies:
         movie = movies[movie_url]
         for frameset_hash in movie['framesets']:
