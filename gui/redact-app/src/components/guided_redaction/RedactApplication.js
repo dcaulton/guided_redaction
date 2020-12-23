@@ -3,6 +3,7 @@ import MoviePanel from './MoviePanel';
 import Pipelines from './Pipelines';
 import InsightsPanel from './InsightsPanel';
 import PipelinePanel from './PipelinePanel';
+import JobEvalPanel from './JobEvalPanel';
 import Workflows from './Workflows';
 import JobLogic from './JobLogic';
 import MovieUtils from './MovieUtils';
@@ -2133,12 +2134,14 @@ class RedactApplication extends React.Component {
     let mr_name = 'Movie Redaction'
     let insights_name = 'Insights'
     let pipeline_name = 'Pipeline'
+    let job_eval_name = 'Job Evaluation'
     let top_div_classnames = 'h-100 col-2 bg-dark navbar-dark pl-4 font-weight-bold'
     if (!this.state.visibilityFlags['side_nav']) {
       pl_name = 'PL'
       mr_name = 'MR'
       insights_name = 'In'
       pipeline_name = 'PI'
+      job_eval_name = 'JE'
       top_div_classnames = 'h-100 col-1 bg-dark navbar-dark pl-2 font-weight-bold'
     }
     if (!this.props.show_insights) {
@@ -2179,6 +2182,15 @@ class RedactApplication extends React.Component {
                 to='/redact/pipeline'
               >
                 {pipeline_name}
+              </Link>
+            </li>
+            <li className="nav-item mt-2 mb-2">
+              <Link 
+                className='nav-link' 
+                id='job_eval_link' 
+                to='/redact/job-eval'
+              >
+                {job_eval_name}
               </Link>
             </li>
             <li className="nav-item mt-2 mb-2">
@@ -2358,6 +2370,10 @@ class RedactApplication extends React.Component {
                 getPipelineJobStatus={this.getPipelineJobStatus}
                 getJobResultData={this.getJobResultDataWrapper}
                 restartPipelineJob={this.restartPipelineJobWrapper}
+              />
+            </Route>
+            <Route path='/redact/job-eval'>
+              <JobEvalPanel  
               />
             </Route>
             <Route path={['/redact/compose', '/redact']}>
