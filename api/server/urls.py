@@ -12,6 +12,7 @@ import guided_redaction.files.urls
 import guided_redaction.scanners.urls
 import guided_redaction.attributes.urls
 import guided_redaction.pipelines.urls
+import guided_redaction.job_eval_objectives.urls
 
 router = get_router()
 
