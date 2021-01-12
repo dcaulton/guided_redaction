@@ -625,6 +625,8 @@ class RedactApplication extends React.Component {
       return api_server_url + 'v1/parse/get-colors-in-zone'
     } else if (url_name === 'get_screens_url') {
       return api_server_url + 'v1/analyze/get-screens'
+    } else if (url_name === 'job_eval_objectives_url') {
+      return api_server_url + 'v1/job-eval-objectives'
     }
   }
 
@@ -2374,6 +2376,9 @@ class RedactApplication extends React.Component {
             </Route>
             <Route path='/redact/job-eval'>
               <JobEvalPanel  
+                getUrl={this.getUrl}
+                buildJsonHeaders={this.buildJsonHeaders}
+                fetch={fetch}
               />
             </Route>
             <Route path={['/redact/compose', '/redact']}>
