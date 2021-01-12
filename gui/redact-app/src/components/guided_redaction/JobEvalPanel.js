@@ -28,10 +28,22 @@ class JobEvalPanel extends React.Component {
     }
     this.setLocalStateVar = this.setLocalStateVar.bind(this)
     this.afterJeoSave = this.afterJeoSave.bind(this)
+    this.loadJeo = this.loadJeo.bind(this)
+    this.getJobEvalObjectives= this.getJobEvalObjectives.bind(this)
   }
 
   afterJeoSave(response_obj) {
-console.log('after save is done we get ', response_obj)
+    let jeo_id = ''
+    if (Object.keys(response_obj).includes('id')) {
+      jeo_id = response_obj['id']
+    }
+    this.getJobEvalObjectives(
+      (() => {this.loadJeo(jeo_id)})
+    )
+  }
+
+  afterJeoDelete(response_obj) {
+    this.getJobEvalObjectives()
   }
 
   getJeoFromState() {
@@ -52,18 +64,21 @@ console.log('after save is done we get ', response_obj)
     .then((response) => response.json())
     .then((responseJson) => {
       this.setState({
-        'scanners': responseJson['scanners'],
+        'job_eval_objectives': responseJson,
        })
+    })
+    .then((responseJson) => {
+      when_done(responseJson)
     })
     .catch((error) => {
       console.error(error);
     })
   }
 
-  async saveJobEvalObjectives(jeo_object, when_done=(()=>{})) {
+  async saveJobEvalObjective(jeo_object, when_done=(()=>{})) {
     let the_url = this.props.getUrl('job_eval_objectives_url')
     const payload = jeo_object
-    let response = await this.props.fetch(this.props.getUrl('job_eval_objectives_url'), {
+    let response = await this.props.fetch(the_url, {
       method: 'POST',
       headers: this.props.buildJsonHeaders(),
       body: JSON.stringify(payload),
@@ -71,6 +86,21 @@ console.log('after save is done we get ', response_obj)
     .then((response) => response.json())
     .then((responseJson) => {
       when_done(responseJson)
+    })
+    .catch((error) => {
+      console.error(error)
+    })
+    await response
+  }
+
+  async deleteJeo(jeo_id, when_done=(()=>{})) {
+    let the_url = this.props.getUrl('job_eval_objectives_url')
+    let response = await this.props.fetch(the_url + '/' + jeo_id, {
+      method: 'DELETE',
+      headers: this.props.buildJsonHeaders(),
+    })
+    .then((response) => {
+      when_done(response)
     })
     .catch((error) => {
       console.error(error)
@@ -99,6 +129,40 @@ console.log('after save is done we get ', response_obj)
     })
   }
 
+  buildJeoDeleteButton() {
+    const jeo_keys = Object.keys(this.state.job_eval_objectives)
+    return (
+      <div className='d-inline'>
+        <button
+            key='jeo_delete_button'
+            className='btn btn-primary ml-2 dropdown-toggle'
+            type='button'
+            id='arglebargle12'
+            data-toggle='dropdown'
+            area-haspopup='true'
+            area-expanded='false'
+        >
+          Delete
+        </button>
+        <div className='dropdown-menu' aria-labelledby='arglebargle12'>
+          {jeo_keys.map((jeo_key, index) => {
+            const jeo = this.state.job_eval_objectives[jeo_key]
+            const the_name = jeo['description']
+            return (
+              <button
+                  className='dropdown-item'
+                  key={index}
+                  onClick={() => this.deleteJeo(jeo_key, (()=>{this.afterJeoDelete()}))}
+              >
+                {the_name}
+              </button>
+            )
+          })}
+        </div>
+      </div>
+    )
+  }
+  
   buildJeoLoadButton() {
     const jeo_keys = Object.keys(this.state.job_eval_objectives)
     return (
@@ -144,7 +208,6 @@ console.log('after save is done we get ', response_obj)
     if (!this.state.something_changed) {
       return ''
     }
-  console.log('assy')
     return (
       <button
           className='btn btn-primary'
@@ -171,16 +234,6 @@ console.log('after save is done we get ', response_obj)
   componentDidMount() {
     this.getJobEvalObjectives()
     this.loadNewJeo()
-    this.setState({
-      job_eval_objectives: {
-        '123': {
-          id: '123',
-          last_modified: '2021-01-09T13:30:31',
-          description: 'something special',
-          content: {},
-        }
-      }
-    })
   }
 
   buildModeNav() {
@@ -248,6 +301,7 @@ console.log('after save is done we get ', response_obj)
     const show_hide_general = makePlusMinusRowLight('general', 'objective_div')
     const load_button = this.buildJeoLoadButton()
     const save_button = this.buildJeoSaveButton()
+    const delete_button = this.buildJeoDeleteButton()
 
     return (
       <div className='col-9'>
@@ -264,6 +318,9 @@ console.log('after save is done we get ', response_obj)
               </div>
               <div className='d-inline ml-2'>
                 {save_button}
+              </div>
+              <div className='d-inline ml-2'>
+                {delete_button}
               </div>
             </div>
 
@@ -285,11 +342,11 @@ console.log('after save is done we get ', response_obj)
                     className='d-inline'
                 >
                   <textarea
-                     id='jeo_description'
-                     cols='60'
-                     rows='3'
-                     value={this.state.description}
-                    onChange={(event) => this.setLocalStateVar('description', event.target.value.split('\n'))}
+                    id='jeo_description'
+                    cols='60'
+                    rows='3'
+                    value={this.state.description}
+                    onChange={(event) => this.setLocalStateVar('description', event.target.value)}
                   />
                 </div>
               </div>
@@ -303,7 +360,7 @@ console.log('after save is done we get ', response_obj)
 
   doSave(when_done=(()=>{})) {
     const jeo_object = this.getJeoFromState()
-    this.saveJobEvalObjectives(jeo_object, this.afterJeoSave)
+    this.saveJobEvalObjective(jeo_object, this.afterJeoSave)
   }
 
   render() {

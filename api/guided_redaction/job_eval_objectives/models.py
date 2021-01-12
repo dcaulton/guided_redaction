@@ -8,3 +8,11 @@ class JobEvalObjective(models.Model):
     description = models.CharField(max_length=255)
     content = models.TextField(null=True)
 
+    def __str__(self):
+        disp_hash = {
+            'id': str(self.id),
+            'description': self.description,
+            'updated_on': self.updated_on,
+            'content': self.content,
+        }
+        return disp_hash.__str__()
