@@ -28,6 +28,21 @@ class JobEvalPanel extends React.Component {
     this.getJobEvalObjectives=this.getJobEvalObjectives.bind(this)
     this.handleImageClick=this.handleImageClick.bind(this)
     this.getOcrRegions=this.getOcrRegions.bind(this)
+    this.getBoxes=this.getBoxes.bind(this)
+  }
+
+  getBoxes() {
+    const perm_standard = this.state.content['permanent_standards']
+    const movie_name = this.getMovieNameFromUrl(this.state.annotate_movie_url)
+
+    if (!Object.keys(perm_standard).includes(movie_name)) {
+      return {}
+    }
+    if (!Object.keys(perm_standard[movie_name]['framesets']).includes(this.props.frameset_hash)) {
+      return {}
+    }
+    const boxes = perm_standard[movie_name]['framesets'][this.props.frameset_hash]
+    return boxes
   }
 
   getOcrRegions() {
@@ -69,7 +84,45 @@ class JobEvalPanel extends React.Component {
       })
     } else if (this.state.image_mode === 'add_box_2') {
       this.doAddBox2(x_scaled, y_scaled)
+    } else if (this.state.image_mode === 'delete_box') {
+      this.doDeleteBox(x_scaled, y_scaled)
     }
+  }
+
+  doDeleteBox(x_scaled, y_scaled) {
+    let deepCopyContent = JSON.parse(JSON.stringify(this.state.content))
+    let something_changed = false
+    const movie_name = this.getMovieNameFromUrl(this.state.annotate_movie_url)
+    if (!Object.keys(deepCopyContent['permanent_standards']).includes(movie_name)) {
+      return
+    }
+    if (!Object.keys(deepCopyContent['permanent_standards'][movie_name]['framesets']).includes(this.props.frameset_hash)) {
+      return
+    }
+    const boxes_this_frame = this.state.content['permanent_standards'][movie_name]['framesets'][this.props.frameset_hash]
+    for (let i=0; i < Object.keys(boxes_this_frame).length; i++) {
+      const the_key = Object.keys(boxes_this_frame)[i]
+      const the_box = boxes_this_frame[the_key]
+      if (this.pointIsInBox([x_scaled, y_scaled], the_box['start'], the_box['end'])) {
+        delete deepCopyContent['permanent_standards'][movie_name]['framesets'][this.props.frameset_hash][the_key]
+        something_changed = true
+      }
+    }
+    if (something_changed) {
+      this.setState({
+        content: deepCopyContent,
+      })
+    }
+  }
+
+  pointIsInBox(point_coords, box_start, box_end) {
+    if (
+      (box_start[0] <= point_coords[0]) &&
+      (point_coords[0] <= box_end[0]) &&
+      (box_start[1] <= point_coords[1]) &&
+      (point_coords[1] <= box_end[1])) {
+        return true
+      }
   }
 
   doAddBox2(x_scaled, y_scaled) {
@@ -701,6 +754,7 @@ class JobEvalPanel extends React.Component {
             clickCallback={this.handleImageClick}
             last_click={this.state.clicked_coords}
             getOcrRegions={this.getOcrRegions}
+            getBoxes={this.getBoxes}
           />
         </div>
 

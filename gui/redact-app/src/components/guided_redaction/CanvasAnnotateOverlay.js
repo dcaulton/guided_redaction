@@ -45,18 +45,19 @@ class CanvasAnnotateOverlay extends React.Component {
     ctx.clearRect(0, 0, canvas.width, canvas.height)
   }
 
-  drawBoxesAroundStartEndRecords(records, outline_color) {
+  drawBoxesAroundStartEndRecords(record_hash, outline_color) {
     const canvas = this.refs.canvas
     let ctx = canvas.getContext('2d')
     ctx.strokeStyle = outline_color
     ctx.lineWidth = 3
     ctx.globalAlpha = 1
 
-    for (let i=0; i < records.length; i++) {
-      let record = records[i]
+    for (let i=0; i < Object.keys(record_hash).length; i++) {
+      const rec_key = Object.keys(record_hash)[i]
+      const record = record_hash[rec_key]
       if (Object.keys(record).includes('start')) {
-        let start = record['start']
-        let end = record['end']
+        const start = record['start']
+        const end = record['end']
         const start_x_scaled = start[0] * this.props.image_scale
         const start_y_scaled = start[1] * this.props.image_scale
         const width = (end[0] - start[0]) * this.props.image_scale
@@ -69,16 +70,24 @@ class CanvasAnnotateOverlay extends React.Component {
   drawOcr() {
   }
 
+  drawManualBoxes() {
+    const boxes = this.props.getBoxes()
+    this.drawBoxesAroundStartEndRecords(boxes, '#F24')
+console.log('bingo boxes are ', boxes)
+  }
+
   componentDidMount() {
     this.clearCanvasItems()
     this.drawCrosshairs()
     this.drawOcr()
+    this.drawManualBoxes()
   }
 
   componentDidUpdate() {
     this.clearCanvasItems()
     this.drawCrosshairs()
     this.drawOcr()
+    this.drawManualBoxes()
   }
 
   getCanvasDims() {
