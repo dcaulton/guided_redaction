@@ -73,7 +73,6 @@ class CanvasAnnotateOverlay extends React.Component {
   drawManualBoxes() {
     const boxes = this.props.getBoxes()
     this.drawBoxesAroundStartEndRecords(boxes, '#F24')
-console.log('bingo boxes are ', boxes)
   }
 
   componentDidMount() {

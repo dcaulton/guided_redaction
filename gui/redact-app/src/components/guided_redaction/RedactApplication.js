@@ -2400,6 +2400,8 @@ class RedactApplication extends React.Component {
                 getImageUrl={this.getImageUrl}
                 frameset_hash={this.state.frameset_hash}
                 tier_1_matches={this.state.tier_1_matches}
+                getFramesetHashesInOrder={this.getFramesetHashesInOrder}
+                setFramesetHash={this.setFramesetHash}
               />
             </Route>
             <Route path={['/redact/compose', '/redact']}>

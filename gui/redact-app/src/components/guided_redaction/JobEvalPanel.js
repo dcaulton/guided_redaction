@@ -29,6 +29,33 @@ class JobEvalPanel extends React.Component {
     this.handleImageClick=this.handleImageClick.bind(this)
     this.getOcrRegions=this.getOcrRegions.bind(this)
     this.getBoxes=this.getBoxes.bind(this)
+    this.keyPress=this.keyPress.bind(this)
+  }
+
+  keyPress(event) {
+    if (event.keyCode === 39) {
+      this.gotoNextFrame()
+    } else if (event.keyCode === 37) {
+      this.gotoPrevFrame()
+    }
+  }
+
+  gotoPrevFrame() {
+    const ordered_hashes = this.props.getFramesetHashesInOrder()
+    const cur_index = ordered_hashes.indexOf(this.props.frameset_hash)
+    if (cur_index > 0) {
+      const next_hash = ordered_hashes[cur_index-1]
+      this.props.setFramesetHash(next_hash)
+    }
+  }
+
+  gotoNextFrame() {
+    const ordered_hashes = this.props.getFramesetHashesInOrder()
+    const cur_index = ordered_hashes.indexOf(this.props.frameset_hash)
+    if (cur_index < (ordered_hashes.length-1)) {
+      const next_hash = ordered_hashes[cur_index+1]
+      this.props.setFramesetHash(next_hash)
+    }
   }
 
   getBoxes() {
@@ -426,6 +453,7 @@ class JobEvalPanel extends React.Component {
   componentDidMount() {
     this.getJobEvalObjectives()
     this.loadNewJeo()
+    window.addEventListener('keydown', this.keyPress)
   }
 
   buildModeNav() {
@@ -723,6 +751,28 @@ class JobEvalPanel extends React.Component {
     } 
   }
 
+  buildNextFrameButton() {
+    return (
+      <button
+        className='btn btn-primary'
+        onClick={()=>{this.gotoNextFrame()}}
+      >
+        Next
+      </button>
+    )
+  }
+
+  buildPrevFrameButton() {
+    return (
+      <button
+        className='btn btn-primary'
+        onClick={()=>{this.gotoPrevFrame()}}
+      >
+        Prev
+      </button>
+    )
+  }
+
   buildAnnotatePanel() {
     const ocr_id_field = this.buildOcrMatchIdField()
     const add_box_button = this.buildAddBoxButton()
@@ -731,6 +781,8 @@ class JobEvalPanel extends React.Component {
     const hide_ocr_button = this.buildHideOcrButton()
     const add_ocr_button = this.buildAddOcrButton()
     const delete_ocr_button = this.buildDeleteOcrButton()
+    const next_frame_button = this.buildNextFrameButton()
+    const prev_frame_button = this.buildPrevFrameButton()
     const image_url = this.props.getImageUrl()
     const image_element = this.buildImageElement(image_url)
     return (
@@ -781,6 +833,14 @@ class JobEvalPanel extends React.Component {
 
           <div className='d-inline ml-1'>
             {delete_ocr_button}
+          </div>
+
+          <div className='d-inline ml-1'>
+            {next_frame_button}
+          </div>
+
+          <div className='d-inline ml-1'>
+            {prev_frame_button}
           </div>
 
         </div>
