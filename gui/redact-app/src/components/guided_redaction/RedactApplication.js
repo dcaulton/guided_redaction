@@ -228,6 +228,7 @@ class RedactApplication extends React.Component {
     this.getColorAtPixel=this.getColorAtPixel.bind(this)
     this.getColorsInZone=this.getColorsInZone.bind(this)
     this.detectScreens=this.detectScreens.bind(this)
+    this.setActiveMovieFirstFrame=this.setActiveMovieFirstFrame.bind(this)
   }
 
   async detectScreens(the_image_url = '', when_done=(()=>{})) {
@@ -1305,6 +1306,16 @@ class RedactApplication extends React.Component {
     }
   }
 
+  setActiveMovieFirstFrame(the_url, theCallback=(()=>{})) {
+    const the_movie = this.state.movies[the_url]
+    const first_frame_image_url = the_movie['frames'][0]
+    const frameset_hash = this.getFramesetHashForImageUrl(first_frame_image_url, the_movie['framesets'])
+    if (this.state.movie_url !== the_url) {
+      this.setGlobalStateVar('movie_url', the_url)
+    }
+    this.setFramesetHash(frameset_hash, the_movie['framesets'], theCallback)
+  }
+
   setActiveMovie(the_url, theCallback=(()=>{})) {
     const the_movie = this.state.movies[the_url]
     if (this.state.movie_url !== the_url) {
@@ -2379,6 +2390,9 @@ class RedactApplication extends React.Component {
                 getUrl={this.getUrl}
                 buildJsonHeaders={this.buildJsonHeaders}
                 fetch={fetch}
+                movies={this.state.movies}
+                jobs={this.state.jobs}
+                setActiveMovieFirstFrame={this.setActiveMovieFirstFrame}
               />
             </Route>
             <Route path={['/redact/compose', '/redact']}>
