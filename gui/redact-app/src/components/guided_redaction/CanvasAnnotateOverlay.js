@@ -8,32 +8,6 @@ class CanvasAnnotateOverlay extends React.Component {
     this.mask_zone_color = '#B6B'
   }
 
-  drawTemplateMaskZones() {
-    if (!this.props.currentImageIsTemplateAnchorImage()) {
-      return
-    }
-    const mask_zones = this.props.getCurrentTemplateMaskZones()
-    if (mask_zones) {
-      this.drawBoxesAroundStartEndRecords(
-        mask_zones,
-        this.mask_zone_color
-      )
-    }
-  }
-
-  drawTemplateAnchors() {
-    if (!this.props.currentImageIsTemplateAnchorImage()) {
-      return
-    }
-    const anchors = this.props.getCurrentTemplateAnchors()
-    if (anchors) {
-      this.drawBoxesAroundStartEndRecords(
-        anchors,
-        this.anchor_color
-      )
-    }
-  }
-
   drawCrosshairs() {
     let canvas = this.refs.canvas
     let ctx = canvas.getContext("2d")
@@ -43,7 +17,7 @@ class CanvasAnnotateOverlay extends React.Component {
     // the add_2 croosshairs need to be divided by image scale, the oval ones need to be multiplied by the same
     // looks like one is getting the unscaled coords, the other gets the scaled maybe?  
     if (
-      this.props.mode === 'add_2_box' 
+      this.props.mode === 'add_box_2' 
       || this.props.mode === 'add_template_anchor_2' 
     ) {
       let crosshair_length = 2000
@@ -92,52 +66,19 @@ class CanvasAnnotateOverlay extends React.Component {
     }
   }
 
-  drawRectangles() {
-    const canvas = this.refs.canvas
-    let ctx = canvas.getContext("2d")
-    ctx.strokeStyle = '#3F3'
-    ctx.lineWidth = 3
-
-    const areas_to_redact = this.props.getRedactionsFromCurrentFrameset()
-    for (let i= 0; i < areas_to_redact.length; i++) {
-      let a2r = areas_to_redact[i]
-      let width = 0
-      let height = 0
-      let start_x_scaled = 0
-      let start_y_scaled = 0
-      if (Object.keys(a2r).includes('location') && Object.keys(a2r).includes('size')) {
-        start_x_scaled = a2r['location'][0] * this.props.image_scale
-        start_y_scaled = a2r['location'][1] * this.props.image_scale
-        width = a2r['size'][0] * this.props.image_scale
-        height = a2r['size'][1] * this.props.image_scale
-      } else {
-        start_x_scaled = a2r['start'][0] * this.props.image_scale
-        start_y_scaled = a2r['start'][1] * this.props.image_scale
-        width = (a2r['end'][0] - a2r['start'][0]) * this.props.image_scale
-        height = (a2r['end'][1] - a2r['start'][1]) * this.props.image_scale
-      }
-      ctx.strokeRect(start_x_scaled, start_y_scaled, width, height)
-    }
+  drawOcr() {
   }
 
   componentDidMount() {
     this.clearCanvasItems()
-//    if (this.props.show_redaction_borders) {
-//      this.drawRectangles()
-//    }
-//    this.drawTemplateMaskZones()
-//    this.drawTemplateAnchors()
     this.drawCrosshairs()
+    this.drawOcr()
   }
 
   componentDidUpdate() {
     this.clearCanvasItems()
-//    if (this.props.show_redaction_borders) {
-//      this.drawRectangles()
-//    }
-//    this.drawTemplateMaskZones()
-//    this.drawTemplateAnchors()
     this.drawCrosshairs()
+    this.drawOcr()
   }
 
   getCanvasDims() {

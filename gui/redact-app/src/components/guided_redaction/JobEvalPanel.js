@@ -14,16 +14,86 @@ class JobEvalPanel extends React.Component {
       annotate_view_mode: 'tile',
       annotate_movie_url: '',
       ocr_job_id: '',
+      show_ocr: false,
+      clicked_coords: [],
       id: '',
       description: '',
       content: {},
       something_changed: false,
       job_eval_objectives: {},
     }
-    this.setLocalStateVar = this.setLocalStateVar.bind(this)
-    this.afterJeoSave = this.afterJeoSave.bind(this)
-    this.loadJeo = this.loadJeo.bind(this)
-    this.getJobEvalObjectives= this.getJobEvalObjectives.bind(this)
+    this.setLocalStateVar=this.setLocalStateVar.bind(this)
+    this.afterJeoSave=this.afterJeoSave.bind(this)
+    this.loadJeo=this.loadJeo.bind(this)
+    this.getJobEvalObjectives=this.getJobEvalObjectives.bind(this)
+    this.handleImageClick=this.handleImageClick.bind(this)
+    this.getOcrRegions=this.getOcrRegions.bind(this)
+  }
+
+  getOcrRegions() {
+ return {}
+    if (!this.state.ocr_job_id || !this.state.show_ocr || !this.state.annotate_movie_url) {
+      return {}
+    }
+    for (let i=0; i < Object.keys(this.props.tier_1_matches['ocr']).length; i++) {
+      const match_key = Object.keys(this.props.tier_1_matches['ocr'])[i]
+      const match_obj = this.props.tier_1_matches['ocr'][match_key]
+      for (let j=0; j < Object.keys(match_obj['movies']).length; j++) {
+        const match_movie_url = Object.keys(match_obj['movies'])[j]
+        if (match_movie_url.includes(this.state.annotate_movie_url)) {
+          const regions = match_obj['movies'][match_movie_url]
+        }
+      }
+    }
+    return {}
+  }
+
+  handleImageClick = (e) => {
+    const x = e.nativeEvent.offsetX
+    const y = e.nativeEvent.offsetY
+    const imageEl = document.getElementById('annotate_image');
+    const scale = (
+      ((imageEl && imageEl.width) || 100) / ((imageEl && imageEl.naturalWidth) || 100)
+    );
+    const x_scaled = parseInt(x / scale)
+    const y_scaled = parseInt(y / scale)
+    if (x_scaled > this.state.image_width || y_scaled > this.state.image_height) {
+        return
+    }
+    if (this.state.image_mode === 'add_ocr') {
+      this.handleSetMode('add_ocr')
+    } else if (this.state.image_mode === 'add_box_1') {
+      this.setState({
+        clicked_coords: [x_scaled, y_scaled],
+        image_mode: 'add_box_2',
+      })
+    } else if (this.state.image_mode === 'add_box_2') {
+      this.doAddBox2(x_scaled, y_scaled)
+    }
+  }
+
+  doAddBox2(x_scaled, y_scaled) {
+    const new_id = 'box_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
+    const new_box = {
+      source: 'manual',
+      start: this.state.clicked_coords,
+      end: [x_scaled, y_scaled],
+    }
+    let deepCopyContent = JSON.parse(JSON.stringify(this.state.content))
+    const movie_name = this.getMovieNameFromUrl(this.state.annotate_movie_url)
+    if (!Object.keys(deepCopyContent['permanent_standards']).includes(movie_name)) {
+      deepCopyContent['permanent_standards'][movie_name] = {framesets: {}}
+    }
+    if (!Object.keys(deepCopyContent['permanent_standards'][movie_name]['framesets']).includes(this.props.frameset_hash)) {
+      deepCopyContent['permanent_standards'][movie_name]['framesets'][this.props.frameset_hash] = {}
+    }
+    deepCopyContent['permanent_standards'][movie_name]['framesets'][this.props.frameset_hash][new_id] = new_box
+    this.setState({
+      clicked_coords: [x_scaled, y_scaled],
+      image_mode: 'add_box_1',
+      content: deepCopyContent,
+      something_changed: true,
+    })
   }
 
   setImageMode(mode_name) {
@@ -214,6 +284,10 @@ class JobEvalPanel extends React.Component {
     )
   }
   
+  getMovieNameFromUrl(movie_url) {
+    return movie_url.split('/').slice(-1)[0]
+  }
+
   buildAddExemplarMovieButton() {
     return (
       <div className='d-inline'>
@@ -230,7 +304,7 @@ class JobEvalPanel extends React.Component {
         </button>
         <div className='dropdown-menu' aria-labelledby='argle'>
           {Object.keys(this.props.movies).map((movie_url, index) => {
-            const movie_name = movie_url.split('/').slice(-1)[0]
+            const movie_name = this.getMovieNameFromUrl(movie_url)
             if (
               this.state.content && 
               Object.keys(this.state.content).includes('permanent_standards') && 
@@ -513,7 +587,7 @@ class JobEvalPanel extends React.Component {
     return (
       <button
         className='btn btn-primary'
-        onClick={()=>{this.showOcrForFrame()}}
+        onClick={()=>{this.setLocalStateVar('show_ocr', true)}}
       >
         Show Ocr
       </button>
@@ -527,7 +601,7 @@ class JobEvalPanel extends React.Component {
     return (
       <button
         className='btn btn-primary'
-        onClick={()=>{this.hideOcrForFrame()}}
+        onClick={()=>{this.setLocalStateVar('show_ocr', false)}}
       >
         Hide Ocr
       </button>
@@ -566,7 +640,7 @@ class JobEvalPanel extends React.Component {
     return (
       <button
         className='btn btn-primary'
-        onClick={()=>{this.setImageMode('add_box')}}
+        onClick={()=>{this.setImageMode('add_box_1')}}
       >
         Add Box
       </button>
@@ -623,6 +697,10 @@ class JobEvalPanel extends React.Component {
             image_height={this.props.image_height}
             image_scale={this.props.image_scale}
             image_url={image_url}
+            mode={this.state.image_mode}
+            clickCallback={this.handleImageClick}
+            last_click={this.state.clicked_coords}
+            getOcrRegions={this.getOcrRegions}
           />
         </div>
 
@@ -656,14 +734,6 @@ class JobEvalPanel extends React.Component {
 
       </div>
     )
-  }
-
-  showOcrForFrame() {
-  console.log('showing ocr for frame')
-  }
-
-  hideOcrForFrame() {
-  console.log('hiding ocr for frame')
   }
 
   render() {
