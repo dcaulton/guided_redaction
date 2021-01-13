@@ -141,7 +141,7 @@ class CanvasAnnotateOverlay extends React.Component {
   }
 
   getCanvasDims() {
-    if (this.props.getImageUrl()) {
+    if (this.props.image_url) {
       return [
         Math.ceil(this.props.image_width * this.props.image_scale),             
         Math.ceil(this.props.image_height * this.props.image_scale)
@@ -162,9 +162,6 @@ class CanvasAnnotateOverlay extends React.Component {
       <div id='canvas_div'
         className='m-0 p-0 mw-100'
         style={canvasDivStyle}
-        draggable='true'
-        onDragOver={(event) => event.preventDefault()}
-        onDrop={(event) => this.props.handleDroppedMovie(event)}
       >
         <canvas id='overlay_canvas' 
           ref='canvas'

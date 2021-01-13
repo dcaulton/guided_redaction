@@ -584,16 +584,28 @@ class JobEvalPanel extends React.Component {
     )
   }
 
+  buildImageElement(image_url) {
+    if (image_url) {
+      return (
+        <img
+            id='annotate_image'
+            src={image_url}
+            alt={image_url}
+        />
+      )
+    } 
+  }
+
   buildAnnotatePanel() {
     const ocr_id_field = this.buildOcrMatchIdField()
-//          <CanvasAnnotateOverlay
-//          />
     const add_box_button = this.buildAddBoxButton()
     const delete_box_button = this.buildDeleteBoxButton()
     const show_ocr_button = this.buildShowOcrButton()
     const hide_ocr_button = this.buildHideOcrButton()
     const add_ocr_button = this.buildAddOcrButton()
     const delete_ocr_button = this.buildDeleteOcrButton()
+    const image_url = this.props.getImageUrl()
+    const image_element = this.buildImageElement(image_url)
     return (
       <div className='col'>
         <div className='row mt-2'>
@@ -604,11 +616,17 @@ class JobEvalPanel extends React.Component {
           {ocr_id_field}
         </div>
 
-        <div className='row'>
-        IMAGE PANEL
+        <div id='annotate_image_div' className='row'>
+          {image_element}
+          <CanvasAnnotateOverlay
+            image_width={this.props.image_width}
+            image_height={this.props.image_height}
+            image_scale={this.props.image_scale}
+            image_url={image_url}
+          />
         </div>
 
-        <div className='row'>
+        <div className='row mt-2'>
           <div className='d-inline ml-1'>
             {add_box_button}
           </div>

@@ -1804,7 +1804,8 @@ class RedactApplication extends React.Component {
 
   getImageUrl(frameset_hash='') {
     frameset_hash = frameset_hash || this.state.frameset_hash
-    return this.getImageFromFrameset(frameset_hash)
+    const img_url = this.getImageFromFrameset(frameset_hash)
+    return img_url
   }
 
   getRedactedImageUrl() {
@@ -2393,6 +2394,10 @@ class RedactApplication extends React.Component {
                 movies={this.state.movies}
                 jobs={this.state.jobs}
                 setActiveMovieFirstFrame={this.setActiveMovieFirstFrame}
+                image_width={this.state.image_width}
+                image_height={this.state.image_height}
+                image_scale={this.state.image_scale}
+                getImageUrl={this.getImageUrl}
               />
             </Route>
             <Route path={['/redact/compose', '/redact']}>
