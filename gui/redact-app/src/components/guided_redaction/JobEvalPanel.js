@@ -15,6 +15,7 @@ class JobEvalPanel extends React.Component {
       annotate_movie_url: '',
       ocr_job_id: '',
       show_ocr: false,
+      selected_frameset_hashes: [],
       clicked_coords: [],
       id: '',
       description: '',
@@ -32,6 +33,24 @@ class JobEvalPanel extends React.Component {
     this.keyPress=this.keyPress.bind(this)
   }
 
+  selectFramesetHash(fs_hash) {
+    let deepCopySFH = JSON.parse(JSON.stringify(this.state.selected_frameset_hashes))
+    let something_changed = false
+    if (!this.state.selected_frameset_hashes.includes(fs_hash)) {
+      deepCopySFH.push(fs_hash)
+      something_changed = true
+    } else {
+      const cur_index = deepCopySFH.indexOf(fs_hash)
+      deepCopySFH.splice(cur_index, 1)
+      something_changed = true
+    }
+    if (something_changed) {
+      this.setState({
+        selected_frameset_hashes: deepCopySFH,
+      })
+    }
+  }
+
   keyPress(event) {
     if (event.keyCode === 39) {
       this.gotoNextFrame()
@@ -40,8 +59,40 @@ class JobEvalPanel extends React.Component {
     }
   }
 
+  getFirstFramesetHash(movie_url) {
+    const the_movie = this.props.movies[movie_url]
+    const first_frame_image_url = the_movie['frames'][0]
+    let frameset_hash = this.props.getFramesetHashForImageUrl(first_frame_image_url, the_movie['framesets'])
+ console.log('poopsky', this.state.selected_frameset_hashes)
+    if (this.state.selected_frameset_hashes.length > 0) {
+ console.log('badda bing 01')
+      let ordered_hashes = this.props.getFramesetHashesInOrder()
+      let ordered_sf_hashes = []
+      for (let i=0; i < ordered_hashes.length; i++) {
+        const ith_hash = ordered_hashes[i]
+console.log('gravy ', ith_hash)
+        if (this.state.selected_frameset_hashes.includes(ith_hash)) {
+console.log('===============its IN')
+          ordered_sf_hashes.push(ith_hash)
+        }
+      }
+ console.log('badda bing 02', ordered_sf_hashes)
+      frameset_hash = ordered_sf_hashes[0]
+    }
+    return frameset_hash
+  }
+
   gotoPrevFrame() {
-    const ordered_hashes = this.props.getFramesetHashesInOrder()
+    let ordered_hashes = this.props.getFramesetHashesInOrder()
+    if (this.state.selected_frameset_hashes.length > 0) {
+      let ordered_sf_hashes = []
+      for (let i=0; i < ordered_hashes.length; i++) {
+        if (this.state.selected_frameset_hashes.includes(ordered_hashes[i])) {
+          ordered_sf_hashes.push(ordered_hashes[i])
+        }
+      }
+      ordered_hashes = ordered_sf_hashes
+    }
     const cur_index = ordered_hashes.indexOf(this.props.frameset_hash)
     if (cur_index > 0) {
       const next_hash = ordered_hashes[cur_index-1]
@@ -50,7 +101,16 @@ class JobEvalPanel extends React.Component {
   }
 
   gotoNextFrame() {
-    const ordered_hashes = this.props.getFramesetHashesInOrder()
+    let ordered_hashes = this.props.getFramesetHashesInOrder()
+    if (this.state.selected_frameset_hashes.length > 0) {
+      let ordered_sf_hashes = []
+      for (let i=0; i < ordered_hashes.length; i++) {
+        if (this.state.selected_frameset_hashes.includes(ordered_hashes[i])) {
+          ordered_sf_hashes.push(ordered_hashes[i])
+        }
+      }
+      ordered_hashes = ordered_sf_hashes
+    }
     const cur_index = ordered_hashes.indexOf(this.props.frameset_hash)
     if (cur_index < (ordered_hashes.length-1)) {
       const next_hash = ordered_hashes[cur_index+1]
@@ -182,11 +242,13 @@ class JobEvalPanel extends React.Component {
     })
   }
 
-  annotateExemplarMovie(movie_url) {
-    this.props.setActiveMovieFirstFrame(movie_url)
+  annotateExemplarMovie(movie_url, annotate_view_mode) {
+    const fs_hash = this.getFirstFramesetHash(movie_url)
+    this.props.setActiveMovieFirstFrame(movie_url, fs_hash)
     this.setState({
       mode: 'annotate',
       annotate_movie_url: movie_url,
+      annotate_view_mode: annotate_view_mode,
     })
   }
 
@@ -525,7 +587,7 @@ class JobEvalPanel extends React.Component {
                 <div className='col-2'>
                   <button
                     className='btn btn-link ml-2 p-0'
-                    onClick={()=>{this.annotateExemplarMovie(source_movie_url)}}
+                    onClick={()=>{this.annotateExemplarMovie(source_movie_url, 'tile')}}
                   >
                     annotate
                   </button>
@@ -661,6 +723,20 @@ class JobEvalPanel extends React.Component {
     )
   }
 
+  buildAnnotateViewModeField() {
+    const annotate_options = [
+      {'single': 'single frame'},
+      {'tile': 'show all frames'}
+    ]
+    return buildLabelAndDropdown(
+      annotate_options,
+      'Annotate View Mode',
+      this.state.annotate_view_mode,
+      'annotate_view_mode',
+      ((value)=>{this.setLocalStateVar('annotate_view_mode', value)})
+    )
+  }
+
   buildShowOcrButton() {
     if (!this.state.ocr_job_id) {
       return ''
@@ -773,8 +849,71 @@ class JobEvalPanel extends React.Component {
     )
   }
 
-  buildAnnotatePanel() {
-    const ocr_id_field = this.buildOcrMatchIdField()
+  buildAnnotatePanelTile() {
+    const num_cols = 6
+    const col_class = 'col-2'
+    const ordered_hashes = this.props.getFramesetHashesInOrder()
+    const num_rows = Math.ceil(ordered_hashes.length / num_cols)
+
+    let row_num_array = []
+    for (let i=0; i < num_rows; i++) {
+      row_num_array.push(i)
+    }
+
+    const img_style = {
+      width: '100%',
+    }
+    return (
+      <div className='row'>
+        <div className='col'>
+          <div className='row h5'>
+            <div className='col-9'>
+              Select the frames you wish to annotate by clicking on them, press the Annotate button when done
+            </div>
+            <div className='col-3'>
+              <button
+                className='btn btn-primary'
+                onClick={()=>{this.annotateExemplarMovie(this.state.annotate_movie_url, 'single')}}
+              >
+                Annotate
+              </button>
+            </div>
+          </div>
+          {row_num_array.map((whatever, row_num) => {
+            const start_point = row_num * num_cols 
+            const end_point = start_point + num_cols
+            const fs_hashes_this_row = ordered_hashes.slice(start_point, end_point)
+            return (
+              <div className='row pt-2 pr-2' key={row_num}>
+                {fs_hashes_this_row.map((fs_hash, index) => {
+                  let div_class = col_class
+                  if (this.state.selected_frameset_hashes.includes(fs_hash)) {
+                    div_class = col_class + ' active_card'
+                  }
+                  const img_url = this.props.getImageUrl(fs_hash)
+                  return (
+                    <div 
+                        className={div_class} 
+                        key={index} 
+                    >
+                      <img
+                        style={img_style}
+                        src={img_url}
+                        alt={img_url}
+                        onClick={()=>{this.selectFramesetHash(fs_hash)}}
+                      />
+                    </div>
+                  )
+                })}
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    )
+  }
+
+  buildAnnotatePanelSingle() {
     const add_box_button = this.buildAddBoxButton()
     const delete_box_button = this.buildDeleteBoxButton()
     const show_ocr_button = this.buildShowOcrButton()
@@ -786,6 +925,73 @@ class JobEvalPanel extends React.Component {
     const image_url = this.props.getImageUrl()
     const image_element = this.buildImageElement(image_url)
     return (
+      <div className='row'>
+        <div className='col'>
+          <div id='annotate_image_div' className='row'>
+            {image_element}
+            <CanvasAnnotateOverlay
+              image_width={this.props.image_width}
+              image_height={this.props.image_height}
+              image_scale={this.props.image_scale}
+              image_url={image_url}
+              mode={this.state.image_mode}
+              clickCallback={this.handleImageClick}
+              last_click={this.state.clicked_coords}
+              getOcrRegions={this.getOcrRegions}
+              getBoxes={this.getBoxes}
+            />
+          </div>
+
+          <div className='row mt-2'>
+            <div className='d-inline ml-1'>
+              {add_box_button}
+            </div>
+
+            <div className='d-inline ml-1'>
+              {delete_box_button}
+            </div>
+
+            <div className='d-inline ml-1'>
+              {show_ocr_button}
+            </div>
+
+            <div className='d-inline ml-1'>
+              {hide_ocr_button}
+            </div>
+
+            <div className='d-inline ml-1'>
+              {add_ocr_button}
+            </div>
+
+            <div className='d-inline ml-1'>
+              {delete_ocr_button}
+            </div>
+
+            <div className='d-inline ml-1'>
+              {next_frame_button}
+            </div>
+
+            <div className='d-inline ml-1'>
+              {prev_frame_button}
+            </div>
+
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  buildAnnotatePanel() {
+    const ocr_id_field = this.buildOcrMatchIdField()
+    const annotate_view_mode_field = this.buildAnnotateViewModeField()
+    let the_body = ''
+    if (this.state.annotate_view_mode === 'single') {
+      the_body = this.buildAnnotatePanelSingle()
+    } else if (this.state.annotate_view_mode === 'tile') {
+      the_body = this.buildAnnotatePanelTile()
+    }
+
+    return (
       <div className='col'>
         <div className='row mt-2'>
           annotating movie {this.state.annotate_movie_url}
@@ -795,56 +1001,11 @@ class JobEvalPanel extends React.Component {
           {ocr_id_field}
         </div>
 
-        <div id='annotate_image_div' className='row'>
-          {image_element}
-          <CanvasAnnotateOverlay
-            image_width={this.props.image_width}
-            image_height={this.props.image_height}
-            image_scale={this.props.image_scale}
-            image_url={image_url}
-            mode={this.state.image_mode}
-            clickCallback={this.handleImageClick}
-            last_click={this.state.clicked_coords}
-            getOcrRegions={this.getOcrRegions}
-            getBoxes={this.getBoxes}
-          />
+        <div className='row'>
+          {annotate_view_mode_field}
         </div>
 
-        <div className='row mt-2'>
-          <div className='d-inline ml-1'>
-            {add_box_button}
-          </div>
-
-          <div className='d-inline ml-1'>
-            {delete_box_button}
-          </div>
-
-          <div className='d-inline ml-1'>
-            {show_ocr_button}
-          </div>
-
-          <div className='d-inline ml-1'>
-            {hide_ocr_button}
-          </div>
-
-          <div className='d-inline ml-1'>
-            {add_ocr_button}
-          </div>
-
-          <div className='d-inline ml-1'>
-            {delete_ocr_button}
-          </div>
-
-          <div className='d-inline ml-1'>
-            {next_frame_button}
-          </div>
-
-          <div className='d-inline ml-1'>
-            {prev_frame_button}
-          </div>
-
-        </div>
-
+        {the_body}
 
       </div>
     )

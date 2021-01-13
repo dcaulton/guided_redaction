@@ -1306,10 +1306,12 @@ class RedactApplication extends React.Component {
     }
   }
 
-  setActiveMovieFirstFrame(the_url, theCallback=(()=>{})) {
+  setActiveMovieFirstFrame(the_url, frameset_hash='', theCallback=(()=>{})) {
     const the_movie = this.state.movies[the_url]
-    const first_frame_image_url = the_movie['frames'][0]
-    const frameset_hash = this.getFramesetHashForImageUrl(first_frame_image_url, the_movie['framesets'])
+    if (!frameset_hash) {
+      const first_frame_image_url = the_movie['frames'][0]
+      frameset_hash = this.getFramesetHashForImageUrl(first_frame_image_url, the_movie['framesets'])
+    }
     if (this.state.movie_url !== the_url) {
       this.setGlobalStateVar('movie_url', the_url)
     }
@@ -2401,6 +2403,7 @@ class RedactApplication extends React.Component {
                 frameset_hash={this.state.frameset_hash}
                 tier_1_matches={this.state.tier_1_matches}
                 getFramesetHashesInOrder={this.getFramesetHashesInOrder}
+                getFramesetHashForImageUrl={this.getFramesetHashForImageUrl}
                 setFramesetHash={this.setFramesetHash}
               />
             </Route>
