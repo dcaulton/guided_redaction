@@ -121,6 +121,10 @@ div.active_card {
   border: 5px solid red;
 }
 
+div.green_card {
+  border: 9px dashed green;
+}
+
 div#prev_button_col, div#next_button_col{
 padding-top:200px;
 }

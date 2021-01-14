@@ -15,6 +15,7 @@ class JobEvalPanel extends React.Component {
       annotate_movie_url: '',
       ocr_job_id: '',
       show_ocr: false,
+      annotate_tile_column_count: 6,
       selected_frameset_hashes: [],
       clicked_coords: [],
       id: '',
@@ -59,30 +60,44 @@ class JobEvalPanel extends React.Component {
     }
   }
 
+  frameHasAnnotationData(frameset_hash) {
+    const movie_url = this.state.annotate_movie_url
+    const movie_name = this.getMovieNameFromUrl(this.state.annotate_movie_url)
+    if (
+      this.state.annotate_movie_url !== '' &&
+      Object.keys(this.state.content['permanent_standards']).includes(movie_name) &&
+      Object.keys(this.state.content['permanent_standards'][movie_name]['framesets']).includes(frameset_hash) &&
+      Object.keys(this.state.content['permanent_standards'][movie_name]['framesets'][frameset_hash]).length > 0
+    ) {
+      return true
+    }
+  }
+
   getFirstFramesetHash(movie_url) {
     const the_movie = this.props.movies[movie_url]
     const first_frame_image_url = the_movie['frames'][0]
     let frameset_hash = this.props.getFramesetHashForImageUrl(first_frame_image_url, the_movie['framesets'])
- console.log('poopsky', this.state.selected_frameset_hashes)
     if (this.state.selected_frameset_hashes.length > 0) {
- console.log('badda bing 01')
       let ordered_hashes = this.props.getFramesetHashesInOrder()
       let ordered_sf_hashes = []
       for (let i=0; i < ordered_hashes.length; i++) {
         const ith_hash = ordered_hashes[i]
-console.log('gravy ', ith_hash)
         if (this.state.selected_frameset_hashes.includes(ith_hash)) {
-console.log('===============its IN')
           ordered_sf_hashes.push(ith_hash)
         }
       }
- console.log('badda bing 02', ordered_sf_hashes)
       frameset_hash = ordered_sf_hashes[0]
     }
     return frameset_hash
   }
 
-  gotoPrevFrame() {
+  getFramePositionString() {
+    const ordered_hashes = this.getFramesetHashesInOrder()
+    const cur_index = ordered_hashes.indexOf(this.props.frameset_hash)
+    return (cur_index + 1).toString() + '/' + ordered_hashes.length.toString()
+  }
+
+  getFramesetHashesInOrder() {
     let ordered_hashes = this.props.getFramesetHashesInOrder()
     if (this.state.selected_frameset_hashes.length > 0) {
       let ordered_sf_hashes = []
@@ -93,6 +108,11 @@ console.log('===============its IN')
       }
       ordered_hashes = ordered_sf_hashes
     }
+    return ordered_hashes
+  }
+
+  gotoPrevFrame() {
+    const ordered_hashes = this.getFramesetHashesInOrder()
     const cur_index = ordered_hashes.indexOf(this.props.frameset_hash)
     if (cur_index > 0) {
       const next_hash = ordered_hashes[cur_index-1]
@@ -101,16 +121,7 @@ console.log('===============its IN')
   }
 
   gotoNextFrame() {
-    let ordered_hashes = this.props.getFramesetHashesInOrder()
-    if (this.state.selected_frameset_hashes.length > 0) {
-      let ordered_sf_hashes = []
-      for (let i=0; i < ordered_hashes.length; i++) {
-        if (this.state.selected_frameset_hashes.includes(ordered_hashes[i])) {
-          ordered_sf_hashes.push(ordered_hashes[i])
-        }
-      }
-      ordered_hashes = ordered_sf_hashes
-    }
+    const ordered_hashes = this.getFramesetHashesInOrder()
     const cur_index = ordered_hashes.indexOf(this.props.frameset_hash)
     if (cur_index < (ordered_hashes.length-1)) {
       const next_hash = ordered_hashes[cur_index+1]
@@ -849,11 +860,45 @@ console.log('===============its IN')
     )
   }
 
+  buildBackToTileButton() {
+    return (
+      <button
+        className='btn btn-primary'
+        onClick={()=>{this.annotateExemplarMovie(this.state.annotate_movie_url, 'tile')}}
+      >
+        Back to Tile View
+      </button>
+    )
+  }
+
+  buildAnnotateTileColumnCountDropdown() {
+    const annotate_options = [
+      {'6': '6 columns'},
+      {'4': '4 columns'},
+      {'2': '2 columns'}
+    ]
+    return buildLabelAndDropdown(
+      annotate_options,
+      'Number of Columns',
+      this.state.annotate_tile_column_count,
+      'annotate_tile_column_count',
+      ((value)=>{this.setState({'annotate_tile_column_count': value})})
+    )
+  }
+
   buildAnnotatePanelTile() {
-    const num_cols = 6
-    const col_class = 'col-2'
+    const num_cols = this.state.annotate_tile_column_count
+    let col_class = 'col-2'
+    if (num_cols === '6') {
+      col_class = 'col-2'
+    } else if (num_cols === '4') {
+      col_class = 'col-3'
+    } else if (num_cols === '2') {
+      col_class = 'col-6'
+    }
     const ordered_hashes = this.props.getFramesetHashesInOrder()
     const num_rows = Math.ceil(ordered_hashes.length / num_cols)
+    const col_count_picker = this.buildAnnotateTileColumnCountDropdown()
 
     let row_num_array = []
     for (let i=0; i < num_rows; i++) {
@@ -868,7 +913,8 @@ console.log('===============its IN')
         <div className='col'>
           <div className='row h5'>
             <div className='col-9'>
-              Select the frames you wish to annotate by clicking on them, press the Annotate button when done
+              Select the frames you wish to annotate by clicking on them, press the Annotate button when done.  
+              Clicking on no frames gives you all frames of the movie to annotate.
             </div>
             <div className='col-3'>
               <button
@@ -879,6 +925,9 @@ console.log('===============its IN')
               </button>
             </div>
           </div>
+          <div className='row'>
+            {col_count_picker}
+          </div>
           {row_num_array.map((whatever, row_num) => {
             const start_point = row_num * num_cols 
             const end_point = start_point + num_cols
@@ -888,14 +937,27 @@ console.log('===============its IN')
                 {fs_hashes_this_row.map((fs_hash, index) => {
                   let div_class = col_class
                   if (this.state.selected_frameset_hashes.includes(fs_hash)) {
-                    div_class = col_class + ' active_card'
+                    div_class += ' active_card'
                   }
                   const img_url = this.props.getImageUrl(fs_hash)
+                  let overlay_text = '.'
+                  let overlay_style = {
+                    color: 'white',
+                  }
+                  if (this.frameHasAnnotationData(fs_hash)) {
+                    overlay_text = 'ANNOTATED'
+                    overlay_style['color'] = '#000'
+                  }
                   return (
                     <div 
                         className={div_class} 
                         key={index} 
                     >
+                      <div
+                        style={overlay_style}
+                      >
+                        {overlay_text}
+                      </div>
                       <img
                         style={img_style}
                         src={img_url}
@@ -922,6 +984,7 @@ console.log('===============its IN')
     const delete_ocr_button = this.buildDeleteOcrButton()
     const next_frame_button = this.buildNextFrameButton()
     const prev_frame_button = this.buildPrevFrameButton()
+    const back_to_tile_button = this.buildBackToTileButton()
     const image_url = this.props.getImageUrl()
     const image_element = this.buildImageElement(image_url)
     return (
@@ -968,11 +1031,15 @@ console.log('===============its IN')
             </div>
 
             <div className='d-inline ml-1'>
+              {prev_frame_button}
+            </div>
+
+            <div className='d-inline ml-1'>
               {next_frame_button}
             </div>
 
             <div className='d-inline ml-1'>
-              {prev_frame_button}
+              {back_to_tile_button}
             </div>
 
           </div>
@@ -982,19 +1049,28 @@ console.log('===============its IN')
   }
 
   buildAnnotatePanel() {
-    const ocr_id_field = this.buildOcrMatchIdField()
-    const annotate_view_mode_field = this.buildAnnotateViewModeField()
+//    const ocr_id_field = this.buildOcrMatchIdField()
+    const ocr_id_field = ''
+//    const annotate_view_mode_field = this.buildAnnotateViewModeField()
+    const annotate_view_mode_field = ''
     let the_body = ''
+    let the_title = ''
+    const movie_name = this.getMovieNameFromUrl(this.state.annotate_movie_url)
     if (this.state.annotate_view_mode === 'single') {
       the_body = this.buildAnnotatePanelSingle()
+      const image_url = this.props.getImageUrl()
+      const image_name = this.getMovieNameFromUrl(image_url)
+      const position_string = this.getFramePositionString()
+      the_title = movie_name + ', ' + image_name + ' - ' +position_string
     } else if (this.state.annotate_view_mode === 'tile') {
       the_body = this.buildAnnotatePanelTile()
+      the_title = movie_name 
     }
 
     return (
       <div className='col'>
-        <div className='row mt-2'>
-          annotating movie {this.state.annotate_movie_url}
+        <div className='row mt-2 h4'>
+          {the_title}
         </div>
 
         <div className='row'>
