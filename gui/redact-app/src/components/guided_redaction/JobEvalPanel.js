@@ -23,6 +23,7 @@ class JobEvalPanel extends React.Component {
       content: {},
       something_changed: false,
       job_eval_objectives: {},
+      job_run_summaries: {},
     }
     this.setLocalStateVar=this.setLocalStateVar.bind(this)
     this.afterJeoSave=this.afterJeoSave.bind(this)
@@ -61,7 +62,6 @@ class JobEvalPanel extends React.Component {
   }
 
   frameHasAnnotationData(frameset_hash) {
-    const movie_url = this.state.annotate_movie_url
     const movie_name = this.getMovieNameFromUrl(this.state.annotate_movie_url)
     if (
       this.state.annotate_movie_url !== '' &&
@@ -643,8 +643,8 @@ class JobEvalPanel extends React.Component {
               </div>
             </div>
 
-            <div className='row ml-2'>
-              <div className='d-inline'>
+            <div className='row'>
+              <div className='d-inline ml-2'>
                 Id: 
               </div>
               <div className='d-inline ml-2'>
@@ -687,6 +687,7 @@ class JobEvalPanel extends React.Component {
     const objective_data = this.buildObjectivePanel()
     const exemplar_movies_section = this.buildExemplarMoviesSection()
     const add_button = this.buildAddExemplarMovieButton()
+    const job_run_summary_section = this.buildJobRunSummarySection()
     return (
       <div className='col'>
         <div className='row mt-2'>
@@ -694,7 +695,7 @@ class JobEvalPanel extends React.Component {
         </div>
 
         <div className='row mt-2'>
-          <div className='col-6 h3'>
+          <div className='col-6 h5'>
             Exemplar Movies
           </div>
           <div className='col-6'>
@@ -707,6 +708,13 @@ class JobEvalPanel extends React.Component {
             {exemplar_movies_section}
           </div>
         </div>
+
+        <div className='row'>
+          <div className='col-12'>
+            {job_run_summary_section}
+          </div>
+        </div>
+
       </div>
     )
   }
@@ -1083,6 +1091,20 @@ class JobEvalPanel extends React.Component {
 
         {the_body}
 
+      </div>
+    )
+  }
+
+  buildJobRunSummarySection() {
+    return (
+      <div className='row border-top'>
+        <div className='col'>
+          <div className='row h3'>
+            Job Run Summaries
+          </div>
+          <div className='row'>
+          </div>
+        </div>
       </div>
     )
   }

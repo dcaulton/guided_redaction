@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'guided_redaction.attributes',
     'guided_redaction.pipelines',
     'guided_redaction.job_eval_objectives',
+    'guided_redaction.job_run_summaries',
     'django_extensions',
     'rest_framework',
     'base',
