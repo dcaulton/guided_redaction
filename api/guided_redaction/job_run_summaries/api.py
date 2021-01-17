@@ -2,6 +2,9 @@ import json
 from rest_framework.response import Response
 from base import viewsets
 from guided_redaction.job_run_summaries.models import JobRunSummary
+from guided_redaction.jobs.models import Job
+from guided_redaction.job_eval_objectives.models import JobEvalObjective
+from .controller_generate import GenerateController
 
 
 class JobRunSummariesViewSet(viewsets.ViewSet):
@@ -48,9 +51,13 @@ class JobRunSummariesViewSet(viewsets.ViewSet):
 
         job_id = request.data.get('job_id')
         if job_id:
+            if not Job.objects.filter(id=job_id).exists():
+                return self.error(['cannot find job for specified id'], status_code=400)
             jrs.job = Job.objects.get(pk=job_id)
         jeo_id = request.data.get('job_eval_objective_id')
         if jeo_id:
+            if not JobEvalObjective.objects.filter(id=jeo_id).exists():
+                return self.error(['cannot find job eval objective for specified id'], status_code=400)
             jrs.job_eval_objective = JobEvalObjective.objects.get(pk=jeo_id)
         jrs.content = json.dumps(content)
         jrs.save()
@@ -62,3 +69,20 @@ class JobRunSummariesViewSet(viewsets.ViewSet):
             return Response({}, status=204)
         else:
             return Response({}, status=404)
+
+
+class JobRunSummariesGenerateViewSet(viewsets.ViewSet):
+    def create(self, request):
+        request_data = request.data
+        return self.process_create_request(request_data)
+
+    def process_create_request(self, request_data):
+        if not request_data.get("job_id"):
+            return self.error("job_id is required")
+        if not request_data.get("job_eval_objective_id"):
+            return self.error("job_eval_objective_id is required")
+
+        worker = GenerateController()
+        jrs = worker.generate_job_run_summary(request_data)
+
+        return Response(jrs)
