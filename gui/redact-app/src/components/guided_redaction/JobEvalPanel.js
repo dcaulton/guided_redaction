@@ -28,6 +28,7 @@ class JobEvalPanel extends React.Component {
       something_changed: false,
       job_eval_objectives: {},
       job_run_summaries: {},
+      jrs_ids_to_compare: [],
     }
     this.setLocalStateVar=this.setLocalStateVar.bind(this)
     this.afterJeoSave=this.afterJeoSave.bind(this)
@@ -37,6 +38,26 @@ class JobEvalPanel extends React.Component {
     this.getOcrRegions=this.getOcrRegions.bind(this)
     this.getBoxes=this.getBoxes.bind(this)
     this.keyPress=this.keyPress.bind(this)
+  }
+
+
+  addRemoveToJrsIdsToCompare(jrs_id) {
+    let build_ids = []
+    let item_found = false
+    for (let i=0; i < this.state.jrs_ids_to_compare.length; i++) {
+      const existing_id = this.state.jrs_ids_to_compare[i]
+      if (existing_id === jrs_id) {
+        item_found = true
+      } else {
+        build_ids.push(existing_id)
+      }
+    }
+    if (!item_found) {
+      build_ids.push(jrs_id)
+    }
+    this.setState({
+      jrs_ids_to_compare: build_ids,
+    })
   }
 
   selectFramesetHash(fs_hash) {
@@ -310,6 +331,27 @@ class JobEvalPanel extends React.Component {
     })
   }
 
+  async generateJobRunSummary(when_done=(()=>{})) {
+    let the_url = this.props.getUrl('job_run_summaries_url')
+    const payload = {
+        job_id: this.state.exemplar_job_id,
+        job_eval_objective_id: this.state.id,
+    }
+    let response = await this.props.fetch(the_url, {
+      method: 'POST',
+      headers: this.props.buildJsonHeaders(),
+      body: JSON.stringify(payload),
+    })
+    .then((response) => response.json())
+    .then((responseJson) => {
+      when_done(responseJson)
+    })
+    .catch((error) => {
+      console.error(error)
+    })
+    await response
+  }
+
   async getJobEvalObjectives(when_done=(()=>{})) {
     let the_url = this.props.getUrl('job_eval_objectives_url')
     await this.props.fetch(the_url, {
@@ -552,10 +594,7 @@ class JobEvalPanel extends React.Component {
 
   buildModeNav() {
     let targets = []
-    targets = [{'': 'home'}, 
-               {'review': 'review non-exemplar job'}, 
-               {'compare': 'compare jobs'}
-    ] 
+    targets = [{'': 'home'}] 
     if (targets.length > 0) {
       return (
         <div className='row'>
@@ -1117,7 +1156,7 @@ class JobEvalPanel extends React.Component {
   }
 
   buildGenerateExemplarJrsLine() {
-    const jobs = []
+    const jobs = [{'': ''}]
     for (let i=0; i < this.props.jobs.length; i++) {
       const job = this.props.jobs[i]
       const build_obj = {}
@@ -1134,20 +1173,119 @@ class JobEvalPanel extends React.Component {
     )
     return (
       <div>
-        <div className='d-inline font-weight-bold'>
-          Generate Exemplar Job Run Summary
-        </div>
         <div className='d-inline'>
           {job_id_dropdown}
-        </div>
-        <div className='d-inline'>
         </div>
       </div>
     )
   }
 
+  buildGenerateExemplarJrsButton() {
+    if (!this.state.id || !this.state.exemplar_job_id) {
+      return ''
+    }
+
+    return (
+      <button
+        className='btn btn-primary'
+        onClick={()=>{this.generateJobRunSummary()}}
+      >
+        Generate Exemplar JRS
+      </button>
+    )
+  }
+
+  buildCompareButton() {
+    if (this.state.jrs_ids_to_compare.length < 2) {
+      return ''
+    }
+
+    return (
+      <button
+        className='btn btn-primary'
+        onClick={()=>{this.startCompare()}}
+      >
+        Compare
+      </button>
+    )
+  }
+
+  startCompare() {
+    this.setState({
+        mode: 'compare',
+    })
+  }
+
+  buildManualJrsButton() {
+    if (!this.state.id || !this.state.exemplar_job_id) {
+      return ''
+    }
+
+    return (
+      <button
+        className='btn btn-primary'
+        onClick={()=>{this.startReview()}}
+      >
+        Build Manual JRS
+      </button>
+    )
+  }
+
+  startReview() {
+    this.setState({
+        mode: 'review',
+    })
+  }
+
+  buildJobRunSummaryList() {
+    if (!this.state.job_run_summaries || Object.keys(this.state.job_run_summaries).length === 0) {
+      return ''
+    }
+    if (!this.state.id) {
+      return ''
+    }
+    return (
+      <div className='col'>
+        {Object.keys(this.state.job_run_summaries).map((jrs_key, index) => {
+          const jrs = this.state.job_run_summaries[jrs_key]
+          if (jrs.job_eval_objective_id !== this.state.id) {
+            return ''
+          }
+          let its_checked = false
+          if (this.state.jrs_ids_to_compare.includes(jrs_key)) {
+            its_checked = true
+          }
+          return (
+            <div 
+              key={index}
+              className='row'
+            >
+              <div className='col-4'>
+                {jrs_key}
+              </div>
+              <div className='col-1'>
+                <input
+                  className='ml-2 mr-2 mt-1'
+                  checked={its_checked}
+                  type='checkbox'
+                  onChange={
+                    () => this.addRemoveToJrsIdsToCompare(jrs_key) 
+                  }
+                />
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    )
+  }
+
   buildJobRunSummarySection() {
-    const exemplar_line = this.buildGenerateExemplarJrsLine()
+    const exemplar_job_picker = this.buildGenerateExemplarJrsLine()
+    const generate_exemplar_button = this.buildGenerateExemplarJrsButton()
+    const manual_review_button = this.buildManualJrsButton()
+    const jrs_list = this.buildJobRunSummaryList()
+    const compare_button = this.buildCompareButton()
     return (
       <div className='row border-top'>
         <div className='col'>
@@ -1155,18 +1293,32 @@ class JobEvalPanel extends React.Component {
             Job Run Summaries
           </div>
 
-          <div className='row'>
-            {exemplar_line}
+          <div className='row mt-4 h4'>
+            Generate Summaries
+          </div>
+          <div className='row mt-4'>
+            {exemplar_job_picker}
           </div>
 
           <div className='row'>
-            button for create manual JRS with a select box for all jobs - this brings you to a kind of annotate panel in single mode
+            <div className='d-inline ml-2'>
+              {generate_exemplar_button}
+            </div>
+            <div className='d-inline ml-2'>
+              {manual_review_button}
+            </div>
           </div>
 
-          <div className='row'>
-            list of Job run summaries for this JEO, each has a checkbox for compare,
-            select a few then press the compare button and youll enter compare mode
+          <div className='row mt-4 h4'>
+            Compare Jobs
           </div>
+          <div className='row'>
+            {jrs_list}
+          </div>
+          <div className='row'>
+            {compare_button}
+          </div>
+
         </div>
       </div>
     )

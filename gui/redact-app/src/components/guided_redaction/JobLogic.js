@@ -382,6 +382,7 @@ class JobLogic extends React.Component {
     getGlobalStateVar
   ) {
     let response_data = JSON.parse(job.response_data)
+    response_data['job_id'] = job.id
     const tier_1_scanners = getGlobalStateVar('tier_1_scanners')
     const current_ids = getGlobalStateVar('current_ids')
     const tier_1_matches = getGlobalStateVar('tier_1_matches')
@@ -467,7 +468,8 @@ class JobLogic extends React.Component {
     getGlobalStateVar
   ) {
     const request_data = JSON.parse(job.request_data)
-    const response_data = JSON.parse(job.response_data)
+    let response_data = JSON.parse(job.response_data)
+    response_data['job_id'] = job.id
 
     const movies = getGlobalStateVar('movies')
     let campaign_movies = getGlobalStateVar('campaign_movies')
