@@ -1,4 +1,7 @@
 import React from 'react'
+import {
+  getFileNameFromUrl
+} from './redact_utils.js'
 import CanvasInsightsOverlay from './CanvasInsightsOverlay'
 import BottomInsightsControls from './BottomInsightsControls'
 import JobCardList from './JobCards'
@@ -423,12 +426,10 @@ class InsightsPanel extends React.Component {
     job_data['operation'] = 'split_and_hash_threaded'
     if (Array.isArray(extra_data)) {
       job_data['description'] = 'split and hash threaded - all campaign movies'
-    } else {
-      job_data['description'] = 'split and hash threaded: ' + extra_data
-    }
-    if (Array.isArray(extra_data)) {
       job_data['request_data']['movie_urls'] = extra_data
     } else {
+      const movie_name = getFileNameFromUrl(extra_data)
+      job_data['description'] = 'split and hash threaded: ' + movie_name
       job_data['request_data']['movie_urls'] = [extra_data]
     }
     job_data['request_data']['preserve_movie_audio'] = this.props.preserve_movie_audio

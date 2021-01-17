@@ -1,4 +1,7 @@
 import React from 'react';
+import {
+  getFileNameFromUrl
+} from './redact_utils.js'
 import CanvasAnnotateOverlay from './CanvasAnnotateOverlay'
 import {
   buildLabelAndDropdown,
@@ -14,6 +17,7 @@ class JobEvalPanel extends React.Component {
       annotate_view_mode: 'tile',
       annotate_movie_url: '',
       ocr_job_id: '',
+      exemplar_job_id: '',
       show_ocr: false,
       annotate_tile_column_count: 6,
       selected_frameset_hashes: [],
@@ -62,7 +66,7 @@ class JobEvalPanel extends React.Component {
   }
 
   frameHasAnnotationData(frameset_hash) {
-    const movie_name = this.getMovieNameFromUrl(this.state.annotate_movie_url)
+    const movie_name = getFileNameFromUrl(this.state.annotate_movie_url)
     if (
       this.state.annotate_movie_url !== '' &&
       Object.keys(this.state.content['permanent_standards']).includes(movie_name) &&
@@ -131,7 +135,7 @@ class JobEvalPanel extends React.Component {
 
   getBoxes() {
     const perm_standard = this.state.content['permanent_standards']
-    const movie_name = this.getMovieNameFromUrl(this.state.annotate_movie_url)
+    const movie_name = getFileNameFromUrl(this.state.annotate_movie_url)
 
     if (!Object.keys(perm_standard).includes(movie_name)) {
       return {}
@@ -190,7 +194,7 @@ class JobEvalPanel extends React.Component {
   doDeleteBox(x_scaled, y_scaled) {
     let deepCopyContent = JSON.parse(JSON.stringify(this.state.content))
     let something_changed = false
-    const movie_name = this.getMovieNameFromUrl(this.state.annotate_movie_url)
+    const movie_name = getFileNameFromUrl(this.state.annotate_movie_url)
     if (!Object.keys(deepCopyContent['permanent_standards']).includes(movie_name)) {
       return
     }
@@ -231,7 +235,7 @@ class JobEvalPanel extends React.Component {
       end: [x_scaled, y_scaled],
     }
     let deepCopyContent = JSON.parse(JSON.stringify(this.state.content))
-    const movie_name = this.getMovieNameFromUrl(this.state.annotate_movie_url)
+    const movie_name = getFileNameFromUrl(this.state.annotate_movie_url)
     if (!Object.keys(deepCopyContent['permanent_standards']).includes(movie_name)) {
       deepCopyContent['permanent_standards'][movie_name] = {framesets: {}}
     }
@@ -284,6 +288,26 @@ class JobEvalPanel extends React.Component {
       content: this.state.content,
     }
     return jeo
+  }
+
+  async getJobRunSummaries(when_done=(()=>{})) {
+    let the_url = this.props.getUrl('job_run_summaries_url')
+    await this.props.fetch(the_url, {
+      method: 'GET',
+      headers: this.props.buildJsonHeaders(),
+    })
+    .then((response) => response.json())
+    .then((responseJson) => {
+      this.setState({
+        'job_run_summaries': responseJson,
+       })
+    })
+    .then((responseJson) => {
+      when_done(responseJson)
+    })
+    .catch((error) => {
+      console.error(error);
+    })
   }
 
   async getJobEvalObjectives(when_done=(()=>{})) {
@@ -437,10 +461,6 @@ class JobEvalPanel extends React.Component {
     )
   }
   
-  getMovieNameFromUrl(movie_url) {
-    return movie_url.split('/').slice(-1)[0]
-  }
-
   buildAddExemplarMovieButton() {
     return (
       <div className='d-inline'>
@@ -457,7 +477,7 @@ class JobEvalPanel extends React.Component {
         </button>
         <div className='dropdown-menu' aria-labelledby='argle'>
           {Object.keys(this.props.movies).map((movie_url, index) => {
-            const movie_name = this.getMovieNameFromUrl(movie_url)
+            const movie_name = getFileNameFromUrl(movie_url)
             if (
               this.state.content && 
               Object.keys(this.state.content).includes('permanent_standards') && 
@@ -525,6 +545,7 @@ class JobEvalPanel extends React.Component {
 
   componentDidMount() {
     this.getJobEvalObjectives()
+    this.getJobRunSummaries()
     this.loadNewJeo()
     window.addEventListener('keydown', this.keyPress)
   }
@@ -1063,11 +1084,11 @@ class JobEvalPanel extends React.Component {
     const annotate_view_mode_field = ''
     let the_body = ''
     let the_title = ''
-    const movie_name = this.getMovieNameFromUrl(this.state.annotate_movie_url)
+    const movie_name = getFileNameFromUrl(this.state.annotate_movie_url)
     if (this.state.annotate_view_mode === 'single') {
       the_body = this.buildAnnotatePanelSingle()
       const image_url = this.props.getImageUrl()
-      const image_name = this.getMovieNameFromUrl(image_url)
+      const image_name = getFileNameFromUrl(image_url)
       const position_string = this.getFramePositionString()
       the_title = movie_name + ', ' + image_name + ' - ' +position_string
     } else if (this.state.annotate_view_mode === 'tile') {
@@ -1095,14 +1116,56 @@ class JobEvalPanel extends React.Component {
     )
   }
 
+  buildGenerateExemplarJrsLine() {
+    const jobs = []
+    for (let i=0; i < this.props.jobs.length; i++) {
+      const job = this.props.jobs[i]
+      const build_obj = {}
+      build_obj[job.id] = job.id.substring(0, 5) + '... - ' + job.description
+      jobs.push(build_obj)
+    }
+
+    const job_id_dropdown = buildLabelAndDropdown(
+      jobs,
+      'Job Id',
+      this.state.exemplar_job_id,
+      'exemplar_job_id',
+      ((value)=>{this.setLocalStateVar('exemplar_job_id', value)})
+    )
+    return (
+      <div>
+        <div className='d-inline font-weight-bold'>
+          Generate Exemplar Job Run Summary
+        </div>
+        <div className='d-inline'>
+          {job_id_dropdown}
+        </div>
+        <div className='d-inline'>
+        </div>
+      </div>
+    )
+  }
+
   buildJobRunSummarySection() {
+    const exemplar_line = this.buildGenerateExemplarJrsLine()
     return (
       <div className='row border-top'>
         <div className='col'>
           <div className='row h3'>
             Job Run Summaries
           </div>
+
           <div className='row'>
+            {exemplar_line}
+          </div>
+
+          <div className='row'>
+            button for create manual JRS with a select box for all jobs - this brings you to a kind of annotate panel in single mode
+          </div>
+
+          <div className='row'>
+            list of Job run summaries for this JEO, each has a checkbox for compare,
+            select a few then press the compare button and youll enter compare mode
           </div>
         </div>
       </div>

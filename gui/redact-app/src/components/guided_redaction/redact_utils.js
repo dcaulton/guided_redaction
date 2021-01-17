@@ -1,5 +1,9 @@
 import React from 'react';                                                      
 
+export const getFileNameFromUrl = function(the_url) {
+  return the_url.split('/').slice(-1)[0]
+}
+
 export const buildIllustrateColorSelect = function(name, value, onchange) {
   return (
     <select

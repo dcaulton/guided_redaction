@@ -628,6 +628,8 @@ class RedactApplication extends React.Component {
       return api_server_url + 'v1/analyze/get-screens'
     } else if (url_name === 'job_eval_objectives_url') {
       return api_server_url + 'v1/job-eval-objectives'
+    } else if (url_name === 'job_run_summaries_url') {
+      return api_server_url + 'v1/job-run-summaries'
     }
   }
 
