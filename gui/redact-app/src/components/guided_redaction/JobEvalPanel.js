@@ -17,7 +17,8 @@ class JobEvalPanel extends React.Component {
       annotate_view_mode: 'tile',
       annotate_movie_url: '',
       ocr_job_id: '',
-      exemplar_job_id: '',
+      active_job_id: '',
+      active_t1_results_key: '',
       show_ocr: false,
       annotate_tile_column_count: 6,
       selected_frameset_hashes: [],
@@ -29,6 +30,7 @@ class JobEvalPanel extends React.Component {
       job_eval_objectives: {},
       job_run_summaries: {},
       jrs_ids_to_compare: [],
+      jrs_movies: {},
     }
     this.setLocalStateVar=this.setLocalStateVar.bind(this)
     this.afterJeoSave=this.afterJeoSave.bind(this)
@@ -39,7 +41,6 @@ class JobEvalPanel extends React.Component {
     this.getBoxes=this.getBoxes.bind(this)
     this.keyPress=this.keyPress.bind(this)
   }
-
 
   addRemoveToJrsIdsToCompare(jrs_id) {
     let build_ids = []
@@ -334,7 +335,7 @@ class JobEvalPanel extends React.Component {
   async generateJobRunSummary(when_done=(()=>{})) {
     let the_url = this.props.getUrl('job_run_summaries_url')
     const payload = {
-        job_id: this.state.exemplar_job_id,
+        job_id: this.state.active_job_id,
         job_eval_objective_id: this.state.id,
     }
     let response = await this.props.fetch(the_url, {
@@ -619,16 +620,6 @@ class JobEvalPanel extends React.Component {
     }
   }
 
-  buildReviewPanel() {
-    return (
-      <div className='col'>
-        <div className='row'>
-          review stuff
-        </div>
-      </div>
-    )
-  }
-
   buildComparePanel() {
     return (
       <div className='col'>
@@ -799,20 +790,6 @@ class JobEvalPanel extends React.Component {
       this.state.ocr_job_id,
       'ocr_job_id',
       ((value)=>{this.setLocalStateVar('ocr_job_id', value)})
-    )
-  }
-
-  buildAnnotateViewModeField() {
-    const annotate_options = [
-      {'single': 'single frame'},
-      {'tile': 'show all frames'}
-    ]
-    return buildLabelAndDropdown(
-      annotate_options,
-      'Annotate View Mode',
-      this.state.annotate_view_mode,
-      'annotate_view_mode',
-      ((value)=>{this.setLocalStateVar('annotate_view_mode', value)})
     )
   }
 
@@ -1119,8 +1096,6 @@ class JobEvalPanel extends React.Component {
   buildAnnotatePanel() {
 //    const ocr_id_field = this.buildOcrMatchIdField()
     const ocr_id_field = ''
-//    const annotate_view_mode_field = this.buildAnnotateViewModeField()
-    const annotate_view_mode_field = ''
     let the_body = ''
     let the_title = ''
     const movie_name = getFileNameFromUrl(this.state.annotate_movie_url)
@@ -1145,10 +1120,6 @@ class JobEvalPanel extends React.Component {
           {ocr_id_field}
         </div>
 
-        <div className='row'>
-          {annotate_view_mode_field}
-        </div>
-
         {the_body}
 
       </div>
@@ -1167,9 +1138,9 @@ class JobEvalPanel extends React.Component {
     const job_id_dropdown = buildLabelAndDropdown(
       jobs,
       'Job Id',
-      this.state.exemplar_job_id,
-      'exemplar_job_id',
-      ((value)=>{this.setLocalStateVar('exemplar_job_id', value)})
+      this.state.active_job_id,
+      'active_job_id',
+      ((value)=>{this.setLocalStateVar('active_job_id', value)})
     )
     return (
       <div>
@@ -1181,7 +1152,7 @@ class JobEvalPanel extends React.Component {
   }
 
   buildGenerateExemplarJrsButton() {
-    if (!this.state.id || !this.state.exemplar_job_id) {
+    if (!this.state.id || !this.state.active_job_id) {
       return ''
     }
 
@@ -1217,24 +1188,82 @@ class JobEvalPanel extends React.Component {
   }
 
   buildManualJrsButton() {
-    if (!this.state.id || !this.state.exemplar_job_id) {
+    if (!this.state.id || !this.state.active_job_id) {
       return ''
     }
 
     return (
       <button
         className='btn btn-primary'
-        onClick={()=>{this.startReview()}}
+        onClick={()=>{this.doReview()}}
       >
         Build Manual JRS
       </button>
     )
   }
 
-  startReview() {
+  buildDeleteJrsMovieButton(movie_url) {
+    return (
+      <button
+        className='btn btn-link'
+        onClick={()=>{this.deleteJrsMovie(movie_url)}}
+      >
+        Delete
+      </button>
+    )
+  }
+
+  buildReviewJrsMovieButton(movie_url) {
+    return (
+      <button
+        className='btn btn-link'
+        onClick={()=>{this.showReviewTile(movie_url)}}
+      >
+        Review
+      </button>
+    )
+  }
+
+  showReviewTile(movie_url) {
     this.setState({
         mode: 'review',
+        annotate_view_mode: 'tile',
+        active_movie_url: movie_url,
     })
+  }
+
+  doReview() {
+  // get movies from job id, save their urls in jrs_movies
+  //  update this.state.active_t1_results_key with the one matching the job id, to speed up lookups
+  //MAMA
+    for (let i=0; i < Object.keys(this.props.tier_1_matches).length; i++) {
+      const scanner_type = Object.keys(this.props.tier_1_matches)[i]
+      for (let j=0; j < Object.keys(this.props.tier_1_matches[scanner_type]).length; j++) {
+        const match_key = Object.keys(this.props.tier_1_matches[scanner_type])[j]
+        const match_obj = this.props.tier_1_matches[scanner_type][match_key]
+        if (
+          Object.keys(match_obj).includes('job_id') &&
+          match_obj['job_id'] === this.state.active_job_id
+        ) {
+          const movie_urls = Object.keys(match_obj['movies'])
+          let build_jrs_movies = {}
+          for (let k=0; k < movie_urls.length; k++) {
+            const movie_url = movie_urls[k]
+            build_jrs_movies[movie_url] = {
+              'framesets': {},
+            }
+            
+          }
+
+          this.setState({
+              mode: 'review',
+              annotate_view_mode: 'summary',
+              jrs_movies: build_jrs_movies,
+              active_t1_results_key: match_key,
+          })
+        }
+      }
+    }
   }
 
   buildJobRunSummaryList() {
@@ -1281,6 +1310,10 @@ class JobEvalPanel extends React.Component {
   }
 
   buildJobRunSummarySection() {
+    if (!this.state.id) {
+      return ''
+    }
+
     const exemplar_job_picker = this.buildGenerateExemplarJrsLine()
     const generate_exemplar_button = this.buildGenerateExemplarJrsButton()
     const manual_review_button = this.buildManualJrsButton()
@@ -1319,6 +1352,95 @@ class JobEvalPanel extends React.Component {
             {compare_button}
           </div>
 
+        </div>
+      </div>
+    )
+  }
+
+  getMovieUrlsForActiveJob() {
+    if (!this.state.jrs_movies) {
+      return []
+    }
+    return Object.keys(this.state.jrs_movies)
+  }
+
+  buildReviewPanelSummary() {
+    const movie_urls = this.getMovieUrlsForActiveJob()
+    return (
+      <div className='row'>
+        <div className='col'>
+          <div className='row'>
+            movies
+          </div>
+        {movie_urls.map((movie_url, index) => {
+          const movie_name = getFileNameFromUrl(movie_url)
+          const delete_movie_button = this.buildDeleteJrsMovieButton(movie_url)
+          const review_movie_button = this.buildReviewJrsMovieButton(movie_url)
+          let summary_info = 'no review data found'
+          if (
+            Object.keys(this.state.jrs_movies).includes(movie_url) &&
+            Object.keys(this.state.jrs_movies[movie_url]['framesets']).length > 0
+          ) {
+            summary_info = Object.keys(this.state.jrs_movies[movie_url]['framesets']).length.toString() + 'frames annotated'
+          }
+          return (
+            <div 
+              key={index}
+              className='row'
+            >
+              <div className='col-4'>
+                {movie_name}
+              </div>
+              <div className='col-3'>
+                {summary_info}
+              </div>
+              <div className='col-1'>
+                {review_movie_button}
+              </div>
+              <div className='col-1'>
+                {delete_movie_button}
+              </div>
+            </div>
+          )
+        })}
+        </div>
+      </div>
+    )
+  }
+
+  buildReviewPanel() {
+    let the_body = ''
+    let the_title = ''
+    const movie_name = getFileNameFromUrl(this.state.annotate_movie_url)
+    if (this.state.annotate_view_mode === 'single') {
+      the_body = this.buildReviewPanelSingle()
+      const image_url = this.props.getImageUrl()
+      const image_name = getFileNameFromUrl(image_url)
+      const position_string = this.getFramePositionString()
+      the_title = movie_name + ', ' + image_name + ' - ' +position_string
+    } else if (this.state.annotate_view_mode === 'tile') {
+      the_body = this.buildReviewPanelTile()
+      the_title = movie_name 
+    } else if (this.state.annotate_view_mode === 'summary') {
+      the_body = this.buildReviewPanelSummary()
+      the_title = 'Manually Reviewing Job ' + this.state.active_job_id
+    }
+
+    return (
+      <div className='col'>
+        <div className='row mt-2 h4'>
+          {the_title}
+        </div>
+
+        {the_body}
+
+      </div>
+    )
+
+    return (
+      <div className='col'>
+        <div className='row'>
+          review stuff
         </div>
       </div>
     )
