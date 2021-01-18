@@ -42,6 +42,16 @@ class JobEvalPanel extends React.Component {
     this.keyPress=this.keyPress.bind(this)
   }
 
+  deleteJrsMovie(movie_url) {
+    if (Object.keys(this.state.jrs_movies).includes(movie_url)) {
+      let deepCopyJrsm = JSON.parse(JSON.stringify(this.state.jrs_movies))
+      delete deepCopyJrsm[movie_url]
+      this.setState({
+        jrs_movies: deepCopyJrsm,
+      })
+    }
+  }
+
   addRemoveToJrsIdsToCompare(jrs_id) {
     let build_ids = []
     let item_found = false
@@ -90,10 +100,21 @@ class JobEvalPanel extends React.Component {
   frameHasAnnotationData(frameset_hash) {
     const movie_name = getFileNameFromUrl(this.state.annotate_movie_url)
     if (
+      this.state.mode !== 'annotate' &&
       this.state.annotate_movie_url !== '' &&
       Object.keys(this.state.content['permanent_standards']).includes(movie_name) &&
       Object.keys(this.state.content['permanent_standards'][movie_name]['framesets']).includes(frameset_hash) &&
       Object.keys(this.state.content['permanent_standards'][movie_name]['framesets'][frameset_hash]).length > 0
+    ) {
+      return true
+    }
+    const movie_url = this.state.annotate_movie_url
+    if (
+      this.state.mode !== 'review' &&
+      movie_url !== '' &&
+      Object.keys(this.state.jrs_movies).includes(movie_url) &&
+      Object.keys(this.state.jrs_movies[movie_url]['framesets']).includes(frameset_hash) &&
+      Object.keys(this.state.jrs_movies[movie_url]['framesets'][frameset_hash]).length > 0
     ) {
       return true
     }
@@ -931,7 +952,7 @@ class JobEvalPanel extends React.Component {
     )
   }
 
-  buildAnnotatePanelTile() {
+  getTileInfo() {
     const num_cols = this.state.annotate_tile_column_count
     let col_class = 'col-2'
     if (num_cols === '6') {
@@ -941,6 +962,16 @@ class JobEvalPanel extends React.Component {
     } else if (num_cols === '2') {
       col_class = 'col-6'
     }
+    return {
+      num_cols: num_cols, 
+      col_class: col_class,
+    }
+  }
+
+  buildAnnotatePanelTile() {
+    const tile_info = this.getTileInfo()
+    const num_cols = tile_info['num_cols']
+    const col_class = tile_info['col_class']
     const ordered_hashes = this.props.getFramesetHashesInOrder()
     const num_rows = Math.ceil(ordered_hashes.length / num_cols)
     const col_count_picker = this.buildAnnotateTileColumnCountDropdown()
@@ -1419,7 +1450,7 @@ class JobEvalPanel extends React.Component {
       const position_string = this.getFramePositionString()
       the_title = movie_name + ', ' + image_name + ' - ' +position_string
     } else if (this.state.annotate_view_mode === 'tile') {
-      the_body = this.buildReviewPanelTile()
+      the_body = this.buildAnnotatePanelTile()
       the_title = movie_name 
     } else if (this.state.annotate_view_mode === 'summary') {
       the_body = this.buildReviewPanelSummary()
