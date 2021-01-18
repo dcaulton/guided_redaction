@@ -17,7 +17,7 @@ class CanvasAnnotateOverlay extends React.Component {
     // the add_2 croosshairs need to be divided by image scale, the oval ones need to be multiplied by the same
     // looks like one is getting the unscaled coords, the other gets the scaled maybe?  
     if (
-      this.props.mode === 'add_box_2' 
+      this.props.mode === 'add_permanent_standard_box_2' 
       || this.props.mode === 'add_template_anchor_2' 
     ) {
       let crosshair_length = 2000
@@ -55,38 +55,53 @@ class CanvasAnnotateOverlay extends React.Component {
     for (let i=0; i < Object.keys(record_hash).length; i++) {
       const rec_key = Object.keys(record_hash)[i]
       const record = record_hash[rec_key]
+      let start = [0,0]
+      let end = [0,0]
       if (Object.keys(record).includes('start')) {
-        const start = record['start']
-        const end = record['end']
-        const start_x_scaled = start[0] * this.props.image_scale
-        const start_y_scaled = start[1] * this.props.image_scale
-        const width = (end[0] - start[0]) * this.props.image_scale
-        const height = (end[1] - start[1]) * this.props.image_scale
-        ctx.strokeRect(start_x_scaled, start_y_scaled, width, height)
+        start = record['start']
+        end = record['end']
+      } else if (Object.keys(record).includes('location')) {
+        start = record['location']
+        end = [
+          start[0] + record['size'][0],
+          start[1] + record['size'][1]
+        ]
       }
+      const start_x_scaled = start[0] * this.props.image_scale
+      const start_y_scaled = start[1] * this.props.image_scale
+      const width = (end[0] - start[0]) * this.props.image_scale
+      const height = (end[1] - start[1]) * this.props.image_scale
+      ctx.strokeRect(start_x_scaled, start_y_scaled, width, height)
     }
   }
 
   drawOcr() {
   }
 
-  drawManualBoxes() {
-    const boxes = this.props.getBoxes()
+  drawPermanentStandardBoxes() {
+    const boxes = this.props.getPermanentStandardBoxes()
     this.drawBoxesAroundStartEndRecords(boxes, '#F24')
+  }
+
+  drawT1MatchBoxes() {
+    const boxes = this.props.getT1MatchBoxes()
+    this.drawBoxesAroundStartEndRecords(boxes, '#5F6')
   }
 
   componentDidMount() {
     this.clearCanvasItems()
     this.drawCrosshairs()
     this.drawOcr()
-    this.drawManualBoxes()
+    this.drawPermanentStandardBoxes()
+    this.drawT1MatchBoxes()
   }
 
   componentDidUpdate() {
     this.clearCanvasItems()
     this.drawCrosshairs()
     this.drawOcr()
-    this.drawManualBoxes()
+    this.drawPermanentStandardBoxes()
+    this.drawT1MatchBoxes()
   }
 
   getCanvasDims() {

@@ -14,6 +14,7 @@ class JobEvalPanel extends React.Component {
     this.state = {
       mode: '',
       image_mode: '',
+      image_scale: 1,
       annotate_view_mode: 'tile',
       active_movie_url: '',
       ocr_job_id: '',
@@ -38,8 +39,48 @@ class JobEvalPanel extends React.Component {
     this.getJobEvalObjectives=this.getJobEvalObjectives.bind(this)
     this.handleImageClick=this.handleImageClick.bind(this)
     this.getOcrRegions=this.getOcrRegions.bind(this)
-    this.getBoxes=this.getBoxes.bind(this)
+    this.getPermanentStandardBoxes=this.getPermanentStandardBoxes.bind(this)
     this.keyPress=this.keyPress.bind(this)
+    this.getT1MatchBoxes=this.getT1MatchBoxes.bind(this)
+    this.setImageScale=this.setImageScale.bind(this)
+  }
+
+// TODO GET THIS INTEGRATED WITH IMAGE CLICK OR SOMETHING, WE"RE STUCK AT 1 UNTIL THEN
+  setImageScale() {
+    if (!document.getElementById('job_eval_image')) {
+      return
+    }
+    const scale = (document.getElementById('job_eval_image').width /
+        document.getElementById('job_eval_image').naturalWidth)
+    this.setState({
+      'image_scale': scale,
+    })
+  }
+
+  getT1MatchBoxes() {
+    if (this.state.mode === 'review' && this.state.active_t1_results_key) {
+      for (let i=0; i < Object.keys(this.props.tier_1_matches).length; i++) {
+        const scanner_type = Object.keys(this.props.tier_1_matches)[i]
+        for (let j=0; j < Object.keys(this.props.tier_1_matches[scanner_type]).length; j++) {
+          const match_key = Object.keys(this.props.tier_1_matches[scanner_type])[j]
+          if (match_key === this.state.active_t1_results_key) {
+            const match_obj = this.props.tier_1_matches[scanner_type][match_key]
+            if (
+              Object.keys(match_obj).includes('movies') &&
+              Object.keys(match_obj['movies']).includes(this.state.active_movie_url)
+            ) {
+              const this_movies_matches = match_obj['movies'][this.state.active_movie_url]
+              if (Object.keys(this_movies_matches['framesets']).includes(this.props.frameset_hash)) {
+                const ret_val = this_movies_matches['framesets'][this.props.frameset_hash]
+                return ret_val
+              }
+            }
+
+          }
+        }
+      }
+    }
+    return {}
   }
 
   deleteJrsMovie(movie_url) {
@@ -176,7 +217,7 @@ class JobEvalPanel extends React.Component {
     }
   }
 
-  getBoxes() {
+  getPermanentStandardBoxes() {
     const perm_standard = this.state.content['permanent_standards']
     const movie_name = getFileNameFromUrl(this.state.active_movie_url)
 
@@ -222,12 +263,12 @@ class JobEvalPanel extends React.Component {
     }
     if (this.state.image_mode === 'add_ocr') {
       this.handleSetMode('add_ocr')
-    } else if (this.state.image_mode === 'add_box_1') {
+    } else if (this.state.image_mode === 'add_permanent_standard_box_1') {
       this.setState({
         clicked_coords: [x_scaled, y_scaled],
-        image_mode: 'add_box_2',
+        image_mode: 'add_permanent_standard_box_2',
       })
-    } else if (this.state.image_mode === 'add_box_2') {
+    } else if (this.state.image_mode === 'add_permanent_standard_box_2') {
       this.doAddBox2(x_scaled, y_scaled)
     } else if (this.state.image_mode === 'delete_box') {
       this.doDeleteBox(x_scaled, y_scaled)
@@ -288,7 +329,7 @@ class JobEvalPanel extends React.Component {
     deepCopyContent['permanent_standards'][movie_name]['framesets'][this.props.frameset_hash][new_id] = new_box
     this.setState({
       clicked_coords: [x_scaled, y_scaled],
-      image_mode: 'add_box_1',
+      image_mode: 'add_permanent_standard_box_1',
       content: deepCopyContent,
       something_changed: true,
     })
@@ -884,7 +925,7 @@ class JobEvalPanel extends React.Component {
     return (
       <button
         className='btn btn-primary'
-        onClick={()=>{this.setImageMode('add_box_1')}}
+        onClick={()=>{this.setImageMode('add_permanent_standard_box_1')}}
       >
         Add Box
       </button>
@@ -1056,6 +1097,7 @@ class JobEvalPanel extends React.Component {
                         {overlay_text}
                       </div>
                       <img
+                        id='job_eval_image'
                         style={img_style}
                         src={img_url}
                         alt={img_url}
@@ -1072,8 +1114,104 @@ class JobEvalPanel extends React.Component {
     )
   }
 
-  buildAnnotatePanelSingle() {
-//MAMA
+  buildPassButton() {
+    return (
+      <button
+        className='btn btn-primary'
+        onClick={()=>{this.markFrameAsPassed()}}
+      >
+        Pass
+      </button>
+    )
+  }
+
+  buildFailButton() {
+    return (
+      <button
+        className='btn btn-primary'
+        onClick={()=>{this.markFrameAsFailed()}}
+      >
+        Fail
+      </button>
+    )
+  }
+
+  buildAddDesiredButton() {
+    return (
+      <button
+        className='btn btn-primary'
+        onClick={()=>{console.log(' winky ouch 643')}}
+      >
+        Add Desired
+      </button>
+    )
+  }
+
+  buildStrikeBoxButton() {
+    return (
+      <button
+        className='btn btn-primary'
+        onClick={()=>{console.log(' winky ouch 192')}}
+      >
+        Delete Box
+      </button>
+    )
+  }
+
+  buildReviewResetButton() {
+    return (
+      <button
+        className='btn btn-primary'
+        onClick={()=>{console.log(' winky ouch 784')}}
+      >
+        Reset
+      </button>
+    )
+  }
+
+  buildReviewSingleButtons() {
+    const pass_button = this.buildPassButton()
+    const fail_button = this.buildFailButton()
+    const add_desired_button = this.buildAddDesiredButton()
+    const strike_box_button = this.buildStrikeBoxButton()
+    const reset_button = this.buildReviewResetButton()
+    const next_frame_button = this.buildNextFrameButton()
+    const prev_frame_button = this.buildPrevFrameButton()
+    return (
+      <div>
+        <div className='d-inline ml-1'>
+          {pass_button}
+        </div>
+
+        <div className='d-inline ml-1'>
+          {fail_button}
+        </div>
+
+        <div className='d-inline ml-1'>
+          {add_desired_button}
+        </div>
+
+        <div className='d-inline ml-1'>
+          {strike_box_button}
+        </div>
+
+        <div className='d-inline ml-1'>
+          {reset_button}
+        </div>
+
+        <div className='d-inline ml-1'>
+          {prev_frame_button}
+        </div>
+
+        <div className='d-inline ml-1'>
+          {next_frame_button}
+        </div>
+
+      </div>
+    )
+  } 
+
+  buildAnnotateSingleButtons() {
     const add_box_button = this.buildAddBoxButton()
     const delete_box_button = this.buildDeleteBoxButton()
     const show_ocr_button = this.buildShowOcrButton()
@@ -1083,64 +1221,79 @@ class JobEvalPanel extends React.Component {
     const next_frame_button = this.buildNextFrameButton()
     const prev_frame_button = this.buildPrevFrameButton()
     const back_to_tile_button = this.buildBackToTileButton()
+    return (
+      <div>
+        <div className='d-inline ml-1'>
+          {add_box_button}
+        </div>
+
+        <div className='d-inline ml-1'>
+          {delete_box_button}
+        </div>
+
+        <div className='d-inline ml-1'>
+          {show_ocr_button}
+        </div>
+
+        <div className='d-inline ml-1'>
+          {hide_ocr_button}
+        </div>
+
+        <div className='d-inline ml-1'>
+          {add_ocr_button}
+        </div>
+
+        <div className='d-inline ml-1'>
+          {delete_ocr_button}
+        </div>
+
+        <div className='d-inline ml-1'>
+          {prev_frame_button}
+        </div>
+
+        <div className='d-inline ml-1'>
+          {next_frame_button}
+        </div>
+
+        <div className='d-inline ml-1'>
+          {back_to_tile_button}
+        </div>
+      </div>
+    )
+  }
+
+  buildAnnotatePanelSingle() {
     const image_url = this.props.getImageUrl()
     const image_element = this.buildImageElement(image_url)
+    let buttons_row = ''
+    if (this.state.mode === 'annotate') {
+      buttons_row = this.buildAnnotateSingleButtons()
+    } else if (this.state.mode === 'review') {
+      buttons_row = this.buildReviewSingleButtons()
+    } 
     return (
       <div className='row'>
         <div className='col'>
+          <div className='row mt-2'>
+            {buttons_row}
+          </div>
+
           <div id='annotate_image_div' className='row'>
             {image_element}
             <CanvasAnnotateOverlay
               image_width={this.props.image_width}
               image_height={this.props.image_height}
-              image_scale={this.props.image_scale}
+              image_scale={this.state.image_scale}
               image_url={image_url}
               mode={this.state.image_mode}
               clickCallback={this.handleImageClick}
               last_click={this.state.clicked_coords}
               getOcrRegions={this.getOcrRegions}
-              getBoxes={this.getBoxes}
+              getPermanentStandardBoxes={this.getPermanentStandardBoxes}
+              getT1MatchBoxes={this.getT1MatchBoxes}
             />
           </div>
 
-          <div className='row mt-2'>
-            <div className='d-inline ml-1'>
-              {add_box_button}
-            </div>
-
-            <div className='d-inline ml-1'>
-              {delete_box_button}
-            </div>
-
-            <div className='d-inline ml-1'>
-              {show_ocr_button}
-            </div>
-
-            <div className='d-inline ml-1'>
-              {hide_ocr_button}
-            </div>
-
-            <div className='d-inline ml-1'>
-              {add_ocr_button}
-            </div>
-
-            <div className='d-inline ml-1'>
-              {delete_ocr_button}
-            </div>
-
-            <div className='d-inline ml-1'>
-              {prev_frame_button}
-            </div>
-
-            <div className='d-inline ml-1'>
-              {next_frame_button}
-            </div>
-
-            <div className='d-inline ml-1'>
-              {back_to_tile_button}
-            </div>
-
-          </div>
         </div>
       </div>
     )

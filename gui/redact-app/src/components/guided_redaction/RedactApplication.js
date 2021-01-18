@@ -2400,7 +2400,6 @@ class RedactApplication extends React.Component {
                 setActiveMovieFirstFrame={this.setActiveMovieFirstFrame}
                 image_width={this.state.image_width}
                 image_height={this.state.image_height}
-                image_scale={this.state.image_scale}
                 getImageUrl={this.getImageUrl}
                 frameset_hash={this.state.frameset_hash}
                 tier_1_matches={this.state.tier_1_matches}
