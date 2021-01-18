@@ -15,7 +15,7 @@ class JobEvalPanel extends React.Component {
       mode: '',
       image_mode: '',
       annotate_view_mode: 'tile',
-      annotate_movie_url: '',
+      active_movie_url: '',
       ocr_job_id: '',
       active_job_id: '',
       active_t1_results_key: '',
@@ -98,17 +98,17 @@ class JobEvalPanel extends React.Component {
   }
 
   frameHasAnnotationData(frameset_hash) {
-    const movie_name = getFileNameFromUrl(this.state.annotate_movie_url)
+    const movie_name = getFileNameFromUrl(this.state.active_movie_url)
     if (
       this.state.mode !== 'annotate' &&
-      this.state.annotate_movie_url !== '' &&
+      this.state.active_movie_url !== '' &&
       Object.keys(this.state.content['permanent_standards']).includes(movie_name) &&
       Object.keys(this.state.content['permanent_standards'][movie_name]['framesets']).includes(frameset_hash) &&
       Object.keys(this.state.content['permanent_standards'][movie_name]['framesets'][frameset_hash]).length > 0
     ) {
       return true
     }
-    const movie_url = this.state.annotate_movie_url
+    const movie_url = this.state.active_movie_url
     if (
       this.state.mode !== 'review' &&
       movie_url !== '' &&
@@ -178,7 +178,7 @@ class JobEvalPanel extends React.Component {
 
   getBoxes() {
     const perm_standard = this.state.content['permanent_standards']
-    const movie_name = getFileNameFromUrl(this.state.annotate_movie_url)
+    const movie_name = getFileNameFromUrl(this.state.active_movie_url)
 
     if (!Object.keys(perm_standard).includes(movie_name)) {
       return {}
@@ -192,7 +192,7 @@ class JobEvalPanel extends React.Component {
 
   getOcrRegions() {
  return {}
-    if (!this.state.ocr_job_id || !this.state.show_ocr || !this.state.annotate_movie_url) {
+    if (!this.state.ocr_job_id || !this.state.show_ocr || !this.state.active_movie_url) {
       return {}
     }
     for (let i=0; i < Object.keys(this.props.tier_1_matches['ocr']).length; i++) {
@@ -200,7 +200,7 @@ class JobEvalPanel extends React.Component {
       const match_obj = this.props.tier_1_matches['ocr'][match_key]
       for (let j=0; j < Object.keys(match_obj['movies']).length; j++) {
         const match_movie_url = Object.keys(match_obj['movies'])[j]
-        if (match_movie_url.includes(this.state.annotate_movie_url)) {
+        if (match_movie_url.includes(this.state.active_movie_url)) {
           const regions = match_obj['movies'][match_movie_url]
         }
       }
@@ -237,7 +237,7 @@ class JobEvalPanel extends React.Component {
   doDeleteBox(x_scaled, y_scaled) {
     let deepCopyContent = JSON.parse(JSON.stringify(this.state.content))
     let something_changed = false
-    const movie_name = getFileNameFromUrl(this.state.annotate_movie_url)
+    const movie_name = getFileNameFromUrl(this.state.active_movie_url)
     if (!Object.keys(deepCopyContent['permanent_standards']).includes(movie_name)) {
       return
     }
@@ -278,7 +278,7 @@ class JobEvalPanel extends React.Component {
       end: [x_scaled, y_scaled],
     }
     let deepCopyContent = JSON.parse(JSON.stringify(this.state.content))
-    const movie_name = getFileNameFromUrl(this.state.annotate_movie_url)
+    const movie_name = getFileNameFromUrl(this.state.active_movie_url)
     if (!Object.keys(deepCopyContent['permanent_standards']).includes(movie_name)) {
       deepCopyContent['permanent_standards'][movie_name] = {framesets: {}}
     }
@@ -305,7 +305,17 @@ class JobEvalPanel extends React.Component {
     this.props.setActiveMovieFirstFrame(movie_url, fs_hash)
     this.setState({
       mode: 'annotate',
-      annotate_movie_url: movie_url,
+      active_movie_url: movie_url,
+      annotate_view_mode: annotate_view_mode,
+    })
+  }
+
+  reviewExemplarMovie(movie_url, annotate_view_mode) {
+    const fs_hash = this.getFirstFramesetHash(movie_url)
+    this.props.setActiveMovieFirstFrame(movie_url, fs_hash)
+    this.setState({
+      mode: 'review',
+      active_movie_url: movie_url,
       annotate_view_mode: annotate_view_mode,
     })
   }
@@ -893,12 +903,16 @@ class JobEvalPanel extends React.Component {
   }
 
   buildImageElement(image_url) {
+    const img_style = {
+      width: '100%',
+    }
     if (image_url) {
       return (
         <img
             id='annotate_image'
             src={image_url}
             alt={image_url}
+            style={img_style}
         />
       )
     } 
@@ -930,7 +944,7 @@ class JobEvalPanel extends React.Component {
     return (
       <button
         className='btn btn-primary'
-        onClick={()=>{this.annotateExemplarMovie(this.state.annotate_movie_url, 'tile')}}
+        onClick={()=>{this.annotateExemplarMovie(this.state.active_movie_url, 'tile')}}
       >
         Back to Tile View
       </button>
@@ -975,6 +989,14 @@ class JobEvalPanel extends React.Component {
     const ordered_hashes = this.props.getFramesetHashesInOrder()
     const num_rows = Math.ceil(ordered_hashes.length / num_cols)
     const col_count_picker = this.buildAnnotateTileColumnCountDropdown()
+    let steps_explained = "Select the frames you wish to annotate by clicking on them, press the Annotate button when done. Clicking on no frames gives you all frames of the movie to annotate."
+    let when_clicked = (()=>{this.annotateExemplarMovie(this.state.active_movie_url, 'single')})
+    let button_label = 'Annotate'
+    if (this.state.mode === 'review') {
+      steps_explained = "Select the frames you wish to review by clicking on them, press the Review button when done. Clicking on no frames gives you all frames of the movie to review."
+      button_label = 'Review'
+      when_clicked = (()=>{this.reviewExemplarMovie(this.state.active_movie_url, 'single')})
+    }
 
     let row_num_array = []
     for (let i=0; i < num_rows; i++) {
@@ -989,15 +1011,14 @@ class JobEvalPanel extends React.Component {
         <div className='col'>
           <div className='row h5'>
             <div className='col-9'>
-              Select the frames you wish to annotate by clicking on them, press the Annotate button when done.  
-              Clicking on no frames gives you all frames of the movie to annotate.
+              {steps_explained}
             </div>
             <div className='col-3'>
               <button
                 className='btn btn-primary'
-                onClick={()=>{this.annotateExemplarMovie(this.state.annotate_movie_url, 'single')}}
+                onClick={when_clicked}
               >
-                Annotate
+                {button_label}
               </button>
             </div>
           </div>
@@ -1052,6 +1073,7 @@ class JobEvalPanel extends React.Component {
   }
 
   buildAnnotatePanelSingle() {
+//MAMA
     const add_box_button = this.buildAddBoxButton()
     const delete_box_button = this.buildDeleteBoxButton()
     const show_ocr_button = this.buildShowOcrButton()
@@ -1129,7 +1151,7 @@ class JobEvalPanel extends React.Component {
     const ocr_id_field = ''
     let the_body = ''
     let the_title = ''
-    const movie_name = getFileNameFromUrl(this.state.annotate_movie_url)
+    const movie_name = getFileNameFromUrl(this.state.active_movie_url)
     if (this.state.annotate_view_mode === 'single') {
       the_body = this.buildAnnotatePanelSingle()
       const image_url = this.props.getImageUrl()
@@ -1226,7 +1248,7 @@ class JobEvalPanel extends React.Component {
     return (
       <button
         className='btn btn-primary'
-        onClick={()=>{this.doReview()}}
+        onClick={()=>{this.showReviewSummary()}}
       >
         Build Manual JRS
       </button>
@@ -1263,10 +1285,7 @@ class JobEvalPanel extends React.Component {
     })
   }
 
-  doReview() {
-  // get movies from job id, save their urls in jrs_movies
-  //  update this.state.active_t1_results_key with the one matching the job id, to speed up lookups
-  //MAMA
+  showReviewSummary() {
     for (let i=0; i < Object.keys(this.props.tier_1_matches).length; i++) {
       const scanner_type = Object.keys(this.props.tier_1_matches)[i]
       for (let j=0; j < Object.keys(this.props.tier_1_matches[scanner_type]).length; j++) {
@@ -1442,9 +1461,9 @@ class JobEvalPanel extends React.Component {
   buildReviewPanel() {
     let the_body = ''
     let the_title = ''
-    const movie_name = getFileNameFromUrl(this.state.annotate_movie_url)
+    const movie_name = getFileNameFromUrl(this.state.active_movie_url)
     if (this.state.annotate_view_mode === 'single') {
-      the_body = this.buildReviewPanelSingle()
+      the_body = this.buildAnnotatePanelSingle()
       const image_url = this.props.getImageUrl()
       const image_name = getFileNameFromUrl(image_url)
       const position_string = this.getFramePositionString()
