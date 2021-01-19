@@ -13,6 +13,7 @@ class JobEvalPanel extends React.Component {
     super(props)
     this.state = {
       mode: '',
+      message: '',
       image_mode: '',
       image_scale: 1,
       annotate_view_mode: 'tile',
@@ -342,6 +343,11 @@ class JobEvalPanel extends React.Component {
   }
 
   annotateExemplarMovie(movie_url, annotate_view_mode) {
+console.log("gambas ", movie_url)
+    if (!Object.keys(this.props.movies).includes(movie_url)) {
+      this.setState({'message': 'error: campaign movie not loaded'})
+      return
+    }
     const fs_hash = this.getFirstFramesetHash(movie_url)
     this.props.setActiveMovieFirstFrame(movie_url, fs_hash)
     this.setState({
@@ -1435,6 +1441,7 @@ class JobEvalPanel extends React.Component {
         mode: 'review',
         annotate_view_mode: 'tile',
         active_movie_url: movie_url,
+        message: '',
     })
   }
 
@@ -1464,9 +1471,13 @@ class JobEvalPanel extends React.Component {
               jrs_movies: build_jrs_movies,
               active_t1_results_key: match_key,
           })
+          return
         }
       }
     }
+    this.setState({
+      message: 'error: the job you selected needs to be loaded into memory first'
+    })
   }
 
   buildJobRunSummaryList() {
@@ -1652,6 +1663,8 @@ class JobEvalPanel extends React.Component {
   render() {
     const mode_nav = this.buildModeNav()
     let title = 'Job Evaluation - Home'
+    let message = '.'
+    let message_style = {'color': 'white'}
     let page_content = ''
     if (!this.state.mode || this.state.mode === 'home') {
       page_content = this.buildHomePanel()
@@ -1665,6 +1678,10 @@ class JobEvalPanel extends React.Component {
       page_content = this.buildComparePanel()
       title = 'Job Eval - Compare'
     }
+    if (this.state.message) {
+      message = this.state.message
+      message_style['color'] = 'black'
+    }
     return (
       <div className='col ml-2'>
         <div>
@@ -1672,6 +1689,9 @@ class JobEvalPanel extends React.Component {
         </div>
         <div className='row h2'>
           {title}
+        </div>
+        <div style={message_style} className='row'>
+          {message}
         </div>
 
         <div className='row'>
