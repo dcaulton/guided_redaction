@@ -41,6 +41,8 @@ class JobEvalPanel extends React.Component {
     this.handleImageClick=this.handleImageClick.bind(this)
     this.getOcrRegions=this.getOcrRegions.bind(this)
     this.getPermanentStandardBoxes=this.getPermanentStandardBoxes.bind(this)
+    this.getDesiredBoxes=this.getDesiredBoxes.bind(this)
+    this.getUnwantedBoxes=this.getUnwantedBoxes.bind(this)
     this.keyPress=this.keyPress.bind(this)
     this.getT1MatchBoxes=this.getT1MatchBoxes.bind(this)
     this.setImageScale=this.setImageScale.bind(this)
@@ -56,6 +58,34 @@ class JobEvalPanel extends React.Component {
     this.setState({
       'image_scale': scale,
     })
+  }
+
+  getDesiredBoxes() {
+    return this.getDesiredOrUnwantedBoxes('desired')
+  }
+
+  getUnwantedBoxes() {
+    return this.getDesiredOrUnwantedBoxes('unwanted')
+  }
+
+  getDesiredOrUnwantedBoxes(box_type='desired') {
+    if (this.state.mode !== 'review') {
+      return {}
+    }
+    const movie_url = this.state.active_movie_url
+    const fsh = this.props.frameset_hash
+    const jrs_movies = this.state.jrs_movies
+    if (!Object.keys(jrs_movies).includes(movie_url)) {
+      return {}
+    }
+    if (!Object.keys(jrs_movies[movie_url]['framesets']).includes(fsh)) {
+      return {}
+    }
+    if (!Object.keys(jrs_movies[movie_url]['framesets'][fsh]).includes(box_type)) {
+      return {}
+    }
+    const items = jrs_movies[movie_url]['framesets'][fsh][box_type]
+    return items
   }
 
   getT1MatchBoxes() {
@@ -139,24 +169,25 @@ class JobEvalPanel extends React.Component {
     }
   }
 
-  frameHasAnnotationData(frameset_hash) {
-    const movie_name = getFileNameFromUrl(this.state.active_movie_url)
-    if (
-      this.state.mode !== 'annotate' &&
-      this.state.active_movie_url !== '' &&
-      Object.keys(this.state.content['permanent_standards']).includes(movie_name) &&
-      Object.keys(this.state.content['permanent_standards'][movie_name]['framesets']).includes(frameset_hash) &&
-      Object.keys(this.state.content['permanent_standards'][movie_name]['framesets'][frameset_hash]).length > 0
-    ) {
-      return true
-    }
+  frameHasReviewData(frameset_hash) {
     const movie_url = this.state.active_movie_url
     if (
-      this.state.mode !== 'review' &&
       movie_url !== '' &&
       Object.keys(this.state.jrs_movies).includes(movie_url) &&
       Object.keys(this.state.jrs_movies[movie_url]['framesets']).includes(frameset_hash) &&
       Object.keys(this.state.jrs_movies[movie_url]['framesets'][frameset_hash]).length > 0
+    ) {
+      return true
+    }
+  }
+
+  frameHasAnnotationData(frameset_hash) {
+    const movie_name = getFileNameFromUrl(this.state.active_movie_url)
+    if (
+      this.state.active_movie_url !== '' &&
+      Object.keys(this.state.content['permanent_standards']).includes(movie_name) &&
+      Object.keys(this.state.content['permanent_standards'][movie_name]['framesets']).includes(frameset_hash) &&
+      Object.keys(this.state.content['permanent_standards'][movie_name]['framesets'][frameset_hash]).length > 0
     ) {
       return true
     }
@@ -219,6 +250,9 @@ class JobEvalPanel extends React.Component {
   }
 
   getPermanentStandardBoxes() {
+    if (this.state.mode !== 'annotate') {
+      return {}
+    }
     const perm_standard = this.state.content['permanent_standards']
     const movie_name = getFileNameFromUrl(this.state.active_movie_url)
 
@@ -265,15 +299,27 @@ class JobEvalPanel extends React.Component {
     if (this.state.image_mode === 'add_ocr') {
       this.handleSetMode('add_ocr')
     } else if (this.state.image_mode === 'add_permanent_standard_box_1') {
-      this.setState({
-        clicked_coords: [x_scaled, y_scaled],
-        image_mode: 'add_permanent_standard_box_2',
-      })
+      this.saveCoordsAndSetImageMode(x_scaled, y_scaled, 'add_permanent_standard_box_2')
+    } else if (this.state.image_mode === 'add_desired_box_1') {
+      this.saveCoordsAndSetImageMode(x_scaled, y_scaled, 'add_desired_box_2')
+    } else if (this.state.image_mode === 'add_unwanted_box_1') {
+      this.saveCoordsAndSetImageMode(x_scaled, y_scaled, 'add_unwanted_box_2')
     } else if (this.state.image_mode === 'add_permanent_standard_box_2') {
       this.doAddBox2(x_scaled, y_scaled)
+    } else if (this.state.image_mode === 'add_desired_box_2') {
+      this.doAddDesiredBox2(x_scaled, y_scaled)
+    } else if (this.state.image_mode === 'add_unwanted_box_2') {
+      this.doAddUnwantedBox2(x_scaled, y_scaled)
     } else if (this.state.image_mode === 'delete_box') {
       this.doDeleteBox(x_scaled, y_scaled)
     }
+  }
+
+  saveCoordsAndSetImageMode(x_scaled, y_scaled, image_mode) {
+    this.setState({
+      clicked_coords: [x_scaled, y_scaled],
+      image_mode: image_mode,
+    })
   }
 
   doDeleteBox(x_scaled, y_scaled) {
@@ -312,6 +358,36 @@ class JobEvalPanel extends React.Component {
       }
   }
 
+  doAddUnwantedBox2(x_scaled, y_scaled) {
+    return this.doAddDesiredUnwantedBox2(x_scaled, y_scaled, 'unwanted')
+  }
+
+  doAddDesiredBox2(x_scaled, y_scaled) {
+    return this.doAddDesiredUnwantedBox2(x_scaled, y_scaled, 'desired')
+  }
+
+  doAddDesiredUnwantedBox2(x_scaled, y_scaled, box_type) {
+    const new_id = 'box_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
+    const new_box = {
+      source: 'manual',
+      start: this.state.clicked_coords,
+      end: [x_scaled, y_scaled],
+    }
+    let deepCopyJrsm = JSON.parse(JSON.stringify(this.state.jrs_movies))
+    const fsh = this.props.frameset_hash
+    if (!Object.keys(this.state.jrs_movies[this.state.active_movie_url]['framesets']).includes(fsh)) {
+      deepCopyJrsm[this.state.active_movie_url]['framesets'][fsh] = {
+        desired: {},
+        unwanted: {},
+        pass_or_fail: '',
+      }
+    }
+    deepCopyJrsm[this.state.active_movie_url]['framesets'][fsh][box_type][new_id] = new_box
+    this.setState({
+      jrs_movies: deepCopyJrsm,
+    })
+  }
+
   doAddBox2(x_scaled, y_scaled) {
     const new_id = 'box_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
     const new_box = {
@@ -343,7 +419,6 @@ class JobEvalPanel extends React.Component {
   }
 
   annotateExemplarMovie(movie_url, annotate_view_mode) {
-console.log("gambas ", movie_url)
     if (!Object.keys(this.props.movies).includes(movie_url)) {
       this.setState({'message': 'error: campaign movie not loaded'})
       return
@@ -942,9 +1017,23 @@ console.log("gambas ", movie_url)
     return (
       <button
         className='btn btn-primary'
-        onClick={()=>{this.setImageMode('delete_box')}}
+        onClick={()=>{this.setImageMode('delete_box_1')}}
       >
-        Delete Box
+        Add Unwanted
+      </button>
+    )
+  }
+
+  buildBackToJrsSummaryButton() {
+    if (this.state.mode !== 'review') {
+      return ''
+    }
+    return (
+      <button
+        className='btn btn-primary'
+        onClick={()=>{this.showReviewSummary()}}
+      >
+        Back To JRS Summary
       </button>
     )
   }
@@ -1053,12 +1142,17 @@ console.log("gambas ", movie_url)
     const img_style = {
       width: '100%',
     }
+    const back_to_jrs_summary_button = this.buildBackToJrsSummaryButton()
+
     return (
       <div className='row'>
         <div className='col'>
           <div className='row h5'>
             <div className='col-9'>
               {steps_explained}
+            </div>
+            <div className='d-inline ml-1'>
+              {back_to_jrs_summary_button}
             </div>
             <div className='col-3'>
               <button
@@ -1090,6 +1184,9 @@ console.log("gambas ", movie_url)
                   }
                   if (this.frameHasAnnotationData(fs_hash)) {
                     overlay_text = 'ANNOTATED'
+                    overlay_style['color'] = '#000'
+                  } else if (this.frameHasReviewData(fs_hash)) {
+                    overlay_text = 'REVIEWED'
                     overlay_style['color'] = '#000'
                   }
                   return (
@@ -1146,20 +1243,20 @@ console.log("gambas ", movie_url)
     return (
       <button
         className='btn btn-primary'
-        onClick={()=>{console.log(' winky ouch 643')}}
+        onClick={()=>{this.setImageMode('add_desired_box_1')}}
       >
         Add Desired
       </button>
     )
   }
 
-  buildStrikeBoxButton() {
+  buildAddUnwantedBoxButton() {
     return (
       <button
         className='btn btn-primary'
-        onClick={()=>{console.log(' winky ouch 192')}}
+        onClick={()=>{this.setImageMode('add_unwanted_box_1')}}
       >
-        Delete Box
+        Add Unwanted
       </button>
     )
   }
@@ -1175,14 +1272,27 @@ console.log("gambas ", movie_url)
     )
   }
 
+  buildBackToReviewJrsMovieButton(movie_url) {
+    return (
+      <button
+        className='btn btn-primary'
+        onClick={()=>{this.showReviewTile(movie_url)}}
+      >
+        Review Tile
+      </button>
+    )
+  }
+
   buildReviewSingleButtons() {
     const pass_button = this.buildPassButton()
     const fail_button = this.buildFailButton()
     const add_desired_button = this.buildAddDesiredButton()
-    const strike_box_button = this.buildStrikeBoxButton()
+    const strike_box_button = this.buildAddUnwantedBoxButton()
     const reset_button = this.buildReviewResetButton()
     const next_frame_button = this.buildNextFrameButton()
     const prev_frame_button = this.buildPrevFrameButton()
+    const back_to_jrs_tile_button = this.buildBackToReviewJrsMovieButton(this.state.active_movie_url)
+
     return (
       <div>
         <div className='d-inline ml-1'>
@@ -1211,6 +1321,10 @@ console.log("gambas ", movie_url)
 
         <div className='d-inline ml-1'>
           {next_frame_button}
+        </div>
+
+        <div className='d-inline ml-1'>
+          {back_to_jrs_tile_button}
         </div>
 
       </div>
@@ -1297,6 +1411,8 @@ console.log("gambas ", movie_url)
               getOcrRegions={this.getOcrRegions}
               getPermanentStandardBoxes={this.getPermanentStandardBoxes}
               getT1MatchBoxes={this.getT1MatchBoxes}
+              getUnwantedBoxes={this.getUnwantedBoxes}
+              getDesiredBoxes={this.getDesiredBoxes}
             />
           </div>
 
@@ -1431,7 +1547,7 @@ console.log("gambas ", movie_url)
         className='btn btn-link'
         onClick={()=>{this.showReviewTile(movie_url)}}
       >
-        Review
+        Review Tile
       </button>
     )
   }
@@ -1609,10 +1725,10 @@ console.log("gambas ", movie_url)
                 {summary_info}
               </div>
               <div className='col-1'>
-                {review_movie_button}
-              </div>
-              <div className='col-1'>
                 {delete_movie_button}
+              </div>
+              <div className='col-2'>
+                {review_movie_button}
               </div>
             </div>
           )

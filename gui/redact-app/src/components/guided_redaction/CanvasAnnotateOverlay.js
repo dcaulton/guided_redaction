@@ -17,8 +17,9 @@ class CanvasAnnotateOverlay extends React.Component {
     // the add_2 croosshairs need to be divided by image scale, the oval ones need to be multiplied by the same
     // looks like one is getting the unscaled coords, the other gets the scaled maybe?  
     if (
-      this.props.mode === 'add_permanent_standard_box_2' 
-      || this.props.mode === 'add_template_anchor_2' 
+      this.props.mode === 'add_permanent_standard_box_2' ||
+      this.props.mode === 'add_desired_box_2' ||
+      this.props.mode === 'add_unwanted_box_2' 
     ) {
       let crosshair_length = 2000
       let start_x = (this.props.last_click[0] - crosshair_length/2) / this.props.image_scale
@@ -88,11 +89,23 @@ class CanvasAnnotateOverlay extends React.Component {
     this.drawBoxesAroundStartEndRecords(boxes, '#5F6')
   }
 
+  drawDesiredBoxes() {
+    const boxes = this.props.getDesiredBoxes()
+    this.drawBoxesAroundStartEndRecords(boxes, '#929')
+  }
+
+  drawUnwantedBoxes() {
+    const boxes = this.props.getUnwantedBoxes()
+    this.drawBoxesAroundStartEndRecords(boxes, '#292')
+  }
+
   componentDidMount() {
     this.clearCanvasItems()
     this.drawCrosshairs()
     this.drawOcr()
     this.drawPermanentStandardBoxes()
+    this.drawDesiredBoxes()
+    this.drawUnwantedBoxes()
     this.drawT1MatchBoxes()
   }
 
@@ -101,6 +114,8 @@ class CanvasAnnotateOverlay extends React.Component {
     this.drawCrosshairs()
     this.drawOcr()
     this.drawPermanentStandardBoxes()
+    this.drawDesiredBoxes()
+    this.drawUnwantedBoxes()
     this.drawT1MatchBoxes()
   }
 
