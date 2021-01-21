@@ -1611,7 +1611,7 @@ class JobEvalPanel extends React.Component {
         className='btn btn-link'
         onClick={()=>{this.showReviewTile(movie_url)}}
       >
-        Review Tile
+        Review
       </button>
     )
   }
@@ -1780,7 +1780,6 @@ class JobEvalPanel extends React.Component {
           const delete_movie_button = this.buildDeleteJrsMovieButton(movie_url)
           const review_movie_button = this.buildReviewJrsMovieButton(movie_url)
           let summary_info = 'no review data found'
-          let send_to_api_button = ''
           if (
             Object.keys(this.state.jrs_movies).includes(movie_url) &&
             Object.keys(this.state.jrs_movies[movie_url]['framesets']).length > 0
