@@ -29,7 +29,7 @@ class JobEvalPanel extends React.Component {
       clicked_coords: [],
       jeo_id: '',
       jeo_description: '',
-      permanent_standards: {},
+      jeo_permanent_standards: {},
       jeo_weight_true_pos: 1,
       jeo_weight_false_pos: 1,
       jeo_weight_true_neg: 1,
@@ -294,8 +294,8 @@ class JobEvalPanel extends React.Component {
       return false
     }
     const match_movie_urls = Object.keys(match_obj['movies'])
-    for (let i=0; i < Object.keys(this.state.permanent_standards).length; i++) {
-      const movie_name = Object.keys(this.state.permanent_standards)[i]
+    for (let i=0; i < Object.keys(this.state.jeo_permanent_standards).length; i++) {
+      const movie_name = Object.keys(this.state.jeo_permanent_standards)[i]
       for (let j=0; j < match_movie_urls.length; j++) {
         if (match_movie_urls[j].includes(movie_name)) {
           return true
@@ -383,9 +383,9 @@ class JobEvalPanel extends React.Component {
     const movie_name = getFileNameFromUrl(this.state.active_movie_url)
     if (
       this.state.active_movie_url !== '' &&
-      Object.keys(this.state.permanent_standards).includes(movie_name) &&
-      Object.keys(this.state.permanent_standards[movie_name]['framesets']).includes(frameset_hash) &&
-      Object.keys(this.state.permanent_standards[movie_name]['framesets'][frameset_hash]).length > 0
+      Object.keys(this.state.jeo_permanent_standards).includes(movie_name) &&
+      Object.keys(this.state.jeo_permanent_standards[movie_name]['framesets']).includes(frameset_hash) &&
+      Object.keys(this.state.jeo_permanent_standards[movie_name]['framesets'][frameset_hash]).length > 0
     ) {
       return true
     }
@@ -451,7 +451,7 @@ class JobEvalPanel extends React.Component {
     if (this.state.mode !== 'annotate') {
       return {}
     }
-    const perm_standard = this.state.permanent_standards
+    const perm_standard = this.state.jeo_permanent_standards
     const movie_name = getFileNameFromUrl(this.state.active_movie_url)
 
     if (!Object.keys(perm_standard).includes(movie_name)) {
@@ -521,7 +521,7 @@ class JobEvalPanel extends React.Component {
   }
 
   doDeleteBox(x_scaled, y_scaled) {
-    let deepCopyPs= JSON.parse(JSON.stringify(this.state.permanent_standards))
+    let deepCopyPs= JSON.parse(JSON.stringify(this.state.jeo_permanent_standards))
     let something_changed = false
     const movie_name = getFileNameFromUrl(this.state.active_movie_url)
     if (!Object.keys(deepCopyPs).includes(movie_name)) {
@@ -530,7 +530,7 @@ class JobEvalPanel extends React.Component {
     if (!Object.keys(deepCopyPs[movie_name]['framesets']).includes(this.props.frameset_hash)) {
       return
     }
-    const boxes_this_frame = this.state.permanent_standards[movie_name]['framesets'][this.props.frameset_hash]
+    const boxes_this_frame = this.state.jeo_permanent_standards[movie_name]['framesets'][this.props.frameset_hash]
     for (let i=0; i < Object.keys(boxes_this_frame).length; i++) {
       const the_key = Object.keys(boxes_this_frame)[i]
       const the_box = boxes_this_frame[the_key]
@@ -541,7 +541,7 @@ class JobEvalPanel extends React.Component {
     }
     if (something_changed) {
       this.setState({
-        permanent_standards: deepCopyPs,
+        jeo_permanent_standards: deepCopyPs,
       })
     }
   }
@@ -619,7 +619,7 @@ class JobEvalPanel extends React.Component {
       start: this.state.clicked_coords,
       end: [x_scaled, y_scaled],
     }
-    let deepCopyPs = JSON.parse(JSON.stringify(this.state.permanent_standards))
+    let deepCopyPs = JSON.parse(JSON.stringify(this.state.jeo_permanent_standards))
     const movie_name = getFileNameFromUrl(this.state.active_movie_url)
     if (!Object.keys(deepCopyPs).includes(movie_name)) {
       deepCopyPs[movie_name] = {framesets: {}}
@@ -631,7 +631,7 @@ class JobEvalPanel extends React.Component {
     this.setState({
       clicked_coords: [x_scaled, y_scaled],
       image_mode: 'add_permanent_standard_box_1',
-      permanent_standards: deepCopyPs,
+      jeo_permanent_standards: deepCopyPs,
       something_changed: true,
     })
   }
@@ -692,7 +692,7 @@ class JobEvalPanel extends React.Component {
       hard_fail_from_any_frame: this.state.jeo_hard_fail_from_any_frame,
       preserve_job_run_parameters: this.state.jeo_preserve_job_run_parameters,
       preserve_truth_maps: this.state.jeo_preserve_truth_maps,
-      permanent_standards: this.state.permanent_standards,
+      permanent_standards: this.state.jeo_permanent_standards,
     }
     const jeo = {
       id: this.state.jeo_id,
@@ -833,7 +833,7 @@ class JobEvalPanel extends React.Component {
       jeo_hard_fail_from_any_frame: jeo.content.hard_fail_from_any_frame,
       jeo_preserve_job_run_parameters: jeo.content.preserve_job_run_parameters,
       jeo_preserve_truth_maps: jeo.content.preserve_truth_maps,
-      permanent_standards: jeo.content.permanent_standards,
+      jeo_permanent_standards: jeo.content.permanent_standards,
     })
   }
 
@@ -851,7 +851,7 @@ class JobEvalPanel extends React.Component {
       jeo_hard_fail_from_any_frame: false,
       jeo_preserve_job_run_parameters: true,
       jeo_preserve_truth_maps: true,
-      permanent_standards: {},
+      jeo_permanent_standards: {},
     })
   }
 
@@ -948,7 +948,7 @@ class JobEvalPanel extends React.Component {
           {Object.keys(this.props.movies).map((movie_url, index) => {
             const movie_name = getFileNameFromUrl(movie_url)
             if (
-              Object.keys(this.state.permanent_standards).includes(movie_name)) {
+              Object.keys(this.state.jeo_permanent_standards).includes(movie_name)) {
               return ''
             }
             return (
@@ -967,20 +967,20 @@ class JobEvalPanel extends React.Component {
   }
 
   removeExemplarMovie(movie_name) {
-    let deepCopyPs = JSON.parse(JSON.stringify(this.state.permanent_standards))
+    let deepCopyPs = JSON.parse(JSON.stringify(this.state.jeo_permanent_standards))
     if (Object.keys(deepCopyPs).includes(movie_name)) {
       delete deepCopyPs[movie_name]
-      this.setLocalStateVar('permanent_standards', deepCopyPs)
+      this.setLocalStateVar('jeo_permanent_standards', deepCopyPs)
     }
   }
 
   addExemplarMovie(movie_name, movie_url) {
-    let deepCopyPs = JSON.parse(JSON.stringify(this.state.permanent_standards))
+    let deepCopyPs = JSON.parse(JSON.stringify(this.state.jeo_permanent_standards))
     deepCopyPs[movie_name] = {
       source_movie_url: movie_url,
       framesets: {},
     }
-    this.setLocalStateVar('permanent_standards', deepCopyPs)
+    this.setLocalStateVar('jeo_permanent_standards', deepCopyPs)
   }
 
   buildJeoSaveButton() {
@@ -1060,7 +1060,7 @@ class JobEvalPanel extends React.Component {
     }
     const add_button = this.buildAddExemplarMovieButton()
     let perm_standards = {}
-    perm_standards = this.state.permanent_standards
+    perm_standards = this.state.jeo_permanent_standards
     return (
       <div className='row mt-2'>
         <div className='col'>
@@ -1075,7 +1075,7 @@ class JobEvalPanel extends React.Component {
           <div className='row'>
             <div className='col'>
               {Object.keys(perm_standards).map((movie_name, index) => {
-                const perm_standard = this.state.permanent_standards[movie_name]
+                const perm_standard = this.state.jeo_permanent_standards[movie_name]
                 const source_movie_url = perm_standard['source_movie_url']
                 return (
                   <div key={index} className='row'>
