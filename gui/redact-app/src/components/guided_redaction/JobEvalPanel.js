@@ -21,6 +21,7 @@ class JobEvalPanel extends React.Component {
       ocr_job_id: '',
       active_job_id: '',
       active_t1_results_key: '',
+      active_t1_scanner_type: '',
       show_ocr: false,
       annotate_tile_column_count: 6,
       selected_frameset_hashes: [],
@@ -60,6 +61,21 @@ class JobEvalPanel extends React.Component {
     })
   }
 
+  frameHasT1Data(frameset_hash) {
+    if (this.state.mode === 'review' && this.state.active_t1_results_key) {
+      const match_obj = this.props.tier_1_matches[this.state.active_t1_scanner_type][this.state.active_t1_results_key]
+      const movie_url = this.state.active_movie_url
+      if (
+        movie_url !== '' &&
+        Object.keys(match_obj['movies']).includes(movie_url) &&
+        Object.keys(match_obj['movies'][movie_url]['framesets']).includes(frameset_hash) &&
+        Object.keys(match_obj['movies'][movie_url]['framesets'][frameset_hash]).length > 0
+      ) {
+        return true
+      }
+    }
+  }
+
   getDesiredBoxes() {
     return this.getDesiredOrUnwantedBoxes('desired')
   }
@@ -90,24 +106,15 @@ class JobEvalPanel extends React.Component {
 
   getT1MatchBoxes() {
     if (this.state.mode === 'review' && this.state.active_t1_results_key) {
-      for (let i=0; i < Object.keys(this.props.tier_1_matches).length; i++) {
-        const scanner_type = Object.keys(this.props.tier_1_matches)[i]
-        for (let j=0; j < Object.keys(this.props.tier_1_matches[scanner_type]).length; j++) {
-          const match_key = Object.keys(this.props.tier_1_matches[scanner_type])[j]
-          if (match_key === this.state.active_t1_results_key) {
-            const match_obj = this.props.tier_1_matches[scanner_type][match_key]
-            if (
-              Object.keys(match_obj).includes('movies') &&
-              Object.keys(match_obj['movies']).includes(this.state.active_movie_url)
-            ) {
-              const this_movies_matches = match_obj['movies'][this.state.active_movie_url]
-              if (Object.keys(this_movies_matches['framesets']).includes(this.props.frameset_hash)) {
-                const ret_val = this_movies_matches['framesets'][this.props.frameset_hash]
-                return ret_val
-              }
-            }
-
-          }
+      const match_obj = this.props.tier_1_matches[this.state.active_t1_scanner_type][this.state.active_t1_results_key]
+      if (
+        Object.keys(match_obj).includes('movies') &&
+        Object.keys(match_obj['movies']).includes(this.state.active_movie_url)
+      ) {
+        const this_movies_matches = match_obj['movies'][this.state.active_movie_url]
+        if (Object.keys(this_movies_matches['framesets']).includes(this.props.frameset_hash)) {
+          const ret_val = this_movies_matches['framesets'][this.props.frameset_hash]
+          return ret_val
         }
       }
     }
@@ -198,15 +205,22 @@ class JobEvalPanel extends React.Component {
     }
   }
 
-  frameHasReviewData(frameset_hash) {
+  getHasReviewDataSummary(fs_hash) {
     const movie_url = this.state.active_movie_url
     if (
       movie_url !== '' &&
       Object.keys(this.state.jrs_movies).includes(movie_url) &&
-      Object.keys(this.state.jrs_movies[movie_url]['framesets']).includes(frameset_hash) &&
-      Object.keys(this.state.jrs_movies[movie_url]['framesets'][frameset_hash]).length > 0
+      Object.keys(this.state.jrs_movies[movie_url]['framesets']).includes(fs_hash) &&
+      Object.keys(this.state.jrs_movies[movie_url]['framesets'][fs_hash]).length > 0
     ) {
-      return true
+      const review_obj = this.state.jrs_movies[movie_url]['framesets'][fs_hash]
+      if (review_obj['pass_or_fail'] === 'pass') {
+        return 'PASSED'
+      } else if (review_obj['pass_or_fail'] === 'fail') {
+        return 'FAILED'
+      } else {
+        return 'REVIEWED'
+      }
     }
   }
 
@@ -1232,14 +1246,18 @@ class JobEvalPanel extends React.Component {
                   }
                   const img_url = this.props.getImageUrl(fs_hash)
                   let overlay_text = '.'
+                  let overlay_text2 = '.'
                   let overlay_style = {
                     color: 'white',
                   }
                   if (this.frameHasAnnotationData(fs_hash)) {
                     overlay_text = 'ANNOTATED'
                     overlay_style['color'] = '#000'
-                  } else if (this.frameHasReviewData(fs_hash)) {
-                    overlay_text = 'REVIEWED'
+                  } else if (this.state.mode === 'review') {
+                    if (this.frameHasT1Data(fs_hash)) {
+                      overlay_text = 'RESULTS'
+                    }
+                    overlay_text2 = this.getHasReviewDataSummary(fs_hash)
                     overlay_style['color'] = '#000'
                   }
                   return (
@@ -1251,6 +1269,11 @@ class JobEvalPanel extends React.Component {
                         style={overlay_style}
                       >
                         {overlay_text}
+                      </div>
+                      <div
+                        style={overlay_style}
+                      >
+                        {overlay_text2}
                       </div>
                       <img
                         id='job_eval_image'
@@ -1651,12 +1674,14 @@ class JobEvalPanel extends React.Component {
               annotate_view_mode: 'summary',
               jrs_movies: build_jrs_movies,
               active_t1_results_key: match_key,
+              active_t1_scanner_type: scanner_type,
             })
           } else {
             this.setState({
               mode: 'review',
               annotate_view_mode: 'summary',
               active_t1_results_key: match_key,
+              active_t1_scanner_type: scanner_type,
             })
           }
           return
