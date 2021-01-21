@@ -4,6 +4,7 @@ import {
 } from './redact_utils.js'
 import CanvasAnnotateOverlay from './CanvasAnnotateOverlay'
 import {
+  buildLabelAndTextInput,
   buildLabelAndDropdown,
 } from './SharedControls'
 
@@ -26,9 +27,19 @@ class JobEvalPanel extends React.Component {
       annotate_tile_column_count: 6,
       selected_frameset_hashes: [],
       clicked_coords: [],
-      id: '',
-      description: '',
-      content: {},
+      jeo_id: '',
+      jeo_description: '',
+      permanent_standards: {},
+      jeo_weight_true_pos: 1,
+      jeo_weight_false_pos: 1,
+      jeo_weight_true_neg: 1,
+      jeo_weight_false_neg: 1,
+      jeo_frame_passing_score: 70,
+      jeo_movie_passing_score: 70,
+      jeo_max_num_failed_frames: 10,
+      jeo_hard_fail_from_any_frame: false,
+      jeo_preserve_job_run_parameters: true,
+      jeo_preserve_truth_maps: true,
       something_changed: false,
       job_eval_objectives: {},
       job_run_summaries: {},
@@ -59,6 +70,149 @@ class JobEvalPanel extends React.Component {
     this.setState({
       'image_scale': scale,
     })
+  }
+
+  buildPreserveTruthMapsField() {
+    let checked_value = ''
+    if (this.state.jeo_preserve_truth_maps) {
+      checked_value = 'checked'
+    }
+    return (
+      <div>
+        <div className='d-inline'>
+          <input
+            className='ml-2 mr-2 mt-1'
+            checked={checked_value}
+            type='checkbox'
+            onChange={() => this.setLocalStateVar('jeo_preserve_truth_maps', !this.state.jeo_preserve_truth_maps)}
+          />
+        </div>
+        <div className='d-inline'>
+          Preserve Truth Maps
+        </div>
+      </div>
+    )
+  }
+
+  buildPreserveJobRunParametersField() {
+    let checked_value = ''
+    if (this.state.jeo_preserve_job_run_parameters) {
+      checked_value = 'checked'
+    }
+    return (
+      <div>
+        <div className='d-inline'>
+          <input
+            className='ml-2 mr-2 mt-1'
+            checked={checked_value}
+            type='checkbox'
+            onChange={() => this.setLocalStateVar('jeo_preserve_job_run_parameters', !this.state.jeo_preserve_job_run_parameters)}
+          />
+        </div>
+        <div className='d-inline'>
+          Preserve Job Run Parameters
+        </div>
+      </div>
+    )
+  }
+
+  buildHardFailAnyFrameField() {
+    let checked_value = ''
+    if (this.state.jeo_hard_fail_from_any_frame) {
+      checked_value = 'checked'
+    }
+    return (
+      <div>
+        <div className='d-inline'>
+          <input
+            className='ml-2 mr-2 mt-1'
+            checked={checked_value}
+            type='checkbox'
+            onChange={() => this.setLocalStateVar('jeo_hard_fail_from_any_frame', !this.state.jeo_hard_fail_from_any_frame)}
+          />
+        </div>
+        <div className='d-inline'>
+          Hard Fail Any Frame
+        </div>
+      </div>
+    )
+  }
+
+  buildJeoFramePassingScoreField() {
+    return buildLabelAndTextInput(
+      this.state.jeo_frame_passing_score,
+      'Frame Passing Score (0-100)',
+      'jeo_frame_passing_score',
+      'jeo_frame_passing_score',
+      4,
+      ((value)=>{this.setLocalStateVar('jeo_frame_passing_score', value)})
+    )
+  }
+
+  buildJeoMoviePassingScoreField() {
+    return buildLabelAndTextInput(
+      this.state.jeo_movie_passing_score,
+      'Movie Passing Score (0-100)',
+      'jeo_movie_passing_score',
+      'jeo_movie_passing_score',
+      4,
+      ((value)=>{this.setLocalStateVar('jeo_movie_passing_score', value)})
+    )
+  }
+
+  buildJeoMaxNumFailedFramesField() {
+    return buildLabelAndTextInput(
+      this.state.jeo_max_num_failed_frames,
+      'Max Num of Failed Frames',
+      'jeo_max_num_failed_frames',
+      'jeo_max_num_failed_frames',
+      4,
+      ((value)=>{this.setLocalStateVar('jeo_max_num_failed_frames', value)})
+    )
+  }
+
+  buildJeoWeightTruePosField() {
+    return buildLabelAndTextInput(
+      this.state.jeo_weight_true_pos,
+      'True Positive',
+      'jeo_weight_true_pos',
+      'jeo_weight_true_pos',
+      4,
+      ((value)=>{this.setLocalStateVar('jeo_weight_true_pos', value)})
+    )
+  }
+
+  buildJeoWeightTrueNegField() {
+    return buildLabelAndTextInput(
+      this.state.jeo_weight_true_neg,
+      'True Negative',
+      'jeo_weight_true_neg',
+      'jeo_weight_true_neg',
+      4,
+      ((value)=>{this.setLocalStateVar('jeo_weight_true_neg', value)})
+    )
+  }
+
+  buildJeoWeightFalsePosField() {
+    return buildLabelAndTextInput(
+      this.state.jeo_weight_false_pos,
+      'False Positive',
+      'jeo_weight_false_pos',
+      'jeo_weight_false_pos',
+      4,
+      ((value)=>{this.setLocalStateVar('jeo_weight_false_pos', value)})
+    )
+  }
+
+  buildJeoWeightFalseNegField() {
+    return buildLabelAndTextInput(
+      this.state.jeo_weight_false_neg,
+      'False Negative',
+      'jeo_weight_false_neg',
+      'jeo_weight_false_neg',
+      4,
+      ((value)=>{this.setLocalStateVar('jeo_weight_false_neg', value)})
+    )
   }
 
   frameHasT1Data(frameset_hash) {
@@ -122,7 +276,7 @@ class JobEvalPanel extends React.Component {
   }
 
   jobHasMatchForExemplarMovie() {
-    if (!this.state.id || !this.state.active_job_id) {
+    if (!this.state.jeo_id || !this.state.active_job_id) {
       return false
     }
     let match_obj = {}
@@ -140,8 +294,8 @@ class JobEvalPanel extends React.Component {
       return false
     }
     const match_movie_urls = Object.keys(match_obj['movies'])
-    for (let i=0; i < Object.keys(this.state.content['permanent_standards']).length; i++) {
-      const movie_name = Object.keys(this.state.content['permanent_standards'])[i]
+    for (let i=0; i < Object.keys(this.state.permanent_standards).length; i++) {
+      const movie_name = Object.keys(this.state.permanent_standards)[i]
       for (let j=0; j < match_movie_urls.length; j++) {
         if (match_movie_urls[j].includes(movie_name)) {
           return true
@@ -205,7 +359,7 @@ class JobEvalPanel extends React.Component {
     }
   }
 
-  getHasReviewDataSummary(fs_hash) {
+  getFramesetReviewDisplayString(fs_hash) {
     const movie_url = this.state.active_movie_url
     if (
       movie_url !== '' &&
@@ -220,7 +374,8 @@ class JobEvalPanel extends React.Component {
         return 'FAILED'
       } else {
         return 'REVIEWED'
-      }
+      } 
+      return '.'
     }
   }
 
@@ -228,9 +383,9 @@ class JobEvalPanel extends React.Component {
     const movie_name = getFileNameFromUrl(this.state.active_movie_url)
     if (
       this.state.active_movie_url !== '' &&
-      Object.keys(this.state.content['permanent_standards']).includes(movie_name) &&
-      Object.keys(this.state.content['permanent_standards'][movie_name]['framesets']).includes(frameset_hash) &&
-      Object.keys(this.state.content['permanent_standards'][movie_name]['framesets'][frameset_hash]).length > 0
+      Object.keys(this.state.permanent_standards).includes(movie_name) &&
+      Object.keys(this.state.permanent_standards[movie_name]['framesets']).includes(frameset_hash) &&
+      Object.keys(this.state.permanent_standards[movie_name]['framesets'][frameset_hash]).length > 0
     ) {
       return true
     }
@@ -296,7 +451,7 @@ class JobEvalPanel extends React.Component {
     if (this.state.mode !== 'annotate') {
       return {}
     }
-    const perm_standard = this.state.content['permanent_standards']
+    const perm_standard = this.state.permanent_standards
     const movie_name = getFileNameFromUrl(this.state.active_movie_url)
 
     if (!Object.keys(perm_standard).includes(movie_name)) {
@@ -366,27 +521,27 @@ class JobEvalPanel extends React.Component {
   }
 
   doDeleteBox(x_scaled, y_scaled) {
-    let deepCopyContent = JSON.parse(JSON.stringify(this.state.content))
+    let deepCopyPs= JSON.parse(JSON.stringify(this.state.permanent_standards))
     let something_changed = false
     const movie_name = getFileNameFromUrl(this.state.active_movie_url)
-    if (!Object.keys(deepCopyContent['permanent_standards']).includes(movie_name)) {
+    if (!Object.keys(deepCopyPs).includes(movie_name)) {
       return
     }
-    if (!Object.keys(deepCopyContent['permanent_standards'][movie_name]['framesets']).includes(this.props.frameset_hash)) {
+    if (!Object.keys(deepCopyPs[movie_name]['framesets']).includes(this.props.frameset_hash)) {
       return
     }
-    const boxes_this_frame = this.state.content['permanent_standards'][movie_name]['framesets'][this.props.frameset_hash]
+    const boxes_this_frame = this.state.permanent_standards[movie_name]['framesets'][this.props.frameset_hash]
     for (let i=0; i < Object.keys(boxes_this_frame).length; i++) {
       const the_key = Object.keys(boxes_this_frame)[i]
       const the_box = boxes_this_frame[the_key]
       if (this.pointIsInBox([x_scaled, y_scaled], the_box['start'], the_box['end'])) {
-        delete deepCopyContent['permanent_standards'][movie_name]['framesets'][this.props.frameset_hash][the_key]
+        delete deepCopyPs[movie_name]['framesets'][this.props.frameset_hash][the_key]
         something_changed = true
       }
     }
     if (something_changed) {
       this.setState({
-        content: deepCopyContent,
+        permanent_standards: deepCopyPs,
       })
     }
   }
@@ -431,6 +586,32 @@ class JobEvalPanel extends React.Component {
     })
   }
 
+  markFrameAsPassed() {
+    this.markFrameAsPassedOrFailed('pass')
+  }
+
+  markFrameAsFailed() {
+    this.markFrameAsPassedOrFailed('fail')
+  }
+
+  markFrameAsPassedOrFailed(pass_or_fail) {
+    let deepCopyJrsm = JSON.parse(JSON.stringify(this.state.jrs_movies))
+    const fsh = this.props.frameset_hash
+    if (!Object.keys(this.state.jrs_movies[this.state.active_movie_url]['framesets']).includes(fsh)) {
+      deepCopyJrsm[this.state.active_movie_url]['framesets'][fsh] = {
+        desired: {},
+        unwanted: {},
+        pass_or_fail: '',
+      }
+    }
+    deepCopyJrsm[this.state.active_movie_url]['framesets'][fsh]['desired'] = {}
+    deepCopyJrsm[this.state.active_movie_url]['framesets'][fsh]['unwanted'] = {}
+    deepCopyJrsm[this.state.active_movie_url]['framesets'][fsh]['pass_or_fail'] = pass_or_fail
+    this.setState({
+      jrs_movies: deepCopyJrsm,
+    })
+  }
+
   doAddBox2(x_scaled, y_scaled) {
     const new_id = 'box_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
     const new_box = {
@@ -438,19 +619,19 @@ class JobEvalPanel extends React.Component {
       start: this.state.clicked_coords,
       end: [x_scaled, y_scaled],
     }
-    let deepCopyContent = JSON.parse(JSON.stringify(this.state.content))
+    let deepCopyPs = JSON.parse(JSON.stringify(this.state.permanent_standards))
     const movie_name = getFileNameFromUrl(this.state.active_movie_url)
-    if (!Object.keys(deepCopyContent['permanent_standards']).includes(movie_name)) {
-      deepCopyContent['permanent_standards'][movie_name] = {framesets: {}}
+    if (!Object.keys(deepCopyPs).includes(movie_name)) {
+      deepCopyPs[movie_name] = {framesets: {}}
     }
-    if (!Object.keys(deepCopyContent['permanent_standards'][movie_name]['framesets']).includes(this.props.frameset_hash)) {
-      deepCopyContent['permanent_standards'][movie_name]['framesets'][this.props.frameset_hash] = {}
+    if (!Object.keys(deepCopyPs[movie_name]['framesets']).includes(this.props.frameset_hash)) {
+      deepCopyPs[movie_name]['framesets'][this.props.frameset_hash] = {}
     }
-    deepCopyContent['permanent_standards'][movie_name]['framesets'][this.props.frameset_hash][new_id] = new_box
+    deepCopyPs[movie_name]['framesets'][this.props.frameset_hash][new_id] = new_box
     this.setState({
       clicked_coords: [x_scaled, y_scaled],
       image_mode: 'add_permanent_standard_box_1',
-      content: deepCopyContent,
+      permanent_standards: deepCopyPs,
       something_changed: true,
     })
   }
@@ -500,10 +681,23 @@ class JobEvalPanel extends React.Component {
   }
 
   getJeoFromState() {
+    const build_content = {
+      weight_true_pos: this.state.jeo_weight_true_pos,
+      weight_false_pos: this.state.jeo_weight_false_pos,
+      weight_true_neg: this.state.jeo_weight_true_neg,
+      weight_false_neg: this.state.jeo_weight_false_neg,
+      frame_passing_score: this.state.jeo_frame_passing_score,
+      movie_passing_score: this.state.jeo_movie_passing_score,
+      max_num_failed_frames: this.state.jeo_max_num_failed_frames,
+      hard_fail_from_any_frame: this.state.jeo_hard_fail_from_any_frame,
+      preserve_job_run_parameters: this.state.jeo_preserve_job_run_parameters,
+      preserve_truth_maps: this.state.jeo_preserve_truth_maps,
+      permanent_standards: this.state.permanent_standards,
+    }
     const jeo = {
-      id: this.state.id,
-      description: this.state.description,
-      content: this.state.content,
+      id: this.state.jeo_id,
+      description: this.state.jeo_description,
+      content: build_content,
     }
     return jeo
   }
@@ -512,7 +706,7 @@ class JobEvalPanel extends React.Component {
     let the_url = this.props.getUrl('job_run_summaries_url')
     const payload = {
         job_id: this.state.active_job_id,
-        job_eval_objective_id: this.state.id,
+        job_eval_objective_id: this.state.jeo_id,
         jrs_movies: this.state.jrs_movies,
     }
     let response = await this.props.fetch(the_url, {
@@ -554,7 +748,7 @@ class JobEvalPanel extends React.Component {
     let the_url = this.props.getUrl('job_run_summaries_url') + '/generate'
     const payload = {
         job_id: this.state.active_job_id,
-        job_eval_objective_id: this.state.id,
+        job_eval_objective_id: this.state.jeo_id,
     }
     let response = await this.props.fetch(the_url, {
       method: 'POST',
@@ -626,24 +820,38 @@ class JobEvalPanel extends React.Component {
 
   loadJeo(jeo_id) {
     const jeo = this.state.job_eval_objectives[jeo_id]
-    let content_obj = {}
-    if (jeo.content) {
-      content_obj = jeo.content
-    }
     this.setState({
-      id: jeo.id,
-      description: jeo.description,
-      content: content_obj,
+      jeo_id: jeo.id,
+      jeo_description: jeo.description,
+      jeo_weight_true_pos: jeo.content.weight_true_pos,
+      jeo_weight_false_pos: jeo.content.weight_false_pos,
+      jeo_weight_true_neg: jeo.content.weight_true_neg,
+      jeo_weight_false_neg: jeo.content.weight_false_neg,
+      jeo_frame_passing_score: jeo.content.frame_passing_score,
+      jeo_movie_passing_score: jeo.content.movie_passing_score,
+      jeo_max_num_failed_frames: jeo.content.max_num_failed_frames,
+      jeo_hard_fail_from_any_frame: jeo.content.hard_fail_from_any_frame,
+      jeo_preserve_job_run_parameters: jeo.content.preserve_job_run_parameters,
+      jeo_preserve_truth_maps: jeo.content.preserve_truth_maps,
+      permanent_standards: jeo.content.permanent_standards,
     })
   }
 
   loadNewJeo() {
     this.setState({
-      id: '',
-      description: '',
-      content: {
-        permanent_standards: {},
-      },
+      jeo_id: '',
+      jeo_description: '',
+      jeo_weight_true_pos: 1,
+      jeo_weight_false_pos: 1,
+      jeo_weight_true_neg: 1,
+      jeo_weight_false_neg: 1,
+      jeo_frame_passing_score: 70,
+      jeo_movie_passing_score: 70,
+      jeo_max_num_failed_frames: 10,
+      jeo_hard_fail_from_any_frame: false,
+      jeo_preserve_job_run_parameters: true,
+      jeo_preserve_truth_maps: true,
+      permanent_standards: {},
     })
   }
 
@@ -740,9 +948,7 @@ class JobEvalPanel extends React.Component {
           {Object.keys(this.props.movies).map((movie_url, index) => {
             const movie_name = getFileNameFromUrl(movie_url)
             if (
-              this.state.content && 
-              Object.keys(this.state.content).includes('permanent_standards') && 
-              Object.keys(this.state.content['permanent_standards']).includes(movie_name)) {
+              Object.keys(this.state.permanent_standards).includes(movie_name)) {
               return ''
             }
             return (
@@ -761,20 +967,20 @@ class JobEvalPanel extends React.Component {
   }
 
   removeExemplarMovie(movie_name) {
-    let deepCopyContent = JSON.parse(JSON.stringify(this.state.content))
-    if (Object.keys(deepCopyContent['permanent_standards']).includes(movie_name)) {
-      delete deepCopyContent['permanent_standards'][movie_name]
-      this.setLocalStateVar('content', deepCopyContent)
+    let deepCopyPs = JSON.parse(JSON.stringify(this.state.permanent_standards))
+    if (Object.keys(deepCopyPs).includes(movie_name)) {
+      delete deepCopyPs[movie_name]
+      this.setLocalStateVar('permanent_standards', deepCopyPs)
     }
   }
 
   addExemplarMovie(movie_name, movie_url) {
-    let deepCopyContent = JSON.parse(JSON.stringify(this.state.content))
-    deepCopyContent['permanent_standards'][movie_name] = {
+    let deepCopyPs = JSON.parse(JSON.stringify(this.state.permanent_standards))
+    deepCopyPs[movie_name] = {
       source_movie_url: movie_url,
       framesets: {},
     }
-    this.setLocalStateVar('content', deepCopyContent)
+    this.setLocalStateVar('permanent_standards', deepCopyPs)
   }
 
   buildJeoSaveButton() {
@@ -849,14 +1055,12 @@ class JobEvalPanel extends React.Component {
   }
 
   buildExemplarMoviesSection() {
-    if (!this.state.id) {
+    if (!this.state.jeo_id) {
       return ''
     }
     const add_button = this.buildAddExemplarMovieButton()
     let perm_standards = {}
-    if (this.state.content && Object.keys(this.state.content).includes('permanent_standards')) {
-      perm_standards = this.state.content['permanent_standards']
-    }
+    perm_standards = this.state.permanent_standards
     return (
       <div className='row mt-2'>
         <div className='col'>
@@ -871,7 +1075,7 @@ class JobEvalPanel extends React.Component {
           <div className='row'>
             <div className='col'>
               {Object.keys(perm_standards).map((movie_name, index) => {
-                const perm_standard = this.state.content['permanent_standards'][movie_name]
+                const perm_standard = this.state.permanent_standards[movie_name]
                 const source_movie_url = perm_standard['source_movie_url']
                 return (
                   <div key={index} className='row'>
@@ -908,6 +1112,16 @@ class JobEvalPanel extends React.Component {
     const load_button = this.buildJeoLoadButton()
     const save_button = this.buildJeoSaveButton()
     const delete_button = this.buildJeoDeleteButton()
+    const weight_true_pos_field = this.buildJeoWeightTruePosField()
+    const weight_false_pos_field = this.buildJeoWeightFalsePosField()
+    const weight_true_neg_field = this.buildJeoWeightTrueNegField()
+    const weight_false_neg_field = this.buildJeoWeightFalseNegField()
+    const max_num_failed_frames_field = this.buildJeoMaxNumFailedFramesField() 
+    const movie_passing_score_field = this.buildJeoMoviePassingScoreField() 
+    const frame_passing_score_field = this.buildJeoFramePassingScoreField()
+    const hard_fail_any_frame_field = this.buildHardFailAnyFrameField()
+    const preserve_job_run_parameters_field = this.buildPreserveJobRunParametersField()
+    const preserve_truth_maps_field  = this.buildPreserveTruthMapsField()
 
     return (
       <div className='col-9'>
@@ -928,13 +1142,59 @@ class JobEvalPanel extends React.Component {
               </div>
             </div>
 
-            <div className='row'>
-              <div className='d-inline ml-2'>
+            <div className='row m-1'>
+              <div className='d-inline'>
                 Id: 
               </div>
               <div className='d-inline ml-2'>
-                {this.state.id}
+                {this.state.jeo_id}
               </div>
+            </div>
+
+            <div className='row m-1'>
+              <div className='col'>
+                <div className='row mr-2'>
+                  Weights:
+                </div>
+                <div className='row'>
+                  <div className='col-3'>
+                  {weight_true_pos_field}
+                  </div>
+                  <div className='col-3'>
+                  {weight_false_pos_field}
+                  </div>
+                  <div className='col-3'>
+                  {weight_true_neg_field}
+                  </div>
+                  <div className='col-3'>
+                  {weight_false_neg_field}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className='row m-1'>
+              {max_num_failed_frames_field} 
+            </div>
+
+            <div className='row m-1'>
+              {frame_passing_score_field}
+            </div>
+
+            <div className='row m-1'>
+              {movie_passing_score_field}
+            </div>
+
+            <div className='row m-1'>
+              {hard_fail_any_frame_field}
+            </div>
+
+            <div className='row m-1'>
+              {preserve_job_run_parameters_field}
+            </div>
+
+            <div className='row m-1'>
+              {preserve_truth_maps_field}
             </div>
 
             <div className='row'>
@@ -949,8 +1209,8 @@ class JobEvalPanel extends React.Component {
                     id='jeo_description'
                     cols='60'
                     rows='3'
-                    value={this.state.description}
-                    onChange={(event) => this.setLocalStateVar('description', event.target.value)}
+                    value={this.state.jeo_description}
+                    onChange={(event) => this.setLocalStateVar('jeo_description', event.target.value)}
                   />
                 </div>
               </div>
@@ -1250,15 +1510,21 @@ class JobEvalPanel extends React.Component {
                   let overlay_style = {
                     color: 'white',
                   }
+                  let ot2_style = {
+                    color: 'white',
+                  }
                   if (this.frameHasAnnotationData(fs_hash)) {
                     overlay_text = 'ANNOTATED'
                     overlay_style['color'] = '#000'
                   } else if (this.state.mode === 'review') {
                     if (this.frameHasT1Data(fs_hash)) {
+                      overlay_style['color'] = 'black'
                       overlay_text = 'RESULTS'
+                    } 
+                    overlay_text2 = this.getFramesetReviewDisplayString(fs_hash)
+                    if (overlay_text2 !== '.') {
+                      ot2_style['color'] = 'black'
                     }
-                    overlay_text2 = this.getHasReviewDataSummary(fs_hash)
-                    overlay_style['color'] = '#000'
                   }
                   return (
                     <div 
@@ -1271,7 +1537,7 @@ class JobEvalPanel extends React.Component {
                         {overlay_text}
                       </div>
                       <div
-                        style={overlay_style}
+                        style={ot2_style}
                       >
                         {overlay_text2}
                       </div>
@@ -1467,11 +1733,25 @@ class JobEvalPanel extends React.Component {
     } else if (this.state.mode === 'review') {
       buttons_row = this.buildReviewSingleButtons()
     } 
+    let image_extra_text = '.'
+    let extra_text_style = {
+      color: 'white',
+    }
+    if (this.state.mode === 'review') {
+      image_extra_text = this.getFramesetReviewDisplayString(this.props.frameset_hash)
+      if (!image_extra_text !== '.') {
+        extra_text_style['color'] = 'black'
+      }
+    }
     return (
       <div className='row'>
         <div className='col'>
-          <div className='row mt-2'>
+          <div className='row m-1'>
             {buttons_row}
+          </div>
+
+          <div style={extra_text_style} className='row'>
+            {image_extra_text}
           </div>
 
           <div id='annotate_image_div' className='row'>
@@ -1592,7 +1872,7 @@ class JobEvalPanel extends React.Component {
   }
 
   buildManualJrsButton() {
-    if (!this.state.id || !this.state.active_job_id) {
+    if (!this.state.jeo_id || !this.state.active_job_id) {
       return ''
     }
 
@@ -1697,14 +1977,14 @@ class JobEvalPanel extends React.Component {
     if (!this.state.job_run_summaries || Object.keys(this.state.job_run_summaries).length === 0) {
       return ''
     }
-    if (!this.state.id) {
+    if (!this.state.jeo_id) {
       return ''
     }
     return (
       <div className='col'>
         {Object.keys(this.state.job_run_summaries).map((jrs_key, index) => {
           const jrs = this.state.job_run_summaries[jrs_key]
-          if (jrs.job_eval_objective_id !== this.state.id) {
+          if (jrs.job_eval_objective_id !== this.state.jeo_id) {
             return ''
           }
           let its_checked = false
@@ -1737,7 +2017,7 @@ class JobEvalPanel extends React.Component {
   }
 
   buildJobRunSummarySection() {
-    if (!this.state.id) {
+    if (!this.state.jeo_id) {
       return ''
     }
 
