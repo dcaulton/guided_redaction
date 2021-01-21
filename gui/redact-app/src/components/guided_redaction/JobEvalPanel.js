@@ -114,6 +114,35 @@ class JobEvalPanel extends React.Component {
     return {}
   }
 
+  jobHasMatchForExemplarMovie() {
+    if (!this.state.id || !this.state.active_job_id) {
+      return false
+    }
+    let match_obj = {}
+    for (let i=0; i < Object.keys(this.props.tier_1_matches).length; i++) {
+      const scanner_type = Object.keys(this.props.tier_1_matches)[i]
+      for (let j=0; j < Object.keys(this.props.tier_1_matches[scanner_type]).length; j++) {
+        const match_key = Object.keys(this.props.tier_1_matches[scanner_type])[j]
+        if (this.props.tier_1_matches[scanner_type][match_key]['job_id'] === this.state.active_job_id) {
+          match_obj = this.props.tier_1_matches[scanner_type][match_key]
+          break
+        }
+      }
+    }
+    if (Object.keys(match_obj).length === 0) {
+      return false
+    }
+    const match_movie_urls = Object.keys(match_obj['movies'])
+    for (let i=0; i < Object.keys(this.state.content['permanent_standards']).length; i++) {
+      const movie_name = Object.keys(this.state.content['permanent_standards'])[i]
+      for (let j=0; j < match_movie_urls.length; j++) {
+        if (match_movie_urls[j].includes(movie_name)) {
+          return true
+        }
+      }
+    }
+  }
+
   deleteJrsMovie(movie_url) {
     if (Object.keys(this.state.jrs_movies).includes(movie_url)) {
       let deepCopyJrsm = JSON.parse(JSON.stringify(this.state.jrs_movies))
@@ -695,10 +724,10 @@ class JobEvalPanel extends React.Component {
     )
   }
 
-  removeExemplarMovie(movie_uuid) {
+  removeExemplarMovie(movie_name) {
     let deepCopyContent = JSON.parse(JSON.stringify(this.state.content))
-    if (Object.keys(deepCopyContent['permanent_standards']).includes(movie_uuid)) {
-      delete deepCopyContent['permanent_standards'][movie_uuid]
+    if (Object.keys(deepCopyContent['permanent_standards']).includes(movie_name)) {
+      delete deepCopyContent['permanent_standards'][movie_name]
       this.setLocalStateVar('content', deepCopyContent)
     }
   }
@@ -791,13 +820,13 @@ class JobEvalPanel extends React.Component {
     return (
       <div className='row'>
         <div className='col'>
-          {Object.keys(perm_standards).map((movie_uuid, index) => {
-            const perm_standard = this.state.content['permanent_standards'][movie_uuid]
+          {Object.keys(perm_standards).map((movie_name, index) => {
+            const perm_standard = this.state.content['permanent_standards'][movie_name]
             const source_movie_url = perm_standard['source_movie_url']
             return (
               <div key={index} className='row'>
                 <div className='col-4'>
-                  {movie_uuid}
+                  {movie_name}
                 </div>
                 <div className='col-2'>
                   <button
@@ -810,7 +839,7 @@ class JobEvalPanel extends React.Component {
                 <div className='col-2'>
                   <button
                     className='btn btn-link ml-2 p-0'
-                    onClick={()=>{this.removeExemplarMovie(movie_uuid)}}
+                    onClick={()=>{this.removeExemplarMovie(movie_name)}}
                   >
                     delete
                   </button>
@@ -1479,11 +1508,11 @@ class JobEvalPanel extends React.Component {
     )
   }
 
+
   buildGenerateExemplarJrsButton() {
-    if (!this.state.id || !this.state.active_job_id) {
+    if (!this.jobHasMatchForExemplarMovie()) {
       return ''
     }
-
     return (
       <button
         className='btn btn-primary'

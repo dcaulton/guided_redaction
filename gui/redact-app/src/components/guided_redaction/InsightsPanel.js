@@ -334,7 +334,8 @@ class InsightsPanel extends React.Component {
       job_data['description'] += 'for frame '
       job_data['request_data']['movies'] = this.buildOneFrameMovieForCurrentInsightsImage()
     } else if (scope.match(/_current_movie$/)) {   
-      job_data['description'] += 'for movie: ' + this.props.movie_url
+      const movie_name = getFileNameFromUrl(this.props.movie_url)
+      job_data['description'] += 'for movie: ' + movie_name
       job_data['request_data']['movies'][this.props.movie_url] = this.props.movies[this.props.movie_url]
     } else if (scope.match(/_all_movies$/)) {   
       job_data['description'] += 'for all movies'
