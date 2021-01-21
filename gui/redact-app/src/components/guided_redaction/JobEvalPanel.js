@@ -494,6 +494,28 @@ class JobEvalPanel extends React.Component {
     return jeo
   }
 
+  async sendJobRunSummary(when_done=(()=>{})) {
+    let the_url = this.props.getUrl('job_run_summaries_url')
+    const payload = {
+        job_id: this.state.active_job_id,
+        job_eval_objective_id: this.state.id,
+        jrs_movies: this.state.jrs_movies,
+    }
+    let response = await this.props.fetch(the_url, {
+      method: 'POST',
+      headers: this.props.buildJsonHeaders(),
+      body: JSON.stringify(payload),
+    })
+    .then((response) => response.json())
+    .then((responseJson) => {
+      when_done(responseJson)
+    })
+    .catch((error) => {
+      console.error(error)
+    })
+    await response
+  }
+
   async getJobRunSummaries(when_done=(()=>{})) {
     let the_url = this.props.getUrl('job_run_summaries_url')
     await this.props.fetch(the_url, {
@@ -515,7 +537,7 @@ class JobEvalPanel extends React.Component {
   }
 
   async generateJobRunSummary(when_done=(()=>{})) {
-    let the_url = this.props.getUrl('job_run_summaries_url')
+    let the_url = this.props.getUrl('job_run_summaries_url') + '/generate'
     const payload = {
         job_id: this.state.active_job_id,
         job_eval_objective_id: this.state.id,
@@ -813,40 +835,56 @@ class JobEvalPanel extends React.Component {
   }
 
   buildExemplarMoviesSection() {
+    if (!this.state.id) {
+      return ''
+    }
+    const add_button = this.buildAddExemplarMovieButton()
     let perm_standards = {}
     if (this.state.content && Object.keys(this.state.content).includes('permanent_standards')) {
       perm_standards = this.state.content['permanent_standards']
     }
     return (
-      <div className='row'>
+      <div className='row mt-2'>
         <div className='col'>
-          {Object.keys(perm_standards).map((movie_name, index) => {
-            const perm_standard = this.state.content['permanent_standards'][movie_name]
-            const source_movie_url = perm_standard['source_movie_url']
-            return (
-              <div key={index} className='row'>
-                <div className='col-4'>
-                  {movie_name}
-                </div>
-                <div className='col-2'>
-                  <button
-                    className='btn btn-link ml-2 p-0'
-                    onClick={()=>{this.annotateExemplarMovie(source_movie_url, 'tile')}}
-                  >
-                    annotate
-                  </button>
-                </div>
-                <div className='col-2'>
-                  <button
-                    className='btn btn-link ml-2 p-0'
-                    onClick={()=>{this.removeExemplarMovie(movie_name)}}
-                  >
-                    delete
-                  </button>
-                </div>
-              </div>
-            )
-          })}
+          <div className='row'>
+            <div className='col-6 h5'>
+              Exemplar Movies
+            </div>
+            <div className='col-6'>
+              {add_button}
+            </div>
+          </div>
+          <div className='row'>
+            <div className='col'>
+              {Object.keys(perm_standards).map((movie_name, index) => {
+                const perm_standard = this.state.content['permanent_standards'][movie_name]
+                const source_movie_url = perm_standard['source_movie_url']
+                return (
+                  <div key={index} className='row'>
+                    <div className='col-4'>
+                      {movie_name}
+                    </div>
+                    <div className='col-2'>
+                      <button
+                        className='btn btn-link ml-2 p-0'
+                        onClick={()=>{this.annotateExemplarMovie(source_movie_url, 'tile')}}
+                      >
+                        annotate
+                      </button>
+                    </div>
+                    <div className='col-2'>
+                      <button
+                        className='btn btn-link ml-2 p-0'
+                        onClick={()=>{this.removeExemplarMovie(movie_name)}}
+                      >
+                        delete
+                      </button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
         </div>
       </div>
     )
@@ -919,7 +957,6 @@ class JobEvalPanel extends React.Component {
   buildHomePanel() {
     const objective_data = this.buildObjectivePanel()
     const exemplar_movies_section = this.buildExemplarMoviesSection()
-    const add_button = this.buildAddExemplarMovieButton()
     const job_run_summary_section = this.buildJobRunSummarySection()
     return (
       <div className='col'>
@@ -927,20 +964,7 @@ class JobEvalPanel extends React.Component {
           {objective_data}
         </div>
 
-        <div className='row mt-2'>
-          <div className='col-6 h5'>
-            Exemplar Movies
-          </div>
-          <div className='col-6'>
-            {add_button}
-          </div>
-        </div>
-
-        <div className='row'>
-          <div className='col-12'>
-            {exemplar_movies_section}
-          </div>
-        </div>
+        {exemplar_movies_section}
 
         <div className='row'>
           <div className='col-12'>
@@ -1062,7 +1086,7 @@ class JobEvalPanel extends React.Component {
         className='btn btn-primary'
         onClick={()=>{this.showReviewSummary()}}
       >
-        Back To JRS Summary
+        Back
       </button>
     )
   }
@@ -1307,7 +1331,7 @@ class JobEvalPanel extends React.Component {
         className='btn btn-primary'
         onClick={()=>{this.showReviewTile(movie_url)}}
       >
-        Review Tile
+        Back
       </button>
     )
   }
@@ -1552,9 +1576,20 @@ class JobEvalPanel extends React.Component {
     return (
       <button
         className='btn btn-primary'
-        onClick={()=>{this.showReviewSummary()}}
+        onClick={()=>{this.showReviewSummary(true)}}
       >
         Build Manual JRS
+      </button>
+    )
+  }
+
+  buildSendInManualJrsButton() {
+    return (
+      <button
+        className='btn btn-primary'
+        onClick={()=>{this.sendJobRunSummary()}}
+      >
+        Finalize 
       </button>
     )
   }
@@ -1590,7 +1625,7 @@ class JobEvalPanel extends React.Component {
     })
   }
 
-  showReviewSummary() {
+  showReviewSummary(clear_jrs_movies=false) {
     for (let i=0; i < Object.keys(this.props.tier_1_matches).length; i++) {
       const scanner_type = Object.keys(this.props.tier_1_matches)[i]
       for (let j=0; j < Object.keys(this.props.tier_1_matches[scanner_type]).length; j++) {
@@ -1610,12 +1645,20 @@ class JobEvalPanel extends React.Component {
             
           }
 
-          this.setState({
+          if (clear_jrs_movies) {
+            this.setState({
               mode: 'review',
               annotate_view_mode: 'summary',
               jrs_movies: build_jrs_movies,
               active_t1_results_key: match_key,
-          })
+            })
+          } else {
+            this.setState({
+              mode: 'review',
+              annotate_view_mode: 'summary',
+              active_t1_results_key: match_key,
+            })
+          }
           return
         }
       }
@@ -1725,6 +1768,7 @@ class JobEvalPanel extends React.Component {
 
   buildReviewPanelSummary() {
     const movie_urls = this.getMovieUrlsForActiveJob()
+    let send_to_api_button = ''
     return (
       <div className='row'>
         <div className='col'>
@@ -1736,11 +1780,13 @@ class JobEvalPanel extends React.Component {
           const delete_movie_button = this.buildDeleteJrsMovieButton(movie_url)
           const review_movie_button = this.buildReviewJrsMovieButton(movie_url)
           let summary_info = 'no review data found'
+          let send_to_api_button = ''
           if (
             Object.keys(this.state.jrs_movies).includes(movie_url) &&
             Object.keys(this.state.jrs_movies[movie_url]['framesets']).length > 0
           ) {
-            summary_info = Object.keys(this.state.jrs_movies[movie_url]['framesets']).length.toString() + 'frames annotated'
+            summary_info = Object.keys(this.state.jrs_movies[movie_url]['framesets']).length.toString() + ' frames reviewed'
+            send_to_api_button = this.buildSendInManualJrsButton()
           }
           return (
             <div 
@@ -1762,6 +1808,9 @@ class JobEvalPanel extends React.Component {
             </div>
           )
         })}
+          <div className='row'>
+            {send_to_api_button}
+          </div>
         </div>
       </div>
     )
