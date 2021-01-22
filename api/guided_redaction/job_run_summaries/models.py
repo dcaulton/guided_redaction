@@ -10,6 +10,11 @@ class JobRunSummary(models.Model):
     content = models.TextField(null=True)
 
     def __str__(self):
+        self_hash = self.as_hash()
+        self_hash.content = "{} bytes".format(len(self_hash.content))
+        return self_hash.__str__()
+
+    def as_hash(self):
         disp_hash = {
             'id': str(self.id),
             'job_id': self.job.id,
@@ -17,4 +22,5 @@ class JobRunSummary(models.Model):
             'updated_on': self.updated_on,
             'content': self.content,
         }
-        return disp_hash.__str__()
+        return disp_hash
+

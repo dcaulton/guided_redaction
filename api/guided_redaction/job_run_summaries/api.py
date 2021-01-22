@@ -5,6 +5,7 @@ from guided_redaction.job_run_summaries.models import JobRunSummary
 from guided_redaction.jobs.models import Job
 from guided_redaction.job_eval_objectives.models import JobEvalObjective
 from .controller_generate import GenerateController
+from .controller_score_manual import ScoreManualController
 
 
 class JobRunSummariesViewSet(viewsets.ViewSet):
@@ -42,26 +43,15 @@ class JobRunSummariesViewSet(viewsets.ViewSet):
         return Response(jrss)
 
     def create(self, request):
-        content = request.data.get('content')
-        the_id = request.data.get('id')
-        if the_id and JobRunSummary.objects.filter(pk=the_id).exists():
-            jrs = JobRunSummary.objects.get(pk=the_id)
-        else:
-            jrs = JobRunSummary()
+        if not request.data.get("job_id"):
+            return self.error("job_id is required")
+        if not request.data.get("job_eval_objective_id"):
+            return self.error("job_eval_objective_id is required")
 
-        job_id = request.data.get('job_id')
-        if job_id:
-            if not Job.objects.filter(id=job_id).exists():
-                return self.error(['cannot find job for specified id'], status_code=400)
-            jrs.job = Job.objects.get(pk=job_id)
-        jeo_id = request.data.get('job_eval_objective_id')
-        if jeo_id:
-            if not JobEvalObjective.objects.filter(id=jeo_id).exists():
-                return self.error(['cannot find job eval objective for specified id'], status_code=400)
-            jrs.job_eval_objective = JobEvalObjective.objects.get(pk=jeo_id)
-        jrs.content = json.dumps(content)
-        jrs.save()
-        return Response({"id": jrs.id})
+        worker = ScoreManualController()
+        jrs = worker.score_job_run_summary(request.data)
+
+        return Response(jrs.as_hash())
 
     def delete(self, request, pk, format=None):
         if pk and JobRunSummary.objects.filter(pk=pk).exists():
