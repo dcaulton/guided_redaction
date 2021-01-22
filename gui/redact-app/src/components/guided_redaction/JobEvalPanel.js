@@ -67,6 +67,7 @@ class JobEvalPanel extends React.Component {
     }
     const scale = (document.getElementById('job_eval_image').width /
         document.getElementById('job_eval_image').naturalWidth)
+console.log("mingo scale is "+scale.toString())
     this.setState({
       'image_scale': scale,
     })
@@ -503,7 +504,7 @@ class JobEvalPanel extends React.Component {
     } else if (this.state.image_mode === 'add_unwanted_box_1') {
       this.saveCoordsAndSetImageMode(x_scaled, y_scaled, 'add_unwanted_box_2')
     } else if (this.state.image_mode === 'add_permanent_standard_box_2') {
-      this.doAddBox2(x_scaled, y_scaled)
+      this.doAddPermanentStandardBox2(x_scaled, y_scaled)
     } else if (this.state.image_mode === 'add_desired_box_2') {
       this.doAddDesiredBox2(x_scaled, y_scaled)
     } else if (this.state.image_mode === 'add_unwanted_box_2') {
@@ -565,6 +566,10 @@ class JobEvalPanel extends React.Component {
   }
 
   doAddDesiredUnwantedBox2(x_scaled, y_scaled, box_type) {
+    let new_mode = 'add_desired_box_1'
+    if (box_type === 'unwanted') {
+      new_mode = 'add_unwanted_box_1'
+    }
     const new_id = 'box_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
     const new_box = {
       source: 'manual',
@@ -583,6 +588,7 @@ class JobEvalPanel extends React.Component {
     deepCopyJrsm[this.state.active_movie_url]['framesets'][fsh][box_type][new_id] = new_box
     this.setState({
       jrs_movies: deepCopyJrsm,
+      image_mode: new_mode,
     })
   }
 
@@ -612,7 +618,7 @@ class JobEvalPanel extends React.Component {
     })
   }
 
-  doAddBox2(x_scaled, y_scaled) {
+  doAddPermanentStandardBox2(x_scaled, y_scaled) {
     const new_id = 'box_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
     const new_box = {
       source: 'manual',
