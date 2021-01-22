@@ -55,7 +55,7 @@ class JobRunSummariesViewSet(viewsets.ViewSet):
         worker = ScoreManualController()
         jrs = worker.score_job_run_summary(request_data)
 
-        if 'errors' in jrs and jrs['errors']:
+        if type(jrs) == dict  and 'errors' in jrs:
           return self.error(jrs['errors'])
         return Response(jrs.as_hash())
 

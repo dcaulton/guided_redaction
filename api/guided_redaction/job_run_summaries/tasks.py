@@ -1,5 +1,6 @@
-from celery import shared_task                                                  
 import json                                                                     
+from celery import shared_task                                                  
+from guided_redaction.jobs.models import Job
 from guided_redaction.job_run_summaries.api import (
     JobRunSummariesViewSet,
 )

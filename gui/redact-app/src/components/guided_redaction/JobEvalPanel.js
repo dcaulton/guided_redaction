@@ -58,6 +58,7 @@ class JobEvalPanel extends React.Component {
     this.keyPress=this.keyPress.bind(this)
     this.getT1MatchBoxes=this.getT1MatchBoxes.bind(this)
     this.setImageScale=this.setImageScale.bind(this)
+    this.setMessage=this.setMessage.bind(this)
   }
 
 // TODO GET THIS INTEGRATED WITH IMAGE CLICK OR SOMETHING, WE"RE STUCK AT 1 UNTIL THEN
@@ -72,6 +73,40 @@ console.log("mingo scale is "+scale.toString())
       'image_scale': scale,
     })
   }
+
+  setMessage(the_message) {
+    this.setState({
+      message: the_message,
+    })
+  }
+
+  buildManualJrsJobData(extra_data) {
+    let job_data = {
+      request_data: {},
+    }
+    job_data['app'] = 'job_run_summaries'
+    job_data['operation'] = 'create_manual_jrs'
+    job_data['description'] = 'create manual jrs for job '+this.state.active_job_id
+    job_data['request_data']['job_id'] = this.state.active_job_id
+    job_data['request_data']['job_eval_objective_id'] = this.state.jeo_id
+    job_data['request_data']['jrs_movies'] = this.state.jrs_movies
+    return job_data
+  }
+
+  submitJobEvalJob(job_string, extra_data = '') {
+    if (job_string === 'build_manual_job_run_summary') {
+      const job_data = this.buildManualJrsJobData(extra_data)
+      this.props.submitJob({
+        job_data:job_data,
+        after_submit: ((r) => {this.setMessage('build manual job run summary task has been submitted')}),
+        delete_job_after_loading: false,
+        attach_to_job: false,
+        after_loaded: () => {this.getJobEvalObjectives()},
+        when_failed: () => {this.setMessage('build manual job run summary failed')},
+      })
+    }
+  }
+
 
   buildPreserveTruthMapsField() {
     let checked_value = ''
@@ -706,28 +741,6 @@ console.log("mingo scale is "+scale.toString())
       content: build_content,
     }
     return jeo
-  }
-
-  async sendJobRunSummary(when_done=(()=>{})) {
-    let the_url = this.props.getUrl('job_run_summaries_url')
-    const payload = {
-        job_id: this.state.active_job_id,
-        job_eval_objective_id: this.state.jeo_id,
-        jrs_movies: this.state.jrs_movies,
-    }
-    let response = await this.props.fetch(the_url, {
-      method: 'POST',
-      headers: this.props.buildJsonHeaders(),
-      body: JSON.stringify(payload),
-    })
-    .then((response) => response.json())
-    .then((responseJson) => {
-      when_done(responseJson)
-    })
-    .catch((error) => {
-      console.error(error)
-    })
-    await response
   }
 
   async getJobRunSummaries(when_done=(()=>{})) {
@@ -1896,7 +1909,7 @@ console.log("mingo scale is "+scale.toString())
     return (
       <button
         className='btn btn-primary'
-        onClick={()=>{this.sendJobRunSummary()}}
+        onClick={()=>{this.submitJobEvalJob('build_manual_job_run_summary')}}
       >
         Finalize 
       </button>

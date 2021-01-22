@@ -11,15 +11,15 @@ class JobRunSummary(models.Model):
 
     def __str__(self):
         self_hash = self.as_hash()
-        self_hash.content = "{} bytes".format(len(self_hash.content))
+        self_hash['content'] = "{} bytes".format(len(self_hash['content']))
         return self_hash.__str__()
 
     def as_hash(self):
         disp_hash = {
             'id': str(self.id),
-            'job_id': self.job.id,
-            'job_eval_objective_id': self.job_eval_objective.id,
-            'updated_on': self.updated_on,
+            'job_id': str(self.job.id),
+            'job_eval_objective_id': str(self.job_eval_objective.id),
+            'updated_on': str(self.updated_on),
             'content': self.content,
         }
         return disp_hash
