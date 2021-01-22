@@ -2001,8 +2001,20 @@ console.log("mingo scale is "+scale.toString())
     }
     return (
       <div className='col'>
+        <div className='row font-weight-bold'>
+          <div className='col-2 border-bottom'>
+            Job Id
+          </div>
+          <div className='col-3 border-bottom'>
+            Created On
+          </div>
+          <div className='col-1 border-bottom'>
+          </div>
+        </div>
+          
         {Object.keys(this.state.job_run_summaries).map((jrs_key, index) => {
           const jrs = this.state.job_run_summaries[jrs_key]
+          const job_id_short = jrs.job_id.substring(0, 5) + '...'
           if (jrs.job_eval_objective_id !== this.state.jeo_id) {
             return ''
           }
@@ -2015,8 +2027,11 @@ console.log("mingo scale is "+scale.toString())
               key={index}
               className='row'
             >
-              <div className='col-4'>
-                {jrs_key}
+              <div className='col-2'>
+                {job_id_short}
+              </div>
+              <div className='col-3'>
+                {jrs.created_on}
               </div>
               <div className='col-1'>
                 <input
@@ -2069,7 +2084,7 @@ console.log("mingo scale is "+scale.toString())
           </div>
 
           <div className='row mt-4 h4'>
-            Compare Jobs
+            Compare Summaries
           </div>
           <div className='row'>
             {jrs_list}
