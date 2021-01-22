@@ -20,6 +20,7 @@ from guided_redaction.parse import tasks as parse_tasks
 from guided_redaction.redact import tasks as redact_tasks
 from guided_redaction.files import tasks as files_tasks
 from guided_redaction.pipelines import tasks as pipelines_tasks
+from guided_redaction.job_run_summaries import tasks as jrs_tasks
 from guided_redaction.utils.task_shared import get_job_owner, query_profiler
 from guided_redaction.utils.classes.FileWriter import FileWriter
 from .controller_pipeline_job_status import PipelineJobStatusController
@@ -206,6 +207,8 @@ def dispatch_job(job):
         pipelines_tasks.t1_diff.delay(job_uuid)
     if job.app == 'pipeline' and job.operation == 'noop':
         pipelines_tasks.noop.delay(job_uuid)
+    if job.app == 'job_run_summaries' and job.operation == 'create_manual_jrs':
+        jrs_tasks.create_manual_jrs.delay(job_uuid)
 
 
 class JobsViewSet(viewsets.ViewSet):

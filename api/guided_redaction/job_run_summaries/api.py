@@ -43,14 +43,20 @@ class JobRunSummariesViewSet(viewsets.ViewSet):
         return Response(jrss)
 
     def create(self, request):
-        if not request.data.get("job_id"):
+        request_data = request.data
+        return self.process_create_request(request_data)
+
+    def process_create_request(self, request_data):
+        if not request_data.get("job_id"):
             return self.error("job_id is required")
-        if not request.data.get("job_eval_objective_id"):
+        if not request_data.get("job_eval_objective_id"):
             return self.error("job_eval_objective_id is required")
 
         worker = ScoreManualController()
-        jrs = worker.score_job_run_summary(request.data)
+        jrs = worker.score_job_run_summary(request_data)
 
+        if 'errors' in jrs and jrs['errors']:
+          return self.error(jrs['errors'])
         return Response(jrs.as_hash())
 
     def delete(self, request, pk, format=None):
@@ -75,4 +81,6 @@ class JobRunSummariesGenerateViewSet(viewsets.ViewSet):
         worker = GenerateController()
         jrs = worker.generate_job_run_summary(request_data)
 
+        if 'errors' in jrs and jrs['errors']:
+          return self.error(jrs['errors'])
         return Response(jrs)
