@@ -8,6 +8,7 @@ class JobRunSummary(models.Model):
     job = models.ForeignKey('jobs.Job', on_delete=models.CASCADE)
     job_eval_objective = models.ForeignKey('job_eval_objectives.JobEvalObjective', on_delete=models.CASCADE)
     summary_type = models.CharField(max_length=36)
+    score = models.FloatField(default=0)
     content = models.TextField(null=True)
 
     def __str__(self):
@@ -22,6 +23,7 @@ class JobRunSummary(models.Model):
             'job_eval_objective_id': str(self.job_eval_objective.id),
             'updated_on': str(self.updated_on),
             'summary_type': self.summary_type,
+            'score': str(self.score),
             'content': self.content,
         }
         return disp_hash

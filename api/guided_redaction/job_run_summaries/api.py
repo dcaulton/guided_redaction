@@ -20,6 +20,7 @@ class JobRunSummariesViewSet(viewsets.ViewSet):
             'created_on': jrs.created_on,
             'updated_on': jrs.updated_on,
             'summary_type': jrs.summary_type,
+            'score': jrs.summary_type,
             'content': jrs.content,
         }
         return Response(jrs_data)
@@ -40,6 +41,7 @@ class JobRunSummariesViewSet(viewsets.ViewSet):
                   'updated_on': jrs.updated_on,
                   'content_length': content_length,
                   'summary_type': jrs.summary_type,
+                  'score': jrs.score,
                   'content': content,
             }
         return Response(jrss)
