@@ -2059,6 +2059,26 @@ console.log("mingo scale is "+scale.toString())
     })
   }
 
+  buildJrsMovieNamesDiv(jrs) {
+    if (jrs.movie_names.length === 0) {
+      return ''
+    }
+    return (
+      <div className='row'>
+        <div className='col'>
+          {Object.keys(jrs.movie_names).map((movie_name_index, index) => {
+            const movie_name = jrs.movie_names[movie_name_index]
+            return (
+              <div key={index} className='row'>
+                {movie_name}
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    )
+  }
+
   buildJobRunSummaryList() {
     if (!this.state.job_run_summaries || Object.keys(this.state.job_run_summaries).length === 0) {
       return ''
@@ -2077,6 +2097,12 @@ console.log("mingo scale is "+scale.toString())
           <div className='col-1 border-bottom'>
             Type
           </div>
+          <div className='col-1 border-bottom'>
+            Score
+          </div>
+          <div className='col-3 border-bottom'>
+            Movies
+          </div>
           <div className='col-3 border-bottom'>
             Created On
           </div>
@@ -2090,6 +2116,7 @@ console.log("mingo scale is "+scale.toString())
           
         {Object.keys(this.state.job_run_summaries).map((jrs_key, index) => {
           const jrs = this.state.job_run_summaries[jrs_key]
+          const movie_names_div = this.buildJrsMovieNamesDiv(jrs)
           const job_id_short = jrs.job_id.substring(0, 5) + '...'
           if (jrs.job_eval_objective_id !== this.state.jeo_id) {
             return ''
@@ -2112,6 +2139,12 @@ console.log("mingo scale is "+scale.toString())
               </div>
               <div className='col-1'>
                 {jrs.summary_type}
+              </div>
+              <div className='col-1'>
+                {jrs.score}
+              </div>
+              <div className='col-3'>
+                {movie_names_div}
               </div>
               <div className='col-3'>
                 {jrs.created_on}

@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from base import viewsets
 from guided_redaction.job_run_summaries.models import JobRunSummary
 from guided_redaction.jobs.models import Job
+from guided_redaction.attributes.models import Attribute
 from guided_redaction.job_eval_objectives.models import JobEvalObjective
 from .controller_generate import GenerateController
 from .controller_score_manual import ScoreManualController
@@ -10,9 +11,18 @@ from .controller_score_manual import ScoreManualController
 
 class JobRunSummariesViewSet(viewsets.ViewSet):
 
+    def get_movie_names_list(self, job_run_summary):
+        names = []
+        if Attribute.objects.filter(job_run_summary=job_run_summary).exists():
+            attributes = Attribute.objects.filter(job_run_summary=job_run_summary)
+            for attribute in attributes:
+                if attribute.name == 'jrs_movie_name':
+                    names.append(attribute.value)
+        return names
+
     def retrieve(self, request, pk):
         jrs = JobRunSummary.objects.get(pk=pk)
-        build_attributes = {}
+        movie_names = self.get_movie_names_list(jrs)
         jrs_data = {
             'id': jrs.id,
             'job_id': jrs.job.id,
@@ -21,6 +31,7 @@ class JobRunSummariesViewSet(viewsets.ViewSet):
             'updated_on': jrs.updated_on,
             'summary_type': jrs.summary_type,
             'score': jrs.summary_type,
+            'movie_names': movie_names,
             'content': jrs.content,
         }
         return Response(jrs_data)
@@ -33,6 +44,7 @@ class JobRunSummariesViewSet(viewsets.ViewSet):
                 content = json.loads(jrs.content)
             else:
                 content = 'large content, truncated for list'
+            movie_names = self.get_movie_names_list(jrs)
             jrss[str(jrs.id)] = {
                   'id': jrs.id,
                   'job_id': jrs.job.id,
@@ -42,6 +54,7 @@ class JobRunSummariesViewSet(viewsets.ViewSet):
                   'content_length': content_length,
                   'summary_type': jrs.summary_type,
                   'score': jrs.score,
+                  'movie_names': movie_names,
                   'content': content,
             }
         return Response(jrss)
