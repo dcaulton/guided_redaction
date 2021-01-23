@@ -21,10 +21,12 @@ class AttributesViewSet(viewsets.ViewSet):
                     'value': attribute.value,
                     'created_on': attribute.created_on,
                     'updated_on': attribute.updated_on,
-                    'scanner_id': attribute.scanner_id,
-                    'job_id': attribute.job_id,
-                    'workbook_id': attribute.workbook_id,
-                    'pipeline_id': attribute.pipeline_id,
+                    'scanner_id': attribute.scanner.id if attribute.scanner else '',
+                    'job_id': attribute.job.id if attribute.job else '',
+                    'job_run_summary_id': attribute.job_run_summary.id if attribute.job_run_summary else '',
+                    'job_eval_objective_id': attribute.job_eval_objective.id if attribute.job_eval_objective else '',
+                    'workbook_id': attribute.workbook.id if attribute.workbook_id else '',
+                    'pipeline_id': attribute.pipeline.id if attribute.pipeline else '',
                 }
             )
 
@@ -38,10 +40,12 @@ class AttributesViewSet(viewsets.ViewSet):
             'value': attribute.value,
             'created_on': attribute.created_on,
             'updated_on': attribute.updated_on,
-            'scanner_id': attribute.scanner_id,
-            'job_id': attribute.job_id,
-            'workbook_id': attribute.workbook_id,
-            'pipeline_id': attribute.pipeline_id,
+            'scanner_id': attribute.scanner.id if attribute.scanner else '',
+            'job_id': attribute.job.id if attribute.job else '',
+            'job_run_summary_id': attribute.job_run_summary.id if attribute.job_run_summary else '',
+            'job_eval_objective_id': attribute.job_eval_objective.id if attribute.job_eval_objective else '',
+            'workbook_id': attribute.workbook.id if attribute.workbook_id else '',
+            'pipeline_id': attribute.pipeline.id if attribute.pipeline else '',
         }
         return Response({"attribute": a_data})
 
