@@ -57,8 +57,15 @@ class ScoreManualController(T1Controller):
         }
         build_stats = {
             'max_score': 100,
-            'min_score': 65,
+            'min_score': 64,
             'pass_or_fail': 'pass',
+            'movie_statistics': {
+                'http://localhost:8080/2cc72cbe-b909-484f-ac0e-48a48bd0d0f4/b147d17b-8d9d-4f48-9464-7c85ffefddec.mp4': {
+                    'max_score': 100,
+                    'min_score': 65,
+                    'pass_or_fail': 'pass',
+                }
+            }
         }
         content_object = {
             'movies': build_movies,
