@@ -44,6 +44,7 @@ class JobEvalPanel extends React.Component {
       job_eval_objectives: {},
       job_run_summaries: {},
       jrs_ids_to_compare: [],
+      jrs_ids_to_delete: [],
       jrs_movies: {},
     }
     this.setLocalStateVar=this.setLocalStateVar.bind(this)
@@ -348,6 +349,25 @@ console.log("mingo scale is "+scale.toString())
         jrs_movies: deepCopyJrsm,
       })
     }
+  }
+
+  addRemoveToJrsIdsToDelete(jrs_id) {
+    let build_ids = []
+    let item_found = false
+    for (let i=0; i < this.state.jrs_ids_to_delete.length; i++) {
+      const existing_id = this.state.jrs_ids_to_delete[i]
+      if (existing_id === jrs_id) {
+        item_found = true
+      } else {
+        build_ids.push(existing_id)
+      }
+    }
+    if (!item_found) {
+      build_ids.push(jrs_id)
+    }
+    this.setState({
+      jrs_ids_to_delete: build_ids,
+    })
   }
 
   addRemoveToJrsIdsToCompare(jrs_id) {
@@ -741,6 +761,27 @@ console.log("mingo scale is "+scale.toString())
       content: build_content,
     }
     return jeo
+  }
+
+  async deleteJrsRecords() {
+    for (let i=0; i < this.state.jrs_ids_to_delete.length; i++) {
+      const jrs_id = this.state.jrs_ids_to_delete[i]
+      this.deleteJobRunSummary(jrs_id, (()=>{this.getJobRunSummaries()}))
+    }
+  }
+
+  async deleteJobRunSummary(jrs_id, when_done=(()=>{})) {
+    let the_url = this.props.getUrl('job_run_summaries_url') + '/' + jrs_id
+    await this.props.fetch(the_url, {
+      method: 'DELETE',
+      headers: this.props.buildJsonHeaders(),
+    })
+    .then((response) => {
+      when_done(response)
+    })
+    .catch((error) => {
+      console.error(error);
+    })
   }
 
   async getJobRunSummaries(when_done=(()=>{})) {
@@ -1871,15 +1912,30 @@ console.log("mingo scale is "+scale.toString())
 
   buildCompareButton() {
     if (this.state.jrs_ids_to_compare.length < 2) {
-      return ''
+      return 'Compare'
     }
 
     return (
       <button
-        className='btn btn-primary'
+        className='btn btn-link p-0'
         onClick={()=>{this.startCompare()}}
       >
         Compare
+      </button>
+    )
+  }
+
+  buildJrsDeleteButton() {
+    if (this.state.jrs_ids_to_delete.length < 1) {
+      return 'Delete'
+    }
+
+    return (
+      <button
+        className='btn btn-link p-0'
+        onClick={()=>{this.deleteJrsRecords()}}
+      >
+        Delete
       </button>
     )
   }
@@ -1999,16 +2055,25 @@ console.log("mingo scale is "+scale.toString())
     if (!this.state.jeo_id) {
       return ''
     }
+    const compare_button = this.buildCompareButton()
+    const delete_button= this.buildJrsDeleteButton()
     return (
       <div className='col'>
         <div className='row font-weight-bold'>
           <div className='col-2 border-bottom'>
             Job Id
           </div>
+          <div className='col-2 border-bottom'>
+            Type
+          </div>
           <div className='col-3 border-bottom'>
             Created On
           </div>
           <div className='col-1 border-bottom'>
+            {compare_button}
+          </div>
+          <div className='col-1 border-bottom'>
+            {delete_button}
           </div>
         </div>
           
@@ -2018,9 +2083,13 @@ console.log("mingo scale is "+scale.toString())
           if (jrs.job_eval_objective_id !== this.state.jeo_id) {
             return ''
           }
-          let its_checked = false
+          let compare_checked = false
           if (this.state.jrs_ids_to_compare.includes(jrs_key)) {
-            its_checked = true
+            compare_checked = true
+          }
+          let delete_checked = false
+          if (this.state.jrs_ids_to_delete.includes(jrs_key)) {
+            delete_checked = true
           }
           return (
             <div 
@@ -2030,16 +2099,29 @@ console.log("mingo scale is "+scale.toString())
               <div className='col-2'>
                 {job_id_short}
               </div>
+              <div className='col-2'>
+                {jrs.type}
+              </div>
               <div className='col-3'>
                 {jrs.created_on}
               </div>
               <div className='col-1'>
                 <input
                   className='ml-2 mr-2 mt-1'
-                  checked={its_checked}
+                  checked={compare_checked}
                   type='checkbox'
                   onChange={
                     () => this.addRemoveToJrsIdsToCompare(jrs_key) 
+                  }
+                />
+              </div>
+              <div className='col-1'>
+                <input
+                  className='ml-2 mr-2 mt-1'
+                  checked={delete_checked}
+                  type='checkbox'
+                  onChange={
+                    () => this.addRemoveToJrsIdsToDelete(jrs_key) 
                   }
                 />
               </div>
@@ -2059,7 +2141,6 @@ console.log("mingo scale is "+scale.toString())
     const generate_exemplar_button = this.buildGenerateExemplarJrsButton()
     const manual_review_button = this.buildManualJrsButton()
     const jrs_list = this.buildJobRunSummaryList()
-    const compare_button = this.buildCompareButton()
     return (
       <div className='row border-top'>
         <div className='col'>
@@ -2088,9 +2169,6 @@ console.log("mingo scale is "+scale.toString())
           </div>
           <div className='row'>
             {jrs_list}
-          </div>
-          <div className='row'>
-            {compare_button}
           </div>
 
         </div>
