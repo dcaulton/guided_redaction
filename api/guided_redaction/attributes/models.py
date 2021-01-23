@@ -13,6 +13,8 @@ class Attribute(models.Model):
     value = models.CharField(max_length=255)
     scanner = models.ForeignKey('scanners.Scanner', on_delete=models.CASCADE, null=True)
     job = models.ForeignKey('jobs.Job', on_delete=models.CASCADE, null=True)
+    job_run_summary = models.ForeignKey('job_run_summaries.JobRunSummary', on_delete=models.CASCADE, null=True)
+    job_eval_objective = models.ForeignKey('job_eval_objectives.JobEvalObjective', on_delete=models.CASCADE, null=True)
     workbook = models.ForeignKey('workbooks.Workbook', on_delete=models.CASCADE, null=True)
     pipeline = models.ForeignKey('pipelines.Pipeline', on_delete=models.CASCADE, null=True)
 
@@ -21,6 +23,11 @@ class Attribute(models.Model):
             'id': str(self.id),
             'name': self.name,
             'value': self.value,
-            'job_id': self.job.id,
+            'job_id': str(self.job.id),
+            'scanner_id': str(self.scanner.id),
+            'job_run_summary_id': str(self.job_run_summary.id),
+            'job_eval_objective_id': str(self.job_eval_objective.id),
+            'workbook_id': str(self.workbook.id),
+            'pipeline_id': str(self.pipeline.id),
         }
         return disp_hash.__str__()
