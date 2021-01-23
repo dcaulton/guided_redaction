@@ -100,7 +100,7 @@ console.log("mingo scale is "+scale.toString())
       this.props.submitJob({
         job_data:job_data,
         after_submit: ((r) => {this.setMessage('build manual job run summary task has been submitted')}),
-        delete_job_after_loading: false,
+        delete_job_after_loading: true,
         attach_to_job: false,
         after_loaded: () => {this.getJobEvalObjectives()},
         when_failed: () => {this.setMessage('build manual job run summary failed')},
@@ -1053,6 +1053,17 @@ console.log("mingo scale is "+scale.toString())
           onClick={() => this.doSave()}
       >
         Save
+      </button>
+    )
+  }
+
+  buildGetJrsListButton() {
+    return (
+      <button
+          className='btn btn-primary'
+          onClick={() => this.getJobRunSummaries()}
+      >
+        Refresh Summaries
       </button>
     )
   }
@@ -2060,10 +2071,10 @@ console.log("mingo scale is "+scale.toString())
     return (
       <div className='col'>
         <div className='row font-weight-bold'>
-          <div className='col-2 border-bottom'>
+          <div className='col-1 border-bottom'>
             Job Id
           </div>
-          <div className='col-2 border-bottom'>
+          <div className='col-1 border-bottom'>
             Type
           </div>
           <div className='col-3 border-bottom'>
@@ -2096,11 +2107,11 @@ console.log("mingo scale is "+scale.toString())
               key={index}
               className='row'
             >
-              <div className='col-2'>
+              <div className='col-1'>
                 {job_id_short}
               </div>
-              <div className='col-2'>
-                {jrs.type}
+              <div className='col-1'>
+                {jrs.summary_type}
               </div>
               <div className='col-3'>
                 {jrs.created_on}
@@ -2141,11 +2152,17 @@ console.log("mingo scale is "+scale.toString())
     const generate_exemplar_button = this.buildGenerateExemplarJrsButton()
     const manual_review_button = this.buildManualJrsButton()
     const jrs_list = this.buildJobRunSummaryList()
+    const get_jrs_button = this.buildGetJrsListButton()
     return (
       <div className='row border-top'>
         <div className='col'>
           <div className='row h3'>
-            Job Run Summaries
+            <div className='col-8'>
+              Job Run Summaries
+            </div>
+            <div className='col-4'>
+              {get_jrs_button}
+            </div>
           </div>
 
           <div className='row mt-4 h4'>

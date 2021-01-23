@@ -31,7 +31,7 @@ class ScoreManualController(T1Controller):
             return {'errors': ['job eval objective not found for specified id']}
         jrs.job_eval_objective = JobEvalObjective.objects.get(pk=jeo_id)
 
-        jrs.type = 'manual'
+        jrs.summary_type = 'manual'
         jrs.content = '{"flippy": "floppy"}'
         jrs.save()
 

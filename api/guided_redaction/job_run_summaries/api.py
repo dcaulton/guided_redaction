@@ -19,7 +19,7 @@ class JobRunSummariesViewSet(viewsets.ViewSet):
             'job_eval_objective_id': jrs.job_eval_objective.id,
             'created_on': jrs.created_on,
             'updated_on': jrs.updated_on,
-            'type': jrs.type,
+            'summary_type': jrs.summary_type,
             'content': jrs.content,
         }
         return Response(jrs_data)
@@ -39,7 +39,7 @@ class JobRunSummariesViewSet(viewsets.ViewSet):
                   'created_on': jrs.created_on,
                   'updated_on': jrs.updated_on,
                   'content_length': content_length,
-                  'type': jrs.type,
+                  'summary_type': jrs.summary_type,
                   'content': content,
             }
         return Response(jrss)
