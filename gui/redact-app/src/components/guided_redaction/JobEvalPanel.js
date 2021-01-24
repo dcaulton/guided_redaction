@@ -2596,6 +2596,7 @@ console.log("mingo scale is "+scale.toString())
     let second_button = ''
     let third_button = ''
     let fourth_button = ''
+    let fifth_button = ''
     if (overlay_mode === 'none' || !overlay_mode) {
       first_button = (
         <div className='pt-2 mr-2 font-weight-bold'>
@@ -2604,7 +2605,8 @@ console.log("mingo scale is "+scale.toString())
       )
       second_button = this.buildSetOverlayModeButton(panel_id, frameset_hash, 'F Pos', 'f_pos')
       third_button = this.buildSetOverlayModeButton(panel_id, frameset_hash, 'F Neg', 'f_neg')
-      fourth_button = this.buildSetOverlayModeButton(panel_id, frameset_hash, 'Both', 'f_all')
+      fourth_button = this.buildSetOverlayModeButton(panel_id, frameset_hash, 'All False', 'f_all')
+      fifth_button = this.buildSetOverlayModeButton(panel_id, frameset_hash, 'T Pos', 't_pos')
     } else if (overlay_mode === 'f_pos') {
       first_button = this.buildSetOverlayModeButton(panel_id, frameset_hash, 'None', 'none')
       second_button = (
@@ -2613,7 +2615,8 @@ console.log("mingo scale is "+scale.toString())
         </div>
       )
       third_button = this.buildSetOverlayModeButton(panel_id, frameset_hash, 'F Neg', 'f_neg')
-      fourth_button = this.buildSetOverlayModeButton(panel_id, frameset_hash, 'Both', 'f_all')
+      fourth_button = this.buildSetOverlayModeButton(panel_id, frameset_hash, 'All False', 'f_all')
+      fifth_button = this.buildSetOverlayModeButton(panel_id, frameset_hash, 'T Pos', 't_pos')
     } else if (overlay_mode === 'f_neg') {
       first_button = this.buildSetOverlayModeButton(panel_id, frameset_hash, 'None', 'none')
       second_button = this.buildSetOverlayModeButton(panel_id, frameset_hash, 'F Pos', 'f_pos')
@@ -2622,14 +2625,26 @@ console.log("mingo scale is "+scale.toString())
           F Neg
         </div>
       )
-      fourth_button = this.buildSetOverlayModeButton(panel_id, frameset_hash, 'Both', 'f_all')
+      fourth_button = this.buildSetOverlayModeButton(panel_id, frameset_hash, 'All False', 'f_all')
+      fifth_button = this.buildSetOverlayModeButton(panel_id, frameset_hash, 'T Pos', 't_pos')
     } else if (overlay_mode === 'f_all') {
       first_button = this.buildSetOverlayModeButton(panel_id, frameset_hash, 'None', 'none')
       second_button = this.buildSetOverlayModeButton(panel_id, frameset_hash, 'F Pos', 'f_pos')
       third_button = this.buildSetOverlayModeButton(panel_id, frameset_hash, 'F Neg', 'f_neg')
       fourth_button = (
         <div className='pt-2 mr-2 font-weight-bold'>
-          Both
+          All False
+        </div>
+      )
+      fifth_button = this.buildSetOverlayModeButton(panel_id, frameset_hash, 'T Pos', 't_pos')
+    } else if (overlay_mode === 't_pos') {
+      first_button = this.buildSetOverlayModeButton(panel_id, frameset_hash, 'None', 'none')
+      second_button = this.buildSetOverlayModeButton(panel_id, frameset_hash, 'F Pos', 'f_pos')
+      third_button = this.buildSetOverlayModeButton(panel_id, frameset_hash, 'F Neg', 'f_neg')
+      fourth_button = this.buildSetOverlayModeButton(panel_id, frameset_hash, 'All False', 'f_all')
+      fifth_button = (
+        <div className='pt-2 mr-2 font-weight-bold'>
+          T Pos
         </div>
       )
     }
@@ -2648,8 +2663,11 @@ console.log("mingo scale is "+scale.toString())
           <div className='d-inline m-1 p-0 border-right'>
             {third_button}
           </div>
-          <div className='d-inline m-1 p-0'>
+          <div className='d-inline m-1 p-0 border-right'>
             {fourth_button}
+          </div>
+          <div className='d-inline m-1 p-0'>
+            {fifth_button}
           </div>
         </div>
       </div>
