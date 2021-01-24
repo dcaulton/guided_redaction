@@ -38,7 +38,7 @@ class JobRunSummariesViewSet(viewsets.ViewSet):
 
     def list(self, request):
         jrss = {}
-        for jrs in JobRunSummary.objects.all():
+        for jrs in JobRunSummary.objects.order_by('-created_on').all():
             content_length = len(jrs.content)
             if content_length < 1000000:
                 content = json.loads(jrs.content)

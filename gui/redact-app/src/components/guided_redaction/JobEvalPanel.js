@@ -16,6 +16,7 @@ class JobEvalPanel extends React.Component {
       mode: '',
       message: '',
       image_mode: '',
+      compare_single_mode_data: {},
       image_scale: 1,
       annotate_view_mode: 'tile',
       active_movie_url: '',
@@ -1115,16 +1116,6 @@ console.log("mingo scale is "+scale.toString())
     }
   }
 
-  buildComparePanel() {
-    return (
-      <div className='col'>
-        <div className='row'>
-          compare stuff
-        </div>
-      </div>
-    )
-  }
-
   buildExemplarMoviesSection() {
     if (!this.state.jeo_id) {
       return ''
@@ -1922,7 +1913,7 @@ console.log("mingo scale is "+scale.toString())
   }
 
   buildCompareButton() {
-    if (this.state.jrs_ids_to_compare.length < 2) {
+    if (this.state.jrs_ids_to_compare.length < 1) {
       return 'Compare'
     }
 
@@ -1952,8 +1943,20 @@ console.log("mingo scale is "+scale.toString())
   }
 
   startCompare() {
+    let compare_mode_data = {}
+    for (let i=0; i < this.state.jrs_ids_to_compare.length; i++) {
+      const jrs_id = this.state.jrs_ids_to_compare[i]
+      compare_mode_data[i] = {
+        state: 'summary',
+        jrs_id: jrs_id,
+        movie_url: '',
+        frameset_hash: '',
+        overlay_mode: 'none',
+      }
+    }
     this.setState({
         mode: 'compare',
+        compare_single_mode_data: compare_mode_data,
     })
   }
 
@@ -2310,11 +2313,334 @@ console.log("mingo scale is "+scale.toString())
 
       </div>
     )
+  }
+
+  buildCompareSingleTitle(panel_id) {
+    const mode_data = this.state.compare_single_mode_data[panel_id]
+    const jrs = this.state.job_run_summaries[mode_data['jrs_id']]
+    const job_id_short = jrs.job_id.substring(0, 5) + '...'
+    return (
+      <div className='row font-weight-bold'>
+        Summary for Job {job_id_short}
+      </div>
+    )
+  }
+
+  buildCompareSingleSummary(panel_id) {
+    const mode_data = this.state.compare_single_mode_data[panel_id]
+    if (mode_data['state'] !== 'summary') {
+      return ''
+    }
+    const jrs = this.state.job_run_summaries[mode_data['jrs_id']]
+    return (
+      <div className='col'>
+        <div className='row'>
+          score: {jrs.score}
+        </div>
+        <div className='row'>
+          created_on: {jrs.created_on}
+        </div>
+      </div>
+    )
+  }
+
+  setCompareSingleAttribute(panel_id, attribute_name, new_value) {
+    let deepCopyCsmd = JSON.parse(JSON.stringify(this.state.compare_single_mode_data))
+    deepCopyCsmd[panel_id][attribute_name] = new_value
+    this.setState({
+      compare_single_mode_data: deepCopyCsmd,
+    })
+  }
+
+  setCompareMultipleAttributes(panel_id, input_hash) {
+    let deepCopyCsmd = JSON.parse(JSON.stringify(this.state.compare_single_mode_data))
+    for (let i=0; i < Object.keys(input_hash).length; i++) {
+      const key_name = Object.keys(input_hash)[i]
+      deepCopyCsmd[panel_id][key_name] = input_hash[key_name]
+    }
+    this.setState({
+      compare_single_mode_data: deepCopyCsmd,
+    })
+  }
+
+  buildCompareSingleNav(panel_id) {
+    let first_button = ''
+    let second_button = ''
+    let third_button = ''
+    const mode_data = this.state.compare_single_mode_data[panel_id]
+    if (mode_data['state'] === 'summary') {
+      first_button = (
+        <button
+          className='btn btn-link'
+          onClick={()=>{this.setCompareSingleAttribute(panel_id, 'state', 'movie_list')}}
+        >
+          Movies
+        </button>
+      )
+    } else if (mode_data['state'] === 'movie_list') {
+      first_button = (
+        <button
+          className='btn btn-link'
+          onClick={()=>{this.setCompareSingleAttribute(panel_id, 'state', 'summary')}}
+        >
+          Summary
+        </button>
+      )
+    }
 
     return (
       <div className='col'>
         <div className='row'>
-          review stuff
+          <div className='col-4'>
+            {first_button}
+          </div>
+          <div className='col-4'>
+            {second_button}
+          </div>
+          <div className='col-4'>
+            {third_button}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  getMovieUrlForMovieName(jrs, movie_name) {
+    for (let i=0; i < Object.keys(jrs.content['movies']).length; i++) {
+      const movie_url = Object.keys(jrs.content['movies'])[i]
+      if (movie_url.includes(movie_name)) {
+        return movie_url
+      }
+    }
+  }
+
+  setCompareSingleFramesetList(panel_id, movie_url) {
+    this.setCompareMultipleAttributes(
+      panel_id, 
+      {
+        'state': 'frameset_list',
+        'movie_url': movie_url,
+      }
+    )
+  }
+
+  buildCompareSingleMovie(panel_id) {
+    const mode_data = this.state.compare_single_mode_data[panel_id]
+    if (mode_data['state'] !== 'movie_list') {
+      return ''
+    }
+    const jrs = this.state.job_run_summaries[mode_data['jrs_id']]
+    return (
+      <div className='col'>
+        <div className='row font-weight-bold'>
+          Movies:
+        </div>
+        {jrs.movie_names.map((movie_name, index) => {
+          const movie_url = this.getMovieUrlForMovieName(jrs, movie_name)
+          return (
+            <div key={index} className='row'>
+              <button
+                className='btn btn-link'
+                onClick={()=>{this.setCompareSingleFramesetList(panel_id, movie_url)}}
+              >
+                {movie_name}
+              </button>
+            </div>
+          )
+        })}
+      </div>
+    )
+  }
+
+  buildCompareSingleFramesetList(panel_id) {
+    const mode_data = this.state.compare_single_mode_data[panel_id]
+    if (mode_data['state'] !== 'frameset_list') {
+      return ''
+    }
+    const img_style = {
+      width: '100%',
+    }
+    const jrs = this.state.job_run_summaries[mode_data['jrs_id']]
+    const movie_url = mode_data['movie_url']
+    const movie_name = getFileNameFromUrl(movie_url)
+    const movie_data = jrs['content']['movies'][movie_url]
+    const movie_stats = jrs['content']['statistics']['movie_statistics'][movie_url]
+    const frameset_hashes = Object.keys(movie_data['framesets'])
+    return (
+      <div className='col'>
+        <div className='row font-weight-bold'>
+          Movie {movie_name}
+        </div>
+        <div className='row'>
+          <div className='d-inline'>
+            Max Score:
+          </div>
+          <div className='d-inline ml-2'>
+            {movie_stats['max_score']}
+          </div>
+        </div>
+
+        <div className='row'>
+          <div className='d-inline'>
+            Min Score:
+          </div>
+          <div className='d-inline ml-2'>
+            {movie_stats['min_score']}
+          </div>
+        </div>
+
+        <div className='row'>
+          <div className='d-inline'>
+            Pass / Fail
+          </div>
+          <div className='d-inline ml-2'>
+            {movie_stats['pass_or_fail']}
+          </div>
+        </div>
+
+        <div className='row ml-4 h5 border-bottom'>
+          Frameset Data: 
+        </div>
+
+        {frameset_hashes.map((frameset_hash, index) => {
+          const counts = movie_data['framesets'][frameset_hash]['counts']
+          const len_string = (index+1).toString() + '/' + frameset_hashes.length.toString()
+          const name_string = frameset_hash + ' - ' + len_string
+//TODO: get movie from the job data, not this.props.movies
+          const img_url = this.props.movies[movie_url]['framesets'][frameset_hash]['images'][0]
+          return (
+            <div key={index} className='col-4'>
+              <div className='row font-weight-bold'>
+                {name_string}
+              </div>
+
+              <div className='row'>
+                <div className='d-inline'>
+                  Score:
+                </div>
+                <div className='d-inline ml-2'>
+                  {counts['t_pos']}
+                </div>
+              </div>
+
+              <div className='row'>
+                <div className='d-inline'>
+                  True Positives:
+                </div>
+                <div className='d-inline ml-2'>
+                  {counts['t_pos']}
+                </div>
+              </div>
+
+              <div className='row'>
+                <div className='d-inline'>
+                  True Negatives:
+                </div>
+                <div className='d-inline ml-2'>
+                  {counts['t_neg']}
+                </div>
+              </div>
+
+              <div className='row'>
+                <div className='d-inline'>
+                  False Positives:
+                </div>
+                <div className='d-inline ml-2'>
+                  {counts['f_pos']}
+                </div>
+              </div>
+
+              <div className='row'>
+                <div className='d-inline'>
+                  False Negatives:
+                </div>
+                <div className='d-inline ml-2'>
+                  {counts['f_neg']}
+                </div>
+              </div>
+
+              <div className='row'>
+                <img 
+                  style={img_style}
+                  src={img_url}
+                  alt={img_url}
+                />
+              </div>
+
+            </div>
+          )
+        })}
+      </div>
+    )
+  }
+
+  buildComparePanelSingle(job_run_summary_id, panel_id) {
+    const jrs = this.state.job_run_summaries[job_run_summary_id]
+    const title_section = this.buildCompareSingleTitle(panel_id)
+    const summary_section = this.buildCompareSingleSummary(panel_id)
+    const movie_section = this.buildCompareSingleMovie(panel_id)
+    const frameset_section = this.buildCompareSingleFramesetList(panel_id)
+    const nav_section = this.buildCompareSingleNav(panel_id)
+    return (
+      <div
+        className='row'
+      >
+        <div className='col'>
+          <div className='row'>
+            {title_section}
+          </div>
+          <div className='row'>
+            {nav_section}
+          </div>
+          <div className='row'>
+            {summary_section}
+          </div>
+          <div className='row'>
+            {movie_section}
+          </div>
+          <div className='row'>
+            {frameset_section}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  buildComparePanel() {
+    let body = ''
+    let outer_col_class = 'col'
+    if (this.state.jrs_ids_to_compare.length > 4) {
+      return 'too many columns selected'
+    } else if (this.state.jrs_ids_to_compare.length === 4) {
+      outer_col_class = 'col-3'
+    } else if (this.state.jrs_ids_to_compare.length === 3) {
+      outer_col_class = 'col-4'
+    } else if (this.state.jrs_ids_to_compare.length === 2) {
+      outer_col_class = 'col-6'
+    } else if (this.state.jrs_ids_to_compare.length === 1) {
+      outer_col_class = 'col-12'
+    }
+
+    return (
+      <div className='col'>
+        <div className='row h4'>
+          compare stuff header
+        </div>
+        <div className='row'>
+          {this.state.jrs_ids_to_compare.map((jrs_id, index) => {
+            if (index < this.state.jrs_ids_to_compare.length - 1) {
+              outer_col_class += ' border-right'
+            }
+            const single_col_contents = this.buildComparePanelSingle(jrs_id, index)
+            return (
+              <div 
+                key={index}
+                className={outer_col_class}
+              >
+                {single_col_contents}
+              </div>
+            )
+          })}
         </div>
       </div>
     )
