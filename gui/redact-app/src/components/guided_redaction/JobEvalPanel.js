@@ -2464,8 +2464,9 @@ console.log("mingo scale is "+scale.toString())
     const movie_url = mode_data['movie_url']
     const movie_name = getFileNameFromUrl(movie_url)
     const movie_data = jrs['content']['movies'][movie_url]
+    const source_movie = jrs['content']['source_movies'][movie_url]
     const movie_stats = jrs['content']['statistics']['movie_statistics'][movie_url]
-    const frameset_hashes = Object.keys(movie_data['framesets'])
+    const frameset_hashes = Object.keys(source_movie['framesets'])
     return (
       <div className='col'>
         <div className='row font-weight-bold'>
@@ -2503,11 +2504,20 @@ console.log("mingo scale is "+scale.toString())
         </div>
 
         {frameset_hashes.map((frameset_hash, index) => {
-          const counts = movie_data['framesets'][frameset_hash]['counts']
+          let counts = {
+            t_pos: 0,
+            t_neg: 0,
+            f_pos: 0,
+            f_neg: 0,
+          }
+console.log('bolly', movie_data['framesets'], frameset_hash)
+          if (Object.keys(movie_data['framesets']).includes(frameset_hash)) {
+            counts = movie_data['framesets'][frameset_hash]['counts']
+          }
           const len_string = (index+1).toString() + '/' + frameset_hashes.length.toString()
           const name_string = frameset_hash + ' - ' + len_string
 //TODO: get movie from the job data, not this.props.movies
-          const img_url = this.props.movies[movie_url]['framesets'][frameset_hash]['images'][0]
+          const img_url = source_movie['framesets'][frameset_hash]['images'][0]
           return (
             <div key={index} className='col-4'>
               <div className='row font-weight-bold'>

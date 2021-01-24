@@ -59,7 +59,7 @@ class ScoreManualController(T1Controller):
                     'looks like it is mising the end of the last name field for hyphenated names'
                 ],
                 'framesets':  {
-                    '13857090227313213446': {
+                    '13857090227856375814': {
                         'counts': {
                             't_pos': 3986,
                             't_neg': 29700,
