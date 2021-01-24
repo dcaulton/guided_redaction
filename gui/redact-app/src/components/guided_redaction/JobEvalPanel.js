@@ -2467,8 +2467,18 @@ console.log("mingo scale is "+scale.toString())
     if (mode_data['state'] !== 'frameset_list') {
       return ''
     }
+    const img_row_style = {
+      position: 'relative',
+    }
     const img_style = {
       width: '100%',
+    }
+    const overlay_img_style = {
+      width: '100%',
+      opacity: .4,
+      position: 'absolute',
+      top: 0, 
+      left: 0,
     }
     const jrs = this.state.job_run_summaries[mode_data['jrs_id']]
     const movie_url = mode_data['movie_url']
@@ -2517,15 +2527,19 @@ console.log("mingo scale is "+scale.toString())
           let counts = {
             not_used: true,
           }
+          let overlay_image_url = ''
           if (Object.keys(movie_data['framesets']).includes(frameset_hash)) {
             counts = movie_data['framesets'][frameset_hash]['counts']
+            const fs_mode = mode_data['frameset_overlay_modes'][frameset_hash]
+            overlay_image_url = movie_data['framesets'][frameset_hash]['maps'][fs_mode]
           }
           const len_string = (index+1).toString() + '/' + frameset_hashes.length.toString()
           const name_string = frameset_hash + ' - ' + len_string
           const img_url = source_movie['framesets'][frameset_hash]['images'][0]
+
           const frameset_stats_rows = this.buildCompareSingleFramesetStatsRows(counts)
           const frameset_overlay_mode = mode_data['frameset_overlay_modes'][frameset_hash]
-          const frameset_view_buttons = this.buildCompareSingleFramesetStatsViewToggle(panel_id, frameset_hash, frameset_overlay_mode)
+          const frameset_view_buttons = this.buildCompareSingleFramesetStatsViewToggle(panel_id, counts, frameset_hash, frameset_overlay_mode)
           return (
             <div key={index} className='col-4'>
               <div className='row font-weight-bold'>
@@ -2540,11 +2554,19 @@ console.log("mingo scale is "+scale.toString())
                 {frameset_view_buttons}
               </div>
 
-              <div className='row'>
+              <div 
+                style={img_row_style} 
+                className='row'
+              >
                 <img 
                   style={img_style}
                   src={img_url}
                   alt={img_url}
+                />
+                <img 
+                  style={overlay_img_style}
+                  src={overlay_image_url}
+                  alt={overlay_image_url}
                 />
               </div>
 
@@ -2566,7 +2588,10 @@ console.log("mingo scale is "+scale.toString())
     )
   }
 
-  buildCompareSingleFramesetStatsViewToggle(panel_id, frameset_hash, overlay_mode) {
+  buildCompareSingleFramesetStatsViewToggle(panel_id, counts, frameset_hash, overlay_mode) {
+    if (Object.keys(counts).includes('not_used')) {
+      return ''
+    }
     let first_button = ''
     let second_button = ''
     let third_button = ''
@@ -2579,7 +2604,7 @@ console.log("mingo scale is "+scale.toString())
       )
       second_button = this.buildSetOverlayModeButton(panel_id, frameset_hash, 'F Pos', 'f_pos')
       third_button = this.buildSetOverlayModeButton(panel_id, frameset_hash, 'F Neg', 'f_neg')
-      fourth_button = this.buildSetOverlayModeButton(panel_id, frameset_hash, 'Both', 'both')
+      fourth_button = this.buildSetOverlayModeButton(panel_id, frameset_hash, 'Both', 'f_all')
     } else if (overlay_mode === 'f_pos') {
       first_button = this.buildSetOverlayModeButton(panel_id, frameset_hash, 'None', 'none')
       second_button = (
@@ -2588,7 +2613,7 @@ console.log("mingo scale is "+scale.toString())
         </div>
       )
       third_button = this.buildSetOverlayModeButton(panel_id, frameset_hash, 'F Neg', 'f_neg')
-      fourth_button = this.buildSetOverlayModeButton(panel_id, frameset_hash, 'Both', 'both')
+      fourth_button = this.buildSetOverlayModeButton(panel_id, frameset_hash, 'Both', 'f_all')
     } else if (overlay_mode === 'f_neg') {
       first_button = this.buildSetOverlayModeButton(panel_id, frameset_hash, 'None', 'none')
       second_button = this.buildSetOverlayModeButton(panel_id, frameset_hash, 'F Pos', 'f_pos')
@@ -2597,8 +2622,8 @@ console.log("mingo scale is "+scale.toString())
           F Neg
         </div>
       )
-      fourth_button = this.buildSetOverlayModeButton(panel_id, frameset_hash, 'Both', 'both')
-    } else if (overlay_mode === 'both') {
+      fourth_button = this.buildSetOverlayModeButton(panel_id, frameset_hash, 'Both', 'f_all')
+    } else if (overlay_mode === 'f_all') {
       first_button = this.buildSetOverlayModeButton(panel_id, frameset_hash, 'None', 'none')
       second_button = this.buildSetOverlayModeButton(panel_id, frameset_hash, 'F Pos', 'f_pos')
       third_button = this.buildSetOverlayModeButton(panel_id, frameset_hash, 'F Neg', 'f_neg')
