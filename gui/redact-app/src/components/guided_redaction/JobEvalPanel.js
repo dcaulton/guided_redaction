@@ -2514,6 +2514,7 @@ console.log("mingo scale is "+scale.toString())
           const name_string = frameset_hash + ' - ' + len_string
           const img_url = source_movie['framesets'][frameset_hash]['images'][0]
           const frameset_stats_rows = this.buildCompareSingleFramesetStatsRows(counts)
+          const frameset_view_buttons = this.buildCompareSingleFramesetStatsViewToggle(panel_id, mode_data['overlay_mode'])
           return (
             <div key={index} className='col-4'>
               <div className='row font-weight-bold'>
@@ -2522,6 +2523,10 @@ console.log("mingo scale is "+scale.toString())
 
               <div className='row'>
                 {frameset_stats_rows}
+              </div>
+
+              <div className='row'>
+                {frameset_view_buttons}
               </div>
 
               <div className='row'>
@@ -2535,6 +2540,82 @@ console.log("mingo scale is "+scale.toString())
             </div>
           )
         })}
+      </div>
+    )
+  }
+
+  buildSetOverlayModeButton(panel_id, label, new_overlay_mode) {
+    return (
+      <button
+        className='btn btn-link'
+        onClick={()=>{this.setCompareSingleAttribute(panel_id, 'overlay_mode', new_overlay_mode)}}
+      >
+        {label}
+      </button>
+    )
+  }
+
+  buildCompareSingleFramesetStatsViewToggle(panel_id, overlay_mode) {
+    let first_button = ''
+    let second_button = ''
+    let third_button = ''
+    let fourth_button = ''
+    if (overlay_mode === 'none') {
+      first_button = (
+        <div className='pt-2 mr-2 font-weight-bold'>
+          None
+        </div>
+      )
+      second_button = this.buildSetOverlayModeButton(panel_id, 'F Pos', 'f_pos')
+      third_button = this.buildSetOverlayModeButton(panel_id, 'F Neg', 'f_neg')
+      fourth_button = this.buildSetOverlayModeButton(panel_id, 'Both', 'both')
+    } else if (overlay_mode === 'f_pos') {
+      first_button = this.buildSetOverlayModeButton(panel_id, 'None', 'none')
+      second_button = (
+        <div className='pt-2 mr-2 font-weight-bold'>
+          F Pos
+        </div>
+      )
+      third_button = this.buildSetOverlayModeButton(panel_id, 'F Neg', 'f_neg')
+      fourth_button = this.buildSetOverlayModeButton(panel_id, 'Both', 'both')
+    } else if (overlay_mode === 'f_neg') {
+      first_button = this.buildSetOverlayModeButton(panel_id, 'None', 'none')
+      second_button = this.buildSetOverlayModeButton(panel_id, 'F Pos', 'f_pos')
+      third_button = (
+        <div className='pt-2 mr-2 font-weight-bold'>
+          F Neg
+        </div>
+      )
+      fourth_button = this.buildSetOverlayModeButton(panel_id, 'Both', 'both')
+    } else if (overlay_mode === 'both') {
+      first_button = this.buildSetOverlayModeButton(panel_id, 'None', 'none')
+      second_button = this.buildSetOverlayModeButton(panel_id, 'F Pos', 'f_pos')
+      third_button = this.buildSetOverlayModeButton(panel_id, 'F Neg', 'f_neg')
+      fourth_button = (
+        <div className='pt-2 mr-2 font-weight-bold'>
+          Both
+        </div>
+      )
+    }
+    return (
+      <div className='col'>
+        <div className='row'>
+          <div className='d-inline'>
+            Show:
+          </div>
+          <div className='d-inline m-1 p-0 border-right'>
+            {first_button}
+          </div>
+          <div className='d-inline m-1 p-0 border-right'>
+            {second_button}
+          </div>
+          <div className='d-inline m-1 p-0 border-right'>
+            {third_button}
+          </div>
+          <div className='d-inline m-1 p-0'>
+            {fourth_button}
+          </div>
+        </div>
       </div>
     )
   }
