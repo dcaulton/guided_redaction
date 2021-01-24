@@ -31,6 +31,28 @@ class ScoreManualController(T1Controller):
             return {'errors': ['job eval objective not found for specified id']}
         jrs.job_eval_objective = JobEvalObjective.objects.get(pk=jeo_id)
 
+        build_source_movies = {
+          "http://localhost:8080/2cc72cbe-b909-484f-ac0e-48a48bd0d0f4/b147d17b-8d9d-4f48-9464-7c85ffefddec.mp4": {
+            "frames": [
+              "http://localhost:8080/2cc72cbe-b909-484f-ac0e-48a48bd0d0f4/frame_00000.png",
+              "http://localhost:8080/2cc72cbe-b909-484f-ac0e-48a48bd0d0f4/frame_00075.png",
+            ],
+            "framesets": {
+              "0": {
+                "images": [
+                  "http://localhost:8080/2cc72cbe-b909-484f-ac0e-48a48bd0d0f4/frame_00000.png",
+                ],
+              },
+              "13857090227856375814": {
+                "images": [
+                  "http://localhost:8080/2cc72cbe-b909-484f-ac0e-48a48bd0d0f4/frame_00075.png",
+                  "http://localhost:8080/2cc72cbe-b909-484f-ac0e-48a48bd0d0f4/frame_00076.png"
+                ],
+              },
+            },
+          },
+        }
+
         build_movies = {
             'http://localhost:8080/2cc72cbe-b909-484f-ac0e-48a48bd0d0f4/b147d17b-8d9d-4f48-9464-7c85ffefddec.mp4': {
                 'notes':  [
@@ -69,6 +91,7 @@ class ScoreManualController(T1Controller):
         }
         content_object = {
             'movies': build_movies,
+            'source_movies': build_source_movies,
             'statistics': build_stats,
         }
         jrs.summary_type = 'manual'
