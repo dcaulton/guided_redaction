@@ -2505,19 +2505,15 @@ console.log("mingo scale is "+scale.toString())
 
         {frameset_hashes.map((frameset_hash, index) => {
           let counts = {
-            t_pos: 0,
-            t_neg: 0,
-            f_pos: 0,
-            f_neg: 0,
+            not_used: true,
           }
-console.log('bolly', movie_data['framesets'], frameset_hash)
           if (Object.keys(movie_data['framesets']).includes(frameset_hash)) {
             counts = movie_data['framesets'][frameset_hash]['counts']
           }
           const len_string = (index+1).toString() + '/' + frameset_hashes.length.toString()
           const name_string = frameset_hash + ' - ' + len_string
-//TODO: get movie from the job data, not this.props.movies
           const img_url = source_movie['framesets'][frameset_hash]['images'][0]
+          const frameset_stats_rows = this.buildCompareSingleFramesetStatsRows(counts)
           return (
             <div key={index} className='col-4'>
               <div className='row font-weight-bold'>
@@ -2525,48 +2521,7 @@ console.log('bolly', movie_data['framesets'], frameset_hash)
               </div>
 
               <div className='row'>
-                <div className='d-inline'>
-                  Score:
-                </div>
-                <div className='d-inline ml-2'>
-                  {counts['t_pos']}
-                </div>
-              </div>
-
-              <div className='row'>
-                <div className='d-inline'>
-                  True Positives:
-                </div>
-                <div className='d-inline ml-2'>
-                  {counts['t_pos']}
-                </div>
-              </div>
-
-              <div className='row'>
-                <div className='d-inline'>
-                  True Negatives:
-                </div>
-                <div className='d-inline ml-2'>
-                  {counts['t_neg']}
-                </div>
-              </div>
-
-              <div className='row'>
-                <div className='d-inline'>
-                  False Positives:
-                </div>
-                <div className='d-inline ml-2'>
-                  {counts['f_pos']}
-                </div>
-              </div>
-
-              <div className='row'>
-                <div className='d-inline'>
-                  False Negatives:
-                </div>
-                <div className='d-inline ml-2'>
-                  {counts['f_neg']}
-                </div>
+                {frameset_stats_rows}
               </div>
 
               <div className='row'>
@@ -2580,6 +2535,64 @@ console.log('bolly', movie_data['framesets'], frameset_hash)
             </div>
           )
         })}
+      </div>
+    )
+  }
+
+  buildCompareSingleFramesetStatsRows(counts) {
+    if (Object.keys(counts).includes('not_used')) {
+      return (
+        <div className='font-italic'>
+          No job output
+        </div>
+      )
+    }
+    return (
+      <div className='col'>
+        <div className='row'>
+          <div className='d-inline'>
+            Score:
+          </div>
+          <div className='d-inline ml-2'>
+            {counts['t_pos']}
+          </div>
+        </div>
+
+        <div className='row'>
+          <div className='d-inline'>
+            True Positives:
+          </div>
+          <div className='d-inline ml-2'>
+            {counts['t_pos']}
+          </div>
+        </div>
+
+        <div className='row'>
+          <div className='d-inline'>
+            True Negatives:
+          </div>
+          <div className='d-inline ml-2'>
+            {counts['t_neg']}
+          </div>
+        </div>
+
+        <div className='row'>
+          <div className='d-inline'>
+            False Positives:
+          </div>
+          <div className='d-inline ml-2'>
+            {counts['f_pos']}
+          </div>
+        </div>
+
+        <div className='row'>
+          <div className='d-inline'>
+            False Negatives:
+          </div>
+          <div className='d-inline ml-2'>
+            {counts['f_neg']}
+          </div>
+        </div>
       </div>
     )
   }
