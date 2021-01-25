@@ -2319,9 +2319,15 @@ console.log("mingo scale is "+scale.toString())
     const mode_data = this.state.compare_single_mode_data[panel_id]
     const jrs = this.state.job_run_summaries[mode_data['jrs_id']]
     const job_id_short = jrs.job_id.substring(0, 5) + '...'
+    let summary_line = 'Summary for Job ' + job_id_short
+    if (mode_data['state'] === 'movie_list') {
+      summary_line = 'Listing Movies for Job ' + job_id_short
+    } else if (mode_data['state'] === 'frameset_list') {
+      summary_line = 'Listing Framesets for Job ' + job_id_short
+    }
     return (
-      <div className='row font-weight-bold'>
-        Summary for Job {job_id_short}
+      <div className='row ml-2 font-weight-bold'>
+        {summary_line}
       </div>
     )
   }
@@ -2488,7 +2494,7 @@ console.log("mingo scale is "+scale.toString())
     const movie_stats = jrs['content']['statistics']['movie_statistics'][movie_url]
     const frameset_hashes = Object.keys(source_movie['framesets'])
     return (
-      <div className='col'>
+      <div className='col border-bottom pb-2 mb-2'>
         <div className='row font-weight-bold'>
           Movie {movie_name}
         </div>
@@ -2541,7 +2547,7 @@ console.log("mingo scale is "+scale.toString())
           const frameset_overlay_mode = mode_data['frameset_overlay_modes'][frameset_hash]
           const frameset_view_buttons = this.buildCompareSingleFramesetStatsViewToggle(panel_id, counts, frameset_hash, frameset_overlay_mode)
           return (
-            <div key={index} className='col-4'>
+            <div key={index} className='col'>
               <div className='row font-weight-bold'>
                 {name_string}
               </div>
@@ -2781,9 +2787,6 @@ console.log("mingo scale is "+scale.toString())
 
     return (
       <div className='col'>
-        <div className='row h4'>
-          compare stuff header
-        </div>
         <div className='row'>
           {this.state.jrs_ids_to_compare.map((jrs_id, index) => {
             if (index < this.state.jrs_ids_to_compare.length - 1) {
