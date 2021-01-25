@@ -178,8 +178,8 @@ class ScoreManualController(T1Controller):
     def build_movies_and_stats(self, job, job_eval_objective, jrs_movies):
         build_movies = {}
         build_stats = {
-            'max_score': 0,
-            'min_score': 0,
+            'max_score': 100,
+            'min_score': 64,
             'pass_or_fail': 'pass',
             'movie_statistics': {}
         }
@@ -219,6 +219,10 @@ class ScoreManualController(T1Controller):
                         'maps': fs_maps,
                     }
 
+                movie_stats = self.calc_movie_stats(build_movies[movie_url], job_eval_objective)
+                build_stats['movie_statistics'][movie_url] = movie_stats
+
+
                         
 #        build_movies = {
 #            'http://localhost:8080/2cc72cbe-b909-484f-ac0e-48a48bd0d0f4/b147d17b-8d9d-4f48-9464-7c85ffefddec.mp4': {
@@ -245,19 +249,27 @@ class ScoreManualController(T1Controller):
 #                },
 #            },
 #        }
-        build_stats = {
-            'max_score': 100,
-            'min_score': 64,
-            'pass_or_fail': 'pass',
-            'movie_statistics': {
-                'http://localhost:8080/2cc72cbe-b909-484f-ac0e-48a48bd0d0f4/b147d17b-8d9d-4f48-9464-7c85ffefddec.mp4': {
-                    'max_score': 100,
-                    'min_score': 65,
-                    'pass_or_fail': 'pass',
-                }
-            }
-        }
+#        build_stats = {
+#            'max_score': 100,
+#            'min_score': 64,
+#            'pass_or_fail': 'pass',
+#            'movie_statistics': {
+#                'http://localhost:8080/2cc72cbe-b909-484f-ac0e-48a48bd0d0f4/b147d17b-8d9d-4f48-9464-7c85ffefddec.mp4': {
+#                    'max_score': 100,
+#                    'min_score': 65,
+#                    'pass_or_fail': 'pass',
+#                }
+#            }
+#        }
+        print('job run summary build completed')
         return build_movies, build_stats
+
+    def calc_movie_stats(self, movie_count_and_map_data, job_eval_objective):
+        return {
+            'max_score': 100,
+            'min_score': 65,
+            'pass_or_fail': 'pass',
+        }
 
     def build_source_movies(self, job):
         build_source_movies = {}

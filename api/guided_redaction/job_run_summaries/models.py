@@ -1,4 +1,6 @@
+import hashlib
 import uuid
+from django.conf import settings
 from django.db import models
 from guided_redaction.utils.classes.FileWriter import FileWriter
 
@@ -35,6 +37,7 @@ class JobRunSummary(models.Model):
         return disp_hash
 
     def save(self, *args, **kwargs):
+        old_files_to_clear_out_exist = False
         if self.content and len(self.content) > self.MAX_DB_PAYLOAD_SIZE:
             checksum = hashlib.md5(self.content.encode('utf-8')).hexdigest()
             if self.content_data_checksum != checksum:
@@ -48,11 +51,11 @@ class JobRunSummary(models.Model):
                 self.content = '{}'
 
         if old_files_to_clear_out_exist:
-            self.delete_data_from_disk()
+            self.delete_data_from_disk(old_content_path)
         super(JobRunSummary, self).save(*args, **kwargs)
 
     def delete(self):
-        self.delete_data_from_disk()
+        self.delete_data_from_disk(self.content_data_path)
         super(JobRunSummary, self).delete()
 
     @classmethod
@@ -91,7 +94,7 @@ class JobRunSummary(models.Model):
         if self.content_data_path:
             return self.content_data_path.split('/')[-2]
 
-    def delete_data_from_disk(self):
+    def delete_data_from_disk(self, content_data_path):
         if content_data_path:
             fw = FileWriter(
                 working_dir=settings.REDACT_FILE_STORAGE_DIR,
