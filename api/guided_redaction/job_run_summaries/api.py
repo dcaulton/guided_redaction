@@ -32,7 +32,7 @@ class JobRunSummariesViewSet(viewsets.ViewSet):
             'summary_type': jrs.summary_type,
             'score': jrs.summary_type,
             'movie_names': movie_names,
-            'content': jrs.content,
+            'content': json.loads(jrs.content),
         }
         return Response(jrs_data)
 
@@ -40,11 +40,8 @@ class JobRunSummariesViewSet(viewsets.ViewSet):
         jrss = {}
         for jrs in JobRunSummary.objects.order_by('-created_on').all():
             content_length = len(jrs.content)
-            if content_length < 1000000:
-                content = json.loads(jrs.content)
-            else:
-                content = 'large content, truncated for list'
             movie_names = self.get_movie_names_list(jrs)
+            # TODO return a stub content here
             jrss[str(jrs.id)] = {
                   'id': jrs.id,
                   'job_id': jrs.job.id,
@@ -55,7 +52,7 @@ class JobRunSummariesViewSet(viewsets.ViewSet):
                   'summary_type': jrs.summary_type,
                   'score': jrs.score,
                   'movie_names': movie_names,
-                  'content': content,
+                  'content': json.loads(jrs.content),
             }
         return Response(jrss)
 
