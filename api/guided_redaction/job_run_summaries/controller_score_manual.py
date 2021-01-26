@@ -94,6 +94,19 @@ class ScoreManualController(T1Controller):
         tpos_url, found_img = self.draw_and_save_found_image(job_frameset_data, frame_dimensions, fsh_prefix)
         maps['t_pos'] = tpos_url
 
+        total_pixels = int(frame_dimensions[0] * frame_dimensions[1])
+        num_tpos = np.count_nonzero(found_img)
+        num_tneg = total_pixels - num_tpos
+        num_fpos = 0
+        num_fneg = 0
+
+        counts = {
+            't_pos': num_tpos,
+            't_neg': num_tneg,
+            'f_pos': num_fpos,
+            'f_neg': num_fneg,
+        }
+
         return counts, maps
 
     def score_frameset(self, job_frameset_data, jrs_frameset_data, frame_dimensions, fsh_prefix):
