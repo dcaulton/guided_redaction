@@ -91,7 +91,7 @@ class ScoreManualController(T1Controller):
         counts = {}
         maps = {}
 
-        tpos_url = self.draw_and_save_tpos_image(job_frameset_data, frame_dimensions, fsh_prefix)
+        tpos_url, found_img = self.draw_and_save_found_image(job_frameset_data, frame_dimensions, fsh_prefix)
         maps['t_pos'] = tpos_url
 
         return counts, maps
@@ -100,10 +100,14 @@ class ScoreManualController(T1Controller):
         counts = {}
         maps = {}
 
-        tpos_url = self.draw_and_save_tpos_image(job_frameset_data, frame_dimensions, fsh_prefix)
+        found_image = self.draw_job_matches(job_frameset_data, frame_dimensions)
+        not_found_image = cv2.bitwise_not(found_image)
+        tpos_url, tpos_image = self.draw_and_save_tpos_image(found_image, jrs_frameset_data, fsh_prefix)
+        not_tpos_image = cv2.bitwise_not(tpos_image)
+        fpos_url, fpos_image = self.draw_and_save_fpos_image(found_image, not_tpos_image, fsh_prefix)
+
         fneg_url = self.draw_and_save_fneg_image(job_frameset_data, frame_dimensions, fsh_prefix)
-        fpos_url = self.draw_and_save_fneg_image(job_frameset_data, frame_dimensions, fsh_prefix)
-        fall_url = self.draw_and_save_fneg_image(job_frameset_data, frame_dimensions, fsh_prefix)
+        fall_url = self.draw_and_save_fall_image(job_frameset_data, frame_dimensions, fsh_prefix)
         maps = {
             't_pos': tpos_url,
             'f_pos': fpos_url,
@@ -113,22 +117,49 @@ class ScoreManualController(T1Controller):
 
         return counts, maps
 
-    def draw_and_save_fpos_image(self, job_frameset_data, frame_dimensions, fsh_prefix):
-        img = np.zeros((frame_dimensions[1], frame_dimensions[0], 1), np.uint8)
-        cv2.rectangle(
-            img,
-            (10, 10),
-            (30, 300),
-            255,
-            -1
-        )
+    def draw_and_save_tpos_image(self, found_image, jrs_frameset_data, fsh_prefix):
+        tpos_image = found_image.copy()
+        if 'desired' in jrs_frameset_data:
+            for match_id in jrs_frameset_data['desired']:
+                match_rec = jrs_frameset_data['desired'][match_id]
+                start = match_rec['start']
+                end = match_rec['end']
+                cv2.rectangle(
+                    tpos_image,
+                    tuple(start),
+                    tuple(end),
+                    255,
+                    -1
+                )
+        if 'unwanted' in jrs_frameset_data:
+            for match_id in jrs_frameset_data['unwanted']:
+                match_rec = jrs_frameset_data['unwanted'][match_id]
+                start = match_rec['start']
+                end = match_rec['end']
+                cv2.rectangle(
+                    tpos_image,
+                    tuple(start),
+                    tuple(end),
+                    0,
+                    -1
+                )
+        file_name = 't_pos_' + fsh_prefix + '.png'
+        fullpath = self.file_writer.build_file_fullpath_for_uuid_and_filename(
+            self.file_storage_dir_uuid,
+            file_name
+        ) 
+        url = self.file_writer.write_cv2_image_to_filepath(tpos_image, fullpath)
+        return url, tpos_image
+
+    def draw_and_save_fpos_image(self, found_image, not_tpos_image, fsh_prefix):
+        fpos_image = cv2.bitwise_and(found_image, not_tpos_image)
         file_name = 'f_pos_' + fsh_prefix + '.png'
         fullpath = self.file_writer.build_file_fullpath_for_uuid_and_filename(
             self.file_storage_dir_uuid,
             file_name
         ) 
-        url = self.file_writer.write_cv2_image_to_filepath(img, fullpath)
-        return url
+        url = self.file_writer.write_cv2_image_to_filepath(fpos_image, fullpath)
+        return url, fpos_image
 
     def draw_and_save_fneg_image(self, job_frameset_data, frame_dimensions, fsh_prefix):
         img = np.zeros((frame_dimensions[1], frame_dimensions[0], 1), np.uint8)
@@ -161,10 +192,10 @@ class ScoreManualController(T1Controller):
             self.file_storage_dir_uuid,
             file_name
         ) 
-        url = self.file_writer.write_cv2_image_to_filepath(self, img, fullpath)
+        url = self.file_writer.write_cv2_image_to_filepath(img, fullpath)
         return url
 
-    def draw_and_save_tpos_image(self, job_frameset_data, frame_dimensions, fsh_prefix):
+    def draw_and_save_found_image(self, job_frameset_data, frame_dimensions, fsh_prefix):
         img = self.draw_job_matches(job_frameset_data, frame_dimensions)
 
         file_name = 't_pos_' + fsh_prefix + '.png'
@@ -173,7 +204,7 @@ class ScoreManualController(T1Controller):
             file_name
         ) 
         url = self.file_writer.write_cv2_image_to_filepath(img, fullpath)
-        return url
+        return url, img
 
     def build_movies_and_stats(self, job, job_eval_objective, jrs_movies):
         build_movies = {}
@@ -194,7 +225,9 @@ class ScoreManualController(T1Controller):
         if 'movies' in job_resp_data:
             for movie_url in job_resp_data['movies']:
                 job_movie_data = job_resp_data['movies'][movie_url]
-                jrs_movie_data = jrs_movies[movie_url]
+                jrs_movie_data = {'framesets': {}}
+                if movie_url in jrs_movies:
+                    jrs_movie_data = jrs_movies[movie_url]
                 build_movies[movie_url] = {
                     'framesets': {},
                 }
