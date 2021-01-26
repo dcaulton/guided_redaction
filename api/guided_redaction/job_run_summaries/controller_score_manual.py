@@ -43,13 +43,16 @@ class ScoreManualController(T1Controller):
         build_source_movies = self.build_source_movies(jrs.job)
         build_movies, build_stats = self.build_movies_and_stats(jrs.job, jrs.job_eval_objective, jrs_movies)
 
+        build_stats['score'] =  job_score_accum / len(build_stats['movie_statistics'])
+        build_stats['pass_or_fail'] = job_pass_or_fail
+
         content_object = {
             'movies': build_movies,
             'source_movies': build_source_movies,
             'statistics': build_stats,
         }
         jrs.summary_type = 'manual'
-        jrs.score = 95.2
+        jrs.score = build_stats['score']
         jrs.content = json.dumps(content_object)
         jrs.save()
 
@@ -223,8 +226,8 @@ class ScoreManualController(T1Controller):
     def build_movies_and_stats(self, job, job_eval_objective, jrs_movies):
         build_movies = {}
         build_stats = {
-            'max_score': 100,
-            'min_score': 64,
+            'max_score': 0,
+            'min_score': 0,
             'pass_or_fail': 'pass',
             'movie_statistics': {}
         }
@@ -269,6 +272,27 @@ class ScoreManualController(T1Controller):
                 movie_stats = self.calc_movie_stats(build_movies[movie_url], job_eval_objective)
                 build_stats['movie_statistics'][movie_url] = movie_stats
 
+        job_min_score = 100
+        job_max_score = 0
+        job_score_accum = 0
+        job_pass_or_fail = 'pass'
+        for movie_url in build_stats['movie_statistics']:
+            movie_score = build_stats['movie_statistics'][movie_url]['score']
+            job_score_accum += movie_score
+            if build_stats['movie_statistics'][movie_url]['pass_or_fail'] == 'fail':
+                job_pass_or_fail = 'fail'
+            movie_score = build_stats['movie_statistics'][movie_url]['score']
+            if movie_score < job_min_score:
+                job_min_score = movie_score
+            if movie_score > job_max_score:
+                job_max_score = movie_score
+        job_score = job_score_accum / len(build_stats['movie_statistics'])
+        build_stats['min_score'] = job_min_score
+        build_stats['max_score'] = job_max_score
+        build_stats['score'] =  job_score_accum / len(build_stats['movie_statistics'])
+        build_stats['pass_or_fail'] = job_pass_or_fail
+
+
 
                         
 #        build_movies = {
@@ -302,21 +326,79 @@ class ScoreManualController(T1Controller):
 #            'pass_or_fail': 'pass',
 #            'movie_statistics': {
 #                'http://localhost:8080/2cc72cbe-b909-484f-ac0e-48a48bd0d0f4/b147d17b-8d9d-4f48-9464-7c85ffefddec.mp4': {
-#                    'max_score': 100,
-#                    'min_score': 65,
+#                    'max_frameset_score': 100,
+#                    'min_frameset_score': 65,
+#                    'score': 96.4,
 #                    'pass_or_fail': 'pass',
+#                    'framesets': {
+#                        '13857090227856375814': {
+#                            'score': 87.5,
+#                        }
+#                    }
 #                }
 #            }
 #        }
         print('job run summary build completed')
         return build_movies, build_stats
 
-    def calc_movie_stats(self, movie_count_and_map_data, job_eval_objective):
-        return {
-            'max_score': 100,
-            'min_score': 65,
-            'pass_or_fail': 'pass',
+    def calc_movie_stats(self, movie_counts_maps, job_eval_objective):
+        build_stats = {
+            'framesets': {},
         }
+        total_t_pos = 0
+        total_t_neg = 0
+        total_f_pos = 0
+        total_f_neg = 0
+        failed_frames_count = 0
+        jeo_content = json.loads(job_eval_objective.content)
+        f_pos_weight = jeo_content['weight_false_pos']
+        f_neg_weight = jeo_content['weight_false_neg']
+        movie_pass_or_fail = 'pass'
+        movie_low_score = 100
+        movie_high_score = 0
+        score_accum = 0
+        for frameset_hash in movie_counts_maps['framesets']:
+            frameset_pass_or_fail = 'pass'
+            fs_counts = movie_counts_maps['framesets'][frameset_hash]['counts']
+            t_pos = fs_counts['t_pos']
+            t_neg = fs_counts['t_neg']
+            f_pos = fs_counts['f_pos']
+            f_neg = fs_counts['f_neg']
+            total_t_pos += t_pos
+            total_t_neg += t_neg
+            total_f_pos += f_pos
+            total_f_neg += f_neg
+            tot = t_pos + t_neg + f_pos + f_neg
+            count_score = 100 - (f_pos_weight * (f_pos/tot)) - (f_neg_weight * (f_neg/tot))
+            score_accum += count_score
+
+            if count_score < jeo_content['frame_passing_score']:
+                frameset_pass_or_fail = 'fail'
+                failed_frames_count += 1
+                if jeo_content['hard_fail_any_frame']:
+                    movie_pass_or_fail = 'fail'
+                if failed_frames_count >= jeo_content['max_num_failed_frames']:
+                    movie_pass_or_fail = 'fail'
+            if count_score < movie_low_score:
+                movie_low_score = count_score
+            if count_score > movie_high_score:
+                movie_high_score = count_score
+                
+            build_stats['framesets'][frameset_hash] = {
+                'score': count_score,
+                'pass_or_fail': frameset_pass_or_fail,
+            }
+
+        num_framesets = len(movie_counts_maps['framesets'])
+        build_stats['min_frameset_score'] = movie_low_score
+        build_stats['max_frameset_score'] = movie_high_score
+        movie_score = score_accum / num_framesets
+        if movie_score < jeo_content['movie_passing_score']:
+            movie_pass_or_fail = 'fail'
+        build_stats['score'] = movie_score
+        build_stats['pass_or_fail'] = movie_pass_or_fail
+        
+        return build_stats
 
     def build_source_movies(self, job):
         build_source_movies = {}
