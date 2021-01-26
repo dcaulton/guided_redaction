@@ -2497,7 +2497,7 @@ console.log("mingo scale is "+scale.toString())
     // TODO order these hashes as they occur in the movie
     const frameset_hashes = Object.keys(source_movie['framesets'])
     return (
-      <div className='col border-bottom pb-2 mb-2'>
+      <div className='col border-bottom pb-2 ml-2 mb-2'>
         <div className='row font-weight-bold'>
           Movie {movie_name}
         </div>
@@ -2820,6 +2820,11 @@ console.log("mingo scale is "+scale.toString())
     const frameset_section = this.buildCompareSingleFramesetList(panel_id)
     const nav_section = this.buildCompareSingleNav(panel_id)
     const controls_section = this.buildCompareSingleControls(panel_id, jrs)
+    const height_px_string = (window.innerHeight * .85).toString() + 'px'
+    const frameset_style = {
+      overflow: 'scroll',
+      height: height_px_string,
+    }
     return (
       <div
         className='row'
@@ -2837,10 +2842,10 @@ console.log("mingo scale is "+scale.toString())
           <div className='row'>
             {summary_section}
           </div>
-          <div className='row'>
+          <div className='row mt-2'>
             {movie_section}
           </div>
-          <div className='row'>
+          <div style={frameset_style} className='row'>
             {frameset_section}
           </div>
         </div>
