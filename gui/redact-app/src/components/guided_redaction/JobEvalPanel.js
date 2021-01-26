@@ -1952,6 +1952,8 @@ console.log("mingo scale is "+scale.toString())
         movie_url: '',
         frameset_hash: '',
         frameset_overlay_modes: {},
+        hide_non_job_frames: false,
+        hide_non_review_frames: false,
       }
     }
     this.setState({
@@ -2492,6 +2494,7 @@ console.log("mingo scale is "+scale.toString())
     const movie_data = jrs['content']['movies'][movie_url]
     const source_movie = jrs['content']['source_movies'][movie_url]
     const movie_stats = jrs['content']['statistics']['movie_statistics'][movie_url]
+    // TODO order these hashes as they occur in the movie
     const frameset_hashes = Object.keys(source_movie['framesets'])
     return (
       <div className='col border-bottom pb-2 mb-2'>
@@ -2539,6 +2542,21 @@ console.log("mingo scale is "+scale.toString())
             const fs_mode = mode_data['frameset_overlay_modes'][frameset_hash]
             overlay_image_url = movie_data['framesets'][frameset_hash]['maps'][fs_mode]
           }
+
+          if (
+            this.state.compare_single_mode_data[panel_id]['hide_non_job_frames'] &&
+            Object.keys(counts).includes('not_used')
+          ) {
+            return ''
+          }
+
+          if (
+            this.state.compare_single_mode_data[panel_id]['hide_non_review_frames'] &&
+            !Object.keys(movie_data['framesets'][frameset_hash]['maps']).includes('f_pos')
+          ) {
+            return ''
+          }
+
           const len_string = (index+1).toString() + '/' + frameset_hashes.length.toString()
           const name_string = frameset_hash + ' - ' + len_string
           const img_url = source_movie['framesets'][frameset_hash]['images'][0]
@@ -2738,6 +2756,62 @@ console.log("mingo scale is "+scale.toString())
     )
   }
 
+  buildCompareSingleControls(panel_id, job_run_summary) {
+    let job_checked_value = ''
+    let job_new_value = true
+    if (this.state.compare_single_mode_data[panel_id]['hide_non_job_frames']) {
+      job_checked_value = 'checked'
+      job_new_value = false
+    }
+    const job_line = (
+      <div className='row'>
+        <div className='d-inline'>
+          <input
+            className='ml-2 mr-2 mt-1'
+            checked={job_checked_value}
+            type='checkbox'
+            onChange={()=>{this.setCompareSingleAttribute(panel_id, 'hide_non_job_frames', job_new_value)}}
+          />
+        </div>
+        <div className='d-inline'>
+          Hide Non Job Frames
+        </div>
+      </div>
+    )
+
+    let review_line = ''
+    if (job_run_summary['summary_type'] === 'manual') {
+      let review_checked_value = ''
+      let review_new_value = true
+      if (this.state.compare_single_mode_data[panel_id]['hide_non_review_frames']) {
+        review_checked_value = 'checked'
+        review_new_value = false
+      }
+      review_line = (
+        <div className='row'>
+          <div className='d-inline'>
+            <input
+              className='ml-2 mr-2 mt-1'
+              checked={review_checked_value}
+              type='checkbox'
+              onChange={()=>{this.setCompareSingleAttribute(panel_id, 'hide_non_review_frames', review_new_value)}}
+            />
+          </div>
+          <div className='d-inline'>
+            Hide Non Reviewed Frames
+          </div>
+        </div>
+      )
+    }
+
+    return (
+      <div className='col'>
+        {job_line}
+        {review_line}
+      </div>
+    )
+  }
+
   buildComparePanelSingle(job_run_summary_id, panel_id) {
     const jrs = this.state.job_run_summaries[job_run_summary_id]
     const title_section = this.buildCompareSingleTitle(panel_id)
@@ -2745,6 +2819,7 @@ console.log("mingo scale is "+scale.toString())
     const movie_section = this.buildCompareSingleMovie(panel_id)
     const frameset_section = this.buildCompareSingleFramesetList(panel_id)
     const nav_section = this.buildCompareSingleNav(panel_id)
+    const controls_section = this.buildCompareSingleControls(panel_id, jrs)
     return (
       <div
         className='row'
@@ -2755,6 +2830,9 @@ console.log("mingo scale is "+scale.toString())
           </div>
           <div className='row'>
             {nav_section}
+          </div>
+          <div className='row'>
+            {controls_section}
           </div>
           <div className='row'>
             {summary_section}
