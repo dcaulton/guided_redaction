@@ -1084,6 +1084,14 @@ console.log("mingo scale is "+scale.toString())
     }
     let perm_standards = {}
     perm_standards = this.state.jeo_permanent_standards
+    if (Object.keys(perm_standards).length === 0) {
+      return (
+        <div className='col font-italic'>
+          this JEO has no exemplar movies
+        </div>
+      )
+    }
+
     return (
       <div className='col'>
         <div className='row'>
@@ -1146,10 +1154,10 @@ console.log("mingo scale is "+scale.toString())
     }
 
     return (
-      <div className='col-9'>
-        <div id='objective_div row mt-2'>
+      <div className='col-9 pb-4 mb-4 mt-2'>
+        <div id='objective_div row'>
           <div className='col'>
-            <div className='row h3 border-top mt-4 pt-2'>
+            <div className='row h3'>
               <div className='col-4'>
                 JEO General Info
               </div>
@@ -1197,6 +1205,10 @@ console.log("mingo scale is "+scale.toString())
               </div>
             </div>
 
+            <div className='row mt-2'>
+              {exemplar_movies_section}
+            </div>
+
             {show_hide_details}
             <div
                 id='jeo_details'
@@ -1239,10 +1251,6 @@ console.log("mingo scale is "+scale.toString())
                   {preserve_job_run_parameters_field}
                 </div>
               </div>
-            </div>
-
-            <div className='row mt-2 pb-4 mb-4'>
-              {exemplar_movies_section}
             </div>
 
           </div>
