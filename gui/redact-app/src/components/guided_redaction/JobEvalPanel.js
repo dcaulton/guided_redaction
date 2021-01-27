@@ -2494,29 +2494,11 @@ console.log("mingo scale is "+scale.toString())
     const movie_data = jrs['content']['movies'][movie_url]
     const source_movie = jrs['content']['source_movies'][movie_url]
     const movie_stats = jrs['content']['statistics']['movie_statistics'][movie_url]
-    // TODO order these hashes as they occur in the movie
-    const frameset_hashes = Object.keys(source_movie['framesets'])
+    const frameset_hashes = this.props.getFramesetHashesInOrder(source_movie)
     return (
       <div className='col border-bottom pb-2 ml-2 mb-2'>
         <div className='row font-weight-bold'>
           Movie {movie_name}
-        </div>
-        <div className='row'>
-          <div className='d-inline'>
-            Max Score:
-          </div>
-          <div className='d-inline ml-2'>
-            {movie_stats['max_score']}
-          </div>
-        </div>
-
-        <div className='row'>
-          <div className='d-inline'>
-            Min Score:
-          </div>
-          <div className='d-inline ml-2'>
-            {movie_stats['min_score']}
-          </div>
         </div>
 
         <div className='row'>
@@ -2528,28 +2510,52 @@ console.log("mingo scale is "+scale.toString())
           </div>
         </div>
 
+        <div className='row'>
+          <div className='d-inline'>
+            Movie Score:
+          </div>
+          <div className='d-inline ml-2'>
+            {movie_stats['score']}
+          </div>
+        </div>
+
+        <div className='row'>
+          <div className='d-inline'>
+            Max Frameset Score:
+          </div>
+          <div className='d-inline ml-2'>
+            {movie_stats['max_frameset_score']}
+          </div>
+        </div>
+
+        <div className='row'>
+          <div className='d-inline'>
+            Min Frameset Score:
+          </div>
+          <div className='d-inline ml-2'>
+            {movie_stats['min_frameset_score']}
+          </div>
+        </div>
+
         <div className='row ml-4 h5 border-bottom'>
           Frameset Data: 
         </div>
 
         {frameset_hashes.map((frameset_hash, index) => {
-          let counts = {
+          let frameset_counts = {
             not_used: true,
           }
           let overlay_image_url = ''
           if (Object.keys(movie_data['framesets']).includes(frameset_hash)) {
-            counts = movie_data['framesets'][frameset_hash]['counts']
+            frameset_counts = movie_data['framesets'][frameset_hash]['counts']
             const fs_mode = mode_data['frameset_overlay_modes'][frameset_hash]
             overlay_image_url = movie_data['framesets'][frameset_hash]['maps'][fs_mode]
           }
 
           if (
             this.state.compare_single_mode_data[panel_id]['hide_non_job_frames'] &&
-            Object.keys(counts).includes('not_used')
+            Object.keys(frameset_counts).includes('not_used')
           ) {
-            return ''
-          }
-          if (!Object.keys(movie_data['framesets']).includes(frameset_hash)) {
             return ''
           }
           if (
@@ -2564,9 +2570,10 @@ console.log("mingo scale is "+scale.toString())
           const name_string = frameset_hash + ' - ' + len_string
           const img_url = source_movie['framesets'][frameset_hash]['images'][0]
 
-          const frameset_stats_rows = this.buildCompareSingleFramesetStatsRows(counts)
+          const frameset_stats = movie_stats['framesets'][frameset_hash]
+          const frameset_stats_rows = this.buildCompareSingleFramesetStatsRows(frameset_counts, frameset_stats)
           const frameset_overlay_mode = mode_data['frameset_overlay_modes'][frameset_hash]
-          const frameset_view_buttons = this.buildCompareSingleFramesetStatsViewToggle(panel_id, counts, frameset_hash, frameset_overlay_mode)
+          const frameset_view_buttons = this.buildCompareSingleFramesetStatsViewToggle(panel_id, frameset_counts, frameset_hash, frameset_overlay_mode)
           return (
             <div key={index} className='col'>
               <div className='row font-weight-bold'>
@@ -2701,25 +2708,30 @@ console.log("mingo scale is "+scale.toString())
     )
   }
 
-  buildCompareSingleFramesetStatsRows(counts) {
+  buildCompareSingleFramesetStatsRows(counts, frameset_stats) {
+    let job_output_comment = ''
     if (Object.keys(counts).includes('not_used')) {
-      return (
-        <div className='font-italic'>
-          No job output
-        </div>
-      )
+      job_output_comment = 'No job output'
     }
-    return (
-      <div className='col'>
+    let frameset_stats_pass_or_fail = 'pass'
+    let frameset_stats_score = ''
+    let frameset_stats_tpos = ''
+    let frameset_stats_tneg = ''
+    let frameset_stats_fpos = ''
+    let frameset_stats_fneg = ''
+    if (frameset_stats) {
+      frameset_stats_pass_or_fail = frameset_stats['pass_or_fail']
+      frameset_stats_score = (
         <div className='row'>
           <div className='d-inline'>
             Score:
           </div>
           <div className='d-inline ml-2'>
-            {counts['t_pos']}
+            {frameset_stats['score']}
           </div>
         </div>
-
+      )
+      frameset_stats_tpos = (
         <div className='row'>
           <div className='d-inline'>
             True Positives:
@@ -2729,6 +2741,8 @@ console.log("mingo scale is "+scale.toString())
           </div>
         </div>
 
+      )
+      frameset_stats_tneg = (
         <div className='row'>
           <div className='d-inline'>
             True Negatives:
@@ -2738,6 +2752,8 @@ console.log("mingo scale is "+scale.toString())
           </div>
         </div>
 
+      )
+      frameset_stats_fpos = (
         <div className='row'>
           <div className='d-inline'>
             False Positives:
@@ -2747,6 +2763,8 @@ console.log("mingo scale is "+scale.toString())
           </div>
         </div>
 
+      )
+      frameset_stats_fneg = (
         <div className='row'>
           <div className='d-inline'>
             False Negatives:
@@ -2755,7 +2773,33 @@ console.log("mingo scale is "+scale.toString())
             {counts['f_neg']}
           </div>
         </div>
+      )
+    }
+    return (
+      <div className='col'>
+        <div className='row'>
+          <div className='font-italic'>
+            {job_output_comment}
+          </div>
+        </div>
+
+        <div className='row'>
+          <div className='d-inline'>
+            Pass or Fail:
+          </div>
+          <div className='d-inline ml-2'>
+            {frameset_stats_pass_or_fail}
+          </div>
+        </div>
+
+        {frameset_stats_score}
+        {frameset_stats_tpos}
+        {frameset_stats_tneg}
+        {frameset_stats_fpos}
+        {frameset_stats_fneg}
+
       </div>
+
     )
   }
 

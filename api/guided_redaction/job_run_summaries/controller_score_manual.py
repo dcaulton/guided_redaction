@@ -43,9 +43,6 @@ class ScoreManualController(T1Controller):
         build_source_movies = self.build_source_movies(jrs.job)
         build_movies, build_stats = self.build_movies_and_stats(jrs.job, jrs.job_eval_objective, jrs_movies)
 
-        build_stats['score'] =  job_score_accum / len(build_stats['movie_statistics'])
-        build_stats['pass_or_fail'] = job_pass_or_fail
-
         content_object = {
             'movies': build_movies,
             'source_movies': build_source_movies,
@@ -94,7 +91,7 @@ class ScoreManualController(T1Controller):
         counts = {}
         maps = {}
 
-        tpos_url, found_img = self.draw_and_save_found_image(job_frameset_data, frame_dimensions, fsh_prefix)
+        tpos_url, found_img = self.draw_and_save_found_image(job_frameset_data, frame_dimensions, fsh_prefix, 't_pos')
         maps['t_pos'] = tpos_url
 
         total_pixels = int(frame_dimensions[0] * frame_dimensions[1])
@@ -112,9 +109,63 @@ class ScoreManualController(T1Controller):
 
         return counts, maps
 
+    def build_counts_from_images(self, tpos_image, fpos_image, fneg_image, frame_dimensions):
+        total_pixels = int(frame_dimensions[0] * frame_dimensions[1])
+        num_tpos = np.count_nonzero(tpos_image)
+        num_tneg = total_pixels - num_tpos
+        num_fpos = np.count_nonzero(fpos_image)
+        num_fneg = np.count_nonzero(fneg_image)
+
+        counts = {
+            't_pos': num_tpos,
+            't_neg': num_tneg,
+            'f_pos': num_fpos,
+            'f_neg': num_fneg,
+        }
+        return counts
+
+    def score_frameset_manual_fail(self, job_frameset_data, jrs_frameset_data, frame_dimensions, fsh_prefix):
+        fpos_url, fpos_image = self.draw_and_save_found_image(job_frameset_data, frame_dimensions, fsh_prefix, 'f_pos')
+        tpos_image = cv2.bitwise_not(fpos_image)
+        tpos_url = self.draw_and_save_supplied_image(tpos_image, fsh_prefix, 't_pos')
+        fneg_image = tpos_image
+        fneg_url = self.draw_and_save_supplied_image(fneg_image, fsh_prefix, 'f_neg')
+        fall_image = np.ones((frame_dimensions[1], frame_dimensions[0], 1), np.uint8) * 255
+        fall_url = self.draw_and_save_supplied_image(fall_image, fsh_prefix, 'f_all')
+        maps = {
+            't_pos': tpos_url,
+            'f_pos': fpos_url,
+            'f_neg': fneg_url,
+            'f_all': fall_url,
+        }
+
+        counts = self.build_counts_from_images(tpos_image, fpos_image, fneg_image, frame_dimensions)
+        return counts, maps
+
+    def score_frameset_manual_pass(self, job_frameset_data, jrs_frameset_data, frame_dimensions, fsh_prefix):
+        tpos_url, tpos_image = self.draw_and_save_found_image(job_frameset_data, frame_dimensions, fsh_prefix, 't_pos')
+        blank_image = np.zeros((frame_dimensions[1], frame_dimensions[0], 1), np.uint8)
+        fpos_image = blank_image
+        fneg_image = blank_image
+        fall_image = blank_image
+        fpos_url = self.draw_and_save_supplied_image(fpos_image, fsh_prefix, 'f_pos')
+        fneg_url = self.draw_and_save_supplied_image(fneg_image, fsh_prefix, 'f_neg')
+        fall_url = self.draw_and_save_supplied_image(fall_image, fsh_prefix, 'f_all')
+        maps = {
+            't_pos': tpos_url,
+            'f_pos': fpos_url,
+            'f_neg': fneg_url,
+            'f_all': fall_url,
+        }
+
+        counts = self.build_counts_from_images(tpos_image, fpos_image, fneg_image, frame_dimensions)
+        return counts, maps
+
     def score_frameset(self, job_frameset_data, jrs_frameset_data, frame_dimensions, fsh_prefix):
-        counts = {}
-        maps = {}
+        if 'pass_or_fail' in jrs_frameset_data and jrs_frameset_data['pass_or_fail'] == 'pass':
+            return self.score_frameset_manual_pass(job_frameset_data, jrs_frameset_data, frame_dimensions, fsh_prefix)
+        if 'pass_or_fail' in jrs_frameset_data and jrs_frameset_data['pass_or_fail'] == 'fail':
+            return self.score_frameset_manual_fail(job_frameset_data, jrs_frameset_data, frame_dimensions, fsh_prefix)
 
         found_image = self.draw_job_matches(job_frameset_data, frame_dimensions)
         not_found_image = cv2.bitwise_not(found_image)
@@ -133,18 +184,7 @@ class ScoreManualController(T1Controller):
             'f_all': fall_url,
         }
 
-        total_pixels = int(frame_dimensions[0] * frame_dimensions[1])
-        num_tpos = np.count_nonzero(tpos_image)
-        num_tneg = total_pixels - num_tpos
-        num_fpos = np.count_nonzero(fpos_image)
-        num_fneg = np.count_nonzero(fneg_image)
-
-        counts = {
-            't_pos': num_tpos,
-            't_neg': num_tneg,
-            'f_pos': num_fpos,
-            'f_neg': num_fneg,
-        }
+        counts = self.build_counts_from_images(tpos_image, fpos_image, fneg_image, frame_dimensions)
 
         return counts, maps
 
@@ -212,16 +252,25 @@ class ScoreManualController(T1Controller):
         url = self.file_writer.write_cv2_image_to_filepath(fall_image, fullpath)
         return url, fall_image
 
-    def draw_and_save_found_image(self, job_frameset_data, frame_dimensions, fsh_prefix):
+    def draw_and_save_found_image(self, job_frameset_data, frame_dimensions, fsh_prefix, image_type='t_pos'):
         img = self.draw_job_matches(job_frameset_data, frame_dimensions)
 
-        file_name = 't_pos_' + fsh_prefix + '.png'
+        file_name = image_type + '_' + fsh_prefix + '.png'
         fullpath = self.file_writer.build_file_fullpath_for_uuid_and_filename(
             self.file_storage_dir_uuid,
             file_name
         ) 
         url = self.file_writer.write_cv2_image_to_filepath(img, fullpath)
         return url, img
+
+    def draw_and_save_supplied_image(self, img, fsh_prefix, image_type='t_pos'):
+        file_name = image_type + '_' + fsh_prefix + '.png'
+        fullpath = self.file_writer.build_file_fullpath_for_uuid_and_filename(
+            self.file_storage_dir_uuid,
+            file_name
+        ) 
+        url = self.file_writer.write_cv2_image_to_filepath(img, fullpath)
+        return url
 
     def build_movies_and_stats(self, job, job_eval_objective, jrs_movies):
         build_movies = {}
