@@ -4,6 +4,7 @@ import {
 } from './redact_utils.js'
 import CanvasAnnotateOverlay from './CanvasAnnotateOverlay'
 import {
+  makePlusMinusRowLight,
   buildLabelAndTextInput,
   buildLabelAndDropdown,
 } from './SharedControls'
@@ -145,7 +146,7 @@ console.log("mingo scale is "+scale.toString())
           />
         </div>
         <div className='d-inline'>
-          Hard Fail Any Frame
+          Hard Fail Movie if Any Frame Fails
         </div>
       </div>
     )
@@ -198,7 +199,7 @@ console.log("mingo scale is "+scale.toString())
   buildJeoWeightFalsePosField() {
     return buildLabelAndTextInput(
       this.state.jeo_weight_false_pos,
-      'False Positive',
+      'False Positive Weight',
       'jeo_weight_false_pos',
       'jeo_weight_false_pos',
       4,
@@ -209,7 +210,7 @@ console.log("mingo scale is "+scale.toString())
   buildJeoWeightFalseNegField() {
     return buildLabelAndTextInput(
       this.state.jeo_weight_false_neg,
-      'False Negative',
+      'False Negative Weight',
       'jeo_weight_false_neg',
       'jeo_weight_false_neg',
       4,
@@ -950,6 +951,9 @@ console.log("mingo scale is "+scale.toString())
   }
   
   buildAddExemplarMovieButton() {
+    if (!this.state.jeo_id) {
+      return ''
+    }
     return (
       <div className='d-inline'>
         <button
@@ -961,7 +965,7 @@ console.log("mingo scale is "+scale.toString())
             area-haspopup='true'
             area-expanded='false'
         >
-          Add Movie
+          Add Exemplar Movie
         </button>
         <div className='dropdown-menu' aria-labelledby='argle'>
           {Object.keys(this.props.movies).map((movie_url, index) => {
@@ -1078,60 +1082,55 @@ console.log("mingo scale is "+scale.toString())
     if (!this.state.jeo_id) {
       return ''
     }
-    const add_button = this.buildAddExemplarMovieButton()
     let perm_standards = {}
     perm_standards = this.state.jeo_permanent_standards
     return (
-      <div className='row mt-2'>
-        <div className='col'>
-          <div className='row'>
-            <div className='col-6 h5'>
-              Exemplar Movies
-            </div>
-            <div className='col-6'>
-              {add_button}
-            </div>
+      <div className='col'>
+        <div className='row'>
+          <div className='col-6 h5'>
+            Exemplar Movies
           </div>
-          <div className='row'>
-            <div className='col'>
-              {Object.keys(perm_standards).map((movie_name, index) => {
-                const perm_standard = this.state.jeo_permanent_standards[movie_name]
-                const source_movie_url = perm_standard['source_movie_url']
-                return (
-                  <div key={index} className='row'>
-                    <div className='col-4'>
-                      {movie_name}
-                    </div>
-                    <div className='col-2'>
-                      <button
-                        className='btn btn-link ml-2 p-0'
-                        onClick={()=>{this.annotateExemplarMovie(source_movie_url, 'tile')}}
-                      >
-                        annotate
-                      </button>
-                    </div>
-                    <div className='col-2'>
-                      <button
-                        className='btn btn-link ml-2 p-0'
-                        onClick={()=>{this.removeExemplarMovie(movie_name)}}
-                      >
-                        delete
-                      </button>
-                    </div>
+        </div>
+        <div className='row'>
+          <div className='col'>
+            {Object.keys(perm_standards).map((movie_name, index) => {
+              const perm_standard = this.state.jeo_permanent_standards[movie_name]
+              const source_movie_url = perm_standard['source_movie_url']
+              return (
+                <div key={index} className='row'>
+                  <div className='col-4'>
+                    {movie_name}
                   </div>
-                )
-              })}
-            </div>
+                  <div className='col-2'>
+                    <button
+                      className='btn btn-link ml-2 p-0'
+                      onClick={()=>{this.annotateExemplarMovie(source_movie_url, 'tile')}}
+                    >
+                      annotate
+                    </button>
+                  </div>
+                  <div className='col-2'>
+                    <button
+                      className='btn btn-link ml-2 p-0'
+                      onClick={()=>{this.removeExemplarMovie(movie_name)}}
+                    >
+                      delete
+                    </button>
+                  </div>
+                </div>
+              )
+            })}
           </div>
         </div>
       </div>
     )
   }
 
-  buildObjectivePanel() {
+  buildJobEvalObjectivePanel() {
     const load_button = this.buildJeoLoadButton()
     const save_button = this.buildJeoSaveButton()
     const delete_button = this.buildJeoDeleteButton()
+    const add_exemplar_button = this.buildAddExemplarMovieButton()
     const weight_false_pos_field = this.buildJeoWeightFalsePosField()
     const weight_false_neg_field = this.buildJeoWeightFalseNegField()
     const max_num_failed_frames_field = this.buildJeoMaxNumFailedFramesField() 
@@ -1140,23 +1139,33 @@ console.log("mingo scale is "+scale.toString())
     const frame_passing_score_field = this.buildJeoFramePassingScoreField()
     const hard_fail_any_frame_field = this.buildHardFailAnyFrameField()
     const preserve_job_run_parameters_field = this.buildPreserveJobRunParametersField()
+    const exemplar_movies_section = this.buildExemplarMoviesSection()
+    let show_hide_details = ''
+    if (this.state.jeo_id) {
+      show_hide_details = makePlusMinusRowLight('jeo details', 'jeo_details')
+    }
 
     return (
       <div className='col-9'>
-        <div id='objective_div mt-2'>
+        <div id='objective_div row mt-2'>
           <div className='col'>
             <div className='row h3 border-top mt-4 pt-2'>
               <div className='col-4'>
                 JEO General Info
               </div>
-              <div className='col-2'>
-                {load_button}
-              </div>
-              <div className='col-2'>
-                {save_button}
-              </div>
-              <div className='col-2'>
-                {delete_button}
+              <div className='col-8'>
+                <div className='d-inline'>
+                  {load_button}
+                </div>
+                <div className='d-inline ml-2'>
+                  {save_button}
+                </div>
+                <div className='d-inline ml-2'>
+                  {delete_button}
+                </div>
+                <div className='d-inline ml-2'>
+                  {add_exemplar_button}
+                </div>
               </div>
             </div>
 
@@ -1168,47 +1177,7 @@ console.log("mingo scale is "+scale.toString())
                 {this.state.jeo_id}
               </div>
             </div>
-
-            <div className='row m-1'>
-              <div className='col'>
-                <div className='row mr-2'>
-                  Weights:
-                </div>
-                <div className='row'>
-                  <div className='col-3'>
-                    {weight_false_pos_field}
-                  </div>
-                  <div className='col-3'>
-                    {weight_false_neg_field}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className='row m-1'>
-              {max_num_failed_frames_field} 
-            </div>
-
-            <div className='row m-1'>
-              {max_num_missed_entities_field} 
-            </div>
-
-            <div className='row m-1'>
-              {frame_passing_score_field}
-            </div>
-
-            <div className='row m-1'>
-              {movie_passing_score_field}
-            </div>
-
-            <div className='row m-1'>
-              {hard_fail_any_frame_field}
-            </div>
-
-            <div className='row m-1'>
-              {preserve_job_run_parameters_field}
-            </div>
-
+    
             <div className='row'>
               <div className='ml-2 mt-2'>
                 <div>
@@ -1227,6 +1196,55 @@ console.log("mingo scale is "+scale.toString())
                 </div>
               </div>
             </div>
+
+            {show_hide_details}
+            <div
+                id='jeo_details'
+                className='collapse row'
+            >
+              <div className='col border-bottom'>
+                <div className='row ml-4 font-italic'>
+                   Score = 100 - 100*(f_pos_weight * (f_pos_pixels/tot_pixels)) - 100*(f_neg_weight * (f_neg_pixels/tot_pixels))
+                </div>
+                
+                <div className='row m-1'>
+                  {weight_false_pos_field}
+                </div>
+
+                <div className='row m-1'>
+                  {weight_false_neg_field}
+                </div>
+
+                <div className='row m-1'>
+                  {max_num_failed_frames_field} 
+                </div>
+
+                <div className='row m-1'>
+                  {max_num_missed_entities_field} 
+                </div>
+
+                <div className='row m-1'>
+                  {frame_passing_score_field}
+                </div>
+
+                <div className='row m-1'>
+                  {movie_passing_score_field}
+                </div>
+
+                <div className='row m-1'>
+                  {hard_fail_any_frame_field}
+                </div>
+
+                <div className='row m-1'>
+                  {preserve_job_run_parameters_field}
+                </div>
+              </div>
+            </div>
+
+            <div className='row mt-2 pb-4 mb-4'>
+              {exemplar_movies_section}
+            </div>
+
           </div>
         </div>
 
@@ -1241,16 +1259,13 @@ console.log("mingo scale is "+scale.toString())
   }
 
   buildHomePanel() {
-    const objective_data = this.buildObjectivePanel()
-    const exemplar_movies_section = this.buildExemplarMoviesSection()
+    const objective_data = this.buildJobEvalObjectivePanel()
     const job_run_summary_section = this.buildJobRunSummarySection()
     return (
       <div className='col'>
         <div className='row mt-2'>
           {objective_data}
         </div>
-
-        {exemplar_movies_section}
 
         <div className='row'>
           <div className='col-12'>
