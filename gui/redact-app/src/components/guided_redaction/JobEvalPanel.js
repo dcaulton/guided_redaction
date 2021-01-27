@@ -2549,7 +2549,9 @@ console.log("mingo scale is "+scale.toString())
           ) {
             return ''
           }
-
+          if (!Object.keys(movie_data['framesets']).includes(frameset_hash)) {
+            return ''
+          }
           if (
             this.state.compare_single_mode_data[panel_id]['hide_non_review_frames'] &&
             !Object.keys(movie_data['framesets'][frameset_hash]).includes(['maps']) &&
