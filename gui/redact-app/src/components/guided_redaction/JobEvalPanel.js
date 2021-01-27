@@ -2554,14 +2554,13 @@ console.log("mingo scale is "+scale.toString())
 
           if (
             this.state.compare_single_mode_data[panel_id]['hide_non_job_frames'] &&
-            Object.keys(frameset_counts).includes('not_used')
+            !movie_data['framesets'][frameset_hash]['has_job_data']
           ) {
             return ''
           }
           if (
             this.state.compare_single_mode_data[panel_id]['hide_non_review_frames'] &&
-            !Object.keys(movie_data['framesets'][frameset_hash]).includes(['maps']) &&
-            !Object.keys(movie_data['framesets'][frameset_hash]['maps']).includes('f_pos')
+            !movie_data['framesets'][frameset_hash]['was_reviewed']
           ) {
             return ''
           }
