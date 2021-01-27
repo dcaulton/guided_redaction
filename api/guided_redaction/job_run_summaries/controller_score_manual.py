@@ -3,6 +3,7 @@ import os
 import uuid
 import numpy as np
 import cv2
+import imutils
 from django.conf import settings
 from guided_redaction.attributes.models import Attribute
 from guided_redaction.jobs.models import Job
@@ -105,9 +106,24 @@ class ScoreManualController(T1Controller):
             't_neg': num_tneg,
             'f_pos': num_fpos,
             'f_neg': num_fneg,
+            'missed_item_count': 0,
         }
 
         return counts, maps
+
+    def get_missed_item_count(self, tpos_image, fneg_image):
+        missed_zones = 0
+        desired_cnts = cv2.findContours(tpos_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        desired_cnts = imutils.grab_contours(desired_cnts)
+        for desired_cnt in desired_cnts:
+            x,y,w,h = cv2.boundingRect(desired_cnt)
+            desired_start = (x, y)
+            desired_end = (x+w, y+h)
+            start_val = fneg_image[desired_start[1], desired_start[0]]
+            end_val = fneg_image[desired_end[1]-1, desired_end[0]-1]
+            if start_val == 255 or end_val == 255: # this contour was missed
+                missed_zones += 1
+        return missed_zones
 
     def build_counts_from_images(self, tpos_image, fpos_image, fneg_image, frame_dimensions):
         total_pixels = int(frame_dimensions[0] * frame_dimensions[1])
@@ -116,11 +132,13 @@ class ScoreManualController(T1Controller):
         num_fpos = np.count_nonzero(fpos_image)
         num_fneg = np.count_nonzero(fneg_image)
 
+        missed_item_count = self.get_missed_item_count(tpos_image, fneg_image)
         counts = {
             't_pos': num_tpos,
             't_neg': num_tneg,
             'f_pos': num_fpos,
             'f_neg': num_fneg,
+            'missed_item_count': missed_item_count,
         }
         return counts
 
@@ -290,6 +308,7 @@ class ScoreManualController(T1Controller):
             source_movies = req_data['movies']
         if 'movies' in job_resp_data:
             for movie_url in job_resp_data['movies']:
+                print('building job review summary data for movie {}'.format(movie_url))
                 job_movie_data = job_resp_data['movies'][movie_url]
                 jrs_movie_data = {'framesets': {}}
                 if movie_url in jrs_movies:
@@ -374,8 +393,7 @@ class ScoreManualController(T1Controller):
 #                            't_neg': 29700,
 #                            'f_pos': 495,
 #                            'f_neg': 1112,
-#                            'missed_items': 0,
-#                            'miscaptured_items': 0,
+#                            'missed_item_count': 0,
 #                        },
 #                        'maps': {
 #                            'f_pos': 'http://localhost:8080/2cc72cbe-b909-484f-ac0e-48a48bd0d0f4/frame_00075a.png',
@@ -418,8 +436,8 @@ class ScoreManualController(T1Controller):
         total_f_neg = 0
         failed_frames_count = 0
         jeo_content = json.loads(job_eval_objective.content)
-        f_pos_weight = jeo_content['weight_false_pos']
-        f_neg_weight = jeo_content['weight_false_neg']
+        f_pos_weight = float(jeo_content['weight_false_pos'])
+        f_neg_weight = float(jeo_content['weight_false_neg'])
         movie_pass_or_fail = 'pass'
         movie_low_score = 100
         movie_high_score = 0
@@ -431,24 +449,29 @@ class ScoreManualController(T1Controller):
             t_neg = fs_counts['t_neg']
             f_pos = fs_counts['f_pos']
             f_neg = fs_counts['f_neg']
+            missed_item_count = fs_counts['missed_item_count']
             total_t_pos += t_pos
             total_t_neg += t_neg
             total_f_pos += f_pos
             total_f_neg += f_neg
             tot = t_pos + t_neg
             count_score = 100 - 100*(f_pos_weight * (f_pos/tot)) - 100*(f_neg_weight * (f_neg/tot))
+            count_score = max(count_score, 0)
             count_score = round(count_score, 2)
-            if frameset_hash == '0':
-                print('======GAMBAS=={} {} {} - score {} - weights {} {} '.format(f_pos, f_neg, tot, count_score, f_pos_weight, f_neg_weight))
             score_accum += count_score
 
             if count_score < jeo_content['frame_passing_score']:
                 frameset_pass_or_fail = 'fail'
+            elif missed_item_count > jeo_content['max_num_missed_entities_single_frameset']:
+                frameset_pass_or_fail = 'fail'
+
+            if frameset_pass_or_fail == 'fail':
                 failed_frames_count += 1
                 if jeo_content['hard_fail_from_any_frame']:
                     movie_pass_or_fail = 'fail'
                 if failed_frames_count >= jeo_content['max_num_failed_frames']:
                     movie_pass_or_fail = 'fail'
+
             if count_score < movie_low_score:
                 movie_low_score = count_score
             if count_score > movie_high_score:

@@ -31,16 +31,14 @@ class JobEvalPanel extends React.Component {
       jeo_id: '',
       jeo_description: '',
       jeo_permanent_standards: {},
-      jeo_weight_true_pos: 1,
       jeo_weight_false_pos: 1,
-      jeo_weight_true_neg: 1,
-      jeo_weight_false_neg: 1,
+      jeo_weight_false_neg: 20,
       jeo_frame_passing_score: 70,
       jeo_movie_passing_score: 70,
-      jeo_max_num_failed_frames: 10,
+      jeo_max_num_failed_frames: 2,
+      jeo_max_num_missed_entities_single_frameset: 2,
       jeo_hard_fail_from_any_frame: false,
       jeo_preserve_job_run_parameters: true,
-      jeo_preserve_truth_maps: true,
       something_changed: false,
       job_eval_objectives: {},
       job_run_summaries: {},
@@ -107,29 +105,6 @@ console.log("mingo scale is "+scale.toString())
         when_failed: () => {this.setMessage('build manual job run summary failed')},
       })
     }
-  }
-
-
-  buildPreserveTruthMapsField() {
-    let checked_value = ''
-    if (this.state.jeo_preserve_truth_maps) {
-      checked_value = 'checked'
-    }
-    return (
-      <div>
-        <div className='d-inline'>
-          <input
-            className='ml-2 mr-2 mt-1'
-            checked={checked_value}
-            type='checkbox'
-            onChange={() => this.setLocalStateVar('jeo_preserve_truth_maps', !this.state.jeo_preserve_truth_maps)}
-          />
-        </div>
-        <div className='d-inline'>
-          Preserve Truth Maps
-        </div>
-      </div>
-    )
   }
 
   buildPreserveJobRunParametersField() {
@@ -209,25 +184,14 @@ console.log("mingo scale is "+scale.toString())
     )
   }
 
-  buildJeoWeightTruePosField() {
+  buildJeoMaxNumMissedEntitiesField() {
     return buildLabelAndTextInput(
-      this.state.jeo_weight_true_pos,
-      'True Positive',
-      'jeo_weight_true_pos',
-      'jeo_weight_true_pos',
+      this.state.jeo_max_num_missed_entities_single_frameset,
+      'Max Num of Missed Entities In a Single Frame',
+      'jeo_max_num_missed_entities_single_frameset',
+      'jeo_max_num_missed_entities_single_frameset',
       4,
-      ((value)=>{this.setLocalStateVar('jeo_weight_true_pos', value)})
-    )
-  }
-
-  buildJeoWeightTrueNegField() {
-    return buildLabelAndTextInput(
-      this.state.jeo_weight_true_neg,
-      'True Negative',
-      'jeo_weight_true_neg',
-      'jeo_weight_true_neg',
-      4,
-      ((value)=>{this.setLocalStateVar('jeo_weight_true_neg', value)})
+      ((value)=>{this.setLocalStateVar('jeo_max_num_missed_entities_single_frameset', value)})
     )
   }
 
@@ -744,16 +708,14 @@ console.log("mingo scale is "+scale.toString())
 
   getJeoFromState() {
     const build_content = {
-      weight_true_pos: this.state.jeo_weight_true_pos,
       weight_false_pos: this.state.jeo_weight_false_pos,
-      weight_true_neg: this.state.jeo_weight_true_neg,
       weight_false_neg: this.state.jeo_weight_false_neg,
       frame_passing_score: this.state.jeo_frame_passing_score,
       movie_passing_score: this.state.jeo_movie_passing_score,
       max_num_failed_frames: this.state.jeo_max_num_failed_frames,
+      max_num_missed_entities_single_frameset: this.state.jeo_max_num_missed_entities_single_frameset,
       hard_fail_from_any_frame: this.state.jeo_hard_fail_from_any_frame,
       preserve_job_run_parameters: this.state.jeo_preserve_job_run_parameters,
-      preserve_truth_maps: this.state.jeo_preserve_truth_maps,
       permanent_standards: this.state.jeo_permanent_standards,
     }
     const jeo = {
@@ -884,16 +846,14 @@ console.log("mingo scale is "+scale.toString())
     this.setState({
       jeo_id: jeo.id,
       jeo_description: jeo.description,
-      jeo_weight_true_pos: jeo.content.weight_true_pos,
       jeo_weight_false_pos: jeo.content.weight_false_pos,
-      jeo_weight_true_neg: jeo.content.weight_true_neg,
       jeo_weight_false_neg: jeo.content.weight_false_neg,
       jeo_frame_passing_score: jeo.content.frame_passing_score,
       jeo_movie_passing_score: jeo.content.movie_passing_score,
       jeo_max_num_failed_frames: jeo.content.max_num_failed_frames,
+      jeo_max_num_missed_entities_single_frameset: jeo.content.max_num_missed_entities_single_frameset,
       jeo_hard_fail_from_any_frame: jeo.content.hard_fail_from_any_frame,
       jeo_preserve_job_run_parameters: jeo.content.preserve_job_run_parameters,
-      jeo_preserve_truth_maps: jeo.content.preserve_truth_maps,
       jeo_permanent_standards: jeo.content.permanent_standards,
     })
   }
@@ -902,16 +862,14 @@ console.log("mingo scale is "+scale.toString())
     this.setState({
       jeo_id: '',
       jeo_description: '',
-      jeo_weight_true_pos: 1,
       jeo_weight_false_pos: 1,
-      jeo_weight_true_neg: 1,
-      jeo_weight_false_neg: 1,
+      jeo_weight_false_neg: 20,
       jeo_frame_passing_score: 70,
       jeo_movie_passing_score: 70,
-      jeo_max_num_failed_frames: 10,
+      jeo_max_num_failed_frames: 2,
+      jeo_max_num_missed_entities_single_frameset: 2,
       jeo_hard_fail_from_any_frame: false,
       jeo_preserve_job_run_parameters: true,
-      jeo_preserve_truth_maps: true,
       jeo_permanent_standards: {},
     })
   }
@@ -1174,16 +1132,14 @@ console.log("mingo scale is "+scale.toString())
     const load_button = this.buildJeoLoadButton()
     const save_button = this.buildJeoSaveButton()
     const delete_button = this.buildJeoDeleteButton()
-    const weight_true_pos_field = this.buildJeoWeightTruePosField()
     const weight_false_pos_field = this.buildJeoWeightFalsePosField()
-    const weight_true_neg_field = this.buildJeoWeightTrueNegField()
     const weight_false_neg_field = this.buildJeoWeightFalseNegField()
     const max_num_failed_frames_field = this.buildJeoMaxNumFailedFramesField() 
+    const max_num_missed_entities_field = this.buildJeoMaxNumMissedEntitiesField()
     const movie_passing_score_field = this.buildJeoMoviePassingScoreField() 
     const frame_passing_score_field = this.buildJeoFramePassingScoreField()
     const hard_fail_any_frame_field = this.buildHardFailAnyFrameField()
     const preserve_job_run_parameters_field = this.buildPreserveJobRunParametersField()
-    const preserve_truth_maps_field  = this.buildPreserveTruthMapsField()
 
     return (
       <div className='col-9'>
@@ -1220,16 +1176,10 @@ console.log("mingo scale is "+scale.toString())
                 </div>
                 <div className='row'>
                   <div className='col-3'>
-                  {weight_true_pos_field}
+                    {weight_false_pos_field}
                   </div>
                   <div className='col-3'>
-                  {weight_false_pos_field}
-                  </div>
-                  <div className='col-3'>
-                  {weight_true_neg_field}
-                  </div>
-                  <div className='col-3'>
-                  {weight_false_neg_field}
+                    {weight_false_neg_field}
                   </div>
                 </div>
               </div>
@@ -1237,6 +1187,10 @@ console.log("mingo scale is "+scale.toString())
 
             <div className='row m-1'>
               {max_num_failed_frames_field} 
+            </div>
+
+            <div className='row m-1'>
+              {max_num_missed_entities_field} 
             </div>
 
             <div className='row m-1'>
@@ -1253,10 +1207,6 @@ console.log("mingo scale is "+scale.toString())
 
             <div className='row m-1'>
               {preserve_job_run_parameters_field}
-            </div>
-
-            <div className='row m-1'>
-              {preserve_truth_maps_field}
             </div>
 
             <div className='row'>
@@ -2574,7 +2524,7 @@ console.log("mingo scale is "+scale.toString())
           const frameset_overlay_mode = mode_data['frameset_overlay_modes'][frameset_hash]
           const frameset_view_buttons = this.buildCompareSingleFramesetStatsViewToggle(panel_id, frameset_counts, frameset_hash, frameset_overlay_mode)
           return (
-            <div key={index} className='col'>
+            <div key={index} className='col border-bottom pb-4 mb-4'>
               <div className='row font-weight-bold'>
                 {name_string}
               </div>
@@ -2613,7 +2563,7 @@ console.log("mingo scale is "+scale.toString())
   buildSetOverlayModeButton(panel_id, frameset_hash, label, new_overlay_mode) {
     return (
       <button
-        className='btn btn-link'
+        className='btn btn-link p-0 mr-1'
         onClick={()=>{this.setCompareSingleAttributeFramesetVar(panel_id, frameset_hash, 'frameset_overlay_modes', new_overlay_mode)}}
       >
         {label}
@@ -2632,7 +2582,7 @@ console.log("mingo scale is "+scale.toString())
     let fifth_button = ''
     if (overlay_mode === 'none' || !overlay_mode) {
       first_button = (
-        <div className='pt-2 mr-2 font-weight-bold'>
+        <div className='mr-1 font-weight-bold'>
           None
         </div>
       )
@@ -2643,7 +2593,7 @@ console.log("mingo scale is "+scale.toString())
     } else if (overlay_mode === 'f_pos') {
       first_button = this.buildSetOverlayModeButton(panel_id, frameset_hash, 'None', 'none')
       second_button = (
-        <div className='pt-2 mr-2 font-weight-bold'>
+        <div className='mr-1 font-weight-bold'>
           F Pos
         </div>
       )
@@ -2654,7 +2604,7 @@ console.log("mingo scale is "+scale.toString())
       first_button = this.buildSetOverlayModeButton(panel_id, frameset_hash, 'None', 'none')
       second_button = this.buildSetOverlayModeButton(panel_id, frameset_hash, 'F Pos', 'f_pos')
       third_button = (
-        <div className='pt-2 mr-2 font-weight-bold'>
+        <div className='mr-1 font-weight-bold'>
           F Neg
         </div>
       )
@@ -2665,7 +2615,7 @@ console.log("mingo scale is "+scale.toString())
       second_button = this.buildSetOverlayModeButton(panel_id, frameset_hash, 'F Pos', 'f_pos')
       third_button = this.buildSetOverlayModeButton(panel_id, frameset_hash, 'F Neg', 'f_neg')
       fourth_button = (
-        <div className='pt-2 mr-2 font-weight-bold'>
+        <div className='mr-1 font-weight-bold'>
           All False
         </div>
       )
@@ -2676,7 +2626,7 @@ console.log("mingo scale is "+scale.toString())
       third_button = this.buildSetOverlayModeButton(panel_id, frameset_hash, 'F Neg', 'f_neg')
       fourth_button = this.buildSetOverlayModeButton(panel_id, frameset_hash, 'All False', 'f_all')
       fifth_button = (
-        <div className='pt-2 mr-2 font-weight-bold'>
+        <div className='mr-1 font-weight-bold'>
           T Pos
         </div>
       )
@@ -2718,6 +2668,7 @@ console.log("mingo scale is "+scale.toString())
     let frameset_stats_tneg = ''
     let frameset_stats_fpos = ''
     let frameset_stats_fneg = ''
+    let frameset_stats_missed_item = ''
     if (frameset_stats) {
       frameset_stats_pass_or_fail = frameset_stats['pass_or_fail']
       frameset_stats_score = (
@@ -2773,6 +2724,16 @@ console.log("mingo scale is "+scale.toString())
           </div>
         </div>
       )
+      frameset_stats_missed_item = (
+        <div className='row'>
+          <div className='d-inline'>
+            Missed Items:
+          </div>
+          <div className='d-inline ml-2'>
+            {counts['missed_item_count']}
+          </div>
+        </div>
+      )
     }
     return (
       <div className='col'>
@@ -2796,6 +2757,7 @@ console.log("mingo scale is "+scale.toString())
         {frameset_stats_tneg}
         {frameset_stats_fpos}
         {frameset_stats_fneg}
+        {frameset_stats_missed_item}
 
       </div>
 
