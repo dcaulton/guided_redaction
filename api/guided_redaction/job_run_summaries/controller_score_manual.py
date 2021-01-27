@@ -161,7 +161,7 @@ class ScoreManualController(T1Controller):
         counts = self.build_counts_from_images(tpos_image, fpos_image, fneg_image, frame_dimensions)
         return counts, maps
 
-    def score_frameset(self, job_frameset_data, jrs_frameset_data, frame_dimensions, fsh_prefix):
+    def score_frameset(self, frameset_hash, job_frameset_data, jrs_frameset_data, frame_dimensions, fsh_prefix):
         if 'pass_or_fail' in jrs_frameset_data and jrs_frameset_data['pass_or_fail'] == 'pass':
             return self.score_frameset_manual_pass(job_frameset_data, jrs_frameset_data, frame_dimensions, fsh_prefix)
         if 'pass_or_fail' in jrs_frameset_data and jrs_frameset_data['pass_or_fail'] == 'fail':
@@ -304,18 +304,35 @@ class ScoreManualController(T1Controller):
                     frame_dimensions = source_movies[movie_url]['frame_dimensions']
                 if not frame_dimensions: 
                     continue
-                for frameset_hash in job_movie_data['framesets']:
+                source_movie = source_movies[movie_url]
+                ordered_frameset_hashes = self.get_frameset_hashes_in_order(source_movie['frames'], source_movie['framesets'])
+
+                for index, frameset_hash in enumerate(ordered_frameset_hashes):
                     fsh_prefix = movie_uuid + '_' + frameset_hash
-                    job_frameset_data = job_movie_data['framesets'][frameset_hash]
+                    job_frameset_data = {}
+                    has_job_data = False
+                    was_reviewed = False
+                    if frameset_hash in job_movie_data['framesets']:
+                        job_frameset_data = job_movie_data['framesets'][frameset_hash]
+                        has_job_data = True
                     if frameset_hash in jrs_movie_data['framesets']:
+                        was_reviewed = True
                         jrs_frameset_data = jrs_movie_data['framesets'][frameset_hash]
-                        print('scoring frameset '+frameset_hash)
-                        fs_counts, fs_maps = self.score_frameset(job_frameset_data, jrs_frameset_data, frame_dimensions, fsh_prefix)
+                        fs_counts, fs_maps = self.score_frameset(
+                            frameset_hash, 
+                            job_frameset_data, 
+                            jrs_frameset_data, 
+                            frame_dimensions, 
+                            fsh_prefix
+                        )
                     else:
                         fs_counts, fs_maps = self.score_frameset_autopass(job_frameset_data, frame_dimensions, fsh_prefix)
                     build_movies[movie_url]['framesets'][frameset_hash] = {
+                        'order': index,
                         'counts': fs_counts,
                         'maps': fs_maps,
+                        'has_job_data': has_job_data,
+                        'was_reviewed': was_reviewed,
                     }
 
                 movie_stats = self.calc_movie_stats(build_movies[movie_url], job_eval_objective)
@@ -336,9 +353,10 @@ class ScoreManualController(T1Controller):
             if movie_score > job_max_score:
                 job_max_score = movie_score
         job_score = job_score_accum / len(build_stats['movie_statistics'])
+        job_score = round(job_score, 2)
         build_stats['min_score'] = job_min_score
         build_stats['max_score'] = job_max_score
-        build_stats['score'] =  job_score_accum / len(build_stats['movie_statistics'])
+        build_stats['score'] =  job_score
         build_stats['pass_or_fail'] = job_pass_or_fail
 
 
@@ -417,14 +435,17 @@ class ScoreManualController(T1Controller):
             total_t_neg += t_neg
             total_f_pos += f_pos
             total_f_neg += f_neg
-            tot = t_pos + t_neg + f_pos + f_neg
-            count_score = 100 - (f_pos_weight * (f_pos/tot)) - (f_neg_weight * (f_neg/tot))
+            tot = t_pos + t_neg
+            count_score = 100 - 100*(f_pos_weight * (f_pos/tot)) - 100*(f_neg_weight * (f_neg/tot))
+            count_score = round(count_score, 2)
+            if frameset_hash == '0':
+                print('======GAMBAS=={} {} {} - score {} - weights {} {} '.format(f_pos, f_neg, tot, count_score, f_pos_weight, f_neg_weight))
             score_accum += count_score
 
             if count_score < jeo_content['frame_passing_score']:
                 frameset_pass_or_fail = 'fail'
                 failed_frames_count += 1
-                if jeo_content['hard_fail_any_frame']:
+                if jeo_content['hard_fail_from_any_frame']:
                     movie_pass_or_fail = 'fail'
                 if failed_frames_count >= jeo_content['max_num_failed_frames']:
                     movie_pass_or_fail = 'fail'
@@ -442,6 +463,7 @@ class ScoreManualController(T1Controller):
         build_stats['min_frameset_score'] = movie_low_score
         build_stats['max_frameset_score'] = movie_high_score
         movie_score = score_accum / num_framesets
+        movie_score = round(movie_score, 2)
         if movie_score < jeo_content['movie_passing_score']:
             movie_pass_or_fail = 'fail'
         build_stats['score'] = movie_score
