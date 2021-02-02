@@ -1075,7 +1075,7 @@ console.log("mingo scale is "+scale.toString())
     this.getJobEvalObjectives()
     this.getJobRunSummaries()
     this.loadNewJeo()
-    this.setMessage('select a Job Eval Objective to start')
+    this.setMessage('select or create a Job Eval Objective to start.')
     window.addEventListener('keydown', this.keyPress)
   }
 
@@ -1214,21 +1214,28 @@ console.log("mingo scale is "+scale.toString())
               </div>
             </div>
     
-            <div className='row'>
-              <div className='ml-2 mt-2'>
-                <div>
-                  Description:
+            <div className='row ml-2 mt-2'>
+              <div className='col'>
+                <div className='row'>
+                  <div className='d-inline'>
+                    Description:
+                  </div>
+                  <div className='d-inline text-danger ml-5'>
+                    * Required
+                  </div>
                 </div>
-                <div
-                    className='d-inline'
-                >
-                  <textarea
-                    id='jeo_description'
-                    cols='60'
-                    rows='3'
-                    value={this.state.jeo_description}
-                    onChange={(event) => this.setLocalStateVar('jeo_description', event.target.value)}
-                  />
+                <div className='row'>
+                  <div
+                      className='d-inline'
+                  >
+                    <textarea
+                      id='jeo_description'
+                      cols='60'
+                      rows='3'
+                      value={this.state.jeo_description}
+                      onChange={(event) => this.setLocalStateVar('jeo_description', event.target.value)}
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -1892,7 +1899,7 @@ console.log("mingo scale is "+scale.toString())
       'Job Id',
       this.state.active_job_id,
       'active_job_id',
-      ((value)=>{this.setLocalStateVar('active_job_id', value)})
+      ((value)=>{this.setState({'active_job_id': value})})
     )
     return (
       <div>
