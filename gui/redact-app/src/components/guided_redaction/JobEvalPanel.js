@@ -1031,6 +1031,18 @@ console.log("mingo scale is "+scale.toString())
     this.setLocalStateVar('jeo_permanent_standards', deepCopyPs)
   }
 
+  buildJeoHelpButton() {
+    const help_text = 'The Job Evaluation Object (JEO) is the top level organizational object for grouping and comparing the output from different job runs.  It represents the top level objective you wish to accomplish and allows you to customize how jobs are ranked when you compare their output.  Once a JEO has been established, you can perform several operations.  1) You can manually score the output from a job, this creates a Job Run Summary.  2) You can automatically score the output from a job, this also creates a Job Run Summary.  The movies used for automatically scoring are called Exemplar Movies, the desired output you define for those movies is called a Permanent Standard.  3)  You can compare up to four Job Run Summaries side by side.  Or, 4) you can specify the Permanent Standards used for automatic scoring'
+    return (
+      <button
+          className='btn btn-primary'
+          onClick={() => this.setMessage(help_text)}
+      >
+        ?
+      </button>
+    )
+  }
+
   buildJeoSaveButton() {
     if (!this.state.something_changed) {
       return ''
@@ -1138,6 +1150,7 @@ console.log("mingo scale is "+scale.toString())
   buildJobEvalObjectivePanel() {
     const load_button = this.buildJeoLoadButton()
     const save_button = this.buildJeoSaveButton()
+    const help_button = this.buildJeoHelpButton()
     const delete_button = this.buildJeoDeleteButton()
     const add_exemplar_button = this.buildAddExemplarMovieButton()
     const weight_false_pos_field = this.buildJeoWeightFalsePosField()
@@ -1151,7 +1164,7 @@ console.log("mingo scale is "+scale.toString())
     const exemplar_movies_section = this.buildExemplarMoviesSection()
     let show_hide_details = ''
     if (this.state.jeo_id) {
-      show_hide_details = makePlusMinusRowLight('jeo details', 'jeo_details')
+      show_hide_details = makePlusMinusRowLight('details', 'jeo_details')
     }
 
     return (
@@ -1174,6 +1187,9 @@ console.log("mingo scale is "+scale.toString())
                 </div>
                 <div className='d-inline ml-2'>
                   {add_exemplar_button}
+                </div>
+                <div className='d-inline ml-2'>
+                  {help_button}
                 </div>
               </div>
             </div>
@@ -1977,7 +1993,7 @@ console.log("mingo scale is "+scale.toString())
         className='btn btn-primary'
         onClick={()=>{this.showReviewSummary(true)}}
       >
-        Build Manual JRS
+        Build Manual Summary
       </button>
     )
   }
@@ -3001,12 +3017,27 @@ doSleep(time) {
     )
   }
 
+  buildClearMessageButton(the_message) {
+    if (!the_message || the_message === '.') {
+      return ''
+    }
+    return (
+      <button
+        className='btn btn-link ml-4'
+        onClick={() => {this.setMessage('')}}
+      >
+        clear message
+      </button>
+    )
+  }
+
   render() {
     const home_button = this.buildHomeButton()
     const message_obj = this.buildDisplayMessageString()
     const message = message_obj['message_text']
     const message_style = message_obj['message_style']
     const message_class = message_obj['message_class']
+    const clear_message_button = this.buildClearMessageButton(message)
     let title = 'Job Evaluation - Home'
     let page_content = ''
     if (!this.state.mode || this.state.mode === 'home') {
@@ -3037,6 +3068,9 @@ doSleep(time) {
             <div className='font-italic'>
               {message}
             </div>
+          </div>
+          <div>
+            {clear_message_button}
           </div>
         </div>
 
