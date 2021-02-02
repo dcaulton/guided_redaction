@@ -16,6 +16,7 @@ class JobEvalPanel extends React.Component {
     this.state = {
       mode: '',
       message: '',
+      message_class: '',
       image_mode: '',
       compare_single_mode_data: {},
       image_scale: 1,
@@ -75,9 +76,13 @@ console.log("mingo scale is "+scale.toString())
     })
   }
 
-  setMessage(the_message) {
+  setMessage(the_message, the_class='') {
+    if (!the_class) {
+      the_class = 'primary'
+    }
     this.setState({
       message: the_message,
+      message_class: the_class,
     })
   }
 
@@ -564,6 +569,8 @@ console.log("mingo scale is "+scale.toString())
     if (something_changed) {
       this.setState({
         jeo_permanent_standards: deepCopyPs,
+        message: 'You will need to save changes to this JEO before they will have effect in the generation of the next Job Run Summary',
+        message_class: 'primary',
       })
     }
   }
@@ -660,6 +667,8 @@ console.log("mingo scale is "+scale.toString())
       image_mode: 'add_permanent_standard_box_1',
       jeo_permanent_standards: deepCopyPs,
       something_changed: true,
+      message: 'You will need to save changes to this JEO before they will have effect in the generation of the next Job Run Summary',
+      message_class: 'primary',
     })
   }
 
@@ -698,13 +707,23 @@ console.log("mingo scale is "+scale.toString())
     if (Object.keys(response_obj).includes('id')) {
       jeo_id = response_obj['id']
     }
+    function after_saved() {
+      this.setMessage('Job Eval Objective has been saved', 'success')
+    }
     this.getJobEvalObjectives(
-      (() => {this.loadJeo(jeo_id)})
+      (() => {this.loadJeo(jeo_id, after_saved)})
     )
   }
 
-  afterJeoDelete(response_obj) {
-    this.getJobEvalObjectives()
+  afterJeoDelete(response_obj, jeo_key_is_current) {
+    if (jeo_key_is_current) {
+      this.loadNewJeo(this.getJobEvalObjectives)
+      this.setMessage('Job Eval Objective has been Deleted', 'success')
+    } else {
+      this.getJobEvalObjectives(
+        (() => {this.setMessage('Job Eval Objective has been Deleted', 'success')})
+      )
+    }
   }
 
   getJeoFromState() {
@@ -842,7 +861,7 @@ console.log("mingo scale is "+scale.toString())
     await response
   }
 
-  loadJeo(jeo_id) {
+  loadJeo(jeo_id, when_done=(()=>{})) {
     const jeo = this.state.job_eval_objectives[jeo_id]
     this.setState({
       jeo_id: jeo.id,
@@ -856,10 +875,11 @@ console.log("mingo scale is "+scale.toString())
       jeo_hard_fail_from_any_frame: jeo.content.hard_fail_from_any_frame,
       jeo_preserve_job_run_parameters: jeo.content.preserve_job_run_parameters,
       jeo_permanent_standards: jeo.content.permanent_standards,
-    })
+      message: '',
+    }, when_done)
   }
 
-  loadNewJeo() {
+  loadNewJeo(when_done=(()=>{})) {
     this.setState({
       jeo_id: '',
       jeo_description: '',
@@ -872,7 +892,8 @@ console.log("mingo scale is "+scale.toString())
       jeo_hard_fail_from_any_frame: false,
       jeo_preserve_job_run_parameters: true,
       jeo_permanent_standards: {},
-    })
+      message: '',
+    }, when_done)
   }
 
   buildJeoDeleteButton() {
@@ -894,11 +915,12 @@ console.log("mingo scale is "+scale.toString())
           {jeo_keys.map((jeo_key, index) => {
             const jeo = this.state.job_eval_objectives[jeo_key]
             const the_name = jeo['description']
+            const deleting_current_key = (jeo_key === this.state.jeo_id)
             return (
               <button
                   className='dropdown-item'
                   key={index}
-                  onClick={() => this.deleteJeo(jeo_key, (()=>{this.afterJeoDelete()}))}
+                  onClick={() => this.deleteJeo(jeo_key, ((resp)=>{this.afterJeoDelete(resp, deleting_current_key)}))}
               >
                 {the_name}
               </button>
@@ -952,6 +974,9 @@ console.log("mingo scale is "+scale.toString())
   
   buildAddExemplarMovieButton() {
     if (!this.state.jeo_id) {
+      return ''
+    }
+    if (Object.keys(this.props.movies).length === 0) {
       return ''
     }
     return (
@@ -1013,7 +1038,7 @@ console.log("mingo scale is "+scale.toString())
     return (
       <button
           className='btn btn-primary'
-          onClick={() => this.doSave()}
+          onClick={() => this.saveJeo()}
       >
         Save
       </button>
@@ -1039,6 +1064,8 @@ console.log("mingo scale is "+scale.toString())
       {
         [var_name]: var_value,
         something_changed: true,
+        message: 'You will need to save changes to this JEO before they will have effect in the generation of the next Job Run Summary',
+        message_class: 'primary',
       },
       anon_func
     )
@@ -1048,6 +1075,7 @@ console.log("mingo scale is "+scale.toString())
     this.getJobEvalObjectives()
     this.getJobRunSummaries()
     this.loadNewJeo()
+    this.setMessage('select a Job Eval Objective to start')
     window.addEventListener('keydown', this.keyPress)
   }
 
@@ -1261,9 +1289,12 @@ console.log("mingo scale is "+scale.toString())
     )
   }
 
-  doSave(when_done=(()=>{})) {
+  saveJeo(when_done=(()=>{})) {
     const jeo_object = this.getJeoFromState()
     this.saveJobEvalObjective(jeo_object, this.afterJeoSave)
+    this.setState({
+      something_changed: false,
+    })
   }
 
   buildHomePanel() {
@@ -1395,7 +1426,7 @@ console.log("mingo scale is "+scale.toString())
         className='btn btn-primary'
         onClick={()=>{this.showReviewSummary()}}
       >
-        Back
+        Back to Summary View
       </button>
     )
   }
@@ -1488,12 +1519,12 @@ console.log("mingo scale is "+scale.toString())
     const num_rows = Math.ceil(ordered_hashes.length / num_cols)
     const col_count_picker = this.buildAnnotateTileColumnCountDropdown()
     let steps_explained = "Select the frames you wish to annotate by clicking on them, press the Annotate button when done. Clicking on no frames gives you all frames of the movie to annotate."
-    let when_clicked = (()=>{this.annotateExemplarMovie(this.state.active_movie_url, 'single')})
-    let button_label = 'Annotate'
+    let review_annotate_when_clicked = (()=>{this.annotateExemplarMovie(this.state.active_movie_url, 'single')})
+    let review_annotate_button_label = 'Annotate these Frames'
     if (this.state.mode === 'review') {
       steps_explained = "Select the frames you wish to review by clicking on them, press the Review button when done. Clicking on no frames gives you all frames of the movie to review."
-      button_label = 'Review'
-      when_clicked = (()=>{this.reviewExemplarMovie(this.state.active_movie_url, 'single')})
+      review_annotate_button_label = 'Review these Frames'
+      review_annotate_when_clicked = (()=>{this.reviewExemplarMovie(this.state.active_movie_url, 'single')})
     }
 
     let row_num_array = []
@@ -1510,19 +1541,21 @@ console.log("mingo scale is "+scale.toString())
       <div className='row'>
         <div className='col'>
           <div className='row h5'>
-            <div className='col-9'>
+            <div className='col-6'>
               {steps_explained}
             </div>
-            <div className='d-inline ml-1'>
-              {back_to_jrs_summary_button}
-            </div>
-            <div className='col-3'>
+          </div>
+          <div className='row'>
+            <div className='d-inline'>
               <button
                 className='btn btn-primary'
-                onClick={when_clicked}
+                onClick={review_annotate_when_clicked}
               >
-                {button_label}
+                {review_annotate_button_label}
               </button>
+            </div>
+            <div className='d-inline ml-2'>
+              {back_to_jrs_summary_button}
             </div>
           </div>
           <div className='row'>
@@ -1993,6 +2026,7 @@ console.log("mingo scale is "+scale.toString())
   }
 
   showReviewSummary(clear_jrs_movies=false) {
+    let match_found = false
     for (let i=0; i < Object.keys(this.props.tier_1_matches).length; i++) {
       const scanner_type = Object.keys(this.props.tier_1_matches)[i]
       for (let j=0; j < Object.keys(this.props.tier_1_matches[scanner_type]).length; j++) {
@@ -2002,6 +2036,7 @@ console.log("mingo scale is "+scale.toString())
           Object.keys(match_obj).includes('job_id') &&
           match_obj['job_id'] === this.state.active_job_id
         ) {
+          match_found = true
           const movie_urls = Object.keys(match_obj['movies'])
           let build_jrs_movies = {}
           for (let k=0; k < movie_urls.length; k++) {
@@ -2032,10 +2067,20 @@ console.log("mingo scale is "+scale.toString())
         }
       }
     }
-    this.setState({
-      message: 'error: the job you selected needs to be loaded into memory first'
-    })
+    if (!match_found) {
+      this.props.loadJobResults(this.state.active_job_id)
+      this.setMessage('please wait a moment, loading the job results')
+      this.doSleep(5000).then(() => {
+        this.setMessage('job output has been loaded')
+        return this.showReviewSummary(clear_jrs_movies)
+      });
+    }
   }
+
+doSleep(time) {
+  return new Promise((resolve) => setTimeout(resolve, time));
+}
+
 
   buildJrsMovieNamesDiv(jrs) {
     if (jrs.movie_names.length === 0) {
@@ -2275,7 +2320,7 @@ console.log("mingo scale is "+scale.toString())
       the_title = movie_name 
     } else if (this.state.annotate_view_mode === 'summary') {
       the_body = this.buildReviewPanelSummary()
-      the_title = 'Manually Reviewing Job ' + this.state.active_job_id
+      the_title = 'Summary View for Job ' + this.state.active_job_id
     }
 
     return (
@@ -2921,11 +2966,31 @@ console.log("mingo scale is "+scale.toString())
     )
   }
 
-  render() {
-    const mode_nav = this.buildModeNav()
-    let title = 'Job Evaluation - Home'
+  buildDisplayMessageString() {
     let message = '.'
     let message_style = {'color': 'white'}
+    let message_class = 'col-6'
+    if (this.state.message) {
+      message = this.state.message
+    }
+    if (message !== '.') {
+      message_style['color'] = 'black'
+      message_class = 'col-6 alert alert-' + this.state.message_class
+    }
+    return {
+      message_text: message,
+      message_class: message_class,
+      message_style: message_style,
+    }
+  }
+
+  render() {
+    const message_obj = this.buildDisplayMessageString()
+    const message = message_obj['message_text']
+    const message_style = message_obj['message_style']
+    const message_class = message_obj['message_class']
+    const mode_nav = this.buildModeNav()
+    let title = 'Job Evaluation - Home'
     let page_content = ''
     if (!this.state.mode || this.state.mode === 'home') {
       page_content = this.buildHomePanel()
@@ -2939,10 +3004,6 @@ console.log("mingo scale is "+scale.toString())
       page_content = this.buildComparePanel()
       title = 'Job Eval - Compare'
     }
-    if (this.state.message) {
-      message = this.state.message
-      message_style['color'] = 'black'
-    }
     return (
       <div className='col ml-2'>
         <div>
@@ -2951,8 +3012,13 @@ console.log("mingo scale is "+scale.toString())
         <div className='row h2'>
           {title}
         </div>
+
         <div style={message_style} className='row'>
-          {message}
+          <div className={message_class}>
+            <div className='font-italic'>
+              {message}
+            </div>
+          </div>
         </div>
 
         <div className='row'>

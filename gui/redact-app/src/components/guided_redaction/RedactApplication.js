@@ -2407,6 +2407,7 @@ class RedactApplication extends React.Component {
                 getFramesetHashForImageUrl={this.getFramesetHashForImageUrl}
                 setFramesetHash={this.setFramesetHash}
                 submitJob={this.submitJobWrapper}
+                loadJobResults={this.loadJobResultsWrapper}
               />
             </Route>
             <Route path={['/redact/compose', '/redact']}>
