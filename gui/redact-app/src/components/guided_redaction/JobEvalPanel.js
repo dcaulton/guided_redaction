@@ -1703,7 +1703,7 @@ console.log("mingo scale is "+scale.toString())
         className='btn btn-primary'
         onClick={()=>{this.showReviewTile(movie_url)}}
       >
-        Back
+        Back to Tile View
       </button>
     )
   }
@@ -2278,46 +2278,55 @@ doSleep(time) {
   buildReviewPanelSummary() {
     const movie_urls = this.getMovieUrlsForActiveJob()
     let send_to_api_button = ''
+    let submit_message = ''
     return (
       <div className='row'>
         <div className='col'>
           <div className='row'>
             movies
           </div>
-        {movie_urls.map((movie_url, index) => {
-          const movie_name = getFileNameFromUrl(movie_url)
-          const delete_movie_button = this.buildDeleteJrsMovieButton(movie_url)
-          const review_movie_button = this.buildReviewJrsMovieButton(movie_url)
-          let summary_info = 'no review data found'
-          if (
-            Object.keys(this.state.jrs_movies).includes(movie_url) &&
-            Object.keys(this.state.jrs_movies[movie_url]['framesets']).length > 0
-          ) {
-            summary_info = Object.keys(this.state.jrs_movies[movie_url]['framesets']).length.toString() + ' frames reviewed'
-            send_to_api_button = this.buildSendInManualJrsButton()
-          }
-          return (
-            <div 
-              key={index}
-              className='row'
-            >
-              <div className='col-4'>
-                {movie_name}
-              </div>
-              <div className='col-3'>
-                {summary_info}
-              </div>
-              <div className='col-1'>
-                {delete_movie_button}
-              </div>
-              <div className='col-2'>
-                {review_movie_button}
-              </div>
-            </div>
-          )
-        })}
           <div className='row'>
-            {send_to_api_button}
+            <div className='col'>
+              {movie_urls.map((movie_url, index) => {
+                const movie_name = getFileNameFromUrl(movie_url)
+                const delete_movie_button = this.buildDeleteJrsMovieButton(movie_url)
+                const review_movie_button = this.buildReviewJrsMovieButton(movie_url)
+                let summary_info = 'no review data found'
+                if (
+                  Object.keys(this.state.jrs_movies).includes(movie_url) &&
+                  Object.keys(this.state.jrs_movies[movie_url]['framesets']).length > 0
+                ) {
+                  submit_message = 'manual job mark up has been saved, press the Finalize button to initiate the creation of a Job Run Summary'
+                  summary_info = Object.keys(this.state.jrs_movies[movie_url]['framesets']).length.toString() + ' frames reviewed'
+                  send_to_api_button = this.buildSendInManualJrsButton()
+                }
+                return (
+                  <div 
+                    key={index}
+                    className='row'
+                  >
+                    <div className='col-4'>
+                      {movie_name}
+                    </div>
+                    <div className='col-3'>
+                      {summary_info}
+                    </div>
+                    <div className='col-1'>
+                      {delete_movie_button}
+                    </div>
+                    <div className='col-2'>
+                      {review_movie_button}
+                    </div>
+                  </div>
+               )
+              })}
+                <div className='row font-weight-bold font-italic'>
+                  {submit_message}
+                </div>
+                <div className='row'>
+                  {send_to_api_button}
+                </div>
+            </div>
           </div>
         </div>
       </div>
