@@ -1079,33 +1079,6 @@ console.log("mingo scale is "+scale.toString())
     window.addEventListener('keydown', this.keyPress)
   }
 
-  buildModeNav() {
-    let targets = []
-    targets = [{'': 'home'}] 
-    if (targets.length > 0) {
-      return (
-        <div className='row'>
-          {targets.map((target_obj, index) => {
-            const target_key = Object.keys(target_obj)[0]
-            const target_display_text = target_obj[target_key]
-            return (
-              <div className='col-3' key={index}>
-                <div className='row'>
-                <button
-                  className='btn btn-link'
-                  onClick={() => {this.setState({'mode': target_key})}}
-                >
-                  {target_display_text}
-                </button>
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      )
-    }
-  }
-
   buildExemplarMoviesSection() {
     if (!this.state.jeo_id) {
       return ''
@@ -1186,10 +1159,10 @@ console.log("mingo scale is "+scale.toString())
         <div id='objective_div row'>
           <div className='col'>
             <div className='row h3'>
-              <div className='col-4'>
-                JEO General Info
+              <div className='col-6'>
+                Job Eval Objective: General Info
               </div>
-              <div className='col-8'>
+              <div className='col-6'>
                 <div className='d-inline'>
                   {load_button}
                 </div>
@@ -1304,16 +1277,35 @@ console.log("mingo scale is "+scale.toString())
     })
   }
 
+  buildDividerGradient() {
+    if (!this.state.jeo_id) {
+      return ''
+    }
+    const gradient_style = {
+      backgroundImage: 'linear-gradient(to bottom right, #D4DAF8, #D4F9C8)',
+      height: '15px',
+    }
+    return (
+      <div className='col-12' style={gradient_style}>
+      </div>
+    )
+  }
+
   buildHomePanel() {
-    const objective_data = this.buildJobEvalObjectivePanel()
+    const job_eval_objective_data = this.buildJobEvalObjectivePanel()
     const job_run_summary_section = this.buildJobRunSummarySection()
+    const gradient_div = this.buildDividerGradient()
     return (
       <div className='col'>
         <div className='row mt-2'>
-          {objective_data}
+          {job_eval_objective_data}
         </div>
 
-        <div className='row'>
+        <div className='row mt-2 mr-1 rounded'>
+          {gradient_div}
+        </div>
+
+        <div className='row mt-2'>
           <div className='col-12'>
             {job_run_summary_section}
           </div>
@@ -1433,7 +1425,7 @@ console.log("mingo scale is "+scale.toString())
         className='btn btn-primary'
         onClick={()=>{this.showReviewSummary()}}
       >
-        Back to Summary View
+        Back to Job Summary View
       </button>
     )
   }
@@ -2076,7 +2068,7 @@ console.log("mingo scale is "+scale.toString())
     }
     if (!match_found) {
       this.props.loadJobResults(this.state.active_job_id)
-      this.setMessage('please wait a moment, loading the job results')
+      this.setMessage('please wait a moment, loading the job results.  you will be redirected when complete')
       this.doSleep(5000).then(() => {
         this.setMessage('job output has been loaded')
         return this.showReviewSummary(clear_jrs_movies)
@@ -2217,7 +2209,7 @@ doSleep(time) {
     const jrs_list = this.buildJobRunSummaryList()
     const get_jrs_button = this.buildGetJrsListButton()
     return (
-      <div className='row border-top'>
+      <div className='row'>
         <div className='col'>
           <div className='row h3'>
             <div className='col-8'>
@@ -2228,19 +2220,23 @@ doSleep(time) {
             </div>
           </div>
 
-          <div className='row mt-4 h4'>
-            Generate Summaries
-          </div>
           <div className='row mt-4'>
-            {exemplar_job_picker}
-          </div>
+            <div className='col-6 rounded border'>
+              <div className='row mt-4 ml-2 h4'>
+                Generate Summaries
+              </div>
+              <div className='row mt-4 ml-2'>
+                {exemplar_job_picker}
+              </div>
 
-          <div className='row'>
-            <div className='d-inline ml-2'>
-              {generate_exemplar_button}
-            </div>
-            <div className='d-inline ml-2'>
-              {manual_review_button}
+              <div className='row mb-4  mt-2 ml-2'>
+                <div className='d-inline ml-2'>
+                  {generate_exemplar_button}
+                </div>
+                <div className='d-inline ml-2'>
+                  {manual_review_button}
+                </div>
+              </div>
             </div>
           </div>
 
@@ -2991,33 +2987,49 @@ doSleep(time) {
     }
   }
 
+  buildHomeButton() {
+    if (!this.state.mode) {
+      return ''
+    }
+    return (
+      <button
+        className='btn btn-link'
+        onClick={() => {this.setState({'mode': ''})}}
+      >
+        home
+      </button>
+    )
+  }
+
   render() {
+    const home_button = this.buildHomeButton()
     const message_obj = this.buildDisplayMessageString()
     const message = message_obj['message_text']
     const message_style = message_obj['message_style']
     const message_class = message_obj['message_class']
-    const mode_nav = this.buildModeNav()
     let title = 'Job Evaluation - Home'
     let page_content = ''
     if (!this.state.mode || this.state.mode === 'home') {
       page_content = this.buildHomePanel()
     } else if (this.state.mode === 'annotate') {
       page_content = this.buildAnnotatePanel()
-      title = 'Job Eval - Annotate'
+      title = 'Job Evaluation - Annotate Exemplar Movie'
     } else if (this.state.mode === 'review') {
       page_content = this.buildReviewPanel()
-      title = 'Job Eval - Review '
+      title = 'Job Evaluation - Manual Review of Job Output'
     } else if (this.state.mode === 'compare') {
       page_content = this.buildComparePanel()
-      title = 'Job Eval - Compare'
+      title = 'Job Eval - Compare Job Run Summaries'
     }
     return (
       <div className='col ml-2'>
-        <div>
-          {mode_nav}
-        </div>
         <div className='row h2'>
-          {title}
+          <div className='col-9'>
+            {title}
+          </div>
+          <div className='col-3'>
+            {home_button}
+          </div>
         </div>
 
         <div style={message_style} className='row'>
