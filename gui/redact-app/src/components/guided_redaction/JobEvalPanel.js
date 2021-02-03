@@ -47,6 +47,7 @@ class JobEvalPanel extends React.Component {
       jrs_ids_to_compare: [],
       jrs_ids_to_delete: [],
       jrs_movies: {},
+      finalize_manual_submitted: false,
     }
     this.setLocalStateVar=this.setLocalStateVar.bind(this)
     this.afterJeoSave=this.afterJeoSave.bind(this)
@@ -1319,6 +1320,7 @@ console.log("mingo scale is "+scale.toString())
     const gradient_style = {
       backgroundImage: 'linear-gradient(to bottom right, #D4DAF8, #D4F9C8)',
       height: '15px',
+      borderRadius: '25px'
     }
     return (
       <div className='col-12' style={gradient_style}>
@@ -1336,7 +1338,7 @@ console.log("mingo scale is "+scale.toString())
           {job_eval_objective_data}
         </div>
 
-        <div className='row mt-2 mr-1 rounded'>
+        <div className='row mt-2 mr-1'>
           {gradient_div}
         </div>
 
@@ -2077,11 +2079,19 @@ console.log("mingo scale is "+scale.toString())
     )
   }
 
+  sendInManualJob() {
+    this.setState({
+      finalize_manual_submitted: true,
+    })
+    this.submitJobEvalJob('build_manual_job_run_summary')
+  }
+
+
   buildSendInManualJrsButton() {
     return (
       <button
         className='btn btn-primary'
-        onClick={()=>{this.submitJobEvalJob('build_manual_job_run_summary')}}
+        onClick={()=>{this.sendInManualJob()}}
       >
         Finalize 
       </button>
@@ -2119,7 +2129,7 @@ console.log("mingo scale is "+scale.toString())
     })
   }
 
-  showReviewSummary(clear_jrs_movies=false) {
+  showReviewSummary(first_loading_of_this_job=false) {
     let match_found = false
     for (let i=0; i < Object.keys(this.props.tier_1_matches).length; i++) {
       const scanner_type = Object.keys(this.props.tier_1_matches)[i]
@@ -2138,25 +2148,19 @@ console.log("mingo scale is "+scale.toString())
             build_jrs_movies[movie_url] = {
               'framesets': {},
             }
-            
           }
 
-          if (clear_jrs_movies) {
-            this.setState({
-              mode: 'review',
-              annotate_view_mode: 'summary',
-              jrs_movies: build_jrs_movies,
-              active_t1_results_key: match_key,
-              active_t1_scanner_type: scanner_type,
-            })
-          } else {
-            this.setState({
-              mode: 'review',
-              annotate_view_mode: 'summary',
-              active_t1_results_key: match_key,
-              active_t1_scanner_type: scanner_type,
-            })
+          let build_obj = {
+            mode: 'review',
+            annotate_view_mode: 'summary',
+            active_t1_results_key: match_key,
+            active_t1_scanner_type: scanner_type,
           }
+          if (first_loading_of_this_job) {
+            build_obj['jrs_movies'] = build_jrs_movies
+            build_obj['finalize_manual_submitted'] = false
+          }
+          this.setState(build_obj)
           return
         }
       }
@@ -2166,7 +2170,7 @@ console.log("mingo scale is "+scale.toString())
       this.setMessage('please wait a moment, loading the job results.  you will be redirected when complete')
       this.doSleep(5000).then(() => {
         this.setMessage('job output has been loaded')
-        return this.showReviewSummary(clear_jrs_movies)
+        return this.showReviewSummary(first_loading_of_this_job)
       });
     }
   }
@@ -2361,7 +2365,8 @@ doSleep(time) {
       const movie_url = movie_urls[i]
       if (
         Object.keys(this.state.jrs_movies).includes(movie_url) &&
-        Object.keys(this.state.jrs_movies[movie_url]['framesets']).length > 0
+        Object.keys(this.state.jrs_movies[movie_url]['framesets']).length > 0 &&
+        !this.state.finalize_manual_submitted
       ) {
         submit_message = 'manual job mark up has been saved, press the Finalize button to initiate the creation of a Job Run Summary'
         send_to_api_button = this.buildSendInManualJrsButton()
