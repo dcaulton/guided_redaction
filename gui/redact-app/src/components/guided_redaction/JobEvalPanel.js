@@ -620,6 +620,18 @@ console.log("mingo scale is "+scale.toString())
     })
   }
 
+  resetFrameReviewData() {
+    let deepCopyJrsm = JSON.parse(JSON.stringify(this.state.jrs_movies))
+    const fsh = this.props.frameset_hash
+    if (Object.keys(this.state.jrs_movies[this.state.active_movie_url]['framesets']).includes(fsh)) {
+      delete deepCopyJrsm[this.state.active_movie_url]['framesets'][fsh]
+    }
+    this.setState({
+      jrs_movies: deepCopyJrsm,
+      message: 'frame review data has been cleared',
+    })
+  }
+
   markFrameAsPassed() {
     this.markFrameAsPassedOrFailed('pass')
   }
@@ -920,7 +932,7 @@ console.log("mingo scale is "+scale.toString())
               <button
                   className='dropdown-item'
                   key={index}
-                  onClick={() => this.deleteJeo(jeo_key, ((resp)=>{this.afterJeoDelete(resp, deleting_current_key)}))}
+                  onClick={() => this.deleteJeoWithWarning(jeo_key, deleting_current_key)}
               >
                 {the_name}
               </button>
@@ -931,6 +943,13 @@ console.log("mingo scale is "+scale.toString())
     )
   }
   
+  deleteJeoWithWarning(jeo_key, deleting_current_key) {
+    let resp = window.confirm("Are you sure you want to delete this Job Eval Objective?  Deleting it will also remove any associated Job Run Summaries")
+    if (resp) {
+      this.deleteJeo(jeo_key, ((resp)=>{this.afterJeoDelete(resp, deleting_current_key)}))
+    }
+  }
+
   buildJeoLoadButton() {
     const jeo_keys = Object.keys(this.state.job_eval_objectives)
     return (
@@ -1690,12 +1709,35 @@ console.log("mingo scale is "+scale.toString())
     return (
       <button
         className='btn btn-primary'
-        onClick={()=>{console.log(' winky ouch 784')}}
+        onClick={()=>{this.resetFrameReviewData()}}
       >
         Reset
       </button>
     )
   }
+
+  buildAnnotateSingleHelpButton() {
+    return (
+      <button
+        className='btn btn-primary'
+        onClick={()=>{this.setMessage('this is the annotate help documentation')}}
+      >
+        ?
+      </button>
+    )
+  }
+
+  buildReviewSingleHelpButton() {
+    return (
+      <button
+        className='btn btn-primary'
+        onClick={()=>{this.setMessage('A number of rules are applicable when reviewing a single frame of a jobs output.  1) If you specify nothing, PASS is assumed, 2) if you FAIL a job, it is assumed that all the detected areas from the job were done in error, and the opposite of that - all areas that were missed - were things you wanted to see in the results.  Job score will be zero.  3) You can specify Desired and Unwanted regions.  Those will be used to score the job results, ultimately calculating the areas of missed-but-wanted (false negative) and returned-but-not-wanted (false positive) regions, and scoring them with the weights and formula indicated in the details of the Job Eval Objective record.  If the record receives any Desired/Unwanted markup and does not a simple PASS/FAIL score, it will be scored with the weights and thresholds specified on the JEO.  Scores and PASS/FAIL grades are accumulated across all the frames of all the movies of the jobs, and can pass or fail the movie or entire job, according to thresholds established in the Job Eval Objective record.')}}
+      >
+        ?
+      </button>
+    )
+  }
+
 
   buildBackToReviewJrsMovieButton(movie_url) {
     return (
@@ -1717,6 +1759,7 @@ console.log("mingo scale is "+scale.toString())
     const next_frame_button = this.buildNextFrameButton()
     const prev_frame_button = this.buildPrevFrameButton()
     const back_to_jrs_tile_button = this.buildBackToReviewJrsMovieButton(this.state.active_movie_url)
+    const help_button = this.buildReviewSingleHelpButton()
 
     return (
       <div>
@@ -1752,6 +1795,10 @@ console.log("mingo scale is "+scale.toString())
           {back_to_jrs_tile_button}
         </div>
 
+        <div className='d-inline ml-1'>
+          {help_button}
+        </div>
+
       </div>
     )
   } 
@@ -1766,6 +1813,7 @@ console.log("mingo scale is "+scale.toString())
     const next_frame_button = this.buildNextFrameButton()
     const prev_frame_button = this.buildPrevFrameButton()
     const back_to_tile_button = this.buildBackToTileButton()
+    const help_button = this.buildAnnotateSingleHelpButton()
     return (
       <div>
         <div className='d-inline ml-1'>
@@ -1802,6 +1850,10 @@ console.log("mingo scale is "+scale.toString())
 
         <div className='d-inline ml-1'>
           {back_to_tile_button}
+        </div>
+
+        <div className='d-inline ml-1'>
+          {help_button}
         </div>
       </div>
     )
@@ -2275,18 +2327,58 @@ doSleep(time) {
     return Object.keys(this.state.jrs_movies)
   }
 
-  buildReviewPanelSummary() {
-    const movie_urls = this.getMovieUrlsForActiveJob()
+  buildYouCanFinalizeRow(movie_urls) {
     let send_to_api_button = ''
     let submit_message = ''
+    for (let i=0; i < movie_urls.length; i++) {
+      const movie_url = movie_urls[i]
+      if (
+        Object.keys(this.state.jrs_movies).includes(movie_url) &&
+        Object.keys(this.state.jrs_movies[movie_url]['framesets']).length > 0
+      ) {
+        submit_message = 'manual job mark up has been saved, press the Finalize button to initiate the creation of a Job Run Summary'
+        send_to_api_button = this.buildSendInManualJrsButton()
+      }
+    }
+    if (!submit_message) {
+      return ''
+    }
     return (
       <div className='row'>
         <div className='col'>
-          <div className='row'>
-            movies
+          <div className='row alert alert-primary'>
+            <div className='d-inline h5'>
+              {submit_message}
+            </div>
+            <div className='d-inline ml-2 mt-0'>
+              {send_to_api_button}
+            </div>
           </div>
+        </div>
+      </div>
+    )
+  }
+
+  buildReviewPanelSummary() {
+    const movie_urls = this.getMovieUrlsForActiveJob()
+    const you_can_finalize_row = this.buildYouCanFinalizeRow(movie_urls)
+    return (
+      <div className='row'>
+        <div className='col'>
+
+          {you_can_finalize_row}
+
           <div className='row'>
-            <div className='col'>
+            <table className='table table-striped'>
+              <thead>
+                <tr>
+                  <td>Movie Name</td>
+                  <td></td>
+                  <td></td>
+                  <td></td>
+                </tr>
+              </thead>
+              <tbody>
               {movie_urls.map((movie_url, index) => {
                 const movie_name = getFileNameFromUrl(movie_url)
                 const delete_movie_button = this.buildDeleteJrsMovieButton(movie_url)
@@ -2296,38 +2388,29 @@ doSleep(time) {
                   Object.keys(this.state.jrs_movies).includes(movie_url) &&
                   Object.keys(this.state.jrs_movies[movie_url]['framesets']).length > 0
                 ) {
-                  submit_message = 'manual job mark up has been saved, press the Finalize button to initiate the creation of a Job Run Summary'
-                  summary_info = Object.keys(this.state.jrs_movies[movie_url]['framesets']).length.toString() + ' frames reviewed'
-                  send_to_api_button = this.buildSendInManualJrsButton()
+                  summary_info = 'reviewed'
                 }
                 return (
-                  <div 
-                    key={index}
-                    className='row'
-                  >
-                    <div className='col-4'>
+                  <tr key={index}>
+                    <td>
                       {movie_name}
-                    </div>
-                    <div className='col-3'>
+                    </td>
+                    <td>
                       {summary_info}
-                    </div>
-                    <div className='col-1'>
+                    </td>
+                    <td>
                       {delete_movie_button}
-                    </div>
-                    <div className='col-2'>
+                    </td>
+                    <td>
                       {review_movie_button}
-                    </div>
-                  </div>
+                    </td>
+                  </tr>
                )
               })}
-                <div className='row font-weight-bold font-italic'>
-                  {submit_message}
-                </div>
-                <div className='row'>
-                  {send_to_api_button}
-                </div>
-            </div>
+              </tbody>
+            </table>
           </div>
+
         </div>
       </div>
     )
@@ -3018,7 +3101,7 @@ doSleep(time) {
     }
     return (
       <button
-        className='btn btn-link'
+        className='btn btn-primary'
         onClick={() => {this.setState({'mode': ''})}}
       >
         home

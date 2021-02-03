@@ -319,6 +319,7 @@ class JobLogic extends React.Component {
     if (request_data['scan_level'] === 'tier_2') {
       this.loadTier2RedactData(job, request_data, resp_obj, setGlobalStateVar)
     } 
+    when_done()
   }
 
   loadTier2RedactData(job, request_data, resp_obj, setGlobalStateVar) {
