@@ -3,6 +3,11 @@ import uuid
 from django.conf import settings
 from django.db import models
 from guided_redaction.utils.classes.FileWriter import FileWriter
+from guided_redaction.utils.external_payload_utils import (
+    save_external_payloads,
+    get_data_from_disk_for_model_instance,
+    delete_external_payloads
+)
 
 
 class JobRunSummary(models.Model):
@@ -14,9 +19,10 @@ class JobRunSummary(models.Model):
     summary_type = models.CharField(max_length=36)
     score = models.FloatField(default=0)
     content = models.TextField(null=True)
-    content_data_path = models.CharField(max_length=255, null=True)
-    content_data_checksum = models.CharField(max_length=255, null=True)
+    content_path = models.CharField(max_length=255, null=True)
+    content_checksum = models.CharField(max_length=255, null=True)
 
+    EXTERNAL_PAYLOAD_FIELDS = ['content']
     MAX_DB_PAYLOAD_SIZE = 1000000
 
     def __str__(self):
@@ -37,69 +43,15 @@ class JobRunSummary(models.Model):
         return disp_hash
 
     def save(self, *args, **kwargs):
-        old_files_to_clear_out_exist = False
-        if self.content and len(self.content) > self.MAX_DB_PAYLOAD_SIZE:
-            checksum = hashlib.md5(self.content.encode('utf-8')).hexdigest()
-            if self.content_data_checksum != checksum:
-                self.content_data_checksum = checksum
-                directory = self.get_current_directory()
-                if self.content_data_path:
-                    old_content_path = self.content_data_path
-                    old_files_to_clear_out_exist = True
-                self.content_data_path = \
-                    self.save_data_to_disk(self.content, directory)
-                self.content = '{}'
-
-        if old_files_to_clear_out_exist:
-            self.delete_data_from_disk(old_content_path)
+        save_external_payloads(self)
         super(JobRunSummary, self).save(*args, **kwargs)
 
     def delete(self):
-        self.delete_data_from_disk(self.content_data_path)
+        delete_external_payloads(self)
         super(JobRunSummary, self).delete()
 
     @classmethod
     def from_db(cls, db, field_names, values):
         instance = cls(*values)
-        instance.get_data_from_disk()
+        get_data_from_disk_for_model_instance(instance)
         return instance
-
-    # TODO develop code to share between jobs and this model for serializing payloads to/from disk
-    def save_data_to_disk(self, data, directory):
-        fw = FileWriter(
-            working_dir=settings.REDACT_FILE_STORAGE_DIR,
-            base_url=settings.REDACT_FILE_BASE_URL,
-            image_request_verify_headers=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
-        )
-        if not directory:
-            directory = str(uuid.uuid4())
-            fw.create_unique_directory(directory)
-        filename_uuid = str(uuid.uuid4())
-        file_name = 'jrs_' + filename_uuid + '_data.json'
-        outfilepath = fw.build_file_fullpath_for_uuid_and_filename(directory, file_name)
-        fw.write_text_data_to_filepath(data, outfilepath)
-
-        return outfilepath
-
-    def get_data_from_disk(self):
-        if self.content_data_path:
-            fw = FileWriter(
-                working_dir=settings.REDACT_FILE_STORAGE_DIR,
-                base_url=settings.REDACT_FILE_BASE_URL,
-                image_request_verify_headers=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
-            )
-            self.content = fw.get_text_data_from_filepath(self.content_data_path)
-
-    def get_current_directory(self):
-        if self.content_data_path:
-            return self.content_data_path.split('/')[-2]
-
-    def delete_data_from_disk(self, content_data_path):
-        if content_data_path:
-            fw = FileWriter(
-                working_dir=settings.REDACT_FILE_STORAGE_DIR,
-                base_url=settings.REDACT_FILE_BASE_URL,
-                image_request_verify_headers=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
-            )
-            fw.delete_item_at_filepath(content_data_path)
-

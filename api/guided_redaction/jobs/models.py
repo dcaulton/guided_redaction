@@ -8,6 +8,11 @@ from django.conf import settings
 from django.db import models
 
 from guided_redaction.attributes.models import Attribute
+from guided_redaction.utils.external_payload_utils import (
+    save_external_payloads,
+    get_data_from_disk_for_model_instance,
+    delete_external_payloads
+)
 from guided_redaction.utils.classes.FileWriter import FileWriter
 
 
@@ -35,6 +40,7 @@ class Job(models.Model):
         'workbooks.Workbook', on_delete=models.CASCADE, null=True
     )
 
+    EXTERNAL_PAYLOAD_FIELDS = ['response_data', 'request_data']
     MIN_PERCENT_COMPLETE_INCREMENT = .05
     MAX_DB_PAYLOAD_SIZE = 1000000  
 
@@ -54,36 +60,7 @@ class Job(models.Model):
         if percent_complete != self.percent_complete:
             self.percent_complete = percent_complete
 
-        old_files_to_clear_out_exist = False
-        old_response_path = ''
-        old_request_path = ''
-        if self.response_data and len(self.response_data) > self.MAX_DB_PAYLOAD_SIZE:
-            checksum = hashlib.md5(self.response_data.encode('utf-8')).hexdigest()
-            if self.response_data_checksum != checksum:
-                print('saving job response data to disk, its {} bytes'.format(len(self.response_data)))
-                self.response_data_checksum = checksum
-                directory = self.get_current_directory('response')
-                if self.response_data_path:
-                    old_response_path = self.response_data_path
-                    old_files_to_clear_out_exist = True
-                self.response_data_path = \
-                    self.save_data_to_disk(self.response_data, directory, 'response')
-                self.response_data = '{}'
-
-        if self.request_data and len(self.request_data) > self.MAX_DB_PAYLOAD_SIZE:
-            checksum = hashlib.md5(self.request_data.encode('utf-8')).hexdigest()
-            if self.request_data_checksum != checksum:
-                self.request_data_checksum = checksum
-                print('saving job request data to disk, its {} bytes'.format(len(self.request_data)))
-                directory = self.get_current_directory('request')
-                if self.request_data_path:
-                    old_request_path = self.request_data_path
-                    old_files_to_clear_out_exist = True
-                self.request_data_path = self.save_data_to_disk(self.request_data, directory, 'request')
-                self.request_data = '{}'
-
-        if old_files_to_clear_out_exist:
-            self.delete_data_from_disk(old_request_path, old_response_path)
+        save_external_payloads(self) 
 
         super(Job, self).save(*args, **kwargs)
 
@@ -142,57 +119,11 @@ class Job(models.Model):
             build_obj[child.id] = child.as_dict_recursive(build_obj)
         return build_obj
 
-    def get_current_directory(self, request_or_response):
-        if request_or_response == 'request' and self.request_data_path:
-            return self.request_data_path.split('/')[-2]
-        if request_or_response == 'response' and self.response_data_path:
-            return self.response_data_path.split('/')[-2]
-
-    def get_data_from_disk(self):
-        if self.request_data_path or self.response_data_path:
-            fw = FileWriter(
-                working_dir=settings.REDACT_FILE_STORAGE_DIR,
-                base_url=settings.REDACT_FILE_BASE_URL,
-                image_request_verify_headers=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
-            )
-            if self.request_data_path:
-                self.request_data = fw.get_text_data_from_filepath(self.request_data_path)
-            if self.response_data_path:
-                self.response_data = fw.get_text_data_from_filepath(self.response_data_path)
-
     @classmethod
     def from_db(cls, db, field_names, values):
         instance = cls(*values)
-        instance.get_data_from_disk()
+        get_data_from_disk_for_model_instance(instance)
         return instance
-
-    def delete_data_from_disk(self, request_data_path, response_data_path):
-        if request_data_path or response_data_path:
-            fw = FileWriter(
-                working_dir=settings.REDACT_FILE_STORAGE_DIR,
-                base_url=settings.REDACT_FILE_BASE_URL,
-                image_request_verify_headers=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
-            )
-        if request_data_path:
-            fw.delete_item_at_filepath(request_data_path)
-        if response_data_path:
-            fw.delete_item_at_filepath(response_data_path)
-
-    def save_data_to_disk(self, data, directory, request_or_response='request'):
-        fw = FileWriter(
-            working_dir=settings.REDACT_FILE_STORAGE_DIR,
-            base_url=settings.REDACT_FILE_BASE_URL,
-            image_request_verify_headers=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
-        )
-        if not directory:
-            directory = str(uuid.uuid4())
-            fw.create_unique_directory(directory)
-        filename_uuid = str(uuid.uuid4())
-        file_name = request_or_response + '_' + filename_uuid + '_data.json'
-        outfilepath = fw.build_file_fullpath_for_uuid_and_filename(directory, file_name)
-        fw.write_text_data_to_filepath(data, outfilepath)
-
-        return outfilepath
 
     def broadcast_percent_complete(self):
         try:
@@ -218,7 +149,7 @@ class Job(models.Model):
             for keep_attr in keep_attrs:
                 keep_attr.job = None
                 keep_attr.save()
-        self.delete_data_from_disk(self.request_data_path, self.response_data_path)
+        delete_external_payloads(self)
         super(Job, self).delete()
 
     def add_owner(self, owner_id):
