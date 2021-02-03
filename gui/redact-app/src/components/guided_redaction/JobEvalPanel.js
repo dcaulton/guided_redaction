@@ -1555,7 +1555,9 @@ console.log("mingo scale is "+scale.toString())
     let steps_explained = "Select the frames you wish to annotate by clicking on them, press the Annotate button when done. Clicking on no frames gives you all frames of the movie to annotate."
     let review_annotate_when_clicked = (()=>{this.annotateExemplarMovie(this.state.active_movie_url, 'single')})
     let review_annotate_button_label = 'Annotate these Frames'
+    let help_button = this.buildAnnotateTileHelpButton()
     if (this.state.mode === 'review') {
+      help_button = this.buildReviewTileHelpButton()
       steps_explained = "Select the frames you wish to review by clicking on them, press the Review button when done. Clicking on no frames gives you all frames of the movie to review."
       review_annotate_button_label = 'Review these Frames'
       review_annotate_when_clicked = (()=>{this.reviewExemplarMovie(this.state.active_movie_url, 'single')})
@@ -1590,6 +1592,9 @@ console.log("mingo scale is "+scale.toString())
             </div>
             <div className='d-inline ml-2'>
               {back_to_jrs_summary_button}
+            </div>
+            <div className='d-inline ml-2'>
+              {help_button}
             </div>
           </div>
           <div className='row'>
@@ -1716,11 +1721,33 @@ console.log("mingo scale is "+scale.toString())
     )
   }
 
+  buildReviewTileHelpButton() {
+    return (
+      <button
+        className='btn btn-primary'
+        onClick={()=>{this.setMessage('this is the review tile help documentation')}}
+      >
+        ?
+      </button>
+    )
+  }
+
+  buildAnnotateTileHelpButton() {
+    return (
+      <button
+        className='btn btn-primary'
+        onClick={()=>{this.setMessage('this is the annotate tile help documentation')}}
+      >
+        ?
+      </button>
+    )
+  }
+
   buildAnnotateSingleHelpButton() {
     return (
       <button
         className='btn btn-primary'
-        onClick={()=>{this.setMessage('this is the annotate help documentation')}}
+        onClick={()=>{this.setMessage('this is the annotate single help documentation')}}
       >
         ?
       </button>
