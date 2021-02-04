@@ -70,6 +70,15 @@ class JobEvalPanel extends React.Component {
     this.setUpImageParms=this.setUpImageParms.bind(this)
   }
 
+  setAnnotateMovieComment(comment_string) {
+    const movie_name = getFileNameFromUrl(this.state.active_movie_url)
+    let deepCopyPs= JSON.parse(JSON.stringify(this.state.jeo_permanent_standards))
+    deepCopyPs[movie_name]['comment'] = comment_string
+    this.setState({
+      jeo_permanent_standards: deepCopyPs,
+    })
+  }
+
   resetFrameAnnotateData() {
     const movie_name = getFileNameFromUrl(this.state.active_movie_url)
     if (!Object.keys(this.state.jeo_permanent_standards).includes(movie_name)) {
@@ -112,6 +121,9 @@ class JobEvalPanel extends React.Component {
       const prev_fs_hash = ordered_hashes[cur_hash_index-1]
       const movie_name = getFileNameFromUrl(this.state.active_movie_url)
       if (!Object.keys(this.state.jeo_permanent_standards).includes(movie_name)) {
+        return
+      }
+      if (!Object.keys(this.state.jeo_permanent_standards[movie_name]['framesets']).includes(prev_fs_hash)) {
         return
       }
       const prev_annotations = this.state.jeo_permanent_standards[movie_name]['framesets'][prev_fs_hash]
@@ -714,7 +726,7 @@ class JobEvalPanel extends React.Component {
     })
   }
 
-  setMovieComment(comment_string) {
+  setReviewMovieComment(comment_string) {
     let deepCopyJrsm = JSON.parse(JSON.stringify(this.state.jrs_movies))
     deepCopyJrsm[this.state.active_movie_url]['comment'] = comment_string
     this.setState({
@@ -1733,24 +1745,35 @@ class JobEvalPanel extends React.Component {
     }
   }
 
-  buildAnnotatePanelTile() {
-    const tile_info = this.getTileInfo()
-    const num_cols = tile_info['num_cols']
-    const col_class = tile_info['col_class']
-    const ordered_hashes = this.props.getFramesetHashesInOrder()
-    const num_rows = Math.ceil(ordered_hashes.length / num_cols)
-//    const col_count_picker = this.buildAnnotateTileColumnCountDropdown()
-    const col_count_picker = ''
-    let steps_explained = "Select the frames you wish to annotate by clicking on them, press the Annotate button when done. Clicking on no frames gives you all frames of the movie to annotate."
-    let review_annotate_when_clicked = (()=>{this.annotateExemplarMovie(this.state.active_movie_url, 'single')})
-    let review_annotate_button_label = 'Annotate these Frames'
-    let help_button = this.buildAnnotateTileHelpButton()
+  buildAnnotateMovieCommentsRow() {
     let movie_comments_row = ''
-    if (this.state.mode === 'review') {
-      help_button = this.buildReviewTileHelpButton()
-      steps_explained = "Select the frames you wish to review by clicking on them, press the Review button when done. Clicking on no frames gives you all frames of the movie to review."
-      review_annotate_button_label = 'Review these Frames'
-      review_annotate_when_clicked = (()=>{this.reviewExemplarMovie(this.state.active_movie_url, 'single')})
+    if (this.state.mode === 'annotate') {
+      let comment_val = ''
+      const movie_name = getFileNameFromUrl(this.state.active_movie_url)
+      if (
+        Object.keys(this.state.jeo_permanent_standards).includes(movie_name) &&
+        Object.keys(this.state.jeo_permanent_standards[movie_name]).includes('comment')
+      ) {
+        comment_val = this.state.jeo_permanent_standards[movie_name]['comment']
+      }
+
+      movie_comments_row = (
+        <div className='row mt-2'>
+          <div className='d-inline'>
+            Movie Level Comments
+          </div>
+          <div className='d-inline ml-2'>
+            <textarea
+              id='movie_level_comment'
+              cols='60'
+              rows='3'
+              value={comment_val}
+              onChange={(event) => this.setAnnotateMovieComment(event.target.value)}
+            />
+          </div>
+        </div>
+      )
+    } else if (this.state.mode === 'review') {
       let comment_val = ''
       if (
         Object.keys(this.state.jrs_movies[this.state.active_movie_url]).includes('comment') && 
@@ -1766,15 +1789,38 @@ class JobEvalPanel extends React.Component {
           </div>
           <div className='d-inline ml-2'>
             <textarea
-              id='job_level_comment'
+              id='movie_level_comment'
               cols='60'
               rows='3'
               value={comment_val}
-              onChange={(event) => this.setMovieComment(event.target.value)}
+              onChange={(event) => this.setReviewMovieComment(event.target.value)}
             />
           </div>
         </div>
       )
+    }
+    return movie_comments_row
+  }
+
+
+  buildAnnotatePanelTile() {
+    const tile_info = this.getTileInfo()
+    const num_cols = tile_info['num_cols']
+    const col_class = tile_info['col_class']
+    const ordered_hashes = this.props.getFramesetHashesInOrder()
+    const num_rows = Math.ceil(ordered_hashes.length / num_cols)
+//    const col_count_picker = this.buildAnnotateTileColumnCountDropdown()
+    const col_count_picker = ''
+    let steps_explained = "Select the frames you wish to annotate by clicking on them, press the Annotate button when done. Clicking on no frames gives you all frames of the movie to annotate."
+    let review_annotate_when_clicked = (()=>{this.annotateExemplarMovie(this.state.active_movie_url, 'single')})
+    let review_annotate_button_label = 'Annotate these Frames'
+    let help_button = this.buildAnnotateTileHelpButton()
+    const movie_comments_row = this.buildAnnotateMovieCommentsRow()
+    if (this.state.mode === 'review') {
+      help_button = this.buildReviewTileHelpButton()
+      steps_explained = "Select the frames you wish to review by clicking on them, press the Review button when done. Clicking on no frames gives you all frames of the movie to review."
+      review_annotate_button_label = 'Review these Frames'
+      review_annotate_when_clicked = (()=>{this.reviewExemplarMovie(this.state.active_movie_url, 'single')})
     }
 
     let row_num_array = []
@@ -1953,7 +1999,7 @@ class JobEvalPanel extends React.Component {
     return (
       <button
         className='btn btn-primary'
-        onClick={()=>{this.setMessage('this is the annotate tile help documentation')}}
+        onClick={()=>{this.setMessage('This is the Tile View mode of the Annotate page for a single movie.  It presents you with an overview of all the framesets for the movie you have selected to annotate.  From here you can optionally select some framesets by clicking on them, then pressing the Annotate these Frames button will take you to a Single frame view of the first frameset, where you can begin specifying information.  When that work is completed, the Home button will take you to the main screen, where you can Save your changes to the Job Eval Objective record.')}}
       >
         ?
       </button>
@@ -1964,7 +2010,7 @@ class JobEvalPanel extends React.Component {
     return (
       <button
         className='btn btn-primary'
-        onClick={()=>{this.setMessage('this is the annotate single help documentation')}}
+        onClick={()=>{this.setMessage('This is the Single Frame View mode of the Annotate page for a single movie.  From this page you can specify how the output from a perfect version of the tool youre designing would look.  Besides navigating using the buttons above, the left and right arrows will advance you sequentially between frames.  The up arrow key will copy the contents of the frame immediately before this one and add them to the current frame.  When you are done annotating individual frames, use the Home button to get back to the main screen, then press the Save button to add these annotations as a permanent part of the Job Eval Objective record.')}}
       >
         ?
       </button>
