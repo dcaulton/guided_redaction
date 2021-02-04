@@ -1224,25 +1224,23 @@ console.log("mingo scale is "+scale.toString())
         <div id='objective_div row'>
           <div className='col'>
             <div className='row h3'>
-              <div className='col-6'>
+              <div className='d-inline'>
                 Job Eval Objective: General Info
               </div>
-              <div className='col-6'>
-                <div className='d-inline'>
-                  {load_button}
-                </div>
-                <div className='d-inline ml-2'>
-                  {save_button}
-                </div>
-                <div className='d-inline ml-2'>
-                  {delete_button}
-                </div>
-                <div className='d-inline ml-2'>
-                  {add_exemplar_button}
-                </div>
-                <div className='d-inline ml-2'>
-                  {help_button}
-                </div>
+              <div className='d-inline ml-4'>
+                {load_button}
+              </div>
+              <div className='d-inline ml-2'>
+                {save_button}
+              </div>
+              <div className='d-inline ml-2'>
+                {delete_button}
+              </div>
+              <div className='d-inline ml-2'>
+                {add_exemplar_button}
+              </div>
+              <div className='d-inline ml-2'>
+                {help_button}
               </div>
             </div>
 
@@ -2233,9 +2231,29 @@ doSleep(time) {
     )
   }
 
+  getJobRunSummariesForActiveJeo() {
+    if (!this.state.jeo_id) {
+      return {}
+    }
+    let build_obj = {}
+    for (let i=0; i < Object.keys(this.state.job_run_summaries).length; i++) {
+      const jrs_id = Object.keys(this.state.job_run_summaries)[i]
+      const jrs = this.state.job_run_summaries[jrs_id]
+      if (jrs['job_eval_objective_id'] === this.state.jeo_id) {
+        build_obj[jrs_id] = jrs
+      }
+    }
+    return build_obj
+  }
+
   buildJobRunSummaryList() {
-    if (!this.state.job_run_summaries || Object.keys(this.state.job_run_summaries).length === 0) {
-      return ''
+    const job_run_summaries = this.getJobRunSummariesForActiveJeo()
+    if (!job_run_summaries || Object.keys(job_run_summaries).length === 0) {
+      return (
+        <div className='font-italic'>
+          no job run summaries found
+        </div>
+      )
     }
     if (!this.state.jeo_id) {
       return ''
@@ -2256,8 +2274,8 @@ doSleep(time) {
           </tr>
         </thead>
         <tbody>
-        {Object.keys(this.state.job_run_summaries).map((jrs_key, index) => {
-          const jrs = this.state.job_run_summaries[jrs_key]
+        {Object.keys(job_run_summaries).map((jrs_key, index) => {
+          const jrs = job_run_summaries[jrs_key]
           const movie_names_div = this.buildJrsMovieNamesDiv(jrs)
           const job_id_short = jrs.job_id.substring(0, 5) + '...'
           if (jrs.job_eval_objective_id !== this.state.jeo_id) {
@@ -3016,9 +3034,13 @@ doSleep(time) {
   }
 
   buildCompareSingleControls(panel_id, job_run_summary) {
+    const mode_data = this.state.compare_single_mode_data[panel_id]
+    if (mode_data['state'] !== 'frameset_list') {
+      return ''
+    }
     let job_checked_value = ''
     let job_new_value = true
-    if (this.state.compare_single_mode_data[panel_id]['hide_non_job_frames']) {
+    if (mode_data['hide_non_job_frames']) {
       job_checked_value = 'checked'
       job_new_value = false
     }
@@ -3042,7 +3064,7 @@ doSleep(time) {
     if (job_run_summary['summary_type'] === 'manual') {
       let review_checked_value = ''
       let review_new_value = true
-      if (this.state.compare_single_mode_data[panel_id]['hide_non_review_frames']) {
+      if (mode_data['hide_non_review_frames']) {
         review_checked_value = 'checked'
         review_new_value = false
       }
@@ -3167,14 +3189,42 @@ doSleep(time) {
     }
   }
 
+  reviewDataExists() {
+    let has_review_data = false
+    for (let i=0; i < Object.keys(this.state.jrs_movies).length; i++) {
+      const movie_url = Object.keys(this.state.jrs_movies)[i]
+      if (Object.keys(this.state.jrs_movies[movie_url]['framesets']).length > 0) {
+        has_review_data = true
+      }
+    }
+    return has_review_data
+  }
+
+  goHomeWithWarning() {
+    let resp = window.confirm('If you go to the Home Panel from here, you will lose any work you have done with manually reviewing movies.  Are you sure you want to go the home panel?')
+    if (resp) {
+      this.setState({'mode': ''})
+    }
+  }
+
   buildHomeButton() {
     if (!this.state.mode) {
       return ''
     }
+
+    let action_func = (() => {this.setState({'mode': ''})})
+    if (
+      this.state.mode === 'review' && 
+      this.reviewDataExists() &&
+      !this.state.finalize_manual_submitted
+    ) {
+      action_func = (() => {this.goHomeWithWarning()})
+    }
+
     return (
       <button
         className='btn btn-primary'
-        onClick={() => {this.setState({'mode': ''})}}
+        onClick={action_func}
       >
         home
       </button>
