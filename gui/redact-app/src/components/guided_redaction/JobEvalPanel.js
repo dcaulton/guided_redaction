@@ -813,22 +813,30 @@ class JobEvalPanel extends React.Component {
     }
     const fs_hash = this.getFirstFramesetHash(movie_url)
     this.props.setActiveMovieFirstFrame(movie_url, fs_hash)
-    this.setState({
+
+    let build_obj = {
       mode: 'annotate',
       active_movie_url: movie_url,
       annotate_view_mode: annotate_view_mode,
-    })
+    }
+    if (annotate_view_mode === 'tile') {
+      build_obj['message'] = "Select the frames you wish to annotate by clicking on them, press the Annotate button when done. Clicking on no frames gives you all frames of the movie to annotate."
+    }
+
+    this.setState(build_obj)
   }
 
   reviewExemplarMovie(movie_url, annotate_view_mode) {
     const fs_hash = this.getFirstFramesetHash(movie_url)
     this.props.setActiveMovieFirstFrame(movie_url, fs_hash)
-    this.setState({
+    let build_obj = {
       mode: 'review',
       active_movie_url: movie_url,
       annotate_view_mode: annotate_view_mode,
-    },
-    (()=>{this.setUpImageParms(fs_hash)})
+    }
+    this.setState(
+      build_obj, 
+      (()=>{this.setUpImageParms(fs_hash)})
     )
   }
 
@@ -1811,14 +1819,12 @@ class JobEvalPanel extends React.Component {
     const num_rows = Math.ceil(ordered_hashes.length / num_cols)
 //    const col_count_picker = this.buildAnnotateTileColumnCountDropdown()
     const col_count_picker = ''
-    let steps_explained = "Select the frames you wish to annotate by clicking on them, press the Annotate button when done. Clicking on no frames gives you all frames of the movie to annotate."
     let review_annotate_when_clicked = (()=>{this.annotateExemplarMovie(this.state.active_movie_url, 'single')})
     let review_annotate_button_label = 'Annotate these Frames'
     let help_button = this.buildAnnotateTileHelpButton()
     const movie_comments_row = this.buildAnnotateMovieCommentsRow()
     if (this.state.mode === 'review') {
       help_button = this.buildReviewTileHelpButton()
-      steps_explained = "Select the frames you wish to review by clicking on them, press the Review button when done. Clicking on no frames gives you all frames of the movie to review."
       review_annotate_button_label = 'Review these Frames'
       review_annotate_when_clicked = (()=>{this.reviewExemplarMovie(this.state.active_movie_url, 'single')})
     }
@@ -1836,11 +1842,6 @@ class JobEvalPanel extends React.Component {
     return (
       <div className='row'>
         <div className='col'>
-          <div className='row h5'>
-            <div className='col-6'>
-              {steps_explained}
-            </div>
-          </div>
 
           {movie_comments_row}
 
@@ -2456,12 +2457,13 @@ class JobEvalPanel extends React.Component {
   }
 
   showReviewTile(movie_url) {
-    this.setState({
-        mode: 'review',
-        annotate_view_mode: 'tile',
-        active_movie_url: movie_url,
-        message: '',
-    })
+    let build_obj = {
+      mode: 'review',
+      annotate_view_mode: 'tile',
+      active_movie_url: movie_url,
+      message: "Select the frames you wish to review by clicking on them, press the Review button when done. Clicking on no frames gives you all frames of the movie to review.",
+    }
+    this.setState(build_obj)
   }
 
   showReviewSummary(first_loading_of_this_job=false) {
@@ -2672,10 +2674,10 @@ doSleep(time) {
 
               <div className='row mb-4  mt-2 ml-2'>
                 <div className='d-inline ml-2'>
-                  {generate_exemplar_button}
+                  {manual_review_button}
                 </div>
                 <div className='d-inline ml-2'>
-                  {manual_review_button}
+                  {generate_exemplar_button}
                 </div>
               </div>
             </div>
