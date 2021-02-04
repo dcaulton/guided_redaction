@@ -39,6 +39,8 @@ class ScoreManualController(T1Controller):
             return {'errors': ['job eval objective not found for specified id']}
         jrs.job_eval_objective = JobEvalObjective.objects.get(pk=jeo_id)
 
+        job_notes = request_data.get('job_comment')
+
         jrs_movies = request_data.get('jrs_movies')
 
         build_source_movies = self.build_source_movies(jrs.job)
@@ -49,6 +51,9 @@ class ScoreManualController(T1Controller):
             'source_movies': build_source_movies,
             'statistics': build_stats,
         }
+        if job_notes: 
+            content_object['job_notes'] = job_notes
+
         jrs.summary_type = 'manual'
         jrs.score = build_stats['score']
         jrs.content = json.dumps(content_object)

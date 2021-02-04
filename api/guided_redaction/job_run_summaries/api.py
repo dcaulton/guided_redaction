@@ -34,7 +34,6 @@ class JobRunSummariesViewSet(viewsets.ViewSet):
             if jrs.content_path:
                 content_length = 'very large'
             movie_names = self.get_movie_names_list(jrs)
-            # TODO return a stub content here
             jrss[str(jrs.id)] = {
                   'id': jrs.id,
                   'job_id': jrs.job.id,
@@ -64,7 +63,7 @@ class JobRunSummariesViewSet(viewsets.ViewSet):
 
         if type(jrs) == dict  and 'errors' in jrs:
           return self.error(jrs['errors'])
-        return Response(jrs.as_hash())
+        return Response(jrs.as_dict())
 
     def delete(self, request, pk, format=None):
         if pk and JobRunSummary.objects.filter(pk=pk).exists():

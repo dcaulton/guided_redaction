@@ -47,6 +47,7 @@ class JobEvalPanel extends React.Component {
       jrs_ids_to_compare: [],
       jrs_ids_to_delete: [],
       jrs_movies: {},
+      job_comment: '',
       finalize_manual_submitted: false,
     }
     this.setLocalStateVar=this.setLocalStateVar.bind(this)
@@ -97,6 +98,7 @@ console.log("mingo scale is "+scale.toString())
     job_data['request_data']['job_id'] = this.state.active_job_id
     job_data['request_data']['job_eval_objective_id'] = this.state.jeo_id
     job_data['request_data']['jrs_movies'] = this.state.jrs_movies
+    job_data['request_data']['job_comment'] = this.state.job_comment
     return job_data
   }
 
@@ -629,6 +631,7 @@ console.log("mingo scale is "+scale.toString())
     }
     this.setState({
       jrs_movies: deepCopyJrsm,
+      job_comment: '',
       message: 'frame review data has been cleared',
     })
   }
@@ -2509,10 +2512,38 @@ doSleep(time) {
           {the_title}
         </div>
 
+        <div className='row mt-2'>
+          <div className='d-inline'>
+            Job Level Comments
+          </div>
+          <div className='d-inline ml-2'>
+            <textarea
+              id='job_level_comment'
+              cols='60'
+              rows='3'
+              value={this.state.job_comment}
+              onChange={(event) => this.setState({'job_comment': event.target.value})}
+            />
+          </div>
+        </div>
+
         {the_body}
 
       </div>
     )
+  }
+
+  setReviewComment(comment_type, comment_string) {
+    let deepCopyJrsm = JSON.parse(JSON.stringify(this.state.jrs_movies))
+    if (comment_type === 'job_level') {
+      if (!Object.keys(deepCopyJrsm).includes('general')) {
+        deepCopyJrsm['general'] = {notes: ''}
+      }
+      deepCopyJrsm['general']['notes'] = comment_string
+    }
+    this.setState({
+      jrs_movies: deepCopyJrsm,
+    })
   }
 
   buildCompareSingleTitle(panel_id) {
@@ -2538,17 +2569,19 @@ doSleep(time) {
       return ''
     }
     const jrs = this.state.job_run_summaries[mode_data['jrs_id']]
+
     let notes_row = ''
     if (
       Object.keys(jrs).includes('content') &&
-      Object.keys(jrs['content']['statistics']).includes('notes')
+      Object.keys(jrs['content']).includes('job_notes')
     ) {
       notes_row = (
         <div className='row'>
-          Top Level Comments: {jrs['content']['statistics']['notes']}
+          job comments: {jrs['content']['job_notes']}
         </div>
       )
     }
+
     return (
       <div className='col'>
         <div className='row'>
@@ -3135,7 +3168,6 @@ doSleep(time) {
   }
 
   buildComparePanel() {
-    let body = ''
     let outer_col_class = 'col'
     if (this.state.jrs_ids_to_compare.length > 4) {
       return 'too many columns selected'
