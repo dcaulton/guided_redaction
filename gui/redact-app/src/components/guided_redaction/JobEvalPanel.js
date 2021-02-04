@@ -1602,7 +1602,8 @@ console.log("mingo scale is "+scale.toString())
     const col_class = tile_info['col_class']
     const ordered_hashes = this.props.getFramesetHashesInOrder()
     const num_rows = Math.ceil(ordered_hashes.length / num_cols)
-    const col_count_picker = this.buildAnnotateTileColumnCountDropdown()
+//    const col_count_picker = this.buildAnnotateTileColumnCountDropdown()
+    const col_count_picker = ''
     let steps_explained = "Select the frames you wish to annotate by clicking on them, press the Annotate button when done. Clicking on no frames gives you all frames of the movie to annotate."
     let review_annotate_when_clicked = (()=>{this.annotateExemplarMovie(this.state.active_movie_url, 'single')})
     let review_annotate_button_label = 'Annotate these Frames'
@@ -1804,7 +1805,7 @@ console.log("mingo scale is "+scale.toString())
     return (
       <button
         className='btn btn-primary'
-        onClick={()=>{this.setMessage('this is the review tile help documentation')}}
+        onClick={()=>{this.setMessage('This is the Tile View mode of the Manual Review page for a single movie.  From this page, you optionally select the frames you are interested in reviewing, then you will press the Review these Frames button to begin work.  You will be presented with a full screen view of the first frame in Review - Single Frame mode.  You can specify if it passes or fails, or you can specify desired areas that were or were not selected by the job. You can advance between frames with the Prev and Next buttons but the right and left arrows on your keyboard should work too. When done reviewing the movie, you will submit your work to be Finalized into a permanent Job Run Summary record.')}}
       >
         ?
       </button>
@@ -2689,8 +2690,8 @@ doSleep(time) {
       Object.keys(jrs['content']).includes('job_notes')
     ) {
       notes_row = (
-        <div className='row'>
-          job comments: {jrs['content']['job_notes']}
+        <div className='row alert alert-warning'>
+          Job Comments: {jrs['content']['job_notes']}
         </div>
       )
     }
@@ -2884,7 +2885,7 @@ doSleep(time) {
               movie_data['framesets'][frameset_hash]['comment']
             ) {
               frameset_comment_row = (
-                <div className='row'>
+                <div className='row alert alert-warning'>
                   <div className='d-inline'>
                     Frameset Comments:
                   </div>
@@ -3238,9 +3239,9 @@ doSleep(time) {
     let movie_comment_row = ''
     if (Object.keys(movie_data).includes('comment') && movie_data['comment']) {
       movie_comment_row = (
-        <div className='row'>
+        <div className='row alert alert-warning'>
           <div className='d-inline'>
-            Comments:
+            Movie Comments:
           </div>
           <div className='d-inline ml-2'>
             {movie_data['comment']}
