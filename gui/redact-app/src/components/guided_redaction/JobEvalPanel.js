@@ -19,6 +19,8 @@ class JobEvalPanel extends React.Component {
       message_class: '',
       image_mode: '',
       compare_single_mode_data: {},
+      image_height: 900,
+      image_width: 1600,
       image_scale: 1,
       annotate_view_mode: 'tile',
       active_movie_url: '',
@@ -64,21 +66,49 @@ class JobEvalPanel extends React.Component {
     this.getT1MatchBoxes=this.getT1MatchBoxes.bind(this)
     this.setImageScale=this.setImageScale.bind(this)
     this.setMessage=this.setMessage.bind(this)
+    this.setUpImageParms=this.setUpImageParms.bind(this)
   }
 
-// TODO GET THIS INTEGRATED WITH IMAGE CLICK OR SOMETHING, WE"RE STUCK AT 1 UNTIL THEN
+
   setImageScale() {
-    if (!document.getElementById('job_eval_image')) {
+    if (!document.getElementById('annotate_image')) {
       return
     }
-    const scale = (document.getElementById('job_eval_image').width /
-        document.getElementById('job_eval_image').naturalWidth)
-console.log("mingo scale is "+scale.toString())
+    const scale = (document.getElementById('annotate_image').width /
+        document.getElementById('annotate_image').naturalWidth)
     this.setState({
-      'image_scale': scale,
+      image_scale: scale,
     })
   }
 
+  setImageSize(the_image) {
+    var app_this = this
+    if (the_image) {
+      let img = new Image()
+      img.src = the_image
+      img.onload = function() {
+        app_this.setState({
+          image_width: this.width,
+          image_height: this.height,
+        }, app_this.setImageScale()
+        )
+      }
+    }
+  }
+
+// TODO GET THIS INTEGRATED WITH IMAGE CLICK OR SOMETHING, WE"RE STUCK AT 1 UNTIL THEN
+//  setImageScale() {
+//    if (!document.getElementById('job_eval_image')) {
+//      return
+//    }
+//    const scale = (document.getElementById('job_eval_image').width /
+//        document.getElementById('job_eval_image').naturalWidth)
+//console.log("mingo scale is "+scale.toString())
+//    this.setState({
+//      'image_scale': scale,
+//    })
+//  }
+//
   setMessage(the_message, the_class='') {
     if (!the_class) {
       the_class = 'primary'
@@ -471,6 +501,7 @@ console.log("mingo scale is "+scale.toString())
     if (cur_index > 0) {
       const next_hash = ordered_hashes[cur_index-1]
       this.props.setFramesetHash(next_hash)
+      this.setUpImageParms(next_hash)
     }
   }
 
@@ -480,7 +511,14 @@ console.log("mingo scale is "+scale.toString())
     if (cur_index < (ordered_hashes.length-1)) {
       const next_hash = ordered_hashes[cur_index+1]
       this.props.setFramesetHash(next_hash)
+      this.setUpImageParms(next_hash)
     }
+  }
+
+  setUpImageParms(frameset_hash) {
+    const next_frameset = this.props.movies[this.state.active_movie_url]['framesets'][frameset_hash]
+    const next_img_url = next_frameset['images'][0]
+    this.setImageSize(next_img_url)
   }
 
   getPermanentStandardBoxes() {
@@ -731,7 +769,9 @@ console.log("mingo scale is "+scale.toString())
       mode: 'review',
       active_movie_url: movie_url,
       annotate_view_mode: annotate_view_mode,
-    })
+    },
+    (()=>{this.setUpImageParms(fs_hash)})
+    )
   }
 
   afterJeoSave(response_obj) {
@@ -2047,8 +2087,8 @@ console.log("mingo scale is "+scale.toString())
           <div id='annotate_image_div' className='row'>
             {image_element}
             <CanvasAnnotateOverlay
-              image_width={this.props.image_width}
-              image_height={this.props.image_height}
+              image_width={this.state.image_width}
+              image_height={this.state.image_height}
               image_scale={this.state.image_scale}
               image_url={image_url}
               mode={this.state.image_mode}

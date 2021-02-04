@@ -713,7 +713,7 @@ class RedactApplication extends React.Component {
         image_height: this.height,
         frameset_hash: frameset_hash,
       })
-      when_done()
+      when_done(frameset_hash)
     }
     img.src = the_url
   }
@@ -2398,8 +2398,6 @@ class RedactApplication extends React.Component {
                 movies={this.state.movies}
                 jobs={this.state.jobs}
                 setActiveMovieFirstFrame={this.setActiveMovieFirstFrame}
-                image_width={this.state.image_width}
-                image_height={this.state.image_height}
                 getImageUrl={this.getImageUrl}
                 frameset_hash={this.state.frameset_hash}
                 tier_1_matches={this.state.tier_1_matches}
