@@ -22,24 +22,17 @@ class JobRunSummariesViewSet(viewsets.ViewSet):
 
     def retrieve(self, request, pk):
         jrs = JobRunSummary.objects.get(pk=pk)
+        jrs_data = jrs.as_dict()
         movie_names = self.get_movie_names_list(jrs)
-        jrs_data = {
-            'id': jrs.id,
-            'job_id': jrs.job.id,
-            'job_eval_objective_id': jrs.job_eval_objective.id,
-            'created_on': jrs.created_on,
-            'updated_on': jrs.updated_on,
-            'summary_type': jrs.summary_type,
-            'score': jrs.summary_type,
-            'movie_names': movie_names,
-            'content': json.loads(jrs.content),
-        }
+        jrs_data['movie_names'] = movie_names
         return Response(jrs_data)
 
     def list(self, request):
         jrss = {}
         for jrs in JobRunSummary.objects.order_by('-created_on').all():
-            content_length = len(jrs.content)
+            content_length = str(len(jrs.content)) + ' bytes'
+            if jrs.content_path:
+                content_length = 'very large'
             movie_names = self.get_movie_names_list(jrs)
             # TODO return a stub content here
             jrss[str(jrs.id)] = {
@@ -52,7 +45,7 @@ class JobRunSummariesViewSet(viewsets.ViewSet):
                   'summary_type': jrs.summary_type,
                   'score': jrs.score,
                   'movie_names': movie_names,
-                  'content': json.loads(jrs.content),
+                  'content_length': content_length,
             }
         return Response(jrss)
 

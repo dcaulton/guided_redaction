@@ -26,21 +26,23 @@ class JobRunSummary(models.Model):
     MAX_DB_PAYLOAD_SIZE = 1000000
 
     def __str__(self):
-        self_hash = self.as_hash()
+        self_hash = self.as_dict()
         self_hash['content'] = "{} bytes".format(len(self_hash['content']))
         return self_hash.__str__()
 
-    def as_hash(self):
-        disp_hash = {
+    def as_dict(self):
+        build_content = str(self.content or '{}')
+
+        jrs_data = {
             'id': str(self.id),
             'job_id': str(self.job.id),
             'job_eval_objective_id': str(self.job_eval_objective.id),
             'updated_on': str(self.updated_on),
             'summary_type': self.summary_type,
             'score': str(self.score),
-            'content': self.content,
+            'content': build_content,
         }
-        return disp_hash
+        return jrs_data
 
     def save(self, *args, **kwargs):
         save_external_payloads(self)

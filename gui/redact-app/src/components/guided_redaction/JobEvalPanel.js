@@ -759,6 +759,38 @@ console.log("mingo scale is "+scale.toString())
     return jeo
   }
 
+  loadJobRunSummaryDetails() {
+    for (let i=0; i < this.state.jrs_ids_to_compare.length; i++) {
+      const jrs_id = this.state.jrs_ids_to_compare[i]
+      this.getOneJobRunSummary(jrs_id)
+    }
+  }
+
+  async getOneJobRunSummary(jrs_id, when_done=(()=>{})) {
+    let the_url = this.props.getUrl('job_run_summaries_url') + '/' + jrs_id
+    await this.props.fetch(the_url, {
+      method: 'GET',
+      headers: this.props.buildJsonHeaders(),
+    })
+    .then((response) => response.json())
+    .then((responseJson) => {
+      let deepCopyJrss = JSON.parse(JSON.stringify(this.state.job_run_summaries))
+      let new_jrs = responseJson
+      const content_obj = JSON.parse(new_jrs['content'])
+      new_jrs['content'] = content_obj
+      deepCopyJrss[jrs_id] = new_jrs
+      this.setState({
+        'job_run_summaries': deepCopyJrss,
+       })
+    })
+    .then((responseJson) => {
+      when_done(responseJson)
+    })
+    .catch((error) => {
+      console.error(error);
+    })
+  }
+
   async deleteJrsRecords() {
     for (let i=0; i < this.state.jrs_ids_to_delete.length; i++) {
       const jrs_id = this.state.jrs_ids_to_delete[i]
@@ -2057,6 +2089,7 @@ console.log("mingo scale is "+scale.toString())
         hide_non_job_frames: false,
         hide_non_review_frames: false,
       }
+      this.loadJobRunSummaryDetails()
     }
     this.setState({
         mode: 'compare',
@@ -2169,7 +2202,7 @@ console.log("mingo scale is "+scale.toString())
       this.props.loadJobResults(this.state.active_job_id)
       this.setMessage('please wait a moment, loading the job results.  you will be redirected when complete')
       this.doSleep(5000).then(() => {
-        this.setMessage('job output has been loaded')
+        this.setMessage('Job output has been loaded.  Next, you need to review the movies below.  You can also delete movies that are not of interest, they will be omitted from the analysis.  When you are done reviewing all the movies of interest, you will finish by finalizing this review data - that is submitting it to the server so that charts and statistics can be prepared and assembled into a Job Run Summary.')
         return this.showReviewSummary(first_loading_of_this_job)
       });
     }
@@ -2210,31 +2243,19 @@ doSleep(time) {
     const compare_button = this.buildCompareButton()
     const delete_button= this.buildJrsDeleteButton()
     return (
-      <div className='col'>
-        <div className='row font-weight-bold'>
-          <div className='col-1 border-bottom'>
-            Job Id
-          </div>
-          <div className='col-1 border-bottom'>
-            Type
-          </div>
-          <div className='col-1 border-bottom'>
-            Score
-          </div>
-          <div className='col-3 border-bottom'>
-            Movies
-          </div>
-          <div className='col-3 border-bottom'>
-            Created On
-          </div>
-          <div className='col-1 border-bottom'>
-            {compare_button}
-          </div>
-          <div className='col-1 border-bottom'>
-            {delete_button}
-          </div>
-        </div>
-          
+      <table className='table table-striped'>
+        <thead>
+          <tr>
+            <td>Job Id</td>
+            <td>Type</td>
+            <td>Score</td>
+            <td>Movies</td>
+            <td>Created On</td>
+            <td>{compare_button}</td>
+            <td>{delete_button}</td>
+          </tr>
+        </thead>
+        <tbody>
         {Object.keys(this.state.job_run_summaries).map((jrs_key, index) => {
           const jrs = this.state.job_run_summaries[jrs_key]
           const movie_names_div = this.buildJrsMovieNamesDiv(jrs)
@@ -2251,26 +2272,23 @@ doSleep(time) {
             delete_checked = true
           }
           return (
-            <div 
-              key={index}
-              className='row'
-            >
-              <div className='col-1'>
+            <tr key={index} >
+              <td>
                 {job_id_short}
-              </div>
-              <div className='col-1'>
+              </td>
+              <td>
                 {jrs.summary_type}
-              </div>
-              <div className='col-1'>
+              </td>
+              <td>
                 {jrs.score}
-              </div>
-              <div className='col-3'>
+              </td>
+              <td>
                 {movie_names_div}
-              </div>
-              <div className='col-3'>
+              </td>
+              <td>
                 {jrs.created_on}
-              </div>
-              <div className='col-1'>
+              </td>
+              <td>
                 <input
                   className='ml-2 mr-2 mt-1'
                   checked={compare_checked}
@@ -2279,8 +2297,8 @@ doSleep(time) {
                     () => this.addRemoveToJrsIdsToCompare(jrs_key) 
                   }
                 />
-              </div>
-              <div className='col-1'>
+              </td>
+              <td>
                 <input
                   className='ml-2 mr-2 mt-1'
                   checked={delete_checked}
@@ -2289,11 +2307,12 @@ doSleep(time) {
                     () => this.addRemoveToJrsIdsToDelete(jrs_key) 
                   }
                 />
-              </div>
-            </div>
+              </td>
+            </tr>
           )
         })}
-      </div>
+        </tbody>
+      </table>
     )
   }
 
@@ -2482,7 +2501,7 @@ doSleep(time) {
     const mode_data = this.state.compare_single_mode_data[panel_id]
     const jrs = this.state.job_run_summaries[mode_data['jrs_id']]
     const job_id_short = jrs.job_id.substring(0, 5) + '...'
-    let summary_line = 'Summary for Job ' + job_id_short
+    let summary_line = 'Overall Summary for Job ' + job_id_short
     if (mode_data['state'] === 'movie_list') {
       summary_line = 'Listing Movies for Job ' + job_id_short
     } else if (mode_data['state'] === 'frameset_list') {
@@ -2501,14 +2520,26 @@ doSleep(time) {
       return ''
     }
     const jrs = this.state.job_run_summaries[mode_data['jrs_id']]
+    let notes_row = ''
+    if (
+      Object.keys(jrs).includes('content') &&
+      Object.keys(jrs['content']['statistics']).includes('notes')
+    ) {
+      notes_row = (
+        <div className='row'>
+          Top Level Comments: {jrs['content']['statistics']['notes']}
+        </div>
+      )
+    }
     return (
       <div className='col'>
         <div className='row'>
           score: {jrs.score}
         </div>
         <div className='row'>
-          created_on: {jrs.created_on}
+          last updated: {jrs.updated_on}
         </div>
+        {notes_row}
       </div>
     )
   }
@@ -2548,19 +2579,28 @@ doSleep(time) {
     if (mode_data['state'] === 'summary') {
       first_button = (
         <button
-          className='btn btn-link'
+          className='btn btn-primary'
           onClick={()=>{this.setCompareSingleAttribute(panel_id, 'state', 'movie_list')}}
         >
-          Movies
+          List Movies for Job
         </button>
       )
     } else if (mode_data['state'] === 'movie_list') {
       first_button = (
         <button
-          className='btn btn-link'
+          className='btn btn-primary'
           onClick={()=>{this.setCompareSingleAttribute(panel_id, 'state', 'summary')}}
         >
-          Summary
+          Back to Overall Job Summary
+        </button>
+      )
+    } else if (mode_data['state'] === 'frameset_list') {
+      first_button = (
+        <button
+          className='btn btn-primary'
+          onClick={()=>{this.setCompareSingleAttribute(panel_id, 'state', 'movie_list')}}
+        >
+          Back to List Movies for Job
         </button>
       )
     }
