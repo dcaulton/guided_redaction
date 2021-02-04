@@ -96,19 +96,6 @@ class JobEvalPanel extends React.Component {
     }
   }
 
-// TODO GET THIS INTEGRATED WITH IMAGE CLICK OR SOMETHING, WE"RE STUCK AT 1 UNTIL THEN
-//  setImageScale() {
-//    if (!document.getElementById('job_eval_image')) {
-//      return
-//    }
-//    const scale = (document.getElementById('job_eval_image').width /
-//        document.getElementById('job_eval_image').naturalWidth)
-//console.log("mingo scale is "+scale.toString())
-//    this.setState({
-//      'image_scale': scale,
-//    })
-//  }
-//
   setMessage(the_message, the_class='') {
     if (!the_class) {
       the_class = 'primary'
@@ -443,6 +430,7 @@ class JobEvalPanel extends React.Component {
       } 
       return '.'
     }
+    return '.'
   }
 
   frameHasAnnotationData(frameset_hash) {
