@@ -76,10 +76,10 @@ class JobEvalPanel extends React.Component {
       return
     }
     const fsh = this.props.frameset_hash
-    if (!Object.keys(this.state.jeo_permanent_standards).includes(this.state.active_movie_url)) {
+    if (!Object.keys(this.state.jeo_permanent_standards).includes(movie_name)) {
       return
     }
-    if (!Object.keys(this.state.jeo_permanent_standards[this.state.active_movie_url]['framesets']).includes(fsh)) {
+    if (!Object.keys(this.state.jeo_permanent_standards[movie_name]['framesets']).includes(fsh)) {
       return
     }
     let deepCopyPs= JSON.parse(JSON.stringify(this.state.jeo_permanent_standards))
