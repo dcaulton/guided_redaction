@@ -54,6 +54,7 @@ class JobEvalPanel extends React.Component {
     this.afterJeoSave=this.afterJeoSave.bind(this)
     this.loadJeo=this.loadJeo.bind(this)
     this.getJobEvalObjectives=this.getJobEvalObjectives.bind(this)
+    this.getJobRunSummariesAndAnnounce=this.getJobRunSummariesAndAnnounce.bind(this)
     this.handleImageClick=this.handleImageClick.bind(this)
     this.getOcrRegions=this.getOcrRegions.bind(this)
     this.getPermanentStandardBoxes=this.getPermanentStandardBoxes.bind(this)
@@ -110,10 +111,15 @@ console.log("mingo scale is "+scale.toString())
         after_submit: ((r) => {this.setMessage('build manual job run summary task has been submitted')}),
         delete_job_after_loading: true,
         attach_to_job: false,
-        after_loaded: () => {this.getJobEvalObjectives()},
+        after_loaded: () => {this.getJobRunSummariesAndAnnounce()},
         when_failed: () => {this.setMessage('build manual job run summary failed')},
       })
     }
+  }
+
+  getJobRunSummariesAndAnnounce() {
+    this.getJobRunSummaries()
+    this.setMessage('Job Run Summary has completed and is now available for viewing')
   }
 
   buildPreserveJobRunParametersField() {
@@ -2437,7 +2443,8 @@ doSleep(time) {
     const generate_exemplar_button = this.buildGenerateExemplarJrsButton()
     const manual_review_button = this.buildManualJrsButton()
     const jrs_list = this.buildJobRunSummaryList()
-    const get_jrs_button = this.buildGetJrsListButton()
+//    const get_jrs_button = this.buildGetJrsListButton()
+    const get_jrs_button = ''
     return (
       <div className='row'>
         <div className='col'>
@@ -2641,21 +2648,35 @@ doSleep(time) {
   buildCompareSingleTitle(panel_id) {
     const mode_data = this.state.compare_single_mode_data[panel_id]
     const jrs = this.state.job_run_summaries[mode_data['jrs_id']]
-    const job_id_short = jrs.job_id.substring(0, 5) + '...'
-    let summary_line = 'Overall Summary for Job ' + job_id_short
-    if (mode_data['state'] === 'movie_list') {
-      summary_line = 'Listing Movies for Job ' + job_id_short
-    } else if (mode_data['state'] === 'frameset_list') {
-      summary_line = 'Listing Framesets for Job ' + job_id_short
+    let first_line = 'Overall Summary for Job ' + jrs.job_id
+    if (mode_data['state'] === 'frameset_list') {
+      first_line = 'Listing Framesets for Job id: ' + jrs.job_id
+    }
+    const second_line = 'Job Run Summary id: ' + jrs.id
+    let third_line = ''
+    if (mode_data['state'] === 'frameset_list') {
+      const movie_url = mode_data['movie_url']
+      const movie_name = getFileNameFromUrl(movie_url)
+      third_line = 'Movie ' + movie_name
     }
     return (
-      <div className='row ml-2 font-weight-bold'>
-        {summary_line}
+      <div className='row ml-2'>
+        <div className='col'>
+          <div className='row font-weight-bold'>
+            {first_line}
+          </div>
+          <div className='row font-weight-bold'>
+            {second_line}
+          </div>
+          <div className='row font-weight-bold'>
+            {third_line}
+          </div>
+        </div>
       </div>
     )
   }
 
-  buildCompareSingleSummary(panel_id) {
+  buildCompareSingleJobSummary(panel_id) {
     const mode_data = this.state.compare_single_mode_data[panel_id]
     if (mode_data['state'] !== 'summary') {
       return ''
@@ -2716,56 +2737,29 @@ doSleep(time) {
 
   buildCompareSingleNav(panel_id) {
     let first_button = ''
-    let second_button = ''
-    let third_button = ''
     const mode_data = this.state.compare_single_mode_data[panel_id]
-    if (mode_data['state'] === 'summary') {
-      first_button = (
-        <button
-          className='btn btn-primary'
-          onClick={()=>{this.setCompareSingleAttribute(panel_id, 'state', 'movie_list')}}
-        >
-          List Movies for Job
-        </button>
-      )
-    } else if (mode_data['state'] === 'movie_list') {
+    if (mode_data['state'] === 'frameset_list') {
       first_button = (
         <button
           className='btn btn-primary'
           onClick={()=>{this.setCompareSingleAttribute(panel_id, 'state', 'summary')}}
         >
-          Back to Overall Job Summary
-        </button>
-      )
-    } else if (mode_data['state'] === 'frameset_list') {
-      first_button = (
-        <button
-          className='btn btn-primary'
-          onClick={()=>{this.setCompareSingleAttribute(panel_id, 'state', 'movie_list')}}
-        >
-          Back to List Movies for Job
+          Back to Summary
         </button>
       )
     }
 
     return (
-      <div className='col'>
-        <div className='row'>
-          <div className='col-4'>
-            {first_button}
-          </div>
-          <div className='col-4'>
-            {second_button}
-          </div>
-          <div className='col-4'>
-            {third_button}
-          </div>
-        </div>
+      <div className='m-2'>
+        {first_button}
       </div>
     )
   }
 
   getMovieUrlForMovieName(jrs, movie_name) {
+    if (!Object.keys(jrs).includes('content')) {
+      return ''
+    }
     for (let i=0; i < Object.keys(jrs.content['movies']).length; i++) {
       const movie_url = Object.keys(jrs.content['movies'])[i]
       if (movie_url.includes(movie_name)) {
@@ -2786,9 +2780,9 @@ doSleep(time) {
     )
   }
 
-  buildCompareSingleMovie(panel_id) {
+  buildCompareSingleMovieList(panel_id) {
     const mode_data = this.state.compare_single_mode_data[panel_id]
-    if (mode_data['state'] !== 'movie_list') {
+    if (mode_data['state'] !== 'summary') {
       return ''
     }
     const jrs = this.state.job_run_summaries[mode_data['jrs_id']]
@@ -2797,19 +2791,54 @@ doSleep(time) {
         <div className='row font-weight-bold'>
           Movies:
         </div>
-        {jrs.movie_names.map((movie_name, index) => {
-          const movie_url = this.getMovieUrlForMovieName(jrs, movie_name)
-          return (
-            <div key={index} className='row'>
-              <button
-                className='btn btn-link'
-                onClick={()=>{this.setCompareSingleFramesetList(panel_id, movie_url)}}
-              >
-                {movie_name}
-              </button>
-            </div>
-          )
-        })}
+        <div className='row'>
+          <table className='table table-striped'>
+            <thead>
+              <tr>
+                <td>name</td>
+                <td># job frames</td>
+                <td># review frames</td>
+              </tr>
+            </thead>
+            <tbody>
+              {jrs.movie_names.map((movie_name, index) => {
+                const movie_url = this.getMovieUrlForMovieName(jrs, movie_name)
+                let num_job_frames = 0
+                let num_review_frames = 0
+                if (Object.keys(jrs).includes('content')) {
+                  const jrs_movie_data = jrs['content']['movies'][movie_url]
+                  for (let i=0; i < Object.keys(jrs_movie_data['framesets']).length; i++) {
+                    const fsh = Object.keys(jrs_movie_data['framesets'])[i]
+                    if (jrs_movie_data['framesets'][fsh]['has_job_data']) {
+                      num_job_frames += 1
+                    }
+                    if (jrs_movie_data['framesets'][fsh]['was_reviewed']) {
+                      num_review_frames += 1
+                    }
+                  }
+                }
+                return (
+                  <tr key={index}>
+                    <td>
+                      <button
+                        className='btn btn-link'
+                        onClick={()=>{this.setCompareSingleFramesetList(panel_id, movie_url)}}
+                      >
+                        {movie_name}
+                      </button>
+                    </td>
+                    <td>
+                      {num_job_frames}
+                    </td>
+                    <td>
+                      {num_review_frames}
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
     )
   }
@@ -2834,72 +2863,12 @@ doSleep(time) {
     }
     const jrs = this.state.job_run_summaries[mode_data['jrs_id']]
     const movie_url = mode_data['movie_url']
-    const movie_name = getFileNameFromUrl(movie_url)
     const movie_data = jrs['content']['movies'][movie_url]
     const source_movie = jrs['content']['source_movies'][movie_url]
     const movie_stats = jrs['content']['statistics']['movie_statistics'][movie_url]
     const frameset_hashes = this.props.getFramesetHashesInOrder(source_movie)
-    let movie_comment_row = ''
-    if (Object.keys(movie_data).includes('comment') && movie_data['comment']) {
-      movie_comment_row = (
-        <div className='row'>
-          <div className='d-inline'>
-            Comments:
-          </div>
-          <div className='d-inline ml-2'>
-            {movie_data['comment']}
-          </div>
-        </div>
-      )
-    }
     return (
       <div className='col border-bottom pb-2 ml-2 mb-2'>
-        <div className='row font-weight-bold'>
-          Movie {movie_name}
-        </div>
-
-        <div className='row'>
-          <div className='d-inline'>
-            Pass / Fail
-          </div>
-          <div className='d-inline ml-2'>
-            {movie_stats['pass_or_fail']}
-          </div>
-        </div>
-
-        <div className='row'>
-          <div className='d-inline'>
-            Movie Score:
-          </div>
-          <div className='d-inline ml-2'>
-            {movie_stats['score']}
-          </div>
-        </div>
-
-        <div className='row'>
-          <div className='d-inline'>
-            Max Frameset Score:
-          </div>
-          <div className='d-inline ml-2'>
-            {movie_stats['max_frameset_score']}
-          </div>
-        </div>
-
-        <div className='row'>
-          <div className='d-inline'>
-            Min Frameset Score:
-          </div>
-          <div className='d-inline ml-2'>
-            {movie_stats['min_frameset_score']}
-          </div>
-        </div>
-
-        {movie_comment_row} 
-
-        <div className='row ml-4 h5 border-bottom'>
-          Frameset Data: 
-        </div>
-
         {frameset_hashes.map((frameset_hash, index) => {
           let frameset_counts = {
             not_used: true,
@@ -3203,7 +3172,7 @@ doSleep(time) {
       job_new_value = false
     }
     const job_line = (
-      <div className='row'>
+      <div>
         <div className='d-inline'>
           <input
             className='ml-2 mr-2 mt-1'
@@ -3227,7 +3196,7 @@ doSleep(time) {
         review_new_value = false
       }
       review_line = (
-        <div className='row'>
+        <div>
           <div className='d-inline'>
             <input
               className='ml-2 mr-2 mt-1'
@@ -3245,8 +3214,74 @@ doSleep(time) {
 
     return (
       <div className='col'>
-        {job_line}
-        {review_line}
+        <div className='row'>
+          <div className='col-6'>
+            {job_line}
+          </div>
+          <div className='col-6'>
+            {review_line}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  buildCompareSingleMovieSummary(panel_id) {
+    const mode_data = this.state.compare_single_mode_data[panel_id]
+    if (mode_data['state'] !== 'frameset_list') {
+      return ''
+    }
+    const jrs = this.state.job_run_summaries[mode_data['jrs_id']]
+    const movie_url = mode_data['movie_url']
+    const movie_data = jrs['content']['movies'][movie_url]
+    const movie_stats = jrs['content']['statistics']['movie_statistics'][movie_url]
+    let movie_comment_row = ''
+    if (Object.keys(movie_data).includes('comment') && movie_data['comment']) {
+      movie_comment_row = (
+        <div className='row'>
+          <div className='d-inline'>
+            Comments:
+          </div>
+          <div className='d-inline ml-2'>
+            {movie_data['comment']}
+          </div>
+        </div>
+      )
+    }
+    return (
+      <div className='col'>
+        <div className='row'>
+          <div className='col-6'>
+            <div className='d-inline'>
+              Pass / Fail
+            </div>
+            <div className='d-inline ml-2'>
+              {movie_stats['pass_or_fail']}
+            </div>
+          </div>
+          <div className='col-6'>
+            <div className='d-inline'>
+              Movie Score:
+            </div>
+            <div className='d-inline ml-2'>
+              {movie_stats['score']}
+            </div>
+          </div>
+        </div>
+
+        <div className='row'>
+          <div className='col'>
+          <div className='d-inline'>
+            Max / Min Frameset Scores :
+          </div>
+          <div className='d-inline ml-2'>
+            {movie_stats['max_frameset_score']} / {movie_stats['min_frameset_score']} 
+          </div>
+          </div>
+        </div>
+
+        {movie_comment_row} 
+
       </div>
     )
   }
@@ -3254,13 +3289,14 @@ doSleep(time) {
   buildComparePanelSingle(job_run_summary_id, panel_id) {
     const jrs = this.state.job_run_summaries[job_run_summary_id]
     const title_section = this.buildCompareSingleTitle(panel_id)
-    const summary_section = this.buildCompareSingleSummary(panel_id)
-    const movie_section = this.buildCompareSingleMovie(panel_id)
+    const job_summary_section = this.buildCompareSingleJobSummary(panel_id)
+    const movie_summary_section = this.buildCompareSingleMovieSummary(panel_id)
+    const movie_section = this.buildCompareSingleMovieList(panel_id)
     const frameset_section = this.buildCompareSingleFramesetList(panel_id)
     const nav_section = this.buildCompareSingleNav(panel_id)
     const controls_section = this.buildCompareSingleControls(panel_id, jrs)
-    const height_px_string = (window.innerHeight * .85).toString() + 'px'
-    const frameset_style = {
+    const height_px_string = (window.innerHeight * .75).toString() + 'px'
+    const wrapper_style = {
       overflow: 'scroll',
       height: height_px_string,
     }
@@ -3270,21 +3306,25 @@ doSleep(time) {
       >
         <div className='col'>
           <div className='row'>
-            {title_section}
+            {nav_section}
           </div>
           <div className='row'>
-            {nav_section}
+            {title_section}
           </div>
           <div className='row'>
             {controls_section}
           </div>
           <div className='row'>
-            {summary_section}
+            {job_summary_section}
           </div>
-          <div className='row mt-2'>
+          <div className='row'>
+            {movie_summary_section}
+          </div>
+          <div className='row mt-2 border-bottom'>
             {movie_section}
           </div>
-          <div style={frameset_style} className='row'>
+
+          <div style={wrapper_style} className='row'>
             {frameset_section}
           </div>
         </div>
