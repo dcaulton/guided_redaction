@@ -31,6 +31,7 @@ class JobEvalPanel extends React.Component {
       show_ocr: false,
       annotate_tile_column_count: 6,
       selected_frameset_hashes: [],
+      copied_frameset_hash: '',
       clicked_coords: [],
       jeo_id: '',
       jeo_description: '',
@@ -69,6 +70,58 @@ class JobEvalPanel extends React.Component {
     this.setUpImageParms=this.setUpImageParms.bind(this)
   }
 
+  resetFrameAnnotateData() {
+    const movie_name = getFileNameFromUrl(this.state.active_movie_url)
+    if (!Object.keys(this.state.jeo_permanent_standards).includes(movie_name)) {
+      return
+    }
+    const fsh = this.props.frameset_hash
+    if (!Object.keys(this.state.jeo_permanent_standards).includes(this.state.active_movie_url)) {
+      return
+    }
+    if (!Object.keys(this.state.jeo_permanent_standards[this.state.active_movie_url]['framesets']).includes(fsh)) {
+      return
+    }
+    let deepCopyPs= JSON.parse(JSON.stringify(this.state.jeo_permanent_standards))
+    delete deepCopyPs[movie_name]['framesets'][fsh]
+    this.setState({
+      jeo_permanent_standards: deepCopyPs,
+    })
+  }
+
+  pasteAnnotation() {
+    const movie_name = getFileNameFromUrl(this.state.active_movie_url)
+    const old_fsh = this.state.copied_frameset_hash
+    if (Object.keys(this.state.jeo_permanent_standards[movie_name]['framesets']).includes(old_fsh)) {
+      const prev_annotations = this.state.jeo_permanent_standards[movie_name]['framesets'][old_fsh]
+      let deepCopyPs = JSON.parse(JSON.stringify(this.state.jeo_permanent_standards))
+      deepCopyPs[movie_name]['framesets'][this.props.frameset_hash] = prev_annotations
+      this.setState({
+        jeo_permanent_standards: deepCopyPs,
+      })
+    }
+  }
+
+  addSameAnnotationsAsPrevFrame(current_hash) {
+    const ordered_hashes = this.props.getFramesetHashesInOrder()
+    if (this.props.frameset_hash && ordered_hashes) {
+      const cur_hash_index = ordered_hashes.indexOf(this.props.frameset_hash)
+      if (cur_hash_index === 0) {
+        return 
+      }
+      const prev_fs_hash = ordered_hashes[cur_hash_index-1]
+      const movie_name = getFileNameFromUrl(this.state.active_movie_url)
+      if (!Object.keys(this.state.jeo_permanent_standards).includes(movie_name)) {
+        return
+      }
+      const prev_annotations = this.state.jeo_permanent_standards[movie_name]['framesets'][prev_fs_hash]
+      let deepCopyPs= JSON.parse(JSON.stringify(this.state.jeo_permanent_standards))
+      deepCopyPs[movie_name]['framesets'][this.props.frameset_hash] = prev_annotations
+      this.setState({
+        jeo_permanent_standards: deepCopyPs,
+      })
+    }
+  }
 
   setImageScale() {
     if (!document.getElementById('annotate_image')) {
@@ -409,6 +462,8 @@ class JobEvalPanel extends React.Component {
       this.gotoNextFrame()
     } else if (event.keyCode === 37) {
       this.gotoPrevFrame()
+    } else if (event.keyCode === 38) {
+      this.addSameAnnotationsAsPrevFrame(this.props.frameset_hash)
     }
   }
 
@@ -504,6 +559,9 @@ class JobEvalPanel extends React.Component {
   }
 
   setUpImageParms(frameset_hash) {
+    if (!Object.keys(this.props.movies).includes(this.state.active_movie_url)) {
+      return ''
+    }
     const next_frameset = this.props.movies[this.state.active_movie_url]['framesets'][frameset_hash]
     const next_img_url = next_frameset['images'][0]
     this.setImageSize(next_img_url)
@@ -1212,35 +1270,37 @@ class JobEvalPanel extends React.Component {
           </div>
         </div>
         <div className='row'>
-          <div className='col'>
+          <table className='table table-striped'>
+            <tbody>
             {Object.keys(perm_standards).map((movie_name, index) => {
               const perm_standard = this.state.jeo_permanent_standards[movie_name]
               const source_movie_url = perm_standard['source_movie_url']
               return (
-                <div key={index} className='row'>
-                  <div className='col-4'>
+                <tr key={index}>
+                  <td>
                     {movie_name}
-                  </div>
-                  <div className='col-2'>
+                  </td>
+                  <td>
                     <button
                       className='btn btn-link ml-2 p-0'
                       onClick={()=>{this.annotateExemplarMovie(source_movie_url, 'tile')}}
                     >
                       annotate
                     </button>
-                  </div>
-                  <div className='col-2'>
+                  </td>
+                  <td>
                     <button
                       className='btn btn-link ml-2 p-0'
                       onClick={()=>{this.removeExemplarMovie(movie_name)}}
                     >
                       delete
                     </button>
-                  </div>
-                </div>
+                  </td>
+                </tr>
               )
             })}
-          </div>
+            </tbody>
+          </table>
         </div>
       </div>
     )
@@ -1530,6 +1590,42 @@ class JobEvalPanel extends React.Component {
     )
   }
 
+  buildAddSameAnnotationsAsPrevFramesetButton() {
+    return (
+      <button
+        className='btn btn-primary'
+        onClick={()=>{this.addSameAnnotationsAsPrevFrame()}}
+      >
+        Duplicate Prev (^)
+      </button>
+    )
+  }
+
+  buildCopyCurrentAnnotationsFramesetButton() {
+    return (
+      <button
+        className='btn btn-primary'
+        onClick={()=>{this.setState({copied_frameset_hash: this.props.frameset_hash})}}
+      >
+        Copy current
+      </button>
+    )
+  }
+
+  buildPasteAnnotationFramesetButton() {
+    if (!this.state.copied_frameset_hash) {
+      return ''
+    }
+    return (
+      <button
+        className='btn btn-primary'
+        onClick={()=>{this.pasteAnnotation()}}
+      >
+        Paste
+      </button>
+    )
+  }
+
   buildBackToJrsSummaryButton() {
     if (this.state.mode !== 'review') {
       return ''
@@ -1561,23 +1657,36 @@ class JobEvalPanel extends React.Component {
   }
 
   buildNextFrameButton() {
+    const next_text = 'Next (>)'
     return (
       <button
         className='btn btn-primary'
         onClick={()=>{this.gotoNextFrame()}}
       >
-        Next
+        {next_text}
       </button>
     )
   }
 
   buildPrevFrameButton() {
+    const prev_text = 'Prev (<)'
     return (
       <button
         className='btn btn-primary'
         onClick={()=>{this.gotoPrevFrame()}}
       >
-        Prev
+        {prev_text}
+      </button>
+    )
+  }
+
+  buildAnnotateResetButton() {
+    return (
+      <button
+        className='btn btn-primary'
+        onClick={()=>{this.resetFrameAnnotateData()}}
+      >
+        Reset
       </button>
     )
   }
@@ -1941,12 +2050,16 @@ class JobEvalPanel extends React.Component {
   buildAnnotateSingleButtons() {
     const add_box_button = this.buildAddBoxButton()
     const delete_box_button = this.buildDeleteBoxButton()
+    const add_same_as_prev_frame_button = this.buildAddSameAnnotationsAsPrevFramesetButton()
+    const copy_button = this.buildCopyCurrentAnnotationsFramesetButton()
+    const paste_button = this.buildPasteAnnotationFramesetButton()
     const show_ocr_button = this.buildShowOcrButton()
     const hide_ocr_button = this.buildHideOcrButton()
     const add_ocr_button = this.buildAddOcrButton()
     const delete_ocr_button = this.buildDeleteOcrButton()
     const next_frame_button = this.buildNextFrameButton()
     const prev_frame_button = this.buildPrevFrameButton()
+    const reset_button = this.buildAnnotateResetButton()
     const back_to_tile_button = this.buildBackToTileButton()
     const help_button = this.buildAnnotateSingleHelpButton()
     return (
@@ -1957,6 +2070,10 @@ class JobEvalPanel extends React.Component {
 
         <div className='d-inline ml-1'>
           {delete_box_button}
+        </div>
+
+        <div className='d-inline ml-1'>
+          {reset_button}
         </div>
 
         <div className='d-inline ml-1'>
@@ -1973,6 +2090,18 @@ class JobEvalPanel extends React.Component {
 
         <div className='d-inline ml-1'>
           {delete_ocr_button}
+        </div>
+
+        <div className='d-inline ml-1'>
+          {add_same_as_prev_frame_button}
+        </div>
+
+        <div className='d-inline ml-1'>
+          {copy_button}
+        </div>
+
+        <div className='d-inline ml-1'>
+          {paste_button}
         </div>
 
         <div className='d-inline ml-1'>
