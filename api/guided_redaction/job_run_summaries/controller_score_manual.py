@@ -338,6 +338,7 @@ class ScoreManualController(T1Controller):
                     job_frameset_data = {}
                     has_job_data = False
                     was_reviewed = False
+                    build_comment = ''
                     if frameset_hash in job_movie_data['framesets']:
                         job_frameset_data = job_movie_data['framesets'][frameset_hash]
                         has_job_data = True
@@ -351,6 +352,8 @@ class ScoreManualController(T1Controller):
                             frame_dimensions, 
                             fsh_prefix
                         )
+                        if 'comment' in jrs_frameset_data and jrs_frameset_data['comment']:
+                            build_comment = jrs_frameset_data['comment']
                     else:
                         fs_counts, fs_maps = self.score_frameset_autopass(job_frameset_data, frame_dimensions, fsh_prefix)
                     build_movies[movie_url]['framesets'][frameset_hash] = {
@@ -360,6 +363,8 @@ class ScoreManualController(T1Controller):
                         'has_job_data': has_job_data,
                         'was_reviewed': was_reviewed,
                     }
+                    if build_comment:
+                        build_movies[movie_url]['framesets'][frameset_hash]['comment'] = build_comment
 
                 movie_stats = self.calc_movie_stats(build_movies[movie_url], job_eval_objective)
                 build_stats['movie_statistics'][movie_url] = movie_stats

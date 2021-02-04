@@ -1959,14 +1959,60 @@ console.log("mingo scale is "+scale.toString())
     )
   }
 
+  buildFramesetCommentsInputRow() {
+    let fs_comment = ''
+    const fsh = this.props.frameset_hash
+    if (
+      Object.keys(this.state.jrs_movies[this.state.active_movie_url]['framesets']).includes(fsh) &&
+      Object.keys(this.state.jrs_movies[this.state.active_movie_url]['framesets'][fsh]).includes('comment')
+    ) {
+      fs_comment = this.state.jrs_movies[this.state.active_movie_url]['framesets'][fsh]['comment']
+    }
+    return (
+      <div className='row mt-2'>
+        <div className='d-inline'>
+          Frameset Comments
+        </div>
+        <div className='d-inline ml-2'>
+          <textarea
+            id='frameset_comment'
+            cols='60'
+            rows='3'
+            value={fs_comment}
+            onChange={(event) => this.setFramesetComment(event.target.value)}
+          />
+        </div>
+      </div>
+    )
+  }
+
+  setFramesetComment(comment_string) {
+    let deepCopyJrsm = JSON.parse(JSON.stringify(this.state.jrs_movies))
+    if (!Object.keys(this.state.jrs_movies[this.state.active_movie_url]['framesets']).includes(this.props.frameset_hash)) {
+      deepCopyJrsm[this.state.active_movie_url]['framesets'][this.props.frameset_hash] = {
+        desired: {},
+        unwanted: {},
+        pass_or_fail: '',
+        comment: '',
+      }
+    }
+    deepCopyJrsm[this.state.active_movie_url]['framesets'][this.props.frameset_hash]['comment'] = comment_string
+    this.setState({
+      jrs_movies: deepCopyJrsm,
+    })
+    
+  }
+
   buildAnnotatePanelSingle() {
     const image_url = this.props.getImageUrl()
     const image_element = this.buildImageElement(image_url)
     let buttons_row = ''
+    let frameset_comments_row = ''
     if (this.state.mode === 'annotate') {
       buttons_row = this.buildAnnotateSingleButtons()
     } else if (this.state.mode === 'review') {
       buttons_row = this.buildReviewSingleButtons()
+      frameset_comments_row = this.buildFramesetCommentsInputRow()
     } 
     let image_extra_text = '.'
     let extra_text_style = {
@@ -1984,6 +2030,8 @@ console.log("mingo scale is "+scale.toString())
           <div className='row m-1'>
             {buttons_row}
           </div>
+
+          {frameset_comments_row}
 
           <div style={extra_text_style} className='row'>
             {image_extra_text}
@@ -2045,13 +2093,18 @@ console.log("mingo scale is "+scale.toString())
     )
   }
 
-  buildGenerateExemplarJrsLine() {
+  buildManualJobPicker() {
     const jobs = [{'': ''}]
     for (let i=0; i < this.props.jobs.length; i++) {
       const job = this.props.jobs[i]
-      const build_obj = {}
-      build_obj[job.id] = job.id.substring(0, 5) + '... - ' + job.description
-      jobs.push(build_obj)
+      if (
+        job.app === 'analyze' ||
+        job.app === 'pipeline'
+      ) {
+        const build_obj = {}
+        build_obj[job.id] = job.id.substring(0, 5) + '... - ' + job.description
+        jobs.push(build_obj)
+      }
     }
 
     const job_id_dropdown = buildLabelAndDropdown(
@@ -2380,7 +2433,7 @@ doSleep(time) {
       return ''
     }
 
-    const exemplar_job_picker = this.buildGenerateExemplarJrsLine()
+    const manual_job_picker = this.buildManualJobPicker()
     const generate_exemplar_button = this.buildGenerateExemplarJrsButton()
     const manual_review_button = this.buildManualJrsButton()
     const jrs_list = this.buildJobRunSummaryList()
@@ -2403,7 +2456,7 @@ doSleep(time) {
                 Generate Summaries
               </div>
               <div className='row mt-4 ml-2'>
-                {exemplar_job_picker}
+                {manual_job_picker}
               </div>
 
               <div className='row mb-4  mt-2 ml-2'>
@@ -2786,9 +2839,9 @@ doSleep(time) {
     const source_movie = jrs['content']['source_movies'][movie_url]
     const movie_stats = jrs['content']['statistics']['movie_statistics'][movie_url]
     const frameset_hashes = this.props.getFramesetHashesInOrder(source_movie)
-    let comment_row = ''
+    let movie_comment_row = ''
     if (Object.keys(movie_data).includes('comment') && movie_data['comment']) {
-      comment_row = (
+      movie_comment_row = (
         <div className='row'>
           <div className='d-inline'>
             Comments:
@@ -2841,7 +2894,7 @@ doSleep(time) {
           </div>
         </div>
 
-        {comment_row} 
+        {movie_comment_row} 
 
         <div className='row ml-4 h5 border-bottom'>
           Frameset Data: 
@@ -2852,10 +2905,26 @@ doSleep(time) {
             not_used: true,
           }
           let overlay_image_url = ''
+          let frameset_comment_row = ''
           if (Object.keys(movie_data['framesets']).includes(frameset_hash)) {
             frameset_counts = movie_data['framesets'][frameset_hash]['counts']
             const fs_mode = mode_data['frameset_overlay_modes'][frameset_hash]
             overlay_image_url = movie_data['framesets'][frameset_hash]['maps'][fs_mode]
+            if (
+              Object.keys(movie_data['framesets'][frameset_hash]).includes('comment') &&
+              movie_data['framesets'][frameset_hash]['comment']
+            ) {
+              frameset_comment_row = (
+                <div className='row'>
+                  <div className='d-inline'>
+                    Frameset Comments:
+                  </div>
+                  <div className='d-inline ml-2'>
+                    {movie_data['framesets'][frameset_hash]['comment']}
+                  </div>
+                </div>
+              )
+            }
           }
 
           if (
@@ -2888,6 +2957,8 @@ doSleep(time) {
               <div className='row'>
                 {frameset_stats_rows}
               </div>
+
+              {frameset_comment_row}
 
               <div className='row'>
                 {frameset_view_buttons}
