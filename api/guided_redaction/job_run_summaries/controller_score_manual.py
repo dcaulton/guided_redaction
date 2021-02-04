@@ -321,6 +321,8 @@ class ScoreManualController(T1Controller):
                 build_movies[movie_url] = {
                     'framesets': {},
                 }
+                if 'comment' in jrs_movie_data and jrs_movie_data['comment']:
+                    build_movies[movie_url]['comment'] = jrs_movie_data['comment']
                 frame_dimensions = ()
                 (_, file_name) = os.path.split(movie_url)
                 (movie_uuid, file_type) = file_name.split('.')

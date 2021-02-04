@@ -614,12 +614,21 @@ console.log("mingo scale is "+scale.toString())
         desired: {},
         unwanted: {},
         pass_or_fail: '',
+        comment: '',
       }
     }
     deepCopyJrsm[this.state.active_movie_url]['framesets'][fsh][box_type][new_id] = new_box
     this.setState({
       jrs_movies: deepCopyJrsm,
       image_mode: new_mode,
+    })
+  }
+
+  setMovieComment(comment_string) {
+    let deepCopyJrsm = JSON.parse(JSON.stringify(this.state.jrs_movies))
+    deepCopyJrsm[this.state.active_movie_url]['comment'] = comment_string
+    this.setState({
+      jrs_movies: deepCopyJrsm,
     })
   }
 
@@ -652,6 +661,7 @@ console.log("mingo scale is "+scale.toString())
         desired: {},
         unwanted: {},
         pass_or_fail: '',
+        comment: '',
       }
     }
     deepCopyJrsm[this.state.active_movie_url]['framesets'][fsh]['desired'] = {}
@@ -1591,11 +1601,36 @@ console.log("mingo scale is "+scale.toString())
     let review_annotate_when_clicked = (()=>{this.annotateExemplarMovie(this.state.active_movie_url, 'single')})
     let review_annotate_button_label = 'Annotate these Frames'
     let help_button = this.buildAnnotateTileHelpButton()
+    let movie_comments_row = ''
     if (this.state.mode === 'review') {
       help_button = this.buildReviewTileHelpButton()
       steps_explained = "Select the frames you wish to review by clicking on them, press the Review button when done. Clicking on no frames gives you all frames of the movie to review."
       review_annotate_button_label = 'Review these Frames'
       review_annotate_when_clicked = (()=>{this.reviewExemplarMovie(this.state.active_movie_url, 'single')})
+      let comment_val = ''
+      if (
+        Object.keys(this.state.jrs_movies[this.state.active_movie_url]).includes('comment') && 
+        this.state.jrs_movies[this.state.active_movie_url]['comment']
+      ) {
+        comment_val = this.state.jrs_movies[this.state.active_movie_url]['comment']
+      }
+      
+      movie_comments_row = (
+        <div className='row mt-2'>
+          <div className='d-inline'>
+            Movie Level Comments
+          </div>
+          <div className='d-inline ml-2'>
+            <textarea
+              id='job_level_comment'
+              cols='60'
+              rows='3'
+              value={comment_val}
+              onChange={(event) => this.setMovieComment(event.target.value)}
+            />
+          </div>
+        </div>
+      )
     }
 
     let row_num_array = []
@@ -1616,6 +1651,9 @@ console.log("mingo scale is "+scale.toString())
               {steps_explained}
             </div>
           </div>
+
+          {movie_comments_row}
+
           <div className='row'>
             <div className='d-inline'>
               <button
@@ -2440,6 +2478,21 @@ doSleep(time) {
 
           {you_can_finalize_row}
 
+          <div className='row mt-2'>
+            <div className='d-inline'>
+              Job Level Comments
+            </div>
+            <div className='d-inline ml-2'>
+              <textarea
+                id='job_level_comment'
+                cols='60'
+                rows='3'
+                value={this.state.job_comment}
+                onChange={(event) => this.setState({'job_comment': event.target.value})}
+              />
+            </div>
+          </div>
+
           <div className='row'>
             <table className='table table-striped'>
               <thead>
@@ -2512,20 +2565,6 @@ doSleep(time) {
           {the_title}
         </div>
 
-        <div className='row mt-2'>
-          <div className='d-inline'>
-            Job Level Comments
-          </div>
-          <div className='d-inline ml-2'>
-            <textarea
-              id='job_level_comment'
-              cols='60'
-              rows='3'
-              value={this.state.job_comment}
-              onChange={(event) => this.setState({'job_comment': event.target.value})}
-            />
-          </div>
-        </div>
 
         {the_body}
 
@@ -2747,6 +2786,19 @@ doSleep(time) {
     const source_movie = jrs['content']['source_movies'][movie_url]
     const movie_stats = jrs['content']['statistics']['movie_statistics'][movie_url]
     const frameset_hashes = this.props.getFramesetHashesInOrder(source_movie)
+    let comment_row = ''
+    if (Object.keys(movie_data).includes('comment') && movie_data['comment']) {
+      comment_row = (
+        <div className='row'>
+          <div className='d-inline'>
+            Comments:
+          </div>
+          <div className='d-inline ml-2'>
+            {movie_data['comment']}
+          </div>
+        </div>
+      )
+    }
     return (
       <div className='col border-bottom pb-2 ml-2 mb-2'>
         <div className='row font-weight-bold'>
@@ -2788,6 +2840,8 @@ doSleep(time) {
             {movie_stats['min_frameset_score']}
           </div>
         </div>
+
+        {comment_row} 
 
         <div className='row ml-4 h5 border-bottom'>
           Frameset Data: 
