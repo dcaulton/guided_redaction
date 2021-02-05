@@ -30,7 +30,7 @@ class TemplateMatcherTestCase(TestCase):
     def setUp(self):
         pass
 
-    def test_template_matcher_unity_scale_close_enough_to_match(self):
+    def xtest_template_matcher_unity_scale_close_enough_to_match(self):
         template_matcher = TemplateMatcher({
             'match_percent': .93,
         })
@@ -51,7 +51,7 @@ class TemplateMatcherTestCase(TestCase):
         self.assertEquals(match_obj[0], (10, 70))
         self.assertEquals(match_obj[1], 1)
 
-    def test_template_matcher_unity_scale_not_close_enough_to_match(self):
+    def xtest_template_matcher_unity_scale_not_close_enough_to_match(self):
         # same as test_template_matcher_unity_scale_close_enough_to_match, but with the 
         #    template match threshold numdged up just enough to make this not match
         template_matcher = TemplateMatcher({
@@ -70,7 +70,7 @@ class TemplateMatcherTestCase(TestCase):
         # Russek will not be close enough to Russell, it compares at .934
         self.assertEquals(match_obj, False)
 
-    def test_template_matcher_eighty_percent_scale_with_match(self):
+    def xtest_template_matcher_eighty_percent_scale_with_match(self):
         template_matcher = TemplateMatcher({
             'match_percent': .9,
             'scale': '+/-25/5',
@@ -93,7 +93,7 @@ class TemplateMatcherTestCase(TestCase):
         self.assertEquals(match_obj[0], (10, 62))
         self.assertEquals(match_obj[1], .8)
 
-    def test_template_matcher_eighty_percent_scale_no_match(self):
+    def xtest_template_matcher_eighty_percent_scale_no_match(self):
         # same as test_template_matcher_eighty_percent_scale_with_match, but with a template word
         #   that is different enough to not match
         template_matcher = TemplateMatcher({
@@ -117,7 +117,7 @@ class TemplateMatcherTestCase(TestCase):
         #   it to 80% of the original size, so 62 ~ .8 * 70, and 10 ~ .8 * 10 (after accounting for aliasing)
         self.assertEquals(match_obj, False)
 
-    def test_template_matcher_eighty_percent_scale_no_match_because_scale_not_specified(self):
+    def xtest_template_matcher_eighty_percent_scale_no_match_because_scale_not_specified(self):
         # same as test_template_matcher_eighty_percent_scale_with_match, but shows what happens if
         #   you don't request scaling (it failes)
         template_matcher = TemplateMatcher({
@@ -166,7 +166,7 @@ class EastTessTestCase(TestCase):
             "Namespaces are one honking great idea -- let's do more of those!"
         ]
 
-    def test_text_is_recognized(self):
+    def xtest_text_is_recognized(self):
         source_image = np.zeros((500, 700, 3), np.uint8) 
         for i, truth in enumerate(self.wisdom[0:5]):
             draw_text_on_image(source_image, truth, (10, 60*(i+1)), font_scale=.85, font_color=(222,222,222), line_type=1)
