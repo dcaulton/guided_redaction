@@ -3019,9 +3019,9 @@ doSleep(time) {
             <div className='font-italic'>
               {message}
             </div>
-          </div>
-          <div>
-            {clear_message_button}
+            <div className='row float-right'>
+              {clear_message_button}
+            </div>
           </div>
         </div>
 
