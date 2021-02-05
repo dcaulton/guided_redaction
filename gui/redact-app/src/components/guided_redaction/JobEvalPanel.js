@@ -19,7 +19,6 @@ class JobEvalPanel extends React.Component {
       message: '',
       message_class: '',
       image_mode: '',
-      compare_single_mode_data: {},
       image_height: 900,
       image_width: 1600,
       image_scale: 1,
@@ -2410,23 +2409,9 @@ class JobEvalPanel extends React.Component {
   }
 
   startCompare() {
-    let compare_mode_data = {}
-    for (let i=0; i < this.state.jrs_ids_to_compare.length; i++) {
-      const jrs_id = this.state.jrs_ids_to_compare[i]
-      compare_mode_data[i] = {
-        state: 'summary',
-        jrs_id: jrs_id,
-        movie_url: '',
-        frameset_hash: '',
-        frameset_overlay_modes: {},
-        hide_non_job_frames: false,
-        hide_non_review_frames: false,
-      }
-      this.loadJobRunSummaryDetails()
-    }
+    this.loadJobRunSummaryDetails()
     this.setState({
       mode: 'compare',
-      compare_single_mode_data: compare_mode_data,
     })
   }
 
@@ -3010,11 +2995,9 @@ doSleep(time) {
       title = 'Job Evaluation - Manual Review of Job Output'
     } else if (this.state.mode === 'compare') {
       title = 'Job Eval - Compare Job Run Summaries'
-//      page_content = this.buildComparePanel()
       page_content = (
         <JobEvalCompareControls
             jrs_ids_to_compare={this.state.jrs_ids_to_compare}
-            compare_single_mode_data={this.state.compare_single_mode_data}
             job_run_summaries={this.state.job_run_summaries}
             getFramesetHashesInOrder={this.props.getFramesetHashesInOrder}
         />
