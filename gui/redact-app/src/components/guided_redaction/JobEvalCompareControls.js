@@ -31,7 +31,7 @@ class JobEvalCompareControls extends React.Component {
     })
   }
 
-  buildCompareSingleControls(panel_id, job_run_summary) {
+  buildSingleControls(panel_id, job_run_summary) {
     const mode_data = this.state.compare_single_mode_data[panel_id]
     if (!mode_data) { return }
     if (mode_data['state'] !== 'frameset_list') {
@@ -106,7 +106,7 @@ class JobEvalCompareControls extends React.Component {
     })
   }
 
-  buildCompareSingleNav(panel_id) {
+  buildSingleNav(panel_id) {
     let first_button = ''
     const mode_data = this.state.compare_single_mode_data[panel_id]
     if (!mode_data) { return }
@@ -147,7 +147,7 @@ class JobEvalCompareControls extends React.Component {
     )
   }
 
-  buildCompareSingleFramesetStatsViewToggle(panel_id, counts, frameset_hash, overlay_mode) {
+  buildSingleFramesetStatsViewToggle(panel_id, counts, frameset_hash, overlay_mode) {
     if (Object.keys(counts).includes('not_used')) {
       return ''
     }
@@ -233,7 +233,7 @@ class JobEvalCompareControls extends React.Component {
     )
   }
 
-  buildCompareSingleFramesetStatsRows(counts, frameset_stats) {
+  buildSingleFramesetStatsRows(counts, frameset_stats) {
     let job_output_comment = ''
     if (Object.keys(counts).includes('not_used')) {
       job_output_comment = 'No job output'
@@ -339,7 +339,7 @@ class JobEvalCompareControls extends React.Component {
     )
   }
 
-  buildCompareSingleFramesetList(panel_id) {
+  buildSingleFramesetList(panel_id) {
     const mode_data = this.state.compare_single_mode_data[panel_id]
     if (!mode_data) { return }
     if (mode_data['state'] !== 'frameset_list') {
@@ -411,9 +411,9 @@ class JobEvalCompareControls extends React.Component {
           const img_url = source_movie['framesets'][frameset_hash]['images'][0]
 
           const frameset_stats = movie_stats['framesets'][frameset_hash]
-          const frameset_stats_rows = this.buildCompareSingleFramesetStatsRows(frameset_counts, frameset_stats)
+          const frameset_stats_rows = this.buildSingleFramesetStatsRows(frameset_counts, frameset_stats)
           const frameset_overlay_mode = mode_data['frameset_overlay_modes'][frameset_hash]
-          const frameset_view_buttons = this.buildCompareSingleFramesetStatsViewToggle(
+          const frameset_view_buttons = this.buildSingleFramesetStatsViewToggle(
             panel_id, frameset_counts, frameset_hash, frameset_overlay_mode
           )
           return (
@@ -491,7 +491,7 @@ class JobEvalCompareControls extends React.Component {
     }
   }
 
-  buildCompareSingleMovieList(panel_id) {
+  buildSingleMovieList(panel_id) {
     const mode_data = this.state.compare_single_mode_data[panel_id]
     if (!mode_data) { return }
     if (mode_data['state'] !== 'summary') {
@@ -555,7 +555,7 @@ class JobEvalCompareControls extends React.Component {
     )
   }
 
-  buildCompareSingleMovieSummary(panel_id) {
+  buildSingleMovieSummary(panel_id) {
     const mode_data = this.state.compare_single_mode_data[panel_id]
     if (!mode_data) { return }
     if (mode_data['state'] !== 'frameset_list') {
@@ -616,7 +616,7 @@ class JobEvalCompareControls extends React.Component {
     )
   }
 
-  buildCompareSingleJobSummary(panel_id) {
+  buildSingleJobSummary(panel_id) {
     const mode_data = this.state.compare_single_mode_data[panel_id]
     if (!mode_data) { return }
     if (mode_data['state'] !== 'summary') {
@@ -649,7 +649,7 @@ class JobEvalCompareControls extends React.Component {
     )
   }
 
-  buildCompareSingleTitle(panel_id) {
+  buildSingleTitle(panel_id) {
     const mode_data = this.state.compare_single_mode_data[panel_id]
     if (!mode_data) { return }
     const jrs = this.props.job_run_summaries[mode_data['jrs_id']]
@@ -682,13 +682,13 @@ class JobEvalCompareControls extends React.Component {
   }
   buildComparePanelSingle(job_run_summary_id, panel_id) {
     const jrs = this.props.job_run_summaries[job_run_summary_id]
-    const title_section = this.buildCompareSingleTitle(panel_id)
-    const job_summary_section = this.buildCompareSingleJobSummary(panel_id)
-    const movie_summary_section = this.buildCompareSingleMovieSummary(panel_id)
-    const movie_section = this.buildCompareSingleMovieList(panel_id)
-    const frameset_section = this.buildCompareSingleFramesetList(panel_id)
-    const nav_section = this.buildCompareSingleNav(panel_id)
-    const controls_section = this.buildCompareSingleControls(panel_id, jrs)
+    const title_section = this.buildSingleTitle(panel_id)
+    const job_summary_section = this.buildSingleJobSummary(panel_id)
+    const movie_summary_section = this.buildSingleMovieSummary(panel_id)
+    const movie_section = this.buildSingleMovieList(panel_id)
+    const frameset_section = this.buildSingleFramesetList(panel_id)
+    const nav_section = this.buildSingleNav(panel_id)
+    const controls_section = this.buildSingleControls(panel_id, jrs)
     const height_px_string = (window.innerHeight * .75).toString() + 'px'
     const wrapper_style = {
       overflow: 'scroll',
