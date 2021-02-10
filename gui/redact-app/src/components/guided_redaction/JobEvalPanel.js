@@ -539,6 +539,20 @@ class JobEvalPanel extends React.Component {
     return (cur_index + 1).toString() + '/' + ordered_hashes.length.toString()
   }
 
+  curFramesetIsLast() {
+    const hashes = this.getSelectedFramesetHashesInOrder()
+    if (hashes.indexOf(this.props.frameset_hash) >= hashes.length-1) {
+      return true
+    }
+  }
+
+  curFramesetIsFirst() {
+    const hashes = this.getSelectedFramesetHashesInOrder()
+    if (hashes.indexOf(this.props.frameset_hash) === 0) {
+      return true
+    }
+  }
+
   getSelectedFramesetHashesInOrder() {
     let ordered_hashes = this.props.getFramesetHashesInOrder()
     if (this.state.selected_frameset_hashes.length > 0) {
@@ -566,7 +580,7 @@ class JobEvalPanel extends React.Component {
   gotoNextFrame() {
     const ordered_hashes = this.getSelectedFramesetHashesInOrder()
     const cur_index = ordered_hashes.indexOf(this.props.frameset_hash)
-    if (cur_index < (ordered_hashes.length-1)) {
+    if (cur_index < ordered_hashes.length-1) {
       const next_hash = ordered_hashes[cur_index+1]
       this.props.setFramesetHash(next_hash)
       this.setUpImageParms(next_hash)
@@ -580,7 +594,6 @@ class JobEvalPanel extends React.Component {
     const next_frameset = this.props.movies[this.state.active_movie_url]['framesets'][frameset_hash]
     const next_img_url = next_frameset['images'][0]
     this.setImageSize(next_img_url)
-console.log('MAMA')
   }
 
   getPermanentStandardBoxes() {
@@ -1712,6 +1725,9 @@ console.log('MAMA')
   }
 
   buildNextFrameButton() {
+    if (this.curFramesetIsLast()) {
+      return ''
+    }
     const next_text = 'Next (>)'
     return (
       <button
@@ -1724,6 +1740,9 @@ console.log('MAMA')
   }
 
   buildPrevFrameButton() {
+    if (this.curFramesetIsFirst()) {
+      return ''
+    }
     const prev_text = 'Prev (<)'
     return (
       <button
