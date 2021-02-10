@@ -1298,6 +1298,7 @@ class JobEvalPanel extends React.Component {
     this.loadNewJeo()
     this.setMessage('select or create a Job Eval Objective to start.')
     window.addEventListener('keydown', this.keyPress)
+    this.props.setActiveWorkflow('')
   }
 
   buildExemplarMoviesSection() {
