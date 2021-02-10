@@ -496,11 +496,10 @@ class JobEvalPanel extends React.Component {
       } else if (review_obj['pass_or_fail'] === 'fail') {
         return 'FAILED'
       } else {
-        return 'REVIEWED'
+        return 'SCORED'
       } 
-      return '.'
     }
-    return '.'
+    return ''
   }
 
   frameHasAnnotationData(frameset_hash) {
@@ -1776,21 +1775,6 @@ class JobEvalPanel extends React.Component {
     )
   }
 
-  buildAnnotateTileColumnCountDropdown() {
-    const annotate_options = [
-      {'6': '6 columns'},
-      {'4': '4 columns'},
-      {'2': '2 columns'}
-    ]
-    return buildLabelAndDropdown(
-      annotate_options,
-      'Number of Columns',
-      this.state.annotate_tile_column_count,
-      'annotate_tile_column_count',
-      ((value)=>{this.setState({'annotate_tile_column_count': value})})
-    )
-  }
-
   getTileInfo() {
     const num_cols = this.state.annotate_tile_column_count
     let col_class = 'col-2'
@@ -1864,24 +1848,89 @@ class JobEvalPanel extends React.Component {
     return movie_comments_row
   }
 
+  buildTileImageStatsBlock(fs_hash) {
+    const images_this_hash = this.getImageCountForFramesetHash(fs_hash)
+    const image_count_string = images_this_hash.toString() + ' images'
+    const fs_hash_sliced = fs_hash.slice(0, 6) + '...' + fs_hash.slice(fs_hash.length-6,)
+    let overlay_text = ''
+    let overlay_style = {
+      minHeight: '1em',
+    }
+    if (
+      this.frameHasAnnotationData(fs_hash) &&
+      this.state.mode === 'annotate'
+    ) {
+      overlay_text = 'ANNOTATED'
+    } else if (
+      this.state.mode === 'review'
+    ) {
+      if (this.frameHasT1Data(fs_hash)) {
+        overlay_text = 'RESULTS'
+      } 
+      const more = this.getFramesetReviewDisplayString(fs_hash)
+      if (more) {
+        overlay_text += ', ' + this.getFramesetReviewDisplayString(fs_hash)
+      }
+    }
+    return (
+      <div className='mt-2'>
+        <div>
+          {fs_hash_sliced}
+        </div>
+        <div style={overlay_style}>
+          {overlay_text}
+        </div>
+        <div>
+          {image_count_string}
+        </div>
+      </div>
+    )
+  }
 
-  buildAnnotatePanelTile() {
-    const tile_info = this.getTileInfo()
-    const num_cols = tile_info['num_cols']
-    const col_class = tile_info['col_class']
-    const ordered_hashes = this.props.getFramesetHashesInOrder()
-    const num_rows = Math.ceil(ordered_hashes.length / num_cols)
-//    const col_count_picker = this.buildAnnotateTileColumnCountDropdown()
-    const col_count_picker = ''
+  buildTileButtonRow() {
+    let help_button = this.buildAnnotateTileHelpButton()
     let review_annotate_when_clicked = (()=>{this.annotateExemplarMovie(this.state.active_movie_url, 'single')})
     let review_annotate_button_label = 'Annotate these Frames'
-    let help_button = this.buildAnnotateTileHelpButton()
-    const movie_comments_row = this.buildAnnotateMovieCommentsRow()
     if (this.state.mode === 'review') {
       help_button = this.buildReviewTileHelpButton()
       review_annotate_button_label = 'Review these Frames'
       review_annotate_when_clicked = (()=>{this.reviewExemplarMovie(this.state.active_movie_url, 'single')})
     }
+    const back_to_jrs_summary_button = this.buildBackToJrsSummaryButton()
+
+    return (
+      <div className='row'>
+        <div className='d-inline'>
+          <button
+            className='btn btn-primary'
+            onClick={review_annotate_when_clicked}
+          >
+            {review_annotate_button_label}
+          </button>
+        </div>
+        <div className='d-inline ml-2'>
+          {back_to_jrs_summary_button}
+        </div>
+        <div className='d-inline ml-2'>
+          {help_button}
+        </div>
+      </div>
+    )
+  }
+
+  buildAnnotatePanelTile() {
+    const tile_info = this.getTileInfo()
+    const num_cols = tile_info['num_cols']
+    const col_class = tile_info['col_class']
+    let ordered_hashes = []
+    let movie = {framesets: {}}
+    if (Object.keys(this.props.movies).includes(this.state.active_movie_url)) {
+      movie = this.props.movies[this.state.active_movie_url]
+      ordered_hashes = this.props.getFramesetHashesInOrder(movie)
+    }
+    const num_rows = Math.ceil(ordered_hashes.length / num_cols)
+    const movie_comments_row = this.buildAnnotateMovieCommentsRow()
+    const tile_button_row = this.buildTileButtonRow()
 
     let row_num_array = []
     for (let i=0; i < num_rows; i++) {
@@ -1891,7 +1940,6 @@ class JobEvalPanel extends React.Component {
     const img_style = {
       width: '100%',
     }
-    const back_to_jrs_summary_button = this.buildBackToJrsSummaryButton()
 
     return (
       <div className='row'>
@@ -1899,25 +1947,8 @@ class JobEvalPanel extends React.Component {
 
           {movie_comments_row}
 
-          <div className='row'>
-            <div className='d-inline'>
-              <button
-                className='btn btn-primary'
-                onClick={review_annotate_when_clicked}
-              >
-                {review_annotate_button_label}
-              </button>
-            </div>
-            <div className='d-inline ml-2'>
-              {back_to_jrs_summary_button}
-            </div>
-            <div className='d-inline ml-2'>
-              {help_button}
-            </div>
-          </div>
-          <div className='row'>
-            {col_count_picker}
-          </div>
+          {tile_button_row}
+
           {row_num_array.map((whatever, row_num) => {
             const start_point = row_num * num_cols 
             const end_point = start_point + num_cols
@@ -1929,43 +1960,16 @@ class JobEvalPanel extends React.Component {
                   if (this.state.selected_frameset_hashes.includes(fs_hash)) {
                     div_class += ' active_card'
                   }
-                  const img_url = this.props.getImageUrl(fs_hash)
-                  let overlay_text = '.'
-                  let overlay_text2 = '.'
-                  let overlay_style = {
-                    color: 'white',
-                  }
-                  let ot2_style = {
-                    color: 'white',
-                  }
-                  if (this.frameHasAnnotationData(fs_hash)) {
-                    overlay_text = 'ANNOTATED'
-                    overlay_style['color'] = '#000'
-                  } else if (this.state.mode === 'review') {
-                    if (this.frameHasT1Data(fs_hash)) {
-                      overlay_style['color'] = 'black'
-                      overlay_text = 'RESULTS'
-                    } 
-                    overlay_text2 = this.getFramesetReviewDisplayString(fs_hash)
-                    if (overlay_text2 !== '.') {
-                      ot2_style['color'] = 'black'
-                    }
-                  }
+                  const img_url = this.props.getImageFromFrameset(fs_hash, movie['framesets'])
+                  const stats_block = this.buildTileImageStatsBlock(fs_hash)
+
                   return (
                     <div 
                         className={div_class} 
                         key={index} 
                     >
-                      <div
-                        style={overlay_style}
-                      >
-                        {overlay_text}
-                      </div>
-                      <div
-                        style={ot2_style}
-                      >
-                        {overlay_text2}
-                      </div>
+                      {stats_block}
+
                       <img
                         id='job_eval_image'
                         style={img_style}
@@ -1982,6 +1986,20 @@ class JobEvalPanel extends React.Component {
         </div>
       </div>
     )
+  }
+
+  getImageCountForFramesetHash(fs_hash) {
+    if (Object.keys(this.props.movies).includes(this.state.active_movie_url)) {
+      const mov = this.props.movies[this.state.active_movie_url]
+      if (
+        Object.keys(mov).includes('framesets') &&
+        Object.keys(mov['framesets']).includes(fs_hash) &&
+        Object.keys(mov['framesets'][fs_hash]).includes('images')
+      ) {
+        return mov['framesets'][fs_hash]['images'].length
+      }
+    }
+    return 0
   }
 
   buildPassButton() {
@@ -2280,14 +2298,8 @@ class JobEvalPanel extends React.Component {
       frameset_comments_row = this.buildFramesetCommentsInputRow()
     } 
     let image_extra_text = '.'
-    let extra_text_style = {
-      color: 'white',
-    }
     if (this.state.mode === 'review') {
       image_extra_text = this.getFramesetReviewDisplayString(this.props.frameset_hash)
-      if (!image_extra_text !== '.') {
-        extra_text_style['color'] = 'black'
-      }
     }
     return (
       <div className='row'>
@@ -2298,7 +2310,7 @@ class JobEvalPanel extends React.Component {
 
           {frameset_comments_row}
 
-          <div style={extra_text_style} className='row'>
+          <div className='row'>
             {image_extra_text}
           </div>
 
