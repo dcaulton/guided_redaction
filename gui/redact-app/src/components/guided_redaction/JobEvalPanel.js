@@ -97,6 +97,7 @@ class JobEvalPanel extends React.Component {
     delete deepCopyPs[movie_name]['framesets'][fsh]
     this.setState({
       jeo_permanent_standards: deepCopyPs,
+      image_mode: '',
     })
   }
 
@@ -579,6 +580,7 @@ class JobEvalPanel extends React.Component {
     const next_frameset = this.props.movies[this.state.active_movie_url]['framesets'][frameset_hash]
     const next_img_url = next_frameset['images'][0]
     this.setImageSize(next_img_url)
+console.log('MAMA')
   }
 
   getPermanentStandardBoxes() {
@@ -746,6 +748,7 @@ class JobEvalPanel extends React.Component {
       jrs_movies: deepCopyJrsm,
       job_comment: '',
       message: 'frame review data has been cleared',
+      image_mode: '',
     })
   }
 
@@ -825,7 +828,10 @@ class JobEvalPanel extends React.Component {
       build_obj['message'] = "Select the frames you wish to annotate by clicking on them, press the Annotate button when done. Clicking on no frames gives you all frames of the movie to annotate."
     }
 
-    this.setState(build_obj)
+    this.setState(
+      build_obj, 
+      (()=>{this.setUpImageParms(fs_hash)})
+    )
   }
 
   reviewExemplarMovie(movie_url, annotate_view_mode) {
