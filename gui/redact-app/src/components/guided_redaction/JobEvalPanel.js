@@ -1,6 +1,7 @@
 import React from 'react';
 import JobEvalCompareControls from './JobEvalCompareControls';
 import JobEvalTileView from './JobEvalTileView';
+import JobEvalSingleView from './JobEvalSingleView';
 import {
   getFileNameFromUrl
 } from './redact_utils.js'
@@ -76,39 +77,11 @@ class JobEvalPanel extends React.Component {
     this.setUpImageParms=this.setUpImageParms.bind(this)
     this.getSelectedFramesetHashesInOrder=this.getSelectedFramesetHashesInOrder.bind(this)
     this.getFramesetReviewDisplayString=this.getFramesetReviewDisplayString.bind(this)
-  }
-
-  resetFrameAnnotateData() {
-    const movie_name = getFileNameFromUrl(this.state.active_movie_url)
-    if (!Object.keys(this.state.jeo_permanent_standards).includes(movie_name)) {
-      return
-    }
-    const fsh = this.props.frameset_hash
-    if (!Object.keys(this.state.jeo_permanent_standards).includes(movie_name)) {
-      return
-    }
-    if (!Object.keys(this.state.jeo_permanent_standards[movie_name]['framesets']).includes(fsh)) {
-      return
-    }
-    let deepCopyPs= JSON.parse(JSON.stringify(this.state.jeo_permanent_standards))
-    delete deepCopyPs[movie_name]['framesets'][fsh]
-    this.setState({
-      jeo_permanent_standards: deepCopyPs,
-      image_mode: '',
-    })
-  }
-
-  pasteAnnotation() {
-    const movie_name = getFileNameFromUrl(this.state.active_movie_url)
-    const old_fsh = this.state.copied_frameset_hash
-    if (Object.keys(this.state.jeo_permanent_standards[movie_name]['framesets']).includes(old_fsh)) {
-      const prev_annotations = this.state.jeo_permanent_standards[movie_name]['framesets'][old_fsh]
-      let deepCopyPs = JSON.parse(JSON.stringify(this.state.jeo_permanent_standards))
-      deepCopyPs[movie_name]['framesets'][this.props.frameset_hash] = prev_annotations
-      this.setState({
-        jeo_permanent_standards: deepCopyPs,
-      })
-    }
+    this.addSameAnnotationsAsPrevFrame=this.addSameAnnotationsAsPrevFrame.bind(this)
+    this.getSelectedFramesetHashesInOrder=this.getSelectedFramesetHashesInOrder.bind(this)
+    this.gotoNextFrame=this.gotoNextFrame.bind(this)
+    this.gotoPrevFrame=this.gotoPrevFrame.bind(this)
+    this.showReviewTile=this.showReviewTile.bind(this)
   }
 
   addSameAnnotationsAsPrevFrame(current_hash) {
@@ -490,20 +463,6 @@ class JobEvalPanel extends React.Component {
     return (cur_index + 1).toString() + '/' + ordered_hashes.length.toString()
   }
 
-  curFramesetIsLast() {
-    const hashes = this.getSelectedFramesetHashesInOrder()
-    if (hashes.indexOf(this.props.frameset_hash) >= hashes.length-1) {
-      return true
-    }
-  }
-
-  curFramesetIsFirst() {
-    const hashes = this.getSelectedFramesetHashesInOrder()
-    if (hashes.indexOf(this.props.frameset_hash) === 0) {
-      return true
-    }
-  }
-
   getSelectedFramesetHashesInOrder() {
     let ordered_hashes = this.props.getFramesetHashesInOrder()
     if (this.state.selected_frameset_hashes.length > 0) {
@@ -694,47 +653,6 @@ class JobEvalPanel extends React.Component {
     })
   }
 
-  resetFrameReviewData() {
-    let deepCopyJrsm = JSON.parse(JSON.stringify(this.state.jrs_movies))
-    const fsh = this.props.frameset_hash
-    if (Object.keys(this.state.jrs_movies[this.state.active_movie_url]['framesets']).includes(fsh)) {
-      delete deepCopyJrsm[this.state.active_movie_url]['framesets'][fsh]
-    }
-    this.setState({
-      jrs_movies: deepCopyJrsm,
-      job_comment: '',
-      message: 'frame review data has been cleared',
-      image_mode: '',
-    })
-  }
-
-  markFrameAsPassed() {
-    this.markFrameAsPassedOrFailed('pass')
-  }
-
-  markFrameAsFailed() {
-    this.markFrameAsPassedOrFailed('fail')
-  }
-
-  markFrameAsPassedOrFailed(pass_or_fail) {
-    let deepCopyJrsm = JSON.parse(JSON.stringify(this.state.jrs_movies))
-    const fsh = this.props.frameset_hash
-    if (!Object.keys(this.state.jrs_movies[this.state.active_movie_url]['framesets']).includes(fsh)) {
-      deepCopyJrsm[this.state.active_movie_url]['framesets'][fsh] = {
-        desired: {},
-        unwanted: {},
-        pass_or_fail: '',
-        comment: '',
-      }
-    }
-    deepCopyJrsm[this.state.active_movie_url]['framesets'][fsh]['desired'] = {}
-    deepCopyJrsm[this.state.active_movie_url]['framesets'][fsh]['unwanted'] = {}
-    deepCopyJrsm[this.state.active_movie_url]['framesets'][fsh]['pass_or_fail'] = pass_or_fail
-    this.setState({
-      jrs_movies: deepCopyJrsm,
-    })
-  }
-
   doAddPermanentStandardBox2(x_scaled, y_scaled) {
     const new_id = 'box_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
     const new_box = {
@@ -758,12 +676,6 @@ class JobEvalPanel extends React.Component {
       something_changed: true,
       message: 'You will need to save changes to this JEO before they will have effect in the generation of the next Job Run Summary',
       message_class: 'primary',
-    })
-  }
-
-  setImageMode(mode_name) {
-    this.setState({
-      image_mode: mode_name,
     })
   }
 
@@ -1215,12 +1127,25 @@ class JobEvalPanel extends React.Component {
     function anon_func() {
       when_done()
     }
-    this.setState(
-      {
-        [var_name]: var_value,
-      },
-      anon_func
-    )
+    if (typeof var_name === 'string' || var_name instanceof String) {
+      // we have been given one key and one value
+      if (this.state[var_name] === var_value) {
+        when_done()
+      } else {
+        this.setState(
+          {
+            [var_name]: var_value,
+          },
+          anon_func
+        )
+      }
+    } else {
+      // var_name is actaully a dict
+      this.setState(
+        var_name,
+        anon_func
+      )
+    }
   }
 
   setLocalStateVarAndWarn(var_name, var_value, when_done=(()=>{})) {
@@ -1526,509 +1451,44 @@ class JobEvalPanel extends React.Component {
     )
   }
 
-  buildShowOcrButton() {
-    if (!this.state.ocr_job_id) {
-      return ''
-    }
-    return (
-      <button
-        className='btn btn-primary'
-        onClick={()=>{this.setLocalStateVarAndWarn('show_ocr', true)}}
-      >
-        Show Ocr
-      </button>
-    )
-  }
-
-  buildHideOcrButton() {
-    if (!this.state.ocr_job_id) {
-      return ''
-    }
-    return (
-      <button
-        className='btn btn-primary'
-        onClick={()=>{this.setLocalStateVarAndWarn('show_ocr', false)}}
-      >
-        Hide Ocr
-      </button>
-    )
-  }
-
-  buildAddOcrButton() {
-    if (!this.state.ocr_job_id) {
-      return ''
-    }
-    return (
-      <button
-        className='btn btn-primary'
-        onClick={()=>{this.setImageMode('add_ocr')}}
-      >
-        Add Ocr
-      </button>
-    )
-  }
-
-  buildDeleteOcrButton() {
-    if (!this.state.ocr_job_id) {
-      return ''
-    }
-    return (
-      <button
-        className='btn btn-primary'
-        onClick={()=>{this.setImageMode('delete_ocr')}}
-      >
-        Delete Ocr
-      </button>
-    )
-  }
-
-  buildAddBoxButton() {
-    return (
-      <button
-        className='btn btn-primary'
-        onClick={()=>{this.setImageMode('add_permanent_standard_box_1')}}
-      >
-        Add Box
-      </button>
-    )
-  }
-
-  buildDeleteBoxButton() {
-    return (
-      <button
-        className='btn btn-primary'
-        onClick={()=>{this.setImageMode('delete_box_1')}}
-      >
-        Add Unwanted
-      </button>
-    )
-  }
-
-  buildAddSameAnnotationsAsPrevFramesetButton() {
-    return (
-      <button
-        className='btn btn-primary'
-        onClick={()=>{this.addSameAnnotationsAsPrevFrame()}}
-      >
-        Duplicate Prev (^)
-      </button>
-    )
-  }
-
-  buildCopyCurrentAnnotationsFramesetButton() {
-    return (
-      <button
-        className='btn btn-primary'
-        onClick={()=>{this.setState({copied_frameset_hash: this.props.frameset_hash})}}
-      >
-        Copy current
-      </button>
-    )
-  }
-
-  buildPasteAnnotationFramesetButton() {
-    if (!this.state.copied_frameset_hash) {
-      return ''
-    }
-    return (
-      <button
-        className='btn btn-primary'
-        onClick={()=>{this.pasteAnnotation()}}
-      >
-        Paste
-      </button>
-    )
-  }
-
-  buildImageElement(image_url) {
-    const img_style = {
-      width: '100%',
-    }
-    if (image_url) {
-      return (
-        <img
-            id='annotate_image'
-            src={image_url}
-            alt={image_url}
-            style={img_style}
-        />
-      )
-    } 
-  }
-
-  buildNextFrameButton() {
-    if (this.curFramesetIsLast()) {
-      return ''
-    }
-    const next_text = 'Next (>)'
-    return (
-      <button
-        className='btn btn-primary'
-        onClick={()=>{this.gotoNextFrame()}}
-      >
-        {next_text}
-      </button>
-    )
-  }
-
-  buildPrevFrameButton() {
-    if (this.curFramesetIsFirst()) {
-      return ''
-    }
-    const prev_text = 'Prev (<)'
-    return (
-      <button
-        className='btn btn-primary'
-        onClick={()=>{this.gotoPrevFrame()}}
-      >
-        {prev_text}
-      </button>
-    )
-  }
-
-  buildAnnotateResetButton() {
-    return (
-      <button
-        className='btn btn-primary'
-        onClick={()=>{this.resetFrameAnnotateData()}}
-      >
-        Reset
-      </button>
-    )
-  }
-
-  buildBackToTileButton() {
-    return (
-      <button
-        className='btn btn-primary'
-        onClick={()=>{this.annotateExemplarMovie(this.state.active_movie_url, 'tile')}}
-      >
-        Back to Tile View
-      </button>
-    )
-  }
-
-  buildPassButton() {
-    return (
-      <button
-        className='btn btn-primary'
-        onClick={()=>{this.markFrameAsPassed()}}
-      >
-        Pass
-      </button>
-    )
-  }
-
-  buildFailButton() {
-    return (
-      <button
-        className='btn btn-primary'
-        onClick={()=>{this.markFrameAsFailed()}}
-      >
-        Fail
-      </button>
-    )
-  }
-
-  buildAddDesiredButton() {
-    return (
-      <button
-        className='btn btn-primary'
-        onClick={()=>{this.setImageMode('add_desired_box_1')}}
-      >
-        Add Desired
-      </button>
-    )
-  }
-
-  buildAddUnwantedBoxButton() {
-    return (
-      <button
-        className='btn btn-primary'
-        onClick={()=>{this.setImageMode('add_unwanted_box_1')}}
-      >
-        Add Unwanted
-      </button>
-    )
-  }
-
-  buildReviewResetButton() {
-    return (
-      <button
-        className='btn btn-primary'
-        onClick={()=>{this.resetFrameReviewData()}}
-      >
-        Reset
-      </button>
-    )
-  }
-
-  buildAnnotateSingleHelpButton() {
-    return (
-      <button
-        className='btn btn-primary'
-        onClick={()=>{this.setMessage('This is the Single Frame View mode of the Annotate page for a single movie.  From this page you can specify how the output from a perfect version of the tool youre designing would look.  Besides navigating using the buttons above, the left and right arrows will advance you sequentially between frames.  The up arrow key will copy the contents of the frame immediately before this one and add them to the current frame.  When you are done annotating individual frames, use the Home button to get back to the main screen, then press the Save button to add these annotations as a permanent part of the Job Eval Objective record.')}}
-      >
-        ?
-      </button>
-    )
-  }
-
-  buildReviewSingleHelpButton() {
-    return (
-      <button
-        className='btn btn-primary'
-        onClick={()=>{this.setMessage('A number of rules are applicable when reviewing a single frame of a jobs output.  1) If you specify nothing, PASS is assumed, 2) if you FAIL a job, it is assumed that all the detected areas from the job were done in error, and the opposite of that - all areas that were missed - were things you wanted to see in the results.  Job score will be zero.  3) You can specify Desired and Unwanted regions.  Those will be used to score the job results, ultimately calculating the areas of missed-but-wanted (false negative) and returned-but-not-wanted (false positive) regions, and scoring them with the weights and formula indicated in the details of the Job Eval Objective record.  If the record receives any Desired/Unwanted markup and does not a simple PASS/FAIL score, it will be scored with the weights and thresholds specified on the JEO.  Scores and PASS/FAIL grades are accumulated across all the frames of all the movies of the jobs, and can pass or fail the movie or entire job, according to thresholds established in the Job Eval Objective record.')}}
-      >
-        ?
-      </button>
-    )
-  }
-
-
-  buildBackToReviewJrsMovieButton(movie_url) {
-    return (
-      <button
-        className='btn btn-primary'
-        onClick={()=>{this.showReviewTile(movie_url)}}
-      >
-        Back to Tile View
-      </button>
-    )
-  }
-
-  buildReviewSingleButtons() {
-    const pass_button = this.buildPassButton()
-    const fail_button = this.buildFailButton()
-    const add_desired_button = this.buildAddDesiredButton()
-    const strike_box_button = this.buildAddUnwantedBoxButton()
-    const reset_button = this.buildReviewResetButton()
-    const next_frame_button = this.buildNextFrameButton()
-    const prev_frame_button = this.buildPrevFrameButton()
-    const back_to_jrs_tile_button = this.buildBackToReviewJrsMovieButton(this.state.active_movie_url)
-    const help_button = this.buildReviewSingleHelpButton()
-
-    return (
-      <div>
-        <div className='d-inline ml-1'>
-          {pass_button}
-        </div>
-
-        <div className='d-inline ml-1'>
-          {fail_button}
-        </div>
-
-        <div className='d-inline ml-1'>
-          {add_desired_button}
-        </div>
-
-        <div className='d-inline ml-1'>
-          {strike_box_button}
-        </div>
-
-        <div className='d-inline ml-1'>
-          {reset_button}
-        </div>
-
-        <div className='d-inline ml-1'>
-          {prev_frame_button}
-        </div>
-
-        <div className='d-inline ml-1'>
-          {next_frame_button}
-        </div>
-
-        <div className='d-inline ml-1'>
-          {back_to_jrs_tile_button}
-        </div>
-
-        <div className='d-inline ml-1'>
-          {help_button}
-        </div>
-
-      </div>
-    )
-  } 
-
-  buildAnnotateSingleButtons() {
-    const add_box_button = this.buildAddBoxButton()
-    const delete_box_button = this.buildDeleteBoxButton()
-    const add_same_as_prev_frame_button = this.buildAddSameAnnotationsAsPrevFramesetButton()
-    const copy_button = this.buildCopyCurrentAnnotationsFramesetButton()
-    const paste_button = this.buildPasteAnnotationFramesetButton()
-    const show_ocr_button = this.buildShowOcrButton()
-    const hide_ocr_button = this.buildHideOcrButton()
-    const add_ocr_button = this.buildAddOcrButton()
-    const delete_ocr_button = this.buildDeleteOcrButton()
-    const next_frame_button = this.buildNextFrameButton()
-    const prev_frame_button = this.buildPrevFrameButton()
-    const reset_button = this.buildAnnotateResetButton()
-    const back_to_tile_button = this.buildBackToTileButton()
-    const help_button = this.buildAnnotateSingleHelpButton()
-    return (
-      <div>
-        <div className='d-inline ml-1'>
-          {add_box_button}
-        </div>
-
-        <div className='d-inline ml-1'>
-          {delete_box_button}
-        </div>
-
-        <div className='d-inline ml-1'>
-          {reset_button}
-        </div>
-
-        <div className='d-inline ml-1'>
-          {show_ocr_button}
-        </div>
-
-        <div className='d-inline ml-1'>
-          {hide_ocr_button}
-        </div>
-
-        <div className='d-inline ml-1'>
-          {add_ocr_button}
-        </div>
-
-        <div className='d-inline ml-1'>
-          {delete_ocr_button}
-        </div>
-
-        <div className='d-inline ml-1'>
-          {add_same_as_prev_frame_button}
-        </div>
-
-        <div className='d-inline ml-1'>
-          {copy_button}
-        </div>
-
-        <div className='d-inline ml-1'>
-          {paste_button}
-        </div>
-
-        <div className='d-inline ml-1'>
-          {prev_frame_button}
-        </div>
-
-        <div className='d-inline ml-1'>
-          {next_frame_button}
-        </div>
-
-        <div className='d-inline ml-1'>
-          {back_to_tile_button}
-        </div>
-
-        <div className='d-inline ml-1'>
-          {help_button}
-        </div>
-      </div>
-    )
-  }
-
-  buildFramesetCommentsInputRow() {
-    let fs_comment = ''
-    const fsh = this.props.frameset_hash
-    if (
-      Object.keys(this.state.jrs_movies[this.state.active_movie_url]['framesets']).includes(fsh) &&
-      Object.keys(this.state.jrs_movies[this.state.active_movie_url]['framesets'][fsh]).includes('comment')
-    ) {
-      fs_comment = this.state.jrs_movies[this.state.active_movie_url]['framesets'][fsh]['comment']
-    }
-    return (
-      <div className='row mt-2'>
-        <div className='d-inline'>
-          Frameset Comments
-        </div>
-        <div className='d-inline ml-2'>
-          <textarea
-            id='frameset_comment'
-            cols='60'
-            rows='3'
-            value={fs_comment}
-            onChange={(event) => this.setFramesetComment(event.target.value)}
-          />
-        </div>
-      </div>
-    )
-  }
-
-  setFramesetComment(comment_string) {
-    let deepCopyJrsm = JSON.parse(JSON.stringify(this.state.jrs_movies))
-    if (!Object.keys(this.state.jrs_movies[this.state.active_movie_url]['framesets']).includes(this.props.frameset_hash)) {
-      deepCopyJrsm[this.state.active_movie_url]['framesets'][this.props.frameset_hash] = {
-        desired: {},
-        unwanted: {},
-        pass_or_fail: '',
-        comment: '',
-      }
-    }
-    deepCopyJrsm[this.state.active_movie_url]['framesets'][this.props.frameset_hash]['comment'] = comment_string
-    this.setState({
-      jrs_movies: deepCopyJrsm,
-    })
-    
-  }
-
-  buildAnnotatePanelSingle() {
-    const image_url = this.props.getImageUrl()
-    const image_element = this.buildImageElement(image_url)
-    let buttons_row = ''
-    let frameset_comments_row = ''
-    if (this.state.mode === 'annotate') {
-      buttons_row = this.buildAnnotateSingleButtons()
-    } else if (this.state.mode === 'review') {
-      buttons_row = this.buildReviewSingleButtons()
-      frameset_comments_row = this.buildFramesetCommentsInputRow()
-    } 
-    let image_extra_text = '.'
-    if (this.state.mode === 'review') {
-      image_extra_text = this.getFramesetReviewDisplayString(this.props.frameset_hash)
-    }
-    return (
-      <div className='row'>
-        <div className='col'>
-          <div className='row m-1'>
-            {buttons_row}
-          </div>
-
-          {frameset_comments_row}
-
-          <div className='row'>
-            {image_extra_text}
-          </div>
-
-          <div id='annotate_image_div' className='row'>
-            {image_element}
-            <CanvasAnnotateOverlay
-              image_width={this.state.image_width}
-              image_height={this.state.image_height}
-              image_scale={this.state.image_scale}
-              image_url={image_url}
-              mode={this.state.image_mode}
-              clickCallback={this.handleImageClick}
-              last_click={this.state.clicked_coords}
-              getOcrRegions={this.getOcrRegions}
-              getPermanentStandardBoxes={this.getPermanentStandardBoxes}
-              getT1MatchBoxes={this.getT1MatchBoxes}
-              getUnwantedBoxes={this.getUnwantedBoxes}
-              getDesiredBoxes={this.getDesiredBoxes}
-            />
-          </div>
-
-        </div>
-      </div>
-    )
-  }
-
   buildAnnotatePanel() {
-//    const ocr_id_field = this.buildOcrMatchIdField()
     const ocr_id_field = ''
     let the_body = ''
     let the_title = ''
     const movie_name = getFileNameFromUrl(this.state.active_movie_url)
     if (this.state.annotate_view_mode === 'single') {
-      the_body = this.buildAnnotatePanelSingle()
+      the_body = (
+        <JobEvalSingleView
+          image_width={this.state.image_width}
+          image_height={this.state.image_height}
+          image_scale={this.state.image_scale}
+          image_mode={this.state.image_mode}
+          mode={this.state.mode}
+          clickCallback={this.handleImageClick}
+          last_click={this.state.clicked_coords}
+          getOcrRegions={this.getOcrRegions}
+          getPermanentStandardBoxes={this.getPermanentStandardBoxes}
+          getT1MatchBoxes={this.getT1MatchBoxes}
+          getUnwantedBoxes={this.getUnwantedBoxes}
+          getDesiredBoxes={this.getDesiredBoxes}
+          getImageUrl={this.props.getImageUrl}
+          copied_frameset_hash={this.state.copied_frameset_hash}
+          setLocalStateVar={this.setLocalStateVar}
+          addSameAnnotationsAsPrevFrame={this.addSameAnnotationsAsPrevFrame}
+          active_movie_url={this.state.active_movie_url}
+          jeo_permanent_standards={this.state.jeo_permanent_standards}
+          frameset_hash={this.props.frameset_hash}
+          ocr_job_id={this.state.ocr_job_id}
+          getSelectedFramesetHashesInOrder={this.getSelectedFramesetHashesInOrder}
+          gotoNextFrame={this.gotoNextFrame}
+          gotoPrevFrame={this.gotoPrevFrame}
+          annotateExemplarMovie={this.annotateExemplarMovie}
+          setMessage={this.setMessage}
+          jrs_movies={this.state.jrs_movies}
+          getFramesetReviewDisplayString={this.getFramesetReviewDisplayString}
+          showReviewTile={this.showReviewTile}
+        />
+      )
       const image_url = this.props.getImageUrl()
       const image_name = getFileNameFromUrl(image_url)
       const position_string = this.getFramePositionString()
@@ -2204,6 +1664,16 @@ class JobEvalPanel extends React.Component {
     )
   }
 
+  showReviewTile(movie_url) {
+    let build_obj = {
+      mode: 'review',
+      annotate_view_mode: 'tile',
+      active_movie_url: movie_url,
+      message: "Select the frames you wish to review by clicking on them, press the Review button when done. Clicking on no frames gives you all frames of the movie to review.",
+    }
+    this.setLocalStateVar(build_obj)
+  }
+
   buildReviewJrsMovieButton(movie_url) {
     return (
       <button
@@ -2213,16 +1683,6 @@ class JobEvalPanel extends React.Component {
         Review
       </button>
     )
-  }
-
-  showReviewTile(movie_url) {
-    let build_obj = {
-      mode: 'review',
-      annotate_view_mode: 'tile',
-      active_movie_url: movie_url,
-      message: "Select the frames you wish to review by clicking on them, press the Review button when done. Clicking on no frames gives you all frames of the movie to review.",
-    }
-    this.setState(build_obj)
   }
 
   showReviewSummary(first_loading_of_this_job=false) {
@@ -2571,7 +2031,38 @@ doSleep(time) {
     let the_title = ''
     const movie_name = getFileNameFromUrl(this.state.active_movie_url)
     if (this.state.annotate_view_mode === 'single') {
-      the_body = this.buildAnnotatePanelSingle()
+      the_body = (
+        <JobEvalSingleView
+          image_width={this.state.image_width}
+          image_height={this.state.image_height}
+          image_scale={this.state.image_scale}
+          image_mode={this.state.image_mode}
+          mode={this.state.mode}
+          clickCallback={this.handleImageClick}
+          last_click={this.state.clicked_coords}
+          getOcrRegions={this.getOcrRegions}
+          getPermanentStandardBoxes={this.getPermanentStandardBoxes}
+          getT1MatchBoxes={this.getT1MatchBoxes}
+          getUnwantedBoxes={this.getUnwantedBoxes}
+          getDesiredBoxes={this.getDesiredBoxes}
+          getImageUrl={this.props.getImageUrl}
+          copied_frameset_hash={this.state.copied_frameset_hash}
+          setLocalStateVar={this.setLocalStateVar}
+          addSameAnnotationsAsPrevFrame={this.addSameAnnotationsAsPrevFrame}
+          active_movie_url={this.state.active_movie_url}
+          jeo_permanent_standards={this.state.jeo_permanent_standards}
+          frameset_hash={this.props.frameset_hash}
+          ocr_job_id={this.state.ocr_job_id}
+          getSelectedFramesetHashesInOrder={this.getSelectedFramesetHashesInOrder}
+          gotoNextFrame={this.gotoNextFrame}
+          gotoPrevFrame={this.gotoPrevFrame}
+          annotateExemplarMovie={this.annotateExemplarMovie}
+          setMessage={this.setMessage}
+          jrs_movies={this.state.jrs_movies}
+          getFramesetReviewDisplayString={this.getFramesetReviewDisplayString}
+          showReviewTile={this.showReviewTile}
+        />
+      )
       const image_url = this.props.getImageUrl()
       const image_name = getFileNameFromUrl(image_url)
       const position_string = this.getFramePositionString()

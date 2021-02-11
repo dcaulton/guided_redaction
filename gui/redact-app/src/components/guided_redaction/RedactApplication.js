@@ -660,7 +660,7 @@ class RedactApplication extends React.Component {
           {
             [var_name]: var_value,
           },
-          when_done()
+          when_done
         )
       }
     } else {
