@@ -2,10 +2,10 @@ import React from 'react';
 import JobEvalCompareControls from './JobEvalCompareControls';
 import JobEvalTileView from './JobEvalTileView';
 import JobEvalSingleView from './JobEvalSingleView';
+import JobEvalJeoLogic from './JobEvalJeoLogic';
 import {
   getFileNameFromUrl
 } from './redact_utils.js'
-import CanvasAnnotateOverlay from './CanvasAnnotateOverlay'
 import {
   makePlusMinusRowLight,
   buildLabelAndTextInput,
@@ -61,8 +61,6 @@ class JobEvalPanel extends React.Component {
     this.showReviewSummary=this.showReviewSummary.bind(this)
     this.setLocalStateVarAndWarn=this.setLocalStateVarAndWarn.bind(this)
     this.setLocalStateVar=this.setLocalStateVar.bind(this)
-    this.afterJeoSave=this.afterJeoSave.bind(this)
-    this.loadJeo=this.loadJeo.bind(this)
     this.getJobEvalObjectives=this.getJobEvalObjectives.bind(this)
     this.getJobRunSummariesAndAnnounce=this.getJobRunSummariesAndAnnounce.bind(this)
     this.handleImageClick=this.handleImageClick.bind(this)
@@ -82,6 +80,26 @@ class JobEvalPanel extends React.Component {
     this.gotoNextFrame=this.gotoNextFrame.bind(this)
     this.gotoPrevFrame=this.gotoPrevFrame.bind(this)
     this.showReviewTile=this.showReviewTile.bind(this)
+  }
+
+  async getJobEvalObjectives(when_done=(()=>{})) {
+    let the_url = this.props.getUrl('job_eval_objectives_url')
+    await this.props.fetch(the_url, {
+      method: 'GET',
+      headers: this.props.buildJsonHeaders(),
+    })
+    .then((response) => response.json())
+    .then((responseJson) => {
+      this.setLocalStateVar({
+        'job_eval_objectives': responseJson,
+       })
+    })
+    .then((responseJson) => {
+      when_done(responseJson)
+    })
+    .catch((error) => {
+      console.error(error);
+    })
   }
 
   addSameAnnotationsAsPrevFrame(current_hash) {
@@ -175,116 +193,6 @@ class JobEvalPanel extends React.Component {
   getJobRunSummariesAndAnnounce() {
     this.getJobRunSummaries()
     this.setMessage('Job Run Summary has completed and is now available for viewing')
-  }
-
-  buildPreserveJobRunParametersField() {
-    let checked_value = ''
-    if (this.state.jeo_preserve_job_run_parameters) {
-      checked_value = 'checked'
-    }
-    return (
-      <div>
-        <div className='d-inline'>
-          <input
-            className='ml-2 mr-2 mt-1'
-            checked={checked_value}
-            type='checkbox'
-            onChange={() => this.setLocalStateVarAndWarn('jeo_preserve_job_run_parameters', !this.state.jeo_preserve_job_run_parameters)}
-          />
-        </div>
-        <div className='d-inline'>
-          Preserve Job Run Parameters
-        </div>
-      </div>
-    )
-  }
-
-  buildHardFailAnyFrameField() {
-    let checked_value = ''
-    if (this.state.jeo_hard_fail_from_any_frame) {
-      checked_value = 'checked'
-    }
-    return (
-      <div>
-        <div className='d-inline'>
-          <input
-            className='ml-2 mr-2 mt-1'
-            checked={checked_value}
-            type='checkbox'
-            onChange={() => this.setLocalStateVarAndWarn('jeo_hard_fail_from_any_frame', !this.state.jeo_hard_fail_from_any_frame)}
-          />
-        </div>
-        <div className='d-inline'>
-          Hard Fail Movie if Any Frame Fails
-        </div>
-      </div>
-    )
-  }
-
-  buildJeoFramePassingScoreField() {
-    return buildLabelAndTextInput(
-      this.state.jeo_frame_passing_score,
-      'Frame Passing Score (0-100)',
-      'jeo_frame_passing_score',
-      'jeo_frame_passing_score',
-      4,
-      ((value)=>{this.setLocalStateVarAndWarn('jeo_frame_passing_score', value)})
-    )
-  }
-
-  buildJeoMoviePassingScoreField() {
-    return buildLabelAndTextInput(
-      this.state.jeo_movie_passing_score,
-      'Movie Passing Score (0-100)',
-      'jeo_movie_passing_score',
-      'jeo_movie_passing_score',
-      4,
-      ((value)=>{this.setLocalStateVarAndWarn('jeo_movie_passing_score', value)})
-    )
-  }
-
-  buildJeoMaxNumFailedFramesField() {
-    return buildLabelAndTextInput(
-      this.state.jeo_max_num_failed_frames,
-      'Max Num of Failed Frames',
-      'jeo_max_num_failed_frames',
-      'jeo_max_num_failed_frames',
-      4,
-      ((value)=>{this.setLocalStateVarAndWarn('jeo_max_num_failed_frames', value)})
-    )
-  }
-
-  buildJeoMaxNumMissedEntitiesField() {
-    return buildLabelAndTextInput(
-      this.state.jeo_max_num_missed_entities_single_frameset,
-      'Max Num of Missed Entities In a Single Frame',
-      'jeo_max_num_missed_entities_single_frameset',
-      'jeo_max_num_missed_entities_single_frameset',
-      4,
-      ((value)=>{this.setLocalStateVarAndWarn('jeo_max_num_missed_entities_single_frameset', value)})
-    )
-  }
-
-  buildJeoWeightFalsePosField() {
-    return buildLabelAndTextInput(
-      this.state.jeo_weight_false_pos,
-      'False Positive Weight',
-      'jeo_weight_false_pos',
-      'jeo_weight_false_pos',
-      4,
-      ((value)=>{this.setLocalStateVarAndWarn('jeo_weight_false_pos', value)})
-    )
-  }
-
-  buildJeoWeightFalseNegField() {
-    return buildLabelAndTextInput(
-      this.state.jeo_weight_false_neg,
-      'False Negative Weight',
-      'jeo_weight_false_neg',
-      'jeo_weight_false_neg',
-      4,
-      ((value)=>{this.setLocalStateVarAndWarn('jeo_weight_false_neg', value)})
-    )
   }
 
   getDesiredBoxes() {
@@ -718,50 +626,6 @@ class JobEvalPanel extends React.Component {
     )
   }
 
-  afterJeoSave(response_obj) {
-    let jeo_id = ''
-    if (Object.keys(response_obj).includes('id')) {
-      jeo_id = response_obj['id']
-    }
-    function after_saved() {
-      this.setMessage('Job Eval Objective has been saved', 'success')
-    }
-    this.getJobEvalObjectives(
-      (() => {this.loadJeo(jeo_id, after_saved)})
-    )
-  }
-
-  afterJeoDelete(response_obj, jeo_key_is_current) {
-    if (jeo_key_is_current) {
-      this.loadNewJeo(this.getJobEvalObjectives)
-      this.setMessage('Job Eval Objective has been Deleted', 'success')
-    } else {
-      this.getJobEvalObjectives(
-        (() => {this.setMessage('Job Eval Objective has been Deleted', 'success')})
-      )
-    }
-  }
-
-  getJeoFromState() {
-    const build_content = {
-      weight_false_pos: this.state.jeo_weight_false_pos,
-      weight_false_neg: this.state.jeo_weight_false_neg,
-      frame_passing_score: this.state.jeo_frame_passing_score,
-      movie_passing_score: this.state.jeo_movie_passing_score,
-      max_num_failed_frames: this.state.jeo_max_num_failed_frames,
-      max_num_missed_entities_single_frameset: this.state.jeo_max_num_missed_entities_single_frameset,
-      hard_fail_from_any_frame: this.state.jeo_hard_fail_from_any_frame,
-      preserve_job_run_parameters: this.state.jeo_preserve_job_run_parameters,
-      permanent_standards: this.state.jeo_permanent_standards,
-    }
-    const jeo = {
-      id: this.state.jeo_id,
-      description: this.state.jeo_description,
-      content: build_content,
-    }
-    return jeo
-  }
-
   loadJobRunSummaryDetails() {
     for (let i=0; i < this.state.jrs_ids_to_compare.length; i++) {
       const jrs_id = this.state.jrs_ids_to_compare[i]
@@ -856,262 +720,6 @@ class JobEvalPanel extends React.Component {
     await response
   }
 
-  async getJobEvalObjectives(when_done=(()=>{})) {
-    let the_url = this.props.getUrl('job_eval_objectives_url')
-    await this.props.fetch(the_url, {
-      method: 'GET',
-      headers: this.props.buildJsonHeaders(),
-    })
-    .then((response) => response.json())
-    .then((responseJson) => {
-      this.setState({
-        'job_eval_objectives': responseJson,
-       })
-    })
-    .then((responseJson) => {
-      when_done(responseJson)
-    })
-    .catch((error) => {
-      console.error(error);
-    })
-  }
-
-  async saveJobEvalObjective(jeo_object, when_done=(()=>{})) {
-    let the_url = this.props.getUrl('job_eval_objectives_url')
-    const payload = jeo_object
-    let response = await this.props.fetch(the_url, {
-      method: 'POST',
-      headers: this.props.buildJsonHeaders(),
-      body: JSON.stringify(payload),
-    })
-    .then((response) => response.json())
-    .then((responseJson) => {
-      when_done(responseJson)
-    })
-    .catch((error) => {
-      console.error(error)
-    })
-    await response
-  }
-
-  async deleteJeo(jeo_id, when_done=(()=>{})) {
-    let the_url = this.props.getUrl('job_eval_objectives_url')
-    let response = await this.props.fetch(the_url + '/' + jeo_id, {
-      method: 'DELETE',
-      headers: this.props.buildJsonHeaders(),
-    })
-    .then((response) => {
-      when_done(response)
-    })
-    .catch((error) => {
-      console.error(error)
-    })
-    await response
-  }
-
-  loadJeo(jeo_id, when_done=(()=>{})) {
-    const jeo = this.state.job_eval_objectives[jeo_id]
-    this.setState({
-      jeo_id: jeo.id,
-      jeo_description: jeo.description,
-      jeo_weight_false_pos: jeo.content.weight_false_pos,
-      jeo_weight_false_neg: jeo.content.weight_false_neg,
-      jeo_frame_passing_score: jeo.content.frame_passing_score,
-      jeo_movie_passing_score: jeo.content.movie_passing_score,
-      jeo_max_num_failed_frames: jeo.content.max_num_failed_frames,
-      jeo_max_num_missed_entities_single_frameset: jeo.content.max_num_missed_entities_single_frameset,
-      jeo_hard_fail_from_any_frame: jeo.content.hard_fail_from_any_frame,
-      jeo_preserve_job_run_parameters: jeo.content.preserve_job_run_parameters,
-      jeo_permanent_standards: jeo.content.permanent_standards,
-      message: '',
-    }, when_done)
-  }
-
-  loadNewJeo(when_done=(()=>{})) {
-    this.setState({
-      jeo_id: '',
-      jeo_description: '',
-      jeo_weight_false_pos: 1,
-      jeo_weight_false_neg: 20,
-      jeo_frame_passing_score: 70,
-      jeo_movie_passing_score: 70,
-      jeo_max_num_failed_frames: 2,
-      jeo_max_num_missed_entities_single_frameset: 2,
-      jeo_hard_fail_from_any_frame: false,
-      jeo_preserve_job_run_parameters: true,
-      jeo_permanent_standards: {},
-      message: '',
-    }, when_done)
-  }
-
-  buildJeoDeleteButton() {
-    const jeo_keys = Object.keys(this.state.job_eval_objectives)
-    return (
-      <div className='d-inline'>
-        <button
-            key='jeo_delete_button'
-            className='btn btn-primary ml-2 dropdown-toggle'
-            type='button'
-            id='arglebargle12'
-            data-toggle='dropdown'
-            area-haspopup='true'
-            area-expanded='false'
-        >
-          Delete
-        </button>
-        <div className='dropdown-menu' aria-labelledby='arglebargle12'>
-          {jeo_keys.map((jeo_key, index) => {
-            const jeo = this.state.job_eval_objectives[jeo_key]
-            const the_name = jeo['description']
-            const deleting_current_key = (jeo_key === this.state.jeo_id)
-            return (
-              <button
-                  className='dropdown-item'
-                  key={index}
-                  onClick={() => this.deleteJeoWithWarning(jeo_key, deleting_current_key)}
-              >
-                {the_name}
-              </button>
-            )
-          })}
-        </div>
-      </div>
-    )
-  }
-  
-  deleteJeoWithWarning(jeo_key, deleting_current_key) {
-    let resp = window.confirm("Are you sure you want to delete this Job Eval Objective?  Deleting it will also remove any associated Job Run Summaries")
-    if (resp) {
-      this.deleteJeo(jeo_key, ((resp)=>{this.afterJeoDelete(resp, deleting_current_key)}))
-    }
-  }
-
-  buildJeoLoadButton() {
-    const jeo_keys = Object.keys(this.state.job_eval_objectives)
-    return (
-      <div className='d-inline'>
-        <button
-            key='jeo_load_button'
-            className='btn btn-primary ml-2 dropdown-toggle'
-            type='button'
-            id='arglebargle123'
-            data-toggle='dropdown'
-            area-haspopup='true'
-            area-expanded='false'
-        >
-          Load
-        </button>
-        <div className='dropdown-menu' aria-labelledby='arglebargle123'>
-          {jeo_keys.map((jeo_key, index) => {
-            const jeo = this.state.job_eval_objectives[jeo_key]
-            const the_name = jeo['description']
-            return (
-              <button
-                  className='dropdown-item'
-                  key={index}
-                  onClick={() => this.loadJeo(jeo_key)}
-              >
-                {the_name}
-              </button>
-            )
-          })}
-          <button
-              className='dropdown-item'
-              key='nada_surf'
-              onClick={() => this.loadNewJeo()}
-          >
-            new
-          </button>
-        </div>
-      </div>
-    )
-  }
-  
-  buildAddExemplarMovieButton() {
-    if (!this.state.jeo_id) {
-      return ''
-    }
-    if (Object.keys(this.props.movies).length === 0) {
-      return ''
-    }
-    return (
-      <div className='d-inline'>
-        <button
-            key='add_exemplar_mov_button'
-            className='btn btn-primary ml-2 dropdown-toggle'
-            type='button'
-            id='argle'
-            data-toggle='dropdown'
-            area-haspopup='true'
-            area-expanded='false'
-        >
-          Add Exemplar Movie
-        </button>
-        <div className='dropdown-menu' aria-labelledby='argle'>
-          {Object.keys(this.props.movies).map((movie_url, index) => {
-            const movie_name = getFileNameFromUrl(movie_url)
-            if (
-              Object.keys(this.state.jeo_permanent_standards).includes(movie_name)) {
-              return ''
-            }
-            return (
-              <button
-                  className='dropdown-item'
-                  key={index}
-                  onClick={() => this.addExemplarMovie(movie_name, movie_url)}
-              >
-                {movie_name}
-              </button>
-            )
-          })}
-        </div>
-      </div>
-    )
-  }
-
-  removeExemplarMovie(movie_name) {
-    let deepCopyPs = JSON.parse(JSON.stringify(this.state.jeo_permanent_standards))
-    if (Object.keys(deepCopyPs).includes(movie_name)) {
-      delete deepCopyPs[movie_name]
-      this.setLocalStateVarAndWarn('jeo_permanent_standards', deepCopyPs)
-    }
-  }
-
-  addExemplarMovie(movie_name, movie_url) {
-    let deepCopyPs = JSON.parse(JSON.stringify(this.state.jeo_permanent_standards))
-    deepCopyPs[movie_name] = {
-      source_movie_url: movie_url,
-      framesets: {},
-    }
-    this.setLocalStateVarAndWarn('jeo_permanent_standards', deepCopyPs)
-  }
-
-  buildJeoHelpButton() {
-    const help_text = 'The Job Evaluation Object (JEO) is the top level organizational object for grouping and comparing the output from different job runs.  It represents the top level objective you wish to accomplish and allows you to customize how jobs are ranked when you compare their output.  Once a JEO has been established, you can perform several operations.  1) You can manually score the output from a job, this creates a Job Run Summary.  2) You can automatically score the output from a job, this also creates a Job Run Summary.  The movies used for automatically scoring are called Exemplar Movies, the desired output you define for those movies is called a Permanent Standard.  3)  You can compare up to four Job Run Summaries side by side.  Or, 4) you can specify the Permanent Standards used for automatic scoring'
-    return (
-      <button
-          className='btn btn-primary'
-          onClick={() => this.setMessage(help_text)}
-      >
-        ?
-      </button>
-    )
-  }
-
-  buildJeoSaveButton() {
-    if (!this.state.something_changed) {
-      return ''
-    }
-    return (
-      <button
-          className='btn btn-primary'
-          onClick={() => this.saveJeo()}
-      >
-        Save
-      </button>
-    )
-  }
-
   buildGetJrsListButton() {
     return (
       <button
@@ -1166,227 +774,9 @@ class JobEvalPanel extends React.Component {
   componentDidMount() {
     this.getJobEvalObjectives()
     this.getJobRunSummaries()
-    this.loadNewJeo()
     this.setMessage('select or create a Job Eval Objective to start.')
     window.addEventListener('keydown', this.keyPress)
     this.props.setActiveWorkflow('')
-  }
-
-  buildExemplarMoviesSection() {
-    if (!this.state.jeo_id) {
-      return ''
-    }
-    let perm_standards = {}
-    perm_standards = this.state.jeo_permanent_standards
-    if (Object.keys(perm_standards).length === 0) {
-      return (
-        <div className='col font-italic'>
-          this JEO has no exemplar movies
-        </div>
-      )
-    }
-
-    return (
-      <div className='col'>
-        <div className='row'>
-          <div className='col-6 h5'>
-            Exemplar Movies
-          </div>
-        </div>
-        <div className='row'>
-          <table className='table table-striped'>
-            <thead>
-              <tr>
-                <td>movie name</td>
-                <td>comments</td>
-                <td></td>
-                <td></td>
-              </tr>
-            </thead>
-            <tbody>
-            {Object.keys(perm_standards).map((movie_name, index) => {
-              const perm_standard = this.state.jeo_permanent_standards[movie_name]
-              const source_movie_url = perm_standard['source_movie_url']
-              let comment = ''
-              if (Object.keys(perm_standard).includes('comment')) {
-                comment = perm_standard['comment']
-              }
-              return (
-                <tr key={index}>
-                  <td>
-                    {movie_name}
-                  </td>
-                  <td>
-                    {comment}
-                  </td>
-                  <td>
-                    <button
-                      className='btn btn-link ml-2 p-0'
-                      onClick={()=>{this.annotateExemplarMovie(source_movie_url, 'tile')}}
-                    >
-                      annotate
-                    </button>
-                  </td>
-                  <td>
-                    <button
-                      className='btn btn-link ml-2 p-0'
-                      onClick={()=>{this.removeExemplarMovie(movie_name)}}
-                    >
-                      delete
-                    </button>
-                  </td>
-                </tr>
-              )
-            })}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    )
-  }
-
-  buildJobEvalObjectivePanel() {
-    const load_button = this.buildJeoLoadButton()
-    const save_button = this.buildJeoSaveButton()
-    const help_button = this.buildJeoHelpButton()
-    const delete_button = this.buildJeoDeleteButton()
-    const add_exemplar_button = this.buildAddExemplarMovieButton()
-    const weight_false_pos_field = this.buildJeoWeightFalsePosField()
-    const weight_false_neg_field = this.buildJeoWeightFalseNegField()
-    const max_num_failed_frames_field = this.buildJeoMaxNumFailedFramesField() 
-    const max_num_missed_entities_field = this.buildJeoMaxNumMissedEntitiesField()
-    const movie_passing_score_field = this.buildJeoMoviePassingScoreField() 
-    const frame_passing_score_field = this.buildJeoFramePassingScoreField()
-    const hard_fail_any_frame_field = this.buildHardFailAnyFrameField()
-    const preserve_job_run_parameters_field = this.buildPreserveJobRunParametersField()
-    const exemplar_movies_section = this.buildExemplarMoviesSection()
-    let show_hide_details = ''
-    if (this.state.jeo_id) {
-      show_hide_details = makePlusMinusRowLight('details', 'jeo_details')
-    }
-
-    return (
-      <div className='col-9 pb-4 mb-4 mt-2'>
-        <div id='objective_div row'>
-          <div className='col'>
-            <div className='row h3'>
-              <div className='d-inline'>
-                Job Eval Objective: General Info
-              </div>
-              <div className='d-inline ml-4'>
-                {load_button}
-              </div>
-              <div className='d-inline ml-2'>
-                {save_button}
-              </div>
-              <div className='d-inline ml-2'>
-                {delete_button}
-              </div>
-              <div className='d-inline ml-2'>
-                {add_exemplar_button}
-              </div>
-              <div className='d-inline ml-2'>
-                {help_button}
-              </div>
-            </div>
-
-            <div className='row m-1'>
-              <div className='d-inline'>
-                Id: 
-              </div>
-              <div className='d-inline ml-2'>
-                {this.state.jeo_id}
-              </div>
-            </div>
-    
-            <div className='row ml-2 mt-2'>
-              <div className='col'>
-                <div className='row'>
-                  <div className='d-inline'>
-                    Description:
-                  </div>
-                  <div className='d-inline text-danger ml-5'>
-                    * Required
-                  </div>
-                </div>
-                <div className='row'>
-                  <div
-                      className='d-inline'
-                  >
-                    <textarea
-                      id='jeo_description'
-                      cols='60'
-                      rows='3'
-                      value={this.state.jeo_description}
-                      onChange={(event) => this.setLocalStateVarAndWarn('jeo_description', event.target.value)}
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className='row mt-2'>
-              {exemplar_movies_section}
-            </div>
-
-            {show_hide_details}
-            <div
-                id='jeo_details'
-                className='collapse row'
-            >
-              <div className='col border-bottom'>
-                <div className='row ml-4 font-italic'>
-                   Score = 100 - 100*(f_pos_weight * (f_pos_pixels/tot_pixels)) - 100*(f_neg_weight * (f_neg_pixels/tot_pixels))
-                </div>
-                
-                <div className='row m-1'>
-                  {weight_false_pos_field}
-                </div>
-
-                <div className='row m-1'>
-                  {weight_false_neg_field}
-                </div>
-
-                <div className='row m-1'>
-                  {max_num_failed_frames_field} 
-                </div>
-
-                <div className='row m-1'>
-                  {max_num_missed_entities_field} 
-                </div>
-
-                <div className='row m-1'>
-                  {frame_passing_score_field}
-                </div>
-
-                <div className='row m-1'>
-                  {movie_passing_score_field}
-                </div>
-
-                <div className='row m-1'>
-                  {hard_fail_any_frame_field}
-                </div>
-
-                <div className='row m-1'>
-                  {preserve_job_run_parameters_field}
-                </div>
-              </div>
-            </div>
-
-          </div>
-        </div>
-
-
-      </div>
-    )
-  }
-
-  saveJeo(when_done=(()=>{})) {
-    const jeo_object = this.getJeoFromState()
-    this.saveJobEvalObjective(jeo_object, this.afterJeoSave)
-    this.setState({
-      something_changed: false,
-    })
   }
 
   buildDividerGradient() {
@@ -1405,7 +795,32 @@ class JobEvalPanel extends React.Component {
   }
 
   buildHomePanel() {
-    const job_eval_objective_data = this.buildJobEvalObjectivePanel()
+    const job_eval_objective_data = (
+      <JobEvalJeoLogic
+        job_eval_objectives={this.state.job_eval_objectives}
+        something_changed={this.state.something_changed}
+        setLocalStateVar={this.setLocalStateVar}
+        setLocalStateVarAndWarn={this.setLocalStateVarAndWarn}
+        jeo_weight_false_pos={this.state.jeo_weight_false_pos}
+        jeo_weight_false_neg={this.state.jeo_weight_false_neg}
+        jeo_frame_passing_score={this.state.jeo_frame_passing_score}
+        jeo_movie_passing_score={this.state.jeo_movie_passing_score}
+        jeo_max_num_failed_frames={this.state.jeo_max_num_failed_frames}
+        jeo_max_num_missed_entities_single_frameset={this.state.jeo_max_num_missed_entities_single_frameset}
+        jeo_hard_fail_from_any_frame={this.state.jeo_hard_fail_from_any_frame}
+        jeo_preserve_job_run_parameters={this.state.jeo_preserve_job_run_parameters}
+        jeo_permanent_standards={this.state.jeo_permanent_standards}
+        jeo_id={this.state.jeo_id}
+        jeo_description={this.state.jeo_description}
+        getUrl={this.props.getUrl}
+        fetch={this.props.fetch}
+        buildJsonHeaders={this.props.buildJsonHeaders}
+        setMessage={this.setMessage}
+        movies={this.props.movies}
+        annotateExemplarMovie={this.annotateExemplarMovie}
+        getJobEvalObjectives={this.getJobEvalObjectives}
+      />
+    )
     const job_run_summary_section = this.buildJobRunSummarySection()
     const gradient_div = this.buildDividerGradient()
     return (
