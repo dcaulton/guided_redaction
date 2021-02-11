@@ -1,5 +1,6 @@
 import React from 'react';
 import JobEvalCompareControls from './JobEvalCompareControls';
+import JobEvalTileView from './JobEvalTileView';
 import {
   getFileNameFromUrl
 } from './redact_utils.js'
@@ -53,6 +54,10 @@ class JobEvalPanel extends React.Component {
       job_comment: '',
       finalize_manual_submitted: false,
     }
+    this.getFramesetHashesInOrder=this.props.getFramesetHashesInOrder.bind(this)
+    this.annotateExemplarMovie=this.annotateExemplarMovie.bind(this)
+    this.reviewExemplarMovie=this.reviewExemplarMovie.bind(this)
+    this.showReviewSummary=this.showReviewSummary.bind(this)
     this.setLocalStateVarAndWarn=this.setLocalStateVarAndWarn.bind(this)
     this.setLocalStateVar=this.setLocalStateVar.bind(this)
     this.afterJeoSave=this.afterJeoSave.bind(this)
@@ -70,15 +75,7 @@ class JobEvalPanel extends React.Component {
     this.setMessage=this.setMessage.bind(this)
     this.setUpImageParms=this.setUpImageParms.bind(this)
     this.getSelectedFramesetHashesInOrder=this.getSelectedFramesetHashesInOrder.bind(this)
-  }
-
-  setAnnotateMovieComment(comment_string) {
-    const movie_name = getFileNameFromUrl(this.state.active_movie_url)
-    let deepCopyPs= JSON.parse(JSON.stringify(this.state.jeo_permanent_standards))
-    deepCopyPs[movie_name]['comment'] = comment_string
-    this.setState({
-      jeo_permanent_standards: deepCopyPs,
-    })
+    this.getFramesetReviewDisplayString=this.getFramesetReviewDisplayString.bind(this)
   }
 
   resetFrameAnnotateData() {
@@ -317,21 +314,6 @@ class JobEvalPanel extends React.Component {
     )
   }
 
-  frameHasT1Data(frameset_hash) {
-    if (this.state.mode === 'review' && this.state.active_t1_results_key) {
-      const match_obj = this.props.tier_1_matches[this.state.active_t1_scanner_type][this.state.active_t1_results_key]
-      const movie_url = this.state.active_movie_url
-      if (
-        movie_url !== '' &&
-        Object.keys(match_obj['movies']).includes(movie_url) &&
-        Object.keys(match_obj['movies'][movie_url]['framesets']).includes(frameset_hash) &&
-        Object.keys(match_obj['movies'][movie_url]['framesets'][frameset_hash]).length > 0
-      ) {
-        return true
-      }
-    }
-  }
-
   getDesiredBoxes() {
     return this.getDesiredOrUnwantedBoxes('desired')
   }
@@ -454,24 +436,6 @@ class JobEvalPanel extends React.Component {
     })
   }
 
-  selectFramesetHash(fs_hash) {
-    let deepCopySFH = JSON.parse(JSON.stringify(this.state.selected_frameset_hashes))
-    let something_changed = false
-    if (!this.state.selected_frameset_hashes.includes(fs_hash)) {
-      deepCopySFH.push(fs_hash)
-      something_changed = true
-    } else {
-      const cur_index = deepCopySFH.indexOf(fs_hash)
-      deepCopySFH.splice(cur_index, 1)
-      something_changed = true
-    }
-    if (something_changed) {
-      this.setState({
-        selected_frameset_hashes: deepCopySFH,
-      })
-    }
-  }
-
   keyPress(event) {
     if (event.keyCode === 39) {
       this.gotoNextFrame()
@@ -500,18 +464,6 @@ class JobEvalPanel extends React.Component {
       } 
     }
     return ''
-  }
-
-  frameHasAnnotationData(frameset_hash) {
-    const movie_name = getFileNameFromUrl(this.state.active_movie_url)
-    if (
-      this.state.active_movie_url !== '' &&
-      Object.keys(this.state.jeo_permanent_standards).includes(movie_name) &&
-      Object.keys(this.state.jeo_permanent_standards[movie_name]['framesets']).includes(frameset_hash) &&
-      Object.keys(this.state.jeo_permanent_standards[movie_name]['framesets'][frameset_hash]).length > 0
-    ) {
-      return true
-    }
   }
 
   getFirstFramesetHash(movie_url) {
@@ -742,14 +694,6 @@ class JobEvalPanel extends React.Component {
     })
   }
 
-  setReviewMovieComment(comment_string) {
-    let deepCopyJrsm = JSON.parse(JSON.stringify(this.state.jrs_movies))
-    deepCopyJrsm[this.state.active_movie_url]['comment'] = comment_string
-    this.setState({
-      jrs_movies: deepCopyJrsm,
-    })
-  }
-
   resetFrameReviewData() {
     let deepCopyJrsm = JSON.parse(JSON.stringify(this.state.jrs_movies))
     const fsh = this.props.frameset_hash
@@ -835,6 +779,7 @@ class JobEvalPanel extends React.Component {
       mode: 'annotate',
       active_movie_url: movie_url,
       annotate_view_mode: annotate_view_mode,
+      selected_frameset_hashes: [],
     }
     if (annotate_view_mode === 'tile') {
       build_obj['message'] = "Select the frames you wish to annotate by clicking on them, press the Annotate button when done. Clicking on no frames gives you all frames of the movie to annotate."
@@ -853,6 +798,7 @@ class JobEvalPanel extends React.Component {
       mode: 'review',
       active_movie_url: movie_url,
       annotate_view_mode: annotate_view_mode,
+      selected_frameset_hashes: [],
     }
     this.setState(
       build_obj, 
@@ -1694,20 +1640,6 @@ class JobEvalPanel extends React.Component {
     )
   }
 
-  buildBackToJrsSummaryButton() {
-    if (this.state.mode !== 'review') {
-      return ''
-    }
-    return (
-      <button
-        className='btn btn-primary'
-        onClick={()=>{this.showReviewSummary()}}
-      >
-        Back to Job Summary View
-      </button>
-    )
-  }
-
   buildImageElement(image_url) {
     const img_style = {
       width: '100%',
@@ -1776,233 +1708,6 @@ class JobEvalPanel extends React.Component {
     )
   }
 
-  getTileInfo() {
-    const num_cols = this.state.annotate_tile_column_count
-    let col_class = 'col-2'
-    if (num_cols === '6') {
-      col_class = 'col-2'
-    } else if (num_cols === '4') {
-      col_class = 'col-3'
-    } else if (num_cols === '2') {
-      col_class = 'col-6'
-    }
-    return {
-      num_cols: num_cols, 
-      col_class: col_class,
-    }
-  }
-
-  buildAnnotateMovieCommentsRow() {
-    let movie_comments_row = ''
-    if (this.state.mode === 'annotate') {
-      let comment_val = ''
-      const movie_name = getFileNameFromUrl(this.state.active_movie_url)
-      if (
-        Object.keys(this.state.jeo_permanent_standards).includes(movie_name) &&
-        Object.keys(this.state.jeo_permanent_standards[movie_name]).includes('comment')
-      ) {
-        comment_val = this.state.jeo_permanent_standards[movie_name]['comment']
-      }
-
-      movie_comments_row = (
-        <div className='row mt-2'>
-          <div className='d-inline'>
-            Movie Level Comments
-          </div>
-          <div className='d-inline ml-2'>
-            <textarea
-              id='movie_level_comment'
-              cols='60'
-              rows='3'
-              value={comment_val}
-              onChange={(event) => this.setAnnotateMovieComment(event.target.value)}
-            />
-          </div>
-        </div>
-      )
-    } else if (this.state.mode === 'review') {
-      let comment_val = ''
-      if (
-        Object.keys(this.state.jrs_movies[this.state.active_movie_url]).includes('comment') && 
-        this.state.jrs_movies[this.state.active_movie_url]['comment']
-      ) {
-        comment_val = this.state.jrs_movies[this.state.active_movie_url]['comment']
-      }
-      
-      movie_comments_row = (
-        <div className='row mt-2'>
-          <div className='d-inline'>
-            Movie Level Comments
-          </div>
-          <div className='d-inline ml-2'>
-            <textarea
-              id='movie_level_comment'
-              cols='60'
-              rows='3'
-              value={comment_val}
-              onChange={(event) => this.setReviewMovieComment(event.target.value)}
-            />
-          </div>
-        </div>
-      )
-    }
-    return movie_comments_row
-  }
-
-  buildTileImageStatsBlock(fs_hash) {
-    const images_this_hash = this.getImageCountForFramesetHash(fs_hash)
-    const image_count_string = images_this_hash.toString() + ' images'
-    const fs_hash_sliced = fs_hash.slice(0, 6) + '...' + fs_hash.slice(fs_hash.length-6,)
-    let overlay_text = ''
-    let overlay_style = {
-      minHeight: '1em',
-    }
-    if (
-      this.frameHasAnnotationData(fs_hash) &&
-      this.state.mode === 'annotate'
-    ) {
-      overlay_text = 'ANNOTATED'
-    } else if (
-      this.state.mode === 'review'
-    ) {
-      if (this.frameHasT1Data(fs_hash)) {
-        overlay_text = 'RESULTS'
-      } 
-      const more = this.getFramesetReviewDisplayString(fs_hash)
-      if (more) {
-        overlay_text += ', ' + this.getFramesetReviewDisplayString(fs_hash)
-      }
-    }
-    return (
-      <div className='mt-2'>
-        <div>
-          {fs_hash_sliced}
-        </div>
-        <div style={overlay_style}>
-          {overlay_text}
-        </div>
-        <div>
-          {image_count_string}
-        </div>
-      </div>
-    )
-  }
-
-  buildTileButtonRow() {
-    let help_button = this.buildAnnotateTileHelpButton()
-    let review_annotate_when_clicked = (()=>{this.annotateExemplarMovie(this.state.active_movie_url, 'single')})
-    let review_annotate_button_label = 'Annotate these Frames'
-    if (this.state.mode === 'review') {
-      help_button = this.buildReviewTileHelpButton()
-      review_annotate_button_label = 'Review these Frames'
-      review_annotate_when_clicked = (()=>{this.reviewExemplarMovie(this.state.active_movie_url, 'single')})
-    }
-    const back_to_jrs_summary_button = this.buildBackToJrsSummaryButton()
-
-    return (
-      <div className='row'>
-        <div className='d-inline'>
-          <button
-            className='btn btn-primary'
-            onClick={review_annotate_when_clicked}
-          >
-            {review_annotate_button_label}
-          </button>
-        </div>
-        <div className='d-inline ml-2'>
-          {back_to_jrs_summary_button}
-        </div>
-        <div className='d-inline ml-2'>
-          {help_button}
-        </div>
-      </div>
-    )
-  }
-
-  buildAnnotatePanelTile() {
-    const tile_info = this.getTileInfo()
-    const num_cols = tile_info['num_cols']
-    const col_class = tile_info['col_class']
-    let ordered_hashes = []
-    let movie = {framesets: {}}
-    if (Object.keys(this.props.movies).includes(this.state.active_movie_url)) {
-      movie = this.props.movies[this.state.active_movie_url]
-      ordered_hashes = this.props.getFramesetHashesInOrder(movie)
-    }
-    const num_rows = Math.ceil(ordered_hashes.length / num_cols)
-    const movie_comments_row = this.buildAnnotateMovieCommentsRow()
-    const tile_button_row = this.buildTileButtonRow()
-
-    let row_num_array = []
-    for (let i=0; i < num_rows; i++) {
-      row_num_array.push(i)
-    }
-
-    const img_style = {
-      width: '100%',
-    }
-
-    return (
-      <div className='row'>
-        <div className='col'>
-
-          {movie_comments_row}
-
-          {tile_button_row}
-
-          {row_num_array.map((whatever, row_num) => {
-            const start_point = row_num * num_cols 
-            const end_point = start_point + num_cols
-            const fs_hashes_this_row = ordered_hashes.slice(start_point, end_point)
-            return (
-              <div className='row pt-2 pr-2' key={row_num}>
-                {fs_hashes_this_row.map((fs_hash, index) => {
-                  let div_class = col_class
-                  if (this.state.selected_frameset_hashes.includes(fs_hash)) {
-                    div_class += ' active_card'
-                  }
-                  const img_url = this.props.getImageFromFrameset(fs_hash, movie['framesets'])
-                  const stats_block = this.buildTileImageStatsBlock(fs_hash)
-
-                  return (
-                    <div 
-                        className={div_class} 
-                        key={index} 
-                    >
-                      {stats_block}
-
-                      <img
-                        id='job_eval_image'
-                        style={img_style}
-                        src={img_url}
-                        alt={img_url}
-                        onClick={()=>{this.selectFramesetHash(fs_hash)}}
-                      />
-                    </div>
-                  )
-                })}
-              </div>
-            )
-          })}
-        </div>
-      </div>
-    )
-  }
-
-  getImageCountForFramesetHash(fs_hash) {
-    if (Object.keys(this.props.movies).includes(this.state.active_movie_url)) {
-      const mov = this.props.movies[this.state.active_movie_url]
-      if (
-        Object.keys(mov).includes('framesets') &&
-        Object.keys(mov['framesets']).includes(fs_hash) &&
-        Object.keys(mov['framesets'][fs_hash]).includes('images')
-      ) {
-        return mov['framesets'][fs_hash]['images'].length
-      }
-    }
-    return 0
-  }
-
   buildPassButton() {
     return (
       <button
@@ -2054,28 +1759,6 @@ class JobEvalPanel extends React.Component {
         onClick={()=>{this.resetFrameReviewData()}}
       >
         Reset
-      </button>
-    )
-  }
-
-  buildReviewTileHelpButton() {
-    return (
-      <button
-        className='btn btn-primary'
-        onClick={()=>{this.setMessage('This is the Tile View mode of the Manual Review page for a single movie.  From this page, you optionally select the frames you are interested in reviewing, then you will press the Review these Frames button to begin work.  You will be presented with a full screen view of the first frame in Review - Single Frame mode.  You can specify if it passes or fails, or you can specify desired areas that were or were not selected by the job. You can advance between frames with the Prev and Next buttons but the right and left arrows on your keyboard should work too. When done reviewing the movie, you will submit your work to be Finalized into a permanent Job Run Summary record.')}}
-      >
-        ?
-      </button>
-    )
-  }
-
-  buildAnnotateTileHelpButton() {
-    return (
-      <button
-        className='btn btn-primary'
-        onClick={()=>{this.setMessage('This is the Tile View mode of the Annotate page for a single movie.  It presents you with an overview of all the framesets for the movie you have selected to annotate.  From here you can optionally select some framesets by clicking on them, then pressing the Annotate these Frames button will take you to a Single frame view of the first frameset, where you can begin specifying information.  When that work is completed, the Home button will take you to the main screen, where you can Save your changes to the Job Eval Objective record.')}}
-      >
-        ?
       </button>
     )
   }
@@ -2351,7 +2034,30 @@ class JobEvalPanel extends React.Component {
       const position_string = this.getFramePositionString()
       the_title = movie_name + ', ' + image_name + ' - ' +position_string
     } else if (this.state.annotate_view_mode === 'tile') {
-      the_body = this.buildAnnotatePanelTile()
+      the_body = (
+        <JobEvalTileView
+          annotate_tile_column_count={this.state.annotate_tile_column_count}
+          movies={this.props.movies}
+          active_movie_url={this.state.active_movie_url}
+          mode={this.state.mode}
+          jeo_permanent_standards={this.state.jeo_permanent_standards}
+          jrs_movies={this.state.jrs_movies}
+          getFramesetHashesInOrder={this.props.getFramesetHashesInOrder}
+          setLocalStateVarAndWarn={this.setLocalStateVarAndWarn}
+          setLocalStateVar={this.setLocalStateVar}
+          setMessage={this.setMessage}
+          annotateExemplarMovie={this.annotateExemplarMovie}
+          reviewExemplarMovie={this.reviewExemplarMovie}
+          showReviewSummary={this.showReviewSummary}
+          getImageFromFrameset={this.props.getImageFromFrameset}
+          selected_frameset_hashes={this.state.selected_frameset_hashes}
+          active_t1_results_key={this.state.active_t1_results_key}
+          tier_1_matches={this.props.tier_1_matches}
+          active_t1_scanner_type={this.state.active_t1_scanner_type}
+          getFramesetReviewDisplayString={this.getFramesetReviewDisplayString}
+        />
+      )
+
       the_title = movie_name 
     }
 
@@ -2871,7 +2577,29 @@ doSleep(time) {
       const position_string = this.getFramePositionString()
       the_title = movie_name + ', ' + image_name + ' - ' +position_string
     } else if (this.state.annotate_view_mode === 'tile') {
-      the_body = this.buildAnnotatePanelTile()
+      the_body = (
+        <JobEvalTileView
+          annotate_tile_column_count={this.state.annotate_tile_column_count}
+          movies={this.props.movies}
+          active_movie_url={this.state.active_movie_url}
+          mode={this.state.mode}
+          jeo_permanent_standards={this.state.jeo_permanent_standards}
+          jrs_movies={this.state.jrs_movies}
+          getFramesetHashesInOrder={this.props.getFramesetHashesInOrder}
+          setLocalStateVarAndWarn={this.setLocalStateVarAndWarn}
+          setLocalStateVar={this.setLocalStateVar}
+          setMessage={this.setMessage}
+          annotateExemplarMovie={this.annotateExemplarMovie}
+          reviewExemplarMovie={this.reviewExemplarMovie}
+          showReviewSummary={this.showReviewSummary}
+          getImageFromFrameset={this.props.getImageFromFrameset}
+          selected_frameset_hashes={this.state.selected_frameset_hashes}
+          active_t1_results_key={this.state.active_t1_results_key}
+          tier_1_matches={this.props.tier_1_matches}
+          active_t1_scanner_type={this.state.active_t1_scanner_type}
+          getFramesetReviewDisplayString={this.getFramesetReviewDisplayString}
+        />
+      )
       the_title = movie_name 
     } else if (this.state.annotate_view_mode === 'summary') {
       the_body = this.buildReviewPanelSummary()
