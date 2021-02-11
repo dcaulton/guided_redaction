@@ -12,6 +12,11 @@ class JobEvalJeoLogic extends React.Component {
   constructor(props) {
     super(props)
     this.afterJeoSave=this.afterJeoSave.bind(this)
+    this.saveJeo=this.saveJeo.bind(this)
+  }
+
+  componentDidMount() {
+    this.props.addJobEvalCallback('saveJeo', this.saveJeo)
   }
 
   removeExemplarMovie(movie_name) {
@@ -347,6 +352,12 @@ class JobEvalJeoLogic extends React.Component {
     }
     function after_saved() {
       this.props.setMessage('Job Eval Objective has been saved', 'success')
+      this.props.setLocalStateVar({
+        message: 'Job Eval Objective has been saved', 
+        message_class: 'success',
+        something_changed: false,
+        jeo_id: jeo_id,
+      })
     }
     this.props.getJobEvalObjectives(
       (() => {this.loadJeo(jeo_id, after_saved)})
@@ -383,6 +394,7 @@ class JobEvalJeoLogic extends React.Component {
       preserve_job_run_parameters: this.props.jeo_preserve_job_run_parameters,
       permanent_standards: this.props.jeo_permanent_standards,
     }
+console.log('doonkey breath ps from state is ', this.props.jeo_permanent_standards)
     const jeo = {
       id: this.props.jeo_id,
       description: this.props.jeo_description,
@@ -391,12 +403,9 @@ class JobEvalJeoLogic extends React.Component {
     return jeo
   }
 
-  saveJeo(when_done=(()=>{})) {
+  saveJeo() {
     const jeo_object = this.getJeoFromState()
     this.saveJobEvalObjective(jeo_object, this.afterJeoSave)
-    this.props.setLocalStateVar({
-      something_changed: false,
-    })
   }
 
   buildJeoSaveButton() {

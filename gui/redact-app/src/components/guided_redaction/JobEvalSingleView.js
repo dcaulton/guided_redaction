@@ -44,7 +44,7 @@ class JobEvalSingleView extends React.Component {
       }
     }
     deepCopyJrsm[this.props.active_movie_url]['framesets'][this.props.frameset_hash]['comment'] = comment_string
-    this.setLocalStateVar({
+    this.props.setLocalStateVar({
       jrs_movies: deepCopyJrsm,
     })
   }
@@ -92,7 +92,7 @@ class JobEvalSingleView extends React.Component {
     if (Object.keys(this.props.jrs_movies[this.props.active_movie_url]['framesets']).includes(fsh)) {
       delete deepCopyJrsm[this.props.active_movie_url]['framesets'][fsh]
     }
-    this.setLocalStateVar({
+    this.props.setLocalStateVar({
       jrs_movies: deepCopyJrsm,
       job_comment: '',
       message: 'frame review data has been cleared',
@@ -155,7 +155,7 @@ class JobEvalSingleView extends React.Component {
     deepCopyJrsm[this.props.active_movie_url]['framesets'][fsh]['desired'] = {}
     deepCopyJrsm[this.props.active_movie_url]['framesets'][fsh]['unwanted'] = {}
     deepCopyJrsm[this.props.active_movie_url]['framesets'][fsh]['pass_or_fail'] = pass_or_fail
-    this.setLocalStateVar({
+    this.props.setLocalStateVar({
       jrs_movies: deepCopyJrsm,
     })
   }
@@ -246,11 +246,16 @@ class JobEvalSingleView extends React.Component {
     )
   }
 
+  saveJeoAndGoBackToAnnotateTileView(movie_url) {
+    this.props.runCallbackFunction('saveJeo')
+    this.props.annotateExemplarMovie(movie_url, 'tile')
+  }
+
   buildBackToTileButton() {
     return (
       <button
         className='btn btn-primary'
-        onClick={()=>{this.props.annotateExemplarMovie(this.props.active_movie_url, 'tile')}}
+        onClick={()=>{this.saveJeoAndGoBackToAnnotateTileView(this.props.active_movie_url)}}
       >
         Back to Tile View
       </button>
@@ -338,7 +343,7 @@ class JobEvalSingleView extends React.Component {
     return (
       <button
         className='btn btn-primary'
-        onClick={()=>{this.setLocalStateVar('image_mode', 'delete_ocr')}}
+        onClick={()=>{this.props.setLocalStateVar('image_mode', 'delete_ocr')}}
       >
         Delete Ocr
       </button>
@@ -352,7 +357,7 @@ class JobEvalSingleView extends React.Component {
     return (
       <button
         className='btn btn-primary'
-        onClick={()=>{this.setLocalStateVar('show_ocr', true)}}
+        onClick={()=>{this.props.setLocalStateVar('show_ocr', true)}}
       >
         Show Ocr
       </button>
@@ -366,7 +371,7 @@ class JobEvalSingleView extends React.Component {
     return (
       <button
         className='btn btn-primary'
-        onClick={()=>{this.setLocalStateVar('show_ocr', false)}}
+        onClick={()=>{this.props.setLocalStateVar('show_ocr', false)}}
       >
         Hide Ocr
       </button>
@@ -380,7 +385,7 @@ class JobEvalSingleView extends React.Component {
       const prev_annotations = this.props.jeo_permanent_standards[movie_name]['framesets'][old_fsh]
       let deepCopyPs = JSON.parse(JSON.stringify(this.props.jeo_permanent_standards))
       deepCopyPs[movie_name]['framesets'][this.props.frameset_hash] = prev_annotations
-      this.setLocalStateVar('jeo_permanent_standards', deepCopyPs)
+      this.props.setLocalStateVar('jeo_permanent_standards', deepCopyPs)
     }
   }
 

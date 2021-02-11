@@ -54,6 +54,7 @@ class JobEvalPanel extends React.Component {
       jrs_movies: {},
       job_comment: '',
       finalize_manual_submitted: false,
+      callbacks: {},
     }
     this.getFramesetHashesInOrder=this.props.getFramesetHashesInOrder.bind(this)
     this.annotateExemplarMovie=this.annotateExemplarMovie.bind(this)
@@ -80,7 +81,25 @@ class JobEvalPanel extends React.Component {
     this.gotoNextFrame=this.gotoNextFrame.bind(this)
     this.gotoPrevFrame=this.gotoPrevFrame.bind(this)
     this.showReviewTile=this.showReviewTile.bind(this)
+    this.addJobEvalCallback=this.addJobEvalCallback.bind(this)
+    this.runCallbackFunction=this.runCallbackFunction.bind(this)
   }
+
+  addJobEvalCallback(the_key, the_callback) {
+    let new_callbacks = this.state.callbacks
+    new_callbacks[the_key] = the_callback
+    this.setState({
+      callbacks: new_callbacks,
+    })
+  }
+
+  runCallbackFunction(function_name) {
+    if (Object.keys(this.state.callbacks).includes(function_name)) {
+      return this.state.callbacks[function_name]()
+    }
+    return []
+  }
+
 
   async getJobEvalObjectives(when_done=(()=>{})) {
     let the_url = this.props.getUrl('job_eval_objectives_url')
@@ -819,6 +838,7 @@ class JobEvalPanel extends React.Component {
         movies={this.props.movies}
         annotateExemplarMovie={this.annotateExemplarMovie}
         getJobEvalObjectives={this.getJobEvalObjectives}
+        addJobEvalCallback={this.addJobEvalCallback}
       />
     )
     const job_run_summary_section = this.buildJobRunSummarySection()
@@ -902,6 +922,7 @@ class JobEvalPanel extends React.Component {
           jrs_movies={this.state.jrs_movies}
           getFramesetReviewDisplayString={this.getFramesetReviewDisplayString}
           showReviewTile={this.showReviewTile}
+          runCallbackFunction={this.runCallbackFunction}
         />
       )
       const image_url = this.props.getImageUrl()
