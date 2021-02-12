@@ -87,6 +87,7 @@ class JobRunSummariesGenerateViewSet(viewsets.ViewSet):
         worker = GenerateController()
         jrs = worker.generate_job_run_summary(request_data)
 
-        if 'errors' in jrs and jrs['errors']:
-          return self.error(jrs['errors'])
-        return Response(jrs)
+        if type(jrs) != type(JobRunSummary()):
+            if 'errors' in jrs and jrs['errors']:
+                return self.error(jrs['errors'])
+        return Response(jrs.as_dict())

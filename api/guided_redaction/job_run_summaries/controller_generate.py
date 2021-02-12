@@ -1,12 +1,9 @@
 import json
-import random
-import math
-from django.conf import settings
+import os
+import cv2
+from guided_redaction.attributes.models import Attribute
 from guided_redaction.job_run_summaries.models import JobRunSummary
-from guided_redaction.jobs.models import Job
-from guided_redaction.job_eval_objectives.models import JobEvalObjective
 from guided_redaction.job_run_summaries.controller_score_base import ScoreBaseController
-from guided_redaction.utils.classes.FileWriter import FileWriter
 
 
 class GenerateController(ScoreBaseController):
@@ -14,7 +11,7 @@ class GenerateController(ScoreBaseController):
     def generate_job_run_summary(self, request_data):
         jrs = JobRunSummary()
 
-        ret_val = self.file_writer.create_unique_directory(self.file_storage_dir_uuid)
+        ret_val = self.add_job_and_jeo_to_jrs(request_data, jrs)
         if ret_val: return ret_val
 
         self.file_writer.create_unique_directory(self.file_storage_dir_uuid)
@@ -65,12 +62,7 @@ class GenerateController(ScoreBaseController):
                 print('building automatic job review summary data for movie {}'.format(movie_url))
                 job_movie_data = job_resp_data['movies'][movie_url]
                 ps_movie_data = {'framesets': {}}
-                if movie_url in perm_standards:
-                    ps_movie_data = permanent_standards[movie_url]
-                build_movies[movie_url] = {
-                    'framesets': {},
-                }
-
+                build_movies[movie_url] = {'framesets': {}}
                 frame_dimensions = ()
                 (_, file_name) = os.path.split(movie_url)
                 (movie_uuid, file_type) = file_name.split('.')
@@ -78,6 +70,9 @@ class GenerateController(ScoreBaseController):
                     frame_dimensions = source_movies[movie_url]['frame_dimensions']
                 if not frame_dimensions:
                     continue
+                for annotated_movie_name in perm_standards:
+                    if annotated_movie_name in movie_url:
+                        ps_movie_data = perm_standards[annotated_movie_name]
                 source_movie = source_movies[movie_url]
                 ordered_frameset_hashes = self.get_frameset_hashes_in_order(source_movie['frames'], source_movie['framesets'])
 
@@ -91,7 +86,7 @@ class GenerateController(ScoreBaseController):
                         has_job_data = True
                     if frameset_hash in ps_movie_data['framesets']:
                         was_reviewed = True
-                        ps_frameset_data = jrs_movie_data['framesets'][frameset_hash]
+                        ps_frameset_data = ps_movie_data['framesets'][frameset_hash]
                         fs_counts, fs_maps = self.score_frameset(
                             frameset_hash,
                             job_frameset_data,
@@ -125,10 +120,11 @@ class GenerateController(ScoreBaseController):
         fpos_image = cv2.bitwise_and(job_found_image, not_tpos_image)
         fneg_image = cv2.bitwise_and(not_job_found_image, tpos_image)
 
+        tpos_url = self.save_supplied_image(tpos_image, fsh_prefix, 't_pos')
         fpos_url = self.save_supplied_image(fpos_image, fsh_prefix, 'f_pos')
         fneg_url = self.save_supplied_image(fneg_image, fsh_prefix, 'f_neg')
-
         fall_url, fall_image = self.draw_and_save_fall_image(fpos_image, fneg_image, fsh_prefix)
+
         maps = {
             't_pos': tpos_url,
             'f_pos': fpos_url,

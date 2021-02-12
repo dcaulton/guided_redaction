@@ -1,16 +1,11 @@
 import json
 import os
 import uuid
-import numpy as np
 import cv2
 import imutils
-from django.conf import settings
 from guided_redaction.attributes.models import Attribute
-from guided_redaction.jobs.models import Job
-from guided_redaction.job_eval_objectives.models import JobEvalObjective
 from guided_redaction.job_run_summaries.models import JobRunSummary
 from guided_redaction.job_run_summaries.controller_score_base import ScoreBaseController
-from guided_redaction.utils.classes.FileWriter import FileWriter
 
 
 class ScoreManualController(ScoreBaseController):
