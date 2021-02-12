@@ -181,23 +181,28 @@ class JobEvalPanel extends React.Component {
     })
   }
 
-  buildManualJrsJobData(extra_data) {
+  buildJrsJobData(extra_data, manual_or_automatic='manual') {
     let job_data = {
       request_data: {},
     }
     job_data['app'] = 'job_run_summaries'
-    job_data['operation'] = 'create_manual_jrs'
-    job_data['description'] = 'create manual jrs for job '+this.state.active_job_id
     job_data['request_data']['job_id'] = this.state.active_job_id
     job_data['request_data']['job_eval_objective_id'] = this.state.jeo_id
-    job_data['request_data']['jrs_movies'] = this.state.jrs_movies
-    job_data['request_data']['job_comment'] = this.state.job_comment
+    if (manual_or_automatic === 'manual') {
+      job_data['operation'] = 'create_manual_jrs'
+      job_data['description'] = 'create manual jrs for job '+this.state.active_job_id
+      job_data['request_data']['jrs_movies'] = this.state.jrs_movies
+      job_data['request_data']['job_comment'] = this.state.job_comment
+    } else {
+      job_data['operation'] = 'create_automatic_jrs'
+      job_data['description'] = 'create automatic jrs for job '+this.state.active_job_id
+    }
     return job_data
   }
 
   submitJobEvalJob(job_string, extra_data = '') {
     if (job_string === 'build_manual_job_run_summary') {
-      const job_data = this.buildManualJrsJobData(extra_data)
+      const job_data = this.buildJrsJobData(extra_data, 'manual')
       this.props.submitJob({
         job_data:job_data,
         after_submit: ((r) => {this.setMessage('build manual job run summary task has been submitted')}),
@@ -205,6 +210,16 @@ class JobEvalPanel extends React.Component {
         attach_to_job: false,
         after_loaded: () => {this.getJobRunSummariesAndAnnounce()},
         when_failed: () => {this.setMessage('build manual job run summary failed')},
+      })
+    } else if (job_string === 'build_automatic_job_run_summary') {
+      const job_data = this.buildJrsJobData(extra_data, 'automatic')
+      this.props.submitJob({
+        job_data:job_data,
+        after_submit: ((r) => {this.setMessage('build automatic job run summary task has been submitted')}),
+        delete_job_after_loading: true,
+        attach_to_job: false,
+        after_loaded: () => {this.getJobRunSummariesAndAnnounce()},
+        when_failed: () => {this.setMessage('build automatic job run summary failed')},
       })
     }
   }
@@ -718,27 +733,6 @@ class JobEvalPanel extends React.Component {
     })
   }
 
-  async generateJobRunSummary(when_done=(()=>{})) {
-    let the_url = this.props.getUrl('job_run_summaries_url') + '/generate'
-    const payload = {
-        job_id: this.state.active_job_id,
-        job_eval_objective_id: this.state.jeo_id,
-    }
-    let response = await this.props.fetch(the_url, {
-      method: 'POST',
-      headers: this.props.buildJsonHeaders(),
-      body: JSON.stringify(payload),
-    })
-    .then((response) => response.json())
-    .then((responseJson) => {
-      when_done(responseJson)
-    })
-    .catch((error) => {
-      console.error(error)
-    })
-    await response
-  }
-
   buildGetJrsListButton() {
     return (
       <button
@@ -1011,7 +1005,7 @@ class JobEvalPanel extends React.Component {
     return (
       <button
         className='btn btn-primary'
-        onClick={()=>{this.generateJobRunSummary()}}
+        onClick={()=>{this.submitJobEvalJob('build_automatic_job_run_summary')}}
       >
         Generate Exemplar JRS
       </button>
