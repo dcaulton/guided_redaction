@@ -83,6 +83,7 @@ class JobEvalPanel extends React.Component {
     this.showReviewTile=this.showReviewTile.bind(this)
     this.addJobEvalCallback=this.addJobEvalCallback.bind(this)
     this.runCallbackFunction=this.runCallbackFunction.bind(this)
+    this.goHomeWithCallback=this.goHomeWithCallback.bind(this)
   }
 
   addJobEvalCallback(the_key, the_callback) {
@@ -94,7 +95,9 @@ class JobEvalPanel extends React.Component {
   }
 
   runCallbackFunction(function_name) {
+console.log('benny running callback for '+function_name)
     if (Object.keys(this.state.callbacks).includes(function_name)) {
+console.log('---------YAY')
       return this.state.callbacks[function_name]()
     }
     return []
@@ -637,6 +640,8 @@ class JobEvalPanel extends React.Component {
     }
     if (annotate_view_mode === 'tile') {
       build_obj['message'] = "Select the frames you wish to annotate by clicking on them, press the Annotate button when done. Clicking on no frames gives you all frames of the movie to annotate."
+    } else if (annotate_view_mode === 'single') {
+      build_obj['message'] = "Specify the areas you want to have found.  The buttons below will let you specify areas as boxes.  You can also Copy the contents from other frames and Paste them here.  When you have completed, click the Home button to exit this annotation section without saving, or you can click the Save and Home button to exit, preserving your new annotations, "
     }
 
     this.setState(
@@ -917,6 +922,7 @@ class JobEvalPanel extends React.Component {
           getFramesetReviewDisplayString={this.getFramesetReviewDisplayString}
           showReviewTile={this.showReviewTile}
           runCallbackFunction={this.runCallbackFunction}
+          goHomeWithCallback={this.goHomeWithCallback}
         />
       )
       const image_url = this.props.getImageUrl()
@@ -1495,6 +1501,7 @@ doSleep(time) {
           jrs_movies={this.state.jrs_movies}
           getFramesetReviewDisplayString={this.getFramesetReviewDisplayString}
           showReviewTile={this.showReviewTile}
+          goHomeWithCallback={this.goHomeWithCallback}
         />
       )
       const image_url = this.props.getImageUrl()
@@ -1620,6 +1627,10 @@ doSleep(time) {
       }
     }
     return has_review_data
+  }
+
+  goHomeWithCallback(the_callback=(()=>{})) {
+    this.setState({'mode': ''}, the_callback)
   }
 
   goHomeWithWarning() {

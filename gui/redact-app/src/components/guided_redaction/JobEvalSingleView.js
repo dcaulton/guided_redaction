@@ -239,7 +239,7 @@ class JobEvalSingleView extends React.Component {
     return (
       <button
         className='btn btn-primary'
-        onClick={()=>{this.props.setMessage('This is the Single Frame View mode of the Annotate page for a single movie.  From this page you can specify how the output from a perfect version of the tool youre designing would look.  Besides navigating using the buttons above, the left and right arrows will advance you sequentially between frames.  The up arrow key will copy the contents of the frame immediately before this one and add them to the current frame.  When you are done annotating individual frames, use the Home button to get back to the main screen, then press the Save button to add these annotations as a permanent part of the Job Eval Objective record.')}}
+        onClick={()=>{this.props.setMessage('This is the Single Frame View mode of the Annotate page for a single movie.  From this page you can specify how the output from a perfect version of the tool youre designing would look.  Besides navigating using the buttons above, the left and right arrows will advance you sequentially between frames.  The up arrow key will copy the contents of the frame immediately before this one and add them to the current frame.  When you are done annotating individual frames, press the Save and Home button to save your work and go to the Home page, or press the Home button to get back to the main screen without saving your changes, then press the Save button to add these annotations as a permanent part of the Job Eval Objective record.')}}
       >
         ?
       </button>
@@ -251,13 +251,15 @@ class JobEvalSingleView extends React.Component {
     this.props.annotateExemplarMovie(movie_url, 'tile')
   }
 
-  buildBackToTileButton() {
+  buildSaveAndHomeButton() {
     return (
       <button
         className='btn btn-primary'
-        onClick={()=>{this.saveJeoAndGoBackToAnnotateTileView(this.props.active_movie_url)}}
+        onClick={
+          ()=>{this.props.goHomeWithCallback(()=>{this.props.runCallbackFunction('saveJeo')})}
+        }
       >
-        Back to Tile View
+        Save and Home
       </button>
     )
   }
@@ -448,7 +450,7 @@ class JobEvalSingleView extends React.Component {
     const next_frame_button = this.buildNextFrameButton()
     const prev_frame_button = this.buildPrevFrameButton()
     const reset_button = this.buildAnnotateResetButton()
-    const back_to_tile_button = this.buildBackToTileButton()
+    const save_and_home_button = this.buildSaveAndHomeButton()
     const help_button = this.buildAnnotateSingleHelpButton()
     return (
       <div>
@@ -497,7 +499,7 @@ class JobEvalSingleView extends React.Component {
         </div>
 
         <div className='d-inline ml-1'>
-          {back_to_tile_button}
+          {save_and_home_button}
         </div>
 
         <div className='d-inline ml-1'>

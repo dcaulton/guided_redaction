@@ -32,7 +32,7 @@ class JobEvalTileView extends React.Component {
     }
   }
 
-  buildTileImageStatsBlock(fs_hash) {
+  buildImageStatsBlock(fs_hash) {
     const images_this_hash = this.getImageCountForFramesetHash(fs_hash)
     const image_count_string = images_this_hash.toString() + ' images'
     const fs_hash_sliced = fs_hash.slice(0, 6) + '...' + fs_hash.slice(fs_hash.length-6,)
@@ -115,7 +115,7 @@ class JobEvalTileView extends React.Component {
     )
   }
 
-  buildReviewTileHelpButton() {
+  buildReviewHelpButton() {
     return (
       <button
         className='btn btn-primary'
@@ -126,23 +126,23 @@ class JobEvalTileView extends React.Component {
     )
   }
 
-  buildAnnotateTileHelpButton() {
+  buildAnnotateHelpButton() {
     return (
       <button
         className='btn btn-primary'
-        onClick={()=>{this.props.setMessage('This is the Tile View mode of the Annotate page for a single movie.  It presents you with an overview of all the framesets for the movie you have selected to annotate.  From here you can optionally select some framesets by clicking on them, then pressing the Annotate these Frames button will take you to a Single frame view of the first frameset, where you can begin specifying information.  When that work is completed, the Home button will take you to the main screen, where you can Save your changes to the Job Eval Objective record.')}}
+        onClick={()=>{this.props.setMessage('This is the Tile View mode of the Annotate page for a single movie.  It presents you with an overview of all the framesets for the movie you have selected to annotate.  From here you can optionally select some framesets by clicking on them, then pressing the Annotate button will take you to a Single frame view of the first frameset, where you can begin specifying information.  When that work is completed, the Home button will take you to the main screen, where you can Save your changes to the Job Eval Objective record.')}}
       >
         ?
       </button>
     )
   }
 
-  buildTileButtonRow() {
-    let help_button = this.buildAnnotateTileHelpButton()
+  buildButtonRow() {
+    let help_button = this.buildAnnotateHelpButton()
     let review_annotate_when_clicked = (()=>{this.props.annotateExemplarMovie(this.props.active_movie_url, 'single')})
-    let review_annotate_button_label = 'Annotate these Frames'
+    let review_annotate_button_label = 'Annotate'
     if (this.props.mode === 'review') {
-      help_button = this.buildReviewTileHelpButton()
+      help_button = this.buildReviewHelpButton()
       review_annotate_button_label = 'Review these Frames'
       review_annotate_when_clicked = (()=>{this.props.reviewExemplarMovie(this.props.active_movie_url, 'single')})
     }
@@ -266,7 +266,7 @@ class JobEvalTileView extends React.Component {
     }
     const num_rows = Math.ceil(ordered_hashes.length / num_cols)
     const movie_comments_row = this.buildAnnotateMovieCommentsRow()
-    const tile_button_row = this.buildTileButtonRow()
+    const button_row = this.buildButtonRow()
 
     let row_num_array = []
     for (let i=0; i < num_rows; i++) {
@@ -283,7 +283,7 @@ class JobEvalTileView extends React.Component {
 
           {movie_comments_row}
 
-          {tile_button_row}
+          {button_row}
 
           {row_num_array.map((whatever, row_num) => {
             const start_point = row_num * num_cols 
@@ -300,7 +300,7 @@ class JobEvalTileView extends React.Component {
                     div_class += ' active_card'
                   }
                   const img_url = this.props.getImageFromFrameset(fs_hash, movie['framesets'])
-                  const stats_block = this.buildTileImageStatsBlock(fs_hash)
+                  const stats_block = this.buildImageStatsBlock(fs_hash)
 
                   return (
                     <div 
