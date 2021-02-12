@@ -986,7 +986,7 @@ class JobEvalPanel extends React.Component {
       'Job Id',
       this.state.active_job_id,
       'active_job_id',
-      ((value)=>{this.setState({'active_job_id': value})})
+      ((value)=>{this.changeActiveJobId(value)})
     )
     return (
       <div>
@@ -997,6 +997,10 @@ class JobEvalPanel extends React.Component {
     )
   }
 
+  changeActiveJobId(job_id) {
+    this.setState({'active_job_id': job_id})
+    this.props.loadJobResults(job_id)
+  }
 
   buildGenerateExemplarJrsButton() {
     if (!this.jobHasMatchForExemplarMovie()) {
