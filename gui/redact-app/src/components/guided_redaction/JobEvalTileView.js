@@ -119,7 +119,11 @@ class JobEvalTileView extends React.Component {
     return (
       <button
         className='btn btn-primary'
-        onClick={()=>{this.props.setMessage('This is the Tile View mode of the Manual Review page for a single movie.  From this page, you optionally select the frames you are interested in reviewing, then you will press the Review these Frames button to begin work.  You will be presented with a full screen view of the first frame in Review - Single Frame mode.  You can specify if it passes or fails, or you can specify desired areas that were or were not selected by the job. You can advance between frames with the Prev and Next buttons but the right and left arrows on your keyboard should work too. When done reviewing the movie, you will submit your work to be Finalized into a permanent Job Run Summary record.')}}
+        onClick={()=>{this.props.setMessage([
+          'This is the Tile View mode of the Manual Review page for a single movie.  From this page, you optionally select the frames you are interested in reviewing, then you will press the Review these Frames button to begin work.  ',
+          'You will be presented with a full screen view of the first frame in Review - Single Frame mode.  You can specify if it passes or fails, or you can specify desired areas that were or were not selected by the job. Advancing between frames can be done with the Prev and Next buttons but the right and left arrows on your keyboard should work too.',
+          'When done reviewing the movie, you will submit your work to be Finalized into a permanent Job Run Summary record.'
+        ])}}
       >
         ?
       </button>
@@ -130,7 +134,10 @@ class JobEvalTileView extends React.Component {
     return (
       <button
         className='btn btn-primary'
-        onClick={()=>{this.props.setMessage('This is the Tile View mode of the Annotate page for a single movie.  It presents you with an overview of all the framesets for the movie you have selected to annotate.  From here you can optionally select some framesets by clicking on them, then pressing the Annotate button will take you to a Single frame view of the first frameset, where you can begin specifying information.  When that work is completed, the Home button will take you to the main screen, where you can Save your changes to the Job Eval Objective record.')}}
+        onClick={()=>{this.props.setMessage([
+          'This is the Tile View mode of the Annotate page for a single movie.  It presents you with an overview of all the framesets for the movie you have selected to annotate.  From here you can optionally select some framesets by clicking on them, then pressing the Annotate button will take you to a Single frame view of the first frameset, where you can begin specifying information.  ',
+          'When that work is completed, the Home button will take you to the main screen, where you can Save your changes to the Job Eval Objective record.'
+        ])}}
       >
         ?
       </button>

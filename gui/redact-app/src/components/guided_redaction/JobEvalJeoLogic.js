@@ -334,7 +334,14 @@ class JobEvalJeoLogic extends React.Component {
   }
 
   buildJeoHelpButton() {
-    const help_text = 'The Job Evaluation Object (JEO) is the top level organizational object for grouping and comparing the output from different job runs.  It represents the top level objective you wish to accomplish and allows you to customize how jobs are ranked when you compare their output.  Once a JEO has been established, you can perform several operations.  1) You can manually score the output from a job, this creates a Job Run Summary.  2) You can automatically score the output from a job, this also creates a Job Run Summary.  The movies used for automatically scoring are called Exemplar Movies, the desired output you define for those movies is called a Permanent Standard.  3)  You can compare up to four Job Run Summaries side by side.  Or, 4) you can specify the Permanent Standards used for automatic scoring'
+    const help_text = [
+      'The Job Evaluation Object (JEO) is the top level organizational object for grouping and comparing the output from different job runs.  It represents the top level objective you wish to accomplish and allows you to customize how jobs are ranked when you compare their output.  ',
+      'Once a JEO has been established, you can perform several operations.  ',
+      '1) You can manually score the output from a job, this creates a Job Run Summary.  ',
+      '2) You can automatically score the output from a job, this also creates a Job Run Summary.  The movies used for automatically scoring are called Exemplar Movies, the desired output you define for those movies is called a Permanent Standard.  ',
+      '3)  You can compare up to four Job Run Summaries side by side.  Or, ',
+      '4) you can specify the Permanent Standards used for automatic scoring'
+    ]
     return (
       <button
           className='btn btn-primary'

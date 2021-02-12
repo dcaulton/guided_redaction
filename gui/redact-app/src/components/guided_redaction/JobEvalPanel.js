@@ -626,7 +626,12 @@ console.log('---------YAY')
 
   annotateExemplarMovie(movie_url, annotate_view_mode) {
     if (!Object.keys(this.props.movies).includes(movie_url)) {
-      this.setState({'message': 'error: campaign movie not loaded'})
+      this.setState({
+        'message': [
+          'error: campaign movie not loaded.',
+          'You must load the movie into global state, generally by loading a jobs results,  The movie is listed here because it has previously been annotated, at that time the movie was in global state.  before it can be annotated'
+        ],
+      })
       return
     }
     const fs_hash = this.getFirstFramesetHash(movie_url)
@@ -641,7 +646,10 @@ console.log('---------YAY')
     if (annotate_view_mode === 'tile') {
       build_obj['message'] = "Select the frames you wish to annotate by clicking on them, press the Annotate button when done. Clicking on no frames gives you all frames of the movie to annotate."
     } else if (annotate_view_mode === 'single') {
-      build_obj['message'] = "Specify the areas you want to have found.  The buttons below will let you specify areas as boxes.  You can also Copy the contents from other frames and Paste them here.  When you have completed, click the Home button to exit this annotation section without saving, or you can click the Save and Home button to exit, preserving your new annotations, "
+      build_obj['message'] = [
+        'Specify the areas you want to have found.  The buttons below will let you specify areas as boxes.  You can also Copy the contents from other frames and Paste them here.', 
+        'When you have completed, click the Home button to exit this annotation section without saving, or you can click the Save and Home button to exit, preserving your new annotations.'
+      ]
     }
 
     this.setState(
@@ -1109,7 +1117,10 @@ console.log('---------YAY')
       mode: 'review',
       annotate_view_mode: 'tile',
       active_movie_url: movie_url,
-      message: "Select the frames you wish to review by clicking on them, press the Review button when done. Clicking on no frames gives you all frames of the movie to review.",
+      message: [
+        "Select the frames you wish to review by clicking on them, press the Review button when done.",
+        "Clicking on no frames gives you all frames of the movie to review."
+      ],
     }
     this.setLocalStateVar(build_obj)
   }
@@ -1165,7 +1176,10 @@ console.log('---------YAY')
       this.props.loadJobResults(this.state.active_job_id)
       this.setMessage('please wait a moment, loading the job results.  you will be redirected when complete')
       this.doSleep(5000).then(() => {
-        this.setMessage('Job output has been loaded.  Next, you need to review the movies below.  You can also delete movies that are not of interest, they will be omitted from the analysis.  When you are done reviewing all the movies of interest, you will finish by finalizing this review data - that is submitting it to the server so that charts and statistics can be prepared and assembled into a Job Run Summary.')
+        this.setMessage([
+          'Job output has been loaded.  Next, you need to review the movies below.  You can also delete movies that are not of interest, they will be omitted from the analysis.', 
+          'When you are done reviewing all the movies of interest, you will finish by finalizing this review data - that is submitting it to the server so that charts and statistics can be prepared and assembled into a Job Run Summary.'
+        ])
         return this.showReviewSummary(first_loading_of_this_job)
       });
     }
@@ -1602,13 +1616,14 @@ doSleep(time) {
 
   buildDisplayMessageString() {
     let message = '.'
-    let message_style = {'color': 'white'}
+    let message_style = { 'color': 'white' }
     let message_class = 'col-6'
     if (this.state.message) {
       message = this.state.message
     }
     if (message !== '.') {
       message_style['color'] = 'black'
+      message_style['textIndent'] = '1em'
       message_class = 'col-6 alert alert-' + this.state.message_class
     }
     return {
@@ -1678,13 +1693,49 @@ doSleep(time) {
     )
   }
 
-  render() {
-    const home_button = this.buildHomeButton()
+  buildMessageRow() {
     const message_obj = this.buildDisplayMessageString()
     const message = message_obj['message_text']
     const message_style = message_obj['message_style']
     const message_class = message_obj['message_class']
     const clear_message_button = this.buildClearMessageButton(message)
+    if (typeof(message) === 'string') {
+      return (
+        <div style={message_style} className='row'>
+          <div className={message_class}>
+            <div className='font-italic'>
+              {message}
+            </div>
+            <div className='row float-right'>
+              {clear_message_button}
+            </div>
+          </div>
+        </div>
+      )
+    } else {
+      return (
+        <div style={message_style} className='row'>
+          <div className={message_class}>
+            {Object.keys(message).map((mess_index, index) => {
+              const mess_line = message[mess_index]
+              return (
+                <div className='row font-italic mt-2'>
+                  {mess_line}
+                </div>
+              )
+            })}
+            <div className='row float-right'>
+              {clear_message_button}
+            </div>
+          </div>
+        </div>
+      )
+    }
+  }
+
+  render() {
+    const home_button = this.buildHomeButton()
+    const message_row = this.buildMessageRow()
     let title = 'Job Evaluation - Home'
     let page_content = ''
     if (!this.state.mode || this.state.mode === 'home') {
@@ -1716,16 +1767,7 @@ doSleep(time) {
           </div>
         </div>
 
-        <div style={message_style} className='row'>
-          <div className={message_class}>
-            <div className='font-italic'>
-              {message}
-            </div>
-            <div className='row float-right'>
-              {clear_message_button}
-            </div>
-          </div>
-        </div>
+        {message_row}
 
         <div className='row'>
           {page_content}

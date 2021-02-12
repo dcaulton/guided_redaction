@@ -53,7 +53,13 @@ class JobEvalSingleView extends React.Component {
     return (
       <button
         className='btn btn-primary'
-        onClick={()=>{this.props.setMessage('A number of rules are applicable when reviewing a single frame of a jobs output.  1) If you specify nothing, PASS is assumed, 2) if you FAIL a job, it is assumed that all the detected areas from the job were done in error, and the opposite of that - all areas that were missed - were things you wanted to see in the results.  Job score will be zero.  3) You can specify Desired and Unwanted regions.  Those will be used to score the job results, ultimately calculating the areas of missed-but-wanted (false negative) and returned-but-not-wanted (false positive) regions, and scoring them with the weights and formula indicated in the details of the Job Eval Objective record.  If the record receives any Desired/Unwanted markup and does not a simple PASS/FAIL score, it will be scored with the weights and thresholds specified on the JEO.  Scores and PASS/FAIL grades are accumulated across all the frames of all the movies of the jobs, and can pass or fail the movie or entire job, according to thresholds established in the Job Eval Objective record.')}}
+        onClick={()=>{this.props.setMessage([
+          'A number of rules are applicable when reviewing a single frame of a jobs output.  ', 
+          '1) If you specify nothing, PASS is assumed,',
+          '2) if you FAIL a job, it is assumed that all the detected areas from the job were done in error, and the opposite of that - all areas that were missed - were things you wanted to see in the results.  Job score will be zero.  ', 
+          '3) You can specify Desired and Unwanted regions.  Those will be used to score the job results, ultimately calculating the areas of missed-but-wanted (false negative) and returned-but-not-wanted (false positive) regions, and scoring them with the weights and formula indicated in the details of the Job Eval Objective record.  ',
+          'If the record receives any Desired/Unwanted markup and does not a simple PASS/FAIL score, it will be scored with the weights and thresholds specified on the JEO.  Scores and PASS/FAIL grades are accumulated across all the frames of all the movies of the jobs, and can pass or fail the movie or entire job, according to thresholds established in the Job Eval Objective record.'
+        ])}}
       >
         ?
       </button>
@@ -239,7 +245,11 @@ class JobEvalSingleView extends React.Component {
     return (
       <button
         className='btn btn-primary'
-        onClick={()=>{this.props.setMessage('This is the Single Frame View mode of the Annotate page for a single movie.  From this page you can specify how the output from a perfect version of the tool youre designing would look.  Besides navigating using the buttons above, the left and right arrows will advance you sequentially between frames.  The up arrow key will copy the contents of the frame immediately before this one and add them to the current frame.  When you are done annotating individual frames, press the Save and Home button to save your work and go to the Home page, or press the Home button to get back to the main screen without saving your changes, then press the Save button to add these annotations as a permanent part of the Job Eval Objective record.')}}
+        onClick={()=>{this.props.setMessage([
+          'This is the Single Frame View mode of the Annotate page for a single movie.  From this page you can specify how the output from a perfect version of the tool youre designing would look.  ',
+          'Besides navigating using the buttons above, the left and right arrows will advance you sequentially between frames.  The up arrow key will copy the contents of the frame immediately before this one and add them to the current frame.',
+          'When you are done annotating individual frames, press the Save and Home button to save your work and go to the Home page, or press the Home button to get back to the main screen without saving your changes, then press the Save button to add these annotations as a permanent part of the Job Eval Objective record.'
+        ])}}
       >
         ?
       </button>
