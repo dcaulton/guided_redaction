@@ -95,9 +95,7 @@ class JobEvalPanel extends React.Component {
   }
 
   runCallbackFunction(function_name) {
-console.log('benny running callback for '+function_name)
     if (Object.keys(this.state.callbacks).includes(function_name)) {
-console.log('---------YAY')
       return this.state.callbacks[function_name]()
     }
     return []
@@ -629,7 +627,7 @@ console.log('---------YAY')
       this.setState({
         'message': [
           'error: campaign movie not loaded.',
-          'You must load the movie into global state, generally by loading a jobs results,  The movie is listed here because it has previously been annotated, at that time the movie was in global state.  before it can be annotated'
+          'You must load the movie into global state, generally by loading a jobs results,  The movie is listed here because it has previously been annotated, at that time the movie was in global state.'
         ],
       })
       return
