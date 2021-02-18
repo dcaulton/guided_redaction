@@ -1,6 +1,7 @@
 import cv2
 import json
 import math
+import numpy as np
 import random
 import uuid
 from django.conf import settings
@@ -116,7 +117,7 @@ class SelectedAreaController(T1Controller):
         accum_mask = None
         for region in regions_for_image:
             if 'mask' in region:
-                if not accum_mask:
+                if type(accum_mask) == type(None):
                     accum_mask = region['mask']
                 accum_mask = cv2.bitwise_or(accum_mask, region['mask'])
             r_start = region['regions'][0]
