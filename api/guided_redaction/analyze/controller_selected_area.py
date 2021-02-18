@@ -1,6 +1,8 @@
+import cv2
 import json
-import random
 import math
+import random
+import uuid
 from django.conf import settings
 from guided_redaction.analyze.classes.ExtentsFinder import ExtentsFinder
 from .controller_t1 import T1Controller
@@ -15,6 +17,8 @@ class SelectedAreaController(T1Controller):
             base_url=settings.REDACT_FILE_BASE_URL,
             image_request_verify_headers=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
         )
+        self.file_storage_dir_uuid = str(uuid.uuid4())
+        self.max_num_regions_before_mask_is_smarter = 5
 
     def build_selected_areas(self, request_data):
         response_movies = {}
@@ -56,6 +60,8 @@ class SelectedAreaController(T1Controller):
                         'size': size,
                         "scanner_type": "selected_area",
                     }
+                    if 'mask' in region:
+                        region_hash['mask'] = self.get_base64_image_string(region['mask'])
                     regions_as_hashes[region['sam_area_id']] = region_hash
             # TODO: GET TEMPLATE ANCHOR OFFSET HERE IF NEEDED
             #   it prolly makes sense to return it from process_t1_results
@@ -107,7 +113,12 @@ class SelectedAreaController(T1Controller):
             return
         all_start = list(regions_for_image[0]['regions'][0])
         all_end = list(regions_for_image[0]['regions'][1])
+        accum_mask = None
         for region in regions_for_image:
+            if 'mask' in region:
+                if not accum_mask:
+                    accum_mask = region['mask']
+                accum_mask = cv2.bitwise_or(accum_mask, region['mask'])
             r_start = region['regions'][0]
             r_end = region['regions'][1]
             if r_start[0] < all_start[0]:
@@ -124,6 +135,8 @@ class SelectedAreaController(T1Controller):
           'origin': (0, 0),
           'sam_area_id': new_id,
         }
+        if type(accum_mask) != type(None):
+            new_region['mask'] = accum_mask
         return [new_region]
 
     def get_cv2_image_from_movies(self, frameset, source_movies, movie_url, frameset_hash):
@@ -189,14 +202,47 @@ class SelectedAreaController(T1Controller):
                     if r_start[1] < mz_start[1]:
                         r_start[1] = mz_start[1]
                     region['regions'] = ((r_start, r_end))
-                        
+                    if 'mask' in region:
+                        self.draw_max_zone_on_mask(region['mask'], r_start, r_end)
             build_regions.append(region)
         return build_regions
 
+    def draw_max_zone_on_mask(self, mask, r_start, r_end):
+        cv2.rectangle(
+            mask,
+            (0, 0),
+            (mask.shape[1], r_start[1]),
+            0,
+            -1
+        )
+        cv2.rectangle(
+            mask,
+            (0, 0),
+            (r_start[0], mask.shape[0]),
+            0,
+            -1
+        )
+        cv2.rectangle(
+            mask,
+            (0, r_end[1]),
+            (mask.shape[1], mask.shape[0]),
+            0,
+            -1
+        )
+        cv2.rectangle(
+            mask,
+            (r_end[0], r_start[1]),
+            (mask.shape[1], mask.shape[0]),
+            0,
+            -1
+        )
 
     def append_min_zones(self, selected_area_meta, regions, source_frameset):
         if 'minimum_zones' not in selected_area_meta or not selected_area_meta['minimum_zones']:
             return
+        mask = None
+        if 'mask' in regions:
+            mask = regions['mask']
         for minimum_zone in selected_area_meta['minimum_zones']:
             size_arr =[
                 minimum_zone['end'][0] - minimum_zone['start'][0],
@@ -225,12 +271,28 @@ class SelectedAreaController(T1Controller):
                         'origin': location,
                         'sam_area_id': scanner_matcher_id,
                     })
+                    if mask:
+                        cv2.rectangle(
+                            mask,
+                            location,
+                            end,
+                            255,
+                            -1
+                        )
             else:
                 regions.append({
                     'regions': (minimum_zone['start'], minimum_zone['end']),
                     'origin': (0, 0),
                     'sam_area_id': minimum_zone['id'],
                 })
+                if mask:
+                    cv2.rectangle(
+                        mask,
+                        minimum_zone['start'],
+                        minimum_zone['end'],
+                        255,
+                        -1
+                    )
             
 
     def scale_selected_point(self, match_element, selected_area_meta, selected_point, verbose=False):
@@ -288,24 +350,37 @@ class SelectedAreaController(T1Controller):
                     match_element, selected_area_meta, selected_point
                 )
                 if selected_area_meta['select_type'] == 'arrow':
-                    regions = finder.determine_arrow_fill_area(
+                    region, mask = finder.determine_arrow_fill_area(
                         cv2_image, selected_point, tolerance
                     )
-                    regions_for_image.append({
-                        'regions': regions, 
+                    build_region = {
+                        'regions': region, 
                         'origin': selected_point,
                         'sam_area_id': area_scanner_key,
-                    })
+                    }
+                    if self.we_should_use_a_mask(selected_area_meta, region):
+                        build_region['mask'] = mask
+                    regions_for_image.append(build_region)
                 if selected_area_meta['select_type'] == 'flood':
-                    regions = finder.determine_flood_fill_area(
+                    region, mask = finder.determine_flood_fill_area(
                         cv2_image, selected_point, tolerance
                     )
-                    regions_for_image.append({
-                        'regions': regions, 
+                    build_region = {
+                        'regions': region, 
                         'origin': selected_point,
                         'sam_area_id': area_scanner_key,
-                    })
+                    }
+                    if self.we_should_use_a_mask(selected_area_meta, region):
+                        build_region['mask'] = mask
+                    regions_for_image.append(build_region)
         return regions_for_image
+
+    def we_should_use_a_mask(self, selected_area_meta, regions):
+        # if the regions are complicated enough, or a mask has been requested, return True
+        if selected_area_meta['masks_always'] == 'yes':
+            return True
+        if len(regions) > self.max_num_regions_before_mask_is_smarter:
+            return True
 
     def get_everything_fill_for_t1(self, match_data, cv2_image, selected_area_meta):
         direction = selected_area_meta['everything_direction']
@@ -400,10 +475,23 @@ class SelectedAreaController(T1Controller):
 
         regions_for_image = []
         if new_end[0] != new_start[0] and new_end[1] != new_start[1]:
-            regions_for_image.append({
+            build_region = {
                 'regions': (new_start, new_end), 
                 'origin': start_point,
-            })
+                'sam_area_id': 'everything_' + str(random.randint(9999, 99999999)),
+            }
+            if self.we_should_use_a_mask(selected_area_meta, (new_start, new_end)):
+                return_mask = np.zeros(cv2_image.shape[:2])
+                cv2.rectangle(
+                    return_mask,
+                    new_start,
+                    new_end,
+                    255,
+                    -1
+                )
+                build_region['mask'] = return_mask
+            regions_for_image.append(build_region)
+
         return regions_for_image
 
     def process_virgin_image(self, cv2_image, selected_area_meta, finder):
@@ -412,23 +500,29 @@ class SelectedAreaController(T1Controller):
         for area in selected_area_meta['areas']:
             selected_point = area['center']
             if selected_area_meta['select_type'] == 'arrow':
-                regions = finder.determine_arrow_fill_area(
+                region, mask = finder.determine_arrow_fill_area(
                     cv2_image, selected_point, tolerance
                 )
-                regions_for_image.append({
-                    'regions': regions, 
+                build_region = {
+                    'regions': region, 
                     'origin': selected_point,
                     'sam_area_id': area['id'],
-                })
+                }
+                if self.we_should_use_a_mask(selected_area_meta, region):
+                    build_region['mask'] = mask
+                regions_for_image.append(build_region)
             if selected_area_meta['select_type'] == 'flood':
-                regions = finder.determine_flood_fill_area(
+                region, mask = finder.determine_flood_fill_area(
                     cv2_image, selected_point, tolerance
                 )
-                regions_for_image.append({
-                    'regions': regions, 
+                build_region = {
+                    'regions': region, 
                     'origin': selected_point,
                     'sam_area_id': area['id'],
-                })
+                }
+                if self.we_should_use_a_mask(selected_area_meta, region):
+                    build_region['mask'] = mask
+                regions_for_image.append(build_region)
         return regions_for_image
 
     def frameset_is_t1_output(self, frameset):
@@ -449,6 +543,9 @@ class SelectedAreaController(T1Controller):
         return [0, 0]
 
     def transform_interior_selection_to_exterior(self, regions_for_image, cv2_image):
+        if 'mask' in regions_for_image:
+            regions_for_image['mask'] = cv2.bitwise_not(regions_for_image['mask'])
+
         if len(regions_for_image) == 1:
             start_x = min(regions_for_image[0]['regions'][0][0], regions_for_image[0]['regions'][1][0])
             end_x = max(regions_for_image[0]['regions'][0][0], regions_for_image[0]['regions'][1][0])
@@ -477,5 +574,7 @@ class SelectedAreaController(T1Controller):
               'origin': regions_for_image[0]['origin'],
               'sam_area_id': 'reversed_4',
             })
+
             return new_regions
+
         return regions_for_image

@@ -16,7 +16,7 @@ class ExtentsFinder:
         img_width = gray.shape[1]
         im2 = cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR)
         if x < 0 or x > im2.shape[1] or y < 0 or y > im2.shape[0]:
-            return ((0,0), (0,0)) # point is outside image extents
+            return ((0,0), (0,0)), None # point is outside image extents
         x = cv2.floodFill(im2, None, (x, y), (0, 255, 0), (tol, tol, tol, tol))
         flood_filled_img = x[1]
         low_green = np.array([0, 250, 0])
@@ -27,7 +27,7 @@ class ExtentsFinder:
         biggest_contour = max(cnts, key=cv2.contourArea)
         (box_x, box_y, box_w, box_h) = cv2.boundingRect(biggest_contour)
         rect = ((box_x, box_y), (box_x + box_w, box_y + box_h))
-        return rect
+        return rect, mask
 
     def determine_arrow_fill_area(self, image, fill_center, tolerance=5):
         x = fill_center[0]
@@ -73,7 +73,16 @@ class ExtentsFinder:
         bottom_right = (int(x + plus_x), int(y + plus_y))
         ret_arr = (top_left, bottom_right)
 
-        return ret_arr
+        return_mask = np.zeros(image.shape[:2])
+        cv2.rectangle(
+            return_mask,
+            top_left, 
+            bottom_right,
+            255,
+            -1
+        )
+
+        return ret_arr, return_mask
 
     def get_template_coords(self, source, template):
         res = cv2.matchTemplate(source, template, cv2.TM_CCOEFF_NORMED)

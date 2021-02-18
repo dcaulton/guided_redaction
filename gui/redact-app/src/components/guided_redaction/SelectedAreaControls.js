@@ -24,7 +24,7 @@ class SelectedAreaControls extends React.Component {
       name: '',
       select_type: 'flood',
       merge: 'yes',
-      masks: 'no',
+      masks_always: 'no',
       interior_or_exterior: 'interior',
       attributes: {},
       origin_entity_type: 'adhoc',
@@ -209,7 +209,7 @@ class SelectedAreaControls extends React.Component {
         name: sam['name'],
         select_type: sam['select_type'],
         merge: sam['merge'],
-        masks: sam['masks'],
+        masks_always: sam['masks_always'],
         interior_or_exterior: sam['interior_or_exterior'],
         attributes: sam['attributes'],
         origin_entity_type: sam['origin_entity_type'],
@@ -241,7 +241,7 @@ class SelectedAreaControls extends React.Component {
       name: '',
       select_type: 'flood',
       merge: 'yes',
-      masks: 'no',
+      masks_always: 'no',
       interior_or_exterior: 'interior',
       attributes: {},
       origin_entity_type: 'adhoc',
@@ -263,7 +263,7 @@ class SelectedAreaControls extends React.Component {
       name: this.state.name,
       select_type: this.state.select_type,
       merge: this.state.merge,
-      masks: this.state.masks,
+      masks_always: this.state.masks_always,
       interior_or_exterior: this.state.interior_or_exterior,
       attributes: this.state.attributes,
       origin_entity_type: this.state.origin_entity_type,
@@ -323,10 +323,10 @@ class SelectedAreaControls extends React.Component {
     ]
     return buildLabelAndDropdown(
       values,
-      'Generate Masks',
-      this.state.masks,
-      'selected_area_masks',
-      ((value)=>{this.setLocalStateVar('masks', value)})
+      'Generate Masks Always',
+      this.state.masks_always,
+      'selected_area_masks_always',
+      ((value)=>{this.setLocalStateVar('masks_always', value)})
     )
   }
 

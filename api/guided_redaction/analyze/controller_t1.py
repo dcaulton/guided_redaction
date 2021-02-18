@@ -1,7 +1,8 @@
-import requests
+import base64
+import os
 import cv2
 import numpy as np
-import os
+import requests
 from django.conf import settings
 from guided_redaction.utils.classes.FileWriter import FileWriter
 
@@ -93,3 +94,10 @@ class T1Controller:
                 adjusted_coords['end'] = subscanner['end']
                 return adjusted_coords
         return adjusted_coords
+
+    def get_base64_image_string(self, cv2_image):
+        image_bytes = cv2.imencode(".png", cv2_image)[1].tostring()
+        image_base64 = base64.b64encode(image_bytes)
+        image_base64_string = image_base64.decode('utf-8')
+        return image_base64_string
+

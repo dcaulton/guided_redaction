@@ -215,7 +215,7 @@ class OcrMovieAnalyzer:
                 before_point[0] = 0
             if before_point[1] < 0:
                 before_point[1] = 0
-            before_region = finder.determine_flood_fill_area(
+            before_region, mask = finder.determine_flood_fill_area(
                 cv2_image, before_point, 5
             )
             if self.region_contains_point(before_region, rta['centroid']):
@@ -226,7 +226,7 @@ class OcrMovieAnalyzer:
                 after_point[0] = cv2_image.shape[1] - 1
             if after_point[1] > cv2_image.shape[0] - 1:
                 after_point[1] = cv2_image.shape[0] - 1
-            after_region = finder.determine_flood_fill_area(
+            after_region, mask = finder.determine_flood_fill_area(
                 cv2_image, after_point, 5
             )
             if self.region_contains_point(after_region, rta['centroid']):
