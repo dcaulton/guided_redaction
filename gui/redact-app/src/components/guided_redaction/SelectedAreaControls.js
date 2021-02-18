@@ -24,6 +24,7 @@ class SelectedAreaControls extends React.Component {
       name: '',
       select_type: 'flood',
       merge: 'yes',
+      masks: 'no',
       interior_or_exterior: 'interior',
       attributes: {},
       origin_entity_type: 'adhoc',
@@ -208,6 +209,7 @@ class SelectedAreaControls extends React.Component {
         name: sam['name'],
         select_type: sam['select_type'],
         merge: sam['merge'],
+        masks: sam['masks'],
         interior_or_exterior: sam['interior_or_exterior'],
         attributes: sam['attributes'],
         origin_entity_type: sam['origin_entity_type'],
@@ -239,6 +241,7 @@ class SelectedAreaControls extends React.Component {
       name: '',
       select_type: 'flood',
       merge: 'yes',
+      masks: 'no',
       interior_or_exterior: 'interior',
       attributes: {},
       origin_entity_type: 'adhoc',
@@ -260,6 +263,7 @@ class SelectedAreaControls extends React.Component {
       name: this.state.name,
       select_type: this.state.select_type,
       merge: this.state.merge,
+      masks: this.state.masks,
       interior_or_exterior: this.state.interior_or_exterior,
       attributes: this.state.attributes,
       origin_entity_type: this.state.origin_entity_type,
@@ -309,6 +313,20 @@ class SelectedAreaControls extends React.Component {
       this.state.merge,
       'selected_area_merge',
       ((value)=>{this.setLocalStateVar('merge', value)})
+    )
+  }
+
+  buildMasksDropdown() {
+    const values = [
+      {'yes': 'yes'},
+      {'no': 'no'}
+    ]
+    return buildLabelAndDropdown(
+      values,
+      'Generate Masks',
+      this.state.masks,
+      'selected_area_masks',
+      ((value)=>{this.setLocalStateVar('masks', value)})
     )
   }
 
@@ -750,6 +768,7 @@ class SelectedAreaControls extends React.Component {
 
   buildNonExclusiveFields() {
     const merge_dropdown = this.buildMergeDropdown()
+    const masks_dropdown = this.buildMasksDropdown()
     const select_type_dropdown = this.buildSelectTypeDropdown()
     const interior_or_exterior_dropdown = this.buildInteriorOrExteriorDropdown()
     const tolerance_field = this.buildToleranceField()
@@ -760,6 +779,10 @@ class SelectedAreaControls extends React.Component {
       <div>
         <div className='row mt-2'>
           {merge_dropdown}
+        </div>
+
+        <div className='row mt-2'>
+          {masks_dropdown}
         </div>
 
         <div className='row mt-2'>
