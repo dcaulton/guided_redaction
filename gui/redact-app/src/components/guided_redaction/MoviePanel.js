@@ -453,7 +453,7 @@ class MoviePanel extends React.Component {
     if (extra_data === 'all_templates') {
       job_data['operation'] = 'scan_template_multi'
       job_data['description'] = 'multi template single movie match from MoviePanel:'
-      job_data['description'] += ' movie ' + this.getFileNameFromUrl(this.props.movie_url)
+      job_data['description'] += ' movie ' + getFileNameFromUrl(this.props.movie_url)
       templates_wrap = this.props.templates
       const temp_group_id = 'template_group_' + Math.floor(Math.random(10000, 99999)*100000).toString()
       job_data['request_data']['id'] = temp_group_id
@@ -462,7 +462,7 @@ class MoviePanel extends React.Component {
       job_data['operation'] = 'scan_template'
       job_data['description'] = 'single template single movie match from MoviePanel:'
       job_data['description'] += ' template ' + template['name']
-      job_data['description'] += ' movie ' + this.getFileNameFromUrl(this.props.movie_url)
+      job_data['description'] += ' movie ' + getFileNameFromUrl(this.props.movie_url)
       templates_wrap[template['id']] = template
       job_data['request_data']['template_id'] = template['id']
       job_data['request_data']['id'] = template['id']
@@ -491,7 +491,7 @@ class MoviePanel extends React.Component {
     }
     job_data['app'] = 'redact'
     job_data['operation'] = 'redact'
-    job_data['description'] = 'redact images for movie: ' + this.getFileNameFromUrl(this.props.movie_url)
+    job_data['description'] = 'redact images for movie: ' + getFileNameFromUrl(this.props.movie_url)
     job_data['request_data']['movies'] = {}
     job_data['request_data']['movies'][this.props.movie_url] = this.props.movies[this.props.movie_url]
     job_data['request_data']['redact_rule'] = this.getRedactRule()
@@ -508,7 +508,7 @@ class MoviePanel extends React.Component {
     }
     job_data['app'] = 'redact'
     job_data['operation'] = 'redact'
-    job_data['description'] = 'redact images for movie: ' + this.getFileNameFromUrl(this.props.movie_url)
+    job_data['description'] = 'redact images for movie: ' + getFileNameFromUrl(this.props.movie_url)
     job_data['request_data']['movies'] = {}
 
     const cur_movie = extra_data['movie']
@@ -562,7 +562,7 @@ class MoviePanel extends React.Component {
     let movie = this.props.movies[this.props.movie_url]
     job_data['app'] = 'parse'
     job_data['operation'] = 'zip_movie'
-    job_data['description'] = 'zip movie: ' + this.getFileNameFromUrl(this.props.movie_url)
+    job_data['description'] = 'zip movie: ' + getFileNameFromUrl(this.props.movie_url)
     job_data['request_data']['new_movie_name'] = this.buildRedactedMovieFilename()
     job_data['request_data']['movie_url'] = this.props.movie_url
     if (Object.keys(movie).includes('audio_url')) {
@@ -593,7 +593,7 @@ class MoviePanel extends React.Component {
     }
     job_data['app'] = 'parse'
     job_data['operation'] = 'split_threaded'
-    job_data['description'] = 'split movie from MoviePanel: movie ' + this.getFileNameFromUrl(this.props.movie_url)
+    job_data['description'] = 'split movie from MoviePanel: movie ' + getFileNameFromUrl(this.props.movie_url)
     job_data['request_data'] = {
       movie_url: this.props.movie_url,
       preserve_movie_audio: this.props.preserve_movie_audio,
@@ -607,7 +607,7 @@ class MoviePanel extends React.Component {
     }
     job_data['app'] = 'parse'
     job_data['operation'] = 'hash_movie'
-    job_data['description'] = 'hash movie from MoviePanel: movie ' + this.getFileNameFromUrl(this.props.movie_url)
+    job_data['description'] = 'hash movie from MoviePanel: movie ' + getFileNameFromUrl(this.props.movie_url)
     job_data['request_data'] = {}
     job_data['request_data']['movies'] = {}
     job_data['request_data']['movies'][this.props.movie_url] = this.props.movies[this.props.movie_url]
@@ -621,7 +621,7 @@ class MoviePanel extends React.Component {
     }
     job_data['app'] = 'parse'
     job_data['operation'] = 'copy_movie'
-    job_data['description'] = 'copy movie from MoviePanel: movie ' + this.getFileNameFromUrl(this.props.movie_url)
+    job_data['description'] = 'copy movie from MoviePanel: movie ' + getFileNameFromUrl(this.props.movie_url)
     job_data['request_data'] = {}
     job_data['request_data']['movies'] = {}
     job_data['request_data']['movies'][this.props.movie_url] = this.props.movies[this.props.movie_url]
@@ -634,7 +634,7 @@ class MoviePanel extends React.Component {
     }
     job_data['app'] = 'parse'
     job_data['operation'] = 'change_movie_resolution'
-    job_data['description'] = 'change movie resolution from MoviePanel: movie ' + this.getFileNameFromUrl(this.props.movie_url)
+    job_data['description'] = 'change movie resolution from MoviePanel: movie ' + getFileNameFromUrl(this.props.movie_url)
     job_data['request_data'] = {}
     job_data['request_data']['movies'] = {}
     job_data['request_data']['movies'][this.props.movie_url] = this.props.movies[this.props.movie_url]
