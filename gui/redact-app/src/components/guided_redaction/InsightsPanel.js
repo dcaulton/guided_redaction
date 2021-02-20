@@ -27,6 +27,7 @@ class InsightsPanel extends React.Component {
       draggedId: null,
       imageTypeToDisplay: '',
       callbacks: {},
+      overlay_image_bytes: '',
     }
     this.tier_1_scanner_types = [
       'selected_area',
@@ -67,6 +68,35 @@ class InsightsPanel extends React.Component {
     this.setScrubberToIndex=this.setScrubberToIndex.bind(this)
     this.getCurrentOcrSceneAnalysisMatches=this.getCurrentOcrSceneAnalysisMatches.bind(this)
     this.runCallbackFunction=this.runCallbackFunction.bind(this)
+  }
+
+  getActiveT1ResultsMask() {
+    for (let i=0; i < Object.keys(this.props.current_ids['t1_scanner']).length; i++) {
+      const scanner_type = Object.keys(this.props.current_ids['t1_scanner'])[i]
+      if (!this.props.current_ids['t1_scanner'][scanner_type]) {
+        continue
+      }
+      const scanner_id = this.props.current_ids['t1_scanner'][scanner_type]
+      if (!Object.keys(this.props.tier_1_matches[scanner_type]).includes(scanner_id)) {
+        continue
+      }
+      const movie_match_obj = this.props.tier_1_matches[scanner_type][scanner_id]
+      if (!Object.keys(movie_match_obj['movies']).includes(this.props.movie_url)) {
+        continue
+      }
+      const frameset_hash = this.props.getFramesetHashForImageUrl(this.state.insights_image)
+      if (!Object.keys(movie_match_obj['movies'][this.props.movie_url]['framesets']).includes(frameset_hash)) {
+        continue
+      }
+      const fsh_match_obj = movie_match_obj['movies'][this.props.movie_url]['framesets'][frameset_hash]
+      for (let j=0; j < Object.keys(fsh_match_obj).length; j++) {
+        const single_match_obj = fsh_match_obj[Object.keys(fsh_match_obj)[j]]
+        if (Object.keys(single_match_obj).includes('mask')) {
+          const mask_bytes = single_match_obj['mask']
+          return mask_bytes
+        }
+      }
+    }
   }
 
   getCurrentOcrSceneAnalysisMatches() {
@@ -1013,12 +1043,44 @@ class InsightsPanel extends React.Component {
 
   buildImageElement(insights_image) {
     if (insights_image) {
+      const outer_style = {
+        position: 'relative',
+      }
+      const source_img_style = {
+        width: '100%',
+      }
+      let overlay_image_element = ''
+      let mask_bytes = this.getActiveT1ResultsMask()
+      if (mask_bytes) {
+        const the_src = "data:image/gif;base64," + mask_bytes
+        const overlay_img_style = {
+          width: '100%',
+          opacity: .4,
+          position: 'absolute',
+          top: 0,
+          left: 0,
+        }
+        overlay_image_element = (
+          <img 
+              id='insights_overlay_image' 
+              src={the_src}
+              alt='whatever, just an alt tag'
+              style={overlay_img_style}
+          />
+        )
+      }
       return (
-        <img 
-            id='insights_image' 
-            src={insights_image}
-            alt={insights_image}
-        />
+        <div
+          style={outer_style}
+        >
+          <img 
+              id='insights_image' 
+              src={insights_image}
+              alt={insights_image}
+              style={source_img_style}
+          />
+          {overlay_image_element}
+        </div>
       )
     } else {
       const the_style = {

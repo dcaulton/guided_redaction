@@ -137,15 +137,3 @@ class TemplateMatcher:
             nparr = np.fromstring(img_bytes, np.uint8)
             cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
             return cv2_image
-        else:
-            pic_response = requests.get(anchor["image"])
-            image = pic_response.content
-            if not image:
-                raise Exception("couldn't read source image data for anchor")
-
-            nparr = np.fromstring(image, np.uint8)
-            cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-            start = anchor.get("start")
-            end = anchor.get("end")
-            match_image = cv2_image[start[1] : end[1], start[0] : end[0]]
-            return match_image

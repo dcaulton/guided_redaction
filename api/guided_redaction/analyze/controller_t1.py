@@ -101,3 +101,8 @@ class T1Controller:
         image_base64_string = image_base64.decode('utf-8')
         return image_base64_string
 
+    def get_cv2_image_from_base64_string(self, img_base64):
+        img_bytes = base64.b64decode(img_base64)
+        nparr = np.fromstring(img_bytes, np.uint8)
+        cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        return cv2_image

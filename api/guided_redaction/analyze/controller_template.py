@@ -97,15 +97,23 @@ class TemplateController(T1Controller):
     def trim_target_image_to_t1_inputs(self, target_image, tier_1_record):
         if len(tier_1_record.keys()) == 1 and list(tier_1_record.keys())[0] == 'image':
             return target_image # it's a virgin frameset, not t1
-        for t1_subscanner_id in tier_1_record:
-            t1_subscanner = tier_1_record[t1_subscanner_id]
-            if 'location' in t1_subscanner  \
-                and 'size' in t1_subscanner \
-                and t1_subscanner['scanner_type'] == 'selected_area':
-                start = t1_subscanner['location']
+        for match_obj_id in tier_1_record:
+            match_obj = tier_1_record[match_obj_id]
+            if 'mask' in match_obj:
+                mask_image = self.get_cv2_image_from_base64_string(match_obj['mask'])
+                cv2.imwrite('/Users/davecaulton/Desktop/tg.png', target_image)
+                cv2.imwrite('/Users/davecaulton/Desktop/maasky.png', mask_image)
+                target_image = cv2.bitwise_and(target_image, mask_image)
+                cv2.imwrite('/Users/davecaulton/Desktop/done.png', target_image)
+                print('----- wonkie trimming template target image with a mask')
+                continue
+            if 'location' in match_obj  \
+                and 'size' in match_obj \
+                and match_obj['scanner_type'] == 'selected_area':
+                start = match_obj['location']
                 end = [
-                    t1_subscanner['location'][0] + t1_subscanner['size'][0],
-                    t1_subscanner['location'][1] + t1_subscanner['size'][1],
+                    match_obj['location'][0] + match_obj['size'][0],
+                    match_obj['location'][1] + match_obj['size'][1],
                 ]
                 height = target_image.shape[0]
                 width = target_image.shape[1]
@@ -140,4 +148,3 @@ class TemplateController(T1Controller):
                     )
                 return target_image
         return target_image
-
