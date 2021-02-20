@@ -27,6 +27,7 @@ class TemplateControls extends React.Component {
       scale: '+/-50/5',
       match_percent: 90,
       match_method: 'any',
+      fetch_multiple: 'no',
       scan_level: 'tier_1',
       anchors: [],
       mask_zones: [],
@@ -72,6 +73,7 @@ class TemplateControls extends React.Component {
       attributes: template['attributes'],
       match_percent: template['match_percent'],
       match_method: template['match_method'],
+      fetch_multiple: template['fetch_multiple'],
       scan_level: template['scan_level'],
       anchors: template['anchors'],
       mask_zones: template['mask_zones'],
@@ -133,6 +135,7 @@ class TemplateControls extends React.Component {
       scale: '+/-50/5',
       match_percent: 90,
       match_method: 'any',
+      fetch_multiple: 'no',
       scan_level: 'tier_1',
       anchors: [],
       mask_zones: [],
@@ -152,6 +155,7 @@ class TemplateControls extends React.Component {
         scale: template['scale'],
         match_percent: template['match_percent'],
         match_method: template['match_method'],
+        fetch_multiple: template['fetch_multiple'],
         scan_level: template['scan_level'],
         anchors: template['anchors'],
         mask_zones: template['mask_zones'],
@@ -199,6 +203,7 @@ class TemplateControls extends React.Component {
       scale: this.state.scale,
       match_percent: this.state.match_percent,
       match_method: this.state.match_method,
+      fetch_multiple: this.state.fetch_multiple,
       scan_level: this.state.scan_level,
       anchors: this.state.anchors,
       mask_zones: this.state.mask_zones,
@@ -320,6 +325,7 @@ class TemplateControls extends React.Component {
       scale: this.state.scale,
       match_percent: this.state.match_percent,
       match_method: this.state.match_method,
+      fetch_multiple: this.state.fetch_multiple,
       scan_level: this.state.scan_level,
       anchors: this.state.anchors,
       mask_zones: this.state.mask_zones,
@@ -477,7 +483,7 @@ class TemplateControls extends React.Component {
   buildMatchPercent() {
     return buildLabelAndTextInput(
       this.state.match_percent,
-      'Match Percent',
+      'Match Percent - min amount the template must match by (0-100)',
       'template_match_percent',
       'match percent',
       4,
@@ -486,12 +492,25 @@ class TemplateControls extends React.Component {
   }
 
   buildMatchMethod() {
+    if (this.state.anchors.length < 2) {
+      return ''
+    }
     return buildLabelAndDropdown(
       [{'all': 'Match All Anchors'}, {'any': 'Match Any Anchors'}],
       'Match Method',
       this.state.match_method,
       'template_match_method',
       ((value)=>{this.setLocalStateVar('match_method', value)})
+    )
+  }
+
+  buildFetchMultiple() {
+    return buildLabelAndDropdown(
+      [{'no': 'no'}, {'yes': 'yes'}],
+      'Identify multiple locations if it occurs more than once on the page',
+      this.state.fetch_multiple,
+      'template_fetch_multiple',
+      ((value)=>{this.setLocalStateVar('fetch_multiple', value)})
     )
   }
 
@@ -669,6 +688,7 @@ class TemplateControls extends React.Component {
     const attributes_list = this.buildAttributesList()
     const scale_dropdown = this.buildScaleDropdown() 
     const match_percent = this.buildMatchPercent()
+    const fetch_multiple = this.buildFetchMultiple()
     const match_method = this.buildMatchMethod()
     const scan_level = this.buildScanLevel()
     const import_button = this.buildImportButton()
@@ -696,7 +716,7 @@ class TemplateControls extends React.Component {
                 id='template_controls_body' 
                 className='row collapse'
             >
-              <div id='template_controls_main' className='col'>
+              <div id='template_controls_main' className='col ml-2'>
 
                 <div className='row'>
                   {load_button}
@@ -730,11 +750,15 @@ class TemplateControls extends React.Component {
                 </div>
 
                 <div className='row mt-2'>
-                  {match_method}
+                  {fetch_multiple}
                 </div>
 
                 <div className='row mt-2'>
                   {scan_level}
+                </div>
+
+                <div className='row mt-2'>
+                  {match_method}
                 </div>
 
                 <div className='row mt-1 ml-1 mr-1 border-top'>

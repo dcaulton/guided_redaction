@@ -101,11 +101,7 @@ class TemplateController(T1Controller):
             match_obj = tier_1_record[match_obj_id]
             if 'mask' in match_obj:
                 mask_image = self.get_cv2_image_from_base64_string(match_obj['mask'])
-                cv2.imwrite('/Users/davecaulton/Desktop/tg.png', target_image)
-                cv2.imwrite('/Users/davecaulton/Desktop/maasky.png', mask_image)
                 target_image = cv2.bitwise_and(target_image, mask_image)
-                cv2.imwrite('/Users/davecaulton/Desktop/done.png', target_image)
-                print('----- wonkie trimming template target image with a mask')
                 continue
             if 'location' in match_obj  \
                 and 'size' in match_obj \
