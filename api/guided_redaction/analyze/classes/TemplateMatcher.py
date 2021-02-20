@@ -65,7 +65,9 @@ class TemplateMatcher:
                 self.scales = [scale]
                 return
         
-    def get_template_coords(self, source, template, anchor_id, movie_url=''):
+    def get_template_coords(self, source, template, anchor_id, movie_url='', scales=None):
+        if scales:
+            self.scales = scales
         # movie url enables the acceleration feature when you match against many movie frames
         #   disabling it by sending in spaces is harmless, and if you're just doing an isolated
         #   single frame template match it's the better choice
