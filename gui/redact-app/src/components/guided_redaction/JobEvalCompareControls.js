@@ -23,12 +23,68 @@ class JobEvalCompareControls extends React.Component {
         frameset_hash: '',
         frameset_overlay_modes: {},
         hide_non_job_frames: false,
+        show_all_false_overlays: false,
         hide_non_review_frames: false,
       }
     }
     this.setState({
         compare_single_mode_data: compare_mode_data,
     })
+  }
+
+  setShowAllFalse(panel_id, show_all_false_value) {
+    const mode_data = this.state.compare_single_mode_data[panel_id]
+    let deepCopyCsmd = JSON.parse(JSON.stringify(this.state.compare_single_mode_data))
+    deepCopyCsmd[panel_id]['show_all_false_overlays'] = show_all_false_value
+
+    const jrs = this.props.job_run_summaries[mode_data['jrs_id']]
+    const movie_url = mode_data['movie_url']
+    const source_movie = jrs['content']['source_movies'][movie_url]
+    const frameset_hashes = this.props.getFramesetHashesInOrder(source_movie)
+
+    let build_overlay_modes = {}
+    if (show_all_false_value) {
+      for (let i=0; i < frameset_hashes.length; i++) {
+        const fsh = frameset_hashes[i]
+        build_overlay_modes[fsh] = 'f_all'
+      }
+    }
+    deepCopyCsmd[panel_id]['frameset_overlay_modes'] = build_overlay_modes
+
+    this.setState({
+      compare_single_mode_data: deepCopyCsmd,
+    })
+  }
+
+  buildSingleShowAllFalse(panel_id, job_run_summary) {
+    if (
+      !this.state.compare_single_mode_data ||
+      Object.keys(this.state.compare_single_mode_data).length === 0
+    ) {
+      return 
+    }
+    const mode_data = this.state.compare_single_mode_data[panel_id]
+    let checked_value = ''
+    if (mode_data['show_all_false_overlays']) {
+      checked_value = 'checked'
+    }
+    return (
+      <div>
+        <div className='d-inline'>
+          <input
+            className='ml-2 mr-2 mt-1'
+            checked={checked_value}
+            type='checkbox'
+            onChange={()=>{
+              this.setShowAllFalse(panel_id, !mode_data['show_all_false_overlays'])
+            }}
+          />
+        </div>
+        <div className='d-inline'>
+          Show all False
+        </div>
+      </div>
+    )
   }
 
   buildSingleControls(panel_id, job_run_summary) {
@@ -106,6 +162,14 @@ class JobEvalCompareControls extends React.Component {
     })
   }
 
+  setCompareSingleAttributeFramesetVar(panel_id, frameset_hash, attribute_name, new_value) {
+    let deepCopyCsmd = JSON.parse(JSON.stringify(this.state.compare_single_mode_data))
+    deepCopyCsmd[panel_id][attribute_name][frameset_hash] = new_value
+    this.setState({
+      compare_single_mode_data: deepCopyCsmd,
+    })
+  }
+
   buildSingleNav(panel_id) {
     let first_button = ''
     const mode_data = this.state.compare_single_mode_data[panel_id]
@@ -126,14 +190,6 @@ class JobEvalCompareControls extends React.Component {
         {first_button}
       </div>
     )
-  }
-
-  setCompareSingleAttributeFramesetVar(panel_id, frameset_hash, attribute_name, new_value) {
-    let deepCopyCsmd = JSON.parse(JSON.stringify(this.state.compare_single_mode_data))
-    deepCopyCsmd[panel_id][attribute_name][frameset_hash] = new_value
-    this.setState({
-      compare_single_mode_data: deepCopyCsmd,
-    })
   }
 
   buildSetOverlayModeButton(panel_id, frameset_hash, label, new_overlay_mode) {
@@ -339,6 +395,28 @@ class JobEvalCompareControls extends React.Component {
     )
   }
 
+  buildOneFramesetsComments(fs_mode, movie_data, frameset_hash) {
+    let frameset_comment_row = ''
+    if (Object.keys(movie_data['framesets']).includes(frameset_hash)) {
+      if (
+        Object.keys(movie_data['framesets'][frameset_hash]).includes('comment') &&
+        movie_data['framesets'][frameset_hash]['comment']
+      ) {
+        frameset_comment_row = (
+          <div className='row alert alert-warning'>
+            <div className='d-inline'>
+              Frameset Comments:
+            </div>
+            <div className='d-inline ml-2'>
+              {movie_data['framesets'][frameset_hash]['comment']}
+            </div>
+          </div>
+        )
+      }
+    }
+    return frameset_comment_row
+  }
+
   buildSingleFramesetList(panel_id) {
     const mode_data = this.state.compare_single_mode_data[panel_id]
     if (!mode_data) { return }
@@ -370,28 +448,13 @@ class JobEvalCompareControls extends React.Component {
           let frameset_counts = {
             not_used: true,
           }
+          const fs_mode = mode_data['frameset_overlay_modes'][frameset_hash]
           let overlay_image_url = ''
-          let frameset_comment_row = ''
           if (Object.keys(movie_data['framesets']).includes(frameset_hash)) {
-            frameset_counts = movie_data['framesets'][frameset_hash]['counts']
-            const fs_mode = mode_data['frameset_overlay_modes'][frameset_hash]
             overlay_image_url = movie_data['framesets'][frameset_hash]['maps'][fs_mode]
-            if (
-              Object.keys(movie_data['framesets'][frameset_hash]).includes('comment') &&
-              movie_data['framesets'][frameset_hash]['comment']
-            ) {
-              frameset_comment_row = (
-                <div className='row alert alert-warning'>
-                  <div className='d-inline'>
-                    Frameset Comments:
-                  </div>
-                  <div className='d-inline ml-2'>
-                    {movie_data['framesets'][frameset_hash]['comment']}
-                  </div>
-                </div>
-              )
-            }
+            frameset_counts = movie_data['framesets'][frameset_hash]['counts']
           }
+          let frameset_comment_row = this.buildOneFramesetsComments(fs_mode, movie_data, frameset_hash)
 
           if (
             this.state.compare_single_mode_data[panel_id]['hide_non_job_frames'] &&
@@ -689,6 +752,7 @@ class JobEvalCompareControls extends React.Component {
     const frameset_section = this.buildSingleFramesetList(panel_id)
     const nav_section = this.buildSingleNav(panel_id)
     const controls_section = this.buildSingleControls(panel_id, jrs)
+    const show_all_false = this.buildSingleShowAllFalse(panel_id, jrs)
     const height_px_string = (window.innerHeight * .75).toString() + 'px'
     const wrapper_style = {
       overflow: 'scroll',
@@ -707,6 +771,9 @@ class JobEvalCompareControls extends React.Component {
           </div>
           <div className='row'>
             {controls_section}
+          </div>
+          <div className='row'>
+            {show_all_false}
           </div>
           <div className='row'>
             {job_summary_section}
