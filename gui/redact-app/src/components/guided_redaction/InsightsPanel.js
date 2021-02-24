@@ -230,7 +230,7 @@ class InsightsPanel extends React.Component {
 
   loadInsightsJobResults(job_id) {
     const job = this.getJobForId(job_id)
-    if ((job.app === 'parse' && job.operation === 'split_and_hash_threaded')) {
+    if ((job && job.app === 'parse' && job.operation === 'split_and_hash_threaded')) {
       this.props.loadJobResults(
         job_id, 
         this.afterMovieSplitInsightsJobLoaded
@@ -1286,6 +1286,7 @@ class InsightsPanel extends React.Component {
             getColorAtPixel={this.props.getColorAtPixel}
             getColorsInZone={this.props.getColorsInZone}
             detectScreens={this.props.detectScreens}
+            loadInsightsJobResults={this.loadInsightsJobResults}
           />
         </div>
 

@@ -835,6 +835,32 @@ console.log('get screens came back with ', response)
     )
   }
 
+  buildLoadSubJobAsT1Area()  {
+    return (
+      <div>
+        <div className='d-inline'>
+          Load Sub Job as T1
+        </div>
+        <div className='d-inline ml-2'>
+          <input
+            size='40'
+            id='session_job_id2'
+            value={this.state.job_id}
+            onChange={(event) => this.setLocalStateVar('job_id', event.target.value)}
+           />
+        </div>
+        <div className='d-inline ml-2'>
+          <button
+              className='btn btn-primary'
+              onClick={()=>this.props.loadInsightsJobResults(this.state.job_id)}
+          >
+            Load
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   buildViewJobArea()  {
     return (
       <div>
@@ -890,6 +916,7 @@ console.log('get screens came back with ', response)
     const impersonate_link = this.buildImpersonateLink()
     const panels_checkboxes = this.buildPanelsCheckboxes() 
     const job_view_area = this.buildViewJobArea()
+    const load_sub_job_area = this.buildLoadSubJobAsT1Area()
 
     let preserve_all_jobs_checked = ''
     if (this.props.preserveAllJobs) {
@@ -972,6 +999,10 @@ console.log('get screens came back with ', response)
 
                 <div className='row mt-3 bg-light rounded'>
                   {job_view_area}
+                </div>
+
+                <div className='row mt-3 bg-light rounded'>
+                  {load_sub_job_area}
                 </div>
 
                 <div className='row mt-3 bg-light rounded'>
