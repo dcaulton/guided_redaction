@@ -69,7 +69,7 @@ class JobEvalCompareControls extends React.Component {
       checked_value = 'checked'
     }
     return (
-      <div>
+      <div className='ml-3'>
         <div className='d-inline'>
           <input
             className='ml-2 mr-2 mt-1'

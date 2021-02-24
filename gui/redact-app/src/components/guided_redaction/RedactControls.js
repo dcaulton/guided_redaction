@@ -225,8 +225,14 @@ class RedactControls extends React.Component {
           return (
             <div key={index1}>
               {Object.keys(this.props.tier_1_matches[scanner_type]).map((scanner_id, index2) => {
-                const scanner = this.props.tier_1_scanners[scanner_type][scanner_id]
-                const desc = 'Frames matched by ' + scanner_type + ' job: ' + scanner['name']
+                let desc = 'Frames matched by ' + scanner_type + ' job'
+                if (
+                  Object.keys(this.props.tier_1_scanners).includes(scanner_type) &&
+                  Object.keys(this.props.tier_1_scanners[scanner_type]).includes(scanner_id)
+                ) {
+                  const scanner = this.props.tier_1_scanners[scanner_type][scanner_id]
+                  desc += ': ' + scanner['name']
+                }
                 const build_obj = {
                   source_type: 't1_scanner',
                   scanner_type: scanner_type,
