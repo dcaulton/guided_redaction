@@ -81,7 +81,7 @@ class JobEvalCompareControls extends React.Component {
           />
         </div>
         <div className='d-inline'>
-          Show all False
+          Show all False for Every Frame
         </div>
       </div>
     )

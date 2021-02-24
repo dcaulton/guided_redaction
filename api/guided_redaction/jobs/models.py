@@ -125,6 +125,9 @@ class Job(models.Model):
         get_data_from_disk_for_model_instance(instance)
         return instance
 
+    def get_data_from_disk(self):
+        get_data_from_disk_for_model_instance(self)
+
     def broadcast_percent_complete(self):
         try:
             from channels.layers import get_channel_layer
