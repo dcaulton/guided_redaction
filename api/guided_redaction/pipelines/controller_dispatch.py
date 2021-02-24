@@ -151,7 +151,6 @@ class DispatchController:
             request_data=json.dumps(build_request_data),
         )
         job.save()
-        print('diddy job {} gets {} bytes of request data'.format(job.id, len(build_request_data)), job.request_data_path)
 
         attribute = Attribute(
             name='pipeline_job_link',
@@ -606,13 +605,23 @@ class DispatchController:
         source_movies = self.get_source_movies_from_parent_job(parent_job)
 
         if previous_job:
-            previous_result = json.loads(previous_job.response_data)
-            if not previous_result and previous_job.response_data_path:
-                # this is a hack, not sure why it doesn't get picked up with the normal job fetch
-                previous_job.get_data_from_disk()
+            if 'input' in node:
+                input_job = get_job_for_node(node['input'], parent_job)
+                if input_job:
+                    input_response = json.loads(input_job.response_data)
+                    # this is a hack, not sure why it doesn't get picked up with the normal job fetch
+                    if not input_response and input_job.response_data_path:
+                        input_job.get_data_from_disk()
+                        input_response = json.loads(input_job.response_data)
+                    build_movies = input_response['movies']
+            else:
                 previous_result = json.loads(previous_job.response_data)
-            if previous_result.get('movies'):
-                build_movies = previous_result['movies']
+                if not previous_result and previous_job.response_data_path:
+                    # this is a hack, not sure why it doesn't get picked up with the normal job fetch
+                    previous_job.get_data_from_disk()
+                    previous_result = json.loads(previous_job.response_data)
+                if previous_result.get('movies'):
+                    build_movies = previous_result['movies']
             if source_movies and 'source' not in build_movies:
                 build_movies['source'] = source_movies
         else:
