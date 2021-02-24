@@ -59,10 +59,8 @@ class GenerateController(ScoreBaseController):
 
         if 'movies' in job_resp_data:
             for movie_url in job_resp_data['movies']:
-                print('building automatic job review summary data for movie {}'.format(movie_url))
                 job_movie_data = job_resp_data['movies'][movie_url]
                 ps_movie_data = {'framesets': {}}
-                build_movies[movie_url] = {'framesets': {}}
                 frame_dimensions = ()
                 (_, file_name) = os.path.split(movie_url)
                 (movie_uuid, file_type) = file_name.split('.')
@@ -73,6 +71,10 @@ class GenerateController(ScoreBaseController):
                 for annotated_movie_name in perm_standards:
                     if annotated_movie_name in movie_url:
                         ps_movie_data = perm_standards[annotated_movie_name]
+                if not ps_movie_data['framesets']:
+                    continue
+                print('building automatic job review summary data for movie {}'.format(movie_url))
+                build_movies[movie_url] = {'framesets': {}}
                 source_movie = source_movies[movie_url]
                 ordered_frameset_hashes = self.get_frameset_hashes_in_order(source_movie['frames'], source_movie['framesets'])
 

@@ -161,8 +161,11 @@ class SelectedAreaController(T1Controller):
         for region in regions:
             for maximum_zone in selected_area_meta['maximum_zones']:
                 for scanner_matcher_id in source_frameset:
-                    if selected_area_meta['origin_entity_id'] == scanner_matcher_id:
-                        match_element = source_frameset[scanner_matcher_id]
+                    one_match_obj = source_frameset[scanner_matcher_id]
+                    if selected_area_meta['origin_entity_type'] == 'template_anchor' and \
+                          'anchor_id' in one_match_obj and \
+                          selected_area_meta['origin_entity_id'] == one_match_obj['anchor_id']:
+                        match_element = one_match_obj
                         break
                 if selected_area_meta['origin_entity_id'] and not match_element:
                     print('error in enforce_max_zones, cannot find entity data for sam_oe_id')
@@ -327,12 +330,14 @@ class SelectedAreaController(T1Controller):
         tolerance = int(selected_area_meta['tolerance'])
         regions_for_image = []
         for scanner_matcher_id in frameset:
-            if match_app_id and 'app_id' in frameset[scanner_matcher_id] and \
-                frameset[scanner_matcher_id]['app_id'] != match_app_id:
+            match_rec = frameset[scanner_matcher_id]
+            if match_app_id and 'app_id' in match_rec and match_rec['app_id'] != match_app_id:
                 continue
             match_data = {}
-            if selected_area_meta['origin_entity_type'] == 'template_anchor':
-                if selected_area_meta['origin_entity_id'] == scanner_matcher_id:
+            if selected_area_meta['origin_entity_type'] == 'template_anchor' and \
+                'origin_entity_id' in selected_area_meta and \
+                'anchor_id' in match_rec and \
+                match_rec['anchor_id'] == selected_area_meta['origin_entity_id']:
                     match_data = frameset[scanner_matcher_id]
             else:
                 match_data = frameset[scanner_matcher_id]

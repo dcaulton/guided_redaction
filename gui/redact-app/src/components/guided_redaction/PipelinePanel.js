@@ -230,54 +230,50 @@ class PipelinePanel extends React.Component {
 
   getLastUpdated(status_obj) {
     let last_updated = ''
-    const statuses_needing_restart = ['running', 'created']
-    if (!this.state.restart_safety || statuses_needing_restart.includes(status_obj['status'])) {
-      let restart_button = ''
-      if (statuses_needing_restart.includes(status_obj['status'])) {
-      if (parseInt(status_obj['minutes_since_last_updated']) > 1) {
-        restart_button = (
-          <div className='d-inline'>
-            <div className='d-inline ml-5 font-weight-italic'>
-              this job looks stalled, 
-            </div>
-            <div className='d-inline ml-2'>
-              <button
-                className='btn btn-primary ml-1 p-1'
-                onClick={()=>this.props.restartPipelineJob(status_obj['job_id'], this.restartJobCompleted)}
-              >
-                Restart
-              </button>
-            </div>
-            <div className='d-inline font-weight-italic'>
-              ?
-            </div>
-          </div>
-        )
-      }
-      } else { 
-        restart_button = (
-          <div className='d-inline'>
-            <button
-              className='btn btn-primary ml-1 p-1'
-              onClick={()=>this.props.restartPipelineJob(status_obj['job_id'], this.restartJobCompleted)}
-            >
-              Restart
-            </button>
-          </div>
-        )
-      }
-      
-      last_updated = (
-        <div>
-          <div className='d-inline'>
-            Last Updated:
+    const live_restart_button = (
+      <button
+        className='btn btn-primary p-1'
+        onClick={()=>this.props.restartPipelineJob(status_obj['job_id'], this.restartJobCompleted)}
+      >
+        Restart
+      </button>
+    )
+    let restart_dialog = ''
+    if (!this.state.restart_safety && status_obj['status'] !== 'created') {
+      restart_dialog = live_restart_button
+    } else if (
+      ['created', 'running'].includes(status_obj['status']) &&
+      parseInt(status_obj['minutes_since_last_updated']) > 1
+    ){
+      restart_dialog = (
+        <div className='d-inline'>
+          <div className='d-inline font-weight-italic'>
+            this job looks stalled, 
           </div>
           <div className='d-inline ml-2'>
-            {status_obj['minutes_since_last_updated']} minutes ago {restart_button}
+            {live_restart_button}
+          </div>
+          <div className='d-inline font-weight-italic'>
+            ?
           </div>
         </div>
       )
     }
+
+    last_updated = (
+      <div>
+        <div className='d-inline'>
+          Last Updated:
+        </div>
+        <div className='d-inline ml-2'>
+          {status_obj['minutes_since_last_updated']} minutes ago 
+        </div>
+        <div className='d-inline ml-2'>
+          {restart_dialog}
+        </div>
+      </div>
+    )
+
     return last_updated
   }
 
