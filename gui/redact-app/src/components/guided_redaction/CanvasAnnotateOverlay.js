@@ -76,9 +76,6 @@ class CanvasAnnotateOverlay extends React.Component {
     }
   }
 
-  drawOcr() {
-  }
-
   drawPermanentStandardBoxes() {
     const boxes = this.props.getPermanentStandardBoxes()
     this.drawBoxesAroundStartEndRecords(boxes, '#F24')
@@ -102,7 +99,6 @@ class CanvasAnnotateOverlay extends React.Component {
   componentDidMount() {
     this.clearCanvasItems()
     this.drawCrosshairs()
-    this.drawOcr()
     this.drawPermanentStandardBoxes()
     this.drawDesiredBoxes()
     this.drawUnwantedBoxes()
@@ -112,7 +108,6 @@ class CanvasAnnotateOverlay extends React.Component {
   componentDidUpdate() {
     this.clearCanvasItems()
     this.drawCrosshairs()
-    this.drawOcr()
     this.drawPermanentStandardBoxes()
     this.drawDesiredBoxes()
     this.drawUnwantedBoxes()

@@ -7,8 +7,6 @@ import {
   getFileNameFromUrl
 } from './redact_utils.js'
 import {
-  makePlusMinusRowLight,
-  buildLabelAndTextInput,
   buildLabelAndDropdown,
 } from './SharedControls'
 
@@ -26,11 +24,9 @@ class JobEvalPanel extends React.Component {
       image_scale: 1,
       annotate_view_mode: 'tile',
       active_movie_url: '',
-      ocr_job_id: '',
       active_job_id: '',
       active_t1_results_key: '',
       active_t1_scanner_type: '',
-      show_ocr: false,
       annotate_tile_column_count: 6,
       selected_frameset_hashes: [],
       copied_frameset_hash: '',
@@ -65,7 +61,6 @@ class JobEvalPanel extends React.Component {
     this.getJobEvalObjectives=this.getJobEvalObjectives.bind(this)
     this.getJobRunSummariesAndAnnounce=this.getJobRunSummariesAndAnnounce.bind(this)
     this.handleImageClick=this.handleImageClick.bind(this)
-    this.getOcrRegions=this.getOcrRegions.bind(this)
     this.getPermanentStandardBoxes=this.getPermanentStandardBoxes.bind(this)
     this.getDesiredBoxes=this.getDesiredBoxes.bind(this)
     this.getUnwantedBoxes=this.getUnwantedBoxes.bind(this)
@@ -466,24 +461,6 @@ class JobEvalPanel extends React.Component {
     return boxes
   }
 
-  getOcrRegions() {
- return {}
-    if (!this.state.ocr_job_id || !this.state.show_ocr || !this.state.active_movie_url) {
-      return {}
-    }
-    for (let i=0; i < Object.keys(this.props.tier_1_matches['ocr']).length; i++) {
-      const match_key = Object.keys(this.props.tier_1_matches['ocr'])[i]
-      const match_obj = this.props.tier_1_matches['ocr'][match_key]
-      for (let j=0; j < Object.keys(match_obj['movies']).length; j++) {
-        const match_movie_url = Object.keys(match_obj['movies'])[j]
-        if (match_movie_url.includes(this.state.active_movie_url)) {
-          const regions = match_obj['movies'][match_movie_url]
-        }
-      }
-    }
-    return {}
-  }
-
   handleImageClick = (e) => {
     const x = e.nativeEvent.offsetX
     const y = e.nativeEvent.offsetY
@@ -496,9 +473,7 @@ class JobEvalPanel extends React.Component {
     if (x_scaled > this.state.image_width || y_scaled > this.state.image_height) {
         return
     }
-    if (this.state.image_mode === 'add_ocr') {
-      this.handleSetMode('add_ocr')
-    } else if (this.state.image_mode === 'add_permanent_standard_box_1') {
+    if (this.state.image_mode === 'add_permanent_standard_box_1') {
       this.saveCoordsAndSetImageMode(x_scaled, y_scaled, 'add_permanent_standard_box_2')
     } else if (this.state.image_mode === 'add_desired_box_1') {
       this.saveCoordsAndSetImageMode(x_scaled, y_scaled, 'add_desired_box_2')
@@ -868,31 +843,7 @@ class JobEvalPanel extends React.Component {
     )
   }
 
-  buildOcrMatchIdField() {
-    let ocr_matches = []
-    ocr_matches.push({'': ''})
-    for (let i=0; i < this.props.jobs.length; i++) {
-      const job = this.props.jobs[i]
-      if (job['operation'] !== 'scan_ocr_threaded') {
-        continue
-      }
-      const build_obj = {}
-      const desc = job['description'] + ' ' + job['id'].slice(0,3) + '...'
-      build_obj[job['id']] = desc
-      ocr_matches.push(build_obj)
-    }
-
-    return buildLabelAndDropdown(
-      ocr_matches,
-      'Ocr Job Id',
-      this.state.ocr_job_id,
-      'ocr_job_id',
-      ((value)=>{this.setLocalStateVarAndWarn('ocr_job_id', value)})
-    )
-  }
-
   buildAnnotatePanel() {
-    const ocr_id_field = ''
     let the_body = ''
     let the_title = ''
     const movie_name = getFileNameFromUrl(this.state.active_movie_url)
@@ -906,7 +857,6 @@ class JobEvalPanel extends React.Component {
           mode={this.state.mode}
           clickCallback={this.handleImageClick}
           last_click={this.state.clicked_coords}
-          getOcrRegions={this.getOcrRegions}
           getPermanentStandardBoxes={this.getPermanentStandardBoxes}
           getT1MatchBoxes={this.getT1MatchBoxes}
           getUnwantedBoxes={this.getUnwantedBoxes}
@@ -918,7 +868,6 @@ class JobEvalPanel extends React.Component {
           active_movie_url={this.state.active_movie_url}
           jeo_permanent_standards={this.state.jeo_permanent_standards}
           frameset_hash={this.props.frameset_hash}
-          ocr_job_id={this.state.ocr_job_id}
           getSelectedFramesetHashesInOrder={this.getSelectedFramesetHashesInOrder}
           gotoNextFrame={this.gotoNextFrame}
           gotoPrevFrame={this.gotoPrevFrame}
@@ -967,10 +916,6 @@ class JobEvalPanel extends React.Component {
       <div className='col'>
         <div className='row mt-2 h4'>
           {the_title}
-        </div>
-
-        <div className='row'>
-          {ocr_id_field}
         </div>
 
         {the_body}
@@ -1492,7 +1437,6 @@ doSleep(time) {
           mode={this.state.mode}
           clickCallback={this.handleImageClick}
           last_click={this.state.clicked_coords}
-          getOcrRegions={this.getOcrRegions}
           getPermanentStandardBoxes={this.getPermanentStandardBoxes}
           getT1MatchBoxes={this.getT1MatchBoxes}
           getUnwantedBoxes={this.getUnwantedBoxes}
@@ -1504,7 +1448,6 @@ doSleep(time) {
           active_movie_url={this.state.active_movie_url}
           jeo_permanent_standards={this.state.jeo_permanent_standards}
           frameset_hash={this.props.frameset_hash}
-          ocr_job_id={this.state.ocr_job_id}
           getSelectedFramesetHashesInOrder={this.getSelectedFramesetHashesInOrder}
           gotoNextFrame={this.gotoNextFrame}
           gotoPrevFrame={this.gotoPrevFrame}
