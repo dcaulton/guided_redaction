@@ -90,6 +90,7 @@ class FilesViewSetUnzipArchive(viewsets.ViewSet):
         scanner_count = self.add_scanners(master_json)
         pipeline_count = self.add_pipelines(master_json)
         build_movies = self.add_movie_files(fw, nest_dir, master_json)
+        job_run_summaries, job_eval_objectives = self.add_jrs_records(master_json)
 
         movie_count = 0
         for movie_url in master_json['movies']:
@@ -102,6 +103,8 @@ class FilesViewSetUnzipArchive(viewsets.ViewSet):
             'pipeline_count': pipeline_count,
             'movie_count': movie_count,
             'movies': build_movies,
+            'job_run_summaries': job_run_summaries,
+            'job_eval_objectives': job_eval_objectives,
         })
 
     def add_movie_files(self, fw, nest_dir, master_json):
@@ -131,6 +134,7 @@ class FilesViewSetUnzipArchive(viewsets.ViewSet):
 
     def add_jobs(self, master_json):
         job_count = 0
+        self.old_to_new_job_mappings = {}
         for job_id in master_json['jobs']:
             print('adding job {}'.format(job_id))
             if Job.objects.filter(pk=job_id).exists():
@@ -149,6 +153,7 @@ class FilesViewSetUnzipArchive(viewsets.ViewSet):
                 sequence=job['sequence'],
             )
             job.save()
+            self.old_to_new_job_mappings[job_id] = job.id
             job_count += 1
         # second, add relations between jobs
         for job_id in master_json['jobs']:
@@ -158,8 +163,15 @@ class FilesViewSetUnzipArchive(viewsets.ViewSet):
                 job_imported['parent_id'] != 'None':
                 print('adding links for job {} {}'.format(job_id, job_imported['parent_id']))
                 job = Job.objects.get(pk=job_id)
-                job.parent_id = job_imported['parent_id']
+                new_parent_id = job_imported['parent_id']
+                if job_imported['parent_id'] in self.old_to_new_job_mappings:
+                    new_parent_id = self.old_to_new_job_mappings[job_imported['parent_id']]
+                else:
+                    # we haven't built the parent yet, this job won't link correctly
+                    pass
+                job.parent_id = new_parent_id
                 job.save()
+                self.old_to_new_job_mappings[job_id] = job.id
         return job_count
 
     def add_scanners(self, master_json):
@@ -192,6 +204,46 @@ class FilesViewSetUnzipArchive(viewsets.ViewSet):
             pipeline_count += 1
         return pipeline_count
 
+    def add_jrs_records(self, master_json):
+        jeo_count = 0
+        jrs_count = 0
+
+        self.old_to_new_jeo_mappings = {}
+        for jeo_id in master_json['job_eval_objectives']:
+            if JobEvalObjective.objects.filter(jeo_id).exists():
+                continue
+            input_jeo = master_json['job_eval_objectives'][jeo_id]
+            jeo = JobEvalObjective(
+                description=input_jeo['description'],
+                content=input_jeo['content'],
+            )
+            jeo.save()
+            self.old_to_new_jeo_mappings[jeo_id] = jeo.id
+            jeo_count += 1
+
+        for jrs_id in master_json['job_run_summaries']:
+            if JobRunSummary.objects.filter(jrs_id).exists():
+                continue
+            input_jrs = master_json['job_run_summaries'][jrs_id]
+
+            old_jeo_id = input_jrs['job_eval_objective_id']
+            new_jeo_id = self.old_to_new_jeo_mappings[old_jeo_id]
+            jeo = JobEvalObjective.objects.get(pk=new_jeo_id)
+
+            new_job_id = self.old_to_new_job_mappings[input_jrs['job_id']]
+            job = Job.objects.get(pk=new_job_id)
+
+            jrs = JobRunSummary(
+                job_eval_objective=jeo,
+                job=job,
+                summary_type=input_jeo['summary_type'],
+                score=input_jeo['score'],
+                content=input_jeo['content'],
+            )
+            jrs.save()
+            jrs_count += 1
+
+        return jrs_count, jeo_count
 
 class FilesViewSetImportArchive(viewsets.ViewSet):
     def create(self, request):
@@ -290,21 +342,12 @@ class FilesViewSetExport(viewsets.ViewSet):
         if 'job_ids' in request_data and request_data['job_ids']:
             for job_id in request_data['job_ids']:
                 job = Job.objects.get(pk=job_id)
-                self.add_job_to_dict(
-                    job, 
-                    build_obj,
-                    zipObj, 
-                    request_data,
-                    fw
-                )
+                self.add_job_to_dict(job, build_obj, zipObj, request_data, fw)
 
         if 'pipeline_ids' in request_data and request_data['pipeline_ids']:
             for pipeline_id in request_data['pipeline_ids']:
                 pipeline = Pipeline.objects.get(pk=pipeline_id)
-                self.add_pipeline_to_dict(
-                    pipeline, 
-                    build_obj
-                )
+                self.add_pipeline_to_dict(pipeline, build_obj)
 
         if 'movies' in request_data and request_data['movies']:
             for movie_url in request_data['movies']:
@@ -320,10 +363,7 @@ class FilesViewSetExport(viewsets.ViewSet):
         if 'jrs_ids' in request_data and request_data['jrs_ids']:
             for jrs_id in request_data['jrs_ids']:
                 jrs = JobRunSummary.objects.get(pk=jrs_id)
-                self.add_jrs_to_dict(
-                    jrs, 
-                    build_obj
-                )
+                self.add_jrs_to_dict(jrs, build_obj, zipObj, request_data, fw)
 
         json_filename = 'export_master.json'
         json_archive_path = os.path.join('guided_redaction', 'work', json_filename)
@@ -375,7 +415,7 @@ class FilesViewSetExport(viewsets.ViewSet):
                             request_data,
                             fw
                         )
-        if request_data['include_child_jobs']:
+        if request_data.get('include_child_jobs'):
             children = Job.objects.filter(parent=job)
             for child in children:
                 self.add_job_to_dict(child, build_dict, zipObj, request_data, fw)
@@ -387,7 +427,7 @@ class FilesViewSetExport(viewsets.ViewSet):
         movie_url_fullpath = fw.get_file_path_for_url(movie_url)
         print('adding movie file {}'.format(movie_url))
         zipObj.write(movie_url_fullpath)
-        if 'frames' in movie and request_data['include_child_movie_frames']:
+        if 'frames' in movie and request_data.get('include_child_movie_frames'):
             for image_url in movie['frames']:
                 image_fullpath = fw.get_file_path_for_url(image_url)
                 print('adding image file {}'.format(image_url))
@@ -410,11 +450,19 @@ class FilesViewSetExport(viewsets.ViewSet):
                 if node['type'] == 'pipeline':
                     print('we have a pipeline to export')
 
-    def add_jrs_to_dict(self, jrs, build_dict):
+    def add_jrs_to_dict(self, jrs, build_dict, zipObj, request_data, fw):
         print('adding jrs {}'.format(jrs.id))
         build_dict['job_run_summaries'][str(jrs.id)] = jrs.as_dict()
         jeo = jrs.job_eval_objective
         build_dict['job_eval_objectives'][str(jeo.id)] = jeo.as_dict()
+        job = jrs.job
+        self.add_job_to_dict(
+            job, 
+            build_dict,
+            zipObj, 
+            request_data,
+            fw
+        )
 
 
 class FilesViewSetDownloadSecureFile(viewsets.ViewSet):

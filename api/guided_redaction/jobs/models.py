@@ -82,7 +82,7 @@ class Job(models.Model):
         hours = seconds // 3600
         minutes = (seconds % 3600) // 60
         seconds = seconds % 60
-        wall_clock_run_time = '{}H {}M {}S'.format(hours, minutes, seconds)
+        wall_clock_run_time = '{}:{:02d}:{:02d}'.format(hours, minutes, seconds)
         return wall_clock_run_time 
 
     def as_dict(self):
