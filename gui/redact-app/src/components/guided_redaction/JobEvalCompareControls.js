@@ -571,6 +571,7 @@ class JobEvalCompareControls extends React.Component {
             <thead>
               <tr>
                 <td>name</td>
+                <td>score</td>
                 <td># job frames</td>
                 <td># review frames</td>
               </tr>
@@ -580,6 +581,7 @@ class JobEvalCompareControls extends React.Component {
                 const movie_url = this.getMovieUrlForMovieName(jrs, movie_name)
                 let num_job_frames = 0
                 let num_review_frames = 0
+                let movie_score = ''
                 if (Object.keys(jrs).includes('content')) {
                   const jrs_movie_data = jrs['content']['movies'][movie_url]
                   for (let i=0; i < Object.keys(jrs_movie_data['framesets']).length; i++) {
@@ -591,7 +593,11 @@ class JobEvalCompareControls extends React.Component {
                       num_review_frames += 1
                     }
                   }
+
+                  const jrs_movie_stats = jrs['content']['statistics']['movie_statistics'][movie_url]
+                  movie_score = jrs_movie_stats['score']
                 }
+
                 return (
                   <tr key={index}>
                     <td>
@@ -601,6 +607,9 @@ class JobEvalCompareControls extends React.Component {
                       >
                         {movie_name}
                       </button>
+                    </td>
+                    <td>
+                      {movie_score}
                     </td>
                     <td>
                       {num_job_frames}
