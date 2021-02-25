@@ -241,7 +241,8 @@ class ScoreManualController(ScoreBaseController):
                 movie_stats = self.calc_movie_stats(build_movies[movie_url], job_eval_objective)
                 build_stats['movie_statistics'][movie_url] = movie_stats
 
-        self.build_job_stats(build_stats)
+        rts = job.get_wall_clock_run_time_string()
+        self.build_job_stats(build_stats, rts)
 
         print('manual job run summary build completed')
         return build_movies, build_stats

@@ -507,6 +507,43 @@ console.log('doonkey breath ps from state is ', this.props.jeo_permanent_standar
     )
   }
 
+  handleDroppedArchive(event) {
+    event.preventDefault()
+    event.stopPropagation()
+    if (event.dataTransfer.files && event.dataTransfer.files.length > 0) {
+      for (let i=0; i < event.dataTransfer.files.length; i++) {
+        this.handleUploadedArchive(event.dataTransfer.files[i])
+      }
+    }
+  }
+
+  async handleUploadedArchive(the_file) {
+    let reader = new FileReader()
+    let app_this = this
+    reader.onload = function(e) {
+      app_this.props.postImportArchiveCall({
+        data_uri: e.target.result,
+        filename: the_file.name,
+        when_done: ((x)=>{app_this.props.setMessage('archive upload initiated')}),
+        when_failed: (err) => {app_this.props.setMessage('archive upload failed')},
+      })
+    }
+    reader.readAsDataURL(the_file)
+  }
+
+  buildJobRunSummaryImportTarget() {
+    return (
+      <div        
+        className='h3 font-italic border-1'
+        draggable='true'
+        onDragOver={(event) => event.preventDefault()}
+        onDrop={(event) => this.handleDroppedArchive(event)}
+      >
+        drop archived job run summaries here to upload
+      </div>
+    )
+  }
+
   render() {
     const load_button = this.buildJeoLoadButton()
     const save_button = this.buildJeoSaveButton()
@@ -522,6 +559,7 @@ console.log('doonkey breath ps from state is ', this.props.jeo_permanent_standar
     const hard_fail_any_frame_field = this.buildHardFailAnyFrameField()
     const preserve_job_run_parameters_field = this.buildPreserveJobRunParametersField()
     const exemplar_movies_section = this.buildExemplarMoviesSection()
+    const import_target = this.buildJobRunSummaryImportTarget()
     let show_hide_details = ''
     if (this.props.jeo_id) {
       show_hide_details = makePlusMinusRowLight('details', 'jeo_details')
@@ -632,6 +670,11 @@ console.log('doonkey breath ps from state is ', this.props.jeo_permanent_standar
                 <div className='row m-1'>
                   {preserve_job_run_parameters_field}
                 </div>
+
+                <div className='row m-1'>
+                  {import_target}
+                </div>
+
               </div>
             </div>
 

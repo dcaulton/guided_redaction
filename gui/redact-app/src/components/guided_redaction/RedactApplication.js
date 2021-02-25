@@ -2409,6 +2409,7 @@ class RedactApplication extends React.Component {
                 getImageFromFrameset={this.getImageFromFrameset}
                 setActiveWorkflow={this.setActiveWorkflow}
                 runExportTask={this.runExportTask}
+                postImportArchiveCall={this.postImportArchiveCall}
               />
             </Route>
             <Route path={['/redact/compose', '/redact']}>

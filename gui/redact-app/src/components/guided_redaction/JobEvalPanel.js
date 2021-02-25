@@ -705,17 +705,6 @@ class JobEvalPanel extends React.Component {
     })
   }
 
-  buildGetJrsListButton() {
-    return (
-      <button
-          className='btn btn-primary'
-          onClick={() => this.getJobRunSummaries()}
-      >
-        Refresh Summaries
-      </button>
-    )
-  }
-
   setLocalStateVar(var_name, var_value, when_done=(()=>{})) {
     function anon_func() {
       when_done()
@@ -805,6 +794,7 @@ class JobEvalPanel extends React.Component {
         annotateExemplarMovie={this.annotateExemplarMovie}
         getJobEvalObjectives={this.getJobEvalObjectives}
         addJobEvalCallback={this.addJobEvalCallback}
+        postImportArchiveCall={this.props.postImportArchiveCall}
       />
     )
     const job_run_summary_section = this.buildJobRunSummarySection()
@@ -1310,17 +1300,12 @@ doSleep(time) {
     const generate_exemplar_button = this.buildGenerateExemplarJrsButton()
     const manual_review_button = this.buildManualJrsButton()
     const jrs_list = this.buildJobRunSummaryList()
-//    const get_jrs_button = this.buildGetJrsListButton()
-    const get_jrs_button = ''
     return (
       <div className='row'>
         <div className='col'>
           <div className='row h3'>
             <div className='col-8'>
               Job Run Summaries
-            </div>
-            <div className='col-4'>
-              {get_jrs_button}
             </div>
           </div>
 

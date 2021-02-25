@@ -283,9 +283,6 @@ class ImportExportControls extends React.Component {
       })
     }
     reader.readAsDataURL(the_file)
-    this.setState({
-      uploadMovie: false,
-    })
   }
 
   buildUploadArchiveLink() {
