@@ -77,11 +77,23 @@ class Job(models.Model):
         self.response_data = '{}'
         self.response_data_path = ''
 
+    def get_wall_clock_run_time_string(self):
+        seconds = (self.updated - self.created_on).seconds
+        hours = seconds // 3600
+        minutes = (seconds % 3600) // 60
+        seconds = seconds % 60
+        wall_clock_run_time = '{}H {}M {}S'.format(hours, minutes, seconds)
+        return wall_clock_run_time 
+
     def as_dict(self):
         children = Job.objects.filter(parent_id=self.id).order_by('sequence')
         child_ids = [str(child.id) + ' : ' + child.operation for child in children]
         pretty_time = self.pretty_date(self.created_on)
-        wall_clock_run_time = str(self.updated - self.created_on)
+        seconds = (self.updated - self.created_on).seconds
+        hours = seconds // 3600
+        minutes = (seconds % 3600) // 60
+        seconds = seconds % 60
+        wall_clock_run_time = self.get_wall_clock_run_time_string()
 
         build_attributes = {}
         if Attribute.objects.filter(job=self).exists():

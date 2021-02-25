@@ -223,7 +223,7 @@ class ScoreBaseController(T1Controller):
 
         return counts, maps
 
-    def build_job_stats(self, build_stats):
+    def build_job_stats(self, build_stats, wall_clock_run_time=''):
         job_min_score = 100
         job_max_score = 0
         job_score_accum = 0
@@ -244,6 +244,9 @@ class ScoreBaseController(T1Controller):
         build_stats['max_score'] = job_max_score
         build_stats['score'] =  job_score
         build_stats['pass_or_fail'] = job_pass_or_fail
+        if wall_clock_run_time:
+            build_stats['wall_clock_run_time'] = wall_clock_run_time
+
 
 
 # RETURN DATA STRUCTURE:

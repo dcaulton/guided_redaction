@@ -699,6 +699,20 @@ class JobEvalCompareControls extends React.Component {
       )
     }
 
+    let run_time_row = ''
+    if (
+      Object.keys(jrs).includes('content') &&
+      Object.keys(jrs['content']).includes('statistics') &&
+      Object.keys(jrs['content']['statistics']).includes('wall_clock_run_time')
+    ) {
+      run_time_row = (
+        <div className='row'>
+          wall clock run time: {jrs['content']['statistics']['wall_clock_run_time']}
+        </div>
+      )
+    }
+
+
     return (
       <div className='col'>
         <div className='row'>
@@ -707,6 +721,7 @@ class JobEvalCompareControls extends React.Component {
         <div className='row'>
           last updated: {jrs.updated_on}
         </div>
+        {run_time_row}
         {notes_row}
       </div>
     )

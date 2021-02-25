@@ -53,7 +53,6 @@ class JobRunSummariesViewSet(viewsets.ViewSet):
         return self.process_create_request(request_data)
 
     def process_create_request(self, request_data):
-        print('pancakes')
         if not request_data.get("job_id"):
             return self.error("job_id is required")
         if not request_data.get("job_eval_objective_id"):
@@ -80,7 +79,6 @@ class JobRunSummariesGenerateViewSet(viewsets.ViewSet):
         return self.process_create_request(request_data)
 
     def process_create_request(self, request_data):
-        print('biscuits')
         if not request_data.get("job_id"):
             return self.error("job_id is required")
         if not request_data.get("job_eval_objective_id"):
