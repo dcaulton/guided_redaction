@@ -143,10 +143,14 @@ class MovieUtils extends React.Component {
           movie_url: new_movie_url,
           movies: deepCopyMovies,
         },
-        when_done
+        (()=>{when_done(new_movie)})
       )
     } else {
-      setGlobalStateVar('movies', deepCopyMovies, when_done)
+      setGlobalStateVar(
+        'movies', 
+        deepCopyMovies, 
+        (()=>{when_done(new_movie)})
+      )
     }
     addToCampaignMovies([new_movie_url])
   }

@@ -86,6 +86,7 @@ class ComposePanel extends React.Component {
     this.createSubsequence=this.createSubsequence.bind(this)
     this.addSubsequenceToMainSequence=this.addSubsequenceToMainSequence.bind(this)
     this.showCreateTemplate=this.showCreateTemplate.bind(this)
+    this.afterMovieCreated=this.afterMovieCreated.bind(this)
   }
 
   showCreateTemplate() {
@@ -1009,19 +1010,23 @@ class ComposePanel extends React.Component {
     return max_len
   }
 
+  afterMovieCreated(new_movie) {
+console.log('pauliena after movie created is ', new_movie)
+    const img_url = this.props.getImageUrl()
+    this.props.addImageToMovie({
+      url: img_url,
+      movie_url: 'sequence',
+      update_frameset_hash: false,
+      movie: new_movie,
+    })
+  }
+
   captureFrame() {
     if (!Object.keys(this.props.movies).includes('sequence')) {
       this.props.establishNewEmptyMovie(
         'sequence', 
         false,
-        ((new_movie)=>{this.props.addImageToMovie(
-          {
-            url: this.props.getImageUrl(),
-            movie_url: 'sequence',
-            update_frameset_hash: false,
-            movie: new_movie,
-          }
-        )})
+        this.afterMovieCreated
       )
     } else {
       this.props.addImageToMovie({

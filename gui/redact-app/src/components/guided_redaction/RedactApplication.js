@@ -229,6 +229,7 @@ class RedactApplication extends React.Component {
     this.getColorsInZone=this.getColorsInZone.bind(this)
     this.detectScreens=this.detectScreens.bind(this)
     this.setActiveMovieFirstFrame=this.setActiveMovieFirstFrame.bind(this)
+    this.addToCampaignMovies=this.addToCampaignMovies.bind(this)
   }
 
   async detectScreens(the_image_url = '', when_done=(()=>{})) {
