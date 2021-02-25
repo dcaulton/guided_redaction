@@ -12,6 +12,8 @@ from guided_redaction.utils.classes.FileWriter import FileWriter
 from zipfile import ZipFile
 from guided_redaction.jobs.models import Job
 from guided_redaction.pipelines.models import Pipeline
+from guided_redaction.job_run_summaries.models import JobRunSummary
+from guided_redaction.job_eval_objectives.models import JobEvalObjective
 from guided_redaction.scanners.models import Scanner
 from guided_redaction.files import tasks as files_tasks
 
@@ -233,16 +235,17 @@ class FilesViewSetExport(viewsets.ViewSet):
         return self.process_create_request(request_data)
 
     def process_create_request(self, request_data):
-        if 'job_ids' not in request_data:
-            return self.error("job_ids is required")
-        if 'pipeline_ids' not in request_data:
-            return self.error("pipeline_ids is required")
-        if 'movies' not in request_data:
-            return self.error("movies is required")
-        if 'include_child_jobs' not in request_data:
-            return self.error("include_child_jobs is required")
-        if 'include_child_movie_frames' not in request_data:
-            return self.error("include_child_movie_frames is required")
+        if 'jrs_ids' not in request_data:
+            if 'job_ids' not in request_data:
+                return self.error("job_ids is required")
+            if 'pipeline_ids' not in request_data:
+                return self.error("pipeline_ids is required")
+            if 'movies' not in request_data:
+                return self.error("movies is required")
+            if 'include_child_jobs' not in request_data:
+                return self.error("include_child_jobs is required")
+            if 'include_child_movie_frames' not in request_data:
+                return self.error("include_child_movie_frames is required")
 
         try:
             filename = 'export_' + str(uuid.uuid4()) + '.zip'
@@ -275,6 +278,8 @@ class FilesViewSetExport(viewsets.ViewSet):
             'tier_1_scanners': {},
             'movies': {},
             'pipelines': {},
+            'job_run_summaries': {},
+            'job_eval_objectives': {},
             'meta': {},
         }
         zipObj = ZipFile(output_file_fullpath, 'w')
@@ -282,7 +287,7 @@ class FilesViewSetExport(viewsets.ViewSet):
         build_obj['meta']['base_url'] = fw.base_url
         build_obj['meta']['working_dir'] = fw.working_dir
 
-        if request_data['job_ids']:
+        if 'job_ids' in request_data and request_data['job_ids']:
             for job_id in request_data['job_ids']:
                 job = Job.objects.get(pk=job_id)
                 self.add_job_to_dict(
@@ -293,7 +298,7 @@ class FilesViewSetExport(viewsets.ViewSet):
                     fw
                 )
 
-        if request_data['pipeline_ids']:
+        if 'pipeline_ids' in request_data and request_data['pipeline_ids']:
             for pipeline_id in request_data['pipeline_ids']:
                 pipeline = Pipeline.objects.get(pk=pipeline_id)
                 self.add_pipeline_to_dict(
@@ -301,7 +306,7 @@ class FilesViewSetExport(viewsets.ViewSet):
                     build_obj
                 )
 
-        if request_data['movies']:
+        if 'movies' in request_data and request_data['movies']:
             for movie_url in request_data['movies']:
                 self.add_movie_to_dict_and_zip(
                     movie_url, 
@@ -310,6 +315,14 @@ class FilesViewSetExport(viewsets.ViewSet):
                     zipObj, 
                     request_data,
                     fw
+                )
+
+        if 'jrs_ids' in request_data and request_data['jrs_ids']:
+            for jrs_id in request_data['jrs_ids']:
+                jrs = JobRunSummary.objects.get(pk=jrs_id)
+                self.add_jrs_to_dict(
+                    jrs, 
+                    build_obj
                 )
 
         json_filename = 'export_master.json'
@@ -396,6 +409,12 @@ class FilesViewSetExport(viewsets.ViewSet):
                 node = content['node_metadata']['node'][node_id]
                 if node['type'] == 'pipeline':
                     print('we have a pipeline to export')
+
+    def add_jrs_to_dict(self, jrs, build_dict):
+        print('adding jrs {}'.format(jrs.id))
+        build_dict['job_run_summaries'][str(jrs.id)] = jrs.as_dict()
+        jeo = jrs.job_eval_objective
+        build_dict['job_eval_objectives'][str(jeo.id)] = jeo.as_dict()
 
 
 class FilesViewSetDownloadSecureFile(viewsets.ViewSet):

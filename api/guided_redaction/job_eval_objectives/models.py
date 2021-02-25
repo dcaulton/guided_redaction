@@ -9,10 +9,15 @@ class JobEvalObjective(models.Model):
     content = models.TextField(null=True)
 
     def __str__(self):
-        disp_hash = {
+        return self.as_dict().__str__()
+
+    def as_dict(self):
+        build_content = str(self.content or '{}')
+
+        jrs_data = {
             'id': str(self.id),
             'description': self.description,
-            'updated_on': self.updated_on,
-            'content': self.content,
+            'updated_on': str(self.updated_on),
+            'content': build_content,
         }
-        return disp_hash.__str__()
+        return jrs_data

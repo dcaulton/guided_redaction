@@ -2408,6 +2408,7 @@ class RedactApplication extends React.Component {
                 loadJobResults={this.loadJobResultsWrapper}
                 getImageFromFrameset={this.getImageFromFrameset}
                 setActiveWorkflow={this.setActiveWorkflow}
+                runExportTask={this.runExportTask}
               />
             </Route>
             <Route path={['/redact/compose', '/redact']}>

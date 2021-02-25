@@ -47,10 +47,12 @@ class JobEvalPanel extends React.Component {
       job_run_summaries: {},
       jrs_ids_to_compare: [],
       jrs_ids_to_delete: [],
+      jrs_ids_to_export: [],
       jrs_movies: {},
       job_comment: '',
       finalize_manual_submitted: false,
       callbacks: {},
+      archive_url: '',
     }
     this.getFramesetHashesInOrder=this.props.getFramesetHashesInOrder.bind(this)
     this.annotateExemplarMovie=this.annotateExemplarMovie.bind(this)
@@ -79,6 +81,8 @@ class JobEvalPanel extends React.Component {
     this.addJobEvalCallback=this.addJobEvalCallback.bind(this)
     this.runCallbackFunction=this.runCallbackFunction.bind(this)
     this.goHomeWithCallback=this.goHomeWithCallback.bind(this)
+    this.exportDone=this.exportDone.bind(this)
+    this.buildDownloadArchiveLink=this.buildDownloadArchiveLink.bind(this)
   }
 
   addJobEvalCallback(the_key, the_callback) {
@@ -309,11 +313,12 @@ class JobEvalPanel extends React.Component {
     }
   }
 
-  addRemoveToJrsIdsToDelete(jrs_id) {
+  addRemoveToJrsIdsList(list_type, jrs_id) {
     let build_ids = []
     let item_found = false
-    for (let i=0; i < this.state.jrs_ids_to_delete.length; i++) {
-      const existing_id = this.state.jrs_ids_to_delete[i]
+    const var_name = 'jrs_ids_to_' + list_type
+    for (let i=0; i < this.state[var_name].length; i++) {
+      const existing_id = this.state[var_name][i]
       if (existing_id === jrs_id) {
         item_found = true
       } else {
@@ -323,28 +328,9 @@ class JobEvalPanel extends React.Component {
     if (!item_found) {
       build_ids.push(jrs_id)
     }
-    this.setState({
-      jrs_ids_to_delete: build_ids,
-    })
-  }
-
-  addRemoveToJrsIdsToCompare(jrs_id) {
-    let build_ids = []
-    let item_found = false
-    for (let i=0; i < this.state.jrs_ids_to_compare.length; i++) {
-      const existing_id = this.state.jrs_ids_to_compare[i]
-      if (existing_id === jrs_id) {
-        item_found = true
-      } else {
-        build_ids.push(existing_id)
-      }
-    }
-    if (!item_found) {
-      build_ids.push(jrs_id)
-    }
-    this.setState({
-      jrs_ids_to_compare: build_ids,
-    })
+    let build_obj = {}
+    build_obj[var_name] = build_ids
+    this.setState(build_obj)
   }
 
   keyPress(event) {
@@ -973,6 +959,21 @@ class JobEvalPanel extends React.Component {
     )
   }
 
+  buildExportButton() {
+    if (this.state.jrs_ids_to_export.length < 1) {
+      return 'Export'
+    }
+
+    return (
+      <button
+        className='btn btn-link p-0'
+        onClick={()=>{this.startExport()}}
+      >
+        Export
+      </button>
+    )
+  }
+
   buildCompareButton() {
     if (this.state.jrs_ids_to_compare.length < 1) {
       return 'Compare'
@@ -1000,6 +1001,34 @@ class JobEvalPanel extends React.Component {
       >
         Delete
       </button>
+    )
+  }
+
+  exportDone(responseJson) {
+    this.setLocalStateVar('archive_url', responseJson['archive_url'], this.buildDownloadArchiveLink)
+  }
+
+  buildDownloadArchiveLink() {
+    if (!this.state.archive_url) {
+      return
+    }
+    const dl_link = (
+      <a
+        href={this.state.archive_url}
+      >
+        Download
+      </a>
+    )
+    this.setMessage(['your archive is ready', dl_link])
+  }
+
+  startExport() {
+    const build_obj = {
+      jrs_ids: this.state.jrs_ids_to_export,
+    }
+    this.props.runExportTask(
+      build_obj,
+      this.exportDone
     )
   }
 
@@ -1117,7 +1146,7 @@ class JobEvalPanel extends React.Component {
     }
     if (!match_found) {
       this.props.loadJobResults(this.state.active_job_id)
-      this.setMessage('please wait a moment, loading the job results.  you will be redirected when complete')
+        this.setMessage('please wait a moment, loading the job results.  you will be redirected when complete')
       this.doSleep(5000).then(() => {
         this.setMessage([
           'Job output has been loaded.  Next, you need to review the movies below.  You can also delete movies that are not of interest, they will be omitted from the analysis.', 
@@ -1181,6 +1210,7 @@ doSleep(time) {
       return ''
     }
     const compare_button = this.buildCompareButton()
+    const export_button = this.buildExportButton()
     const delete_button= this.buildJrsDeleteButton()
     return (
       <table className='table table-striped'>
@@ -1192,6 +1222,7 @@ doSleep(time) {
             <td>Movies</td>
             <td>Created On</td>
             <td>{compare_button}</td>
+            <td>{export_button}</td>
             <td>{delete_button}</td>
           </tr>
         </thead>
@@ -1202,6 +1233,10 @@ doSleep(time) {
           const job_id_short = jrs.job_id.substring(0, 5) + '...'
           if (jrs.job_eval_objective_id !== this.state.jeo_id) {
             return ''
+          }
+          let export_checked = false
+          if (this.state.jrs_ids_to_export.includes(jrs_key)) {
+            export_checked = true
           }
           let compare_checked = false
           if (this.state.jrs_ids_to_compare.includes(jrs_key)) {
@@ -1234,7 +1269,17 @@ doSleep(time) {
                   checked={compare_checked}
                   type='checkbox'
                   onChange={
-                    () => this.addRemoveToJrsIdsToCompare(jrs_key) 
+                    () => this.addRemoveToJrsIdsList('compare', jrs_key) 
+                  }
+                />
+              </td>
+              <td>
+                <input
+                  className='ml-2 mr-2 mt-1'
+                  checked={export_checked}
+                  type='checkbox'
+                  onChange={
+                    () => this.addRemoveToJrsIdsList('export', jrs_key) 
                   }
                 />
               </td>
@@ -1244,7 +1289,7 @@ doSleep(time) {
                   checked={delete_checked}
                   type='checkbox'
                   onChange={
-                    () => this.addRemoveToJrsIdsToDelete(jrs_key) 
+                    () => this.addRemoveToJrsIdsList('delete', jrs_key) 
                   }
                 />
               </td>
