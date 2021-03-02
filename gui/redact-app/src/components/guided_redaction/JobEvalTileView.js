@@ -32,6 +32,16 @@ class JobEvalTileView extends React.Component {
     }
   }
 
+  buildImageDeleteLink(fs_hash) {
+    return (
+      <button
+        className='btn btn-link'
+        onClick={()=>{this.props.removeFramesetHash(fs_hash)}}
+      >
+        delete
+      </button>
+    )
+  }
   buildImageStatsBlock(fs_hash) {
     const images_this_hash = this.getImageCountForFramesetHash(fs_hash)
     const image_count_string = images_this_hash.toString() + ' images'
@@ -297,7 +307,7 @@ class JobEvalTileView extends React.Component {
             const end_point = start_point + num_cols
             const fs_hashes_this_row = ordered_hashes.slice(start_point, end_point)
             return (
-              <div className='row pt-2 pr-2' key={row_num}>
+              <div className='row' key={row_num}>
                 {fs_hashes_this_row.map((fs_hash, index) => {
                   let div_class = col_class
                   if (
@@ -308,21 +318,35 @@ class JobEvalTileView extends React.Component {
                   }
                   const img_url = this.props.getImageFromFrameset(fs_hash, movie['framesets'])
                   const stats_block = this.buildImageStatsBlock(fs_hash)
-
+                  const delete_link = this.buildImageDeleteLink(fs_hash)
+                  const div_style1 = {
+                    height: '20px',
+                  }
                   return (
                     <div 
                         className={div_class} 
                         key={index} 
                     >
-                      {stats_block}
+                      <div className='row'>
+                        <div className='d-inline'>
+                          {stats_block}
+                        </div>
+                        <div className='d-inline'>
+                          {delete_link}
+                        </div>
+                      </div>
 
-                      <img
-                        id='job_eval_image'
-                        style={img_style}
-                        src={img_url}
-                        alt={img_url}
-                        onClick={()=>{this.selectFramesetHash(fs_hash)}}
-                      />
+                      <div className='row ml-1 mr-1'>
+                        <img
+                          id='job_eval_image'
+                          style={img_style}
+                          src={img_url}
+                          alt={img_url}
+                          onClick={()=>{this.selectFramesetHash(fs_hash)}}
+                        />
+                      </div>
+                      <div style={div_style1} className='row pl-5 pr-5 pb-2 border-bottom rounded'>
+                      </div>
                     </div>
                   )
                 })}

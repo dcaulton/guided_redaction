@@ -905,6 +905,7 @@ class JobEvalPanel extends React.Component {
           tier_1_matches={this.props.tier_1_matches}
           active_t1_scanner_type={this.state.active_t1_scanner_type}
           getFramesetReviewDisplayString={this.getFramesetReviewDisplayString}
+          removeFramesetHash={this.props.removeFramesetHash}
         />
       )
 

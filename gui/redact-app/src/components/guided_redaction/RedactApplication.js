@@ -2411,6 +2411,7 @@ class RedactApplication extends React.Component {
                 setActiveWorkflow={this.setActiveWorkflow}
                 runExportTask={this.runExportTask}
                 postImportArchiveCall={this.postImportArchiveCall}
+                removeFramesetHash={this.removeFramesetHashWrapper}
               />
             </Route>
             <Route path={['/redact/compose', '/redact']}>

@@ -118,7 +118,7 @@ img#insights_image {
 }
 
 div.active_card {
-  border: 5px solid red;
+  background-color: #FFDDDD;
 }
 
 div.green_card {
