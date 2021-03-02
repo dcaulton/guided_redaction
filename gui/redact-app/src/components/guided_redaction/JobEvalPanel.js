@@ -461,12 +461,16 @@ class JobEvalPanel extends React.Component {
     }
     if (this.state.image_mode === 'add_permanent_standard_box_1') {
       this.saveCoordsAndSetImageMode(x_scaled, y_scaled, 'add_permanent_standard_box_2')
+    } else if (this.state.image_mode === 'add_permanent_standard_unwanted_box_1') {
+      this.saveCoordsAndSetImageMode(x_scaled, y_scaled, 'add_permanent_standard_unwanted_box_2')
     } else if (this.state.image_mode === 'add_desired_box_1') {
       this.saveCoordsAndSetImageMode(x_scaled, y_scaled, 'add_desired_box_2')
     } else if (this.state.image_mode === 'add_unwanted_box_1') {
       this.saveCoordsAndSetImageMode(x_scaled, y_scaled, 'add_unwanted_box_2')
     } else if (this.state.image_mode === 'add_permanent_standard_box_2') {
-      this.doAddPermanentStandardBox2(x_scaled, y_scaled)
+      this.doAddPermanentStandardBox2('positive', x_scaled, y_scaled)
+    } else if (this.state.image_mode === 'add_permanent_standard_unwanted_box_2') {
+      this.doAddPermanentStandardBox2('negative', x_scaled, y_scaled)
     } else if (this.state.image_mode === 'add_desired_box_2') {
       this.doAddDesiredBox2(x_scaled, y_scaled)
     } else if (this.state.image_mode === 'add_unwanted_box_2') {
@@ -557,25 +561,44 @@ class JobEvalPanel extends React.Component {
     })
   }
 
-  doAddPermanentStandardBox2(x_scaled, y_scaled) {
+  doAddPermanentStandardBox2(type_in='positive', x_scaled, y_scaled) {
+    const build_boxes = {}
     const new_id = 'box_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
     const new_box = {
       source: 'manual',
+      type: type_in,
       start: this.state.clicked_coords,
       end: [x_scaled, y_scaled],
     }
+    build_boxes[new_id] = new_box
+    this.addPermanentStandardAreas(type_in, build_boxes, x_scaled, y_scaled)
+  }
+
+  addPermanentStandardAreas(type_in, boxes, x_scaled, y_scaled) {
     let deepCopyPs = JSON.parse(JSON.stringify(this.state.jeo_permanent_standards))
     const movie_name = getFileNameFromUrl(this.state.active_movie_url)
+
     if (!Object.keys(deepCopyPs).includes(movie_name)) {
       deepCopyPs[movie_name] = {framesets: {}}
     }
     if (!Object.keys(deepCopyPs[movie_name]['framesets']).includes(this.props.frameset_hash)) {
       deepCopyPs[movie_name]['framesets'][this.props.frameset_hash] = {}
     }
-    deepCopyPs[movie_name]['framesets'][this.props.frameset_hash][new_id] = new_box
+
+    for (let i=0; i < Object.keys(boxes).length; i++) {
+      const box_id = Object.keys(boxes)[i]
+      const new_box = boxes[box_id]
+      deepCopyPs[movie_name]['framesets'][this.props.frameset_hash][box_id] = new_box
+    }
+
+    let new_image_mode = 'add_permanent_standard_box_1'
+    if (type_in === 'negative') {
+      new_image_mode = 'add_permanent_standard_unwanted_box_1'
+    }
+
     this.setState({
       clicked_coords: [x_scaled, y_scaled],
-      image_mode: 'add_permanent_standard_box_1',
+      image_mode: new_image_mode,
       jeo_permanent_standards: deepCopyPs,
       something_changed: true,
       message: 'You will need to save changes to this JEO before they will have effect in the generation of the next Job Run Summary',

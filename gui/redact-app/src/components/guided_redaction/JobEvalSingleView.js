@@ -437,19 +437,31 @@ class JobEvalSingleView extends React.Component {
     )
   }
 
-  buildAddBoxButton() {
+  buildAddAsWantedButton() {
     return (
       <button
         className='btn btn-primary'
         onClick={()=>{this.props.setLocalStateVar('image_mode', 'add_permanent_standard_box_1')}}
       >
-        Add Box
+        Add As Wanted
+      </button>
+    )
+  }
+
+  buildAddAsUnWantedButton() {
+    return (
+      <button
+        className='btn btn-primary'
+        onClick={()=>{this.props.setLocalStateVar('image_mode', 'add_permanent_standard_unwanted_box_1')}}
+      >
+        Add As Unwanted
       </button>
     )
   }
 
   buildAnnotateSingleButtons() {
-    const add_box_button = this.buildAddBoxButton()
+    const add_wanted_button = this.buildAddAsWantedButton()
+    const add_unwanted_button = this.buildAddAsUnWantedButton()
     const add_same_as_prev_frame_button = this.buildAddSameAnnotationsAsPrevFramesetButton()
     const copy_button = this.buildCopyCurrentAnnotationsFramesetButton()
     const paste_button = this.buildPasteAnnotationFramesetButton()
@@ -465,7 +477,11 @@ class JobEvalSingleView extends React.Component {
     return (
       <div>
         <div className='d-inline ml-1'>
-          {add_box_button}
+          {add_wanted_button}
+        </div>
+
+        <div className='d-inline ml-1'>
+          {add_unwanted_button}
         </div>
 
         <div className='d-inline ml-1'>

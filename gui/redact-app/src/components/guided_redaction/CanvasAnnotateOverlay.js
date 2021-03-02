@@ -18,6 +18,7 @@ class CanvasAnnotateOverlay extends React.Component {
     // looks like one is getting the unscaled coords, the other gets the scaled maybe?  
     if (
       this.props.mode === 'add_permanent_standard_box_2' ||
+      this.props.mode === 'add_permanent_standard_unwanted_box_2' ||
       this.props.mode === 'add_desired_box_2' ||
       this.props.mode === 'add_unwanted_box_2' 
     ) {
@@ -78,7 +79,18 @@ class CanvasAnnotateOverlay extends React.Component {
 
   drawPermanentStandardBoxes() {
     const boxes = this.props.getPermanentStandardBoxes()
-    this.drawBoxesAroundStartEndRecords(boxes, '#F24')
+    const positive_boxes = {}
+    const negative_boxes = {}
+    for (let i=0; i < Object.keys(boxes).length; i++) {
+      const box_id = Object.keys(boxes)[i]
+      if (Object.keys(boxes[box_id]).includes('type') && boxes[box_id]['type'] === 'positive') {
+        positive_boxes[box_id] = boxes[box_id]
+      } else if (Object.keys(boxes[box_id]).includes('type') && boxes[box_id]['type'] === 'negative') {
+        negative_boxes[box_id] = boxes[box_id]
+      }
+    }
+    this.drawBoxesAroundStartEndRecords(positive_boxes, '#F24')
+    this.drawBoxesAroundStartEndRecords(negative_boxes, '#24A')
   }
 
   drawT1MatchBoxes() {
