@@ -62,11 +62,14 @@ class ScoreBaseController(T1Controller):
                     match_obj['location'][1] + match_obj['size'][1]
                 ]
             if start:
+                desired_color = 255
+                if match_obj.get('positive_or_negative', 'positive') == 'negative':
+                    desired_color = 0
                 cv2.rectangle(
                     job_matches_img,
                     tuple(start),
                     tuple(end),
-                    255,
+                    desired_color,
                     -1
                 )
         return job_matches_img
