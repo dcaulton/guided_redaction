@@ -59,7 +59,6 @@ class SelectedAreaController(T1Controller):
                     resp_movies[movie_url]['framesets'][frameset_hash][area_key] = build_obj
         return resp_movies
 
-
     def build_selected_areas(self, request_data):
         response_movies = {}
 
@@ -133,7 +132,7 @@ class SelectedAreaController(T1Controller):
             frameset
         )
 
-        if selected_area_meta['merge'] == 'yes':
+        if selected_area_meta['merge']:
             regions_for_image = self.merge_regions(regions_for_image)
 
         if selected_area_meta['interior_or_exterior'] == 'exterior':
@@ -235,6 +234,8 @@ class SelectedAreaController(T1Controller):
                 # if min zone has at least one pixel overlapping:
                 if (r_start[0] < mz_end[0] and r_start[1] < mz_end[0]) and\
                     (r_end[0] > mz_start[0] and r_end[1] > mz_start[1]):
+                    r_start = list(r_start)
+                    r_end = list(r_end)
                     # enforce max x
                     if r_end[0] > mz_end[0]:
                         r_end[0] = mz_end[0]
@@ -422,13 +423,6 @@ class SelectedAreaController(T1Controller):
                         build_region['mask'] = mask
                     regions_for_image.append(build_region)
         return regions_for_image
-
-    def we_should_use_a_mask(self, selected_area_meta, num_regions):
-        # if the regions are complicated enough, or a mask has been requested, return True
-        if selected_area_meta['masks_always'] == 'yes':
-            return True
-        if num_regions > self.max_num_regions_before_mask_is_smarter:
-            return True
 
     def get_everything_fill_for_t1(self, match_data, cv2_image, selected_area_meta):
         direction = selected_area_meta['everything_direction']

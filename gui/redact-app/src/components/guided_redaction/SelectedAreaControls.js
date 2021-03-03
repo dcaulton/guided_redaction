@@ -23,8 +23,8 @@ class SelectedAreaControls extends React.Component {
       id: '',
       name: '',
       select_type: 'flood',
-      merge: 'yes',
-      masks_always: 'no',
+      merge: true,
+      masks_always: false,
       interior_or_exterior: 'interior',
       attributes: {},
       origin_entity_type: 'adhoc',
@@ -59,6 +59,27 @@ class SelectedAreaControls extends React.Component {
     this.setLocalStateVar=this.setLocalStateVar.bind(this)
   }
 
+  buildToggleField(field_name, label) {
+    let checked_val = ''
+    if (this.state[field_name]) {
+      checked_val = 'checked'
+    }
+    return (
+      <div className='ml-2'>
+        <div className='d-inline'>
+          <input
+            className='mr-2'
+            checked={checked_val}
+            type='checkbox'
+            onChange={() => this.setLocalStateVar(field_name, !this.state[field_name])}
+          />
+        </div>
+        <div className='d-inline'>
+          {label}
+        </div>
+      </div>
+    )
+  }
 
   showSourceFrame(movie_url, image_frameset_index) {
     this.props.setCurrentVideo(movie_url)
@@ -288,8 +309,8 @@ class SelectedAreaControls extends React.Component {
       id: the_id,
       name: '',
       select_type: 'flood',
-      merge: 'yes',
-      masks_always: 'no',
+      merge: true,
+      masks_always: false,
       interior_or_exterior: 'interior',
       attributes: {},
       origin_entity_type: 'adhoc',
@@ -350,34 +371,6 @@ class SelectedAreaControls extends React.Component {
         (()=>{this.props.displayInsightsMessage('Selected Area has been saved to database')})
       )
     }))
-  }
-
-  buildMergeDropdown() {
-    const values = [
-      {'yes': 'yes'},
-      {'no': 'no'}
-    ]
-    return buildLabelAndDropdown(
-      values,
-      'Merge Subareas',
-      this.state.merge,
-      'selected_area_merge',
-      ((value)=>{this.setLocalStateVar('merge', value)})
-    )
-  }
-
-  buildMasksDropdown() {
-    const values = [
-      {'yes': 'yes'},
-      {'no': 'no'}
-    ]
-    return buildLabelAndDropdown(
-      values,
-      'Generate Masks Always',
-      this.state.masks_always,
-      'selected_area_masks_always',
-      ((value)=>{this.setLocalStateVar('masks_always', value)})
-    )
   }
 
   buildSelectTypeDropdown() {
@@ -872,8 +865,8 @@ class SelectedAreaControls extends React.Component {
   }
 
   buildNonExclusiveFields() {
-    const merge_dropdown = this.buildMergeDropdown()
-    const masks_dropdown = this.buildMasksDropdown()
+    const merge_field = this.buildToggleField('merge', 'Merge Subareas')
+    const masks_field = this.buildToggleField('masks_always', 'Generate Masks Always')
     const select_type_dropdown = this.buildSelectTypeDropdown()
     const interior_or_exterior_dropdown = this.buildInteriorOrExteriorDropdown()
     const tolerance_field = this.buildToleranceField()
@@ -883,11 +876,11 @@ class SelectedAreaControls extends React.Component {
     return (
       <div>
         <div className='row mt-2'>
-          {merge_dropdown}
+          {merge_field}
         </div>
 
         <div className='row mt-2'>
-          {masks_dropdown}
+          {masks_field}
         </div>
 
         <div className='row mt-2'>

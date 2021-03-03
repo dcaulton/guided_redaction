@@ -9,6 +9,8 @@ from guided_redaction.utils.classes.FileWriter import FileWriter
 
 class T1Controller:
 
+    max_num_regions_before_mask_is_smarter = 5
+
     def get_cv2_image_from_url(self, image_url, file_writer=None):
         cv2_image = None
         if not file_writer:
@@ -106,3 +108,11 @@ class T1Controller:
         nparr = np.fromstring(img_bytes, np.uint8)
         cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
         return cv2_image
+
+    def we_should_use_a_mask(self, scanner_meta, num_regions):
+        # if the regions are complicated enough, or a mask has been requested, return True
+        if scanner_meta['masks_always']:
+            return True
+        if num_regions > self.max_num_regions_before_mask_is_smarter:
+            return True
+
