@@ -43,7 +43,6 @@ class SelectedAreaController(T1Controller):
                         'scale': 1,
                     }
                     if self.we_should_use_a_mask(selected_area_meta, len(man_zones[movie_url]['framesets'][frameset_hash])):
-                        print('looking for key {} in {}'.format(movie_url, source_movies.keys()))
                         s_mov = source_movies[movie_url]
                         if 'frame_dimensions' not in s_mov:
                             continue
@@ -529,7 +528,7 @@ class SelectedAreaController(T1Controller):
                 'origin': start_point,
                 'sam_area_id': 'everything_' + str(random.randint(9999, 99999999)),
             }
-            if self.we_should_use_a_mask(selected_area_meta, (new_start, new_end)):
+            if self.we_should_use_a_mask(selected_area_meta, 1):
                 return_mask = np.zeros(cv2_image.shape[:2])
                 cv2.rectangle(
                     return_mask,
@@ -557,7 +556,7 @@ class SelectedAreaController(T1Controller):
                     'origin': selected_point,
                     'sam_area_id': area['id'],
                 }
-                if self.we_should_use_a_mask(selected_area_meta, region):
+                if self.we_should_use_a_mask(selected_area_meta, len(selected_area_meta['areas'])):
                     build_region['mask'] = mask
                 regions_for_image.append(build_region)
             if selected_area_meta['select_type'] == 'flood':
@@ -569,7 +568,7 @@ class SelectedAreaController(T1Controller):
                     'origin': selected_point,
                     'sam_area_id': area['id'],
                 }
-                if self.we_should_use_a_mask(selected_area_meta, region):
+                if self.we_should_use_a_mask(selected_area_meta, len(selected_area_meta['areas'])):
                     build_region['mask'] = mask
                 regions_for_image.append(build_region)
         return regions_for_image
