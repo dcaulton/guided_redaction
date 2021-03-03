@@ -35,6 +35,7 @@ class SelectionGrowerControls extends React.Component {
       },
       colors: {},
       merge_response: true,
+      masks_always: false,
       tie_grid_to_selected_area: true,
       row_column_threshold: 2,
       ocr_job_id: '',
@@ -304,6 +305,7 @@ class SelectionGrowerControls extends React.Component {
         offsets: sam['offsets'],
         colors: sam['colors'],
         merge_response: sam['merge_response'],
+        masks_always: sam['masks_always'],
         tie_grid_to_selected_area: sam['tie_grid_to_selected_area'],
         row_column_threshold: sam['row_column_threshold'],
         ocr_job_id: sam['ocr_job_id'],
@@ -343,6 +345,7 @@ class SelectionGrowerControls extends React.Component {
       },
       colors: [],
       merge_response: true,
+      masks_always: false,
       tie_grid_to_selected_area: true,
       row_column_threshold: 2,
       ocr_job_id: '',
@@ -367,6 +370,7 @@ class SelectionGrowerControls extends React.Component {
       offsets: this.state.offsets,
       colors: this.state.colors,
       merge_response: this.state.merge_response,
+      masks_always: this.state.masks_always,
       tie_grid_to_selected_area: this.state.tie_grid_to_selected_area,
       row_column_threshold: this.state.row_column_threshold,
       ocr_job_id: this.state.ocr_job_id,
@@ -437,50 +441,6 @@ class SelectionGrowerControls extends React.Component {
     )
   }
 
-  buildSkipIfOcrNeededField() {
-    let checked_value = ''
-    if (this.state.skip_if_ocr_needed) {
-      checked_value = 'checked'
-    }
-    return (
-      <div>
-        <div className='d-inline'>
-          <input
-            className='ml-2 mr-2 mt-1'
-            checked={checked_value}
-            type='checkbox'
-            onChange={() => this.setLocalStateVar('skip_if_ocr_needed', !this.state.skip_if_ocr_needed)}
-          />
-        </div>
-        <div className='d-inline'>
-          Skip If Ocr Needed
-        </div>
-      </div>
-    )
-  }
-
-  buildDebugField() {
-    let checked_value = ''
-    if (this.state.debug) {
-      checked_value = 'checked'
-    }
-    return (
-      <div>
-        <div className='d-inline'>
-          <input
-            className='ml-2 mr-2 mt-1'
-            checked={checked_value}
-            type='checkbox'
-            onChange={() => this.setLocalStateVar('debug', !this.state.debug)}
-          />
-        </div>
-        <div className='d-inline'>
-          Debug
-        </div>
-      </div>
-    )
-  }
-
   buildDirectionField() {
     const directions = ['north', 'south', 'east', 'west']
     return (
@@ -517,31 +477,9 @@ class SelectionGrowerControls extends React.Component {
     )
   }
 
-  buildTieGridToSelectedAreaField() {
+  buildToggleField(field_name, label) {
     let checked_val = ''
-    if (this.state.tie_grid_to_selected_area) {
-      checked_val = 'checked'
-    }
-    return (
-      <div>
-        <div className='d-inline'>
-          <input 
-            className='mr-2'
-            checked={checked_val}
-            type='checkbox'
-            onChange={() => this.setLocalStateVar('tie_grid_to_selected_area', !this.state.tie_grid_to_selected_area)}
-          />
-        </div>
-        <div className='d-inline'>
-          Tie Grid to Selected Area
-        </div>
-      </div>
-    )
-  }
-
-  buildMergeResponseField() {
-    let checked_val = ''
-    if (this.state.merge_response) {
+    if (this.state[field_name]) {
       checked_val = 'checked'
     }
     return (
@@ -551,11 +489,11 @@ class SelectionGrowerControls extends React.Component {
             className='mr-2'
             checked={checked_val}
             type='checkbox'
-            onChange={() => this.setLocalStateVar('merge_response', !this.state.merge_response)}
+            onChange={() => this.setLocalStateVar(field_name, !this.state[field_name])}
           />
         </div>
         <div className='d-inline'>
-          Merge Response with Input 
+          {label}
         </div>
       </div>
     )
@@ -1046,9 +984,9 @@ class SelectionGrowerControls extends React.Component {
 
   buildGridCaptureSection() {
     const row_column_threshold_field = this.buildRowColumnThresholdField()
-    const tie_grid_field = this.buildTieGridToSelectedAreaField()
+    const tie_grid_field = this.buildToggleField('tie_grid_to_selected_area', 'Tie Grid to Selected Area')
     const ocr_id_field = this.buildOcrMatchIdField()
-    const skip_if_ocr_needed_field = this.buildSkipIfOcrNeededField()
+    const skip_if_ocr_needed_field = this.buildToggleField('skip_if_ocr_needed', 'Skip if Ocr Needed')
     return (
       <div className='col'>
         <div className='row h5 border-top border-bottom bg-gray'>
@@ -1107,8 +1045,9 @@ class SelectionGrowerControls extends React.Component {
     const save_to_db_button = this.buildSaveToDatabaseButton()
     const clear_matches_button = this.buildClearMatchesButton2()
     const direction_field = this.buildDirectionField()
-    const merge_response_field = this.buildMergeResponseField()
-    const debug_field = this.buildDebugField()
+    const merge_response_field = this.buildToggleField('merge_response', 'Merge Response with Input')
+    const masks_field = this.buildToggleField('masks_always', 'Generate Masks Always')
+    const debug_field = this.buildToggleField('debug', 'Debug')
     const offsets_field = this.buildOffsetsField()
     const header_row = makeHeaderRow(
       'selection grower',
@@ -1157,6 +1096,10 @@ class SelectionGrowerControls extends React.Component {
 
                 <div className='row mt-2'>
                   {merge_response_field}
+                </div>
+
+                <div className='row mt-2'>
+                  {masks_field}
                 </div>
 
                 <div className='row mt-2'>
