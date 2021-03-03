@@ -1011,7 +1011,6 @@ class ComposePanel extends React.Component {
   }
 
   afterMovieCreated(new_movie) {
-console.log('pauliena after movie created is ', new_movie)
     const img_url = this.props.getImageUrl()
     this.props.addImageToMovie({
       url: img_url,

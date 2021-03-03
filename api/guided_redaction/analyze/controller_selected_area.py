@@ -1,9 +1,7 @@
 import cv2
-import json
 import math
 import numpy as np
 import random
-import uuid
 from django.conf import settings
 from guided_redaction.analyze.classes.ExtentsFinder import ExtentsFinder
 from .controller_t1 import T1Controller
@@ -18,7 +16,6 @@ class SelectedAreaController(T1Controller):
             base_url=settings.REDACT_FILE_BASE_URL,
             image_request_verify_headers=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
         )
-        self.file_storage_dir_uuid = str(uuid.uuid4())
         self.max_num_regions_before_mask_is_smarter = 5
 
     def build_selected_areas(self, request_data):

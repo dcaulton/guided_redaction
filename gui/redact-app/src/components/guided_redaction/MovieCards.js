@@ -355,10 +355,20 @@ class MovieCard extends React.Component {
     }
     let matches_button = ''
     let clear_button = ''
+    let clear_button_class = 'border-0 text-primary p-1 '
+    let next_button_class = 'border-0 text-primary p-1 ml-2 '
+    if (this.props.this_cards_movie_url === this.props.active_movie_url) {
+      clear_button_class += ' active_button'
+      next_button_class += ' active_button'
+    } else {
+      clear_button_class += ' bg-white'
+      next_button_class += ' bg-white'
+    }
+
     if (count > 0) {
       clear_button = (
         <button
-          className='border-0 text-primary bg-white p-1'
+          className={clear_button_class}
           onClick={() => this.clearTier1Matches(scanner_type)}
         >
           clr
@@ -366,7 +376,7 @@ class MovieCard extends React.Component {
       )
       matches_button = (
         <button
-          className='border-0 text-primary bg-white p-1 ml-2'
+          className={next_button_class}
           onClick={() => this.setScrubberToNextTier1Hit(scanner_type)}
         >
           nxt

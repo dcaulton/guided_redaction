@@ -121,6 +121,10 @@ div.active_card {
   background-color: #FFDDDD;
 }
 
+button.active_button {
+  background-color: #FFDDDD;
+}
+
 div.green_card {
   border: 9px dashed green;
 }
