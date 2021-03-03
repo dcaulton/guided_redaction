@@ -83,9 +83,15 @@ class CanvasAnnotateOverlay extends React.Component {
     const negative_boxes = {}
     for (let i=0; i < Object.keys(boxes).length; i++) {
       const box_id = Object.keys(boxes)[i]
-      if (Object.keys(boxes[box_id]).includes('type') && boxes[box_id]['type'] === 'positive') {
+      if (
+        Object.keys(boxes[box_id]).includes('positive_or_negative') && 
+        boxes[box_id]['positive_or_negative'] === 'positive'
+      ) {
         positive_boxes[box_id] = boxes[box_id]
-      } else if (Object.keys(boxes[box_id]).includes('type') && boxes[box_id]['type'] === 'negative') {
+      } else if (
+        Object.keys(boxes[box_id]).includes('positive_or_negative') && 
+        boxes[box_id]['positive_or_negative'] === 'negative'
+      ) {
         negative_boxes[box_id] = boxes[box_id]
       }
     }

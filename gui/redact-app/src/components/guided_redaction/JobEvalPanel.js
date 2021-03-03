@@ -566,7 +566,7 @@ class JobEvalPanel extends React.Component {
     const new_id = 'box_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
     const new_box = {
       source: 'manual',
-      type: type_in,
+      positive_or_negative: type_in,
       start: this.state.clicked_coords,
       end: [x_scaled, y_scaled],
     }
