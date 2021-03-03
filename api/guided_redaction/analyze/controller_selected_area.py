@@ -18,10 +18,14 @@ class SelectedAreaController(T1Controller):
         )
         self.max_num_regions_before_mask_is_smarter = 5
 
-    def build_manual_selected_areas(self, selected_area_meta):
+    def build_manual_selected_areas(self, selected_area_meta, source_movies, movies):
+        if not source_movies:
+            source_movies = movies
         man_zones = selected_area_meta['manual_zones']
         resp_movies = {}
         for movie_url in man_zones:
+            if movie_url not in source_movies:
+                continue
             resp_movies[movie_url] = {'framesets': {}}
             for frameset_hash in man_zones[movie_url]['framesets']:
                 resp_movies[movie_url]['framesets'][frameset_hash] = {}
@@ -38,6 +42,21 @@ class SelectedAreaController(T1Controller):
                         'origin': [0, 0],
                         'scale': 1,
                     }
+                    if self.we_should_use_a_mask(selected_area_meta, len(man_zones[movie_url]['framesets'][frameset_hash])):
+                        print('looking for key {} in {}'.format(movie_url, source_movies.keys()))
+                        s_mov = source_movies[movie_url]
+                        if 'frame_dimensions' not in s_mov:
+                            continue
+                        dims = s_mov['frame_dimensions']
+                        mask = np.zeros((dims[1], dims[0]))
+                        cv2.rectangle(
+                            mask,
+                            man_zone['start'],
+                            man_zone['end'],
+                            255,
+                            -1
+                        )
+                        build_obj['mask'] = self.get_base64_image_string(mask)
                     resp_movies[movie_url]['framesets'][frameset_hash][area_key] = build_obj
         return resp_movies
 
@@ -48,9 +67,6 @@ class SelectedAreaController(T1Controller):
         sam_id = list(request_data['tier_1_scanners']['selected_area'].keys())[0]
         selected_area_meta = request_data['tier_1_scanners']['selected_area'][sam_id]
 
-        if selected_area_meta['select_type'] == 'manual':
-            return self.build_manual_selected_areas(selected_area_meta)
-            
         source_movies = {}
         movies = request_data.get('movies')
         if 'source' in movies:
@@ -59,6 +75,9 @@ class SelectedAreaController(T1Controller):
         movie_url = list(movies.keys())[0]
         movie = movies[movie_url]
 
+        if selected_area_meta['select_type'] == 'manual':
+            return self.build_manual_selected_areas(selected_area_meta, source_movies, movies)
+            
         finder = ExtentsFinder()
         response_movies[movie_url] = {}
         response_movies[movie_url]['framesets'] = {}
@@ -388,7 +407,7 @@ class SelectedAreaController(T1Controller):
                         'origin': selected_point,
                         'sam_area_id': area_scanner_key,
                     }
-                    if self.we_should_use_a_mask(selected_area_meta, region):
+                    if self.we_should_use_a_mask(selected_area_meta, len(regions_for_image)+1):
                         build_region['mask'] = mask
                     regions_for_image.append(build_region)
                 if selected_area_meta['select_type'] == 'flood':
@@ -400,16 +419,16 @@ class SelectedAreaController(T1Controller):
                         'origin': selected_point,
                         'sam_area_id': area_scanner_key,
                     }
-                    if self.we_should_use_a_mask(selected_area_meta, region):
+                    if self.we_should_use_a_mask(selected_area_meta, len(regions_for_image)+1):
                         build_region['mask'] = mask
                     regions_for_image.append(build_region)
         return regions_for_image
 
-    def we_should_use_a_mask(self, selected_area_meta, regions):
+    def we_should_use_a_mask(self, selected_area_meta, num_regions):
         # if the regions are complicated enough, or a mask has been requested, return True
         if selected_area_meta['masks_always'] == 'yes':
             return True
-        if len(regions) > self.max_num_regions_before_mask_is_smarter:
+        if num_regions > self.max_num_regions_before_mask_is_smarter:
             return True
 
     def get_everything_fill_for_t1(self, match_data, cv2_image, selected_area_meta):
