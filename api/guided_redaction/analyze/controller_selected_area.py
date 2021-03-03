@@ -18,9 +18,39 @@ class SelectedAreaController(T1Controller):
         )
         self.max_num_regions_before_mask_is_smarter = 5
 
+    def build_manual_selected_areas(self, selected_area_meta):
+        man_zones = selected_area_meta['manual_zones']
+        resp_movies = {}
+        for movie_url in man_zones:
+            resp_movies[movie_url] = {'framesets': {}}
+            for frameset_hash in man_zones[movie_url]['framesets']:
+                resp_movies[movie_url]['framesets'][frameset_hash] = {}
+                for area_key in man_zones[movie_url]['framesets'][frameset_hash]:
+                    man_zone = man_zones[movie_url]['framesets'][frameset_hash][area_key]
+                    size = [
+                        man_zone['end'][0] - man_zone['start'][0],   
+                        man_zone['end'][1] - man_zone['start'][1]
+                    ]
+                    build_obj = {
+                        'location': man_zone['start'],
+                        'size': size,
+                        'scanner_type': 'selected_area',
+                        'origin': [0, 0],
+                        'scale': 1,
+                    }
+                    resp_movies[movie_url]['framesets'][frameset_hash][area_key] = build_obj
+        return resp_movies
+
+
     def build_selected_areas(self, request_data):
         response_movies = {}
 
+        sam_id = list(request_data['tier_1_scanners']['selected_area'].keys())[0]
+        selected_area_meta = request_data['tier_1_scanners']['selected_area'][sam_id]
+
+        if selected_area_meta['select_type'] == 'manual':
+            return self.build_manual_selected_areas(selected_area_meta)
+            
         source_movies = {}
         movies = request_data.get('movies')
         if 'source' in movies:
@@ -28,9 +58,6 @@ class SelectedAreaController(T1Controller):
             del movies['source']
         movie_url = list(movies.keys())[0]
         movie = movies[movie_url]
-
-        sam_id = list(request_data['tier_1_scanners']['selected_area'].keys())[0]
-        selected_area_meta = request_data['tier_1_scanners']['selected_area'][sam_id]
 
         finder = ExtentsFinder()
         response_movies[movie_url] = {}

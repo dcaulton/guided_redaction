@@ -299,7 +299,7 @@ class SelectedAreaControls extends React.Component {
       areas: [],
       minimum_zones: [],
       maximum_zones: [],
-      manual_zones: [],
+      manual_zones: {},
       tolerance: 5,
       everything_direction: '',
       respect_source_dimensions: true,
