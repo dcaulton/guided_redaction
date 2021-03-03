@@ -34,6 +34,7 @@ class SelectedAreaControls extends React.Component {
       areas: [],
       minimum_zones: [],
       maximum_zones: [],
+      manual_zones: {},
       tolerance: 5,
       everything_direction: '',
       respect_source_dimensions: true,
@@ -45,12 +46,15 @@ class SelectedAreaControls extends React.Component {
     this.getCurrentSelectedAreaCenters=this.getCurrentSelectedAreaCenters.bind(this)
     this.getCurrentSelectedAreaMinimumZones=this.getCurrentSelectedAreaMinimumZones.bind(this)
     this.getCurrentSelectedAreaMaximumZones=this.getCurrentSelectedAreaMaximumZones.bind(this)
+    this.getCurrentSelectedAreaManualZones=this.getCurrentSelectedAreaManualZones.bind(this)
     this.getCurrentSelectedAreaOriginLocation=this.getCurrentSelectedAreaOriginLocation.bind(this)
     this.addOriginLocation=this.addOriginLocation.bind(this)
     this.addMinimumZonesCallback1=this.addMinimumZonesCallback1.bind(this)
     this.addMinimumZonesCallback2=this.addMinimumZonesCallback2.bind(this)
     this.addMaximumZonesCallback1=this.addMaximumZonesCallback1.bind(this)
     this.addMaximumZonesCallback2=this.addMaximumZonesCallback2.bind(this)
+    this.addManualZoneCallback1=this.addManualZoneCallback1.bind(this)
+    this.addManualZoneCallback2=this.addManualZoneCallback2.bind(this)
     this.getSelectedAreaMetaFromState=this.getSelectedAreaMetaFromState.bind(this)
     this.setLocalStateVar=this.setLocalStateVar.bind(this)
   }
@@ -84,6 +88,35 @@ class SelectedAreaControls extends React.Component {
         )
       }
     }
+  }
+
+  addManualZoneCallback1(click_coords) {
+    this.setState({
+      first_click_coords: click_coords,
+    })
+    this.props.handleSetMode('selected_area_manual_zones_2')
+  }
+
+  addManualZoneCallback2(click_coords) {
+    const zone_id = 'selected_area_manual_zone_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
+    const the_zone = {
+      'start': this.state.first_click_coords,
+      'end': click_coords,
+    }
+    let deepCopyManualZones = this.state['manual_zones']
+    if (!Object.keys(this.state.manual_zones).includes(this.props.movie_url)) {
+      deepCopyManualZones[this.props.movie_url] = { framesets: {} }
+    }
+    const fsh = this.props.getFramesetHashForImageUrl(this.props.insights_image)
+    if (!Object.keys(deepCopyManualZones[this.props.movie_url]['framesets']).includes(fsh)) {
+      deepCopyManualZones[this.props.movie_url]['framesets'][fsh] = {}
+    }
+    deepCopyManualZones[this.props.movie_url]['framesets'][fsh][zone_id] = the_zone
+    this.setLocalStateVar(
+      'manual_zones', 
+      deepCopyManualZones,
+      (()=>{this.props.handleSetMode('selected_area_manual_zones_1')})
+    )
   }
 
   addMinimumZonesCallback1(click_coords) {
@@ -150,6 +183,17 @@ class SelectedAreaControls extends React.Component {
     return this.state.maximum_zones
   }
 
+  getCurrentSelectedAreaManualZones() {
+    const fsh = this.props.getFramesetHashForImageUrl(this.props.insights_image)
+    if (
+      this.state.manual_zones &&
+      Object.keys(this.state.manual_zones).includes(this.props.movie_url) &&
+      Object.keys(this.state.manual_zones[this.props.movie_url]['framesets']).includes(fsh)
+    ) {
+      return this.state.manual_zones[this.props.movie_url]['framesets'][fsh]
+    }
+  }
+
   componentDidMount() {
     this.props.addInsightsCallback('selected_area_area_coords_1', this.addAreaCoordsCallback)
     this.props.addInsightsCallback('selected_area_minimum_zones_1', this.addMinimumZonesCallback1)
@@ -159,8 +203,11 @@ class SelectedAreaControls extends React.Component {
     this.props.addInsightsCallback('getCurrentSelectedAreaCenters', this.getCurrentSelectedAreaCenters)
     this.props.addInsightsCallback('getCurrentSelectedAreaMinimumZones', this.getCurrentSelectedAreaMinimumZones)
     this.props.addInsightsCallback('getCurrentSelectedAreaMaximumZones', this.getCurrentSelectedAreaMaximumZones)
+    this.props.addInsightsCallback('getCurrentSelectedAreaManualZones', this.getCurrentSelectedAreaManualZones)
     this.props.addInsightsCallback('getCurrentSelectedAreaOriginLocation', this.getCurrentSelectedAreaOriginLocation)
     this.props.addInsightsCallback('add_sa_origin_location_1', this.addOriginLocation)
+    this.props.addInsightsCallback('selected_area_manual_zones_1', this.addManualZoneCallback1)
+    this.props.addInsightsCallback('selected_area_manual_zones_2', this.addManualZoneCallback2)
     this.loadNewSelectedAreaMeta()
   }
 
@@ -219,6 +266,7 @@ class SelectedAreaControls extends React.Component {
         areas: sam['areas'],
         minimum_zones : sam['minimum_zones'],
         maximum_zones : sam['maximum_zones'],
+        manual_zones : sam['manual_zones'],
         tolerance: sam['tolerance'],
         everything_direction: sam['everything_direction'],
         respect_source_dimensions: sam['respect_source_dimensions'],
@@ -251,6 +299,7 @@ class SelectedAreaControls extends React.Component {
       areas: [],
       minimum_zones: [],
       maximum_zones: [],
+      manual_zones: [],
       tolerance: 5,
       everything_direction: '',
       respect_source_dimensions: true,
@@ -273,6 +322,7 @@ class SelectedAreaControls extends React.Component {
       areas: this.state.areas,
       minimum_zones: this.state.minimum_zones,
       maximum_zones: this.state.maximum_zones,
+      manual_zones: this.state.manual_zones,
       tolerance: this.state.tolerance,
       everything_direction: this.state.everything_direction,
       respect_source_dimensions: this.state.respect_source_dimensions,
@@ -334,6 +384,7 @@ class SelectedAreaControls extends React.Component {
     const values = [
       {'flood': 'flood simple'},
       {'arrow': 'arrow simple'},
+      {'manual': 'pick areas manually with mouse'},
     ]
     return buildLabelAndDropdown(
       values,
@@ -608,6 +659,9 @@ class SelectedAreaControls extends React.Component {
   }
 
   buildAddAreaCoordsButton() {
+    if (this.state.select_type === 'manual') {
+      return
+    }
     return buildInlinePrimaryButton(
       'Add Area Center',
       (()=>{this.startAddSelectedAreas()})
@@ -615,6 +669,9 @@ class SelectedAreaControls extends React.Component {
   }
 
   buildAddMinimumZonesButton() {
+    if (this.state.select_type === 'manual') {
+      return
+    }
     return buildInlinePrimaryButton(
       'Add Min Zones',
       (()=>{this.startAddMinimumZones()})
@@ -622,6 +679,9 @@ class SelectedAreaControls extends React.Component {
   }
 
   buildAddMaximumZonesButton() {
+    if (this.state.select_type === 'manual') {
+      return
+    }
     return buildInlinePrimaryButton(
       'Add Max Zones',
       (()=>{this.startAddMaximumZones()})
@@ -667,6 +727,9 @@ class SelectedAreaControls extends React.Component {
   }
 
   buildClearAreasButton() {
+    if (this.state.select_type === 'manual') {
+      return
+    }
     return buildInlinePrimaryButton(
       'Clear Area Centers',
       (()=>{this.clearAnchors()})
@@ -674,6 +737,9 @@ class SelectedAreaControls extends React.Component {
   }
   
   buildClearMinimumZonesButton() {
+    if (this.state.select_type === 'manual') {
+      return
+    }
     return buildInlinePrimaryButton(
       'Clear Min Zones',
       (()=>{this.clearMinimumZones()})
@@ -681,17 +747,48 @@ class SelectedAreaControls extends React.Component {
   }
   
   buildClearMaximumZonesButton() {
+    if (this.state.select_type === 'manual') {
+      return
+    }
     return buildInlinePrimaryButton(
       'Clear Max Zones',
       (()=>{this.clearMaximumZones()})
     )
   }
   
+  buildAddManualZoneButton() {
+    if (this.state.select_type !== 'manual') {
+      return
+    }
+    return buildInlinePrimaryButton(
+      'Add Manual Zone',
+      (()=>{this.startAddManualZone()})
+    )
+  }
+
+  buildClearManualZonesButton() {
+    if (this.state.select_type !== 'manual') {
+      return
+    }
+    return buildInlinePrimaryButton(
+      'Clear Manual Zones',
+      (()=>{this.clearManualZones()})
+    )
+  }
+  
+  startAddManualZone() {
+    this.props.handleSetMode('selected_area_manual_zones_1')
+    this.props.displayInsightsMessage('specify the upper left corner of the manual zone')
+  }
+
   startAddOriginLocation() {
     this.props.handleSetMode('add_sa_origin_location_1')
   }
 
   buildAddOriginLocationButton() {
+    if (this.state.select_type === 'manual') {
+      return
+    }
     return buildInlinePrimaryButton(
       'Set Origin Location',
       (()=>{this.startAddOriginLocation()})
@@ -699,6 +796,9 @@ class SelectedAreaControls extends React.Component {
   }
 
   buildClearOriginLocationButton() {
+    if (this.state.select_type === 'manual') {
+      return
+    }
     return buildInlinePrimaryButton(
       'Clear Origin Location',
       (()=>{this.clearOriginLocation()})
@@ -723,6 +823,11 @@ class SelectedAreaControls extends React.Component {
   clearMaximumZones() {
     this.setLocalStateVar('maximum_zones', [])
     this.props.displayInsightsMessage('Maximum zones have been cleared')
+  }
+
+  clearManualZones() {
+    this.setLocalStateVar('manual_zones', [])
+    this.props.displayInsightsMessage('Manual zones have been cleared')
   }
 
   clearSelectedAreaMatches(scope) {
@@ -822,6 +927,8 @@ class SelectedAreaControls extends React.Component {
     const clear_maximum_zones_button = this.buildClearMaximumZonesButton()
     const add_origin_location_button = this.buildAddOriginLocationButton()
     const clear_origin_location_button = this.buildClearOriginLocationButton()
+    const add_manual_button = this.buildAddManualZoneButton() 
+    const clear_manual_button = this.buildClearManualZonesButton() 
     const run_button = this.buildRunButtonWrapper()
     const delete_button = this.buildDeleteButton()
     const save_to_db_button = this.buildSaveToDatabaseButton()
@@ -867,6 +974,11 @@ class SelectedAreaControls extends React.Component {
                   {clear_minimum_zones_button}
                   {add_maximum_zones_button}
                   {clear_maximum_zones_button}
+                </div>
+
+                <div className='row mt-2'>
+                  {add_manual_button}
+                  {clear_manual_button}
                 </div>
 
                 <div className='row mt-2'>

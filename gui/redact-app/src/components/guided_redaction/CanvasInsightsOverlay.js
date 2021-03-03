@@ -12,6 +12,7 @@ class CanvasInsightsOverlay extends React.Component {
     this.sum_color = '#7ED'
     this.selected_area_minimum_zone_color = '#3EA'
     this.selected_area_maximum_zone_color = '#A3A'
+    this.selected_area_manual_zone_color = '#D9E'
     this.selected_area_origin_location_color = '#40D'
     this.mesh_match_minimum_zone_color = '#6EB'
     this.mesh_match_maximum_zone_color = '#AB2'
@@ -70,6 +71,20 @@ class CanvasInsightsOverlay extends React.Component {
         selected_area_min_zones,
         this.selected_area_maximum_zone_color
       )
+    }
+  }
+
+  drawSelectedAreaManualZones() {
+    const man_zones = this.props.runCallbackFunction('getCurrentSelectedAreaManualZones')
+    if (man_zones && Object.keys(man_zones).length > 0) {
+      for (let i=0; i < Object.keys(man_zones).length; i++) {
+        const mz_key = Object.keys(man_zones)[i]
+        const mz = man_zones[mz_key]
+        this.drawBoxesAroundStartEndRecords(
+          [mz],
+          this.selected_area_manual_zone_color
+        )
+      }
     }
   }
 
@@ -251,6 +266,7 @@ class CanvasInsightsOverlay extends React.Component {
       if ((this.props.mode === 'add_template_anchor_2') 
           || (this.props.mode === 'add_template_mask_zone_2')
           || (this.props.mode === 'selected_area_minimum_zones_2')
+          || (this.props.mode === 'selected_area_manual_zones_2')
           || (this.props.mode === 'selection_grower_add_color_zone_2')
           || (this.props.mode === 'selected_area_maximum_zones_2')
           || (this.props.mode === 'mesh_match_minimum_zones_2')
@@ -473,6 +489,7 @@ class CanvasInsightsOverlay extends React.Component {
     this.drawSGColors()
     this.drawSelectedAreaMinimumZones()
     this.drawSelectedAreaMaximumZones()
+    this.drawSelectedAreaManualZones()
     this.drawSelectedAreaOriginLocation()
     this.drawMeshMatchMinimumZones()
     this.drawMeshMatchMaximumZones()
@@ -500,6 +517,7 @@ class CanvasInsightsOverlay extends React.Component {
     this.drawSGColors()
     this.drawSelectedAreaMinimumZones()
     this.drawSelectedAreaMaximumZones()
+    this.drawSelectedAreaManualZones()
     this.drawSelectedAreaOriginLocation()
     this.drawMeshMatchMinimumZones()
     this.drawMeshMatchMaximumZones()

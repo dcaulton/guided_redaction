@@ -71,6 +71,7 @@ class PipelinePanel extends React.Component {
     this.props.getJobs()
     document.getElementById('pipeline_link').classList.add('active')
     this.refreshJobStatus()
+    this.props.setActiveWorkflow('')
   }
    
   saveJobResultData(response) {

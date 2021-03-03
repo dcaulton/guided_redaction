@@ -2389,6 +2389,7 @@ class RedactApplication extends React.Component {
                 getPipelineJobStatus={this.getPipelineJobStatus}
                 getJobResultData={this.getJobResultDataWrapper}
                 restartPipelineJob={this.restartPipelineJobWrapper}
+                setActiveWorkflow={this.setActiveWorkflow}
               />
             </Route>
             <Route path='/redact/job-eval'>
