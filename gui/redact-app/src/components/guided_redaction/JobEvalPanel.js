@@ -607,21 +607,31 @@ class JobEvalPanel extends React.Component {
   }
 
   annotateExemplarMovie(movie_url, annotate_view_mode) {
-    if (!Object.keys(this.props.movies).includes(movie_url)) {
-      this.setState({
-        'message': [
-          'error: campaign movie not loaded.',
-          'You must load the movie into global state, generally by loading a jobs results,  The movie is listed here because it has previously been annotated, at that time the movie was in global state.'
-        ],
-      })
-      return
+  const movie_name = getFileNameFromUrl(movie_url)
+  let movie_found = false
+  let current_movie_url = ''
+  for (let i=0; i < Object.keys(this.props.movies).length; i++) {
+    const movie_url = Object.keys(this.props.movies)[i]
+    if (movie_url.includes(movie_name)) {
+      movie_found = true
+      current_movie_url = movie_url
     }
-    const fs_hash = this.getFirstFramesetHash(movie_url)
-    this.props.setActiveMovieFirstFrame(movie_url, fs_hash)
+  }
+  if (!movie_found) {
+    this.setState({
+      'message': [
+        'error: campaign movie not loaded.',
+        'You must load the movie into global state, generally by loading a jobs results,  The movie is listed here because it has previously been annotated, at that time the movie was in global state.'
+      ],
+    })
+    return
+  }
+  const fs_hash = this.getFirstFramesetHash(current_movie_url)
+  this.props.setActiveMovieFirstFrame(current_movie_url, fs_hash)
 
     let build_obj = {
       mode: 'annotate',
-      active_movie_url: movie_url,
+      active_movie_url: current_movie_url,
       annotate_view_mode: annotate_view_mode,
       selected_frameset_hashes: [],
     }

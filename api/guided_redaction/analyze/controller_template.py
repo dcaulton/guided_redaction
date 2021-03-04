@@ -72,16 +72,19 @@ class TemplateController(T1Controller):
             frameset_hash, frameset, source_movies, template_matcher):
         if frameset_hash not in match_statistics['movies'][movie_url]['framesets']:
             match_statistics['movies'][movie_url]['framesets'][frameset_hash] = {}
+        t1_frameset = None
         if 'images' in frameset:
             one_image_url = frameset["images"][0]
         else:
+            t1_frameset = frameset
             one_image_url = source_movies[movie_url]['framesets'][frameset_hash]['images'][0]
 
         target_image = self.get_cv2_image_from_url(one_image_url, self.file_writer)
         if type(target_image) == type(None):
             print('error loading template source image')
             return
-        target_image = self.trim_target_image_to_t1_inputs(target_image, frameset)
+        target_image = self.apply_t1_limits_to_source_image(target_image, frameset)
+
         match_obj = template_matcher.get_template_coords(
             target_image, anchor_image, anchor_id, movie_url
         )
@@ -125,54 +128,3 @@ class TemplateController(T1Controller):
                 match_counter += 1
             else:
                match_obj['match_found'] = False
-
-    def trim_target_image_to_t1_inputs(self, target_image, tier_1_record):
-        if len(tier_1_record.keys()) == 1 and list(tier_1_record.keys())[0] == 'image':
-            return target_image # it's a virgin frameset, not t1
-        for match_obj_id in tier_1_record:
-            match_obj = tier_1_record[match_obj_id]
-            if 'mask' in match_obj:
-                mask_image = self.get_cv2_image_from_base64_string(match_obj['mask'])
-                target_image = cv2.bitwise_and(target_image, mask_image)
-                continue
-            if 'location' in match_obj  \
-                and 'size' in match_obj \
-                and match_obj['scanner_type'] == 'selected_area':
-                start = match_obj['location']
-                end = [
-                    match_obj['location'][0] + match_obj['size'][0],
-                    match_obj['location'][1] + match_obj['size'][1],
-                ]
-                height = target_image.shape[0]
-                width = target_image.shape[1]
-                cv2.rectangle(
-                    target_image,
-                    (0,0),
-                    (start[0], height),
-                    (0, 0, 0),
-                    -1,
-                )
-                cv2.rectangle(
-                    target_image,
-                    (end[0],0),
-                    (width, height),
-                    (0, 0, 0),
-                    -1,
-                )
-                if len(start) > 1 and type(start[1]) == int:
-                    cv2.rectangle(
-                        target_image,
-                        (0,0),
-                        (width, start[1]),
-                        (0, 0, 0),
-                        -1,
-                    )
-                    cv2.rectangle(
-                        target_image,
-                        (start[0],end[1]),
-                        (end[0], height),
-                        (0, 0, 0),
-                        -1,
-                    )
-                return target_image
-        return target_image
