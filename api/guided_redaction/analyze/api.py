@@ -13,6 +13,7 @@ from .controller_filter import FilterController
 from .controller_timestamp import TimestampController
 from .controller_intersect import IntersectController
 from .controller_get_screens import GetScreensController
+from .controller_data_sifter import DataSifterController
 import json
 from django.conf import settings
 from django.shortcuts import render
@@ -375,3 +376,21 @@ class AnalyzeViewSetGetScreens(viewsets.ViewSet) :
         response_data = worker.get_screens(request_data)
 
         return Response(response_data)
+
+class AnalyzeViewSetDataSifter(viewsets.ViewSet):
+    def create(self, request):
+        request_data = request.data
+        return self.process_create_request(request_data)
+
+    def process_create_request(self, request_data):
+        if not request_data.get("tier_1_scanners"):
+            return self.error("tier_1_scanners is required")
+        if not request_data.get("movies"):
+            return self.error("movies is required")
+        if 'data_sifter' not in request_data['tier_1_scanners']:
+            return self.error("tier_1_scanners > data_sifter is required")
+
+        worker = DataSifterController()
+        matches = worker.sift_data(request_data)
+
+        return Response(matches)

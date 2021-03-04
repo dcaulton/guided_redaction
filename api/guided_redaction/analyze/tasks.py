@@ -30,11 +30,13 @@ from guided_redaction.analyze.api import (
     AnalyzeViewSetTestHog,
     AnalyzeViewSetCompileDataSifter,
     AnalyzeViewSetIntersect,
+    AnalyzeViewSetDataSifter,
     AnalyzeViewSetOcr
 )
 
 
 osa_batch_size = 20
+ds_batch_size = 20
 ocr_batch_size = 20
 sg_batch_size_with_ocr = 10
 sg_batch_size_no_ocr = 100
@@ -60,6 +62,8 @@ def dispatch_parent_job(job):
             selection_grower_threaded.delay(parent_job.id)
         if parent_job.app == 'analyze' and parent_job.operation == 'ocr_scene_analysis_threaded':
             ocr_scene_analysis_threaded.delay(parent_job.id)
+        if parent_job.app == 'analyze' and parent_job.operation == 'data_sifter_threaded':
+            data_sifter_threaded.delay(parent_job.id)
         if parent_job.app == 'analyze' and parent_job.operation == 'hog_train_threaded':
             train_hog_threaded.delay(parent_job.id)
         if parent_job.app == 'analyze' and parent_job.operation == 'oma_first_scan_threaded':
@@ -316,106 +320,31 @@ def wrap_up_generic_threaded(job, children, scanner_type):
     job.response_data = json.dumps(aggregate_response_data)
     job.save()
 
-def get_area_to_redact_from_template_match(
-        mask_zone, 
-        anchor_id, 
-        template, 
-        anchor_found_coords, 
-        anchor_found_scale
-    ):
-    for x in template['anchors']:
-        if x['id'] == anchor_id:
-            anchor = x
-    if not anchor: 
-        print('cant find anchor in template match')
-        return
-    anchor_spec_coords = anchor['start']
-    mz_size = (
-        int((mask_zone['end'][0] - mask_zone['start'][0]) / anchor_found_scale),
-        int((mask_zone['end'][1] - mask_zone['start'][1]) / anchor_found_scale)
-    )
-    mz_spec_offset = [
-        mask_zone['start'][0] - anchor_spec_coords[0],
-        mask_zone['start'][1] - anchor_spec_coords[1]
-    ]
-    mz_spec_offset_scaled = [
-        mz_spec_offset[0] / anchor_found_scale,
-        mz_spec_offset[1] / anchor_found_scale
-    ]
-    new_start = (
-        int(anchor_found_coords[0] + mz_spec_offset_scaled[0]),
-        int(anchor_found_coords[1] + mz_spec_offset_scaled[1])
-    )
-    return (new_start, mz_size)
+def get_frameset_hash_for_frame(frame, framesets):
+    for frameset_hash in framesets:
+        if frame in framesets[frameset_hash]['images']:
+            return frameset_hash
 
-def convert_to_tier_2(response_data, template):
-    print('converting to tier 2')
-    for movie_url in response_data['movies']:
-        for frameset_hash in response_data['movies'][movie_url]['framesets']:
-            frameset = response_data['movies'][movie_url]['framesets'][frameset_hash]
-            for anchor_id in frameset:
-                match_obj = frameset[anchor_id]
-                anchor_found_scale = match_obj['scale']
-                anchor_found_coords = match_obj['location']
-                mask_zones = get_mask_zones_for_anchor(template, anchor_id)
-                for mask_zone in mask_zones:
-                    (new_location, new_size) = get_area_to_redact_from_template_match(
-                        mask_zone, anchor_id, template, anchor_found_coords, anchor_found_scale
-                    )
-                    match_obj['location'] = new_location
-                    match_obj['size'] = new_size
-
-def get_mask_zones_for_anchor(template, anchor_id):
-    mask_zones = []
-    for mask_zone in template['mask_zones']:
-        if 'anchor_id' in mask_zone:
-            if mask_zone['anchor_id'] == anchor_id:
-                mask_zones.append(mask_zone)
-        else:
-            mask_zones.append(mask_zone)
-    return mask_zones
-
-@shared_task
-def scan_template(job_uuid):
-    if Job.objects.filter(pk=job_uuid).exists():
-        job = Job.objects.get(pk=job_uuid)
-        job.status = 'running'
-        job.save()
-        print('scanning template for job {}'.format(job_uuid))
-        avsst = AnalyzeViewSetScanTemplate()
-        response = avsst.process_create_request(json.loads(job.request_data))
-        if not Job.objects.filter(pk=job_uuid).exists():
-            return
-        job = Job.objects.get(pk=job_uuid)
-        request = json.loads(job.request_data)
-        template_id = list(request['tier_1_scanners']['template'].keys())[0]
-        template = request['tier_1_scanners']['template'][template_id]
-        if 'match_method' not in template or template['match_method'] == 'any':
-            jrd = response.data
-        elif template['match_method'] == 'all':
-            built_response_data = {}
-            all_anchor_keys = set([x['id'] for x in template['anchors']])
-            raw_response = response.data
-            for movie_url in raw_response.keys():
-                built_response_data[movie_url] = {}
-                for frameset_hash in raw_response[movie_url].keys():
-                    anchor_matches = raw_response[movie_url][frameset_hash]
-                    anchor_match_keys = set(raw_response[movie_url][frameset_hash].keys())
-                    if anchor_match_keys == all_anchor_keys:
-                        built_response_data[movie_url][frameset_hash] = \
-                            raw_response[movie_url][frameset_hash]
-            # TODO get this to respect save_match_statistics
-            jrd = built_response_data
-        if template['scan_level'] == 'tier_2':
-            convert_to_tier_2(jrd, template)
-        job.response_data = json.dumps(jrd)
-        job.status = 'success'
-        job.save()
-
-        dispatch_parent_job(job)
+def get_frameset_hashes_in_order(frames, framesets, filter_movie):
+    ret_arr = []
+    for frame in frames:
+        frameset_hash = get_frameset_hash_for_frame(frame, framesets)
+        if frameset_hash and frameset_hash not in ret_arr:
+            ret_arr.append(frameset_hash)
+    if len(ret_arr) == len(filter_movie['framesets']):
+        return ret_arr    # frames and framesets are the same as filter movie
     else:
-        print('calling scan_template on nonexistent job: {}'.format(job_uuid))
+        # it looks like we have our filter movie input is a t1 output, with a source movie
+        # being used to give us commplete frames and framesets with image names for ordering
+        resp = [x for x in ret_arr if x in filter_movie['framesets']]
+        return resp
 
+def movie_is_full_movie(movie):
+    if 'frames' in movie:
+        return True
+    return False
+                    
+#=====DATA SIFTER COMPILER========================
 def make_and_dispatch_cds_task(parent_job):
     prd = json.loads(parent_job.request_data)
     build_movies = {}
@@ -538,10 +467,7 @@ def build_data_sifter(job_uuid):
         job.save()
         return
 
-@shared_task
-def filter(job_uuid):
-    generic_worker_call(job_uuid, 'filter', AnalyzeViewSetFilter)
-
+#=======GET TIMESTAMP=============================
 @shared_task
 def get_timestamp(job_uuid):
     generic_worker_call(job_uuid, 'get_timestamp', AnalyzeViewSetTimestamp)
@@ -584,6 +510,48 @@ def build_and_dispatch_get_timestamp_threaded_children(parent_job):
 
 def wrap_up_get_timestamp_threaded(job, children):
     wrap_up_generic_threaded(job, children, 'get_timestamp')
+
+#=====TEMPLATE====================================
+@shared_task
+def scan_template(job_uuid):
+    if Job.objects.filter(pk=job_uuid).exists():
+        job = Job.objects.get(pk=job_uuid)
+        job.status = 'running'
+        job.save()
+        print('scanning template for job {}'.format(job_uuid))
+        avsst = AnalyzeViewSetScanTemplate()
+        response = avsst.process_create_request(json.loads(job.request_data))
+        if not Job.objects.filter(pk=job_uuid).exists():
+            return
+        job = Job.objects.get(pk=job_uuid)
+        request = json.loads(job.request_data)
+        template_id = list(request['tier_1_scanners']['template'].keys())[0]
+        template = request['tier_1_scanners']['template'][template_id]
+        if 'match_method' not in template or template['match_method'] == 'any':
+            jrd = response.data
+        elif template['match_method'] == 'all':
+            built_response_data = {}
+            all_anchor_keys = set([x['id'] for x in template['anchors']])
+            raw_response = response.data
+            for movie_url in raw_response.keys():
+                built_response_data[movie_url] = {}
+                for frameset_hash in raw_response[movie_url].keys():
+                    anchor_matches = raw_response[movie_url][frameset_hash]
+                    anchor_match_keys = set(raw_response[movie_url][frameset_hash].keys())
+                    if anchor_match_keys == all_anchor_keys:
+                        built_response_data[movie_url][frameset_hash] = \
+                            raw_response[movie_url][frameset_hash]
+            # TODO get this to respect save_match_statistics
+            jrd = built_response_data
+        if template['scan_level'] == 'tier_2':
+            convert_to_tier_2(jrd, template)
+        job.response_data = json.dumps(jrd)
+        job.status = 'success'
+        job.save()
+
+        dispatch_parent_job(job)
+    else:
+        print('calling scan_template on nonexistent job: {}'.format(job_uuid))
 
 @shared_task
 def scan_template_multi(job_uuid):
@@ -702,13 +670,69 @@ def wrap_up_scan_template_threaded(job, children):
     job.response_data = json.dumps(aggregate_response_data)
     job.save()
 
+def convert_to_tier_2(response_data, template):
+    print('converting to tier 2')
+    for movie_url in response_data['movies']:
+        for frameset_hash in response_data['movies'][movie_url]['framesets']:
+            frameset = response_data['movies'][movie_url]['framesets'][frameset_hash]
+            for anchor_id in frameset:
+                match_obj = frameset[anchor_id]
+                anchor_found_scale = match_obj['scale']
+                anchor_found_coords = match_obj['location']
+                mask_zones = get_mask_zones_for_anchor(template, anchor_id)
+                for mask_zone in mask_zones:
+                    (new_location, new_size) = get_area_to_redact_from_template_match(
+                        mask_zone, anchor_id, template, anchor_found_coords, anchor_found_scale
+                    )
+                    match_obj['location'] = new_location
+                    match_obj['size'] = new_size
+
+def get_mask_zones_for_anchor(template, anchor_id):
+    mask_zones = []
+    for mask_zone in template['mask_zones']:
+        if 'anchor_id' in mask_zone:
+            if mask_zone['anchor_id'] == anchor_id:
+                mask_zones.append(mask_zone)
+        else:
+            mask_zones.append(mask_zone)
+    return mask_zones
+
+def get_area_to_redact_from_template_match(
+        mask_zone, 
+        anchor_id, 
+        template, 
+        anchor_found_coords, 
+        anchor_found_scale
+    ):
+    for x in template['anchors']:
+        if x['id'] == anchor_id:
+            anchor = x
+    if not anchor: 
+        print('cant find anchor in template match')
+        return
+    anchor_spec_coords = anchor['start']
+    mz_size = (
+        int((mask_zone['end'][0] - mask_zone['start'][0]) / anchor_found_scale),
+        int((mask_zone['end'][1] - mask_zone['start'][1]) / anchor_found_scale)
+    )
+    mz_spec_offset = [
+        mask_zone['start'][0] - anchor_spec_coords[0],
+        mask_zone['start'][1] - anchor_spec_coords[1]
+    ]
+    mz_spec_offset_scaled = [
+        mz_spec_offset[0] / anchor_found_scale,
+        mz_spec_offset[1] / anchor_found_scale
+    ]
+    new_start = (
+        int(anchor_found_coords[0] + mz_spec_offset_scaled[0]),
+        int(anchor_found_coords[1] + mz_spec_offset_scaled[1])
+    )
+    return (new_start, mz_size)
+
+#=====OCR=========================================
 @shared_task
 def scan_ocr(job_uuid):
     generic_worker_call(job_uuid, 'scan_ocr', AnalyzeViewSetOcr)
-
-@shared_task
-def telemetry_find_matching_frames(job_uuid):
-    generic_worker_call(job_uuid, 'telemetry_find_matching_frames', AnalyzeViewSetTelemetry)
 
 @shared_task
 def scan_ocr_threaded(job_uuid):
@@ -810,13 +834,14 @@ def find_relevant_areas_from_response(match_strings, match_percent, areas_to_red
                     continue
     return (relevant_areas, match_percentages)
 
+#=====SELECTION GROWER============================
 @shared_task
 def selection_grower(job_uuid):
     generic_worker_call(job_uuid, 'selection_grower', AnalyzeViewSetSelectionGrower)
 
 def finish_selection_grower_threaded(job):
   children = Job.objects.filter(parent=job)
-  wrap_up_selection_grower_threaded(job, children)
+  wrap_up_generic_threaded(job, children, 'selection_grower')
   pipeline = get_pipeline_for_job(job.parent)
   if pipeline:
       worker = PipelinesViewSetDispatch()
@@ -850,16 +875,14 @@ def build_and_dispatch_selection_grower_threaded_children(parent_job):
         selection_grower
     )
 
-def wrap_up_selection_grower_threaded(job, children):
-    wrap_up_generic_threaded(job, children, 'selection_grower')
-
+#=====MESH MATCH==================================
 @shared_task
 def mesh_match(job_uuid):
     generic_worker_call(job_uuid, 'mesh_match', AnalyzeViewSetMeshMatch)
 
 def finish_mesh_match_threaded(job):
   children = Job.objects.filter(parent=job)
-  wrap_up_mesh_match_threaded(job, children)
+  wrap_up_generic_threaded(job, children, 'mesh_match')
   pipeline = get_pipeline_for_job(job.parent)
   if pipeline:
       worker = PipelinesViewSetDispatch()
@@ -884,16 +907,14 @@ def build_and_dispatch_mesh_match_threaded_children(parent_job):
         finish_mesh_match_threaded
     )
 
-def wrap_up_mesh_match_threaded(job, children):
-    wrap_up_generic_threaded(job, children, 'mesh_match')
-
+#=====SELECTED AREA===============================
 @shared_task
 def selected_area(job_uuid):
     generic_worker_call(job_uuid, 'selected_area', AnalyzeViewSetSelectedArea)
 
 def finish_selected_area_threaded(job):
   children = Job.objects.filter(parent=job)
-  wrap_up_selected_area_threaded(job, children)
+  wrap_up_generic_threaded(job, children, 'selected_area')
   pipeline = get_pipeline_for_job(job.parent)
   if pipeline:
       worker = PipelinesViewSetDispatch()
@@ -918,8 +939,7 @@ def build_and_dispatch_selected_area_threaded_children(parent_job):
         finish_selected_area_threaded
     )
 
-def wrap_up_selected_area_threaded(job, children):
-    wrap_up_generic_threaded(job, children, 'selected_area')
+#=====CHARTS======================================
 
 def generic_chart(job_uuid, chart_type):
     if not Job.objects.filter(pk=job_uuid).exists():
@@ -974,6 +994,8 @@ def selected_area_chart(job_uuid):
 def ocr_scene_analysis_chart(job_uuid):
     generic_chart(job_uuid, 'ocr_scene_analysis_match')
 
+#=====OSA===============================
+
 @shared_task
 def ocr_scene_analysis(job_uuid):
     generic_worker_call(job_uuid, 'ocr_scene_analysis', AnalyzeViewSetOcrSceneAnalysis)
@@ -995,31 +1017,6 @@ def finish_ocr_scene_analysis_threaded(job):
     if pipeline:
         worker = PipelinesViewSetDispatch()
         worker.handle_job_finished(job, pipeline)
-
-def movie_is_full_movie(movie):
-    if 'frames' in movie:
-        return True
-    return False
-                    
-def get_frameset_hash_for_frame(frame, framesets):
-    for frameset_hash in framesets:
-        if frame in framesets[frameset_hash]['images']:
-            return frameset_hash
-
-def get_frameset_hashes_in_order(frames, framesets, filter_movie):
-    ret_arr = []
-    for frame in frames:
-        frameset_hash = get_frameset_hash_for_frame(frame, framesets)
-        if frameset_hash and frameset_hash not in ret_arr:
-            ret_arr.append(frameset_hash)
-    if len(ret_arr) == len(filter_movie['framesets']):
-        return ret_arr    # frames and framesets are the same as filter movie
-    else:
-        # it looks like we have our filter movie input is a t1 output, with a source movie
-        # being used to give us commplete frames and framesets with image names for ordering
-        resp = [x for x in ret_arr if x in filter_movie['framesets']]
-        return resp
-
 
 def build_and_dispatch_ocr_scene_analysis_threaded_children(parent_job):
     build_and_dispatch_generic_batched_threaded_children(
@@ -1056,6 +1053,42 @@ def wrap_up_ocr_scene_analysis_threaded(job, children):
     job.status = 'success'
     job.response_data = json.dumps(aggregate_response_data)
     job.save()
+
+#=====DATA SIFTER===============================
+
+@shared_task
+def data_sifter(job_uuid):
+    generic_worker_call(job_uuid, 'ocr_scene_analysis', AnalyzeViewSetDataSifter)
+
+@shared_task
+def data_sifter_threaded(job_uuid):
+    generic_threaded(
+        job_uuid, 
+        'data_sifter', 
+        'DATA SIFTER THREADED', 
+        build_and_dispatch_data_sifter_threaded_children, 
+        finish_data_sifter_threaded
+    )
+
+def finish_data_sifter_threaded(job):
+    children = Job.objects.filter(parent=job)
+    wrap_up_generic_threaded(job, children, 'data_sifter')
+    pipeline = get_pipeline_for_job(job.parent)
+    if pipeline:
+        worker = PipelinesViewSetDispatch()
+        worker.handle_job_finished(job, pipeline)
+
+def build_and_dispatch_data_sifter_threaded_children(parent_job):
+    build_and_dispatch_generic_batched_threaded_children(
+        parent_job,
+        'data_sifter',
+        ds_batch_size,
+        'data_sifter',
+        finish_data_sifter_threaded,
+        data_sifter 
+    )
+
+#===HOG=================================
 
 @shared_task
 def test_hog(job_uuid):
@@ -1250,6 +1283,8 @@ def get_training_image_urls(hog_rule):
         resp_data[hn['movie_url']][hn['image_url']] = 1
     return resp_data
 
+#=======================================
+
 @shared_task
 def intersect(job_uuid):
     generic_worker_call(job_uuid, 'intersect', AnalyzeViewSetIntersect)
@@ -1258,4 +1293,12 @@ def intersect(job_uuid):
     if pipeline:
         worker = PipelinesViewSetDispatch()
         worker.handle_job_finished(job, pipeline)
+
+@shared_task
+def telemetry_find_matching_frames(job_uuid):
+    generic_worker_call(job_uuid, 'telemetry_find_matching_frames', AnalyzeViewSetTelemetry)
+
+@shared_task
+def filter(job_uuid):
+    generic_worker_call(job_uuid, 'filter', AnalyzeViewSetFilter)
 
