@@ -392,6 +392,5 @@ class AnalyzeViewSetDataSifter(viewsets.ViewSet):
 
         worker = DataSifterController()
         matches = worker.sift_data(request_data)
-        print('sninnfy matches are ', matches)
 
         return Response(matches)
