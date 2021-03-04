@@ -1145,10 +1145,20 @@ class InsightsPanel extends React.Component {
       the_message = '.'
       message_style['color'] = 'white'
     }
+    let top_white_div_class = 'container'
+    let videos_col_class = 'col-lg-2'
+    let center_col_class = 'col-lg-7 ml-4'
+    let jobs_col_class = 'col-lg-2'
+    if (!this.props.visibilityFlags['side_nav']) {
+      top_white_div_class = 'col'
+      videos_col_class = 'col-lg-1'
+      center_col_class = 'col-lg-10 p-4'
+      jobs_col_class = 'col-lg-1 p-4'
+    }
     return (
-    <div className='container'>
+    <div className={top_white_div_class}>
       <div id='insights_panel' className='row mt-5'>
-        <div id='insights_left' className='col-lg-2'>
+        <div id='insights_left' className={videos_col_class}>
           <MovieCardList 
             setCurrentVideo={this.setCurrentVideo}
             movie_url={this.props.movie_url}
@@ -1168,7 +1178,7 @@ class InsightsPanel extends React.Component {
           />
         </div>
 
-        <div id='insights_middle' className='col-lg-7 ml-4'>
+        <div id='insights_middle' className={center_col_class}>
           <div 
               className='row'
               id='insights_header'
@@ -1292,7 +1302,7 @@ class InsightsPanel extends React.Component {
           />
         </div>
 
-        <div id='insights_right' className='col-lg-2 ml-4'>
+        <div id='insights_right' className={jobs_col_class}>
           <JobCardList 
             jobs={this.props.jobs}
             getJobs={this.props.getJobs}
