@@ -22,6 +22,7 @@ class CanvasInsightsOverlay extends React.Component {
     this.selected_area_color = '#2B9'
     this.mesh_match_color = '#C93'
     this.selection_grower_fill_color = '#A83'
+    this.data_sifter_fill_color = '#3BC'
     this.selected_area_center_color = '#9F3'
     this.ocr_color = '#CC0'
     this.area_to_redact_color = '#D6D'
@@ -86,6 +87,10 @@ class CanvasInsightsOverlay extends React.Component {
         )
       }
     }
+  }
+
+  drawDataSifterZones() {
+    this.drawTier1Matches('data_sifter', this.data_sifter_fill_color, this.red_color) 
   }
 
   drawSelectionGrowerZones() {
@@ -506,6 +511,7 @@ class CanvasInsightsOverlay extends React.Component {
     this.drawSumMatches()
     this.drawAreasToRedact()
     this.drawSelectionGrowerZones()
+    this.drawDataSifterZones()
   }
 
   componentDidUpdate() {
@@ -534,6 +540,7 @@ class CanvasInsightsOverlay extends React.Component {
     this.drawSumMatches()
     this.drawAreasToRedact()
     this.drawSelectionGrowerZones()
+    this.drawDataSifterZones()
   }
 
   render() {

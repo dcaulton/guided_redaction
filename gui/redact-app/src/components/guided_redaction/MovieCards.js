@@ -352,6 +352,8 @@ class MovieCard extends React.Component {
       scanner_type_short = 'sg'
     } else if (scanner_type === 'ocr_scene_analysis') {
       scanner_type_short = 'osa'
+    } else if (scanner_type === 'data_sifter') {
+      scanner_type_short = 'ds'
     }
     let matches_button = ''
     let clear_button = ''
@@ -634,6 +636,7 @@ class MovieCard extends React.Component {
     const pipeline_match_string = this.getTier1MatchesString('pipeline')
     const intersect_match_string = this.getTier1MatchesString('intersect')
     const sum_match_string = this.getTier1MatchesString('t1_sum')
+    const ds_match_string = this.getTier1MatchesString('data_sifter')
     const areas_to_redact_string = this.getAreasToRedactString()
     const dims_string = this.getMovieDimensions(this.props.this_cards_movie_url, this.props.movies)
     let top_div_classname = "row mt-2 card"
@@ -711,6 +714,9 @@ class MovieCard extends React.Component {
                   </div>
                   <div className='row'>
                     {sum_match_string}
+                  </div>
+                  <div className='row'>
+                    {ds_match_string}
                   </div>
                   <div className='row'>
                     {has_timestamp_info}

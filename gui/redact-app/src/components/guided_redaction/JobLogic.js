@@ -420,6 +420,20 @@ class JobLogic extends React.Component {
     }
   }
 
+  static loadDataSifterResults(
+    job, 
+    when_done, 
+    setGlobalStateVar, 
+    getGlobalStateVar
+  ) {
+    this.loadScannersMoviesAndMatchesFromTier1(
+      job, 
+      'data_sifter', 
+      setGlobalStateVar, 
+      getGlobalStateVar
+    )
+  } 
+
   static loadOcrSceneAnalysisResults(
     job, 
     when_done, 
@@ -954,6 +968,13 @@ class JobLogic extends React.Component {
         )
 			} else if (job.app === 'analyze' && job.operation === 'ocr_scene_analysis_threaded') {
         this.loadOcrSceneAnalysisResults(
+          job, 
+          when_done, 
+          setGlobalStateVar, 
+          getGlobalStateVar
+        )
+			} else if (job.app === 'analyze' && job.operation === 'data_sifter_threaded') {
+        this.loadDataSifterResults(
           job, 
           when_done, 
           setGlobalStateVar, 
