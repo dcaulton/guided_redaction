@@ -29,6 +29,7 @@ class MeshMatchControls extends React.Component {
       scan_level: 'tier_1',
       maximum_zones: [],
       minimum_zones: [],
+      masks_always: false,
       min_score: 15,
       mesh_size: 50,
       attribute_search_name: '',
@@ -47,6 +48,27 @@ class MeshMatchControls extends React.Component {
     this.setLocalStateVar=this.setLocalStateVar.bind(this)
   }
 
+  buildToggleField(field_name, label) {
+    let checked_val = ''
+    if (this.state[field_name]) {
+      checked_val = 'checked'
+    }
+    return (
+      <div className='ml-2'>
+        <div className='d-inline'>
+          <input
+            className='mr-2'
+            checked={checked_val}
+            type='checkbox'
+            onChange={() => this.setLocalStateVar(field_name, !this.state[field_name])}
+          />
+        </div>
+        <div className='d-inline'>
+          {label}
+        </div>
+      </div>
+    )
+  }
 
   showSourceFrame(movie_url, image_frameset_index) {
     this.props.setCurrentVideo(movie_url)
@@ -195,6 +217,7 @@ class MeshMatchControls extends React.Component {
         scan_level: sam['scan_level'],
         minimum_zones : sam['minimum_zones'],
         maximum_zones : sam['maximum_zones'],
+        masks_always: sam['masks_always'],
         min_score: sam['min_score'],
         mesh_size: sam['mesh_size'],
       })
@@ -221,6 +244,7 @@ class MeshMatchControls extends React.Component {
       scan_level: 'tier_1',
       minimum_zones: [],
       maximum_zones: [],
+      masks_always: false,
       min_score: 15,
       mesh_size: 50,
     })
@@ -237,6 +261,7 @@ class MeshMatchControls extends React.Component {
       scan_level: this.state.scan_level,
       minimum_zones: this.state.minimum_zones,
       maximum_zones: this.state.maximum_zones,
+      masks_always: this.state.masks_always,
       min_score: this.state.min_score,
       mesh_size: this.state.mesh_size,
     }
@@ -557,6 +582,7 @@ class MeshMatchControls extends React.Component {
     const id_string = buildIdString(this.state.id, 'mesh match', false)
     const name_field = this.buildNameField()
     const min_score_field = this.buildMinScoreField()
+    const masks_field = this.buildToggleField('masks_always', 'Generate Masks Always')
     const mesh_size_field = this.buildMeshSizeField()
     const attributes_list = this.buildAttributesList()
     const origin_entity_type_dropdown = this.buildOriginEntityTypeDropdown()
@@ -617,6 +643,10 @@ class MeshMatchControls extends React.Component {
 
                 <div className='row mt-2'>
                   {name_field}
+                </div>
+
+                <div className='row mt-2'>
+                  {masks_field}
                 </div>
 
                 <div className='row mt-2'>

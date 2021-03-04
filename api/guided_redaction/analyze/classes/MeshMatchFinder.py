@@ -77,7 +77,25 @@ class MeshMatchFinder:
             if self.debug:
                 print('no match found')
 
-        return match_obj, match_stats
+        final_mask = np.zeros(cv2_image.shape[:2])
+        self.draw_match_obj_on_mask(match_obj, final_mask)
+
+        return match_obj, match_stats, final_mask
+
+    def draw_match_obj_on_mask(self, match_obj, mask):
+        if not match_obj:
+            return
+        end = (
+            match_obj['location'][0] + match_obj['size'][0],
+            match_obj['location'][1] + match_obj['size'][1]
+        )
+        cv2.rectangle(
+            mask,
+            tuple(match_obj['location']),
+            end,
+            255,
+            -1
+        )
 
     def compute_projected_origin(self, match_location, mesh_grid_coords):
         mesh_size = int(self.mesh_match_meta['mesh_size'])

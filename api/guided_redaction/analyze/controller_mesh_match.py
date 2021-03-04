@@ -61,12 +61,15 @@ class MeshMatchController(T1Controller):
                     continue
                 meshes = {}  # this algo only cares about the most recent one anyway
                 meshes[most_recent_t1_frameset_hash] = finder.build_mesh(most_recent_t1_frameset, mr_cv2_image)
-            match_obj, match_stats = finder.match_mesh(
+            match_obj, match_stats, mask = finder.match_mesh(
                 meshes[most_recent_t1_frameset_hash], 
                 most_recent_t1_frameset,
                 cv2_image
             )
             if match_obj:
+                if self.we_should_use_a_mask(mesh_match_meta, 1):
+                    mask_string = self.get_base64_image_string(mask)
+                    match_obj['mask'] = mask_string
                 response_movies[movie_url]['framesets'][frameset_hash] = {}
                 response_movies[movie_url]['framesets'][frameset_hash][match_obj['id']] = match_obj
             mesh_statistics['movies'][movie_url]['framesets'][frameset_hash] = match_stats

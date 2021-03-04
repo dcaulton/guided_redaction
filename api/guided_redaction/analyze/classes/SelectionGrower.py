@@ -46,14 +46,12 @@ class SelectionGrower:
             match_obj, match_stats['template_capture'] = \
                 self.capture_template(selected_area, template_match_objs, cv2_image)
         self.draw_match_obj_on_mask(match_obj, final_mask)
-        cv2.imwrite('/Users/davecaulton/Desktop/fooey.png', final_mask)
 
         return match_obj, match_stats, final_mask
 
     def draw_match_obj_on_mask(self, match_obj_list, mask):
         for mo_key in match_obj_list:
             match_obj = match_obj_list[mo_key]
-            print('charley match obj ', match_obj)
             end = (
                 match_obj['location'][0] + match_obj['size'][0],
                 match_obj['location'][1] + match_obj['size'][1]
