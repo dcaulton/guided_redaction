@@ -14,7 +14,9 @@ class DataSifter:
         self.match_origin_xy_tolerance = 5
 
     def sift_data(self, cv2_image):
-        return {'donkey': 'framesets'}, {}, None
+        return_stats = {}
+        return_mask = np.zeros((20, 20, 1), 'uint8')
+        return {'pooky': {'id': 'whatevs'}}, return_stats, return_mask
 
     def match_mesh(self, mesh, most_recent_t1_frameset, cv2_image):
         match_obj = {}

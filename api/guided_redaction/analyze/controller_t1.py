@@ -124,6 +124,7 @@ class T1Controller:
                 cv2_image = cv2.bitwise_and(cv2_image, mask_image)
             else:
                 mask_image = np.zeros(cv2_image.shape, dtype='uint8')
+                zone_start = zone_end = None
                 if 'location' in match_obj:
                     zone_start = tuple(match_obj['location'])
                     zone_end = (

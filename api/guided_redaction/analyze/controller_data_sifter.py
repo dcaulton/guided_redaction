@@ -13,9 +13,13 @@ class DataSifterController(T1Controller):
             base_url=settings.REDACT_FILE_BASE_URL,
             image_request_verify_headers=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
         )
+        self.debug = True
 
     def sift_data(self, request_data):
-        response_movies = {}
+        response_obj = {
+            'movies': {},
+            'statistics': {},
+        }
         source_movies = {}
         movies = request_data.get('movies')
         if 'source' in movies:
@@ -32,11 +36,11 @@ class DataSifterController(T1Controller):
 
         data_sifter = DataSifter(data_sifter_meta)
 
-        response_movies[movie_url] = {}
-        response_movies[movie_url]['framesets'] = {}
+        response_obj['movies'][movie_url] = {}
+        response_obj['movies'][movie_url]['framesets'] = {}
         ordered_hashes = self.get_frameset_hashes_in_order(source_movie['frames'], source_movie['framesets'])
-        statistics = {'movies': {}}
-        statistics['movies'][movie_url] = {'framesets': {}}
+        response_obj['statistics'] = {'movies': {}}
+        response_obj['statistics']['movies'][movie_url] = {'framesets': {}}
         for frameset_hash in ordered_hashes:
             image_url = source_movie['framesets'][frameset_hash]['images'][0]
             if self.debug:
@@ -46,14 +50,8 @@ class DataSifterController(T1Controller):
             if type(cv2_image) == type(None):
                 print('error fetching image for data_sifter')
                 continue
-            match_obj, match_stats, mask = data_sifter.sift_data(
-                cv2_image
-            )
+            match_obj, match_stats, mask = data_sifter.sift_data(cv2_image)
             if match_obj:
-                if self.we_should_use_a_mask(data_sifter_meta, 1):
-                    mask_string = self.get_base64_image_string(mask)
-                    match_obj['mask'] = mask_string
-                response_movies[movie_url]['framesets'][frameset_hash] = {}
-                response_movies[movie_url]['framesets'][frameset_hash][match_obj['id']] = match_obj
-            statistics['movies'][movie_url]['framesets'][frameset_hash] = match_stats
-        return response_movies, statistics
+                response_obj['movies'][movie_url]['framesets'][frameset_hash] = match_obj
+            response_obj['statistics']['movies'][movie_url]['framesets'][frameset_hash] = match_stats
+        return response_obj
