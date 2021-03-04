@@ -35,6 +35,7 @@ class InsightsPanel extends React.Component {
       'mesh_match',
       'template',
       'selection_grower',
+      'data_sifter',
       'ocr'
     ]
     this.setCurrentVideo=this.setCurrentVideo.bind(this)
@@ -337,6 +338,7 @@ class InsightsPanel extends React.Component {
       selected_area: 'selected_area_threaded',
       selection_grower: 'selection_grower_threaded',
       mesh_match: 'mesh_match_threaded',
+      data_sifter: 'data_sifter_threaded',
       ocr_scene_analysis: 'ocr_scene_analysis_threaded',
     }
     if (!this.props.current_ids['t1_scanner'][scanner_type]) {
@@ -344,7 +346,7 @@ class InsightsPanel extends React.Component {
       return
     }
     job_data['app'] = 'analyze'
-    job_data['operation'] = scanner_operations[scanner_type]
+    job_data['operation'] = scanner_operations[scanner_type] || 'insights_cant_find_operation'
     const cur_scanner_id = this.props.current_ids['t1_scanner'][scanner_type]
     const cur_scanner = this.props.tier_1_scanners[scanner_type][cur_scanner_id]
     job_data['request_data']['tier_1_scanners'] = {}

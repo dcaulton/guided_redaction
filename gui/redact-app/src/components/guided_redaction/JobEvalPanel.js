@@ -1724,7 +1724,10 @@ doSleep(time) {
             {Object.keys(message).map((mess_index, index) => {
               const mess_line = message[mess_index]
               return (
-                <div className='row font-italic mt-2'>
+                <div 
+                  className='row font-italic mt-2'
+                  key={index}
+                >
                   {mess_line}
                 </div>
               )
