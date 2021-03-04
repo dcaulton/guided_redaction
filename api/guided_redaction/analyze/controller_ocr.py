@@ -44,12 +44,15 @@ class OcrController(T1Controller):
                 if skip_frames != 0 and number_considered < skip_frames + 1:
                     print('ocr skipping {}'.format(frameset_hash))
                     continue
+
+                t1_frameset_data = None
                 if 'images' in movie['framesets'][frameset_hash]:
                     image_url = movie['framesets'][frameset_hash]['images'][0]
                 else:
+                    t1_frameset_data = movie['framesets'][frameset_hash]
                     image_url = source_movies[movie_url]['framesets'][frameset_hash]['images'][0]
 
-                found_areas = self.scan_ocr(image_url, ocr_rule)
+                found_areas = self.scan_ocr(image_url, ocr_rule, t1_frameset_data)
                 if found_areas:
                     if movie_url not in response_data['movies']:
                         response_data['movies'][movie_url] = {'framesets': {}}
@@ -57,7 +60,7 @@ class OcrController(T1Controller):
 
         return response_data
 
-    def scan_ocr(self, image_url, ocr_rule):
+    def scan_ocr(self, image_url, ocr_rule, t1_frameset_data):
         analyzer = EastPlusTessGuidedAnalyzer()
         cv2_image = self.get_cv2_image_from_url(image_url, self.file_writer)
         if type(cv2_image) == type(None):
@@ -68,10 +71,14 @@ class OcrController(T1Controller):
             start = ocr_rule['start']
         else:
             start = (0, 0)
+
         if ocr_rule['end']:
             end = ocr_rule['end']
         else:
             end = (cv2_image.shape[1], cv2_image.shape[0])
+
+        if t1_frameset_data:
+            cv2_image = self.apply_t1_limits_to_source_image(cv2_image, t1_frameset_data)
 
         if ocr_rule['skip_east']:
             tight_image = cv2_image[

@@ -50,8 +50,8 @@ class SelectedAreaController(T1Controller):
                         mask = np.zeros((dims[1], dims[0]))
                         cv2.rectangle(
                             mask,
-                            man_zone['start'],
-                            man_zone['end'],
+                            tuple(man_zone['start']),
+                            tuple(man_zone['end']),
                             255,
                             -1
                         )

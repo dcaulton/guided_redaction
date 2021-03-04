@@ -116,3 +116,30 @@ class T1Controller:
         if num_regions > self.max_num_regions_before_mask_is_smarter:
             return True
 
+    def apply_t1_limits_to_source_image(self, cv2_image, t1_frameset_data):
+        for mo_id in t1_frameset_data:
+            match_obj = t1_frameset_data[mo_id]
+            if 'mask' in match_obj:
+                mask_image = self.get_cv2_image_from_base64_string(match_obj['mask'])
+                cv2_image = cv2.bitwise_and(cv2_image, mask_image)
+            else:
+                mask_image = np.zeros(cv2_image.shape, dtype='uint8')
+                if 'location' in match_obj:
+                    zone_start = tuple(match_obj['location'])
+                    zone_end = (
+                        match_obj['location'][0] + match_obj['size'][0],
+                        match_obj['location'][1] + match_obj['size'][1]
+                    )
+                elif 'start' in match_obj:
+                    zone_start = tuple(match_obj['start'])
+                    zone_end = tuple(match_obj['end'])
+                if zone_start and zone_end:
+                    cv2.rectangle(
+                        mask_image,
+                        zone_start,
+                        zone_end,
+                        255,
+                        -1
+                    )
+                    cv2_image = cv2.bitwise_and(cv2_image, mask_image)
+        return cv2_image
