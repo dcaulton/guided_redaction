@@ -59,7 +59,11 @@ class SelectionGrowerController(T1Controller):
                     self.add_template_to_match_data(t1_match_data, sg_meta['template'], cv2_image)
                     if not self.match_data_contains_scanner_type('template', t1_match_data):
                         continue
-                grown_selection, stats = grower.grow_selection(t1_match_data, cv2_image)
+                grown_selection, stats, mask = grower.grow_selection(t1_match_data, cv2_image)
+                if self.we_should_use_a_mask(sg_meta, 1):
+                    mask_string = self.get_base64_image_string(mask)
+                    for gs_key in grown_selection:
+                        grown_selection[gs_key]['mask'] = mask_string
                 if grown_selection:
                     response_movies[movie_url]['framesets'][frameset_hash] = grown_selection
                 statistics['movies'][movie_url]['framesets'][frameset_hash] = stats
