@@ -1058,7 +1058,7 @@ def wrap_up_ocr_scene_analysis_threaded(job, children):
 
 @shared_task
 def data_sifter(job_uuid):
-    generic_worker_call(job_uuid, 'ocr_scene_analysis', AnalyzeViewSetDataSifter)
+    generic_worker_call(job_uuid, 'data_sifter', AnalyzeViewSetDataSifter)
 
 @shared_task
 def data_sifter_threaded(job_uuid):

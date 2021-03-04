@@ -23,7 +23,9 @@ class DataSifterController(T1Controller):
             del movies['source']
         movie_url = list(movies.keys())[0]
         movie = movies[movie_url]
-        source_movie = source_movies[movie_url]
+
+        if movie_url not in source_movies:
+            source_movie = movie
 
         scanner_id = list(request_data["tier_1_scanners"]['data_sifter'].keys())[0]
         data_sifter_meta = request_data["tier_1_scanners"]['data_sifter'][scanner_id]
@@ -36,7 +38,7 @@ class DataSifterController(T1Controller):
         statistics = {'movies': {}}
         statistics['movies'][movie_url] = {'framesets': {}}
         for frameset_hash in ordered_hashes:
-            image_url = source_movies[movie_url]['framesets'][frameset_hash]['images'][0]
+            image_url = source_movie['framesets'][frameset_hash]['images'][0]
             if self.debug:
                 image_name = image_url.split('/')[-1]
                 print('sifting image {}'.format(image_name))
@@ -44,11 +46,11 @@ class DataSifterController(T1Controller):
             if type(cv2_image) == type(None):
                 print('error fetching image for data_sifter')
                 continue
-            match_obj, match_stats, mask = sifter.sift_data(
+            match_obj, match_stats, mask = data_sifter.sift_data(
                 cv2_image
             )
             if match_obj:
-                if self.we_should_use_a_mask(mesh_match_meta, 1):
+                if self.we_should_use_a_mask(data_sifter_meta, 1):
                     mask_string = self.get_base64_image_string(mask)
                     match_obj['mask'] = mask_string
                 response_movies[movie_url]['framesets'][frameset_hash] = {}

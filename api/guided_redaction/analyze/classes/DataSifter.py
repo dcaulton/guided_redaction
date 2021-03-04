@@ -14,7 +14,7 @@ class DataSifter:
         self.match_origin_xy_tolerance = 5
 
     def sift_data(self, cv2_image):
-        return {'donkey': 'kong'}
+        return {'donkey': 'framesets'}, {}, None
 
     def match_mesh(self, mesh, most_recent_t1_frameset, cv2_image):
         match_obj = {}
