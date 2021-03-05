@@ -1,5 +1,6 @@
 import cv2
 from django import db
+from django.conf import settings
 import math
 from operator import add
 import os
@@ -86,23 +87,13 @@ class MovieParser:
 
     def load_and_hash_frames(self, input_url_list):
         unique_frames = {}
-        for input_url in input_url_list:
+        for image_url in input_url_list:
             try: 
-                pic_response = requests.get(
-                  input_url,
-                  verify=self.image_request_verify_headers,
-                )
-                img_binary = pic_response.content
-                if img_binary:
-                    nparr = np.fromstring(img_binary, np.uint8)
-                    cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-                    try:
-                        if cv2_image.any():
-                            self.advance_one_frame(cv2_image, input_url, unique_frames)
-                    except:
-                        print('MovieParser.load_and_hash_frames: empty or invalid cv2 image')
+                cv2_image = self.get_cv2_image_from_url(image_url, self.file_writer)
+                if type(cv2_image) != type(None):
+                    self.advance_one_frame(cv2_image, image_url, unique_frames)
             except Exception as err:
-                print('MovieParser.load_and_hash_frames DIED TRYING TO READ A FRAME: {}'.format(input_url))
+                print('MovieParser.load_and_hash_frames DIED TRYING TO READ A FRAME: {}'.format(image_url))
                 print(err)
 
         return unique_frames
@@ -133,3 +124,25 @@ class MovieParser:
         print("output_url is "+ output_url)
         return output_url
 
+    # the following is duplicated in analyze/controller_t1.py  Refactor when we have a convenient place
+    #   to share this logic
+    def get_cv2_image_from_url(self, image_url, file_writer=None):
+        cv2_image = None
+        if not file_writer:
+            file_writer = FileWriter(
+                working_dir=settings.REDACT_FILE_STORAGE_DIR,
+                base_url=settings.REDACT_FILE_BASE_URL,
+                image_request_verify_headers=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
+            )
+        file_fullpath = file_writer.get_file_path_for_url(image_url)
+        if os.path.exists(file_fullpath):
+            image = file_writer.read_binary_data_from_filepath(file_fullpath)
+        else:
+            image = requests.get(
+              image_url,
+              verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
+            ).content
+        if image:
+            nparr = np.fromstring(image, np.uint8)
+            cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        return cv2_image
