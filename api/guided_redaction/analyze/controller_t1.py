@@ -111,7 +111,7 @@ class T1Controller:
 
     def we_should_use_a_mask(self, scanner_meta, num_regions):
         # if the regions are complicated enough, or a mask has been requested, return True
-        if scanner_meta['masks_always']:
+        if scanner_meta.get('masks_always'):
             return True
         if num_regions > self.max_num_regions_before_mask_is_smarter:
             return True

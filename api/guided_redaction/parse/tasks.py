@@ -255,6 +255,7 @@ def split_and_hash_threaded(job_uuid):
     print('split and hash threaded, job id is {}'.format(job_uuid))
     if not Job.objects.filter(pk=job_uuid).exists():
         print('calling split_and_hash_threaded on nonexistent job: {}'.format(job_uuid))
+        return
     job = Job.objects.get(pk=job_uuid)
 
     if job.status in ['success', 'failed']:

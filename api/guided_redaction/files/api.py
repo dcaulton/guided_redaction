@@ -93,7 +93,7 @@ class FilesViewSetUnzipArchive(viewsets.ViewSet):
         job_run_summaries, job_eval_objectives = self.add_jrs_records(master_json)
 
         movie_count = 0
-        for movie_url in master_json['movies']:
+        for movie_url in master_json.get('movies', {}):
             build_movies[movie_url] = master_json['movies'][movie_url]
             movie_count += 1
 
@@ -135,7 +135,7 @@ class FilesViewSetUnzipArchive(viewsets.ViewSet):
     def add_jobs(self, master_json):
         job_count = 0
         self.old_to_new_job_mappings = {}
-        for job_id in master_json['jobs']:
+        for job_id in master_json.get('jobs', {}):
             print('adding job {}'.format(job_id))
             if Job.objects.filter(pk=job_id).exists():
                 print('  job already exists, clearing it out')
@@ -156,7 +156,7 @@ class FilesViewSetUnzipArchive(viewsets.ViewSet):
             self.old_to_new_job_mappings[job_id] = job.id
             job_count += 1
         # second, add relations between jobs
-        for job_id in master_json['jobs']:
+        for job_id in master_json.get('jobs', {}):
             job_imported = master_json['jobs'][job_id]
             if 'parent_id' in job_imported and \
                 job_imported['parent_id'] and \
@@ -176,7 +176,7 @@ class FilesViewSetUnzipArchive(viewsets.ViewSet):
 
     def add_scanners(self, master_json):
         scanner_count = 0
-        for scanner_type in master_json['tier_1_scanners']:
+        for scanner_type in master_json.get('tier_1_scanners', {}):
             for scanner_id in master_json['tier_1_scanners'][scanner_type]:
                 scanner = master_json['tier_1_scanners'][scanner_type][scanner_id]
                 if Scanner.objects.filter(name=scanner['name']).exists():
@@ -193,7 +193,7 @@ class FilesViewSetUnzipArchive(viewsets.ViewSet):
 
     def add_pipelines(self, master_json):
         pipeline_count = 0
-        for pipeline_id in master_json['pipelines']:
+        for pipeline_id in master_json.get('pipelines', {}):
             input_pipeline = master_json['pipelines'][pipeline_id]
             pipeline = Pipeline(
                 name=input_pipeline['name'],
@@ -209,7 +209,7 @@ class FilesViewSetUnzipArchive(viewsets.ViewSet):
         jrs_count = 0
 
         self.old_to_new_jeo_mappings = {}
-        for jeo_id in master_json['job_eval_objectives']:
+        for jeo_id in master_json.get('job_eval_objectives', {}):
             if JobEvalObjective.objects.filter(jeo_id).exists():
                 continue
             input_jeo = master_json['job_eval_objectives'][jeo_id]
@@ -221,7 +221,7 @@ class FilesViewSetUnzipArchive(viewsets.ViewSet):
             self.old_to_new_jeo_mappings[jeo_id] = jeo.id
             jeo_count += 1
 
-        for jrs_id in master_json['job_run_summaries']:
+        for jrs_id in master_json.get('job_run_summaries', {}):
             if JobRunSummary.objects.filter(jrs_id).exists():
                 continue
             input_jrs = master_json['job_run_summaries'][jrs_id]

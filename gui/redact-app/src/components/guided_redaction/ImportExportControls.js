@@ -12,8 +12,8 @@ class ImportExportControls extends React.Component {
       pipeline_ids: [],
       movie_urls: [],
       archive_url: '',
-      include_child_jobs: true,
-      include_child_movie_frames: true,
+      include_child_jobs: false,
+      include_child_movie_frames: false,
     }
     this.setLocalStateVar=this.setLocalStateVar.bind(this)
     this.exportDone=this.exportDone.bind(this)
