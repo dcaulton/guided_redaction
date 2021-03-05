@@ -16,6 +16,8 @@ class DataSifterController(T1Controller):
         self.debug = True
 
     def sift_data(self, request_data):
+        ocr_job_results = {'movies': {}}
+
         response_obj = {
             'movies': {},
             'statistics': {},
@@ -41,16 +43,20 @@ class DataSifterController(T1Controller):
         ordered_hashes = self.get_frameset_hashes_in_order(source_movie['frames'], source_movie['framesets'])
         response_obj['statistics'] = {'movies': {}}
         response_obj['statistics']['movies'][movie_url] = {'framesets': {}}
+
         for frameset_hash in ordered_hashes:
+            ocr_frame_results = {}
+            if 'movies' in ocr_job_results and \
+                movie_url in ocr_job_results['movies'] and \
+                frameset_hash in ocr_job_results['movies'][movie_url]['framesets']:
+                ocr_frame_results = ocr_job_results['movies'][movie_url]['framesets'][frameset_hash]
             image_url = source_movie['framesets'][frameset_hash]['images'][0]
-            if self.debug:
-                image_name = image_url.split('/')[-1]
-                print('sifting image {}'.format(image_name))
+            print('sifting image {}'.format(image_url.split('/')[-1]))
             cv2_image = self.get_cv2_image_from_url(image_url, self.file_writer)
             if type(cv2_image) == type(None):
                 print('error fetching image for data_sifter')
                 continue
-            match_obj, match_stats, mask = data_sifter.sift_data(cv2_image)
+            match_obj, match_stats, mask = data_sifter.sift_data(cv2_image, ocr_frame_results)
             if match_obj:
                 response_obj['movies'][movie_url]['framesets'][frameset_hash] = match_obj
             response_obj['statistics']['movies'][movie_url]['framesets'][frameset_hash] = match_stats
