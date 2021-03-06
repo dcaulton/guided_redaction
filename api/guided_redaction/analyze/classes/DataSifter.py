@@ -19,6 +19,7 @@ class DataSifter:
         return_stats = {}
         return_mask = np.zeros((20, 20, 1), 'uint8')
 
+        fast_pass_confirmed = slow_pass_confirmed = False
         fast_pass = self.fast_pass_for_labels(ocr_results_this_frame, other_t1_results_this_frame)
         if fast_pass:
             fast_pass_confirmed = self.confirm_fast_pass(cv2_image, ocr_results_this_frame, other_t1_results_this_frame)

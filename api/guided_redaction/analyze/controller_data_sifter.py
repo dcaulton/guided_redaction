@@ -29,7 +29,6 @@ class DataSifterController(T1Controller):
         source_movie = source_movies[movie_url]
         movie = movies[movie_url]
 
-        print('poclkie source movie {} =x=x=x=x=x============================== t1 movie {}'.format(source_movie, movie))
         scanner_id = list(request_data["tier_1_scanners"]['data_sifter'].keys())[0]
         data_sifter_meta = request_data["tier_1_scanners"]['data_sifter'][scanner_id]
 
@@ -46,7 +45,6 @@ class DataSifterController(T1Controller):
             other_t1_matches_in = {}
             if frameset_hash in movie['framesets']:
                 for match_id in movie['framesets'][frameset_hash]:
-                    print('-----------pibble {} '.format(movie['framesets'][frameset_hash][match_id]['scanner_type']))
                     if movie['framesets'][frameset_hash][match_id]['scanner_type'] == 'ocr':
                         ocr_matches_in[match_id] = movie['framesets'][frameset_hash][match_id]
                     else:
