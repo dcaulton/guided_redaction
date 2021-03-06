@@ -24,15 +24,12 @@ class DataSifterController(T1Controller):
         }
         source_movies = {}
         movies = request_data.get('movies')
-        if 'source' in movies:
-            source_movies = movies['source']
-            del movies['source']
-        movie_url = list(movies.keys())[0]
+        source_movies = movies['source']
+        movie_url = list(source_movies.keys())[0]
+        source_movie = source_movies[movie_url]
         movie = movies[movie_url]
 
-        if movie_url not in source_movies:
-            source_movie = movie
-
+        print('poclkie source movie {} =x=x=x=x=x============================== t1 movie {}'.format(source_movie, movie))
         scanner_id = list(request_data["tier_1_scanners"]['data_sifter'].keys())[0]
         data_sifter_meta = request_data["tier_1_scanners"]['data_sifter'][scanner_id]
 
@@ -45,12 +42,11 @@ class DataSifterController(T1Controller):
         response_obj['statistics']['movies'][movie_url] = {'framesets': {}}
 
         for frameset_hash in ordered_hashes:
-            print('chupacabra-----', frameset_hash, movie)
             ocr_matches_in = {}
             other_t1_matches_in = {}
             if frameset_hash in movie['framesets']:
                 for match_id in movie['framesets'][frameset_hash]:
-                    print('sterling', movie['framesets'][frameset_hash][match_id])
+                    print('-----------pibble {} '.format(movie['framesets'][frameset_hash][match_id]['scanner_type']))
                     if movie['framesets'][frameset_hash][match_id]['scanner_type'] == 'ocr':
                         ocr_matches_in[match_id] = movie['framesets'][frameset_hash][match_id]
                     else:
@@ -58,6 +54,7 @@ class DataSifterController(T1Controller):
             image_url = source_movie['framesets'][frameset_hash]['images'][0]
             print('sifting image {}'.format(image_url.split('/')[-1]))
             cv2_image = self.get_cv2_image_from_url(image_url, self.file_writer)
+
             if type(cv2_image) == type(None):
                 print('error fetching image for data_sifter')
                 continue

@@ -369,20 +369,14 @@ class InsightsPanel extends React.Component {
     // if we have all source movies, and they're not in source, move them into source
     //  then load the ocr job data alongside any other t1 job data remaining in the non-source movies
     let movies_framesets_to_cover = {}
-    const tmp_movies = {'source': {}}
-    for (let i=0; i < Object.keys(build_job_data['movies']).length; i++) {
-      const movie_url = Object.keys(build_job_data['movies'])[i]
-      const movie = build_job_data['movies'][movie_url]
+
+    for (let i=0; i < Object.keys(build_job_data['movies']['source']).length; i++) {
+      const movie_url = Object.keys(build_job_data['movies']['source'])[i]
+      let movie = build_job_data['movies']['source'][movie_url]
       movies_framesets_to_cover[movie_url] = []
       for (let j=0; j < Object.keys(movie['framesets']).length; j++) {
         const perly = Object.keys(movie['framesets'])[j]
         movies_framesets_to_cover[movie_url].push(perly)
-      }
-      if (Object.keys(movie).includes('frames')) {
-          // its a source movie, move it
-        tmp_movies['source'][movie_url] = movie
-      } else {
-        tmp_movies[movie_url] = movie
       }
     }
     for (let i=0; i < Object.keys(movies_framesets_to_cover).length; i++) {
@@ -398,22 +392,33 @@ class InsightsPanel extends React.Component {
           for (let k=0; k < Object.keys(ocr_job_data['movies'][movie_url]['framesets'][frameset_hash]).length; k++) {
             const match_key = Object.keys(ocr_job_data['movies'][movie_url]['framesets'][frameset_hash])[k]
             const match_obj = ocr_job_data['movies'][movie_url]['framesets'][frameset_hash][match_key]
-            if (!Object.keys(tmp_movies).includes(movie_url)) {
-              tmp_movies[movie_url] = {'framesets': {}}
+            if (!Object.keys(build_job_data['movies']).includes(movie_url)) {
+              build_job_data['movies'][movie_url] = {'framesets': {}}
             }
-            if (!Object.keys(tmp_movies[movie_url]['framesets']).includes(frameset_hash)) {
-              tmp_movies[movie_url]['framesets'][frameset_hash] = {}
+            if (!Object.keys(build_job_data['movies'][movie_url]['framesets']).includes(frameset_hash)) {
+              build_job_data['movies'][movie_url]['framesets'][frameset_hash] = {}
             }
-            tmp_movies[movie_url]['framesets'][frameset_hash][match_key] = match_obj
+            build_job_data['movies'][movie_url]['framesets'][frameset_hash][match_key] = match_obj
           }
         }
       }
     }
-    build_job_data['movies'] = tmp_movies
   }
 
   buildDataSifterMovieData(data_sifter_meta, job_data, scope, extra_data) {
+    // Data Sifter has stricter input requirements
+    //   movies always needs to have source movies
+    //   the non-source movies contain ocr, and optionally data from other t1 scans
+
     this.buildT1MovieData(job_data, scope, extra_data)
+    // if this job doesn't already have source movies, make all the movies source movies
+    //  if we called buildT1MovieData with t1 input, it will have source and regular movies
+    if (!Object.keys(job_data['request_data']['movies']).includes('source')) {
+      const new_obj = job_data['request_data']['movies']
+      job_data['request_data']['movies'] = {
+          source: new_obj,
+      }
+    }
     let ocr_job_data = {}
     for (let i=0; i < Object.keys(this.props.tier_1_matches['ocr']).length; i++) {
       const match_id = Object.keys(this.props.tier_1_matches['ocr'])[i]
@@ -424,7 +429,7 @@ class InsightsPanel extends React.Component {
     if (ocr_job_data) {
       this.loadOcrDataIntoMovies(job_data['request_data'], ocr_job_data) 
     } else {
-    console.log('WE NEED TO LOAD THE JOB DATA FOR DINKY DATA SIFTER HERE')
+    console.log('TODO WE NEED TO LOAD THE JOB DATA FOR DINKY DATA SIFTER HERE')
     }
   }
 
