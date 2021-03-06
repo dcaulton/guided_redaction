@@ -36,7 +36,6 @@ from guided_redaction.analyze.api import (
 
 
 osa_batch_size = 20
-ds_batch_size = 20
 ocr_batch_size = 20
 sg_batch_size_with_ocr = 10
 sg_batch_size_no_ocr = 100
@@ -168,14 +167,15 @@ def build_and_dispatch_generic_batched_threaded_children(
                 child_task.delay(job.id)
 
 def target_wants_ocr_data(operation, t1_scanner):
-    if operation in ['selection_grower', 'ocr_scene_analysis'] and \
+    if operation in ['selection_grower', 'ocr_scene_analysis', 'data_sifter'] and \
         'ocr_job_id' in t1_scanner and \
         t1_scanner['ocr_job_id']:
         return True
 
 def get_prescanned_ocr_data(t1_scanner):
     job = Job.objects.get(pk=t1_scanner['ocr_job_id'])
-    return json.loads(job.response_data)['movies']
+    ocr_data = json.loads(job.response_data)['movies']
+    return ocr_data
 
 def add_ocr_data(build_movies, prescanned_ocr_results):
     for movie_url in build_movies:
@@ -1079,13 +1079,12 @@ def finish_data_sifter_threaded(job):
         worker.handle_job_finished(job, pipeline)
 
 def build_and_dispatch_data_sifter_threaded_children(parent_job):
-    build_and_dispatch_generic_batched_threaded_children(
-        parent_job,
-        'data_sifter',
-        ds_batch_size,
-        'data_sifter',
-        finish_data_sifter_threaded,
-        data_sifter 
+    build_and_dispatch_generic_threaded_children(
+        parent_job, 
+        'data_sifter', 
+        'data_sifter', 
+        data_sifter, 
+        finish_data_sifter_threaded
     )
 
 #===HOG=================================

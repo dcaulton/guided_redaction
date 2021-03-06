@@ -135,6 +135,7 @@ class BottomInsightsControls extends React.Component {
           current_ids={this.props.current_ids}
           tier_1_matches={this.props.tier_1_matches}
           submitInsightsJob={this.props.submitInsightsJob}
+          jobs={this.props.jobs}
         />
 
         <HogControls

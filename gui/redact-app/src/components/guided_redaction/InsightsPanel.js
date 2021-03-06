@@ -69,6 +69,7 @@ class InsightsPanel extends React.Component {
     this.setScrubberToIndex=this.setScrubberToIndex.bind(this)
     this.getCurrentOcrSceneAnalysisMatches=this.getCurrentOcrSceneAnalysisMatches.bind(this)
     this.runCallbackFunction=this.runCallbackFunction.bind(this)
+    this.loadOcrDataIntoMovies=this.loadOcrDataIntoMovies.bind(this)
   }
 
   getActiveT1ResultsMask() {
@@ -356,8 +357,75 @@ class InsightsPanel extends React.Component {
     job_data['request_data']['scan_level'] = 'tier_1'
     job_data['description'] = scanner_type + ' (' + cur_scanner['name'] + ') '
 
-    this.buildT1MovieData(job_data, scope, extra_data)
+    if (scanner_type === 'data_sifter') {
+      this.buildDataSifterMovieData(cur_scanner, job_data, scope, extra_data)
+    } else {
+      this.buildT1MovieData(job_data, scope, extra_data)
+    }
     return job_data
+  }
+
+  loadOcrDataIntoMovies(build_job_data, ocr_job_data) {
+    // if we have all source movies, and they're not in source, move them into source
+    //  then load the ocr job data alongside any other t1 job data remaining in the non-source movies
+    let movies_framesets_to_cover = {}
+    const tmp_movies = {'source': {}}
+    for (let i=0; i < Object.keys(build_job_data['movies']).length; i++) {
+      const movie_url = Object.keys(build_job_data['movies'])[i]
+      const movie = build_job_data['movies'][movie_url]
+      movies_framesets_to_cover[movie_url] = []
+      for (let j=0; j < Object.keys(movie['framesets']).length; j++) {
+        const perly = Object.keys(movie['framesets'])[j]
+        movies_framesets_to_cover[movie_url].push(perly)
+      }
+      if (Object.keys(movie).includes('frames')) {
+          // its a source movie, move it
+        tmp_movies['source'][movie_url] = movie
+      } else {
+        tmp_movies[movie_url] = movie
+      }
+    }
+    for (let i=0; i < Object.keys(movies_framesets_to_cover).length; i++) {
+      const movie_url = Object.keys(movies_framesets_to_cover)[i]
+      for (let j=0; j < Object.keys(movies_framesets_to_cover[movie_url]).length; j++) {
+        const fsh_index = Object.keys(movies_framesets_to_cover[movie_url])[j]
+        const frameset_hash = movies_framesets_to_cover[movie_url][fsh_index]
+        if (
+          Object.keys(ocr_job_data).includes('movies') &&
+          Object.keys(ocr_job_data['movies']).includes(movie_url) &&
+          Object.keys(ocr_job_data['movies'][movie_url]['framesets']).includes(frameset_hash)
+        ) {
+          for (let k=0; k < Object.keys(ocr_job_data['movies'][movie_url]['framesets'][frameset_hash]).length; k++) {
+            const match_key = Object.keys(ocr_job_data['movies'][movie_url]['framesets'][frameset_hash])[k]
+            const match_obj = ocr_job_data['movies'][movie_url]['framesets'][frameset_hash][match_key]
+            if (!Object.keys(tmp_movies).includes(movie_url)) {
+              tmp_movies[movie_url] = {'framesets': {}}
+            }
+            if (!Object.keys(tmp_movies[movie_url]['framesets']).includes(frameset_hash)) {
+              tmp_movies[movie_url]['framesets'][frameset_hash] = {}
+            }
+            tmp_movies[movie_url]['framesets'][frameset_hash][match_key] = match_obj
+          }
+        }
+      }
+    }
+    build_job_data['movies'] = tmp_movies
+  }
+
+  buildDataSifterMovieData(data_sifter_meta, job_data, scope, extra_data) {
+    this.buildT1MovieData(job_data, scope, extra_data)
+    let ocr_job_data = {}
+    for (let i=0; i < Object.keys(this.props.tier_1_matches['ocr']).length; i++) {
+      const match_id = Object.keys(this.props.tier_1_matches['ocr'])[i]
+      if (this.props.tier_1_matches['ocr'][match_id]['job_id'] === data_sifter_meta['include_ocr_job_id']) {
+        ocr_job_data = this.props.tier_1_matches['ocr'][match_id]
+      }
+    }
+    if (ocr_job_data) {
+      this.loadOcrDataIntoMovies(job_data['request_data'], ocr_job_data) 
+    } else {
+    console.log('WE NEED TO LOAD THE JOB DATA FOR DINKY DATA SIFTER HERE')
+    }
   }
 
   buildT1MovieData(job_data, scope, extra_data) {

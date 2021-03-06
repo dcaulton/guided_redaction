@@ -25,6 +25,7 @@ class DataSifterControls extends React.Component {
       fake_data: 'true',
       app_dictionary: {},
       scale: '1:1',
+      include_ocr_job_id: '',
       attributes: {},
       scan_level: 'tier_2',
       attribute_search_name: '',
@@ -77,6 +78,7 @@ class DataSifterControls extends React.Component {
         fake_data: sam['fake_data'],
         app_dictionary: sam['app_dictionary'],
         scale: sam['scale'],
+        include_ocr_job_id: sam['include_ocr_job_id'],
         attributes: sam['attributes'],
         scan_level: sam['scan_level'],
       })
@@ -99,6 +101,7 @@ class DataSifterControls extends React.Component {
       fake_data: 'yes',
       app_dictionary: {},
       scale: '1:1',
+      include_ocr_job_id: '',
       attributes: {},
       scan_level: 'tier_2',
     })
@@ -111,6 +114,7 @@ class DataSifterControls extends React.Component {
       fake_data: this.state.fake_data,
       app_dictionary: this.state.app_dictionary,
       scale: this.state.scale,
+      include_ocr_job_id: this.state.include_ocr_job_id,
       attributes: this.state.attributes,
       scan_level: this.state.scan_level,
     }
@@ -137,6 +141,39 @@ class DataSifterControls extends React.Component {
         (()=>{this.props.displayInsightsMessage('Selected Area has been saved to database')})
       )
     }))
+  }
+
+  buildOcrMatchIdField() {
+    let ocr_matches = []
+    ocr_matches.push({'': ''})
+    for (let i=0; i < this.props.jobs.length; i++) {
+      const job = this.props.jobs[i]
+      if (job['operation'] !== 'scan_ocr_threaded') {
+        continue
+      }
+      const build_obj = {}
+      const desc = job['description'] + ' ' + job['id'].slice(0,3) + '...'
+      build_obj[job['id']] = desc
+      ocr_matches.push(build_obj)
+    }
+
+    const label_and_drop = buildLabelAndDropdown(
+      ocr_matches,
+      'Ocr Job Id',
+      this.state.include_ocr_job_id,
+      'include_ocr_job_id',
+      ((value)=>{this.setLocalStateVar('include_ocr_job_id', value)})
+    )
+    return (
+      <div>
+        <div className='d-inline'>
+          {label_and_drop}
+        </div>
+        <div className='d-inline text-danger'>
+          ^^^ Required to Scan
+        </div>
+      </div>
+    )
   }
 
   buildScaleDropdown() {
@@ -291,7 +328,10 @@ class DataSifterControls extends React.Component {
 
   buildRunButtonWrapper() {
     if (!Object.keys(this.props.tier_1_scanners['data_sifter']).includes(this.state.id)) {
-      return ''
+      return
+    }
+    if (!this.state.include_ocr_job_id) {
+      return
     }
     return buildRunButton(
       this.props.tier_1_scanners, 'data_sifter', this.props.buildTier1RunOptions, this.props.submitInsightsJob
@@ -351,6 +391,7 @@ class DataSifterControls extends React.Component {
     const id_string = buildIdString(this.state.id, 'data_sifter', false)
     const name_field = this.buildNameField()
     const scale_dropdown = this.buildScaleDropdown()
+    const ocr_job_id_dropdown = this.buildOcrMatchIdField()
     const fake_data_dropdown = this.buildFakeDataDropdown()
     const attributes_list = this.buildAttributesList()
     const scan_level_dropdown = this.buildScanLevelDropdown2()
@@ -396,6 +437,10 @@ class DataSifterControls extends React.Component {
 
                 <div className='row mt-2'>
                   {scale_dropdown}
+                </div>
+
+                <div className='row mt-2'>
+                  {ocr_job_id_dropdown}
                 </div>
 
                 <div className='row mt-2'>

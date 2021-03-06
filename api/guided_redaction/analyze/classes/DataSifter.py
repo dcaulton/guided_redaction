@@ -14,15 +14,34 @@ class DataSifter:
         self.match_origin_xy_tolerance = 5
         self.get_app_data()
 
-    def sift_data(self, cv2_image, ocr_results_this_frame):
+    def sift_data(self, cv2_image, ocr_results_this_frame, other_t1_results_this_frame):
         all_zones = {}
         return_stats = {}
         return_mask = np.zeros((20, 20, 1), 'uint8')
 
+        fast_pass = self.fast_pass_for_labels(ocr_results_this_frame, other_t1_results_this_frame)
+        if fast_pass:
+            fast_pass_confirmed = self.confirm_fast_pass(cv2_image, ocr_results_this_frame, other_t1_results_this_frame)
+        if not fast_pass_confirmed:
+            slow_pass_confirmed = self.slow_pass_for_labels(cv2_image, ocr_results_this_frame, other_t1_results_this_frame)
+        if fast_pass_confirmed or slow_pass_confirmed:
+            self.build_match_results(all_zones, return_stats, return_mask, cv2_image, fast_pass_confirmed, slow_pass_confirmed)
+
         self.build_hardcoded_response(all_zones, return_stats)
 
-
         return all_zones, return_stats, return_mask
+
+    def fast_pass_for_labels(self, ocr_results_this_frame, other_t1_results_this_frame):
+        pass
+
+    def confirm_fast_pass(self, ocr_results_this_frame, other_t1_results_this_frame):
+        pass
+
+    def slow_pass_for_labels(self, cv2_image, ocr_results_this_frame, other_t1_results_this_frame):
+        pass
+
+    def build_match_results(self, all_zones, return_stats, return_mask, cv2_image, fast_pass_confirmed, slow_pass_confirmed):
+        pass
 
     def build_hardcoded_response(self, all_zones, return_stats):
         one_zone = {
@@ -62,11 +81,11 @@ class DataSifter:
 
     def get_app_data(self):
         self.app_data = {
-            rows: [
+            'rows': [
                 ['a1', 'a2', 'a3', 'a4', 'a5', 'a6'],
                 ['b1'],
             ],
-            cols: [
+            'cols': [
                 ['a1'],
                 ['a2'],
                 ['a3'],
@@ -74,7 +93,7 @@ class DataSifter:
                 ['a5'],
                 ['a6'],
             ],
-            items: {
+            'items': {
                 'a1': {
                     'type': 'label',
                     'text': 'Details',
