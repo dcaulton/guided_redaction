@@ -26,9 +26,13 @@ class DataSifter:
         fast_pass_confirmed = slow_pass_confirmed = False
         fast_pass = self.fast_pass_for_labels(ocr_results_this_frame, other_t1_results_this_frame)
         if fast_pass:
-            fast_pass_confirmed = self.confirm_fast_pass(fast_pass, cv2_image, ocr_results_this_frame, other_t1_results_this_frame)
+            fast_pass_confirmed = self.confirm_fast_pass(
+                fast_pass, cv2_image, ocr_results_this_frame, other_t1_results_this_frame
+            )
         if not fast_pass_confirmed:
-            slow_pass_confirmed = self.slow_pass_for_labels(cv2_image, ocr_results_this_frame, other_t1_results_this_frame)
+            slow_pass_confirmed = self.slow_pass_for_labels(
+                cv2_image, ocr_results_this_frame, other_t1_results_this_frame
+            )
         if fast_pass_confirmed or slow_pass_confirmed:
             self.build_match_results(return_mask, cv2_image, fast_pass_confirmed, slow_pass_confirmed)
 
@@ -49,7 +53,7 @@ class DataSifter:
                         if self.point_is_in_t1_region(ocr_coords, t1_ele):
                             if ocr_ele_id not in build_ocr_results:
                                 build_ocr_results[ocr_ele_id] = ocr_ele
-#                            break
+
             return build_ocr_results
         return ocr_results_this_frame
 
@@ -63,18 +67,24 @@ class DataSifter:
 
     def gather_existing_classes(self, ocr_results_this_frame, rows_or_cols='rows'):
         existing_classes = {}
-        for match_id in ocr_results_this_frame:
+        sorted_ocr_keys = ocr_results_this_frame.keys()
+
+        if rows_or_cols == 'rows':
+            sorted_ocr_keys = sorted(ocr_results_this_frame, key=lambda item: ocr_results_this_frame[item]['location'][0])
+        elif rows_or_cols == 'cols':
+            sorted_ocr_keys = sorted(ocr_results_this_frame, key=lambda item: ocr_results_this_frame[item]['location'][1])
+
+        for match_id in sorted_ocr_keys:
             match_obj = ocr_results_this_frame[match_id]
             closest_distance = 9999999
             closest_class_id = None
             for class_id in existing_classes:
-                if self.is_close_enough(match_obj, existing_classes[class_id]['envelope']):
+                if self.is_close_enough(match_obj, existing_classes[class_id]):
                     closest_class_id = class_id
             if closest_class_id:
                 existing_class = existing_classes[closest_class_id]
-                new_class_envelope = self.grow_envelope_to_accomodate(existing_class['envelope'], match_obj)
+                self.grow_object_to_accomodate(existing_class, match_obj)
                 existing_class['member_ids'].append(match_id)
-                existing_class['envelope'] = new_class_envelope
             else:
                 new_id = str(random.randint(1, 999999999))
                 new_start = match_obj['location']
@@ -82,37 +92,28 @@ class DataSifter:
                     match_obj['location'][0] + match_obj['size'][0],
                     match_obj['location'][1] + match_obj['size'][1]
                 ]
-                centroid = [
-                    match_obj['location'][0] + math.floor(.5 * match_obj['size'][0]),
-                    match_obj['location'][1] + math.floor(.5 * match_obj['size'][1])
-                ]
                 build_obj = {
                     'member_ids': [match_id],
-                    'envelope': {
-                        'start': new_start,
-                        'end': new_end,
-                        'centroid': centroid,
-                    },
+                    'start': new_start,
+                    'end': new_end,
                 }
                 existing_classes[new_id] = build_obj
-
-        existing_classes = self.merge_overlapping_rows(existing_classes)
 
         build_rows = {}
         for row_class_id in existing_classes:
             # TODO embed masks of the rows and cols in statistics
-            comment = rows_or_cols + ' with ocr members ' + ', '.join(existing_classes[row_class_id]['member_ids'])
             build_rows[row_class_id] = {
-                'start': existing_classes[row_class_id]['envelope']['start'], 
-                'end': existing_classes[row_class_id]['envelope']['end'], 
-                'centroid': existing_classes[row_class_id]['envelope']['centroid'], 
-                'comment': comment,
+                'start': existing_classes[row_class_id]['start'], 
+                'end': existing_classes[row_class_id]['end'], 
+                'ocr_member_ids': existing_classes[row_class_id]['member_ids'],
+                'row_or_column': rows_or_cols,
             }
             if self.debug:
                 self.add_zone_to_response(
-                    existing_classes[row_class_id]['envelope']['start'], 
-                    existing_classes[row_class_id]['envelope']['end'],
-                    comment
+                    existing_classes[row_class_id]['start'], 
+                    existing_classes[row_class_id]['end'],
+                    existing_classes[row_class_id]['member_ids'],
+                    rows_or_cols,
                 )
 
         self.return_stats[rows_or_cols] = build_rows
@@ -120,17 +121,7 @@ class DataSifter:
         return existing_classes
 
     def point_is_in_t1_region(self, coords, t1_match_obj):
-        if 'start' in t1_match_obj:
-            start = t1_match_obj['start']
-        if 'location' in t1_match_obj:
-            start = t1_match_obj['location']
-        if 'end' in t1_match_obj:
-            end = t1_match_obj['end']
-        if 'size' in t1_match_obj:
-            end = [
-                t1_match_obj['location'][0] + t1_match_obj['size'][0],
-                t1_match_obj['location'][1] + t1_match_obj['size'][1]
-            ]
+        start, end = self.get_match_obj_start_end(t1_match_obj)
         if start and end:
             if coords[0] >= start[0] and coords[0] <= end[0] and\
                 coords[1] >= start[1] and coords[1] <= end[1]:
@@ -138,14 +129,19 @@ class DataSifter:
             return False
         return True
 
-    def merge_overlapping_rows(self, ocr_rows_dict):
-        print('TODO  WRITE the ROW overllapping LOGIC')
-        return ocr_rows_dict
-        # if any row has its centroid inside another rows extents, merge the rows
-        # we can get here because we're initially building rows with shuffled ocr elements, we might have some that
-        #   appear too far from each other to be in the same row, but subsequent elements may be enough to 
-        #   bridge that horizontal gap, currently set at 1000px
-
+    def get_match_obj_start_end(self, match_obj):
+        if 'start' in match_obj:
+            start = match_obj['start']
+        if 'location' in match_obj:
+            start = match_obj['location']
+        if 'end' in match_obj:
+            end = match_obj['end']
+        if 'size' in match_obj:
+            end = [
+                match_obj['location'][0] + match_obj['size'][0],
+                match_obj['location'][1] + match_obj['size'][1]
+            ]
+        return start, end
 
     def confirm_fast_pass(self, fast_pass_match_obj, ocr_results_this_frame, other_t1_results_this_frame):
         pass
@@ -156,7 +152,7 @@ class DataSifter:
     def build_match_results(self, return_mask, cv2_image, fast_pass_confirmed, slow_pass_confirmed):
         pass
 
-    def add_zone_to_response(self, zone_start, zone_end, comment=None):
+    def add_zone_to_response(self, zone_start, zone_end, ocr_member_ids=None, row_or_column=None):
         new_id = str(random.randint(1, 999999999))
         new_size = [
             zone_end[0] - zone_start[0],
@@ -169,8 +165,10 @@ class DataSifter:
             'scale': 1,
             'scanner_type': 'data_sifter',
         }
-        if comment:
-            one_zone['comment'] = comment
+        if ocr_member_ids:
+            one_zone['ocr_member_ids'] = ocr_member_ids
+        if row_or_column:
+            one_zone['row_or_column'] = row_or_column
         self.all_zones[one_zone['id']] = one_zone
 
     def get_app_data(self):
@@ -237,21 +235,23 @@ class DataSifter:
 
         return app_rows, app_cols
 
-    def grow_envelope_to_accomodate(self, envelope, new_ocr_obj):
+    def grow_object_to_accomodate(self, match_object, new_ocr_obj):
         new_obj_start = new_ocr_obj['location']
         new_obj_end = [
             new_ocr_obj['location'][0] + new_ocr_obj['size'][0],
             new_ocr_obj['location'][1] + new_ocr_obj['size'][1]
         ]
-        if new_obj_start[0] < envelope['start'][0]:
-            envelope['start'][0] = new_obj_start[0]
-        if new_obj_start[1] < envelope['start'][1]:
-            envelope['start'][1] = new_obj_start[1]
-        if new_obj_end[0] > envelope['end'][0]:
-            envelope['end'][0] = new_obj_end[0]
-        if new_obj_end[1] > envelope['end'][1]:
-            envelope['end'][1] = new_obj_end[1]
-        return envelope
+        if 'start' not in match_object:
+            print('PROBLEM, were getting weird envelope vars')
+        if new_obj_start[0] < match_object['start'][0]:
+            match_object['start'][0] = new_obj_start[0]
+        if new_obj_start[1] < match_object['start'][1]:
+            match_object['start'][1] = new_obj_start[1]
+        if new_obj_end[0] > match_object['end'][0]:
+            match_object['end'][0] = new_obj_end[0]
+        if new_obj_end[1] > match_object['end'][1]:
+            match_object['end'][1] = new_obj_end[1]
+        return match_object
 
     def is_close_enough(self, ocr_match_obj, envelope, group_type='rows'):
         ocr_start = ocr_match_obj['location']
