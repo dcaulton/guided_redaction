@@ -291,6 +291,9 @@ class InsightsPanel extends React.Component {
     let movies_obj = {}
     for (let i=0; i < Object.keys(tier_1_output).length; i++) {
       const movie_url = Object.keys(tier_1_output)[i]
+      if (movie_url === 'source') {
+        continue
+      }
       movies_obj[movie_url] = this.props.movies[movie_url]
     }
     return movies_obj
