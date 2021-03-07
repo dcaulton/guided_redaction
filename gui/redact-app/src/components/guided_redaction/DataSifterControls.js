@@ -190,13 +190,15 @@ class DataSifterControls extends React.Component {
       ((value)=>{this.setLocalStateVar('include_ocr_job_id', value)})
     )
     return (
-      <div>
-        <div className='d-inline'>
+      <div className='col'>
+      <div className='row'>
+        <div className='col'>
           {label_and_drop}
         </div>
-        <div className='d-inline text-danger'>
-          ^^^ Required to Scan
+        <div className='col text-danger'>
+          * Required 
         </div>
+      </div>
       </div>
     )
   }
@@ -229,7 +231,7 @@ class DataSifterControls extends React.Component {
   buildScanLevelDropdown2() {
     const scan_level_dropdown = [
       {'tier_1': 'Tier 1 (select only)'},
-      {'tier_2': 'Tier 2 (select and redact)'}
+      {'tier_3': 'Tier 3 (select and extract)'}
     ]
 
     return buildLabelAndDropdown(
