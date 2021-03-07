@@ -22,7 +22,8 @@ class DataSifterControls extends React.Component {
     this.state = {
       id: '',
       name: '',
-      fake_data: 'true',
+      fake_data: false,
+      debug: false,
       app_dictionary: {},
       scale: '1:1',
       include_ocr_job_id: '',
@@ -36,6 +37,27 @@ class DataSifterControls extends React.Component {
     this.setLocalStateVar=this.setLocalStateVar.bind(this)
   }
 
+  buildToggleField(field_name, label) {
+    let checked_val = ''
+    if (this.state[field_name]) {
+      checked_val = 'checked'
+    }
+    return (
+      <div className='ml-2'>
+        <div className='d-inline'>
+          <input
+            className='mr-2'
+            checked={checked_val}
+            type='checkbox'
+            onChange={() => this.setLocalStateVar(field_name, !this.state[field_name])}
+          />
+        </div>
+        <div className='d-inline'>
+          {label}
+        </div>
+      </div>
+    )
+  }
 
   showSourceFrame(movie_url, image_frameset_index) {
     this.props.setCurrentVideo(movie_url)
@@ -76,6 +98,7 @@ class DataSifterControls extends React.Component {
         id: sam['id'],
         name: sam['name'],
         fake_data: sam['fake_data'],
+        debug: sam['debug'],
         app_dictionary: sam['app_dictionary'],
         scale: sam['scale'],
         include_ocr_job_id: sam['include_ocr_job_id'],
@@ -98,7 +121,8 @@ class DataSifterControls extends React.Component {
     this.setState({
       id: the_id,
       name: '',
-      fake_data: 'yes',
+      fake_data: false,
+      debug: false,
       app_dictionary: {},
       scale: '1:1',
       include_ocr_job_id: '',
@@ -112,6 +136,7 @@ class DataSifterControls extends React.Component {
       id: this.state.id,
       name: this.state.name,
       fake_data: this.state.fake_data,
+      debug: this.state.debug,
       app_dictionary: this.state.app_dictionary,
       scale: this.state.scale,
       include_ocr_job_id: this.state.include_ocr_job_id,
@@ -187,23 +212,6 @@ class DataSifterControls extends React.Component {
       this.state.scale,
       'data_sifter_scale',
       ((value)=>{this.setLocalStateVar('scale', value)})
-    )
-  }
-
-  buildFakeDataDropdown() {
-    if (this.state.scan_level !== 'tier_2') {
-      return 
-    }
-    const values = [
-      {'yes': 'yes'},
-      {'no': 'no'},
-    ]
-    return buildLabelAndDropdown(
-      values,
-      'Generate Fake Data',
-      this.state.fake_data,
-      'data_sifter_fake_data',
-      ((value)=>{this.setLocalStateVar('fake_data', value)})
     )
   }
 
@@ -392,7 +400,8 @@ class DataSifterControls extends React.Component {
     const name_field = this.buildNameField()
     const scale_dropdown = this.buildScaleDropdown()
     const ocr_job_id_dropdown = this.buildOcrMatchIdField()
-    const fake_data_dropdown = this.buildFakeDataDropdown()
+    const fake_data_checkbox = this.buildToggleField('fake_data', 'Generate Fake Data')
+    const debug_checkbox = this.buildToggleField('debug', 'Debug')
     const attributes_list = this.buildAttributesList()
     const scan_level_dropdown = this.buildScanLevelDropdown2()
     const run_button = this.buildRunButtonWrapper()
@@ -444,7 +453,11 @@ class DataSifterControls extends React.Component {
                 </div>
 
                 <div className='row mt-2'>
-                  {fake_data_dropdown}
+                  {fake_data_checkbox}
+                </div>
+
+                <div className='row mt-2'>
+                  {debug_checkbox}
                 </div>
 
                 <div className='row mt-2'>

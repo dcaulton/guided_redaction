@@ -9,15 +9,19 @@ class DataSifter:
 
     def __init__(self, mesh_match_meta):
         self.mesh_match_meta = mesh_match_meta
-        self.debug = True
+        self.debug = mesh_match_meta.get('debug', False)
         self.template_match_threshold = .9
         self.match_origin_xy_tolerance = 5
         self.get_app_data()
+        self.min_vertical_overlap_pixels = 5
+        self.min_row_horizontal_overlap_pixels = 1000
 
     def sift_data(self, cv2_image, ocr_results_this_frame, other_t1_results_this_frame):
         self.all_zones = {}
         self.return_stats = {}
         return_mask = np.zeros((20, 20, 1), 'uint8')
+
+        ocr_results_this_frame = self.filter_results_by_t1_bounds(ocr_results_this_frame, other_t1_results_this_frame)
 
         fast_pass_confirmed = slow_pass_confirmed = False
         fast_pass = self.fast_pass_for_labels(ocr_results_this_frame, other_t1_results_this_frame)
@@ -32,11 +36,116 @@ class DataSifter:
 
         return self.all_zones, self.return_stats, return_mask
 
+    def filter_results_by_t1_bounds(self, ocr_results_this_frame, other_t1_results_this_frame):
+        if other_t1_results_this_frame:
+            build_ocr_results = {}
+            for t1_match_id in other_t1_results_this_frame:
+                t1_ele = other_t1_results_this_frame[t1_match_id]
+                for ocr_ele_id in ocr_results_this_frame:
+                    ocr_ele = ocr_results_this_frame[ocr_ele_id]
+                    ocr_coords = ocr_ele.get('start')
+                    if 'location' in ocr_ele:
+                        ocr_coords = ocr_ele['location']
+                        if self.point_is_in_t1_region(ocr_coords, t1_ele):
+                            if ocr_ele_id not in build_ocr_results:
+                                build_ocr_results[ocr_ele_id] = ocr_ele
+#                            break
+            return build_ocr_results
+        return ocr_results_this_frame
+
     def fast_pass_for_labels(self, ocr_results_this_frame, other_t1_results_this_frame):
-        app_rows, app_cols = self.build_fast_pass_row_and_col_data()
-        row_neighbors, col_neighbors = self.quantize_rows_and_cols(ocr_results_this_frame)
+        app_rows, app_cols = self.build_app_row_and_col_data()
+
+        ocr_rows_dict = self.gather_existing_classes(ocr_results_this_frame, 'rows')
+        ocr_cols_dict = self.gather_existing_classes(ocr_results_this_frame, 'cols')
         print('swords are good so are rows and cols')
         return False
+
+    def gather_existing_classes(self, ocr_results_this_frame, rows_or_cols='rows'):
+        existing_classes = {}
+        for match_id in ocr_results_this_frame:
+            match_obj = ocr_results_this_frame[match_id]
+            closest_distance = 9999999
+            closest_class_id = None
+            for class_id in existing_classes:
+                if self.is_close_enough(match_obj, existing_classes[class_id]['envelope']):
+                    closest_class_id = class_id
+            if closest_class_id:
+                existing_class = existing_classes[closest_class_id]
+                new_class_envelope = self.grow_envelope_to_accomodate(existing_class['envelope'], match_obj)
+                existing_class['member_ids'].append(match_id)
+                existing_class['envelope'] = new_class_envelope
+            else:
+                new_id = str(random.randint(1, 999999999))
+                new_start = match_obj['location']
+                new_end = [
+                    match_obj['location'][0] + match_obj['size'][0],
+                    match_obj['location'][1] + match_obj['size'][1]
+                ]
+                centroid = [
+                    match_obj['location'][0] + math.floor(.5 * match_obj['size'][0]),
+                    match_obj['location'][1] + math.floor(.5 * match_obj['size'][1])
+                ]
+                build_obj = {
+                    'member_ids': [match_id],
+                    'envelope': {
+                        'start': new_start,
+                        'end': new_end,
+                        'centroid': centroid,
+                    },
+                }
+                existing_classes[new_id] = build_obj
+
+        existing_classes = self.merge_overlapping_rows(existing_classes)
+
+        build_rows = {}
+        for row_class_id in existing_classes:
+            # TODO embed masks of the rows and cols in statistics
+            comment = rows_or_cols + ' with ocr members ' + ', '.join(existing_classes[row_class_id]['member_ids'])
+            build_rows[row_class_id] = {
+                'start': existing_classes[row_class_id]['envelope']['start'], 
+                'end': existing_classes[row_class_id]['envelope']['end'], 
+                'centroid': existing_classes[row_class_id]['envelope']['centroid'], 
+                'comment': comment,
+            }
+            if self.debug:
+                self.add_zone_to_response(
+                    existing_classes[row_class_id]['envelope']['start'], 
+                    existing_classes[row_class_id]['envelope']['end'],
+                    comment
+                )
+
+        self.return_stats[rows_or_cols] = build_rows
+            
+        return existing_classes
+
+    def point_is_in_t1_region(self, coords, t1_match_obj):
+        if 'start' in t1_match_obj:
+            start = t1_match_obj['start']
+        if 'location' in t1_match_obj:
+            start = t1_match_obj['location']
+        if 'end' in t1_match_obj:
+            end = t1_match_obj['end']
+        if 'size' in t1_match_obj:
+            end = [
+                t1_match_obj['location'][0] + t1_match_obj['size'][0],
+                t1_match_obj['location'][1] + t1_match_obj['size'][1]
+            ]
+        if start and end:
+            if coords[0] >= start[0] and coords[0] <= end[0] and\
+                coords[1] >= start[1] and coords[1] <= end[1]:
+                return True
+            return False
+        return True
+
+    def merge_overlapping_rows(self, ocr_rows_dict):
+        print('TODO  WRITE the ROW overllapping LOGIC')
+        return ocr_rows_dict
+        # if any row has its centroid inside another rows extents, merge the rows
+        # we can get here because we're initially building rows with shuffled ocr elements, we might have some that
+        #   appear too far from each other to be in the same row, but subsequent elements may be enough to 
+        #   bridge that horizontal gap, currently set at 1000px
+
 
     def confirm_fast_pass(self, fast_pass_match_obj, ocr_results_this_frame, other_t1_results_this_frame):
         pass
@@ -62,13 +171,7 @@ class DataSifter:
         }
         if comment:
             one_zone['comment'] = comment
-        one_stat = {
-            'id': new_id,
-            'match_percent': 97.3,
-            'text': 'Bobble Head'
-        }
         self.all_zones[one_zone['id']] = one_zone
-        self.return_stats[one_stat['id']] = one_stat
 
     def get_app_data(self):
         self.app_data = {
@@ -115,7 +218,7 @@ class DataSifter:
             }
         }
 
-    def build_fast_pass_row_and_col_data(self):
+    def build_app_row_and_col_data(self):
         app_rows = []
         for row in self.app_data['rows']:
             app_row = []
@@ -133,53 +236,6 @@ class DataSifter:
             app_cols.append(app_col)
 
         return app_rows, app_cols
-
-    def quantize_rows_and_cols(self, ocr_results_this_frame):
-        row_neighbors = col_neighbors = None
-
-        row_class_count = self.count_existing_classes(ocr_results_this_frame, 'rows')
-        col_class_count = self.count_existing_classes(ocr_results_this_frame, 'cols')
-
-        return row_neighbors, col_neighbors
-
-    def count_existing_classes(self, ocr_results_this_frame, rows_or_cols='rows'):
-        existing_classes = {}
-        for match_id in ocr_results_this_frame:
-            match_obj = ocr_results_this_frame[match_id]
-            closest_distance = 9999999
-            closest_class_id = None
-            for class_id in existing_classes:
-                if self.is_close_enough(match_obj, existing_classes[class_id]['envelope']):
-                    closest_class_id = class_id
-            if closest_class_id:
-                existing_class = existing_classes[closest_class_id]
-                new_class_envelope = self.grow_envelope_to_accomodate(existing_class['envelope'], match_obj)
-                existing_class['member_ids'].append(match_id)
-                existing_class['envelope'] = new_class_envelope
-            else:
-                new_id = str(random.randint(1, 999999999))
-                new_start = match_obj['location']
-                new_end = [
-                    match_obj['location'][0] + match_obj['size'][0],
-                    match_obj['location'][1] + match_obj['size'][1]
-                ]
-                build_obj = {
-                    'member_ids': [match_id],
-                    'envelope': {
-                        'start': new_start,
-                        'end': new_end,
-                    },
-                }
-                existing_classes[new_id] = build_obj
-        if self.debug:
-            # TODO embed masks of the rows and cols in statistics
-            for row_class_id in existing_classes:
-                self.add_zone_to_response(
-                    existing_classes[row_class_id]['envelope']['start'], 
-                    existing_classes[row_class_id]['envelope']['end'],
-                    rows_or_cols
-                )
-        return len(existing_classes.keys())
 
     def grow_envelope_to_accomodate(self, envelope, new_ocr_obj):
         new_obj_start = new_ocr_obj['location']
@@ -204,15 +260,27 @@ class DataSifter:
             ocr_match_obj['location'][1] + ocr_match_obj['size'][1]
         ]
         x_difference = self.get_axis_difference(ocr_start, ocr_end, envelope['start'], envelope['end'], 'x')
-        y_difference = self.get_axis_difference(ocr_start, ocr_end, envelope['start'], envelope['end'], 'y')
+        y_overlap = self.get_vertical_overlap(ocr_start, ocr_end, envelope['start'], envelope['end'])
         if group_type == 'rows':
-            if y_difference > 0 or x_difference > 1000:
+            if y_overlap < self.min_vertical_overlap_pixels or \
+                x_difference > self.min_row_horizontal_overlap_pixels:
                 return False
             return True
         else:  # group_type == 'cols':
+            # TODO: this needs consider left/right alignment
+            #    vertical separation/overlap isn't as much of a concern as it is for rows
             if x_difference > 0 or y_difference > 1000:
                 return False
             return True
+
+    def get_vertical_overlap(self, ocr_start, ocr_end, envelope_start, envelope_end):
+        if ocr_end[1] <= envelope_start[1]:
+            return 0 # box is above the row
+        if ocr_start[1] >= envelope_end[1]:
+            return 0 # box is below the row
+        overlap_top = ocr_end[1] - envelope_start[1]
+        overlap_bottom = envelope_end[1] - ocr_start[1]
+        return max(overlap_top, overlap_bottom)
 
     def get_axis_difference(self, ocr_start, ocr_end, envelope_start, envelope_end, axis='y'):
         axis_index = 0
