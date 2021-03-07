@@ -60,12 +60,30 @@ class DataSifter:
     def fast_pass_for_labels(self, ocr_results_this_frame, other_t1_results_this_frame):
         app_rows, app_cols = self.build_app_row_and_col_data()
 
-        ocr_rows_dict = self.gather_existing_classes(ocr_results_this_frame, 'rows')
-        ocr_cols_dict = self.gather_existing_classes(ocr_results_this_frame, 'cols')
+        ocr_rows_dict = self.gather_existing_rows_cols(ocr_results_this_frame, 'rows')
+        ocr_cols_dict = self.gather_existing_rows_cols(ocr_results_this_frame, 'cols')
         print('swords are good so are rows and cols')
         return False
 
-    def gather_existing_classes(self, ocr_results_this_frame, rows_or_cols='rows'):
+    def build_new_row_col_elements(self, rows_or_cols, ocr_match_id, ocr_match_obj):
+        return_hash = {}
+        if rows_or_cols == 'rows':
+            new_id = str(random.randint(1, 999999999))
+            new_start = ocr_match_obj['location']
+            new_end = [
+                ocr_match_obj['location'][0] + ocr_match_obj['size'][0],
+                ocr_match_obj['location'][1] + ocr_match_obj['size'][1]
+            ]
+            build_obj = {
+                'member_ids': [ocr_match_id],
+                'start': new_start,
+                'end': new_end,
+            }
+            return_hash[new_id] = build_obj
+        return return_hash
+
+    def gather_existing_rows_cols(self, ocr_results_this_frame, rows_or_cols='rows'):
+        print('DINNY gathering {}'.format(rows_or_cols))
         existing_classes = {}
         sorted_ocr_keys = ocr_results_this_frame.keys()
 
@@ -79,30 +97,20 @@ class DataSifter:
             closest_distance = 9999999
             closest_class_id = None
             for class_id in existing_classes:
-                if self.is_close_enough(match_obj, existing_classes[class_id]):
+                row_col = existing_classes[class_id]
+                if self.is_close_enough(match_obj, row_col):
                     closest_class_id = class_id
             if closest_class_id:
                 existing_class = existing_classes[closest_class_id]
                 self.grow_object_to_accomodate(existing_class, match_obj)
                 existing_class['member_ids'].append(match_id)
             else:
-                new_id = str(random.randint(1, 999999999))
-                new_start = match_obj['location']
-                new_end = [
-                    match_obj['location'][0] + match_obj['size'][0],
-                    match_obj['location'][1] + match_obj['size'][1]
-                ]
-                build_obj = {
-                    'member_ids': [match_id],
-                    'start': new_start,
-                    'end': new_end,
-                }
-                existing_classes[new_id] = build_obj
+                new_elements = self.build_new_row_col_elements(rows_or_cols, match_id, match_obj)
+                existing_classes = {**existing_classes, **new_elements}
 
-        build_rows = {}
+        build_classes = {}
         for row_class_id in existing_classes:
-            # TODO embed masks of the rows and cols in statistics
-            build_rows[row_class_id] = {
+            build_classes[row_class_id] = {
                 'start': existing_classes[row_class_id]['start'], 
                 'end': existing_classes[row_class_id]['end'], 
                 'ocr_member_ids': existing_classes[row_class_id]['member_ids'],
@@ -116,7 +124,7 @@ class DataSifter:
                     rows_or_cols,
                 )
 
-        self.return_stats[rows_or_cols] = build_rows
+        self.return_stats[rows_or_cols] = build_classes
             
         return existing_classes
 
