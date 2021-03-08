@@ -17,6 +17,7 @@ class DataSifter:
         self.min_row_horizontal_overlap_pixels = 1000
         self.min_app_score = 200
         self.fuzz_match_threshold = 70
+        self.fast_pass_app_score_threshold = 500
 
     def sift_data(self, cv2_image, ocr_results_this_frame, other_t1_results_this_frame):
         self.all_zones = {}
@@ -38,7 +39,7 @@ class DataSifter:
         if fast_pass_confirmed or slow_pass_confirmed:
             self.build_match_results(return_mask, cv2_image, fast_pass_confirmed, slow_pass_confirmed)
 
-        self.add_zone_to_response((100, 115), (355, 160))
+#        self.add_zone_to_response((100, 115), (355, 160))
 
         return self.all_zones, self.return_stats, return_mask
 
@@ -70,8 +71,7 @@ class DataSifter:
         )
 
         if match_obj:
-            print('WOOHOO, we found the app')
-
+            print('WOOHOO, we found the app {}'.format(match_obj))
         else:
             print('UGH, app was not found')
 
@@ -91,42 +91,83 @@ class DataSifter:
         return total_score
 
 
-    def fast_score_row_and_col_data(
-        self, app_rows, app_cols, ocr_rows_dict, ocr_left_cols_dict, ocr_right_cols_dict, ocr_results_this_frame
-    ):
-        best_scores = {}
-
-        sorted_keys = self.get_sorted_keys_this_group_type('left_col', ocr_rows_dict, ocr_left_cols_dict, ocr_right_cols_dict)
-        left_col_bests = {}
-        for left_col_id in sorted_keys:
-            left_col = ocr_left_cols_dict[left_col_id]
-            app_col_scores = []
-            for app_col in app_cols:
-                app_col_score = self.score_ocr_col_to_app_col(app_col, left_col, ocr_results_this_frame)
-                app_col_scores.append(app_col_score)
-            print('scores for left col are {}'.format(app_col_scores))
-
-#    do this for left cols, right cols and rows:
-#    order ocr_left_cols in ascending x
-#    left_col_bests = {}
-#    foreach ocr_left_col: 
-#        possible_ocr_left_col_matches = {}
-#        foreach app_col:
-#            if cols_match(app_col, ocr_left_col):
-#                possible_ocr_left_col_matches[ocr_left_col_id] = ocr_left_col
-#        left_col_bests[ocr_left_col_id] = highest score entry in possible_ocr_left_col_matches
+    def scan_best_scores(self, scores, enforce_order=True):
 #    step through left col bests by each left col, see if we can find a highest path score
-# with 3 app left cols and 6 ocr matches cols it looks like this:
+# with 3 app left cols and 7 ocr matches cols it looks like this:
 #  ocr col1 [259, 0, 0]
 #  ocr col2 [350, 0, 0]
 #  ocr col3 [0, 179, 0]
 #  ocr col4 [0, 324, 0]
 #  ocr col5 [0, 0, 244]
 #  ocr col6 [0, 0, 194]
-# and you want to say ocr_col2, ocr_col4, ocr_col5 gives us the best overall score across all ocr and app rows
+#  ocr col7 [734, 0, 0]
+#   if we need to enforce the order. you want to say [2, 4, 5] because it gives us the best overall score across all ocr and app rows
+#     also, 4 MUST be higher than 2, and 5 MUST be higher than 4.  these are the order of the columns.
+#   if not you want to say [7, 4, 5]  if we know that certain cols can float depending on page size, and order doesn't matter
+# 
+        total_score = 0
+        winning_cols = np.argmax(scores, 0)
+        for app_col_num, ocr_col_num in enumerate(winning_cols):
+            total_score += scores[ocr_col_num][app_col_num]
+        return winning_cols, total_score
 
+    def fast_score_row_and_col_data(
+        self, app_rows, app_cols, ocr_rows_dict, ocr_left_cols_dict, ocr_right_cols_dict, ocr_results_this_frame
+    ):
+        sorted_keys = self.get_sorted_keys_this_group_type('left_col', ocr_rows_dict, ocr_left_cols_dict, ocr_right_cols_dict)
+        lcol_scores = []
+        for left_col_id in sorted_keys:
+            left_col = ocr_left_cols_dict[left_col_id]
+            app_col_scores = []
+            for app_col in app_cols:
+                app_col_score = self.score_ocr_col_to_app_col(app_col, left_col, ocr_results_this_frame)
+                app_col_scores.append(app_col_score)
+            lcol_scores.append(app_col_scores)
+        best_ocr_offsets, best_ocr_lcol_score = self.scan_best_scores(lcol_scores)
+        best_ocr_lcol_ids = [sorted_keys[x] for x in best_ocr_offsets]
 
-        return False
+        sorted_keys = self.get_sorted_keys_this_group_type('right_col', ocr_rows_dict, ocr_left_cols_dict, ocr_right_cols_dict)
+        rcol_scores = []
+        for right_col_id in sorted_keys:
+            right_col = ocr_right_cols_dict[right_col_id]
+            app_col_scores = []
+            for app_col in app_cols:
+                app_col_score = self.score_ocr_col_to_app_col(app_col, right_col, ocr_results_this_frame)
+                app_col_scores.append(app_col_score)
+            rcol_scores.append(app_col_scores)
+        best_ocr_offsets, best_ocr_rcol_score = self.scan_best_scores(rcol_scores)
+        best_ocr_rcol_ids = [sorted_keys[x] for x in best_ocr_offsets]
+
+        sorted_keys = self.get_sorted_keys_this_group_type('row', ocr_rows_dict, ocr_left_cols_dict, ocr_right_cols_dict)
+        row_scores = []
+        for row_id in sorted_keys:
+            row = ocr_rows_dict[row_id]
+            app_row_scores = []
+            for app_row in app_rows:
+                app_row_score = self.score_ocr_col_to_app_col(app_row, row, ocr_results_this_frame)
+                app_row_scores.append(app_row_score)
+            row_scores.append(app_row_scores)
+        best_row_offsets, best_ocr_row_score = self.scan_best_scores(row_scores)
+        best_ocr_row_ids = [sorted_keys[x] for x in best_row_offsets]
+
+        total_score = best_ocr_lcol_score + best_ocr_rcol_score + best_ocr_row_score
+        if total_score >= self.fast_pass_app_score_threshold:
+            best_ocr_ids = {
+                'row': {
+                    'ids': best_ocr_row_ids,
+                    'score': best_ocr_row_score,
+                },
+                'left_col': {
+                    'ids': best_ocr_lcol_ids,
+                    'score': best_ocr_lcol_score,
+                },
+                'right_col': {
+                    'ids': best_ocr_rcol_ids,
+                    'score': best_ocr_rcol_score,
+                },
+                'total_score': total_score
+            }
+            return best_ocr_ids
 
     def get_sorted_keys_this_group_type(self, group_type, ocr_rows_dict, ocr_left_cols_dict, ocr_right_cols_dict):
         if group_type == 'left_col':
@@ -271,7 +312,7 @@ class DataSifter:
             ]
         return start, end
 
-    def confirm_fast_pass(self, fast_pass_match_obj, ocr_results_this_frame, other_t1_results_this_frame):
+    def confirm_fast_pass(self, fast_pass_match_obj, cv2_image, ocr_results_this_frame, other_t1_results_this_frame):
         pass
 
     def slow_pass_for_labels(self, cv2_image, ocr_results_this_frame, other_t1_results_this_frame):
