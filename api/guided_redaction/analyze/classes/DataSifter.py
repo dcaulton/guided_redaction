@@ -29,6 +29,7 @@ class DataSifter:
         fast_pass_confirmed = slow_pass_confirmed = False
         fast_pass = self.fast_pass_for_labels(ocr_results_this_frame, other_t1_results_this_frame)
         if fast_pass:
+            self.add_fast_pass_to_results(fast_pass, ocr_results_this_frame)
             fast_pass_confirmed = self.confirm_fast_pass(
                 fast_pass, cv2_image, ocr_results_this_frame, other_t1_results_this_frame
             )
@@ -38,8 +39,6 @@ class DataSifter:
             )
         if fast_pass_confirmed or slow_pass_confirmed:
             self.build_match_results(return_mask, cv2_image, fast_pass_confirmed, slow_pass_confirmed)
-
-#        self.add_zone_to_response((100, 115), (355, 160))
 
         return self.all_zones, self.return_stats, return_mask
 
@@ -60,15 +59,55 @@ class DataSifter:
             return build_ocr_results
         return ocr_results_this_frame
 
+    def add_fast_pass_to_results(self, fast_pass_obj, ocr_results_this_frame):
+        row_dict = fast_pass_obj['ocr_rows_dict']
+        for row_id in fast_pass_obj['row']['ids']:
+            ocr_row = row_dict[row_id]
+            for ocr_match_id in ocr_row['member_ids']:
+                ocr_match_ele = ocr_results_this_frame[ocr_match_id]
+                end_coords = [
+                    ocr_match_ele['location'][0] + ocr_match_ele['size'][0],
+                    ocr_match_ele['location'][1] + ocr_match_ele['size'][1]
+                ]
+                # TODO remove this later, just saving the ocr items we are confident are matches
+                self.add_zone_to_response(ocr_match_ele['location'], end_coords)
+
+        lcol_dict = fast_pass_obj['ocr_left_cols_dict']
+        for col_id in fast_pass_obj['left_col']['ids']:
+            ocr_col = lcol_dict[col_id]
+            for ocr_match_id in ocr_col['member_ids']:
+                ocr_match_ele = ocr_results_this_frame[ocr_match_id]
+                end_coords = [
+                    ocr_match_ele['location'][0] + ocr_match_ele['size'][0],
+                    ocr_match_ele['location'][1] + ocr_match_ele['size'][1]
+                ]
+                # TODO remove this later, just saving the ocr items we are confident are matches
+                self.add_zone_to_response(ocr_match_ele['location'], end_coords)
+
+        rcol_dict = fast_pass_obj['ocr_right_cols_dict']
+        for col_id in fast_pass_obj['right_col']['ids']:
+            ocr_col = lcol_dict[col_id]
+            for ocr_match_id in ocr_col['member_ids']:
+                ocr_match_ele = ocr_results_this_frame[ocr_match_id]
+                end_coords = [
+                    ocr_match_ele['location'][0] + ocr_match_ele['size'][0],
+                    ocr_match_ele['location'][1] + ocr_match_ele['size'][1]
+                ]
+                # TODO remove this later, just saving the ocr items we are confident are matches
+                self.add_zone_to_response(ocr_match_ele['location'], end_coords)
+
     def fast_pass_for_labels(self, ocr_results_this_frame, other_t1_results_this_frame):
-        app_rows, app_cols = self.build_app_row_and_col_data()
+        app_rows, app_left_cols, app_right_cols = self.build_app_row_and_col_data()
 
         ocr_rows_dict = self.gather_ocr_rows(ocr_results_this_frame)
         ocr_left_cols_dict, ocr_right_cols_dict = self.gather_ocr_cols(ocr_results_this_frame)
 
         match_obj = self.fast_score_row_and_col_data(
-            app_rows, app_cols, ocr_rows_dict, ocr_left_cols_dict, ocr_right_cols_dict, ocr_results_this_frame
+            app_rows, app_left_cols, app_right_cols, ocr_rows_dict, ocr_left_cols_dict, ocr_right_cols_dict, ocr_results_this_frame
         )
+        match_obj['ocr_rows_dict'] = ocr_rows_dict
+        match_obj['ocr_left_cols_dict'] = ocr_left_cols_dict
+        match_obj['ocr_right_cols_dict'] = ocr_right_cols_dict
 
         if match_obj:
             print('WOOHOO, we found the app {}'.format(match_obj))
@@ -112,14 +151,14 @@ class DataSifter:
         return winning_cols, total_score
 
     def fast_score_row_and_col_data(
-        self, app_rows, app_cols, ocr_rows_dict, ocr_left_cols_dict, ocr_right_cols_dict, ocr_results_this_frame
+        self, app_rows, app_left_cols, app_right_cols, ocr_rows_dict, ocr_left_cols_dict, ocr_right_cols_dict, ocr_results_this_frame
     ):
         sorted_keys = self.get_sorted_keys_this_group_type('left_col', ocr_rows_dict, ocr_left_cols_dict, ocr_right_cols_dict)
         lcol_scores = []
         for left_col_id in sorted_keys:
             left_col = ocr_left_cols_dict[left_col_id]
             app_col_scores = []
-            for app_col in app_cols:
+            for app_col in app_left_cols:
                 app_col_score = self.score_ocr_col_to_app_col(app_col, left_col, ocr_results_this_frame)
                 app_col_scores.append(app_col_score)
             lcol_scores.append(app_col_scores)
@@ -131,7 +170,7 @@ class DataSifter:
         for right_col_id in sorted_keys:
             right_col = ocr_right_cols_dict[right_col_id]
             app_col_scores = []
-            for app_col in app_cols:
+            for app_col in app_right_cols:
                 app_col_score = self.score_ocr_col_to_app_col(app_col, right_col, ocr_results_this_frame)
                 app_col_scores.append(app_col_score)
             rcol_scores.append(app_col_scores)
@@ -346,10 +385,11 @@ class DataSifter:
                 ['a1', 'a2', 'a3', 'a4', 'a5', 'a6'], 
                 ['b1'],
             ],
-            'cols': [
+            'left_cols': [
                 ['d1', 'd2', 'd3', 'd4', 'd5', 'd6', 'd7', 'd8'],
                 ['c1', 'c2', 'c3', 'c4', 'c5', 'c6', 'c7'],
             ],
+            'right_cols': [],
             'items': {
                 'a1': {
                     'type': 'label',
@@ -451,15 +491,23 @@ class DataSifter:
                     app_row.append(self.app_data['items'][item_id]['text'])
             app_rows.append(app_row)
 
-        app_cols = []
-        for col in self.app_data['cols']:
+        app_left_cols = []
+        for col in self.app_data['left_cols']:
             app_col = []
             for item_id in col:
                 if self.app_data['items'][item_id]['type'] == 'label':
                     app_col.append(self.app_data['items'][item_id]['text'])
-            app_cols.append(app_col)
+            app_left_cols.append(app_col)
 
-        return app_rows, app_cols
+        app_right_cols = []
+        for col in self.app_data['right_cols']:
+            app_col = []
+            for item_id in col:
+                if self.app_data['items'][item_id]['type'] == 'label':
+                    app_col.append(self.app_data['items'][item_id]['text'])
+            app_right_cols.append(app_col)
+
+        return app_rows, app_left_cols, app_right_cols
 
     def grow_object_to_accomodate(self, match_object, new_ocr_obj):
         new_obj_start = new_ocr_obj['location']
