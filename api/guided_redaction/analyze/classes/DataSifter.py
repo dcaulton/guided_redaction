@@ -1,8 +1,9 @@
-import cv2
 import random
 import math
-import imutils
+from fuzzywuzzy import fuzz
+import cv2
 import numpy as np
+import imutils
 
 
 class DataSifter:
@@ -14,6 +15,8 @@ class DataSifter:
         self.min_vertical_overlap_pixels = 5
         self.max_column_misalign_pixels = 5
         self.min_row_horizontal_overlap_pixels = 1000
+        self.min_app_score = 200
+        self.fuzz_match_threshold = 70
 
     def sift_data(self, cv2_image, ocr_results_this_frame, other_t1_results_this_frame):
         self.all_zones = {}
@@ -61,8 +64,81 @@ class DataSifter:
 
         ocr_rows_dict = self.gather_ocr_rows(ocr_results_this_frame)
         ocr_left_cols_dict, ocr_right_cols_dict = self.gather_ocr_cols(ocr_results_this_frame)
-        print('swords are good so are rows and cols')
+
+        match_obj = self.fast_score_row_and_col_data(
+            app_rows, app_cols, ocr_rows_dict, ocr_left_cols_dict, ocr_right_cols_dict, ocr_results_this_frame
+        )
+
+        if match_obj:
+            print('WOOHOO, we found the app')
+
+        else:
+            print('UGH, app was not found')
+
+        return match_obj
+
+    def score_ocr_col_to_app_col(self, app_col, ocr_col, ocr_results_this_frame):
+        total_score = 0
+        base_ocr_col = 0
+        for app_field_string in app_col:
+            for index, match_id in enumerate(ocr_col['member_ids'][base_ocr_col:]):
+                ocr_phrase = ocr_results_this_frame[match_id]['text']
+                ratio = fuzz.ratio(app_field_string, ocr_phrase)
+                if ratio >= self.fuzz_match_threshold:
+                    total_score += ratio
+                    base_ocr_col += index+1
+                    break
+        return total_score
+
+
+    def fast_score_row_and_col_data(
+        self, app_rows, app_cols, ocr_rows_dict, ocr_left_cols_dict, ocr_right_cols_dict, ocr_results_this_frame
+    ):
+        best_scores = {}
+
+        sorted_keys = self.get_sorted_keys_this_group_type('left_col', ocr_rows_dict, ocr_left_cols_dict, ocr_right_cols_dict)
+        left_col_bests = {}
+        for left_col_id in sorted_keys:
+            left_col = ocr_left_cols_dict[left_col_id]
+            app_col_scores = []
+            for app_col in app_cols:
+                app_col_score = self.score_ocr_col_to_app_col(app_col, left_col, ocr_results_this_frame)
+                app_col_scores.append(app_col_score)
+            print('scores for left col are {}'.format(app_col_scores))
+
+#    do this for left cols, right cols and rows:
+#    order ocr_left_cols in ascending x
+#    left_col_bests = {}
+#    foreach ocr_left_col: 
+#        possible_ocr_left_col_matches = {}
+#        foreach app_col:
+#            if cols_match(app_col, ocr_left_col):
+#                possible_ocr_left_col_matches[ocr_left_col_id] = ocr_left_col
+#        left_col_bests[ocr_left_col_id] = highest score entry in possible_ocr_left_col_matches
+#    step through left col bests by each left col, see if we can find a highest path score
+# with 3 app left cols and 6 ocr matches cols it looks like this:
+#  ocr col1 [259, 0, 0]
+#  ocr col2 [350, 0, 0]
+#  ocr col3 [0, 179, 0]
+#  ocr col4 [0, 324, 0]
+#  ocr col5 [0, 0, 244]
+#  ocr col6 [0, 0, 194]
+# and you want to say ocr_col2, ocr_col4, ocr_col5 gives us the best overall score across all ocr and app rows
+
+
         return False
+
+    def get_sorted_keys_this_group_type(self, group_type, ocr_rows_dict, ocr_left_cols_dict, ocr_right_cols_dict):
+        if group_type == 'left_col':
+            sorted_keys = sorted(ocr_left_cols_dict, key=lambda item: ocr_left_cols_dict[item]['start'][0])
+        elif group_type == 'right_col':
+            sorted_keys = sorted(
+                ocr_right_cols_dict, 
+                key=lambda item: ocr_right_cols_dict[item]['end'][0]
+            )
+        elif group_type == 'row':
+            sorted_keys = sorted(ocr_rows_dict, key=lambda item: ocr_rows_dict[item]['start'][1])
+        return sorted_keys
 
     def build_new_row_col_element(self, row_col_type, ocr_match_id, ocr_match_obj):
         new_id = str(random.randint(1, 999999999))
@@ -226,15 +302,12 @@ class DataSifter:
     def get_app_data(self):
         self.app_data = {
             'rows': [
-                ['a1', 'a2', 'a3', 'a4', 'a5', 'a6'], ['b1'],
+                ['a1', 'a2', 'a3', 'a4', 'a5', 'a6'], 
+                ['b1'],
             ],
             'cols': [
-                ['a1'],
-                ['a2'],
-                ['a3'],
-                ['a4'],
-                ['a5'],
-                ['a6'],
+                ['d1', 'd2', 'd3', 'd4', 'd5', 'd6', 'd7', 'd8'],
+                ['c1', 'c2', 'c3', 'c4', 'c5', 'c6', 'c7'],
             ],
             'items': {
                 'a1': {
@@ -264,6 +337,66 @@ class DataSifter:
                 'b1': {
                     'type': 'label',
                     'text': 'Contact Information',
+                },
+                'c1': {
+                    'type': 'label',
+                    'text': 'Email',
+                },
+                'c2': {
+                    'type': 'label',
+                    'text': 'Preferred Contact Method',
+                },
+                'c3': {
+                    'type': 'label',
+                    'text': 'Preferred Language',
+                },
+                'c4': {
+                    'type': 'label',
+                    'text': 'Mobile',
+                },
+                'c5': {
+                    'type': 'label',
+                    'text': 'Work Phone',
+                },
+                'c6': {
+                    'type': 'label',
+                    'text': 'Home Phone',
+                },
+                'c7': {
+                    'type': 'label',
+                    'text': 'Other Phone',
+                },
+                'd1': {
+                    'type': 'label',
+                    'text': 'Name',
+                },
+                'd2': {
+                    'type': 'label',
+                    'text': 'Sonos ID',
+                },
+                'd3': {
+                    'type': 'label',
+                    'text': 'Email Opt Out',
+                },
+                'd4': {
+                    'type': 'label',
+                    'text': 'Survey Opt Out',
+                },
+                'd5': {
+                    'type': 'label',
+                    'text': 'In app Messaging Opt Out',
+                },
+                'd6': {
+                    'type': 'label',
+                    'text': 'Address',
+                },
+                'd7': {
+                    'type': 'label',
+                    'text': 'User Type',
+                },
+                'd8': {
+                    'type': 'label',
+                    'text': 'Lead Source',
                 },
             }
         }
