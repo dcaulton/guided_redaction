@@ -29,6 +29,7 @@ class DataSifter:
         fast_pass_confirmed = slow_pass_confirmed = False
         fast_pass = self.fast_pass_for_labels(ocr_results_this_frame, other_t1_results_this_frame)
         if fast_pass:
+            # this is mainly for debugging, we normally don't want to return the labels as t1 output
             self.add_fast_pass_to_results(fast_pass, ocr_results_this_frame)
             fast_pass_confirmed = self.confirm_fast_pass(
                 fast_pass, cv2_image, ocr_results_this_frame, other_t1_results_this_frame
@@ -58,6 +59,16 @@ class DataSifter:
 
             return build_ocr_results
         return ocr_results_this_frame
+
+    def confirm_fast_pass(self, fast_pass_match_obj, cv2_image, ocr_results_this_frame, other_t1_results_this_frame):
+        # gather size info for ocr objects (get title sizes, standard text sizes, etc as defined in the spec)
+        # gather background color near some of the labels (as specified in the app spec)
+        # look for conflicts in fast_pass_match_obj, rule out rows/cols which break things
+        # match against remaining fields that were missed in fast_pass_match_obj (e.g. variable data)
+        # use logic shared with selection grower to find color fields and lines
+        # use color fields, lines and matched colors to establish app 'sections'
+        # for each section, identify any subfields
+        pass
 
     def add_fast_pass_to_results(self, fast_pass_obj, ocr_results_this_frame):
         row_dict = fast_pass_obj['ocr_rows_dict']
@@ -110,7 +121,7 @@ class DataSifter:
         match_obj['ocr_right_cols_dict'] = ocr_right_cols_dict
 
         if match_obj:
-            print('WOOHOO, we found the app {}'.format(match_obj))
+            print('WOOHOO, we found the app')
         else:
             print('UGH, app was not found')
 
@@ -351,9 +362,6 @@ class DataSifter:
             ]
         return start, end
 
-    def confirm_fast_pass(self, fast_pass_match_obj, cv2_image, ocr_results_this_frame, other_t1_results_this_frame):
-        pass
-
     def slow_pass_for_labels(self, cv2_image, ocr_results_this_frame, other_t1_results_this_frame):
         pass
 
@@ -394,6 +402,26 @@ class DataSifter:
                 'a1': {
                     'type': 'label',
                     'text': 'Details',
+# type
+# text
+# field name label   *so we can refer to it in other rules
+# text size label
+# background color label
+# text color label
+# column_align_left_right
+# always present
+# can have dropdown?   *probably not, labels don't, almost any variable text does
+# mask this field
+# is pii
+# is pci
+# ref location   * if it's on its own row, col this becomes very important
+# ref size    * if it's on its own row, col this becomes very important
+
+# have sections as a top level object, it lets us nest thigns
+# have free form geometry defined as a top level object, stuff like gutters and fields of color
+# consider having anchors as a top level object, at least where you hold the base64 strings
+
+
                 },
                 'a2': {
                     'type': 'label',
