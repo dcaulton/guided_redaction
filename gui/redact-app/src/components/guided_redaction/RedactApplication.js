@@ -1595,11 +1595,7 @@ class RedactApplication extends React.Component {
     } else if (input_obj.scope.match(/^t1_matches:/)) {
         specified_input = input_obj.extra_data
     } else if (input_obj.scope === 'input_json') {
-      if (typeof(input_obj) === 'string') {
         specified_input = JSON.parse(input_obj.extra_data)
-      } else {
-        specified_input = input_obj.extra_data
-      }
     } else if (input_obj.scope.match(/^t1_matches:/)) {
         specified_input = input_obj.extra_data
     }
