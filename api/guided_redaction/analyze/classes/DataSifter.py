@@ -402,9 +402,10 @@ class DataSifter:
                 'a1': {
                     'type': 'label',
                     'text': 'Details',
+#   ITEM FIELDS:
 # type
 # text
-# field name label   *so we can refer to it in other rules
+# field name label   *so we can refer to it in other rules, across other apps even, so not just key in this app
 # text size label
 # background color label
 # text color label
@@ -417,9 +418,11 @@ class DataSifter:
 # ref location   * if it's on its own row, col this becomes very important
 # ref size    * if it's on its own row, col this becomes very important
 
-# have sections as a top level object, it lets us nest thigns
-# have free form geometry defined as a top level object, stuff like gutters and fields of color
-# consider having anchors as a top level object, at least where you hold the base64 strings
+#  OTHER TOP LEVEL OBJECTS
+# sections - it lets us nest things
+# shapes - stuff like gutters and fields of color, build a shared logic from what is used in selection grower
+# anchors?  I'd like to hold base64 strings apart from the primary data structure, better for eyeballing output
+
 
 
                 },
