@@ -1224,7 +1224,7 @@ class InsightsPanel extends React.Component {
     let top_white_div_class = 'container'
     let videos_col_class = 'col-lg-2'
     let center_col_class = 'col-lg-7 ml-4'
-    let jobs_col_class = 'col-lg-2'
+    let jobs_col_class = 'col-lg-2 ml-4'
     if (!this.props.visibilityFlags['side_nav']) {
       top_white_div_class = 'col'
       videos_col_class = 'col-lg-1'

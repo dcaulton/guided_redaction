@@ -23,14 +23,23 @@ class DataSifter:
         self.all_zones = {}
         self.return_stats = {}
         return_mask = np.zeros((20, 20, 1), 'uint8')
+        fast_pass_confirmed = slow_pass_confirmed = False
 
         ocr_results_this_frame = self.filter_results_by_t1_bounds(ocr_results_this_frame, other_t1_results_this_frame)
+        ocr_rows_dict = self.gather_ocr_rows(ocr_results_this_frame)
+        ocr_left_cols_dict, ocr_right_cols_dict = self.gather_ocr_cols(ocr_results_this_frame)
+        app_rows, app_left_cols, app_right_cols = self.build_app_row_and_col_data()
 
-        fast_pass_confirmed = slow_pass_confirmed = False
-        fast_pass = self.fast_pass_for_labels(ocr_results_this_frame, other_t1_results_this_frame)
+        fast_pass = self.fast_score_row_and_col_data(
+            app_rows, app_left_cols, app_right_cols, ocr_rows_dict, ocr_left_cols_dict, ocr_right_cols_dict, ocr_results_this_frame
+        )
+
         if fast_pass:
-            # this is mainly for debugging, we normally don't want to return the labels as t1 output
-            self.add_fast_pass_to_results(fast_pass, ocr_results_this_frame)
+            print('WE FOUND THE APP - fast pass match obj is {}'.format(fast_pass))
+            # this is for debugging, we normally don't want to return the labels and positive rows/cols as t1 output
+            self.add_fast_pass_to_results(
+                fast_pass, ocr_results_this_frame, ocr_rows_dict, ocr_left_cols_dict, ocr_right_cols_dict
+            )
             fast_pass_confirmed = self.confirm_fast_pass(
                 fast_pass, cv2_image, ocr_results_this_frame, other_t1_results_this_frame
             )
@@ -61,6 +70,9 @@ class DataSifter:
         return ocr_results_this_frame
 
     def confirm_fast_pass(self, fast_pass_match_obj, cv2_image, ocr_results_this_frame, other_t1_results_this_frame):
+        # add in user data matches if their data type matches the ocr data
+        # if we matched on an item in some column and it's in a row that was not matched, add it as a match for that row.
+        #   same for if it's in a row and the col didn't get picked up.
         # gather size info for ocr objects (get title sizes, standard text sizes, etc as defined in the spec)
         # gather background color near some of the labels (as specified in the app spec)
         # look for conflicts in fast_pass_match_obj, rule out rows/cols which break things
@@ -70,10 +82,12 @@ class DataSifter:
         # for each section, identify any subfields
         pass
 
-    def add_fast_pass_to_results(self, fast_pass_obj, ocr_results_this_frame):
-        row_dict = fast_pass_obj['ocr_rows_dict']
+    def add_fast_pass_to_results(
+        self, fast_pass_obj, ocr_results_this_frame, ocr_rows_dict, ocr_left_cols_dict, ocr_right_cols_dict
+    ):
         for row_id in fast_pass_obj['row']['ids']:
-            ocr_row = row_dict[row_id]
+            ocr_row = ocr_rows_dict[row_id]
+            self.add_zone_to_response(ocr_row['start'], ocr_row['end'])
             for ocr_match_id in ocr_row['member_ids']:
                 ocr_match_ele = ocr_results_this_frame[ocr_match_id]
                 end_coords = [
@@ -83,9 +97,10 @@ class DataSifter:
                 # TODO remove this later, just saving the ocr items we are confident are matches
                 self.add_zone_to_response(ocr_match_ele['location'], end_coords)
 
-        lcol_dict = fast_pass_obj['ocr_left_cols_dict']
+        lcol_dict = ocr_left_cols_dict
         for col_id in fast_pass_obj['left_col']['ids']:
-            ocr_col = lcol_dict[col_id]
+            ocr_col = ocr_left_cols_dict[col_id]
+            self.add_zone_to_response(ocr_col['start'], ocr_col['end'])
             for ocr_match_id in ocr_col['member_ids']:
                 ocr_match_ele = ocr_results_this_frame[ocr_match_id]
                 end_coords = [
@@ -95,9 +110,9 @@ class DataSifter:
                 # TODO remove this later, just saving the ocr items we are confident are matches
                 self.add_zone_to_response(ocr_match_ele['location'], end_coords)
 
-        rcol_dict = fast_pass_obj['ocr_right_cols_dict']
         for col_id in fast_pass_obj['right_col']['ids']:
-            ocr_col = lcol_dict[col_id]
+            ocr_col = ocr_right_cols_dict[col_id]
+            self.add_zone_to_response(ocr_col['start'], ocr_col['end'])
             for ocr_match_id in ocr_col['member_ids']:
                 ocr_match_ele = ocr_results_this_frame[ocr_match_id]
                 end_coords = [
@@ -107,18 +122,14 @@ class DataSifter:
                 # TODO remove this later, just saving the ocr items we are confident are matches
                 self.add_zone_to_response(ocr_match_ele['location'], end_coords)
 
-    def fast_pass_for_labels(self, ocr_results_this_frame, other_t1_results_this_frame):
+    def fast_pass_for_labels(
+        self, ocr_results_this_frame, other_t1_results_this_frame, ocr_rows_dict, ocr_left_cols_dict, ocr_right_cols_dict
+    ):
         app_rows, app_left_cols, app_right_cols = self.build_app_row_and_col_data()
-
-        ocr_rows_dict = self.gather_ocr_rows(ocr_results_this_frame)
-        ocr_left_cols_dict, ocr_right_cols_dict = self.gather_ocr_cols(ocr_results_this_frame)
 
         match_obj = self.fast_score_row_and_col_data(
             app_rows, app_left_cols, app_right_cols, ocr_rows_dict, ocr_left_cols_dict, ocr_right_cols_dict, ocr_results_this_frame
         )
-        match_obj['ocr_rows_dict'] = ocr_rows_dict
-        match_obj['ocr_left_cols_dict'] = ocr_left_cols_dict
-        match_obj['ocr_right_cols_dict'] = ocr_right_cols_dict
 
         if match_obj:
             print('WOOHOO, we found the app')
@@ -130,7 +141,8 @@ class DataSifter:
     def score_ocr_col_to_app_col(self, app_col, ocr_col, ocr_results_this_frame):
         total_score = 0
         base_ocr_col = 0
-        for app_field_string in app_col:
+        for app_col_obj in app_col:
+            app_field_string = app_col_obj['text']
             for index, match_id in enumerate(ocr_col['member_ids'][base_ocr_col:]):
                 ocr_phrase = ocr_results_this_frame[match_id]['text']
                 ratio = fuzz.ratio(app_field_string, ocr_phrase)
@@ -392,10 +404,13 @@ class DataSifter:
             'rows': [
                 ['a1', 'a2', 'a3', 'a4', 'a5', 'a6'], 
                 ['b1'],
+                ['d1', 'e1', 'c1', 'f1'],
             ],
             'left_cols': [
                 ['d1', 'd2', 'd3', 'd4', 'd5', 'd6', 'd7', 'd8'],
                 ['c1', 'c2', 'c3', 'c4', 'c5', 'c6', 'c7'],
+                ['e1', 'e2'],
+                ['f1', 'f2', 'f3'],
             ],
             'right_cols': [],
             'items': {
@@ -510,6 +525,41 @@ class DataSifter:
                     'type': 'label',
                     'text': 'Lead Source',
                 },
+                'e1': {
+                    'type': 'user_data',
+                    'field_name_label': 'full_name',
+                    'mask_this_field': True,
+                    'is_pii': True,
+                    'data_type': 'string',
+                },
+                'e2': {
+                    'type': 'user_data',
+                    'field_name_label': 'sonos_id',
+                    'mask_this_field': True,
+                    'is_pii': True,
+                    'data_type': 'int',
+                },
+                'f1': {
+                    'type': 'user_data',
+                    'field_name_label': 'email',
+                    'mask_this_field': True,
+                    'is_pii': True,
+                    'data_type': 'string',
+                },
+                'f2': {
+                    'type': 'user_data',
+                    'field_name_label': 'preferred_lang',
+                    'mask_this_field': False,
+                    'is_pii': False,
+                    'data_type': 'string',
+                },
+                'f3': {
+                    'type': 'user_data',
+                    'field_name_label': 'other_phone',
+                    'mask_this_field': True,
+                    'is_pii': True,
+                    'data_type': 'phone',
+                },
             }
         }
 
@@ -519,7 +569,17 @@ class DataSifter:
             app_row = []
             for item_id in row:
                 if self.app_data['items'][item_id]['type'] == 'label':
-                    app_row.append(self.app_data['items'][item_id]['text'])
+                    build_obj = {
+                        'app_id': item_id,
+                        'text': self.app_data['items'][item_id]['text'],
+                    }
+                    app_row.append(build_obj)
+                if self.app_data['items'][item_id]['type'] == 'user_data':
+                    build_obj = {
+                        'app_id': item_id,
+                        'text': 'dont_match_on_this'
+                    }
+                    app_row.append(build_obj)
             app_rows.append(app_row)
 
         app_left_cols = []
@@ -527,7 +587,17 @@ class DataSifter:
             app_col = []
             for item_id in col:
                 if self.app_data['items'][item_id]['type'] == 'label':
-                    app_col.append(self.app_data['items'][item_id]['text'])
+                    build_obj = {
+                        'app_id': item_id,
+                        'text': self.app_data['items'][item_id]['text'],
+                    }
+                    app_col.append(build_obj)
+                if self.app_data['items'][item_id]['type'] == 'user_data':
+                    build_obj = {
+                        'app_id': item_id,
+                        'text': 'dont_match_on_this'
+                    }
+                    app_col.append(build_obj)
             app_left_cols.append(app_col)
 
         app_right_cols = []
@@ -535,7 +605,17 @@ class DataSifter:
             app_col = []
             for item_id in col:
                 if self.app_data['items'][item_id]['type'] == 'label':
-                    app_col.append(self.app_data['items'][item_id]['text'])
+                    build_obj = {
+                        'app_id': item_id,
+                        'text': self.app_data['items'][item_id]['text'],
+                    }
+                    app_col.append(build_obj)
+                if self.app_data['items'][item_id]['type'] == 'user_data':
+                    build_obj = {
+                        'app_id': item_id,
+                        'text': 'dont_match_on_this'
+                    }
+                    app_col.append(build_obj)
             app_right_cols.append(app_col)
 
         return app_rows, app_left_cols, app_right_cols
