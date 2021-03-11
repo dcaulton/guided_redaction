@@ -23,23 +23,39 @@ class DataSifter:
         self.all_zones = {}
         self.return_stats = {}
         return_mask = np.zeros((20, 20, 1), 'uint8')
-        fast_pass_confirmed = slow_pass_confirmed = False
+        fast_pass = fast_pass_confirmed = slow_pass_confirmed = False
 
         ocr_results_this_frame = self.filter_results_by_t1_bounds(ocr_results_this_frame, other_t1_results_this_frame)
         ocr_rows_dict = self.gather_ocr_rows(ocr_results_this_frame)
         ocr_left_cols_dict, ocr_right_cols_dict = self.gather_ocr_cols(ocr_results_this_frame)
         app_rows, app_left_cols, app_right_cols = self.build_app_row_and_col_data()
 
-        fast_pass = self.fast_score_row_and_col_data(
-            app_rows, app_left_cols, app_right_cols, ocr_rows_dict, ocr_left_cols_dict, ocr_right_cols_dict, ocr_results_this_frame
-        )
+        # TODO, also save the row fields that each ocr row field matched against? Nah, for now redo that work in fp confirm logic
+        best_ocr_row_ids, best_ocr_row_score = \
+            self.fast_score_rowcol_data('row', app_rows, ocr_rows_dict, ocr_results_this_frame)
+        best_ocr_lcol_ids, best_ocr_lcol_score = \
+            self.fast_score_rowcol_data('left_col', app_left_cols, ocr_left_cols_dict, ocr_results_this_frame)
+        best_ocr_rcol_ids, best_ocr_rcol_score = \
+            self.fast_score_rowcol_data('right_col', app_right_cols, ocr_right_cols_dict, ocr_results_this_frame)
+        print('best ocr rows: {} {}'.format(best_ocr_row_ids, best_ocr_row_score))
+        print('best ocr lcols: {} {}'.format(best_ocr_lcol_ids, best_ocr_lcol_score))
+        print('best ocr rcols: {} {}'.format(best_ocr_rcol_ids, best_ocr_rcol_score))
+        total_score = best_ocr_lcol_score + best_ocr_rcol_score + best_ocr_row_score
+        if total_score >= self.fast_pass_app_score_threshold:
+            fast_pass = {
+                'row': {'ids': best_ocr_row_ids, 'score': best_ocr_row_score},
+                'left_col': {'ids': best_ocr_lcol_ids, 'score': best_ocr_lcol_score},
+                'right_col': {'ids': best_ocr_rcol_ids, 'score': best_ocr_rcol_score},
+                'total_score': total_score
+            }
 
         if fast_pass:
-            print('WE FOUND THE APP - fast pass match obj is {}'.format(fast_pass))
-            # this is for debugging, we normally don't want to return the labels and positive rows/cols as t1 output
+            print('FAST PASS HAS A LEAD ON THE APP - fp match obj is {}'.format(fast_pass))
+            # this is for debugging, we normally want to return the labels and positive rows/cols as stats, not t1 output
             self.add_fast_pass_to_results(
                 fast_pass, ocr_results_this_frame, ocr_rows_dict, ocr_left_cols_dict, ocr_right_cols_dict
             )
+            self.add_user_data_to_fast_pass_match(f'row', fast_pass['row'], app_rows, ocr_rows_dict)
             fast_pass_confirmed = self.confirm_fast_pass(
                 fast_pass, cv2_image, ocr_results_this_frame, other_t1_results_this_frame
             )
@@ -51,6 +67,14 @@ class DataSifter:
             self.build_match_results(return_mask, cv2_image, fast_pass_confirmed, slow_pass_confirmed)
 
         return self.all_zones, self.return_stats, return_mask
+
+    def add_user_data_to_fast_pass_match(self, match_obj_type, fast_pass, app_rows, ocr_rows_dict):
+        print('dididy for ', app_rows)
+        print(ocr_rows_dict)
+        print('dusty for ', fast_pass)
+        for row_id in fast_pass:
+            pass
+
 
     def filter_results_by_t1_bounds(self, ocr_results_this_frame, other_t1_results_this_frame):
         if other_t1_results_this_frame:
@@ -86,6 +110,8 @@ class DataSifter:
         self, fast_pass_obj, ocr_results_this_frame, ocr_rows_dict, ocr_left_cols_dict, ocr_right_cols_dict
     ):
         for row_id in fast_pass_obj['row']['ids']:
+            if not row_id: 
+                continue  # that means no ocr row matched the app row in that position
             ocr_row = ocr_rows_dict[row_id]
             self.add_zone_to_response(ocr_row['start'], ocr_row['end'])
             for ocr_match_id in ocr_row['member_ids']:
@@ -99,6 +125,8 @@ class DataSifter:
 
         lcol_dict = ocr_left_cols_dict
         for col_id in fast_pass_obj['left_col']['ids']:
+            if not col_id: 
+                continue  # that means no ocr col matched the app col in that position
             ocr_col = ocr_left_cols_dict[col_id]
             self.add_zone_to_response(ocr_col['start'], ocr_col['end'])
             for ocr_match_id in ocr_col['member_ids']:
@@ -111,6 +139,8 @@ class DataSifter:
                 self.add_zone_to_response(ocr_match_ele['location'], end_coords)
 
         for col_id in fast_pass_obj['right_col']['ids']:
+            if not col_id: 
+                continue  # that means no ocr col matched the app col in that position
             ocr_col = ocr_right_cols_dict[col_id]
             self.add_zone_to_response(ocr_col['start'], ocr_col['end'])
             for ocr_match_id in ocr_col['member_ids']:
@@ -127,7 +157,7 @@ class DataSifter:
     ):
         app_rows, app_left_cols, app_right_cols = self.build_app_row_and_col_data()
 
-        match_obj = self.fast_score_row_and_col_data(
+        match_obj = self.fast_score_rowcol_data(
             app_rows, app_left_cols, app_right_cols, ocr_rows_dict, ocr_left_cols_dict, ocr_right_cols_dict, ocr_results_this_frame
         )
 
@@ -138,7 +168,7 @@ class DataSifter:
 
         return match_obj
 
-    def score_ocr_col_to_app_col(self, app_col, ocr_col, ocr_results_this_frame):
+    def fast_score_ocr_rowcol_to_app_rowcol(self, app_col, ocr_col, ocr_results_this_frame):
         total_score = 0
         base_ocr_col = 0
         for app_col_obj in app_col:
@@ -173,74 +203,49 @@ class DataSifter:
             total_score += scores[ocr_col_num][app_col_num]
         return winning_cols, total_score
 
-    def fast_score_row_and_col_data(
-        self, app_rows, app_left_cols, app_right_cols, ocr_rows_dict, ocr_left_cols_dict, ocr_right_cols_dict, ocr_results_this_frame
-    ):
-        sorted_keys = self.get_sorted_keys_this_group_type('left_col', ocr_rows_dict, ocr_left_cols_dict, ocr_right_cols_dict)
-        lcol_scores = []
-        for left_col_id in sorted_keys:
-            left_col = ocr_left_cols_dict[left_col_id]
-            app_col_scores = []
-            for app_col in app_left_cols:
-                app_col_score = self.score_ocr_col_to_app_col(app_col, left_col, ocr_results_this_frame)
-                app_col_scores.append(app_col_score)
-            lcol_scores.append(app_col_scores)
-        best_ocr_offsets, best_ocr_lcol_score = self.scan_best_scores(lcol_scores)
-        best_ocr_lcol_ids = [sorted_keys[x] for x in best_ocr_offsets]
+    def fast_score_rowcol_data(self, rowcol_type, app_rowcols, ocr_rowcols_dict, ocr_results_this_frame):
+        # this takes a set of app and ocr rows, left cols or right cols (let's just talk about rows here, they all act the same)
+        # order the ocr rows by ascending measure, e.g. ascending y
+        # for each ocr row:
+        #   compare it to each app row.  those are in a fixed order as defined in the app record.
+        #   so now you have something like this for each ocr row [277,0,0,123]
+        #         (where there are 4 app rows, and you scored 277 against the first, and 123 against the last)
+        # when done with all ocr rows,
+        #   for each app row, find the ocr row that matched best with it.  note that ocr rows key, or '' if nothing matched 
+        # return the final answer of ['422', '', '', '523'], 
+        #          (where 422 is the id of the ocr row that matched best against the first app row, and
+        #           523 is the id of the ocr row that matched up best against the final app row.  The middle two app rows
+        #           did not have anything that matched well enough to count.
+        sorted_keys = self.get_sorted_keys_for_ocr_rowcols(rowcol_type, ocr_rowcols_dict)
+        ocr_rowcol_scores = []
+        for ocr_rowcol_id in sorted_keys:
+            ocr_rowcol = ocr_rowcols_dict[ocr_rowcol_id]
+            app_rowcol_scores = []
+            for app_rowcol in app_rowcols:
+                app_rowcol_score = self.fast_score_ocr_rowcol_to_app_rowcol(app_rowcol, ocr_rowcol, ocr_results_this_frame)
+                app_rowcol_scores.append(app_rowcol_score)
+            ocr_rowcol_scores.append(app_rowcol_scores)
+        best_ocr_offsets, best_ocr_rowcol_score = self.scan_best_scores(ocr_rowcol_scores)
+        best_ocr_rowcol_ids = []
+        for app_rowcol_offset, x in enumerate(best_ocr_offsets):
+            rowcol_score = ocr_rowcol_scores[x][app_rowcol_offset]
+            if rowcol_score > 0:
+                best_ocr_rowcol_ids.append(sorted_keys[x])
+            else:
+                best_ocr_rowcol_ids.append('')
 
-        sorted_keys = self.get_sorted_keys_this_group_type('right_col', ocr_rows_dict, ocr_left_cols_dict, ocr_right_cols_dict)
-        rcol_scores = []
-        for right_col_id in sorted_keys:
-            right_col = ocr_right_cols_dict[right_col_id]
-            app_col_scores = []
-            for app_col in app_right_cols:
-                app_col_score = self.score_ocr_col_to_app_col(app_col, right_col, ocr_results_this_frame)
-                app_col_scores.append(app_col_score)
-            rcol_scores.append(app_col_scores)
-        best_ocr_offsets, best_ocr_rcol_score = self.scan_best_scores(rcol_scores)
-        best_ocr_rcol_ids = [sorted_keys[x] for x in best_ocr_offsets]
+        return best_ocr_rowcol_ids, best_ocr_rowcol_score
 
-        sorted_keys = self.get_sorted_keys_this_group_type('row', ocr_rows_dict, ocr_left_cols_dict, ocr_right_cols_dict)
-        row_scores = []
-        for row_id in sorted_keys:
-            row = ocr_rows_dict[row_id]
-            app_row_scores = []
-            for app_row in app_rows:
-                app_row_score = self.score_ocr_col_to_app_col(app_row, row, ocr_results_this_frame)
-                app_row_scores.append(app_row_score)
-            row_scores.append(app_row_scores)
-        best_row_offsets, best_ocr_row_score = self.scan_best_scores(row_scores)
-        best_ocr_row_ids = [sorted_keys[x] for x in best_row_offsets]
-
-        total_score = best_ocr_lcol_score + best_ocr_rcol_score + best_ocr_row_score
-        if total_score >= self.fast_pass_app_score_threshold:
-            best_ocr_ids = {
-                'row': {
-                    'ids': best_ocr_row_ids,
-                    'score': best_ocr_row_score,
-                },
-                'left_col': {
-                    'ids': best_ocr_lcol_ids,
-                    'score': best_ocr_lcol_score,
-                },
-                'right_col': {
-                    'ids': best_ocr_rcol_ids,
-                    'score': best_ocr_rcol_score,
-                },
-                'total_score': total_score
-            }
-            return best_ocr_ids
-
-    def get_sorted_keys_this_group_type(self, group_type, ocr_rows_dict, ocr_left_cols_dict, ocr_right_cols_dict):
+    def get_sorted_keys_for_ocr_rowcols(self, group_type, ocr_row_or_col_dict):
         if group_type == 'left_col':
-            sorted_keys = sorted(ocr_left_cols_dict, key=lambda item: ocr_left_cols_dict[item]['start'][0])
+            sorted_keys = sorted(ocr_row_or_col_dict, key=lambda item: ocr_row_or_col_dict[item]['start'][0])
         elif group_type == 'right_col':
             sorted_keys = sorted(
-                ocr_right_cols_dict, 
-                key=lambda item: ocr_right_cols_dict[item]['end'][0]
+                ocr_row_or_col_dict, 
+                key=lambda item: ocr_row_or_col_dict[item]['end'][0]
             )
         elif group_type == 'row':
-            sorted_keys = sorted(ocr_rows_dict, key=lambda item: ocr_rows_dict[item]['start'][1])
+            sorted_keys = sorted(ocr_row_or_col_dict, key=lambda item: ocr_row_or_col_dict[item]['start'][1])
         return sorted_keys
 
     def build_new_row_col_element(self, row_col_type, ocr_match_id, ocr_match_obj):
@@ -404,6 +409,7 @@ class DataSifter:
             'rows': [
                 ['a1', 'a2', 'a3', 'a4', 'a5', 'a6'], 
                 ['b1'],
+                ['x1'],
                 ['d1', 'e1', 'c1', 'f1'],
             ],
             'left_cols': [
@@ -559,6 +565,10 @@ class DataSifter:
                     'mask_this_field': True,
                     'is_pii': True,
                     'data_type': 'phone',
+                },
+                'x1': {
+                    'type': 'label',
+                    'text': 'total nonsense should not match',
                 },
             }
         }
