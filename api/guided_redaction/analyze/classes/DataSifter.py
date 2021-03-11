@@ -99,13 +99,14 @@ class DataSifter:
     def confirm_fast_pass(
         self, fast_pass_match_obj, cv2_image, ocr_results_this_frame, ocr_rows_dict, ocr_left_cols_dict, ocr_right_cols_dict
     ):
-        # add in user data matches if their data type matches the ocr data
         # if we matched on an item in some column and it's in a row that was not matched, add it as a match for that row.
         #   same for if it's in a row and the col didn't get picked up.
         # gather size info for ocr objects (get title sizes, standard text sizes, etc as defined in the spec)
         # gather background color near some of the labels (as specified in the app spec)
         # look for conflicts in fast_pass_match_obj, rule out rows/cols which break things
-        # match against remaining fields that were missed in fast_pass_match_obj (e.g. variable data)
+        # use contours to automatically detect template like things?  
+        #     *if we mask off just this row on cv2_image it should be fast and only at one scale
+        # match against remaining fields that were missed in fast_pass_match_obj (e.g. variable data, templates)
         # use logic shared with selection grower to find color fields and lines
         # use color fields, lines and matched colors to establish app 'sections'
         # for each section, identify any subfields
@@ -127,52 +128,6 @@ class DataSifter:
 
             return build_ocr_results
         return ocr_results_this_frame
-
-    def add_fast_pass_to_results(
-        self, fast_pass_obj, ocr_results_this_frame, ocr_rows_dict, ocr_left_cols_dict, ocr_right_cols_dict
-    ):
-        for row_id in fast_pass_obj['row']['ids']:
-            if not row_id: 
-                continue  # that means no ocr row matched the app row in that position
-            ocr_row = ocr_rows_dict[row_id]
-            self.add_zone_to_response(ocr_row['start'], ocr_row['end'])
-            for ocr_match_id in ocr_row['member_ids']:
-                ocr_match_ele = ocr_results_this_frame[ocr_match_id]
-                end_coords = [
-                    ocr_match_ele['location'][0] + ocr_match_ele['size'][0],
-                    ocr_match_ele['location'][1] + ocr_match_ele['size'][1]
-                ]
-                # TODO remove this later, just saving the ocr items we are confident are matches
-                self.add_zone_to_response(ocr_match_ele['location'], end_coords)
-
-        lcol_dict = ocr_left_cols_dict
-        for col_id in fast_pass_obj['left_col']['ids']:
-            if not col_id: 
-                continue  # that means no ocr col matched the app col in that position
-            ocr_col = ocr_left_cols_dict[col_id]
-            self.add_zone_to_response(ocr_col['start'], ocr_col['end'])
-            for ocr_match_id in ocr_col['member_ids']:
-                ocr_match_ele = ocr_results_this_frame[ocr_match_id]
-                end_coords = [
-                    ocr_match_ele['location'][0] + ocr_match_ele['size'][0],
-                    ocr_match_ele['location'][1] + ocr_match_ele['size'][1]
-                ]
-                # TODO remove this later, just saving the ocr items we are confident are matches
-                self.add_zone_to_response(ocr_match_ele['location'], end_coords)
-
-        for col_id in fast_pass_obj['right_col']['ids']:
-            if not col_id: 
-                continue  # that means no ocr col matched the app col in that position
-            ocr_col = ocr_right_cols_dict[col_id]
-            self.add_zone_to_response(ocr_col['start'], ocr_col['end'])
-            for ocr_match_id in ocr_col['member_ids']:
-                ocr_match_ele = ocr_results_this_frame[ocr_match_id]
-                end_coords = [
-                    ocr_match_ele['location'][0] + ocr_match_ele['size'][0],
-                    ocr_match_ele['location'][1] + ocr_match_ele['size'][1]
-                ]
-                # TODO remove this later, just saving the ocr items we are confident are matches
-                self.add_zone_to_response(ocr_match_ele['location'], end_coords)
 
     def fast_score_ocr_rowcol_to_app_rowcol(self, app_col, ocr_col, ocr_results_this_frame):
         total_score = 0
@@ -376,7 +331,184 @@ class DataSifter:
             one_zone['row_column_type'] = row_col_type
         self.all_zones[one_zone['id']] = one_zone
 
+    def build_app_rowcol_data(self, pass_mode='fast'):
+        app_rows = []
+        for row in self.app_data['rows']:
+            app_row = []
+            for item_id in row:
+                if self.app_data['items'][item_id]['type'] == 'label':
+                    build_obj = {
+                        'app_id': item_id,
+                        'text': self.app_data['items'][item_id]['text'],
+                    }
+                    app_row.append(build_obj)
+                    # if pass_mode=slow, add other types here
+            app_rows.append(app_row)
+
+        app_left_cols = []
+        for col in self.app_data['left_cols']:
+            app_col = []
+            for item_id in col:
+                if self.app_data['items'][item_id]['type'] == 'label':
+                    build_obj = {
+                        'app_id': item_id,
+                        'text': self.app_data['items'][item_id]['text'],
+                    }
+                    app_col.append(build_obj)
+                    # if pass_mode=slow, add other types here
+            app_left_cols.append(app_col)
+
+        app_right_cols = []
+        for col in self.app_data['right_cols']:
+            app_col = []
+            for item_id in col:
+                if self.app_data['items'][item_id]['type'] == 'label':
+                    build_obj = {
+                        'app_id': item_id,
+                        'text': self.app_data['items'][item_id]['text'],
+                    }
+                    app_col.append(build_obj)
+                    # if pass_mode=slow, add other types here
+            app_right_cols.append(app_col)
+
+        return app_rows, app_left_cols, app_right_cols
+
+    def grow_object_to_accomodate(self, match_object, new_ocr_obj):
+        new_obj_start = new_ocr_obj['location']
+        new_obj_end = [
+            new_ocr_obj['location'][0] + new_ocr_obj['size'][0],
+            new_ocr_obj['location'][1] + new_ocr_obj['size'][1]
+        ]
+        if 'start' not in match_object:
+            print('PROBLEM, were getting weird envelope vars')
+        if new_obj_start[0] < match_object['start'][0]:
+            match_object['start'][0] = new_obj_start[0]
+        if new_obj_start[1] < match_object['start'][1]:
+            match_object['start'][1] = new_obj_start[1]
+        if new_obj_end[0] > match_object['end'][0]:
+            match_object['end'][0] = new_obj_end[0]
+        if new_obj_end[1] > match_object['end'][1]:
+            match_object['end'][1] = new_obj_end[1]
+        return match_object
+
+    def is_close_enough(self, ocr_match_obj, envelope, group_type='row'):
+        ocr_start = ocr_match_obj['location']
+        ocr_end = [
+            ocr_match_obj['location'][0] + ocr_match_obj['size'][0],
+            ocr_match_obj['location'][1] + ocr_match_obj['size'][1]
+        ]
+        if group_type == 'row':
+            x_difference = self.get_axis_difference(ocr_start, ocr_end, envelope['start'], envelope['end'], 'x')
+            y_overlap = self.get_vertical_overlap(ocr_start, ocr_end, envelope['start'], envelope['end'])
+            if y_overlap < self.min_vertical_overlap_pixels or \
+                x_difference > self.min_row_horizontal_overlap_pixels:
+                return False
+            return True
+        elif group_type == 'left_col':
+            if abs(ocr_start[0] - envelope['start'][0]) < self.max_column_misalign_pixels:
+                return True
+            return False
+        elif group_type == 'right_col':
+            if abs(ocr_end[0] - envelope['end'][0]) < self.max_column_misalign_pixels:
+                return True
+            return False
+
+    def get_vertical_overlap(self, ocr_start, ocr_end, envelope_start, envelope_end):
+        if ocr_end[1] <= envelope_start[1]:
+            return 0 # box is above the row
+        if ocr_start[1] >= envelope_end[1]:
+            return 0 # box is below the row
+        overlap_top = ocr_end[1] - envelope_start[1]
+        overlap_bottom = envelope_end[1] - ocr_start[1]
+        return max(overlap_top, overlap_bottom)
+
+    def get_axis_difference(self, ocr_start, ocr_end, envelope_start, envelope_end, axis='y'):
+        axis_index = 0
+        if axis == 'y': 
+            axis_index = 1
+        if envelope_start[axis_index] <= ocr_start[axis_index] <= envelope_end[axis_index]:
+            return 0   #completely enclosed vertically
+        if ocr_start[axis_index] < envelope_start[axis_index]:
+            if ocr_end[axis_index] >= envelope_start[axis_index]:
+                return 0  # ocr starts first, but ends after the envelope starts, dist is zero
+            else:
+                return envelope_start[axis_index] - ocr_end[axis_index] 
+        if ocr_start[axis_index] > envelope_start[axis_index]:
+            if ocr_start[axis_index] <= envelope_end[axis_index]:
+                return 0  # envelope starts first, the ocr starts before envelope is done
+            else:
+                return ocr_start[axis_index] - envelope_end[axis_index]
+
+    def add_fast_pass_to_results(
+        self, fast_pass_obj, ocr_results_this_frame, ocr_rows_dict, ocr_left_cols_dict, ocr_right_cols_dict
+    ):
+        for row_id in fast_pass_obj['row']['ids']:
+            if not row_id: 
+                continue  # that means no ocr row matched the app row in that position
+            ocr_row = ocr_rows_dict[row_id]
+            self.add_zone_to_response(ocr_row['start'], ocr_row['end'])
+            for ocr_match_id in ocr_row['member_ids']:
+                ocr_match_ele = ocr_results_this_frame[ocr_match_id]
+                end_coords = [
+                    ocr_match_ele['location'][0] + ocr_match_ele['size'][0],
+                    ocr_match_ele['location'][1] + ocr_match_ele['size'][1]
+                ]
+                # TODO remove this later, just saving the ocr items we are confident are matches
+                self.add_zone_to_response(ocr_match_ele['location'], end_coords)
+
+        lcol_dict = ocr_left_cols_dict
+        for col_id in fast_pass_obj['left_col']['ids']:
+            if not col_id: 
+                continue  # that means no ocr col matched the app col in that position
+            ocr_col = ocr_left_cols_dict[col_id]
+            self.add_zone_to_response(ocr_col['start'], ocr_col['end'])
+            for ocr_match_id in ocr_col['member_ids']:
+                ocr_match_ele = ocr_results_this_frame[ocr_match_id]
+                end_coords = [
+                    ocr_match_ele['location'][0] + ocr_match_ele['size'][0],
+                    ocr_match_ele['location'][1] + ocr_match_ele['size'][1]
+                ]
+                # TODO remove this later, just saving the ocr items we are confident are matches
+                self.add_zone_to_response(ocr_match_ele['location'], end_coords)
+
+        for col_id in fast_pass_obj['right_col']['ids']:
+            if not col_id: 
+                continue  # that means no ocr col matched the app col in that position
+            ocr_col = ocr_right_cols_dict[col_id]
+            self.add_zone_to_response(ocr_col['start'], ocr_col['end'])
+            for ocr_match_id in ocr_col['member_ids']:
+                ocr_match_ele = ocr_results_this_frame[ocr_match_id]
+                end_coords = [
+                    ocr_match_ele['location'][0] + ocr_match_ele['size'][0],
+                    ocr_match_ele['location'][1] + ocr_match_ele['size'][1]
+                ]
+                # TODO remove this later, just saving the ocr items we are confident are matches
+                self.add_zone_to_response(ocr_match_ele['location'], end_coords)
+
     def get_app_data(self):
+#   ITEM FIELDS:
+# type
+# text
+# field name label   *so we can refer to it in other rules, across other apps even, so not just key in this app
+# text size label
+# background color label
+# text color label
+# column_align_left_right
+# always present
+# can have dropdown?   *probably not, labels don't, almost any variable text does
+# mask this field
+# is pii
+# is pci
+# ref location   * if it's on its own row, col this becomes very important
+# ref size    * if it's on its own row, col this becomes very important
+# allowed_values
+# regex
+# fuzzy_match_threshold  # would allow some nice customization for fields that never seem to come in cleanly with ocr
+
+#  OTHER TOP LEVEL OBJECTS
+# sections - it lets us nest things
+# shapes - stuff like gutters and fields of color, build a shared logic from what is used in selection grower
+# anchors?  I'd like to hold base64 strings apart from the primary data structure, better for eyeballing output
         self.app_data = {
             'rows': [
                 ['a1', 'a2', 'a3', 'a4', 'a5', 'a6'], 
@@ -395,29 +527,6 @@ class DataSifter:
                 'a1': {
                     'type': 'label',
                     'text': 'Details',
-#   ITEM FIELDS:
-# type
-# text
-# field name label   *so we can refer to it in other rules, across other apps even, so not just key in this app
-# text size label
-# background color label
-# text color label
-# column_align_left_right
-# always present
-# can have dropdown?   *probably not, labels don't, almost any variable text does
-# mask this field
-# is pii
-# is pci
-# ref location   * if it's on its own row, col this becomes very important
-# ref size    * if it's on its own row, col this becomes very important
-
-#  OTHER TOP LEVEL OBJECTS
-# sections - it lets us nest things
-# shapes - stuff like gutters and fields of color, build a shared logic from what is used in selection grower
-# anchors?  I'd like to hold base64 strings apart from the primary data structure, better for eyeballing output
-
-
-
                 },
                 'a2': {
                     'type': 'label',
@@ -545,110 +654,4 @@ class DataSifter:
             }
         }
 
-    def build_app_rowcol_data(self, pass_mode='fast'):
-        app_rows = []
-        for row in self.app_data['rows']:
-            app_row = []
-            for item_id in row:
-                if self.app_data['items'][item_id]['type'] == 'label':
-                    build_obj = {
-                        'app_id': item_id,
-                        'text': self.app_data['items'][item_id]['text'],
-                    }
-                    app_row.append(build_obj)
-                    # if pass_mode=slow, add other types here
-            app_rows.append(app_row)
 
-        app_left_cols = []
-        for col in self.app_data['left_cols']:
-            app_col = []
-            for item_id in col:
-                if self.app_data['items'][item_id]['type'] == 'label':
-                    build_obj = {
-                        'app_id': item_id,
-                        'text': self.app_data['items'][item_id]['text'],
-                    }
-                    app_col.append(build_obj)
-                    # if pass_mode=slow, add other types here
-            app_left_cols.append(app_col)
-
-        app_right_cols = []
-        for col in self.app_data['right_cols']:
-            app_col = []
-            for item_id in col:
-                if self.app_data['items'][item_id]['type'] == 'label':
-                    build_obj = {
-                        'app_id': item_id,
-                        'text': self.app_data['items'][item_id]['text'],
-                    }
-                    app_col.append(build_obj)
-                    # if pass_mode=slow, add other types here
-            app_right_cols.append(app_col)
-
-        return app_rows, app_left_cols, app_right_cols
-
-    def grow_object_to_accomodate(self, match_object, new_ocr_obj):
-        new_obj_start = new_ocr_obj['location']
-        new_obj_end = [
-            new_ocr_obj['location'][0] + new_ocr_obj['size'][0],
-            new_ocr_obj['location'][1] + new_ocr_obj['size'][1]
-        ]
-        if 'start' not in match_object:
-            print('PROBLEM, were getting weird envelope vars')
-        if new_obj_start[0] < match_object['start'][0]:
-            match_object['start'][0] = new_obj_start[0]
-        if new_obj_start[1] < match_object['start'][1]:
-            match_object['start'][1] = new_obj_start[1]
-        if new_obj_end[0] > match_object['end'][0]:
-            match_object['end'][0] = new_obj_end[0]
-        if new_obj_end[1] > match_object['end'][1]:
-            match_object['end'][1] = new_obj_end[1]
-        return match_object
-
-    def is_close_enough(self, ocr_match_obj, envelope, group_type='row'):
-        ocr_start = ocr_match_obj['location']
-        ocr_end = [
-            ocr_match_obj['location'][0] + ocr_match_obj['size'][0],
-            ocr_match_obj['location'][1] + ocr_match_obj['size'][1]
-        ]
-        if group_type == 'row':
-            x_difference = self.get_axis_difference(ocr_start, ocr_end, envelope['start'], envelope['end'], 'x')
-            y_overlap = self.get_vertical_overlap(ocr_start, ocr_end, envelope['start'], envelope['end'])
-            if y_overlap < self.min_vertical_overlap_pixels or \
-                x_difference > self.min_row_horizontal_overlap_pixels:
-                return False
-            return True
-        elif group_type == 'left_col':
-            if abs(ocr_start[0] - envelope['start'][0]) < self.max_column_misalign_pixels:
-                return True
-            return False
-        elif group_type == 'right_col':
-            if abs(ocr_end[0] - envelope['end'][0]) < self.max_column_misalign_pixels:
-                return True
-            return False
-
-    def get_vertical_overlap(self, ocr_start, ocr_end, envelope_start, envelope_end):
-        if ocr_end[1] <= envelope_start[1]:
-            return 0 # box is above the row
-        if ocr_start[1] >= envelope_end[1]:
-            return 0 # box is below the row
-        overlap_top = ocr_end[1] - envelope_start[1]
-        overlap_bottom = envelope_end[1] - ocr_start[1]
-        return max(overlap_top, overlap_bottom)
-
-    def get_axis_difference(self, ocr_start, ocr_end, envelope_start, envelope_end, axis='y'):
-        axis_index = 0
-        if axis == 'y': 
-            axis_index = 1
-        if envelope_start[axis_index] <= ocr_start[axis_index] <= envelope_end[axis_index]:
-            return 0   #completely enclosed vertically
-        if ocr_start[axis_index] < envelope_start[axis_index]:
-            if ocr_end[axis_index] >= envelope_start[axis_index]:
-                return 0  # ocr starts first, but ends after the envelope starts, dist is zero
-            else:
-                return envelope_start[axis_index] - ocr_end[axis_index] 
-        if ocr_start[axis_index] > envelope_start[axis_index]:
-            if ocr_start[axis_index] <= envelope_end[axis_index]:
-                return 0  # envelope starts first, the ocr starts before envelope is done
-            else:
-                return ocr_start[axis_index] - envelope_end[axis_index]

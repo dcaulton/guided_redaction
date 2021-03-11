@@ -1595,7 +1595,14 @@ class RedactApplication extends React.Component {
     } else if (input_obj.scope.match(/^t1_matches:/)) {
         specified_input = input_obj.extra_data
     } else if (input_obj.scope === 'input_json') {
+      if (
+        Object.keys(input_obj).includes('extra_data') &&
+        Object.keys(input_obj['extra_data']).includes('recording_ids')
+      ) {  // it's coming in through the recording-id get parm
+        specified_input = input_obj.extra_data
+      } else {  // it's coming through in formdata from the pipeline controls on insights
         specified_input = JSON.parse(input_obj.extra_data)
+      }
     } else if (input_obj.scope.match(/^t1_matches:/)) {
         specified_input = input_obj.extra_data
     }

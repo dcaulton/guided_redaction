@@ -46,9 +46,6 @@ class FilesViewSet(viewsets.ViewSet):
             "overall_space_used": '{:,} bytes'.format(total_overall_space_used),
         })
 
-    def retrieve(self, request, pk):
-        return Response({"needed": 'so delete works'})
-
     def delete(self, request, pk, format=None):
         dirpath = os.path.join(settings.REDACT_FILE_STORAGE_DIR, pk)
         try:
