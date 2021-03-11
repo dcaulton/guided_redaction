@@ -28,18 +28,14 @@ class DataSifter:
         ocr_results_this_frame = self.filter_results_by_t1_bounds(ocr_results_this_frame, other_t1_results_this_frame)
         ocr_rows_dict = self.gather_ocr_rows(ocr_results_this_frame)
         ocr_left_cols_dict, ocr_right_cols_dict = self.gather_ocr_cols(ocr_results_this_frame)
-        app_rows, app_left_cols, app_right_cols = self.build_app_row_and_col_data()
+        app_rows, app_left_cols, app_right_cols = self.build_app_rowcol_data('fast')
 
-        # TODO, also save the row fields that each ocr row field matched against? Nah, for now redo that work in fp confirm logic
         best_ocr_row_ids, best_ocr_row_score = \
             self.fast_score_rowcol_data('row', app_rows, ocr_rows_dict, ocr_results_this_frame)
         best_ocr_lcol_ids, best_ocr_lcol_score = \
             self.fast_score_rowcol_data('left_col', app_left_cols, ocr_left_cols_dict, ocr_results_this_frame)
         best_ocr_rcol_ids, best_ocr_rcol_score = \
             self.fast_score_rowcol_data('right_col', app_right_cols, ocr_right_cols_dict, ocr_results_this_frame)
-        print('best ocr rows: {} {}'.format(best_ocr_row_ids, best_ocr_row_score))
-        print('best ocr lcols: {} {}'.format(best_ocr_lcol_ids, best_ocr_lcol_score))
-        print('best ocr rcols: {} {}'.format(best_ocr_rcol_ids, best_ocr_rcol_score))
         total_score = best_ocr_lcol_score + best_ocr_rcol_score + best_ocr_row_score
         if total_score >= self.fast_pass_app_score_threshold:
             fast_pass = {
@@ -55,26 +51,65 @@ class DataSifter:
             self.add_fast_pass_to_results(
                 fast_pass, ocr_results_this_frame, ocr_rows_dict, ocr_left_cols_dict, ocr_right_cols_dict
             )
-            self.add_user_data_to_fast_pass_match(f'row', fast_pass['row'], app_rows, ocr_rows_dict)
             fast_pass_confirmed = self.confirm_fast_pass(
-                fast_pass, cv2_image, ocr_results_this_frame, other_t1_results_this_frame
+                fast_pass, cv2_image, ocr_results_this_frame, ocr_rows_dict, ocr_left_cols_dict, ocr_right_cols_dict
             )
         if not fast_pass_confirmed:
             slow_pass_confirmed = self.slow_pass_for_labels(
-                cv2_image, ocr_results_this_frame, other_t1_results_this_frame
+                cv2_image, ocr_results_this_frame
             )
         if fast_pass_confirmed or slow_pass_confirmed:
             self.build_match_results(return_mask, cv2_image, fast_pass_confirmed, slow_pass_confirmed)
 
         return self.all_zones, self.return_stats, return_mask
 
-    def add_user_data_to_fast_pass_match(self, match_obj_type, fast_pass, app_rows, ocr_rows_dict):
-        print('dididy for ', app_rows)
-        print(ocr_rows_dict)
-        print('dusty for ', fast_pass)
-        for row_id in fast_pass:
-            pass
+    def fast_score_rowcol_data(self, rowcol_type, app_rowcols, ocr_rowcols_dict, ocr_results_this_frame):
+        # this takes a set of app and ocr rows, left cols or right cols (let's just talk about rows here, they all act the same)
+        # order the ocr rows by ascending measure, e.g. ascending y
+        # for each ocr row:
+        #   compare it to each app row.  those are in a fixed order as defined in the app record.
+        #   so now you have something like this for each ocr row [277,0,0,123]
+        #         (where there are 4 app rows, and you scored 277 against the first, and 123 against the last)
+        # when done with all ocr rows,
+        #   for each app row, find the ocr row that matched best with it.  note that ocr rows key, or '' if nothing matched 
+        # return the final answer of ['422', '', '', '523'], 
+        #          (where 422 is the id of the ocr row that matched best against the first app row, and
+        #           523 is the id of the ocr row that matched up best against the final app row.  The middle two app rows
+        #           did not have anything that matched well enough to count.
+        sorted_keys = self.get_sorted_keys_for_ocr_rowcols(rowcol_type, ocr_rowcols_dict)
+        ocr_rowcol_scores = []
+        for ocr_rowcol_id in sorted_keys:
+            ocr_rowcol = ocr_rowcols_dict[ocr_rowcol_id]
+            app_rowcol_scores = []
+            for app_rowcol in app_rowcols:
+                app_rowcol_score = self.fast_score_ocr_rowcol_to_app_rowcol(app_rowcol, ocr_rowcol, ocr_results_this_frame)
+                app_rowcol_scores.append(app_rowcol_score)
+            ocr_rowcol_scores.append(app_rowcol_scores)
+        best_ocr_offsets, best_ocr_rowcol_score = self.scan_best_scores(ocr_rowcol_scores)
+        best_ocr_rowcol_ids = []
+        for app_rowcol_offset, x in enumerate(best_ocr_offsets):
+            rowcol_score = ocr_rowcol_scores[x][app_rowcol_offset]
+            if rowcol_score > 0:
+                best_ocr_rowcol_ids.append(sorted_keys[x])
+            else:
+                best_ocr_rowcol_ids.append('')
 
+        return best_ocr_rowcol_ids, best_ocr_rowcol_score
+
+    def confirm_fast_pass(
+        self, fast_pass_match_obj, cv2_image, ocr_results_this_frame, ocr_rows_dict, ocr_left_cols_dict, ocr_right_cols_dict
+    ):
+        # add in user data matches if their data type matches the ocr data
+        # if we matched on an item in some column and it's in a row that was not matched, add it as a match for that row.
+        #   same for if it's in a row and the col didn't get picked up.
+        # gather size info for ocr objects (get title sizes, standard text sizes, etc as defined in the spec)
+        # gather background color near some of the labels (as specified in the app spec)
+        # look for conflicts in fast_pass_match_obj, rule out rows/cols which break things
+        # match against remaining fields that were missed in fast_pass_match_obj (e.g. variable data)
+        # use logic shared with selection grower to find color fields and lines
+        # use color fields, lines and matched colors to establish app 'sections'
+        # for each section, identify any subfields
+        pass
 
     def filter_results_by_t1_bounds(self, ocr_results_this_frame, other_t1_results_this_frame):
         if other_t1_results_this_frame:
@@ -92,19 +127,6 @@ class DataSifter:
 
             return build_ocr_results
         return ocr_results_this_frame
-
-    def confirm_fast_pass(self, fast_pass_match_obj, cv2_image, ocr_results_this_frame, other_t1_results_this_frame):
-        # add in user data matches if their data type matches the ocr data
-        # if we matched on an item in some column and it's in a row that was not matched, add it as a match for that row.
-        #   same for if it's in a row and the col didn't get picked up.
-        # gather size info for ocr objects (get title sizes, standard text sizes, etc as defined in the spec)
-        # gather background color near some of the labels (as specified in the app spec)
-        # look for conflicts in fast_pass_match_obj, rule out rows/cols which break things
-        # match against remaining fields that were missed in fast_pass_match_obj (e.g. variable data)
-        # use logic shared with selection grower to find color fields and lines
-        # use color fields, lines and matched colors to establish app 'sections'
-        # for each section, identify any subfields
-        pass
 
     def add_fast_pass_to_results(
         self, fast_pass_obj, ocr_results_this_frame, ocr_rows_dict, ocr_left_cols_dict, ocr_right_cols_dict
@@ -152,22 +174,6 @@ class DataSifter:
                 # TODO remove this later, just saving the ocr items we are confident are matches
                 self.add_zone_to_response(ocr_match_ele['location'], end_coords)
 
-    def fast_pass_for_labels(
-        self, ocr_results_this_frame, other_t1_results_this_frame, ocr_rows_dict, ocr_left_cols_dict, ocr_right_cols_dict
-    ):
-        app_rows, app_left_cols, app_right_cols = self.build_app_row_and_col_data()
-
-        match_obj = self.fast_score_rowcol_data(
-            app_rows, app_left_cols, app_right_cols, ocr_rows_dict, ocr_left_cols_dict, ocr_right_cols_dict, ocr_results_this_frame
-        )
-
-        if match_obj:
-            print('WOOHOO, we found the app')
-        else:
-            print('UGH, app was not found')
-
-        return match_obj
-
     def fast_score_ocr_rowcol_to_app_rowcol(self, app_col, ocr_col, ocr_results_this_frame):
         total_score = 0
         base_ocr_col = 0
@@ -181,7 +187,6 @@ class DataSifter:
                     base_ocr_col += index+1
                     break
         return total_score
-
 
     def scan_best_scores(self, scores, enforce_order=True):
 #    step through left col bests by each left col, see if we can find a highest path score
@@ -202,39 +207,6 @@ class DataSifter:
         for app_col_num, ocr_col_num in enumerate(winning_cols):
             total_score += scores[ocr_col_num][app_col_num]
         return winning_cols, total_score
-
-    def fast_score_rowcol_data(self, rowcol_type, app_rowcols, ocr_rowcols_dict, ocr_results_this_frame):
-        # this takes a set of app and ocr rows, left cols or right cols (let's just talk about rows here, they all act the same)
-        # order the ocr rows by ascending measure, e.g. ascending y
-        # for each ocr row:
-        #   compare it to each app row.  those are in a fixed order as defined in the app record.
-        #   so now you have something like this for each ocr row [277,0,0,123]
-        #         (where there are 4 app rows, and you scored 277 against the first, and 123 against the last)
-        # when done with all ocr rows,
-        #   for each app row, find the ocr row that matched best with it.  note that ocr rows key, or '' if nothing matched 
-        # return the final answer of ['422', '', '', '523'], 
-        #          (where 422 is the id of the ocr row that matched best against the first app row, and
-        #           523 is the id of the ocr row that matched up best against the final app row.  The middle two app rows
-        #           did not have anything that matched well enough to count.
-        sorted_keys = self.get_sorted_keys_for_ocr_rowcols(rowcol_type, ocr_rowcols_dict)
-        ocr_rowcol_scores = []
-        for ocr_rowcol_id in sorted_keys:
-            ocr_rowcol = ocr_rowcols_dict[ocr_rowcol_id]
-            app_rowcol_scores = []
-            for app_rowcol in app_rowcols:
-                app_rowcol_score = self.fast_score_ocr_rowcol_to_app_rowcol(app_rowcol, ocr_rowcol, ocr_results_this_frame)
-                app_rowcol_scores.append(app_rowcol_score)
-            ocr_rowcol_scores.append(app_rowcol_scores)
-        best_ocr_offsets, best_ocr_rowcol_score = self.scan_best_scores(ocr_rowcol_scores)
-        best_ocr_rowcol_ids = []
-        for app_rowcol_offset, x in enumerate(best_ocr_offsets):
-            rowcol_score = ocr_rowcol_scores[x][app_rowcol_offset]
-            if rowcol_score > 0:
-                best_ocr_rowcol_ids.append(sorted_keys[x])
-            else:
-                best_ocr_rowcol_ids.append('')
-
-        return best_ocr_rowcol_ids, best_ocr_rowcol_score
 
     def get_sorted_keys_for_ocr_rowcols(self, group_type, ocr_row_or_col_dict):
         if group_type == 'left_col':
@@ -379,7 +351,7 @@ class DataSifter:
             ]
         return start, end
 
-    def slow_pass_for_labels(self, cv2_image, ocr_results_this_frame, other_t1_results_this_frame):
+    def slow_pass_for_labels(self, cv2_image, ocr_results_this_frame):
         pass
 
     def build_match_results(self, return_mask, cv2_image, fast_pass_confirmed, slow_pass_confirmed):
@@ -573,7 +545,7 @@ class DataSifter:
             }
         }
 
-    def build_app_row_and_col_data(self):
+    def build_app_rowcol_data(self, pass_mode='fast'):
         app_rows = []
         for row in self.app_data['rows']:
             app_row = []
@@ -584,12 +556,7 @@ class DataSifter:
                         'text': self.app_data['items'][item_id]['text'],
                     }
                     app_row.append(build_obj)
-                if self.app_data['items'][item_id]['type'] == 'user_data':
-                    build_obj = {
-                        'app_id': item_id,
-                        'text': 'dont_match_on_this'
-                    }
-                    app_row.append(build_obj)
+                    # if pass_mode=slow, add other types here
             app_rows.append(app_row)
 
         app_left_cols = []
@@ -602,12 +569,7 @@ class DataSifter:
                         'text': self.app_data['items'][item_id]['text'],
                     }
                     app_col.append(build_obj)
-                if self.app_data['items'][item_id]['type'] == 'user_data':
-                    build_obj = {
-                        'app_id': item_id,
-                        'text': 'dont_match_on_this'
-                    }
-                    app_col.append(build_obj)
+                    # if pass_mode=slow, add other types here
             app_left_cols.append(app_col)
 
         app_right_cols = []
@@ -620,12 +582,7 @@ class DataSifter:
                         'text': self.app_data['items'][item_id]['text'],
                     }
                     app_col.append(build_obj)
-                if self.app_data['items'][item_id]['type'] == 'user_data':
-                    build_obj = {
-                        'app_id': item_id,
-                        'text': 'dont_match_on_this'
-                    }
-                    app_col.append(build_obj)
+                    # if pass_mode=slow, add other types here
             app_right_cols.append(app_col)
 
         return app_rows, app_left_cols, app_right_cols
