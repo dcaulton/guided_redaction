@@ -84,6 +84,8 @@ class MovieCardList extends React.Component {
               insights_image={this.props.insights_image}
               setGlobalStateVar={this.props.setGlobalStateVar}
               displayInsightsMessage={this.props.displayInsightsMessage}
+              setScrubberToNextTier1Hit={this.props.setScrubberToNextTier1Hit}
+              getTier1MatchHashesForMovie={this.props.getTier1MatchHashesForMovie}
           />
           )
         })}
@@ -258,70 +260,6 @@ class MovieCard extends React.Component {
     )
   }
 
-  getTier1MatchHashesForMovie(scanner_type, movie_url) {
-    let hashes = []
-    if (!this.props.current_ids['t1_scanner']) {
-      return []
-    }
-    const current_rule_id = this.props.current_ids['t1_scanner'][scanner_type]
-    if (!current_rule_id) {
-      return []
-    }
-    if (!Object.keys(this.props.tier_1_matches).includes(scanner_type)) {
-      return []
-    }
-    if (!Object.keys(this.props.tier_1_matches[scanner_type]).includes(current_rule_id)) {
-      return []
-    }
-    const this_rule_matches = this.props.tier_1_matches[scanner_type][current_rule_id]
-    if (!Object.keys(this_rule_matches).includes('movies') || 
-        !Object.keys(this_rule_matches['movies']).includes(movie_url) ||
-        !this_rule_matches['movies'][movie_url]) {
-      return []
-    }
-    const scanner_matches_for_movie = this_rule_matches['movies'][movie_url]
-    const frameset_hashes = Object.keys(scanner_matches_for_movie['framesets'])
-    for (let i=0; i < frameset_hashes.length; i++) {
-      if (Object.keys(scanner_matches_for_movie['framesets'][frameset_hashes[i]]).length > 0) {
-        hashes.push(frameset_hashes[i])
-      }
-    }
-    return hashes
-  }
-
-  setScrubberToNextTier1Hit(scanner_type) {
-    const scanner_frameset_hashes = this.getTier1MatchHashesForMovie(scanner_type, this.props.this_cards_movie_url)
-    let movie = this.props.movies[this.props.this_cards_movie_url]
-    const movie_frameset_hashes = this.props.getFramesetHashesInOrder(movie)
-    if (this.props.active_movie_url !== this.props.this_cards_movie_url) {
-      this.props.setCurrentVideo(this.props.this_cards_movie_url) 
-      let lowest_position = 99999
-      let scanner_hash = ''
-      let index = 99999
-      for (let i=0; i < scanner_frameset_hashes.length; i++) {
-        scanner_hash = scanner_frameset_hashes[i]
-        index = movie_frameset_hashes.indexOf(scanner_hash)
-        if (index < lowest_position) {
-          lowest_position = index
-        } 
-      }
-      setTimeout((() => {this.props.setScrubberToIndex(lowest_position)}), 1000)
-    } else {
-      const cur_hash = this.props.getFramesetHashForImageUrl(this.props.insights_image)
-      const cur_position = movie_frameset_hashes.indexOf(cur_hash)
-      const remaining_hashes = movie_frameset_hashes.slice(cur_position+1)
-      for (let i=0; i < remaining_hashes.length; i++) {
-        if (scanner_frameset_hashes.includes(remaining_hashes[i])) {
-          const new_index = cur_position + i + 1
-          setTimeout((() => {this.props.setScrubberToIndex(new_index)}), 1000)
-          return
-        }
-      }
-      const first_index = movie_frameset_hashes.indexOf(scanner_frameset_hashes[0])
-      setTimeout((() => {this.props.setScrubberToIndex(first_index)}), 1000)
-    }
-  }
-
   clearTier1Matches(scanner_type) {
     let deepCopyTier1Matches= JSON.parse(JSON.stringify(this.props.tier_1_matches))
     const current_scanner_id = this.props.current_ids['t1_scanner'][scanner_type]
@@ -331,7 +269,7 @@ class MovieCard extends React.Component {
   }
 
   getTier1MatchesString(scanner_type) {
-    let count = this.getTier1MatchHashesForMovie(scanner_type, this.props.this_cards_movie_url).length
+    let count = this.props.getTier1MatchHashesForMovie(scanner_type, this.props.this_cards_movie_url).length
     if (!count) {
       return
     }
@@ -379,7 +317,7 @@ class MovieCard extends React.Component {
       matches_button = (
         <button
           className={next_button_class}
-          onClick={() => this.setScrubberToNextTier1Hit(scanner_type)}
+          onClick={() => this.props.setScrubberToNextTier1Hit(scanner_type, this.props.this_cards_movie_url)}
         >
           nxt
         </button>

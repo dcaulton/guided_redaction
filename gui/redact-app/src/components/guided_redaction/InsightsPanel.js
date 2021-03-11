@@ -38,6 +38,15 @@ class InsightsPanel extends React.Component {
       'data_sifter',
       'ocr'
     ]
+    this.tier_1_job_operations = [
+      'selected_area_threaded',
+      'ocr_scene_analysis_threaded',
+      'mesh_match_threaded',
+      'template_threaded',
+      'selection_grower_threaded',
+      'data_sifter_threaded',
+      'ocr_threaded'
+    ]
     this.setCurrentVideo=this.setCurrentVideo.bind(this)
     this.setInsightsImage=this.setInsightsImage.bind(this)
     this.movieSplitDone=this.movieSplitDone.bind(this)
@@ -70,6 +79,77 @@ class InsightsPanel extends React.Component {
     this.getCurrentOcrSceneAnalysisMatches=this.getCurrentOcrSceneAnalysisMatches.bind(this)
     this.runCallbackFunction=this.runCallbackFunction.bind(this)
     this.loadOcrDataIntoMovies=this.loadOcrDataIntoMovies.bind(this)
+    this.getTier1MatchHashesForMovie=this.getTier1MatchHashesForMovie.bind(this)
+    this.setScrubberToNextTier1Hit=this.setScrubberToNextTier1Hit.bind(this)
+    this.afterTier1JobLoaded=this.afterTier1JobLoaded.bind(this)
+  }
+
+  getTier1MatchHashesForMovie(scanner_type, movie_url) {
+    let hashes = []
+    if (!this.props.current_ids['t1_scanner']) {
+      return []
+    }
+    const current_rule_id = this.props.current_ids['t1_scanner'][scanner_type]
+    if (!current_rule_id) {
+      return []
+    }
+    if (!Object.keys(this.props.tier_1_matches).includes(scanner_type)) {
+      return []
+    }
+    if (!Object.keys(this.props.tier_1_matches[scanner_type]).includes(current_rule_id)) {
+      return []
+    }
+    const this_rule_matches = this.props.tier_1_matches[scanner_type][current_rule_id]
+    if (!Object.keys(this_rule_matches).includes('movies') ||
+        !Object.keys(this_rule_matches['movies']).includes(movie_url) ||
+        !this_rule_matches['movies'][movie_url]) {
+      return []
+    }
+    const scanner_matches_for_movie = this_rule_matches['movies'][movie_url]
+    const frameset_hashes = Object.keys(scanner_matches_for_movie['framesets'])
+    for (let i=0; i < frameset_hashes.length; i++) {
+      if (Object.keys(scanner_matches_for_movie['framesets'][frameset_hashes[i]]).length > 0) {
+        hashes.push(frameset_hashes[i])
+      }
+    }
+    return hashes
+  }
+
+  setScrubberToNextTier1Hit(scanner_type, movie_url) {
+console.log('ORANGIPPLE', scanner_type, movie_url)
+    if (!movie_url) {
+      movie_url = this.props.active_movie_url
+    }
+    const scanner_frameset_hashes = this.getTier1MatchHashesForMovie(scanner_type, movie_url)
+    let movie = this.props.movies[movie_url]
+    const movie_frameset_hashes = this.props.getFramesetHashesInOrder(movie)
+    if (this.props.active_movie_url !== movie_url) {
+      this.setCurrentVideo(movie_url)
+      let lowest_position = 99999
+      let scanner_hash = ''
+      let index = 99999
+      for (let i=0; i < scanner_frameset_hashes.length; i++) {
+        scanner_hash = scanner_frameset_hashes[i]
+        index = movie_frameset_hashes.indexOf(scanner_hash)
+        if (index < lowest_position) {
+          lowest_position = index
+        }
+      }
+      setTimeout((() => {this.setScrubberToIndex(lowest_position)}), 1000)
+    } else {
+      const cur_hash = this.props.getFramesetHashForImageUrl(this.state.insights_image)
+      const cur_position = movie_frameset_hashes.indexOf(cur_hash)
+      const remaining_hashes = movie_frameset_hashes.slice(cur_position+1)
+      for (let i=0; i < remaining_hashes.length; i++) {
+        if (scanner_frameset_hashes.includes(remaining_hashes[i])) {
+          const new_index = cur_position + i + 1
+          setTimeout((() => {this.setScrubberToIndex(new_index)}), 1000)
+          return
+        }
+      }
+      const first_index = movie_frameset_hashes.indexOf(scanner_frameset_hashes[0])
+      setTimeout((() => {this.setScrubberToIndex(first_index)}), 1000)
+    }
   }
 
   getActiveT1ResultsMask() {
@@ -230,6 +310,10 @@ class InsightsPanel extends React.Component {
     })
   }
 
+  afterTier1JobLoaded(scanner_type) {
+    this.setScrubberToNextTier1Hit(scanner_type)
+  }
+
   loadInsightsJobResults(job_id) {
     const job = this.getJobForId(job_id)
     if ((job && job.app === 'parse' && job.operation === 'split_and_hash_threaded')) {
@@ -238,7 +322,22 @@ class InsightsPanel extends React.Component {
         this.afterMovieSplitInsightsJobLoaded
       )
     } else {
-      this.props.loadJobResults(job_id) 
+      if (job && this.tier_1_job_operations.includes(job.operation)) {
+        const scanner_type = this.getScannerTypeFromJobOperation(job.operation)
+        this.props.loadJobResults(
+          job_id,
+          this.afterTier1JobLoaded(scanner_type)
+        ) 
+      } else {
+        this.props.loadJobResults(job_id) 
+      }
+    }
+  }
+
+  getScannerTypeFromJobOperation(operation) {
+    const thr_index = operation.indexOf('_threaded')
+    if (thr_index > 0) {
+      return operation.substring(0, thr_index)
     }
   }
 
@@ -1251,6 +1350,8 @@ class InsightsPanel extends React.Component {
             insights_image={insights_image}
             setGlobalStateVar={this.props.setGlobalStateVar}
             displayInsightsMessage={this.displayInsightsMessage}
+            setScrubberToNextTier1Hit={this.setScrubberToNextTier1Hit}
+            getTier1MatchHashesForMovie={this.getTier1MatchHashesForMovie}
           />
         </div>
 
@@ -1391,6 +1492,7 @@ class InsightsPanel extends React.Component {
             attachToJob={this.props.attachToJob}
             attached_job={this.props.attached_job}
             user={this.props.user}
+            setScrubberToNextTier1Hit={this.setScrubberToNextTier1Hit}
           />
         </div>
       </div>

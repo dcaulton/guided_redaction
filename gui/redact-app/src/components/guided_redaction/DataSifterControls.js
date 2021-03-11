@@ -12,7 +12,7 @@ import {
   buildClearMatchesButton,
   buildRunButton,
   doTier1Save,
-  } from './SharedControls'
+} from './SharedControls'
 
 
 class DataSifterControls extends React.Component {
