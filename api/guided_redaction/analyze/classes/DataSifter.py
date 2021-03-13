@@ -11,7 +11,7 @@ class DataSifter:
     def __init__(self, mesh_match_meta):
         self.mesh_match_meta = mesh_match_meta
         self.debug = mesh_match_meta.get('debug', False)
-        self.get_app_data()
+        self.app_data = self.get_app_data()
         self.min_vertical_overlap_pixels = 5
         self.max_column_misalign_pixels = 5
         self.min_row_horizontal_overlap_pixels = 1000
@@ -99,35 +99,80 @@ class DataSifter:
         return best_ocr_rowcol_ids, best_ocr_rowcol_score
 
     def confirm_fast_pass(self, fast_pass_match_obj):
+        # first, do a complete match on all fields in each rowcol that fastpass picked up on, 
+        #   this time, store ocr match_ids in the respective objects in app_rows, app_left_cols, app_right_cols
+        self.slow_score_all_of_one_type_of_rowcol(fast_pass_match_obj, 'row')
+        self.slow_score_all_of_one_type_of_rowcol(fast_pass_match_obj, 'left_col')
+        self.slow_score_all_of_one_type_of_rowcol(fast_pass_match_obj, 'right_col')
+
+        # disqualify 'fast pass matched' rows on geometry
+        #   for each fast pass row, l col, r col, guess the origin location based on each matched ocr element and app ref coords
+        #   use the spacing between two recognized rows to get a sense of scale compared to app ref coords
+        #   some features should be designed as landmarks, things that scale in a predictable way, e.g. certain row heights 
+        #   if there is a big consensus, fire any dissenters
+
+
         # if we matched on an item in some column and it's in a row that was not matched, add it as a match for that row.
         #   same for if it's in a row and the col didn't get picked up.
         # gather size info for ocr objects (get title sizes, standard text sizes, etc as defined in the spec)
         # gather background color near some of the labels (as specified in the app spec)
         # look for conflicts in fast_pass_match_obj, rule out rows/cols which break things
+        # look for app rows/cols that had no match with an ocr row, see if any unmatched ocr rows now look better, 
+        #     considering things like app, reference coords, below threshold matches due to ocr splitting a word up 
+        #     into multiples, and user data rules
         # use contours to automatically detect template like things?  
         #     *if we mask off just this row on cv2_image it should be fast and only at one scale
         # match against remaining fields that were missed in fast_pass_match_obj (e.g. variable data, templates)
         # use logic shared with selection grower to find color fields and lines
         # use color fields, lines and matched colors to establish app 'sections'
         # for each section, identify any subfields
-        pass
+        print('confirmed rows {}'.format(self.app_rows))
+        print('confirmed left cols {}'.format(self.app_left_cols))
+        print('confirmed right cols {}'.format(self.app_right_cols))
 
-    def filter_results_by_t1_bounds(self, ocr_results_this_frame, other_t1_results_this_frame):
-        if other_t1_results_this_frame:
-            build_ocr_results = {}
-            for t1_match_id in other_t1_results_this_frame:
-                t1_ele = other_t1_results_this_frame[t1_match_id]
-                for ocr_ele_id in ocr_results_this_frame:
-                    ocr_ele = ocr_results_this_frame[ocr_ele_id]
-                    ocr_coords = ocr_ele.get('start')
-                    if 'location' in ocr_ele:
-                        ocr_coords = ocr_ele['location']
-                        if self.point_is_in_t1_region(ocr_coords, t1_ele):
-                            if ocr_ele_id not in build_ocr_results:
-                                build_ocr_results[ocr_ele_id] = ocr_ele
+    def slow_score_all_of_one_type_of_rowcol(self, fast_pass_match_obj, rc_type):
+        if not fast_pass_match_obj[rc_type]:
+            return
+        for app_rowcol_number, ocr_rowcol_id in enumerate(fast_pass_match_obj[rc_type]['ids']):
+            if not ocr_rowcol_id:
+                continue #  pass it for now.  we will come back for you, little buddy!
+            if rc_type == 'row':
+                app_rowcol = self.app_rows[app_rowcol_number]
+                ocr_rowcol = self.ocr_rows_dict[ocr_rowcol_id]
+            elif rc_type == 'left_col':
+                app_rowcol = self.app_left_cols[app_rowcol_number]
+                ocr_rowcol = self.ocr_left_cols_dict[ocr_rowcol_id]
+            elif rc_type == 'right_col':
+                app_rowcol = self.app_right_cols[app_rowcol_number]
+                ocr_rowcol = self.ocr_right_cols_dict[ocr_rowcol_id]
+            self.slow_score_ocr_rowcol_to_app_rowcol(app_rowcol, ocr_rowcol)
 
-            return build_ocr_results
-        return ocr_results_this_frame
+    def slow_score_ocr_rowcol_to_app_rowcol(self, app_row, ocr_row):
+        base_ocr_col = 0
+        for app_row_element in app_row:
+            app_item_id = app_row_element['app_id']
+            app_element = self.app_data['items'][app_item_id]
+            #TODO clear out the ocr_id and found_text first, we want to be able to run this method multiple times
+            #  on the same row after findings have been massaged e.g. by geometric data or a match on a related rowcol
+#            print(' - one app row field, {}'.format(app_element))
+            for index, ocr_match_id in enumerate(ocr_row['member_ids'][base_ocr_col:]):
+                ocr_match_ele = self.ocr_results_this_frame[ocr_match_id]
+#                print('  - trying ocr ele {}'.format(ocr_match_ele['text']))
+                if app_element['type'] == 'label':
+                    ratio = fuzz.ratio(app_element['text'], ocr_match_ele['text'])
+                    if ratio >= self.fuzz_match_threshold:
+                        base_ocr_col += index+1
+#                        print('  - ITS A LABEL MATCH')
+                        app_row_element['ocr_id'] = ocr_match_id
+                        break
+                elif app_element['type'] == 'user_data':
+                        # a simple greedy algo for first cut, just pass the first element you see
+                        #   we will be qualifying these soon by font size, field length
+                        base_ocr_col += index+1
+#                        print('  - ITS A USERDATA MATCH')
+                        app_row_element['ocr_id'] = ocr_match_id
+                        app_row_element['found_value'] = ocr_match_ele['text'].rstrip()
+                        break
 
     def fast_score_ocr_rowcol_to_app_rowcol(self, app_col, ocr_col):
         total_score = 0
@@ -438,6 +483,23 @@ class DataSifter:
             else:
                 return ocr_start[axis_index] - envelope_end[axis_index]
 
+    def filter_results_by_t1_bounds(self, ocr_results_this_frame, other_t1_results_this_frame):
+        if other_t1_results_this_frame:
+            build_ocr_results = {}
+            for t1_match_id in other_t1_results_this_frame:
+                t1_ele = other_t1_results_this_frame[t1_match_id]
+                for ocr_ele_id in ocr_results_this_frame:
+                    ocr_ele = ocr_results_this_frame[ocr_ele_id]
+                    ocr_coords = ocr_ele.get('start')
+                    if 'location' in ocr_ele:
+                        ocr_coords = ocr_ele['location']
+                        if self.point_is_in_t1_region(ocr_coords, t1_ele):
+                            if ocr_ele_id not in build_ocr_results:
+                                build_ocr_results[ocr_ele_id] = ocr_ele
+
+            return build_ocr_results
+        return ocr_results_this_frame
+
     def add_fast_pass_to_results(self, fast_pass_obj):
         for row_id in fast_pass_obj['row']['ids']:
             if not row_id: 
@@ -505,7 +567,8 @@ class DataSifter:
 # sections - it lets us nest things
 # shapes - stuff like gutters and fields of color, build a shared logic from what is used in selection grower
 # anchors?  I'd like to hold base64 strings apart from the primary data structure, better for eyeballing output
-        self.app_data = {
+# landmarks - like a star chart, a few of these can orient you in the form, even if they scale
+        build_obj = {
             'rows': [
                 ['a1', 'a2', 'a3', 'a4', 'a5', 'a6'], 
                 ['b1'],
@@ -649,5 +712,6 @@ class DataSifter:
                 },
             }
         }
+        return build_obj
 
 
