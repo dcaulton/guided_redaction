@@ -173,7 +173,7 @@ class DataSifterControls extends React.Component {
     ocr_matches.push({'': ''})
     for (let i=0; i < this.props.jobs.length; i++) {
       const job = this.props.jobs[i]
-      if (job['operation'] !== 'scan_ocr_threaded') {
+      if (job['operation'] !== 'ocr_threaded') {
         continue
       }
       const build_obj = {}

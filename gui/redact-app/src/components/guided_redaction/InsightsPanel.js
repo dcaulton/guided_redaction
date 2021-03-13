@@ -436,8 +436,8 @@ console.log('ORANGIPPLE', scanner_type, movie_url)
     }
 
     const scanner_operations = {
-      template: 'scan_template_threaded',
-      ocr: 'scan_ocr_threaded',
+      template: 'template_threaded',
+      ocr: 'ocr_threaded',
       selected_area: 'selected_area_threaded',
       selection_grower: 'selection_grower_threaded',
       mesh_match: 'mesh_match_threaded',

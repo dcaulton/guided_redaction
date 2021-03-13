@@ -135,14 +135,14 @@ def dispatch_job_wrapper(job, restart_unfinished_children=True):
 
 def dispatch_job(job):
     job_uuid = job.id
-    if job.app == 'analyze' and job.operation == 'scan_template_threaded':
-        analyze_tasks.scan_template_threaded.delay(job_uuid)
+    if job.app == 'analyze' and job.operation == 'template_threaded':
+        analyze_tasks.template_threaded.delay(job_uuid)
     if job.app == 'analyze' and job.operation == 'scan_template_multi':
         analyze_tasks.scan_template_multi.delay(job_uuid)
     if job.app == 'analyze' and job.operation == 'filter':
         analyze_tasks.filter.delay(job_uuid)
-    if job.app == 'analyze' and job.operation == 'scan_ocr_threaded':
-        analyze_tasks.scan_ocr_threaded.delay(job_uuid)
+    if job.app == 'analyze' and job.operation == 'ocr_threaded':
+        analyze_tasks.ocr_threaded.delay(job_uuid)
     if job.app == 'analyze' and job.operation == 'scan_ocr':
         analyze_tasks.scan_ocr.delay(job_uuid)
     if job.app == 'analyze' and job.operation == 'get_timestamp':

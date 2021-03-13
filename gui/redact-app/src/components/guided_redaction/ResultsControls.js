@@ -112,10 +112,10 @@ class ResultsControls extends React.Component {
     for (let i=0; i < this.props.jobs.length; i++) {
       const job = this.props.jobs[i]
       if (this.state.type === 'template_match_chart' && 
-          job['operation'] === 'scan_template_threaded') {
+          job['operation'] === 'template_threaded') {
         eligible_jobs.push(job)
       } else if (this.state.type === 'ocr_match_chart' && 
-          job['operation'] === 'scan_ocr_threaded') {
+          job['operation'] === 'ocr_threaded') {
         eligible_jobs.push(job)
       } else if (this.state.type === 'ocr_scene_analysis_chart' && 
           job['operation'] === 'ocr_scene_analysis_threaded') {

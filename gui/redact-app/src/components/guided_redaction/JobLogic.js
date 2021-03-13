@@ -914,7 +914,7 @@ class JobLogic extends React.Component {
     .then((responseJson) => {
       const job = responseJson['job']
       if ((job.app === 'analyze' && job.operation === 'scan_template_multi')
-        || (job.app === 'analyze' && job.operation === 'scan_template_threaded')) {
+        || (job.app === 'analyze' && job.operation === 'template_threaded')) {
         this.loadTemplateResults(
           job, 
           when_done, 
@@ -938,7 +938,7 @@ class JobLogic extends React.Component {
         this.loadGetFramesetMatchChartResults(
           job, when_done, setGlobalStateVar, getGlobalStateVar
         )
-			} else if (job.app === 'analyze' && job.operation === 'scan_ocr_threaded') {
+			} else if (job.app === 'analyze' && job.operation === 'ocr_threaded') {
         this.loadOcrResults(
           job, 
           when_done,

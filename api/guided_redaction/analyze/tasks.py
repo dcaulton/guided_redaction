@@ -43,16 +43,16 @@ sg_batch_size_no_ocr = 100
 def dispatch_parent_job(job):
     if job.parent_id:
         parent_job = Job.objects.get(pk=job.parent_id)
-        if parent_job.app == 'analyze' and parent_job.operation == 'scan_template_threaded':
-            scan_template_threaded.delay(parent_job.id)
+        if parent_job.app == 'analyze' and parent_job.operation == 'template_threaded':
+            template_threaded.delay(parent_job.id)
         if parent_job.app == 'analyze' and parent_job.operation == 'scan_template_multi':
             scan_template_multi.delay(parent_job.id)
         if parent_job.app == 'analyze' and parent_job.operation == 'build_data_sifter':
             build_data_sifter.delay(parent_job.id)
         if parent_job.app == 'analyze' and parent_job.operation == 'get_timestamp_threaded':
             get_timestamp_threaded.delay(parent_job.id)
-        if parent_job.app == 'analyze' and parent_job.operation == 'scan_ocr_threaded':
-            scan_ocr_threaded.delay(parent_job.id)
+        if parent_job.app == 'analyze' and parent_job.operation == 'ocr_threaded':
+            ocr_threaded.delay(parent_job.id)
         if parent_job.app == 'analyze' and parent_job.operation == 'selected_area_threaded':
             selected_area_threaded.delay(parent_job.id)
         if parent_job.app == 'analyze' and parent_job.operation == 'mesh_match_threaded':
@@ -348,7 +348,7 @@ def movie_is_full_movie(movie):
 def make_and_dispatch_cds_task(parent_job):
     prd = json.loads(parent_job.request_data)
     build_movies = {}
-    children = Job.objects.filter(parent=parent_job).filter(operation='scan_ocr_threaded')
+    children = Job.objects.filter(parent=parent_job).filter(operation='ocr_threaded')
     for child in children:
         crd = json.loads(child.response_data)
         for movie_url in crd['movies']:
@@ -413,13 +413,13 @@ def dispatch_ds_scan_ocr(parent_job):
             status='created',
             description='scan_ocr for movie {}'.format(movie_url),
             app='analyze',
-            operation='scan_ocr_threaded',
+            operation='ocr_threaded',
             sequence=0,
             parent=parent_job,
         )
         job.save()
         print('dispatch ds scan ocr kids: dispatching job for movie {}'.format(movie_url))
-        scan_ocr_threaded.delay(job.id)
+        ocr_threaded.delay(job.id)
 
 @shared_task
 def compile_data_sifter(job_uuid):
@@ -437,12 +437,12 @@ def build_data_sifter(job_uuid):
         job.save()
     children = Job.objects.filter(parent=job)                                   
                                                                                 
-    if not children.filter(operation='scan_ocr_threaded').exists():  
+    if not children.filter(operation='ocr_threaded').exists():  
         dispatch_ds_scan_ocr(job)
         return
     next_step = evaluate_children(
         'BUILD DATA SIFTER - SCAN OCR',
-        'scan_ocr_threaded',
+        'ocr_threaded',
         children
     )
     print('next step is {}'.format(next_step))
@@ -606,31 +606,31 @@ def wrap_up_scan_template_multi(job, children):
     job.response_data = json.dumps(aggregate_response_data)
     job.save()
 
-def finish_scan_template_threaded(job):
+def finish_template_threaded(job):
   children = Job.objects.filter(parent=job)
-  wrap_up_scan_template_threaded(job, children)
+  wrap_up_template_threaded(job, children)
   pipeline = get_pipeline_for_job(job.parent)
   if pipeline:
       worker = PipelinesViewSetDispatch()
       worker.handle_job_finished(job, pipeline)
 
 @shared_task
-def scan_template_threaded(job_uuid):
+def template_threaded(job_uuid):
     generic_threaded(
         job_uuid, 
         'scan_template', 
         'SCAN TEMPLATE THREADED', 
-        build_and_dispatch_scan_template_threaded_children, 
-        finish_scan_template_threaded
+        build_and_dispatch_template_threaded_children, 
+        finish_template_threaded
     )
 
-def build_and_dispatch_scan_template_threaded_children(parent_job):
+def build_and_dispatch_template_threaded_children(parent_job):
     build_and_dispatch_generic_threaded_children(
         parent_job, 
         'template', 
         'scan_template', 
         scan_template, 
-        finish_scan_template_threaded
+        finish_template_threaded
     )
 
 def aggregate_statistics_from_template_child(aggregate_response_data, child_response_data):
@@ -650,7 +650,7 @@ def aggregate_statistics_from_template_child(aggregate_response_data, child_resp
                 for anchor_id in crd_framesets[frameset_hash]:
                     aggregate_response_data['statistics']['movies'][movie_url]['framesets'][frameset_hash][anchor_id] = crd_framesets[frameset_hash][anchor_id]
 
-def wrap_up_scan_template_threaded(job, children):
+def wrap_up_template_threaded(job, children):
     aggregate_response_data = {
         'movies': {},
     }
@@ -665,7 +665,7 @@ def wrap_up_scan_template_threaded(job, children):
             aggregate_response_data['movies'][movie_url] = child_response_data['movies'][movie_url]
         aggregate_statistics_from_template_child(aggregate_response_data, child_response_data)
 
-    print('wrap_up_scan_template_threaded: wrapping up parent job')
+    print('wrap_up_template_threaded: wrapping up parent job')
     job.status = 'success'
     job.response_data = json.dumps(aggregate_response_data)
     job.save()
@@ -735,25 +735,25 @@ def scan_ocr(job_uuid):
     generic_worker_call(job_uuid, 'scan_ocr', AnalyzeViewSetOcr)
 
 @shared_task
-def scan_ocr_threaded(job_uuid):
+def ocr_threaded(job_uuid):
     generic_threaded(
         job_uuid, 
         'scan_ocr', 
         'SCAN OCR THREADED', 
-        build_and_dispatch_scan_ocr_threaded_children, 
+        build_and_dispatch_ocr_threaded_children, 
         finish_ocr_threaded
     )
 
 def finish_ocr_threaded(job):
     children = Job.objects.filter(parent=job)
-    wrap_up_scan_ocr_threaded(job, children)
+    wrap_up_ocr_threaded(job, children)
     pipeline = get_pipeline_for_job(job.parent)
     if pipeline:
         worker = PipelinesViewSetDispatch()
         worker.handle_job_finished(job, pipeline)
     dispatch_parent_job(job)
 
-def build_and_dispatch_scan_ocr_threaded_children(parent_job):
+def build_and_dispatch_ocr_threaded_children(parent_job):
     build_and_dispatch_generic_batched_threaded_children(
         parent_job,
         'ocr',
@@ -763,7 +763,7 @@ def build_and_dispatch_scan_ocr_threaded_children(parent_job):
         scan_ocr
     )
 
-def wrap_up_scan_ocr_threaded(parent_job, children):
+def wrap_up_ocr_threaded(parent_job, children):
     parent_request_data = json.loads(parent_job.request_data)
     ocr_rule_id = list(parent_request_data['tier_1_scanners']['ocr'].keys())[0]
     ocr_rule = parent_request_data['tier_1_scanners']['ocr'][ocr_rule_id]
@@ -801,7 +801,7 @@ def wrap_up_scan_ocr_threaded(parent_job, children):
         'statistics': aggregate_stats,
     }
 
-    print('wrap_up_scan_ocr_threaded: wrapping up parent job')
+    print('wrap_up_ocr_threaded: wrapping up parent job')
     parent_job.status = 'success'
     parent_job.response_data = json.dumps(return_data)
     parent_job.save()

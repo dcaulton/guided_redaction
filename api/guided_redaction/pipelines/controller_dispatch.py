@@ -636,11 +636,11 @@ class DispatchController:
         }
         build_request_data['tier_1_scanners'][scanner_type] = build_scanners
         if scanner_type == 'template':
-            operation = 'scan_template_threaded'
+            operation = 'template_threaded'
         elif scanner_type == 'selected_area':
             operation = 'selected_area_threaded'
         elif scanner_type == 'ocr':
-            operation = 'scan_ocr_threaded'
+            operation = 'ocr_threaded'
         elif scanner_type == 'ocr_scene_analysis':
             operation = 'ocr_scene_analysis_threaded'
         elif scanner_type == 'mesh_match':
