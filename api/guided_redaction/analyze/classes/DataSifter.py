@@ -20,22 +20,20 @@ class DataSifter:
         self.fast_pass_app_score_threshold = 500
 
     def sift_data(self, cv2_image, ocr_results_this_frame, other_t1_results_this_frame):
+        self.app_rows, self.app_left_cols, self.app_right_cols = self.build_app_rowcol_data()
         self.all_zones = {}
         self.return_stats = {}
         return_mask = np.zeros((20, 20, 1), 'uint8')
         fast_pass = fast_pass_confirmed = slow_pass_confirmed = False
+        self.cv2_image = cv2_image
 
-        ocr_results_this_frame = self.filter_results_by_t1_bounds(ocr_results_this_frame, other_t1_results_this_frame)
-        ocr_rows_dict = self.gather_ocr_rows(ocr_results_this_frame)
-        ocr_left_cols_dict, ocr_right_cols_dict = self.gather_ocr_cols(ocr_results_this_frame)
-        app_rows, app_left_cols, app_right_cols = self.build_app_rowcol_data('fast')
+        self.ocr_results_this_frame = self.filter_results_by_t1_bounds(ocr_results_this_frame, other_t1_results_this_frame)
+        self.ocr_rows_dict = self.gather_ocr_rows()
+        self.ocr_left_cols_dict, self.ocr_right_cols_dict = self.gather_ocr_cols()
 
-        best_ocr_row_ids, best_ocr_row_score = \
-            self.fast_score_rowcol_data('row', app_rows, ocr_rows_dict, ocr_results_this_frame)
-        best_ocr_lcol_ids, best_ocr_lcol_score = \
-            self.fast_score_rowcol_data('left_col', app_left_cols, ocr_left_cols_dict, ocr_results_this_frame)
-        best_ocr_rcol_ids, best_ocr_rcol_score = \
-            self.fast_score_rowcol_data('right_col', app_right_cols, ocr_right_cols_dict, ocr_results_this_frame)
+        best_ocr_row_ids, best_ocr_row_score = self.fast_score_rowcol_data('row')
+        best_ocr_lcol_ids, best_ocr_lcol_score = self.fast_score_rowcol_data('left_col')
+        best_ocr_rcol_ids, best_ocr_rcol_score = self.fast_score_rowcol_data('right_col')
         total_score = best_ocr_lcol_score + best_ocr_rcol_score + best_ocr_row_score
         if total_score >= self.fast_pass_app_score_threshold:
             fast_pass = {
@@ -48,22 +46,16 @@ class DataSifter:
         if fast_pass:
             print('FAST PASS HAS A LEAD ON THE APP - fp match obj is {}'.format(fast_pass))
             # this is for debugging, we normally want to return the labels and positive rows/cols as stats, not t1 output
-            self.add_fast_pass_to_results(
-                fast_pass, ocr_results_this_frame, ocr_rows_dict, ocr_left_cols_dict, ocr_right_cols_dict
-            )
-            fast_pass_confirmed = self.confirm_fast_pass(
-                fast_pass, cv2_image, ocr_results_this_frame, ocr_rows_dict, ocr_left_cols_dict, ocr_right_cols_dict
-            )
+            self.add_fast_pass_to_results(fast_pass)
+            fast_pass_confirmed = self.confirm_fast_pass(fast_pass)
         if not fast_pass_confirmed:
-            slow_pass_confirmed = self.slow_pass_for_labels(
-                cv2_image, ocr_results_this_frame
-            )
+            slow_pass_confirmed = self.slow_pass_for_labels()
         if fast_pass_confirmed or slow_pass_confirmed:
-            self.build_match_results(return_mask, cv2_image, fast_pass_confirmed, slow_pass_confirmed)
+            self.build_match_results(return_mask, fast_pass_confirmed, slow_pass_confirmed)
 
         return self.all_zones, self.return_stats, return_mask
 
-    def fast_score_rowcol_data(self, rowcol_type, app_rowcols, ocr_rowcols_dict, ocr_results_this_frame):
+    def fast_score_rowcol_data(self, rowcol_type):
         # this takes a set of app and ocr rows, left cols or right cols (let's just talk about rows here, they all act the same)
         # order the ocr rows by ascending measure, e.g. ascending y
         # for each ocr row:
@@ -76,13 +68,23 @@ class DataSifter:
         #          (where 422 is the id of the ocr row that matched best against the first app row, and
         #           523 is the id of the ocr row that matched up best against the final app row.  The middle two app rows
         #           did not have anything that matched well enough to count.
+        if rowcol_type == 'row':
+            app_rowcols = self.app_rows
+            ocr_rowcols_dict = self.ocr_rows_dict
+        elif rowcol_type == 'left_col':
+            app_rowcols = self.app_left_cols
+            ocr_rowcols_dict = self.ocr_left_cols_dict
+        elif rowcol_type == 'right_col':
+            app_rowcols = self.app_right_cols
+            ocr_rowcols_dict = self.ocr_right_cols_dict
+
         sorted_keys = self.get_sorted_keys_for_ocr_rowcols(rowcol_type, ocr_rowcols_dict)
         ocr_rowcol_scores = []
         for ocr_rowcol_id in sorted_keys:
             ocr_rowcol = ocr_rowcols_dict[ocr_rowcol_id]
             app_rowcol_scores = []
             for app_rowcol in app_rowcols:
-                app_rowcol_score = self.fast_score_ocr_rowcol_to_app_rowcol(app_rowcol, ocr_rowcol, ocr_results_this_frame)
+                app_rowcol_score = self.fast_score_ocr_rowcol_to_app_rowcol(app_rowcol, ocr_rowcol)
                 app_rowcol_scores.append(app_rowcol_score)
             ocr_rowcol_scores.append(app_rowcol_scores)
         best_ocr_offsets, best_ocr_rowcol_score = self.scan_best_scores(ocr_rowcol_scores)
@@ -96,9 +98,7 @@ class DataSifter:
 
         return best_ocr_rowcol_ids, best_ocr_rowcol_score
 
-    def confirm_fast_pass(
-        self, fast_pass_match_obj, cv2_image, ocr_results_this_frame, ocr_rows_dict, ocr_left_cols_dict, ocr_right_cols_dict
-    ):
+    def confirm_fast_pass(self, fast_pass_match_obj):
         # if we matched on an item in some column and it's in a row that was not matched, add it as a match for that row.
         #   same for if it's in a row and the col didn't get picked up.
         # gather size info for ocr objects (get title sizes, standard text sizes, etc as defined in the spec)
@@ -129,13 +129,15 @@ class DataSifter:
             return build_ocr_results
         return ocr_results_this_frame
 
-    def fast_score_ocr_rowcol_to_app_rowcol(self, app_col, ocr_col, ocr_results_this_frame):
+    def fast_score_ocr_rowcol_to_app_rowcol(self, app_col, ocr_col):
         total_score = 0
         base_ocr_col = 0
         for app_col_obj in app_col:
+            if 'text' not in app_col_obj:
+                continue
             app_field_string = app_col_obj['text']
             for index, match_id in enumerate(ocr_col['member_ids'][base_ocr_col:]):
-                ocr_phrase = ocr_results_this_frame[match_id]['text']
+                ocr_phrase = self.ocr_results_this_frame[match_id]['text']
                 ratio = fuzz.ratio(app_field_string, ocr_phrase)
                 if ratio >= self.fuzz_match_threshold:
                     total_score += ratio
@@ -191,15 +193,15 @@ class DataSifter:
         }
         return build_obj
 
-    def gather_ocr_cols(self, ocr_results_this_frame):
+    def gather_ocr_cols(self):
         left_cols = {}
         right_cols = {}
-        sorted_ocr_keys = ocr_results_this_frame.keys()
+        sorted_ocr_keys = self.ocr_results_this_frame.keys()
 
-        sorted_ocr_keys = sorted(ocr_results_this_frame, key=lambda item: ocr_results_this_frame[item]['location'][1])
+        sorted_ocr_keys = sorted(self.ocr_results_this_frame, key=lambda item: self.ocr_results_this_frame[item]['location'][1])
 
         for match_id in sorted_ocr_keys:
-            ocr_match_obj = ocr_results_this_frame[match_id]
+            ocr_match_obj = self.ocr_results_this_frame[match_id]
             closest_left_col_id = None
             closest_right_col_id = None
             for class_id in left_cols:
@@ -232,14 +234,14 @@ class DataSifter:
 
         return left_cols, right_cols
 
-    def gather_ocr_rows(self, ocr_results_this_frame):
+    def gather_ocr_rows(self):
         rows = {}
-        sorted_ocr_keys = ocr_results_this_frame.keys()
+        sorted_ocr_keys = self.ocr_results_this_frame.keys()
 
-        sorted_ocr_keys = sorted(ocr_results_this_frame, key=lambda item: ocr_results_this_frame[item]['location'][0])
+        sorted_ocr_keys = sorted(self.ocr_results_this_frame, key=lambda item: self.ocr_results_this_frame[item]['location'][0])
 
         for match_id in sorted_ocr_keys:
-            match_obj = ocr_results_this_frame[match_id]
+            match_obj = self.ocr_results_this_frame[match_id]
             closest_class_id = None
             for class_id in rows:
                 row = rows[class_id]
@@ -306,10 +308,10 @@ class DataSifter:
             ]
         return start, end
 
-    def slow_pass_for_labels(self, cv2_image, ocr_results_this_frame):
+    def slow_pass_for_labels(self):
         pass
 
-    def build_match_results(self, return_mask, cv2_image, fast_pass_confirmed, slow_pass_confirmed):
+    def build_match_results(self, return_mask, fast_pass_confirmed, slow_pass_confirmed):
         pass
 
     def add_zone_to_response(self, zone_start, zone_end, ocr_member_ids=None, row_col_type=None):
@@ -331,44 +333,41 @@ class DataSifter:
             one_zone['row_column_type'] = row_col_type
         self.all_zones[one_zone['id']] = one_zone
 
-    def build_app_rowcol_data(self, pass_mode='fast'):
+    def build_app_rowcol_data(self):
         app_rows = []
         for row in self.app_data['rows']:
             app_row = []
             for item_id in row:
+                build_obj = {
+                    'app_id': item_id,
+                }
                 if self.app_data['items'][item_id]['type'] == 'label':
-                    build_obj = {
-                        'app_id': item_id,
-                        'text': self.app_data['items'][item_id]['text'],
-                    }
-                    app_row.append(build_obj)
-                    # if pass_mode=slow, add other types here
+                    build_obj['text'] = self.app_data['items'][item_id]['text']
+                app_row.append(build_obj)
             app_rows.append(app_row)
 
         app_left_cols = []
         for col in self.app_data['left_cols']:
             app_col = []
             for item_id in col:
+                build_obj = {
+                    'app_id': item_id,
+                }
                 if self.app_data['items'][item_id]['type'] == 'label':
-                    build_obj = {
-                        'app_id': item_id,
-                        'text': self.app_data['items'][item_id]['text'],
-                    }
-                    app_col.append(build_obj)
-                    # if pass_mode=slow, add other types here
+                    build_obj['text'] = self.app_data['items'][item_id]['text']
+                app_col.append(build_obj)
             app_left_cols.append(app_col)
 
         app_right_cols = []
         for col in self.app_data['right_cols']:
             app_col = []
             for item_id in col:
+                build_obj = {
+                    'app_id': item_id,
+                }
                 if self.app_data['items'][item_id]['type'] == 'label':
-                    build_obj = {
-                        'app_id': item_id,
-                        'text': self.app_data['items'][item_id]['text'],
-                    }
-                    app_col.append(build_obj)
-                    # if pass_mode=slow, add other types here
+                    build_obj['text'] = self.app_data['items'][item_id]['text']
+                app_col.append(build_obj)
             app_right_cols.append(app_col)
 
         return app_rows, app_left_cols, app_right_cols
@@ -439,16 +438,14 @@ class DataSifter:
             else:
                 return ocr_start[axis_index] - envelope_end[axis_index]
 
-    def add_fast_pass_to_results(
-        self, fast_pass_obj, ocr_results_this_frame, ocr_rows_dict, ocr_left_cols_dict, ocr_right_cols_dict
-    ):
+    def add_fast_pass_to_results(self, fast_pass_obj):
         for row_id in fast_pass_obj['row']['ids']:
             if not row_id: 
                 continue  # that means no ocr row matched the app row in that position
-            ocr_row = ocr_rows_dict[row_id]
+            ocr_row = self.ocr_rows_dict[row_id]
             self.add_zone_to_response(ocr_row['start'], ocr_row['end'])
             for ocr_match_id in ocr_row['member_ids']:
-                ocr_match_ele = ocr_results_this_frame[ocr_match_id]
+                ocr_match_ele = self.ocr_results_this_frame[ocr_match_id]
                 end_coords = [
                     ocr_match_ele['location'][0] + ocr_match_ele['size'][0],
                     ocr_match_ele['location'][1] + ocr_match_ele['size'][1]
@@ -456,14 +453,13 @@ class DataSifter:
                 # TODO remove this later, just saving the ocr items we are confident are matches
                 self.add_zone_to_response(ocr_match_ele['location'], end_coords)
 
-        lcol_dict = ocr_left_cols_dict
         for col_id in fast_pass_obj['left_col']['ids']:
             if not col_id: 
                 continue  # that means no ocr col matched the app col in that position
-            ocr_col = ocr_left_cols_dict[col_id]
+            ocr_col = self.ocr_left_cols_dict[col_id]
             self.add_zone_to_response(ocr_col['start'], ocr_col['end'])
             for ocr_match_id in ocr_col['member_ids']:
-                ocr_match_ele = ocr_results_this_frame[ocr_match_id]
+                ocr_match_ele = self.ocr_results_this_frame[ocr_match_id]
                 end_coords = [
                     ocr_match_ele['location'][0] + ocr_match_ele['size'][0],
                     ocr_match_ele['location'][1] + ocr_match_ele['size'][1]
@@ -474,10 +470,10 @@ class DataSifter:
         for col_id in fast_pass_obj['right_col']['ids']:
             if not col_id: 
                 continue  # that means no ocr col matched the app col in that position
-            ocr_col = ocr_right_cols_dict[col_id]
+            ocr_col = self.ocr_right_cols_dict[col_id]
             self.add_zone_to_response(ocr_col['start'], ocr_col['end'])
             for ocr_match_id in ocr_col['member_ids']:
-                ocr_match_ele = ocr_results_this_frame[ocr_match_id]
+                ocr_match_ele = self.ocr_results_this_frame[ocr_match_id]
                 end_coords = [
                     ocr_match_ele['location'][0] + ocr_match_ele['size'][0],
                     ocr_match_ele['location'][1] + ocr_match_ele['size'][1]
@@ -538,7 +534,7 @@ class DataSifter:
                 },
                 'a4': {
                     'type': 'label',
-                    'text': 'Offsers',
+                    'text': 'Offers',
                 },
                 'a5': {
                     'type': 'label',
