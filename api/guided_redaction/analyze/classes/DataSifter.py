@@ -60,7 +60,7 @@ class DataSifter:
         # order the ocr rows by ascending measure, e.g. ascending y
         # for each ocr row:
         #   compare it to each app row.  those are in a fixed order as defined in the app record.
-        #   so now you have something like this for each ocr row [277,0,0,123]
+        #   so now you have something like this for each ocr row ['277','','','123']
         #         (where there are 4 app rows, and you scored 277 against the first, and 123 against the last)
         # when done with all ocr rows,
         #   for each app row, find the ocr row that matched best with it.  note that ocr rows key, or '' if nothing matched 
@@ -79,18 +79,18 @@ class DataSifter:
             ocr_rowcols_dict = self.ocr_right_cols_dict
 
         sorted_keys = self.get_sorted_keys_for_ocr_rowcols(rowcol_type, ocr_rowcols_dict)
-        ocr_rowcol_scores = []
+        self.ocr_rowcol_scores = []
         for ocr_rowcol_id in sorted_keys:
             ocr_rowcol = ocr_rowcols_dict[ocr_rowcol_id]
             app_rowcol_scores = []
             for app_rowcol in app_rowcols:
                 app_rowcol_score = self.fast_score_ocr_rowcol_to_app_rowcol(app_rowcol, ocr_rowcol)
                 app_rowcol_scores.append(app_rowcol_score)
-            ocr_rowcol_scores.append(app_rowcol_scores)
-        best_ocr_offsets, best_ocr_rowcol_score = self.scan_best_scores(ocr_rowcol_scores)
+            self.ocr_rowcol_scores.append(app_rowcol_scores)
+        best_ocr_offsets, best_ocr_rowcol_score = self.scan_best_scores()
         best_ocr_rowcol_ids = []
         for app_rowcol_offset, x in enumerate(best_ocr_offsets):
-            rowcol_score = ocr_rowcol_scores[x][app_rowcol_offset]
+            rowcol_score = self.ocr_rowcol_scores[x][app_rowcol_offset]
             if rowcol_score > 0:
                 best_ocr_rowcol_ids.append(sorted_keys[x])
             else:
@@ -110,10 +110,13 @@ class DataSifter:
         #   use the spacing between two recognized rows to get a sense of scale compared to app ref coords
         #   some features should be designed as landmarks, things that scale in a predictable way, e.g. certain row heights 
         #   if there is a big consensus, fire any dissenters
+        # enforce rowcol rules, like you'll only see these or those
 
 
         # if we matched on an item in some column and it's in a row that was not matched, add it as a match for that row.
         #   same for if it's in a row and the col didn't get picked up.
+        self.tie_detected_rowcol_elements()
+
         # gather size info for ocr objects (get title sizes, standard text sizes, etc as defined in the spec)
         # gather background color near some of the labels (as specified in the app spec)
         # look for conflicts in fast_pass_match_obj, rule out rows/cols which break things
@@ -129,6 +132,28 @@ class DataSifter:
         print('confirmed rows {}'.format(self.app_rows))
         print('confirmed left cols {}'.format(self.app_left_cols))
         print('confirmed right cols {}'.format(self.app_right_cols))
+
+    def tie_detected_rowcol_elements(self):
+        found_app_ids = {}
+        self.get_ids_for_one_rowcol_type(found_app_ids, 'row')
+        self.get_ids_for_one_rowcol_type(found_app_ids, 'left_col')
+        self.get_ids_for_one_rowcol_type(found_app_ids, 'right_col')
+
+        # TODO use the found ids to insert ocr_id values where they might habe been missed
+
+    def get_ids_for_one_rowcol_type(self, found_app_ids, rowcol_type):
+        app_rowcols = []
+        if rowcol_type == 'row':
+            app_rowcols = self.app_rows
+        elif rowcol_type == 'left_col':
+            app_rowcols = self.app_left_cols
+        elif rowcol_type == 'right_col':
+            app_rowcols = self.app_right_cols
+
+        for app_rowcol in app_rowcols:
+            for rowcol_ele in app_rowcol:
+                if 'ocr_id' in rowcol_ele:
+                    found_app_ids[rowcol_ele['app_id']] = rowcol_ele['ocr_id']
 
     def slow_score_all_of_one_type_of_rowcol(self, fast_pass_match_obj, rc_type):
         if not fast_pass_match_obj[rc_type]:
@@ -162,9 +187,7 @@ class DataSifter:
                     ratio = fuzz.ratio(app_element['text'], ocr_match_ele['text'])
                     if ratio >= self.fuzz_match_threshold:
                         base_ocr_col += index+1
-#                        print('  - ITS A LABEL MATCH')
-                        app_row_element['ocr_id'] = ocr_match_id
-                        break
+#                        print('  - ITS A LABEL MATCH') app_row_element['ocr_id'] = ocr_match_id break
                 elif app_element['type'] == 'user_data':
                         # a simple greedy algo for first cut, just pass the first element you see
                         #   we will be qualifying these soon by font size, field length
@@ -190,7 +213,7 @@ class DataSifter:
                     break
         return total_score
 
-    def scan_best_scores(self, scores, enforce_order=True):
+    def scan_best_scores(self, enforce_order=True):
 #    step through left col bests by each left col, see if we can find a highest path score
 # with 3 app left cols and 7 ocr matches cols it looks like this:
 #  ocr col1 [259, 0, 0]
@@ -204,11 +227,119 @@ class DataSifter:
 #     also, 4 MUST be higher than 2, and 5 MUST be higher than 4.  these are the order of the columns.
 #   if not you want to say [7, 4, 5]  if we know that certain cols can float depending on page size, and order doesn't matter
 # 
+#
+#        only valid combos are:
+#        skip/[nonzero scores for col 1 on an index ladder]
+#        skip/[nonzero scores for col 2 on an index ladder]
+#        skip/[nonzero scores for col 3 on an index ladder]
+#        skip/[nonzero scores for col 4 on an index ladder]
+#
+#        todo: score the legal paths through this:
+#        S S S S
+#        2 3 1 1
+#        5   3 4
+#            9
+#
+#  ** use recursion to get legal options forward from any point
+#     e.g. app col 2 = S3. so 2,0=S, 2,1=3  glo(2, 1) = [S, 4], [9, S], [S, S]
+#  so, always skip to the end, or [S, S]
+#  also, skip+anything higher for the last
+#  also, anything higher next plus skips the rest of the way to the end
+#
+#  self.scores is a 2d array accessed by x, y, so (col_num, row_num)
+#  self.paths is where we write the answers in form (1, 2, 6, -1)
+#
+#  get_all_paths_forward(self, caller_list, this_row_num, this_col_num)
+#    new_list = caller_list.append(this_row_num)
+#    if this_col_num >= (self.scores[0].length-1):    # we're in the final column
+#        self.paths.append(new_list)
+#        return
+#    get_all_paths_forward(new_list, -1, this_col_num+1)
+#    for next_row_num in range(this_row_num+1, num_score_rows):
+#        if self.scores[this_row_num+1] > 0:
+#            self.get_all_paths_forward(new_list, -1, this_col_num+1)
+
+        self.paths = []
+        self.print_app_ocr_scores_matrix()
+        # if we have no rows or cols, bail
+        # if we have one col (so only one app_rowcol defined), build for this col only and bail
+        # else we have multi app_rowcols
+        self.get_all_paths_forward([], -1, 0) # handle the 'skip first col' case
+        for row_number, ocr_score_row in enumerate(self.ocr_rowcol_scores):
+            if ocr_score_row and ocr_score_row[0]:
+                self.get_all_paths_forward([], row_number, 0) # handle the 'skip first col' case
+
+        self.print_all_paths()
+        
+        
         total_score = 0
-        winning_cols = np.argmax(scores, 0)
+        winning_cols = np.argmax(self.ocr_rowcol_scores, 0)
         for app_col_num, ocr_col_num in enumerate(winning_cols):
-            total_score += scores[ocr_col_num][app_col_num]
+            total_score += self.ocr_rowcol_scores[ocr_col_num][app_col_num]
+        print('-- winners are ========')
+        print(winning_cols)
         return winning_cols, total_score
+
+    def get_score_for_path(self, path):
+        total = 0
+        for app_row_num, ocr_row_num in enumerate(path):
+            if ocr_row_num != -1:
+                total += self.ocr_rowcol_scores[ocr_row_num][app_row_num]
+        return total
+
+    def get_all_paths_forward(self, caller_list, this_row_num, this_col_num):
+        #  let's say you have 4 app rows defined 6 ocr rows detcted and a scores matrix like this 
+        #    [0   0   0   117]   so this row reads ocr row 0 scored 0 against app row 1... and 117 against app row 3
+        #    [98  0   0   0  ]
+        #    [224 0   0   0  ]
+        #    [0   85  0   0  ]
+        #    [0   0   0   81 ]
+        #
+        #  we want to boil that matrix down to its possible paths across it.  Here are the rules.  moving left to right 
+        #    as you match on a given ocr row, you can only use higher ocr rows or 'skip ocr row'.  It's how we say that rows
+        #    are ordered in ascending app order and ascending ocr.  
+        #  so if the above score matrix can be cast as the below columns of 'ocr cols we'd like to try':
+        #    S S S S
+        #    1 3   0
+        #    2     4
+        #              
+        # we wish to come up with a list of left-to-right traversals of those ocr cols, so we want this, 
+        #   where -1 means skip that ocr col
+        # -1 -1 -1 -1
+        # -1 -1 -1 0
+        # -1 -1 -1 4
+        # -1 3 -1 -1
+        # -1 3 -1 0
+        # -1 3 -1 4
+        # then these same rows repeated with a first col value of 1 and then 2
+
+        new_list = [*caller_list, this_row_num]
+        if this_col_num >= (len(self.ocr_rowcol_scores[0])-1):    # we're in the final column
+            self.paths.append(new_list)
+            return
+        next_col_num = this_col_num+1
+        self.get_all_paths_forward(new_list, -1, next_col_num)
+        if caller_list:
+            start_row = max(caller_list) + 1 # have to do this because prev might be -1 ie skipped
+        else:
+            start_row = 0
+        for next_row_num in range(start_row, len(self.ocr_rowcol_scores)):
+            if self.ocr_rowcol_scores[next_row_num][next_col_num] > 0:
+                self.get_all_paths_forward(new_list, next_row_num, next_col_num)
+
+    def print_app_ocr_scores_matrix(self):
+        print('== APP OCR SCORES MATRIX')
+        [print(rc) for rc in self.ocr_rowcol_scores]
+
+    def print_all_paths(self):
+        print('== ALL LEGAL PATHS THROUGH APP OCR SCORES MATRIX')
+        for one_path in self.paths:
+            total = 0
+            score = self.get_score_for_path(one_path)
+            print('one path is {} score is {}'.format(one_path, score))
+            for app_col_num, ocr_col_num in enumerate(one_path):
+                if ocr_col_num != -1:
+                    total += self.ocr_rowcol_scores[ocr_col_num][app_col_num]
 
     def get_sorted_keys_for_ocr_rowcols(self, group_type, ocr_row_or_col_dict):
         if group_type == 'left_col':
@@ -568,6 +699,7 @@ class DataSifter:
 # shapes - stuff like gutters and fields of color, build a shared logic from what is used in selection grower
 # anchors?  I'd like to hold base64 strings apart from the primary data structure, better for eyeballing output
 # landmarks - like a star chart, a few of these can orient you in the form, even if they scale
+# rowcol_rules.  things like you'll only see app rows 6,7,8 or 9,10,11 but never items from BOTH at the same time
         build_obj = {
             'rows': [
                 ['a1', 'a2', 'a3', 'a4', 'a5', 'a6'], 
