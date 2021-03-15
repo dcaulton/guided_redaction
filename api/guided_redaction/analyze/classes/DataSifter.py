@@ -90,6 +90,9 @@ class DataSifter:
         best_ocr_offsets, best_ocr_rowcol_score = self.scan_best_scores()
         best_ocr_rowcol_ids = []
         for app_rowcol_offset, x in enumerate(best_ocr_offsets):
+            if x == -1:
+                best_ocr_rowcol_ids.append('')
+                continue
             rowcol_score = self.ocr_rowcol_scores[x][app_rowcol_offset]
             if rowcol_score > 0:
                 best_ocr_rowcol_ids.append(sorted_keys[x])
@@ -179,20 +182,17 @@ class DataSifter:
             app_element = self.app_data['items'][app_item_id]
             #TODO clear out the ocr_id and found_text first, we want to be able to run this method multiple times
             #  on the same row after findings have been massaged e.g. by geometric data or a match on a related rowcol
-#            print(' - one app row field, {}'.format(app_element))
             for index, ocr_match_id in enumerate(ocr_row['member_ids'][base_ocr_col:]):
                 ocr_match_ele = self.ocr_results_this_frame[ocr_match_id]
-#                print('  - trying ocr ele {}'.format(ocr_match_ele['text']))
                 if app_element['type'] == 'label':
                     ratio = fuzz.ratio(app_element['text'], ocr_match_ele['text'])
                     if ratio >= self.fuzz_match_threshold:
                         base_ocr_col += index+1
-#                        print('  - ITS A LABEL MATCH') app_row_element['ocr_id'] = ocr_match_id break
+                        app_row_element['ocr_id'] = ocr_match_id
                 elif app_element['type'] == 'user_data':
                         # a simple greedy algo for first cut, just pass the first element you see
                         #   we will be qualifying these soon by font size, field length
                         base_ocr_col += index+1
-#                        print('  - ITS A USERDATA MATCH')
                         app_row_element['ocr_id'] = ocr_match_id
                         app_row_element['found_value'] = ocr_match_ele['text'].rstrip()
                         break
@@ -214,51 +214,6 @@ class DataSifter:
         return total_score
 
     def scan_best_scores(self, enforce_order=True):
-#    step through left col bests by each left col, see if we can find a highest path score
-# with 3 app left cols and 7 ocr matches cols it looks like this:
-#  ocr col1 [259, 0, 0]
-#  ocr col2 [350, 0, 0]
-#  ocr col3 [0, 179, 0]
-#  ocr col4 [0, 324, 0]
-#  ocr col5 [0, 0, 244]
-#  ocr col6 [0, 0, 194]
-#  ocr col7 [734, 0, 0]
-#   if we need to enforce the order. you want to say [2, 4, 5] because it gives us the best overall score across all ocr and app rows
-#     also, 4 MUST be higher than 2, and 5 MUST be higher than 4.  these are the order of the columns.
-#   if not you want to say [7, 4, 5]  if we know that certain cols can float depending on page size, and order doesn't matter
-# 
-#
-#        only valid combos are:
-#        skip/[nonzero scores for col 1 on an index ladder]
-#        skip/[nonzero scores for col 2 on an index ladder]
-#        skip/[nonzero scores for col 3 on an index ladder]
-#        skip/[nonzero scores for col 4 on an index ladder]
-#
-#        todo: score the legal paths through this:
-#        S S S S
-#        2 3 1 1
-#        5   3 4
-#            9
-#
-#  ** use recursion to get legal options forward from any point
-#     e.g. app col 2 = S3. so 2,0=S, 2,1=3  glo(2, 1) = [S, 4], [9, S], [S, S]
-#  so, always skip to the end, or [S, S]
-#  also, skip+anything higher for the last
-#  also, anything higher next plus skips the rest of the way to the end
-#
-#  self.scores is a 2d array accessed by x, y, so (col_num, row_num)
-#  self.paths is where we write the answers in form (1, 2, 6, -1)
-#
-#  get_all_paths_forward(self, caller_list, this_row_num, this_col_num)
-#    new_list = caller_list.append(this_row_num)
-#    if this_col_num >= (self.scores[0].length-1):    # we're in the final column
-#        self.paths.append(new_list)
-#        return
-#    get_all_paths_forward(new_list, -1, this_col_num+1)
-#    for next_row_num in range(this_row_num+1, num_score_rows):
-#        if self.scores[this_row_num+1] > 0:
-#            self.get_all_paths_forward(new_list, -1, this_col_num+1)
-
         self.paths = []
         self.print_app_ocr_scores_matrix()
         # if we have no rows or cols, bail
@@ -270,16 +225,31 @@ class DataSifter:
                 self.get_all_paths_forward([], row_number, 0) # handle the 'skip first col' case
 
         self.print_all_paths()
-        
-        
-        total_score = 0
-        winning_cols = np.argmax(self.ocr_rowcol_scores, 0)
-        for app_col_num, ocr_col_num in enumerate(winning_cols):
-            total_score += self.ocr_rowcol_scores[ocr_col_num][app_col_num]
-        print('-- winners are ========')
-        print(winning_cols)
-        return winning_cols, total_score
 
+        best_total = 0
+        best_path = []
+        for one_path in self.paths:
+            score = self.get_score_for_path(one_path)
+            if score > best_total:
+                best_total = score
+                best_path = one_path
+        
+        if self.debug:
+            print('-- winners are ========')
+            print(best_path)
+
+# below is the naive way we used to solve best scores.  It was broken because it couldn't force ocr cols
+#   to be in ascending order, but it's still instructive.  Delete when no longer useful
+#       total_score = 0
+#       winning_cols = np.argmax(self.ocr_rowcol_scores, 0)
+#       for app_col_num, ocr_col_num in enumerate(winning_cols):
+#           total_score += self.ocr_rowcol_scores[ocr_col_num][app_col_num]
+#       print('-- winners are ========')
+#       print(winning_cols)
+#       return winning_cols, total_score
+
+        return best_path, best_total
+        
     def get_score_for_path(self, path):
         total = 0
         for app_row_num, ocr_row_num in enumerate(path):
@@ -288,30 +258,35 @@ class DataSifter:
         return total
 
     def get_all_paths_forward(self, caller_list, this_row_num, this_col_num):
-        #  let's say you have 4 app rows defined 6 ocr rows detcted and a scores matrix like this 
-        #    [0   0   0   117]   so this row reads ocr row 0 scored 0 against app row 1... and 117 against app row 3
+        #  let's say you have 4 app rows defined, and 6 ocr rows detcted with a scores matrix like this 
+        #    [0   0   0   117]   so this row reads ocr row 0 scored 0 against app row 0... and 117 against app row 3
         #    [98  0   0   0  ]
         #    [224 0   0   0  ]
         #    [0   85  0   0  ]
         #    [0   0   0   81 ]
         #
         #  we want to boil that matrix down to its possible paths across it.  Here are the rules.  moving left to right 
-        #    as you match on a given ocr row, you can only use higher ocr rows or 'skip ocr row'.  It's how we say that rows
-        #    are ordered in ascending app order and ascending ocr.  
-        #  so if the above score matrix can be cast as the below columns of 'ocr cols we'd like to try':
-        #    S S S S
-        #    1 3   0
-        #    2     4
+        #    as you match on a given ocr row, all subsequent app rows can only use higher ocr rows or 'skip ocr row'.  
+        #  It's this rule that lets us leverage our knowledge of what rows come before other ones. 
+        # 
+        #  So if the above score matrix can be cast as the below columns of 'ocr cols we'd like to try', we have 
+        #   -1 -1 -1 -1 
+        #    1  3     0
+        #    2        4
+        #  where -1 means dont match this app row against any ocr row
         #              
         # we wish to come up with a list of left-to-right traversals of those ocr cols, so we want this, 
-        #   where -1 means skip that ocr col
+        #   where -1 means match that app row against none of the ocr rows
         # -1 -1 -1 -1
-        # -1 -1 -1 0
-        # -1 -1 -1 4
-        # -1 3 -1 -1
-        # -1 3 -1 0
-        # -1 3 -1 4
+        # -1 -1 -1  0
+        # -1 -1 -1  4
+        # -1  3 -1 -1
+        # -1  3 -1  0
+        # -1  3 -1  4
         # then these same rows repeated with a first col value of 1 and then 2
+        #
+        # after we have these traversals, it's a simple matter to use them to determine the maximum valued traversal
+        #   across a scores matrix that will normally be very sparse (so n**2 approaches would be much too wasteful)
 
         new_list = [*caller_list, this_row_num]
         if this_col_num >= (len(self.ocr_rowcol_scores[0])-1):    # we're in the final column
@@ -328,18 +303,20 @@ class DataSifter:
                 self.get_all_paths_forward(new_list, next_row_num, next_col_num)
 
     def print_app_ocr_scores_matrix(self):
-        print('== APP OCR SCORES MATRIX')
-        [print(rc) for rc in self.ocr_rowcol_scores]
+        if self.debug:
+            print('== APP OCR SCORES MATRIX')
+            [print(rc) for rc in self.ocr_rowcol_scores]
 
     def print_all_paths(self):
-        print('== ALL LEGAL PATHS THROUGH APP OCR SCORES MATRIX')
-        for one_path in self.paths:
-            total = 0
-            score = self.get_score_for_path(one_path)
-            print('one path is {} score is {}'.format(one_path, score))
-            for app_col_num, ocr_col_num in enumerate(one_path):
-                if ocr_col_num != -1:
-                    total += self.ocr_rowcol_scores[ocr_col_num][app_col_num]
+        if self.debug:
+            print('== ALL LEGAL PATHS THROUGH APP OCR SCORES MATRIX')
+            for one_path in self.paths:
+                total = 0
+                score = self.get_score_for_path(one_path)
+                print('one path is {} score is {}'.format(one_path, score))
+                for app_col_num, ocr_col_num in enumerate(one_path):
+                    if ocr_col_num != -1:
+                        total += self.ocr_rowcol_scores[ocr_col_num][app_col_num]
 
     def get_sorted_keys_for_ocr_rowcols(self, group_type, ocr_row_or_col_dict):
         if group_type == 'left_col':
@@ -632,6 +609,8 @@ class DataSifter:
         return ocr_results_this_frame
 
     def add_fast_pass_to_results(self, fast_pass_obj):
+        if not self.debug:
+            return
         for row_id in fast_pass_obj['row']['ids']:
             if not row_id: 
                 continue  # that means no ocr row matched the app row in that position
