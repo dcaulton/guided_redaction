@@ -142,7 +142,6 @@ class DataSifterControls extends React.Component {
       debug: false,
       app_dictionary: {},
       scale: '1:1',
-      show_type: 'all',
       include_ocr_job_id: '',
       attributes: {},
       scan_level: 'tier_2',
