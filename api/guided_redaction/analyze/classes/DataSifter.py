@@ -440,8 +440,8 @@ class DataSifter:
             build_classes[row_class_id] = {
                 'start': existing_classes[row_class_id]['start'], 
                 'end': existing_classes[row_class_id]['end'], 
-                'ocr_member_ids': existing_classes[row_class_id]['member_ids'],
                 'row_column_type': row_col_type,
+                'ocr_member_ids': existing_classes[row_class_id]['member_ids'],
             }
             if self.debug:
                 self.add_zone_to_response(
@@ -451,13 +451,7 @@ class DataSifter:
                     row_col_type,
                 )
 
-        group_name = 'undefined_35a4'
-        if row_col_type == 'row': 
-            group_name = 'rows'
-        elif row_col_type == 'right_col': 
-            group_name = 'right_columns'
-        elif row_col_type == 'left_col': 
-            group_name = 'left_columns'
+        group_name = row_col_type + 's'
         self.return_stats[group_name] = build_classes
 
     def point_is_in_t1_region(self, coords, t1_match_obj):
@@ -637,7 +631,6 @@ class DataSifter:
             if not row_id: 
                 continue  # that means no ocr row matched the app row in that position
             ocr_row = self.ocr_rows_dict[row_id]
-            self.add_zone_to_response(ocr_row['start'], ocr_row['end'])
             for ocr_match_id in ocr_row['member_ids']:
                 ocr_match_ele = self.ocr_results_this_frame[ocr_match_id]
                 end_coords = [
@@ -645,13 +638,12 @@ class DataSifter:
                     ocr_match_ele['location'][1] + ocr_match_ele['size'][1]
                 ]
                 # TODO remove this later, just saving the ocr items we are confident are matches
-                self.add_zone_to_response(ocr_match_ele['location'], end_coords)
+                self.add_zone_to_response(ocr_match_ele['location'], end_coords, [], 'fast_pass_anchor')
 
         for col_id in fast_pass_obj['left_col']['ids']:
             if not col_id: 
                 continue  # that means no ocr col matched the app col in that position
             ocr_col = self.ocr_left_cols_dict[col_id]
-            self.add_zone_to_response(ocr_col['start'], ocr_col['end'])
             for ocr_match_id in ocr_col['member_ids']:
                 ocr_match_ele = self.ocr_results_this_frame[ocr_match_id]
                 end_coords = [
@@ -659,13 +651,12 @@ class DataSifter:
                     ocr_match_ele['location'][1] + ocr_match_ele['size'][1]
                 ]
                 # TODO remove this later, just saving the ocr items we are confident are matches
-                self.add_zone_to_response(ocr_match_ele['location'], end_coords)
+                self.add_zone_to_response(ocr_match_ele['location'], end_coords, [], 'fast_pass_anchor')
 
         for col_id in fast_pass_obj['right_col']['ids']:
             if not col_id: 
                 continue  # that means no ocr col matched the app col in that position
             ocr_col = self.ocr_right_cols_dict[col_id]
-            self.add_zone_to_response(ocr_col['start'], ocr_col['end'])
             for ocr_match_id in ocr_col['member_ids']:
                 ocr_match_ele = self.ocr_results_this_frame[ocr_match_id]
                 end_coords = [
@@ -673,7 +664,7 @@ class DataSifter:
                     ocr_match_ele['location'][1] + ocr_match_ele['size'][1]
                 ]
                 # TODO remove this later, just saving the ocr items we are confident are matches
-                self.add_zone_to_response(ocr_match_ele['location'], end_coords)
+                self.add_zone_to_response(ocr_match_ele['location'], end_coords, [], 'fast_pass_anchor')
 
     def get_app_data(self):
 #   ITEM FIELDS:

@@ -116,7 +116,6 @@ class InsightsPanel extends React.Component {
   }
 
   setScrubberToNextTier1Hit(scanner_type, movie_url) {
-console.log('ORANGIPPLE', scanner_type, movie_url)
     if (!movie_url) {
       movie_url = this.props.active_movie_url
     }

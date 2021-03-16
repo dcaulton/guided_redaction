@@ -26,6 +26,7 @@ class DataSifterControls extends React.Component {
       debug: false,
       app_dictionary: {},
       scale: '1:1',
+      show_type: 'all',
       include_ocr_job_id: '',
       attributes: {},
       scan_level: 'tier_2',
@@ -35,6 +36,21 @@ class DataSifterControls extends React.Component {
     }
     this.getDataSifterFromState=this.getDataSifterFromState.bind(this)
     this.setLocalStateVar=this.setLocalStateVar.bind(this)
+    this.getShowType=this.getShowType.bind(this)
+  }
+
+  getShowType() {
+    return this.state.show_type
+  }
+
+  buildShowType() {
+    return buildLabelAndDropdown(
+      [{'all': 'all'}, {'mask_items': 'mask_items'}, {'rows':'rows'}, {'left_cols':'left_cols'}, {'right_cols': 'right_cols'}, {'fast_pass_anchors': 'fast_pass_anchors'}],
+      'Display Objects of This Type:',
+      this.state.show_type,
+      'show_type',
+      ((value)=>{this.setLocalStateVar('show_type', value)})
+    )
   }
 
   buildToggleField(field_name, label) {
@@ -66,6 +82,7 @@ class DataSifterControls extends React.Component {
 
   componentDidMount() {
     this.loadNewDataSifter()
+    this.props.addInsightsCallback('getDataSifterShowType', this.getShowType)
   }
 
   setLocalStateVar(var_name, var_value, when_done=(()=>{})) {
@@ -125,6 +142,7 @@ class DataSifterControls extends React.Component {
       debug: false,
       app_dictionary: {},
       scale: '1:1',
+      show_type: 'all',
       include_ocr_job_id: '',
       attributes: {},
       scan_level: 'tier_2',
@@ -404,6 +422,7 @@ class DataSifterControls extends React.Component {
     const ocr_job_id_dropdown = this.buildOcrMatchIdField()
     const fake_data_checkbox = this.buildToggleField('fake_data', 'Generate Fake Data')
     const debug_checkbox = this.buildToggleField('debug', 'Debug')
+    const show_type_dropdown = this.buildShowType()
     const attributes_list = this.buildAttributesList()
     const scan_level_dropdown = this.buildScanLevelDropdown2()
     const run_button = this.buildRunButtonWrapper()
@@ -460,6 +479,10 @@ class DataSifterControls extends React.Component {
 
                 <div className='row mt-2'>
                   {debug_checkbox}
+                </div>
+
+                <div className='row mt-2'>
+                  {show_type_dropdown}
                 </div>
 
                 <div className='row mt-2'>

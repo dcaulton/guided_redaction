@@ -23,6 +23,7 @@ class CanvasInsightsOverlay extends React.Component {
     this.mesh_match_color = '#C93'
     this.selection_grower_fill_color = '#A83'
     this.data_sifter_fill_color = '#3BC'
+    this.data_sifter_rowcol_fill_color = '#A9C'
     this.selected_area_center_color = '#9F3'
     this.ocr_color = '#CC0'
     this.area_to_redact_color = '#D6D'
@@ -90,7 +91,62 @@ class CanvasInsightsOverlay extends React.Component {
   }
 
   drawDataSifterZones() {
-    this.drawTier1Matches('data_sifter', this.data_sifter_fill_color, this.red_color) 
+    let matches = this.props.getTier1ScannerMatches('data_sifter')
+    if (!matches) {
+      return
+    }
+    const show_type = this.props.runCallbackFunction('getDataSifterShowType')
+    const canvas = this.refs.insights_canvas
+    let ctx = canvas.getContext('2d')
+    for (let i=0; i < Object.keys(matches).length; i++) {
+      const match_key = Object.keys(matches)[i]
+      const match = matches[match_key]
+      const resp_obj = this.getScaledStartAndSizeFromMatchObject(match) 
+      const start_x = resp_obj[0]
+      const start_y = resp_obj[1]
+      const width = resp_obj[2]
+      const height = resp_obj[3]
+      if (show_type === 'all' && Object.keys(match).includes('row_column_type')) {
+        this.drawAlphaBoxAndBorder(
+          canvas, ctx, this.data_sifter_rowcol_fill_color, this.red_color, start_x, start_y, width, height
+        ) 
+      } else if (show_type === 'all' && !Object.keys(match).includes('row_column_type')) {
+        this.drawAlphaBoxAndBorder(
+          canvas, ctx, this.data_sifter_fill_color, this.red_color, start_x, start_y, width, height
+        ) 
+      } else if (show_type === 'mask_items' && !Object.keys(match).includes('row_column_type')) {
+        this.drawAlphaBoxAndBorder(
+          canvas, ctx, this.data_sifter_fill_color, this.red_color, start_x, start_y, width, height
+        ) 
+      } else if (show_type === 'rows' && 
+        Object.keys(match).includes('row_column_type') && match['row_column_type'] === 'row') 
+      {
+        this.drawAlphaBoxAndBorder(
+          canvas, ctx, this.data_sifter_rowcol_fill_color, this.red_color, start_x, start_y, width, height
+        ) 
+      } else if (
+        show_type === 'left_cols' && 
+        Object.keys(match).includes('row_column_type') && match['row_column_type'] === 'left_col'
+      ) {
+        this.drawAlphaBoxAndBorder(
+          canvas, ctx, this.data_sifter_rowcol_fill_color, this.red_color, start_x, start_y, width, height
+        ) 
+      } else if (
+          show_type === 'right_cols' && 
+          Object.keys(match).includes('row_column_type') && match['row_column_type'] === 'right_col'
+      ) {
+        this.drawAlphaBoxAndBorder(
+          canvas, ctx, this.data_sifter_rowcol_fill_color, this.red_color, start_x, start_y, width, height
+        ) 
+      } else if (
+          show_type === 'fast_pass_anchors' && 
+          Object.keys(match).includes('row_column_type') && match['row_column_type'] === 'fast_pass_anchor'
+      ) {
+        this.drawAlphaBoxAndBorder(
+          canvas, ctx, this.data_sifter_rowcol_fill_color, this.red_color, start_x, start_y, width, height
+        ) 
+      }
+    }
   }
 
   drawSelectionGrowerZones() {
@@ -388,34 +444,47 @@ class CanvasInsightsOverlay extends React.Component {
     for (let i=0; i < Object.keys(matches).length; i++) {
       let anchor_id = Object.keys(matches)[i]
       let match = matches[anchor_id]
-      let start = match['location']
-      if (Object.keys(match).includes('start')) {
-        start = match['start']
-      }
-      let template_scale = 1
-      if (Object.keys(match).includes('scale')) {
-        template_scale = parseFloat(match['scale'])
-      }
-      let size=[500,800]
-      if (Object.keys(match).includes('size')) {
-        size = match['size']
-      } else if (Object.keys(match).includes('start')) {
-        const x = match['end'][0] - match['start'][0]
-        const y = match['end'][1] - match['start'][1]
-        size = [x, y]
-      }
-      
-      const start_x_scaled = start[0] * this.props.insights_image_scale 
-      const start_y_scaled = start[1] * this.props.insights_image_scale
-      const width_scaled = size[0] * this.props.insights_image_scale / template_scale
-      const height_scaled = size[1] * this.props.insights_image_scale / template_scale
-      ctx.fillStyle = fill_color
-      ctx.globalAlpha = 0.4
-      ctx.fillRect(start_x_scaled, start_y_scaled, width_scaled, height_scaled)
-      ctx.strokeStyle = edge_color
-      ctx.lineWidth = 3
-      ctx.strokeRect(start_x_scaled, start_y_scaled, width_scaled, height_scaled)
+      const resp_obj = this.getScaledStartAndSizeFromMatchObject(match) 
+      const start_x_scaled = resp_obj[0]
+      const start_y_scaled = resp_obj[1]
+      const width_scaled = resp_obj[2]
+      const height_scaled = resp_obj[3]
+      this.drawAlphaBoxAndBorder(canvas, ctx, fill_color, edge_color, start_x_scaled, start_y_scaled, width_scaled, height_scaled)
     }
+  }
+
+  getScaledStartAndSizeFromMatchObject(match) {
+    let start = match['location']
+    if (Object.keys(match).includes('start')) {
+      start = match['start']
+    }
+    let template_scale = 1
+    if (Object.keys(match).includes('scale')) {
+      template_scale = parseFloat(match['scale'])
+    }
+    let size=[500,800]
+    if (Object.keys(match).includes('size')) {
+      size = match['size']
+    } else if (Object.keys(match).includes('start')) {
+      const x = match['end'][0] - match['start'][0]
+      const y = match['end'][1] - match['start'][1]
+      size = [x, y]
+    }
+    
+    const start_x_scaled = start[0] * this.props.insights_image_scale 
+    const start_y_scaled = start[1] * this.props.insights_image_scale
+    const width_scaled = size[0] * this.props.insights_image_scale / template_scale
+    const height_scaled = size[1] * this.props.insights_image_scale / template_scale
+    return [start_x_scaled, start_y_scaled, width_scaled, height_scaled]
+  }
+
+  drawAlphaBoxAndBorder(canvas, ctx, fill_color, edge_color, start_x, start_y, width, height) {
+    ctx.fillStyle = fill_color
+    ctx.globalAlpha = 0.4
+    ctx.fillRect(start_x, start_y, width, height)
+    ctx.strokeStyle = edge_color
+    ctx.lineWidth = 3
+    ctx.strokeRect(start_x, start_y, width, height)
   }
 
   drawScannerOrigins() {
