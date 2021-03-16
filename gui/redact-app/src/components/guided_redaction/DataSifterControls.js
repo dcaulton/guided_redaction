@@ -28,6 +28,7 @@ class DataSifterControls extends React.Component {
       scale: '1:1',
       show_type: 'all',
       include_ocr_job_id: '',
+      include_template_job_id: '',
       attributes: {},
       scan_level: 'tier_2',
       attribute_search_name: '',
@@ -119,6 +120,7 @@ class DataSifterControls extends React.Component {
         app_dictionary: sam['app_dictionary'],
         scale: sam['scale'],
         include_ocr_job_id: sam['include_ocr_job_id'],
+        include_template_job_id: sam['include_template_job_id'],
         attributes: sam['attributes'],
         scan_level: sam['scan_level'],
       })
@@ -143,6 +145,7 @@ class DataSifterControls extends React.Component {
       app_dictionary: {},
       scale: '1:1',
       include_ocr_job_id: '',
+      include_template_job_id: '',
       attributes: {},
       scan_level: 'tier_2',
     })
@@ -157,6 +160,7 @@ class DataSifterControls extends React.Component {
       app_dictionary: this.state.app_dictionary,
       scale: this.state.scale,
       include_ocr_job_id: this.state.include_ocr_job_id,
+      include_template_job_id: this.state.include_template_job_id,
       attributes: this.state.attributes,
       scan_level: this.state.scan_level,
     }
@@ -185,26 +189,35 @@ class DataSifterControls extends React.Component {
     }))
   }
 
-  buildOcrMatchIdField() {
-    let ocr_matches = []
-    ocr_matches.push({'': ''})
+  buildMatchIdField(job_type, is_required=true) {
+    let matches = []
+    matches.push({'': ''})
     for (let i=0; i < this.props.jobs.length; i++) {
       const job = this.props.jobs[i]
-      if (job['operation'] !== 'ocr_threaded') {
+      if (job['operation'] !== job_type + '_threaded') {
         continue
       }
       const build_obj = {}
       const desc = job['description'] + ' ' + job['id'].slice(0,3) + '...'
       build_obj[job['id']] = desc
-      ocr_matches.push(build_obj)
+      matches.push(build_obj)
+    }
+
+    let required_block = ''
+    if (is_required) {
+      required_block = (
+        <div className='col text-danger'>
+          * Required 
+        </div>
+      )
     }
 
     const label_and_drop = buildLabelAndDropdown(
-      ocr_matches,
-      'Ocr Job Id',
-      this.state.include_ocr_job_id,
-      'include_ocr_job_id',
-      ((value)=>{this.setLocalStateVar('include_ocr_job_id', value)})
+      matches,
+      job_type + ' job id',
+      this.state['include_'+ job_type + '_job_id'],
+      'include_'+ job_type +'_job_id',
+      ((value)=>{this.setLocalStateVar('include_' + job_type + '_job_id', value)})
     )
     return (
       <div className='col'>
@@ -212,9 +225,7 @@ class DataSifterControls extends React.Component {
         <div className='col'>
           {label_and_drop}
         </div>
-        <div className='col text-danger'>
-          * Required 
-        </div>
+        {required_block}
       </div>
       </div>
     )
@@ -418,7 +429,8 @@ class DataSifterControls extends React.Component {
     const id_string = buildIdString(this.state.id, 'data_sifter', false)
     const name_field = this.buildNameField()
     const scale_dropdown = this.buildScaleDropdown()
-    const ocr_job_id_dropdown = this.buildOcrMatchIdField()
+    const ocr_job_id_dropdown = this.buildMatchIdField('ocr', true) 
+    const template_job_id_dropdown = this.buildMatchIdField('template', true) 
     const fake_data_checkbox = this.buildToggleField('fake_data', 'Generate Fake Data')
     const debug_checkbox = this.buildToggleField('debug', 'Debug')
     const show_type_dropdown = this.buildShowType()
@@ -470,6 +482,10 @@ class DataSifterControls extends React.Component {
 
                 <div className='row mt-2'>
                   {ocr_job_id_dropdown}
+                </div>
+
+                <div className='row mt-2'>
+                  {template_job_id_dropdown}
                 </div>
 
                 <div className='row mt-2'>

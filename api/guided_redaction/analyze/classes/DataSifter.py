@@ -62,7 +62,8 @@ class DataSifter:
             for app_row_item in ar:
                 app_id = app_row_item['app_id']
                 app_element = self.app_data['items'][app_id]
-                if app_element.get('mask_this_field'): # pass the ocr element through as an area to redact+data
+                if app_element.get('mask_this_field') and 'ocr_id' in app_row_item: 
+                    # pass the ocr element through as an area to redact+data
                     self.all_zones[app_id] = ocr_results_this_frame[app_row_item['ocr_id']]
 
     def fast_score_rowcol_data(self, rowcol_type):
