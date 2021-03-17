@@ -700,7 +700,10 @@ class DataSifter:
                 ['x1'],
                 ['d1', 'e1', 'c1', 'f1'],
                 ['c3', 'f2'],
-                ['c7', 'f3'],
+                ['c4', 'm1a'],
+                ['c5', 'm1b'],
+                ['c6', 'm1c'],
+                ['c7', 'm1d', 'f3'],
             ],
             'left_cols': [
                 ['d1', 'd2', 'd3', 'd4', 'd5', 'd6', 'd7', 'd8'],
@@ -832,6 +835,31 @@ class DataSifter:
                     'mask_this_field': True,
                     'is_pii': True,
                     'data_type': 'phone',
+                },
+                'm1a': {
+                    'type': 'template_anchor',
+                    'anchor_id': 'anchor_590897819',
+                    'name': 'eyeball',
+                },
+                'm1b': {
+                    'type': 'template_anchor',
+                    'anchor_id': 'anchor_590897819',
+                    'name': 'eyeball',
+                },
+                'm1c': {
+                    'type': 'template_anchor',
+                    'anchor_id': 'anchor_590897819',
+                    'name': 'eyeball',
+                },
+                'm1d': {
+                    'type': 'template_anchor',
+                    'anchor_id': 'anchor_590897819',
+                    'name': 'eyeball',
+                },
+                'm2a': {
+                    'type': 'template_anchor',
+                    'anchor_id': 'anchor_46051205',
+                    'name': 'pencil',
                 },
                 'x1': {
                     'type': 'label',
