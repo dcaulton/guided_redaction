@@ -132,9 +132,14 @@ class DataSifter:
         #   same for if it's in a row and the col didn't get picked up.
         found_app_ids = {}
         self.get_ids_for_one_rowcol_type(found_app_ids, 'row')
+        self.get_ids_for_one_rowcol_type(found_app_ids, 'left_col')
+        self.get_ids_for_one_rowcol_type(found_app_ids, 'right_col')
         self.insert_ids_for_one_rowcol_type(found_app_ids, 'row')
         self.insert_ids_for_one_rowcol_type(found_app_ids, 'left_col')
         self.insert_ids_for_one_rowcol_type(found_app_ids, 'right_col')
+
+        # for user fields, see if there are any adjacent, unclaimed ocr regions.  If so, absorb them in the user area
+        #  this is because ocr can sometimes split a single word into a couple ones.
 
         # gather size info for ocr objects (get title sizes, standard text sizes, etc as defined in the spec)
         # gather background color near some of the labels (as specified in the app spec)
@@ -213,6 +218,8 @@ class DataSifter:
                         base_ocr_col += index+1
                         app_row_element['ocr_id'] = ocr_match_id
                 elif app_element['type'] == 'user_data':
+                        if app_element.get('min_width', 0) > ocr_match_ele['size'][0]:
+                            continue
                         # a simple greedy algo for first cut, just pass the first element you see
                         #   we will be qualifying these soon by font size, field length
                         base_ocr_col += index+1
@@ -807,6 +814,7 @@ class DataSifter:
                     'mask_this_field': True,
                     'is_pii': True,
                     'data_type': 'string',
+                    'min_width': 50,
                 },
                 'e2': {
                     'type': 'user_data',
@@ -814,6 +822,7 @@ class DataSifter:
                     'mask_this_field': True,
                     'is_pii': True,
                     'data_type': 'int',
+                    'min_width': 50,
                 },
                 'f1': {
                     'type': 'user_data',
@@ -821,6 +830,7 @@ class DataSifter:
                     'mask_this_field': True,
                     'is_pii': True,
                     'data_type': 'string',
+                    'min_width': 50,
                 },
                 'f2': {
                     'type': 'user_data',
@@ -835,6 +845,7 @@ class DataSifter:
                     'mask_this_field': True,
                     'is_pii': True,
                     'data_type': 'phone',
+                    'min_width': 50,
                 },
                 'm1a': {
                     'type': 'template_anchor',

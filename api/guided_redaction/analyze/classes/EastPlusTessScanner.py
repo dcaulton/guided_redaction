@@ -55,7 +55,7 @@ class EastPlusTessScanner(EastScanner):
                 "end": lower_right,
                 "location": upper_left,
                 "size": (w, h),
-                "text": text,
+                "text": text.rstrip(),
                 "centroid": centroid,
                 "source": "ocr: east+tess",
                 "scanner_type": "ocr",
