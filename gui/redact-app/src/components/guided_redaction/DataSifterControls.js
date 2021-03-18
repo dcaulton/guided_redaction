@@ -43,23 +43,62 @@ class DataSifterControls extends React.Component {
     this.deleteOcrAreaCallback=this.deleteOcrAreaCallback.bind(this)
   }
 
-  deleteOcrAreaCallback(end_coords) {
-    const start_coords = this.props.clicked_coords
+  submitForCompile() {
+  //takes the ocr fields you have selected, packages them and submits as a DS compile manual job
+  // what comes back is a data sifter to tweak
+    const frameset_hash = this.props.getFramesetHashForImageUrl(this.props.insights_image)
+    const match_list = this.getCurrentOcrMatches() 
+    const build_obj = {'movies': {}}
+    build_obj['movies'][this.props.movie_url] = {'framesets': {}}
+    build_obj['movies'][this.props.movie_url]['framesets'][frameset_hash] = match_list
+    this.props.submitInsightsJob('manual_compile_data_sifter', build_obj)
+  }
+
+  buildSubmitCompileButton() {
+    if (!this.state.id) {
+      return ''
+    }
+    return (
+      <div
+          className='d-inline ml-1'
+      >
+        <button
+            className='btn btn-primary'
+            onClick={() => this.submitForCompile() }
+        >
+          Submit for Compile
+        </button>
+      </div>
+    )
+  }
+
+  getCurrentOcrMatches() {
     const cur_ocr_id = this.props.current_ids['t1_scanner']['ocr']
     if (!cur_ocr_id) {
-      return
+      return {}
     }
     const frameset_hash = this.props.getFramesetHashForImageUrl(this.props.insights_image)
     const cur_ocr_matches = this.props.tier_1_matches['ocr'][cur_ocr_id]
     const build_matches = {}
     if (!Object.keys(cur_ocr_matches['movies']).includes(this.props.movie_url)) {
-      return
+      return {}
     }
     if (!Object.keys(cur_ocr_matches['movies'][this.props.movie_url]['framesets']).includes(frameset_hash)) {
-      return
+      return {}
     }
     const match_list = cur_ocr_matches['movies'][this.props.movie_url]['framesets'][frameset_hash]
+    return match_list
+  }
+
+  deleteOcrAreaCallback(end_coords) {
+    const cur_ocr_id = this.props.current_ids['t1_scanner']['ocr']
+    const match_list = this.getCurrentOcrMatches() 
+    if (!match_list) {
+      return
+    }
+    const frameset_hash = this.props.getFramesetHashForImageUrl(this.props.insights_image)
     let something_changed = false
+    let build_matches = {}
     for (let i=0; i < Object.keys(match_list).length; i++) {
       const the_key = Object.keys(match_list)[i]
       const the_ele = match_list[the_key]
@@ -104,7 +143,7 @@ class DataSifterControls extends React.Component {
   buildDeleteOcrAreasButton() {
     return (
       <div
-          className='d-inline mb-1'
+          className='d-inline'
       >
         <button
             className='btn btn-primary'
@@ -121,9 +160,11 @@ class DataSifterControls extends React.Component {
       return ''
     }
     const delete_ocr_areas_button = this.buildDeleteOcrAreasButton()
+    const submit_for_compile_button = this.buildSubmitCompileButton()
     return (
       <div>
         {delete_ocr_areas_button}
+        {submit_for_compile_button}
       </div>
     )
   }

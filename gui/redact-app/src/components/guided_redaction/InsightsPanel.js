@@ -397,6 +397,25 @@ class InsightsPanel extends React.Component {
     return movies_obj
   }
 
+  buildDataSifterManualCompileJobData(job_string, extra_data) {
+    let job_data = {
+      request_data: {},
+    }
+    job_data['app'] = 'analyze'
+    job_data['operation'] = 'manual_compile_data_sifter'
+
+    const data_sifter_id = this.props.current_ids['t1_scanner']['data_sifter']
+    const data_sifter = this.props.tier_1_scanners['data_sifter'][data_sifter_id]
+    job_data['request_data']['tier_1_scanners'] = {}
+    job_data['request_data']['tier_1_scanners']['data_sifter'] = {}
+    job_data['request_data']['tier_1_scanners']['data_sifter'][data_sifter_id] = data_sifter
+    job_data['request_data']['id'] = data_sifter_id
+    job_data['description'] = 'manual compile of data sifter (' + data_sifter.name + ')'
+
+    job_data['request_data']['movies'] = extra_data['movies']
+    return job_data
+  }
+
   buildDataSifterBuildJobData(job_string, extra_data) {
     let job_data = {
       request_data: {},
@@ -876,6 +895,11 @@ class InsightsPanel extends React.Component {
       })
     } else if (job_string.startsWith('data_sifter_build_')) {
       let job_data = this.buildDataSifterBuildJobData(job_string, extra_data)
+      this.props.submitJob({
+        job_data: job_data,
+      })
+    } else if (job_string === 'manual_compile_data_sifter') {
+      let job_data = this.buildDataSifterManualCompileJobData(job_string, extra_data)
       this.props.submitJob({
         job_data: job_data,
       })
