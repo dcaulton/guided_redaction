@@ -117,12 +117,12 @@ class InsightsPanel extends React.Component {
 
   setScrubberToNextTier1Hit(scanner_type, movie_url) {
     if (!movie_url) {
-      movie_url = this.props.active_movie_url
+      movie_url = this.props.movie_url
     }
     const scanner_frameset_hashes = this.getTier1MatchHashesForMovie(scanner_type, movie_url)
     let movie = this.props.movies[movie_url]
     const movie_frameset_hashes = this.props.getFramesetHashesInOrder(movie)
-    if (this.props.active_movie_url !== movie_url) {
+    if (this.props.movie_url !== movie_url) {
       this.setCurrentVideo(movie_url)
       let lowest_position = 99999
       let scanner_hash = ''
