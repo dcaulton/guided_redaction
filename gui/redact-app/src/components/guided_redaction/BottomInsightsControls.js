@@ -273,6 +273,7 @@ class BottomInsightsControls extends React.Component {
           tier_1_scanners={this.props.tier_1_scanners}
           current_ids={this.props.current_ids}
           tier_1_matches={this.props.tier_1_matches}
+          jobs={this.props.jobs}
         />
 
         <TelemetryControls

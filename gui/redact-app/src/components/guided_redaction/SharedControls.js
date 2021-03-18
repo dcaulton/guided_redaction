@@ -535,3 +535,52 @@ export function doTier1Save(
   when_done(scanner)
   return scanner
 }
+
+export function buildMatchIdField(
+    job_type, 
+    jobs, 
+    setLocalStateVar, 
+    cur_value,
+    is_required=true
+) {
+  let matches = []
+  matches.push({'': ''})
+  for (let i=0; i < jobs.length; i++) {
+    const job = jobs[i]
+    if (job['operation'] !== job_type + '_threaded') {
+      continue
+    }
+    const build_obj = {}
+    const desc = job['description'] + ' ' + job['id'].slice(0,3) + '...'
+    build_obj[job['id']] = desc
+    matches.push(build_obj)
+  }
+
+  let required_block = ''
+  if (is_required) {
+    required_block = (
+      <div className='col text-danger'>
+        * Required
+      </div>
+    )
+  }
+
+  const label_and_drop = buildLabelAndDropdown(
+    matches,
+    job_type + ' job id',
+    cur_value,
+    job_type +'_job_id',
+    ((value)=>{setLocalStateVar(job_type + '_job_id', value)})
+  )
+  return (
+    <div className='col'>
+    <div className='row'>
+      <div className='col'>
+        {label_and_drop}
+      </div>
+      {required_block}
+    </div>
+    </div>
+  )
+}
+

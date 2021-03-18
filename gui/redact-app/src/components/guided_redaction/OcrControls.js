@@ -14,6 +14,7 @@ import {
   buildAttributesAsRows,
   buildRunButton,
   buildAttributesAddRow,
+  buildMatchIdField,
   buildSkipCountDropdown,
 } from './SharedControls'
 
@@ -25,9 +26,10 @@ class OcrControls extends React.Component {
       id: '',
       name: '',
       match_text: [],
-      match_percent: 90,
+      match_percent: 70,
       skip_frames: 0,
       skip_east: false,
+      data_sifter_job_id: '',
       scan_level: 'tier_1',
       start: [],
       end: [],
@@ -39,6 +41,16 @@ class OcrControls extends React.Component {
     this.getOcrMetaFromState=this.getOcrMetaFromState.bind(this)
     this.setLocalStateVar=this.setLocalStateVar.bind(this)
     this.getOcrWindow=this.getOcrWindow.bind(this)
+  }
+
+  buildMatchIdField2() {
+    return buildMatchIdField(
+        'data_sifter',
+        this.props.jobs,
+        this.setLocalStateVar,
+        this.state.data_sifter_job_id,
+        false
+    )
   }
 
   getOcrWindow() {
@@ -157,6 +169,7 @@ class OcrControls extends React.Component {
         match_percent: ocr_rule['match_percent'],
         skip_frames: ocr_rule['skip_frames'],
         skip_east: ocr_rule['skip_east'],
+        data_sifter_job_id: ocr_rule['data_sifter_job_id'],
         scan_level: ocr_rule['scan_level'],
         start: ocr_rule['start'],
         end: ocr_rule['end'],
@@ -180,9 +193,10 @@ class OcrControls extends React.Component {
       id: the_id,
       name: '',
       match_text: [],
-      match_percent: 90,
+      match_percent: 70,
       skip_frames: 0,
       skip_east: false,
+      data_sifter_job_id: '',
       scan_level: 'tier_1',
       start: [],
       end: [],
@@ -200,6 +214,7 @@ class OcrControls extends React.Component {
       match_percent: this.state.match_percent,
       skip_frames: this.state.skip_frames,
       skip_east: this.state.skip_east,
+      data_sifter_job_id: this.state.data_sifter_job_id,
       scan_level: this.state.scan_level,
       attributes: this.state.attributes,
     }
@@ -412,6 +427,7 @@ class OcrControls extends React.Component {
     const save_to_database_button = this.buildSaveToDatabaseButton()
     const clear_matches_button = this.buildClearMatchesButton2()
     const match_text = this.buildMatchText()
+    const data_sifter_job_id_field = this.buildMatchIdField2() 
     const match_percent = this.buildMatchPercent()
     const skip_frames = this.buildSkipFrames()
     const skip_east = this.buildSkipEast()
@@ -458,6 +474,10 @@ class OcrControls extends React.Component {
 
                 <div className='row bg-light'>
                   {match_text}
+                </div>
+
+                <div className='row bg-light'>
+                  {data_sifter_job_id_field}
                 </div>
 
                 <div className='row bg-light'>

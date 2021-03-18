@@ -2,6 +2,7 @@ import React from 'react';
 import ScannerSearchControls from './ScannerSearchControls'
 import {
   buildAttributesAddRow, buildLabelAndTextInput, buildLabelAndDropdown,
+  buildMatchIdField,
   buildInlinePrimaryButton, 
   buildTier1LoadButton, 
   buildTier1DeleteButton,
@@ -189,45 +190,13 @@ class DataSifterControls extends React.Component {
     }))
   }
 
-  buildMatchIdField(job_type, is_required=true) {
-    let matches = []
-    matches.push({'': ''})
-    for (let i=0; i < this.props.jobs.length; i++) {
-      const job = this.props.jobs[i]
-      if (job['operation'] !== job_type + '_threaded') {
-        continue
-      }
-      const build_obj = {}
-      const desc = job['description'] + ' ' + job['id'].slice(0,3) + '...'
-      build_obj[job['id']] = desc
-      matches.push(build_obj)
-    }
-
-    let required_block = ''
-    if (is_required) {
-      required_block = (
-        <div className='col text-danger'>
-          * Required 
-        </div>
-      )
-    }
-
-    const label_and_drop = buildLabelAndDropdown(
-      matches,
-      job_type + ' job id',
-      this.state[job_type + '_job_id'],
-      job_type +'_job_id',
-      ((value)=>{this.setLocalStateVar(job_type + '_job_id', value)})
-    )
-    return (
-      <div className='col'>
-      <div className='row'>
-        <div className='col'>
-          {label_and_drop}
-        </div>
-        {required_block}
-      </div>
-      </div>
+  buildMatchIdField2(job_type, is_required=true) {
+    return buildMatchIdField(
+        job_type,
+        this.props.jobs,
+        this.setLocalStateVar,
+        this.state[job_type + '_job_id'],
+        true
     )
   }
 
@@ -429,8 +398,8 @@ class DataSifterControls extends React.Component {
     const id_string = buildIdString(this.state.id, 'data_sifter', false)
     const name_field = this.buildNameField()
     const scale_dropdown = this.buildScaleDropdown()
-    const ocr_job_id_dropdown = this.buildMatchIdField('ocr', true) 
-    const template_job_id_dropdown = this.buildMatchIdField('template', true) 
+    const ocr_job_id_dropdown = this.buildMatchIdField2('ocr', true) 
+    const template_job_id_dropdown = this.buildMatchIdField2('template', true) 
     const fake_data_checkbox = this.buildToggleField('fake_data', 'Generate Fake Data')
     const debug_checkbox = this.buildToggleField('debug', 'Debug')
     const show_type_dropdown = this.buildShowType()
