@@ -21,7 +21,6 @@ import re
 import requests
 from base import viewsets
 from rest_framework.response import Response
-from guided_redaction.jobs.models import Job
 from guided_redaction.utils.classes.FileWriter import FileWriter
 
 requests.packages.urllib3.disable_warnings()

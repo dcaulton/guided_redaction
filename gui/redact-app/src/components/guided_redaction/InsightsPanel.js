@@ -458,11 +458,7 @@ class InsightsPanel extends React.Component {
     job_data['request_data']['scan_level'] = 'tier_1'
     job_data['description'] = scanner_type + ' (' + cur_scanner['name'] + ') '
 
-    if (scanner_type === 'data_sifter') {
-      this.buildDataSifterMovieData(cur_scanner, job_data, scope, extra_data)
-    } else {
-      this.buildT1MovieData(job_data, scope, extra_data)
-    }
+    this.buildT1MovieData(job_data, scope, extra_data)
     return job_data
   }
 
@@ -503,34 +499,6 @@ class InsightsPanel extends React.Component {
           }
         }
       }
-    }
-  }
-
-  buildDataSifterMovieData(data_sifter_meta, job_data, scope, extra_data) {
-    // Data Sifter has stricter input requirements
-    //   movies always needs to have source movies
-    //   the non-source movies contain ocr, and optionally data from other t1 scans
-
-    this.buildT1MovieData(job_data, scope, extra_data)
-    // if this job doesn't already have source movies, make all the movies source movies
-    //  if we called buildT1MovieData with t1 input, it will have source and regular movies
-    if (!Object.keys(job_data['request_data']['movies']).includes('source')) {
-      const new_obj = job_data['request_data']['movies']
-      job_data['request_data']['movies'] = {
-          source: new_obj,
-      }
-    }
-    let ocr_job_data = {}
-    for (let i=0; i < Object.keys(this.props.tier_1_matches['ocr']).length; i++) {
-      const match_id = Object.keys(this.props.tier_1_matches['ocr'])[i]
-      if (this.props.tier_1_matches['ocr'][match_id]['job_id'] === data_sifter_meta['include_ocr_job_id']) {
-        ocr_job_data = this.props.tier_1_matches['ocr'][match_id]
-      }
-    }
-    if (ocr_job_data) {
-      this.loadOcrDataIntoMovies(job_data['request_data'], ocr_job_data) 
-    } else {
-    console.log('TODO WE NEED TO LOAD THE JOB DATA FOR DINKY DATA SIFTER HERE')
     }
   }
 

@@ -27,8 +27,8 @@ class DataSifterControls extends React.Component {
       app_dictionary: {},
       scale: '1:1',
       show_type: 'all',
-      include_ocr_job_id: '',
-      include_template_job_id: '',
+      ocr_job_id: '',
+      template_job_id: '',
       attributes: {},
       scan_level: 'tier_2',
       attribute_search_name: '',
@@ -119,8 +119,8 @@ class DataSifterControls extends React.Component {
         debug: sam['debug'],
         app_dictionary: sam['app_dictionary'],
         scale: sam['scale'],
-        include_ocr_job_id: sam['include_ocr_job_id'],
-        include_template_job_id: sam['include_template_job_id'],
+        ocr_job_id: sam['ocr_job_id'],
+        template_job_id: sam['template_job_id'],
         attributes: sam['attributes'],
         scan_level: sam['scan_level'],
       })
@@ -144,8 +144,8 @@ class DataSifterControls extends React.Component {
       debug: false,
       app_dictionary: {},
       scale: '1:1',
-      include_ocr_job_id: '',
-      include_template_job_id: '',
+      ocr_job_id: '',
+      template_job_id: '',
       attributes: {},
       scan_level: 'tier_2',
     })
@@ -159,8 +159,8 @@ class DataSifterControls extends React.Component {
       debug: this.state.debug,
       app_dictionary: this.state.app_dictionary,
       scale: this.state.scale,
-      include_ocr_job_id: this.state.include_ocr_job_id,
-      include_template_job_id: this.state.include_template_job_id,
+      ocr_job_id: this.state.ocr_job_id,
+      template_job_id: this.state.template_job_id,
       attributes: this.state.attributes,
       scan_level: this.state.scan_level,
     }
@@ -215,9 +215,9 @@ class DataSifterControls extends React.Component {
     const label_and_drop = buildLabelAndDropdown(
       matches,
       job_type + ' job id',
-      this.state['include_'+ job_type + '_job_id'],
-      'include_'+ job_type +'_job_id',
-      ((value)=>{this.setLocalStateVar('include_' + job_type + '_job_id', value)})
+      this.state[job_type + '_job_id'],
+      job_type +'_job_id',
+      ((value)=>{this.setLocalStateVar(job_type + '_job_id', value)})
     )
     return (
       <div className='col'>
@@ -368,7 +368,7 @@ class DataSifterControls extends React.Component {
     if (!Object.keys(this.props.tier_1_scanners['data_sifter']).includes(this.state.id)) {
       return
     }
-    if (!this.state.include_ocr_job_id) {
+    if (!this.state.ocr_job_id) {
       return
     }
     return buildRunButton(
