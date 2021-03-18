@@ -6,7 +6,6 @@ import uuid
 from django.conf import settings
 import json
 import os
-from fuzzywuzzy import fuzz
 from guided_redaction.jobs.models import Job
 from guided_redaction.utils.task_shared import (
     evaluate_children,

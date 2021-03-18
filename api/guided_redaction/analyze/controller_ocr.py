@@ -1,6 +1,7 @@
 import cv2
 import random
 import os
+from fuzzywuzzy import fuzz
 from django.conf import settings
 from guided_redaction.utils.classes.FileWriter import FileWriter
 from guided_redaction.analyze.classes.EastPlusTessGuidedAnalyzer import (
@@ -17,10 +18,12 @@ class OcrController(T1Controller):
             base_url=settings.REDACT_FILE_BASE_URL,
             image_request_verify_headers=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
         )
+        self.fuzz_match_threshold = 70
 
     def scan_ocr_all(self, request_data):
         ocr_rule_id = list(request_data['tier_1_scanners']['ocr'].keys())[0]
         ocr_rule = request_data['tier_1_scanners']['ocr'][ocr_rule_id]
+        self.fuzz_match_threshold = int(ocr_rule['match_percent'])
         response_data = {
             'movies': {},
             'statistics': {},
@@ -77,6 +80,17 @@ class OcrController(T1Controller):
         else:
             end = (cv2_image.shape[1], cv2_image.shape[0])
 
+        # this is where ocr treats ocr t1 input differently than the rest.  If we get ocr input, we assume those
+        #   are phrases we need to search for in the raw ocr scan data from the page
+        phrases_to_match = {}
+        for match_key in t1_frameset_data:
+            if t1_frameset_data[match_key]['scanner_type'] == 'ocr':
+                # treat this as words we need to search for, it probably came from data sifter
+                phrases_to_match[match_key] = t1_frameset_data[match_key]['text']
+        for match_key in phrases_to_match:
+            del t1_frameset_data[match_key]
+        phrases_to_match = list(phrases_to_match.values())
+
         if t1_frameset_data:
             cv2_image = self.apply_t1_limits_to_source_image(cv2_image, t1_frameset_data)
 
@@ -117,6 +131,15 @@ class OcrController(T1Controller):
                     end[1] - start[1]
                 ]
                 returned_start_coords = start
+
+            if phrases_to_match:
+                found_a_match = False
+                for phrase in phrases_to_match:
+                    ratio = fuzz.ratio(phrase, raw_rta['text'])
+                    if ratio > self.fuzz_match_threshold:
+                        found_a_match = True
+                if not found_a_match:
+                    continue
                 
             recognized_text_areas[the_id] = {
                 'source': raw_rta['source'],
