@@ -28,6 +28,7 @@ from guided_redaction.analyze.api import (
     AnalyzeViewSetTrainHog,
     AnalyzeViewSetTestHog,
     AnalyzeViewSetCompileDataSifter,
+    AnalyzeViewSetManualCompileDataSifter,
     AnalyzeViewSetIntersect,
     AnalyzeViewSetDataSifter,
     AnalyzeViewSetOcr
@@ -419,6 +420,10 @@ def dispatch_ds_scan_ocr(parent_job):
         job.save()
         print('dispatch ds scan ocr kids: dispatching job for movie {}'.format(movie_url))
         ocr_threaded.delay(job.id)
+
+@shared_task
+def manual_compile_data_sifter(job_uuid):
+    generic_worker_call(job_uuid, 'manual_compile_data_sifter', AnalyzeViewSetManualCompileDataSifter)
 
 @shared_task
 def compile_data_sifter(job_uuid):

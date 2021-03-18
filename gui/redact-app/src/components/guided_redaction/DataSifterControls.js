@@ -51,6 +51,11 @@ class DataSifterControls extends React.Component {
     const build_obj = {'movies': {}}
     build_obj['movies'][this.props.movie_url] = {'framesets': {}}
     build_obj['movies'][this.props.movie_url]['framesets'][frameset_hash] = match_list
+    build_obj['movies']['source'] = {}
+    build_obj['movies']['source'][this.props.movie_url] = {'framesets': {}}
+    build_obj['movies']['source'][this.props.movie_url]['framesets'][frameset_hash] = {'images': [this.props.insights_image]}
+    build_obj['movies']['source'][this.props.movie_url]['frames'] = [this.props.insights_image]
+
     this.props.submitInsightsJob('manual_compile_data_sifter', build_obj)
   }
 

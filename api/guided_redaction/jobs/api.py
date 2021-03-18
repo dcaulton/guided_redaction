@@ -163,6 +163,8 @@ def dispatch_job(job):
         analyze_tasks.selection_grower_threaded.delay(job_uuid)
     if job.app == 'analyze' and job.operation == 'build_data_sifter':
         analyze_tasks.build_data_sifter.delay(job_uuid)
+    if job.app == 'analyze' and job.operation == 'manual_compile_data_sifter':
+        analyze_tasks.manual_compile_data_sifter.delay(job_uuid)
     if job.app == 'analyze' and job.operation == 'ocr_scene_analysis_threaded':
         analyze_tasks.ocr_scene_analysis_threaded.delay(job_uuid)
     if job.app == 'analyze' and job.operation == 'data_sifter_threaded':

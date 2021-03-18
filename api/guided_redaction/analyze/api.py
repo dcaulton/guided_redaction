@@ -3,6 +3,7 @@ from guided_redaction.analyze.classes.TemplateMatcher import TemplateMatcher
 from guided_redaction.analyze.classes.ChartMaker import ChartMaker
 from guided_redaction.analyze.classes.HogScanner import HogScanner
 from guided_redaction.analyze.classes.DataSifterCompiler import DataSifterCompiler
+from guided_redaction.analyze.classes.DataSifterManualCompiler import DataSifterManualCompiler
 from .controller_selected_area import SelectedAreaController
 from .controller_mesh_match import MeshMatchController
 from .controller_selection_grower import SelectionGrowerController
@@ -322,6 +323,26 @@ class AnalyzeViewSetTestHog(viewsets.ViewSet):
 
         return Response(results)
 
+
+class AnalyzeViewSetManualCompileDataSifter(viewsets.ViewSet) :
+    def create(self, request):
+        request_data = request.data
+        return self.process_create_request(request_data)
+
+    def process_create_request(self, request_data):
+        if not request_data.get("tier_1_scanners"):
+            return self.error("tier_1_scanners is required", status_code=400)
+        if not request_data.get("movies"):
+            return self.error("movies is required", status_code=400)
+        response_movies = {}
+        t1_scanners = request_data.get('tier_1_scanners')
+        first_key = list(t1_scanners['data_sifter'].keys())[0]
+        data_sifter = t1_scanners['data_sifter'][first_key]
+        movies = request_data.get("movies")
+        worker = DataSifterManualCompiler(data_sifter, movies)
+        results = worker.compile()
+
+        return Response(results)
 
 class AnalyzeViewSetCompileDataSifter(viewsets.ViewSet) :
     def create(self, request):
