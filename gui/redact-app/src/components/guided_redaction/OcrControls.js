@@ -248,11 +248,19 @@ class OcrControls extends React.Component {
              cols='60'
              rows='3'
              value={the_value}
-            onChange={(event) => this.setLocalStateVar('match_text', event.target.value.split('\n'))}
+            onChange={(event) => this.setMatchText(event.target.value)}
           />
         </div>
       </div>
     )
+  }
+
+  setMatchText(the_value) {
+    if (!the_value.trim()) {
+      this.setLocalStateVar('match_text', [])
+    } else {
+      this.setLocalStateVar('match_text', the_value.split('\n'))
+    }
   }
 
   buildMatchPercent() {

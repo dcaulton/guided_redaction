@@ -1,8 +1,10 @@
 import cv2
+import json
 import random
 import os
 from fuzzywuzzy import fuzz
 from django.conf import settings
+from guided_redaction.jobs.models import Job
 from guided_redaction.utils.classes.FileWriter import FileWriter
 from guided_redaction.analyze.classes.EastPlusTessGuidedAnalyzer import (
     EastPlusTessGuidedAnalyzer,
@@ -24,6 +26,16 @@ class OcrController(T1Controller):
         ocr_rule_id = list(request_data['tier_1_scanners']['ocr'].keys())[0]
         ocr_rule = request_data['tier_1_scanners']['ocr'][ocr_rule_id]
         self.fuzz_match_threshold = int(ocr_rule['match_percent'])
+
+        base_phrases = ocr_rule['match_text']
+        if len(base_phrases) == 1 and not base_phrases[0]:
+            base_phrases = []
+
+        ds_job_results = {}
+        if ocr_rule.get('data_sifter_job_id'):
+            ds_job = Job.objects.get(pk=ocr_rule.get('data_sifter_job_id'))
+            ds_job_results = json.loads(ds_job.response_data)
+
         response_data = {
             'movies': {},
             'statistics': {},
@@ -42,13 +54,16 @@ class OcrController(T1Controller):
 
         for movie_url in movies:
             movie = movies[movie_url]
+            new_phrases = self.get_phrases_for_ds_movie(ocr_rule, movie_url, ds_job_results)
+            if new_phrases:
+                ocr_rule['match_text'] = [*base_phrases, *new_phrases]
             for frameset_hash in movie['framesets']:
                 number_considered += 1
                 if skip_frames != 0 and number_considered < skip_frames + 1:
                     print('ocr skipping {}'.format(frameset_hash))
                     continue
 
-                t1_frameset_data = None
+                t1_frameset_data = {}
                 if 'images' in movie['framesets'][frameset_hash]:
                     image_url = movie['framesets'][frameset_hash]['images'][0]
                 else:
@@ -62,6 +77,19 @@ class OcrController(T1Controller):
                     response_data['movies'][movie_url]['framesets'][frameset_hash] = found_areas
 
         return response_data
+
+    def get_phrases_for_ds_movie(self, ocr_rule, movie_url, ds_job_results):
+        if not ds_job_results:
+            return
+        if movie_url not in ds_job_results['movies']:
+            return
+        new_phrases = []
+        for frameset_hash in ds_job_results['movies'][movie_url]['framesets']:
+            for match_id in ds_job_results['movies'][movie_url]['framesets'][frameset_hash]:
+                match_obj = ds_job_results['movies'][movie_url]['framesets'][frameset_hash][match_id]
+                if 'text' in match_obj and match_obj['text'] not in new_phrases:
+                    new_phrases.append(match_obj['text'])
+        return new_phrases
 
     def scan_ocr(self, image_url, ocr_rule, t1_frameset_data):
         analyzer = EastPlusTessGuidedAnalyzer()
@@ -80,16 +108,7 @@ class OcrController(T1Controller):
         else:
             end = (cv2_image.shape[1], cv2_image.shape[0])
 
-        # this is where ocr treats ocr t1 input differently than the rest.  If we get ocr input, we assume those
-        #   are phrases we need to search for in the raw ocr scan data from the page
-        phrases_to_match = {}
-        for match_key in t1_frameset_data:
-            if t1_frameset_data[match_key]['scanner_type'] == 'ocr':
-                # treat this as words we need to search for, it probably came from data sifter
-                phrases_to_match[match_key] = t1_frameset_data[match_key]['text']
-        for match_key in phrases_to_match:
-            del t1_frameset_data[match_key]
-        phrases_to_match = list(phrases_to_match.values())
+        phrases_to_match = ocr_rule['match_text']
 
         if t1_frameset_data:
             cv2_image = self.apply_t1_limits_to_source_image(cv2_image, t1_frameset_data)

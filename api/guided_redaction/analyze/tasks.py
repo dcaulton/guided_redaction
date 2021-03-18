@@ -762,6 +762,8 @@ def build_and_dispatch_ocr_threaded_children(parent_job):
         scan_ocr
     )
 
+# TODO This whole method might be okay with just a generic call now.  We have all the fuzz matching in the 
+#   controller now
 def wrap_up_ocr_threaded(parent_job, children):
     parent_request_data = json.loads(parent_job.request_data)
     ocr_rule_id = list(parent_request_data['tier_1_scanners']['ocr'].keys())[0]
@@ -778,21 +780,6 @@ def wrap_up_ocr_threaded(parent_job, children):
             resp_movie = child_response_data['movies'][movie_url]
             for frameset_hash in resp_movie['framesets']:
                 areas_to_redact = resp_movie['framesets'][frameset_hash]
-
-                if (ocr_rule['match_text'] and ocr_rule['match_percent']):
-                    if 'match_percent' not in aggregate_stats:
-                        aggregate_stats['match_percent'] = ocr_rule['match_percent']
-                    if movie_url not in aggregate_stats['movies']:
-                        aggregate_stats['movies'][movie_url] = {'framesets': {}}
-                    (areas_to_redact, match_percentages) = find_relevant_areas_from_response(
-                        ocr_rule['match_text'], 
-                        int(ocr_rule['match_percent']), 
-                        areas_to_redact
-                    )
-                    aggregate_stats['movies'][movie_url]['framesets'][frameset_hash] = match_percentages
-                    if len(areas_to_redact) == 0:
-                        continue
-
                 build_movies[movie_url]['framesets'][frameset_hash] = areas_to_redact
 
     return_data = {
@@ -804,35 +791,6 @@ def wrap_up_ocr_threaded(parent_job, children):
     parent_job.status = 'success'
     parent_job.response_data = json.dumps(return_data)
     parent_job.save()
-
-def find_relevant_areas_from_response(match_strings, match_percent, areas_to_redact):
-    relevant_areas = {}
-    match_percentages = {}
-    for a2r_key in areas_to_redact:
-        area = areas_to_redact[a2r_key]
-        subject_string = area['text']
-        for pattern in match_strings:
-            if pattern not in match_percentages:
-                match_percentages[pattern] = {'percent': 0}
-            pattern_length = len(pattern)
-            subject_string_length = len(subject_string)
-            num_compares = subject_string_length - pattern_length + 1
-            if pattern_length > subject_string_length:
-                ratio = fuzz.ratio(pattern, subject_string)
-                if ratio > match_percentages[pattern]['percent']:
-                    match_percentages[pattern]['percent'] = ratio
-                if ratio >= match_percent:
-                    relevant_areas.append(area)
-                    continue
-            for i in range(num_compares):
-                ratio = fuzz.ratio(pattern, subject_string[i:i+pattern_length])
-                if ratio > match_percentages[pattern]['percent']:
-                    match_percentages[pattern]['percent'] = ratio
-                if ratio >= match_percent:
-                    relevant_areas[a2r_key] = area
-                    continue
-    return (relevant_areas, match_percentages)
-
 #=====SELECTION GROWER============================
 @shared_task
 def selection_grower(job_uuid):
