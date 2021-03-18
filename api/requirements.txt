@@ -41,6 +41,7 @@ packaging
 Pillow
 pooch
 pycparser
+pyenchant
 pyparsing
 pytesseract
 python-dateutil
