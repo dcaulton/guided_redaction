@@ -542,6 +542,13 @@ class InsightsPanel extends React.Component {
       job_data['description'] += 'on t1 osa results (osa ' + t1_osa_rule['name'] + ')'
       job_data['request_data']['movies'] = tier_1_output
       job_data['request_data']['movies']['source'] = this.makeSourceForPassedT1Output(tier_1_output)
+    } else if (scope.match(/_t1_ds$/)) {   
+      const the_id = extra_data
+      const t1_ds_rule = this.props.tier_1_scanners['data_sifter'][the_id]
+      const tier_1_output = this.props.tier_1_matches['data_sifter'][the_id]['movies']
+      job_data['description'] += 'on t1 ds results (ds ' + t1_ds_rule['name'] + ')'
+      job_data['request_data']['movies'] = tier_1_output
+      job_data['request_data']['movies']['source'] = this.makeSourceForPassedT1Output(tier_1_output)
     } else if (scope.match(/_t1_mesh_match$/)) {   
       const osa_id = extra_data
       const t1_osa_rule = this.props.tier_1_scanners['mesh_match'][osa_id]

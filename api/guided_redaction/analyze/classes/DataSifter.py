@@ -20,7 +20,6 @@ class DataSifter:
         self.fast_pass_app_score_threshold = 500
 
     def sift_data(self, cv2_image, ocr_results_this_frame, other_t1_results_this_frame, template_results_this_frame):
-        print('gaggly template hits are {}'.format(template_results_this_frame))
         self.app_rows, self.app_left_cols, self.app_right_cols = self.build_app_rowcol_data()
         self.all_zones = {}
         self.return_stats = {}
@@ -29,6 +28,9 @@ class DataSifter:
         self.cv2_image = cv2_image
 
         self.ocr_results_this_frame = self.filter_results_by_t1_bounds(ocr_results_this_frame, other_t1_results_this_frame)
+        self.template_results_this_frame = self.filter_results_by_t1_bounds(
+            template_results_this_frame, other_t1_results_this_frame
+        )
         self.ocr_rows_dict = self.gather_ocr_rows()
         self.ocr_left_cols_dict, self.ocr_right_cols_dict = self.gather_ocr_cols()
 

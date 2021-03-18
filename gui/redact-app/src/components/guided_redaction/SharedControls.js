@@ -13,6 +13,7 @@ export function buildRunButton(
   const tier_1_ocr_run_options = buildTier1RunOptions('ocr', scanner_type + '_t1_ocr')
   const tier_1_telemetry_run_options = buildTier1RunOptions('telemetry', scanner_type + '_t1_telemetry')
   const tier_1_osa_run_options = buildTier1RunOptions('ocr_scene_analysis', scanner_type + '_t1_osa')
+  const tier_1_ds_run_options = buildTier1RunOptions('data_sifter', scanner_type + '_t1_ds')
 
   const dropdown_id = 'scan_' + scanner_type + '_DropdownButton'
   let frame_movie_movies = (
@@ -56,6 +57,7 @@ export function buildRunButton(
         {tier_1_selection_grower_run_options}
         {tier_1_ocr_run_options}
         {tier_1_osa_run_options}
+        {tier_1_ds_run_options}
         {tier_1_telemetry_run_options}
       </div>
     </div>
