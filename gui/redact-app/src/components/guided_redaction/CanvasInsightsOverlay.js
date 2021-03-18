@@ -332,6 +332,7 @@ class CanvasInsightsOverlay extends React.Component {
           || (this.props.mode === 'selected_area_maximum_zones_2')
           || (this.props.mode === 'mesh_match_minimum_zones_2')
           || (this.props.mode === 'mesh_match_maximum_zones_2')
+          || (this.props.mode === 'ds_delete_ocr_area_2')
           || (this.props.mode === 'scan_ocr_2')) {
         crosshair_length = 2000
       } 

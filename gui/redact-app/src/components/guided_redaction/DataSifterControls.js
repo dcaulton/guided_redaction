@@ -24,6 +24,7 @@ class DataSifterControls extends React.Component {
       id: '',
       name: '',
       fake_data: false,
+      build_by_hand: false,
       debug: false,
       app_dictionary: {},
       scale: '1:1',
@@ -39,6 +40,92 @@ class DataSifterControls extends React.Component {
     this.getDataSifterFromState=this.getDataSifterFromState.bind(this)
     this.setLocalStateVar=this.setLocalStateVar.bind(this)
     this.getShowType=this.getShowType.bind(this)
+    this.deleteOcrAreaCallback=this.deleteOcrAreaCallback.bind(this)
+  }
+
+  deleteOcrAreaCallback(end_coords) {
+    const start_coords = this.props.clicked_coords
+    const cur_ocr_id = this.props.current_ids['t1_scanner']['ocr']
+    if (!cur_ocr_id) {
+      return
+    }
+    const frameset_hash = this.props.getFramesetHashForImageUrl(this.props.insights_image)
+    const cur_ocr_matches = this.props.tier_1_matches['ocr'][cur_ocr_id]
+    const build_matches = {}
+    if (!Object.keys(cur_ocr_matches['movies']).includes(this.props.movie_url)) {
+      return
+    }
+    if (!Object.keys(cur_ocr_matches['movies'][this.props.movie_url]['framesets']).includes(frameset_hash)) {
+      return
+    }
+    const match_list = cur_ocr_matches['movies'][this.props.movie_url]['framesets'][frameset_hash]
+    let something_changed = false
+    for (let i=0; i < Object.keys(match_list).length; i++) {
+      const the_key = Object.keys(match_list)[i]
+      const the_ele = match_list[the_key]
+      const ele_start = the_ele['location']
+      const ele_end = [
+        the_ele['location'][0] + the_ele['size'][0],
+        the_ele['location'][1] + the_ele['size'][1]
+      ]
+      if (
+        this.props.clicked_coords[0] <= ele_start[0] &&
+        ele_start[0] <= end_coords[0] &&
+        this.props.clicked_coords[1] <= ele_start[1] &&
+        ele_start[1] <= end_coords[1] 
+      ) {
+        something_changed = true
+        console.log('not adding this one')
+      } else if (
+        this.props.clicked_coords[0] <= ele_end[0] &&
+        ele_end[0] <= end_coords[0] &&
+        this.props.clicked_coords[1] <= ele_end[1] &&
+        ele_end[1] <= end_coords[1] 
+      ) {
+        something_changed = true
+        console.log('not adding this one')
+      } else {
+        build_matches[the_key] = the_ele
+      }
+      
+      if (something_changed) {
+        let deepCopyT1Matches= JSON.parse(JSON.stringify(this.props.tier_1_matches))
+        deepCopyT1Matches['ocr'][cur_ocr_id]['movies'][this.props.movie_url]['framesets'][frameset_hash] = build_matches
+        this.props.setGlobalStateVar('tier_1_matches', deepCopyT1Matches)
+      }
+    }
+    this.props.handleSetMode('ds_delete_ocr_area_1')
+  }
+
+  startDeleteOcrAreas() {
+    this.props.handleSetMode('ds_delete_ocr_area_1')
+  }
+
+  buildDeleteOcrAreasButton() {
+    return (
+      <div
+          className='d-inline mb-1'
+      >
+        <button
+            className='btn btn-primary'
+            onClick={() => this.startDeleteOcrAreas() }
+        >
+          Delete Ocr Areas
+        </button>
+      </div>
+    )
+  }
+
+  buildBuildByHandButtons() {
+    if (!this.state.build_by_hand) {
+      return ''
+    }
+    const delete_ocr_areas_button = this.buildDeleteOcrAreasButton()
+    return (
+      <div>
+        {delete_ocr_areas_button}
+      </div>
+    )
   }
 
   getShowType() {
@@ -85,6 +172,7 @@ class DataSifterControls extends React.Component {
   componentDidMount() {
     this.loadNewDataSifter()
     this.props.addInsightsCallback('getDataSifterShowType', this.getShowType)
+    this.props.addInsightsCallback('ds_delete_ocr_area_2', this.deleteOcrAreaCallback)
   }
 
   setLocalStateVar(var_name, var_value, when_done=(()=>{})) {
@@ -401,6 +489,7 @@ class DataSifterControls extends React.Component {
     const ocr_job_id_dropdown = this.buildMatchIdField2('ocr', true) 
     const template_job_id_dropdown = this.buildMatchIdField2('template', true) 
     const fake_data_checkbox = this.buildToggleField('fake_data', 'Generate Fake Data')
+    const build_by_hand_checkbox = this.buildToggleField('build_by_hand', 'Build by Hand')
     const debug_checkbox = this.buildToggleField('debug', 'Debug')
     const show_type_dropdown = this.buildShowType()
     const attributes_list = this.buildAttributesList()
@@ -410,6 +499,7 @@ class DataSifterControls extends React.Component {
     const delete_button = this.buildDeleteButton()
     const save_to_db_button = this.buildSaveToDatabaseButton()
     const clear_matches_button = this.buildClearMatchesButton2()
+    const build_by_hand_buttons = this.buildBuildByHandButtons()
     const header_row = makeHeaderRow(
       'data sifter',
       'data_sifter_body',
@@ -438,6 +528,10 @@ class DataSifterControls extends React.Component {
                 </div>
 
                 <div className='row mt-2'>
+                  {build_by_hand_buttons}
+                </div>
+
+                <div className='row mt-2'>
                   {id_string}
                 </div>
 
@@ -459,6 +553,10 @@ class DataSifterControls extends React.Component {
 
                 <div className='row mt-2'>
                   {fake_data_checkbox}
+                </div>
+
+                <div className='row mt-2'>
+                  {build_by_hand_checkbox}
                 </div>
 
                 <div className='row mt-2'>

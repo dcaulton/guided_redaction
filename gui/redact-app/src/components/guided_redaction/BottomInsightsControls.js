@@ -136,6 +136,7 @@ class BottomInsightsControls extends React.Component {
           tier_1_matches={this.props.tier_1_matches}
           submitInsightsJob={this.props.submitInsightsJob}
           jobs={this.props.jobs}
+          getFramesetHashForImageUrl={this.props.getFramesetHashForImageUrl}
         />
 
         <HogControls

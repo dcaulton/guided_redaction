@@ -1025,6 +1025,10 @@ class InsightsPanel extends React.Component {
       the_message = 'Select the upper left corner of the zone'
     } else if (the_mode === 'selection_grower_add_color_zone_2') {
       the_message = 'Select the bottom right corner of the zone'
+    } else if (the_mode === 'ds_delete_ocr_area_1') {
+      the_message = 'Select the upper left corner of the zone'
+    } else if (the_mode === 'ds_delete_ocr_area_2') {
+      the_message = 'click second corner'
     }
     this.props.setGlobalStateVar('message', the_message)
     this.setState({
@@ -1097,6 +1101,8 @@ class InsightsPanel extends React.Component {
       this.handleSetMode('add_template_mask_zone_2') 
     } else if (this.state.mode === 'scan_ocr_1') {
       this.handleSetMode('scan_ocr_2') 
+    } else if (this.state.mode === 'ds_delete_ocr_area_1') {
+      this.handleSetMode('ds_delete_ocr_area_2') 
     }
   }
 
