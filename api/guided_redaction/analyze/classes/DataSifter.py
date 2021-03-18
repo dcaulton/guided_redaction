@@ -4,17 +4,17 @@ from fuzzywuzzy import fuzz
 import cv2
 import numpy as np
 import imutils
+from guided_redaction.analyze.classes.OcrRowColMaker import OcrRowColMaker
 
 
 class DataSifter:
 
-    def __init__(self, mesh_match_meta):
+    def __init__(self, mesh_match_meta, *args, **kwargs):
+        super(DataSifter, self).__init__(*args, **kwargs)
         self.mesh_match_meta = mesh_match_meta
         self.debug = mesh_match_meta.get('debug', False)
         self.app_data = self.get_app_data()
-        self.min_vertical_overlap_pixels = 5
-        self.max_column_misalign_pixels = 5
-        self.min_row_horizontal_overlap_pixels = 1000
+        self.ocr_rowcol_maker = OcrRowColMaker()
         self.min_app_score = 200
         self.fuzz_match_threshold = 70
         self.fast_pass_app_score_threshold = 500
@@ -31,8 +31,11 @@ class DataSifter:
         self.template_results_this_frame = self.filter_results_by_t1_bounds(
             template_results_this_frame, other_t1_results_this_frame
         )
-        self.ocr_rows_dict = self.gather_ocr_rows()
-        self.ocr_left_cols_dict, self.ocr_right_cols_dict = self.gather_ocr_cols()
+        self.ocr_rows_dict = self.ocr_row_maker.gather_ocr_rows(self.ocr_results_this_frame)
+        self.ocr_left_cols_dict, self.ocr_right_cols_dict = self.ocr_row_maker.gather_ocr_cols(self.ocr_results_this_frame)
+        self.add_rows_cols_to_response_and_stats('row', self.ocr_rows_dict)
+        self.add_rows_cols_to_response_and_stats('left_col', self.ocr_left_cols_dict)
+        self.add_rows_cols_to_response_and_stats('right_col', self.ocr_right_cols_dict)
 
         best_ocr_row_ids, best_ocr_row_score = self.fast_score_rowcol_data('row')
         best_ocr_lcol_ids, best_ocr_lcol_score = self.fast_score_rowcol_data('left_col')
@@ -363,88 +366,6 @@ class DataSifter:
             sorted_keys = sorted(ocr_row_or_col_dict, key=lambda item: ocr_row_or_col_dict[item]['start'][1])
         return sorted_keys
 
-    def build_new_row_col_element(self, row_col_type, ocr_match_id, ocr_match_obj):
-        new_id = str(random.randint(1, 999999999))
-        new_start = ocr_match_obj['location']
-        new_end = [
-            ocr_match_obj['location'][0] + ocr_match_obj['size'][0],
-            ocr_match_obj['location'][1] + ocr_match_obj['size'][1]
-        ]
-        build_obj = {
-            'id': new_id,
-            'member_ids': [ocr_match_id],
-            'start': new_start,
-            'end': new_end,
-            'row_column_type': row_col_type,
-        }
-        return build_obj
-
-    def gather_ocr_cols(self):
-        left_cols = {}
-        right_cols = {}
-        sorted_ocr_keys = self.ocr_results_this_frame.keys()
-
-        sorted_ocr_keys = sorted(self.ocr_results_this_frame, key=lambda item: self.ocr_results_this_frame[item]['location'][1])
-
-        for match_id in sorted_ocr_keys:
-            ocr_match_obj = self.ocr_results_this_frame[match_id]
-            closest_left_col_id = None
-            closest_right_col_id = None
-            for class_id in left_cols:
-                left_col = left_cols[class_id]
-                if self.is_close_enough(ocr_match_obj, left_col, 'left_col'):
-                    closest_left_col_id = class_id
-            for class_id in right_cols:
-                right_col = right_cols[class_id]
-                if self.is_close_enough(ocr_match_obj, right_col, 'right_col'):
-                    closest_right_col_id = class_id
-
-            if closest_left_col_id:
-                left_col = left_cols[closest_left_col_id]
-                self.grow_object_to_accomodate(left_col, ocr_match_obj)
-                left_col['member_ids'].append(match_id)
-            else:
-                new_element = self.build_new_row_col_element('left_col', match_id, ocr_match_obj)
-                left_cols[new_element['id']] = new_element
-
-            if closest_right_col_id:
-                right_col = right_cols[closest_right_col_id]
-                self.grow_object_to_accomodate(right_col, ocr_match_obj)
-                right_col['member_ids'].append(match_id)
-            else:
-                new_element = self.build_new_row_col_element('right_col', match_id, ocr_match_obj)
-                right_cols[new_element['id']] = new_element
-
-        self.add_rows_cols_to_response_and_stats('left_col', left_cols)
-        self.add_rows_cols_to_response_and_stats('right_col', right_cols)
-
-        return left_cols, right_cols
-
-    def gather_ocr_rows(self):
-        rows = {}
-        sorted_ocr_keys = self.ocr_results_this_frame.keys()
-
-        sorted_ocr_keys = sorted(self.ocr_results_this_frame, key=lambda item: self.ocr_results_this_frame[item]['location'][0])
-
-        for match_id in sorted_ocr_keys:
-            match_obj = self.ocr_results_this_frame[match_id]
-            closest_class_id = None
-            for class_id in rows:
-                row = rows[class_id]
-                if self.is_close_enough(match_obj, row, 'row'):
-                    closest_class_id = class_id
-            if closest_class_id:
-                row = rows[closest_class_id]
-                self.grow_object_to_accomodate(row, match_obj)
-                row['member_ids'].append(match_id)
-            else:
-                new_element = self.build_new_row_col_element('row', match_id, match_obj)
-                rows[new_element['id']] = new_element
-
-        self.add_rows_cols_to_response_and_stats('row', rows)
-
-        return rows
-
     def add_rows_cols_to_response_and_stats(self, row_col_type, existing_classes):
         build_classes = {}
         for row_class_id in existing_classes:
@@ -551,72 +472,6 @@ class DataSifter:
             app_right_cols.append(app_col)
 
         return app_rows, app_left_cols, app_right_cols
-
-    def grow_object_to_accomodate(self, match_object, new_ocr_obj):
-        new_obj_start = new_ocr_obj['location']
-        new_obj_end = [
-            new_ocr_obj['location'][0] + new_ocr_obj['size'][0],
-            new_ocr_obj['location'][1] + new_ocr_obj['size'][1]
-        ]
-        if 'start' not in match_object:
-            print('PROBLEM, were getting weird envelope vars')
-        if new_obj_start[0] < match_object['start'][0]:
-            match_object['start'][0] = new_obj_start[0]
-        if new_obj_start[1] < match_object['start'][1]:
-            match_object['start'][1] = new_obj_start[1]
-        if new_obj_end[0] > match_object['end'][0]:
-            match_object['end'][0] = new_obj_end[0]
-        if new_obj_end[1] > match_object['end'][1]:
-            match_object['end'][1] = new_obj_end[1]
-        return match_object
-
-    def is_close_enough(self, ocr_match_obj, envelope, group_type='row'):
-        ocr_start = ocr_match_obj['location']
-        ocr_end = [
-            ocr_match_obj['location'][0] + ocr_match_obj['size'][0],
-            ocr_match_obj['location'][1] + ocr_match_obj['size'][1]
-        ]
-        if group_type == 'row':
-            x_difference = self.get_axis_difference(ocr_start, ocr_end, envelope['start'], envelope['end'], 'x')
-            y_overlap = self.get_vertical_overlap(ocr_start, ocr_end, envelope['start'], envelope['end'])
-            if y_overlap < self.min_vertical_overlap_pixels or \
-                x_difference > self.min_row_horizontal_overlap_pixels:
-                return False
-            return True
-        elif group_type == 'left_col':
-            if abs(ocr_start[0] - envelope['start'][0]) < self.max_column_misalign_pixels:
-                return True
-            return False
-        elif group_type == 'right_col':
-            if abs(ocr_end[0] - envelope['end'][0]) < self.max_column_misalign_pixels:
-                return True
-            return False
-
-    def get_vertical_overlap(self, ocr_start, ocr_end, envelope_start, envelope_end):
-        if ocr_end[1] <= envelope_start[1]:
-            return 0 # box is above the row
-        if ocr_start[1] >= envelope_end[1]:
-            return 0 # box is below the row
-        overlap_top = ocr_end[1] - envelope_start[1]
-        overlap_bottom = envelope_end[1] - ocr_start[1]
-        return max(overlap_top, overlap_bottom)
-
-    def get_axis_difference(self, ocr_start, ocr_end, envelope_start, envelope_end, axis='y'):
-        axis_index = 0
-        if axis == 'y': 
-            axis_index = 1
-        if envelope_start[axis_index] <= ocr_start[axis_index] <= envelope_end[axis_index]:
-            return 0   #completely enclosed vertically
-        if ocr_start[axis_index] < envelope_start[axis_index]:
-            if ocr_end[axis_index] >= envelope_start[axis_index]:
-                return 0  # ocr starts first, but ends after the envelope starts, dist is zero
-            else:
-                return envelope_start[axis_index] - ocr_end[axis_index] 
-        if ocr_start[axis_index] > envelope_start[axis_index]:
-            if ocr_start[axis_index] <= envelope_end[axis_index]:
-                return 0  # envelope starts first, the ocr starts before envelope is done
-            else:
-                return ocr_start[axis_index] - envelope_end[axis_index]
 
     def filter_results_by_t1_bounds(self, ocr_results_this_frame, other_t1_results_this_frame):
         if other_t1_results_this_frame:

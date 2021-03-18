@@ -20,5 +20,9 @@ class DataSifterManualCompiler():
     # gather ocr_rows, left_cols, right_cols
     # make guesses as to which fields are labels
         print('POCKY WOCKY')
-        pass
+
+
+        
+        return self.data_sifter
+
 
