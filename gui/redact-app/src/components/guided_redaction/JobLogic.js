@@ -261,6 +261,42 @@ class JobLogic extends React.Component {
     }
   }
 
+  static loadMoviesFromTier1Source(
+    request_data, 
+    setGlobalStateVar, 
+    getGlobalStateVar
+  ) {
+    const movies = getGlobalStateVar('movies')
+    let campaign_movies = getGlobalStateVar('campaign_movies')
+    let movie_url = ''
+    let deepCopyMovies= JSON.parse(JSON.stringify(movies))
+    let something_changed = false
+    if (!Object.keys(request_data['movies']).includes('source')) {
+      return 
+    }
+    for (let i=0; i < Object.keys(request_data['movies']['source']).length; i++) {
+      movie_url = Object.keys(request_data['movies']['source'])[i]
+      if (!Object.keys(deepCopyMovies).includes(movie_url)) {
+        deepCopyMovies[movie_url] = request_data['movies']['source'][movie_url]
+        this.addToCampaignMovies(movie_url, setGlobalStateVar, getGlobalStateVar)
+        something_changed = true
+      }
+      if (!campaign_movies.includes(movie_url)) {
+        campaign_movies.push(movie_url)
+      }
+    }
+    if (something_changed) {
+      setGlobalStateVar({
+        campaign_movies: campaign_movies,
+        movies: deepCopyMovies,
+        movie_url: movie_url,
+      })
+    }
+    return {
+      movie_url: movie_url,
+    }
+  }
+
   static loadMoviesFromTier1Request(
     request_data, 
     setGlobalStateVar, 
@@ -731,6 +767,12 @@ class JobLogic extends React.Component {
   }
 
   static async loadManualCompileDataSifterResults(job, when_done=(()=>{}), setGlobalStateVar, getGlobalStateVar) {
+    const request_data = JSON.parse(job.request_data)
+    this.loadMoviesFromTier1Source(
+      request_data, 
+      setGlobalStateVar,
+      getGlobalStateVar
+    )
     const resp_data = JSON.parse(job.response_data)
     const scanner_id = resp_data['id']
     const tier_1_scanners = getGlobalStateVar('tier_1_scanners')
@@ -744,6 +786,8 @@ class JobLogic extends React.Component {
       tier_1_scanners: deepCopyScanners,
       current_ids: deepCopyIds,
     })
+    // TODO I should be able to hang this in setGlobalStateVar, but it's not getting picked up
+    setTimeout(when_done, 1000)
   }
 
   static async loadIllustrateResults(job, when_done=(()=>{}), setGlobalStateVar, getGlobalStateVar) {

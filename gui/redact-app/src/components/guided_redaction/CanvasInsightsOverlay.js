@@ -24,11 +24,15 @@ class CanvasInsightsOverlay extends React.Component {
     this.selection_grower_fill_color = '#A83'
     this.data_sifter_fill_color = '#3BC'
     this.data_sifter_rowcol_fill_color = '#A9C'
+    this.data_sifter_app_label_rowcol_fill_color = '#7F7'
+    this.data_sifter_app_hot_userdata_rowcol_fill_color = '#F89'
+    this.data_sifter_app_cool_userdata_rowcol_fill_color = '#75F'
     this.selected_area_center_color = '#9F3'
     this.ocr_color = '#CC0'
     this.area_to_redact_color = '#D6D'
     this.ocr_window_color = '#DA9'
-    this.red_color = '#F00'
+    this.red_color = '#F33'
+    this.green_color = '#3F3'
   }
 
   clearCanvasItems() {
@@ -86,6 +90,45 @@ class CanvasInsightsOverlay extends React.Component {
           [mz],
           this.selected_area_manual_zone_color
         )
+      }
+    }
+  }
+
+  drawDataSifterAppZones() {
+    const app_zones = this.props.runCallbackFunction('getDataSifterAppZones')
+    if (!app_zones) {
+      return
+    }
+    const canvas = this.refs.insights_canvas
+    let ctx = canvas.getContext('2d')
+    for (let i=0; i < Object.keys(app_zones).length; i++) {
+      const app_id = Object.keys(app_zones)[i]
+      const app_obj = app_zones[app_id]
+      const resp_obj = this.getScaledStartAndSizeFromMatchObject(app_obj) 
+      const start_x = resp_obj[0]
+      const start_y = resp_obj[1]
+      const width = resp_obj[2]
+      const height = resp_obj[3]
+      if (app_obj['type'] === 'label') {
+        this.drawAlphaBoxAndBorder(
+          canvas, ctx, 
+          this.data_sifter_app_label_rowcol_fill_color,
+          this.data_sifter_app_label_rowcol_fill_color,
+          start_x, 
+          start_y, 
+          width, 
+          height
+        ) 
+      } else if (app_obj['type'] === 'user_data') {
+        this.drawAlphaBoxAndBorder(
+          canvas, ctx, 
+          this.data_sifter_app_hot_userdata_rowcol_fill_color,
+          this.data_sifter_app_hot_userdata_rowcol_fill_color,
+          start_x, 
+          start_y, 
+          width, 
+          height
+        ) 
       }
     }
   }
@@ -582,6 +625,7 @@ class CanvasInsightsOverlay extends React.Component {
     this.drawAreasToRedact()
     this.drawSelectionGrowerZones()
     this.drawDataSifterZones()
+    this.drawDataSifterAppZones()
   }
 
   componentDidUpdate() {
@@ -611,6 +655,7 @@ class CanvasInsightsOverlay extends React.Component {
     this.drawAreasToRedact()
     this.drawSelectionGrowerZones()
     this.drawDataSifterZones()
+    this.drawDataSifterAppZones()
   }
 
   render() {

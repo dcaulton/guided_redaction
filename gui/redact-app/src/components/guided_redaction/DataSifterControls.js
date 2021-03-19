@@ -45,7 +45,29 @@ class DataSifterControls extends React.Component {
     this.getDataSifterFromState=this.getDataSifterFromState.bind(this)
     this.setLocalStateVar=this.setLocalStateVar.bind(this)
     this.getShowType=this.getShowType.bind(this)
+    this.getAppZones=this.getAppZones.bind(this)
     this.deleteOcrAreaCallback=this.deleteOcrAreaCallback.bind(this)
+  }
+
+  getAppZones() {
+    if (!this.state.id) {
+      return {}
+    }
+    let build_obj = {}
+    for (let i=0; i < this.state.rows.length; i++) {
+      const rowcol = this.state.rows[i]
+      for (let j=0; j < rowcol.length; j++) {
+        const item_id = rowcol[j]
+        const item = this.state.items[item_id]
+        const build_item = {
+          location: item['location'],
+          size: item['size'],
+          type: item['type'],
+        }
+        build_obj[item_id] = build_item
+      }
+    }
+    return build_obj
   }
 
   submitForCompile() {
@@ -254,6 +276,7 @@ class DataSifterControls extends React.Component {
   componentDidMount() {
     this.loadNewDataSifter()
     this.props.addInsightsCallback('getDataSifterShowType', this.getShowType)
+    this.props.addInsightsCallback('getDataSifterAppZones', this.getAppZones)
     this.props.addInsightsCallback('ds_delete_ocr_area_2', this.deleteOcrAreaCallback)
   }
 

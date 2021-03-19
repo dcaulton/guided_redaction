@@ -82,6 +82,8 @@ class InsightsPanel extends React.Component {
     this.getTier1MatchHashesForMovie=this.getTier1MatchHashesForMovie.bind(this)
     this.setScrubberToNextTier1Hit=this.setScrubberToNextTier1Hit.bind(this)
     this.afterTier1JobLoaded=this.afterTier1JobLoaded.bind(this)
+    this.setScrubberToFirstFrame=this.setScrubberToFirstFrame.bind(this)
+    this.afterManualCompileDataSifterLoaded=this.afterManualCompileDataSifterLoaded.bind(this)
   }
 
   getTier1MatchHashesForMovie(scanner_type, movie_url) {
@@ -113,6 +115,10 @@ class InsightsPanel extends React.Component {
       }
     }
     return hashes
+  }
+
+  setScrubberToFirstFrame() {
+    setTimeout((() => {this.setScrubberToIndex(0)}), 1000)
   }
 
   setScrubberToNextTier1Hit(scanner_type, movie_url) {
@@ -313,12 +319,21 @@ class InsightsPanel extends React.Component {
     this.setScrubberToNextTier1Hit(scanner_type)
   }
 
+  afterManualCompileDataSifterLoaded() {
+    this.setScrubberToFirstFrame()
+  }
+
   loadInsightsJobResults(job_id) {
     const job = this.getJobForId(job_id)
     if ((job && job.app === 'parse' && job.operation === 'split_and_hash_threaded')) {
       this.props.loadJobResults(
         job_id, 
         this.afterMovieSplitInsightsJobLoaded
+      )
+    } else if ((job && job.app === 'analyze' && job.operation === 'manual_compile_data_sifter')) {
+      this.props.loadJobResults(
+        job_id, 
+        this.afterManualCompileDataSifterLoaded
       )
     } else {
       if (job && this.tier_1_job_operations.includes(job.operation)) {
