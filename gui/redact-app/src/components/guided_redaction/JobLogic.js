@@ -730,6 +730,22 @@ class JobLogic extends React.Component {
     })
   }
 
+  static async loadManualCompileDataSifterResults(job, when_done=(()=>{}), setGlobalStateVar, getGlobalStateVar) {
+    const resp_data = JSON.parse(job.response_data)
+    const scanner_id = resp_data['id']
+    const tier_1_scanners = getGlobalStateVar('tier_1_scanners')
+    let deepCopyScanners = JSON.parse(JSON.stringify(tier_1_scanners))
+    let deepCopyThisScanners = deepCopyScanners['data_sifter']
+    deepCopyThisScanners[scanner_id] = resp_data
+    const current_ids = getGlobalStateVar('current_ids')
+    let deepCopyIds = JSON.parse(JSON.stringify(current_ids))
+    deepCopyIds['t1_scanner']['data_sifter'] = scanner_id
+    setGlobalStateVar({
+      tier_1_scanners: deepCopyScanners,
+      current_ids: deepCopyIds,
+    })
+  }
+
   static async loadIllustrateResults(job, when_done=(()=>{}), setGlobalStateVar, getGlobalStateVar) {
     const req_data = JSON.parse(job.request_data)
     const movies = getGlobalStateVar('movies')
@@ -1049,6 +1065,10 @@ class JobLogic extends React.Component {
         )
 			} else if (job.app === 'redact' && job.operation === 'illustrate') {
         this.loadIllustrateResults(
+          job, when_done, setGlobalStateVar, getGlobalStateVar
+        )
+			} else if (job.app === 'analyze' && job.operation === 'manual_compile_data_sifter') {
+        this.loadManualCompileDataSifterResults(
           job, when_done, setGlobalStateVar, getGlobalStateVar
         )
 			} else if (

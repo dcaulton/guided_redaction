@@ -32,7 +32,7 @@ class DataSifterControls extends React.Component {
       ocr_job_id: '',
       template_job_id: '',
       attributes: {},
-      scan_level: 'tier_2',
+      scan_level: 'tier_1',
       attribute_search_name: '',
       attribute_search_value: '',
       first_click_coords: [],
@@ -118,7 +118,6 @@ class DataSifterControls extends React.Component {
         ele_start[1] <= end_coords[1] 
       ) {
         something_changed = true
-        console.log('not adding this one')
       } else if (
         this.props.clicked_coords[0] <= ele_end[0] &&
         ele_end[0] <= end_coords[0] &&
@@ -126,7 +125,6 @@ class DataSifterControls extends React.Component {
         ele_end[1] <= end_coords[1] 
       ) {
         something_changed = true
-        console.log('not adding this one')
       } else {
         build_matches[the_key] = the_ele
       }
@@ -315,7 +313,7 @@ class DataSifterControls extends React.Component {
       ocr_job_id: '',
       template_job_id: '',
       attributes: {},
-      scan_level: 'tier_2',
+      scan_level: 'tier_1',
     })
   }
 
