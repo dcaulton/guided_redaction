@@ -64,6 +64,7 @@ class DataSifterManualCompiler():
                 if has_unrecognized_tokens:
                     build_item = {
                         'type': 'user_data',
+                        'text': ocr_match_element['text'], # in case the user wants to toggle this to a label 
                         'field_name_label': '',
                         'mask_this_field': True,
                         'is_pii': True,

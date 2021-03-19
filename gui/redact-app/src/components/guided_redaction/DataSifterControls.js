@@ -53,6 +53,79 @@ class DataSifterControls extends React.Component {
     this.getDataSifterHighlightedItemId=this.getDataSifterHighlightedItemId.bind(this)
   }
 
+  buildItemMaskThisField(item) {
+    if (!this.state.highlighted_item_id) {
+      return ''
+    }
+    if (item['type'] !== 'user_data') {
+      return ''
+    }
+    let checked_val = ''
+    if (item.mask_this_field) {
+      checked_val = 'checked'
+    }
+    return (
+      <div className='ml-2'>
+        <div className='d-inline'>
+          <input
+            className='mr-2'
+            checked={checked_val}
+            type='checkbox'
+            onChange={() => this.setCurrentItemVar('mask_this_field', !item.mask_this_field)}
+          />
+        </div>
+        <div className='d-inline'>
+          Mask this Field?
+        </div>
+      </div>
+    )
+  }
+
+  buildItemIsPiiField(item) {
+    if (!this.state.highlighted_item_id) {
+      return ''
+    }
+    if (item['type'] !== 'user_data') {
+      return ''
+    }
+    let checked_val = ''
+    if (item.is_pii) {
+      checked_val = 'checked'
+    }
+    return (
+      <div className='ml-2'>
+        <div className='d-inline'>
+          <input
+            className='mr-2'
+            checked={checked_val}
+            type='checkbox'
+            onChange={() => this.setCurrentItemVar('is_pii', !item.is_pii)}
+          />
+        </div>
+        <div className='d-inline'>
+          Is Pii
+        </div>
+      </div>
+    )
+  }
+
+  buildItemTextField(item) {
+    if (!this.state.highlighted_item_id) {
+      return ''
+    }
+    if (item['type'] !== 'label') {
+      return ''
+    }
+    return buildLabelAndTextInput(
+      item['text'],
+      'Text',
+      'data_sifter_item_text',
+      'item_text',
+      25,
+      ((value)=>{this.setCurrentItemVar('text', value)})
+    )
+  }
+
   buildItemTypeDropdown(item) {
     if (!this.state.highlighted_item_id) {
       return ''
@@ -82,14 +155,29 @@ class DataSifterControls extends React.Component {
     }
     const item = this.state.items[this.state.highlighted_item_id]
     const type_dropdown = this.buildItemTypeDropdown(item)
+    const text_field = this.buildItemTextField(item)
+    const is_pii_field = this.buildItemIsPiiField(item)
+    const mask_this_field = this.buildItemMaskThisField(item) 
     return (
-      <div className='row bg-gray'>
-        <div className='col'>
+      <div className='row border m-2'>
+        <div className='col ml-2'>
+          <div className='row h5'>
+            Selected Item Information
+          </div>
           <div className='row'>
             id: {this.state.highlighted_item_id}
           </div>
           <div className='row'>
             {type_dropdown}
+          </div>
+          <div className='row'>
+            {text_field}
+          </div>
+          <div className='row'>
+            {is_pii_field}
+          </div>
+          <div className='row'>
+            {mask_this_field}
           </div>
         </div>
       </div>
