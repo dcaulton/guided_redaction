@@ -24,9 +24,9 @@ class CanvasInsightsOverlay extends React.Component {
     this.selection_grower_fill_color = '#A83'
     this.data_sifter_fill_color = '#3BC'
     this.data_sifter_rowcol_fill_color = '#A9C'
-    this.data_sifter_app_label_rowcol_fill_color = '#7F7'
-    this.data_sifter_app_hot_userdata_rowcol_fill_color = '#F89'
-    this.data_sifter_app_cool_userdata_rowcol_fill_color = '#75F'
+    this.data_sifter_app_label_rowcol_fill_color = '#79F'
+    this.data_sifter_app_hot_userdata_rowcol_fill_color = '#DB9'
+    this.data_sifter_app_cool_userdata_rowcol_fill_color = '#7F9'
     this.selected_area_center_color = '#9F3'
     this.ocr_color = '#CC0'
     this.area_to_redact_color = '#D6D'
@@ -99,6 +99,7 @@ class CanvasInsightsOverlay extends React.Component {
     if (!app_zones) {
       return
     }
+    const highlighted_app_id = this.props.runCallbackFunction('getDataSifterHighlightedItemId')
     const canvas = this.refs.insights_canvas
     let ctx = canvas.getContext('2d')
     for (let i=0; i < Object.keys(app_zones).length; i++) {
@@ -110,20 +111,28 @@ class CanvasInsightsOverlay extends React.Component {
       const width = resp_obj[2]
       const height = resp_obj[3]
       if (app_obj['type'] === 'label') {
+        let border_color = this.data_sifter_app_label_rowcol_fill_color
+        if (app_id === highlighted_app_id) {
+          border_color = this.red_color
+        }
         this.drawAlphaBoxAndBorder(
           canvas, ctx, 
           this.data_sifter_app_label_rowcol_fill_color,
-          this.data_sifter_app_label_rowcol_fill_color,
+          border_color,
           start_x, 
           start_y, 
           width, 
           height
         ) 
       } else if (app_obj['type'] === 'user_data') {
+        let border_color = this.data_sifter_app_hot_userdata_rowcol_fill_color
+        if (app_id === highlighted_app_id) {
+          border_color = this.red_color
+        }
         this.drawAlphaBoxAndBorder(
           canvas, ctx, 
           this.data_sifter_app_hot_userdata_rowcol_fill_color,
-          this.data_sifter_app_hot_userdata_rowcol_fill_color,
+          border_color,
           start_x, 
           start_y, 
           width, 

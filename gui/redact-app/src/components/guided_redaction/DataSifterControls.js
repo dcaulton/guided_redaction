@@ -34,6 +34,7 @@ class DataSifterControls extends React.Component {
       items: {},
       scale: '1:1',
       show_type: 'all',
+      highlighted_item_id: '',
       ocr_job_id: '',
       template_job_id: '',
       attributes: {},
@@ -49,6 +50,54 @@ class DataSifterControls extends React.Component {
     this.deleteOcrAreaCallback=this.deleteOcrAreaCallback.bind(this)
     this.highlightAppItems=this.highlightAppItems.bind(this)
     this.loadCurrentDataSifter=this.loadCurrentDataSifter.bind(this)
+    this.getDataSifterHighlightedItemId=this.getDataSifterHighlightedItemId.bind(this)
+  }
+
+  buildItemTypeDropdown(item) {
+    if (!this.state.highlighted_item_id) {
+      return ''
+    }
+    const values = [
+      {'label': 'label'},
+      {'user_data': 'user data'}
+    ]
+    return buildLabelAndDropdown(
+      values,
+      'Type',
+      item['type'],
+      'data_sifter_item_type',
+      ((value)=>{this.setCurrentItemVar('type', value)})
+    )
+  }
+
+  setCurrentItemVar(var_name, var_value) {
+    let deepCopyItems= JSON.parse(JSON.stringify(this.state.items))
+    deepCopyItems[this.state.highlighted_item_id][var_name] = var_value
+    this.setLocalStateVar('items', deepCopyItems)
+  }
+
+  buildItemInfoArea() {
+    if (!this.state.highlighted_item_id) {
+      return ''
+    }
+    const item = this.state.items[this.state.highlighted_item_id]
+    const type_dropdown = this.buildItemTypeDropdown(item)
+    return (
+      <div className='row bg-gray'>
+        <div className='col'>
+          <div className='row'>
+            id: {this.state.highlighted_item_id}
+          </div>
+          <div className='row'>
+            {type_dropdown}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  getDataSifterHighlightedItemId() {
+    return this.state.highlighted_item_id
   }
 
   loadCurrentDataSifter() {
@@ -57,8 +106,31 @@ class DataSifterControls extends React.Component {
     this.props.handleSetMode('ds_highlight_app_items')
   }
 
-  highlightAppItems() {
-console.log('FRUIT PUNCH highlighting app items')
+  itemContainsClick(item, clicked_coords) {
+    const start = item['location']
+    const end = [
+      item['location'][0] + item['size'][0],
+      item['location'][1] + item['size'][1]
+    ]
+    if (
+      start[0] <= clicked_coords[0] &&
+      clicked_coords[0] <= end[0] &&
+      start[1] <= clicked_coords[1] &&
+      clicked_coords[1] <= end[1]
+    ) {
+      return true
+    }
+  }
+
+  highlightAppItems(clicked_coords) {
+    for (let i=0; i < Object.keys(this.state.items).length; i++) {
+      const item_key = Object.keys(this.state.items)[i]
+      const item = this.state.items[item_key]
+      if (this.itemContainsClick(item, clicked_coords)) {
+        this.setState({'highlighted_item_id': item_key})
+        console.log('FOUND IT')
+      }
+    }
   }
 
   getAppZones() {
@@ -288,6 +360,7 @@ console.log('FRUIT PUNCH highlighting app items')
     this.loadNewDataSifter()
     this.props.addInsightsCallback('getDataSifterShowType', this.getShowType)
     this.props.addInsightsCallback('getDataSifterAppZones', this.getAppZones)
+    this.props.addInsightsCallback('getDataSifterHighlightedItemId', this.getDataSifterHighlightedItemId)
     this.props.addInsightsCallback('ds_delete_ocr_area_2', this.deleteOcrAreaCallback)
     this.props.addInsightsCallback('ds_highlight_app_items', this.highlightAppItems)
     this.props.addInsightsCallback('ds_load_current_data_sifter', this.loadCurrentDataSifter)
@@ -650,6 +723,7 @@ console.log('FRUIT PUNCH highlighting app items')
     const scan_level_dropdown = this.buildScanLevelDropdown2()
     const normal_scan_mode_buttons_row = this.buildNormalScanModeButtonsRow()
     const build_by_hand_buttons_row = this.buildBuildByHandButtonsRow()
+    const item_info_area = this.buildItemInfoArea()
     const header_row = makeHeaderRow(
       'data sifter',
       'data_sifter_body',
@@ -667,49 +741,55 @@ console.log('FRUIT PUNCH highlighting app items')
                 className='row collapse bg-light'
             >
               <div id='data_sifter_main' className='col'>
+                <div className='row'>
+                  <div className='col-6'>
+                    {normal_scan_mode_buttons_row}
 
-                {normal_scan_mode_buttons_row}
+                    {build_by_hand_buttons_row}
 
-                {build_by_hand_buttons_row}
+                    <div className='row mt-2'>
+                      {build_by_hand_checkbox}
+                    </div>
 
-                <div className='row mt-2'>
-                  {build_by_hand_checkbox}
-                </div>
+                    <div className='row mt-2'>
+                      {id_string}
+                    </div>
 
-                <div className='row mt-2'>
-                  {id_string}
-                </div>
+                    <div className='row mt-2'>
+                      {name_field}
+                    </div>
 
-                <div className='row mt-2'>
-                  {name_field}
-                </div>
+                    <div className='row mt-2'>
+                      {scale_dropdown}
+                    </div>
 
-                <div className='row mt-2'>
-                  {scale_dropdown}
-                </div>
+                    <div className='row mt-2'>
+                      {ocr_job_id_dropdown}
+                    </div>
 
-                <div className='row mt-2'>
-                  {ocr_job_id_dropdown}
-                </div>
+                    <div className='row mt-2'>
+                      {template_job_id_dropdown}
+                    </div>
 
-                <div className='row mt-2'>
-                  {template_job_id_dropdown}
-                </div>
+                    <div className='row mt-2'>
+                      {fake_data_checkbox}
+                    </div>
 
-                <div className='row mt-2'>
-                  {fake_data_checkbox}
-                </div>
+                    <div className='row mt-2'>
+                      {debug_checkbox}
+                    </div>
 
-                <div className='row mt-2'>
-                  {debug_checkbox}
-                </div>
+                    <div className='row mt-2'>
+                      {show_type_dropdown}
+                    </div>
 
-                <div className='row mt-2'>
-                  {show_type_dropdown}
-                </div>
-
-                <div className='row mt-2'>
-                  {scan_level_dropdown}
+                    <div className='row mt-2'>
+                      {scan_level_dropdown}
+                    </div>
+                  </div>
+                  <div className='col-6'>
+                    {item_info_area}
+                  </div>
                 </div>
 
                 <div className='row mt-1 mr-1 ml-1 border-top'>
