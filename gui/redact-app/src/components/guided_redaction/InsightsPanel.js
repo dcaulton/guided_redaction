@@ -224,9 +224,9 @@ class InsightsPanel extends React.Component {
     this.scrubberOnChange()
   }
 
-  runCallbackFunction(function_name) {
+  runCallbackFunction(function_name, vitoparms) {
     if (Object.keys(this.state.callbacks).includes(function_name)) {
-      return this.state.callbacks[function_name]()
+      return this.state.callbacks[function_name](vitoparms)
     }
     return []
   }
@@ -321,6 +321,7 @@ class InsightsPanel extends React.Component {
 
   afterManualCompileDataSifterLoaded() {
     this.setScrubberToFirstFrame()
+    this.runCallbackFunction('ds_load_current_data_sifter')
   }
 
   loadInsightsJobResults(job_id) {

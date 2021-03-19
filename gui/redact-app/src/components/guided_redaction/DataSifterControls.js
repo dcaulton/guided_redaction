@@ -47,6 +47,18 @@ class DataSifterControls extends React.Component {
     this.getShowType=this.getShowType.bind(this)
     this.getAppZones=this.getAppZones.bind(this)
     this.deleteOcrAreaCallback=this.deleteOcrAreaCallback.bind(this)
+    this.highlightAppItems=this.highlightAppItems.bind(this)
+    this.loadCurrentDataSifter=this.loadCurrentDataSifter.bind(this)
+  }
+
+  loadCurrentDataSifter() {
+    const cur_ds_id = this.props.current_ids['t1_scanner']['data_sifter']
+    this.loadDataSifter(cur_ds_id)
+    this.props.handleSetMode('ds_highlight_app_items')
+  }
+
+  highlightAppItems() {
+console.log('FRUIT PUNCH highlighting app items')
   }
 
   getAppZones() {
@@ -225,7 +237,6 @@ class DataSifterControls extends React.Component {
             checked={checked_val}
             type='checkbox'
             onChange={() => this.setLocalStateVar(field_name, !this.state[field_name])}
-            MAMA
           />
         </div>
         <div className='d-inline'>
@@ -278,6 +289,8 @@ class DataSifterControls extends React.Component {
     this.props.addInsightsCallback('getDataSifterShowType', this.getShowType)
     this.props.addInsightsCallback('getDataSifterAppZones', this.getAppZones)
     this.props.addInsightsCallback('ds_delete_ocr_area_2', this.deleteOcrAreaCallback)
+    this.props.addInsightsCallback('ds_highlight_app_items', this.highlightAppItems)
+    this.props.addInsightsCallback('ds_load_current_data_sifter', this.loadCurrentDataSifter)
   }
 
   setLocalStateVar(var_name, var_value, when_done=(()=>{})) {
