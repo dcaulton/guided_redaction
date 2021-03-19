@@ -95,7 +95,7 @@ class DataSifter:
             app_rowcols = self.app_right_cols
             ocr_rowcols_dict = self.ocr_right_cols_dict
 
-        sorted_keys = self.get_sorted_keys_for_ocr_rowcols(rowcol_type, ocr_rowcols_dict)
+        sorted_keys = self.ocr_rowcol_maker.get_sorted_keys_for_ocr_rowcols(rowcol_type, ocr_rowcols_dict)
         self.ocr_rowcol_scores = []
         for ocr_rowcol_id in sorted_keys:
             ocr_rowcol = ocr_rowcols_dict[ocr_rowcol_id]
@@ -353,18 +353,6 @@ class DataSifter:
                 for app_col_num, ocr_col_num in enumerate(one_path):
                     if ocr_col_num != -1:
                         total += self.ocr_rowcol_scores[ocr_col_num][app_col_num]
-
-    def get_sorted_keys_for_ocr_rowcols(self, group_type, ocr_row_or_col_dict):
-        if group_type == 'left_col':
-            sorted_keys = sorted(ocr_row_or_col_dict, key=lambda item: ocr_row_or_col_dict[item]['start'][0])
-        elif group_type == 'right_col':
-            sorted_keys = sorted(
-                ocr_row_or_col_dict, 
-                key=lambda item: ocr_row_or_col_dict[item]['end'][0]
-            )
-        elif group_type == 'row':
-            sorted_keys = sorted(ocr_row_or_col_dict, key=lambda item: ocr_row_or_col_dict[item]['start'][1])
-        return sorted_keys
 
     def add_rows_cols_to_response_and_stats(self, row_col_type, existing_classes):
         build_classes = {}

@@ -153,3 +153,15 @@ class OcrRowColMaker:
                 return 0  # envelope starts first, the ocr starts before envelope is done
             else:
                 return ocr_start[axis_index] - envelope_end[axis_index]
+
+    def get_sorted_keys_for_ocr_rowcols(self, group_type, ocr_row_or_col_dict):
+        if group_type == 'left_col':
+            sorted_keys = sorted(ocr_row_or_col_dict, key=lambda item: ocr_row_or_col_dict[item]['start'][0])
+        elif group_type == 'right_col':
+            sorted_keys = sorted(
+                ocr_row_or_col_dict,
+                key=lambda item: ocr_row_or_col_dict[item]['end'][0]
+            )
+        elif group_type == 'row':
+            sorted_keys = sorted(ocr_row_or_col_dict, key=lambda item: ocr_row_or_col_dict[item]['start'][1])
+        return sorted_keys
