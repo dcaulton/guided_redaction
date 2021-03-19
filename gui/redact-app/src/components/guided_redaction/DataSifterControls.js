@@ -84,7 +84,6 @@ class DataSifterControls extends React.Component {
     }
     const frameset_hash = this.props.getFramesetHashForImageUrl(this.props.insights_image)
     const cur_ocr_matches = this.props.tier_1_matches['ocr'][cur_ocr_id]
-    const build_matches = {}
     if (!Object.keys(cur_ocr_matches['movies']).includes(this.props.movie_url)) {
       return {}
     }
@@ -148,7 +147,7 @@ class DataSifterControls extends React.Component {
   buildDeleteOcrAreasButton() {
     return (
       <div
-          className='d-inline'
+          className='d-inline ml-2'
       >
         <button
             className='btn btn-primary'
@@ -160,14 +159,14 @@ class DataSifterControls extends React.Component {
     )
   }
 
-  buildBuildByHandButtons() {
+  buildBuildByHandButtonsRow() {
     if (!this.state.build_by_hand) {
       return ''
     }
     const delete_ocr_areas_button = this.buildDeleteOcrAreasButton()
     const submit_for_compile_button = this.buildSubmitCompileButton()
     return (
-      <div>
+      <div className='row mt-2'>
         {delete_ocr_areas_button}
         {submit_for_compile_button}
       </div>
@@ -188,6 +187,40 @@ class DataSifterControls extends React.Component {
     )
   }
 
+  buildBuildByHandCheckbox(field_name, label) {
+    let checked_val = ''
+    if (this.state.build_by_hand) {
+      checked_val = 'checked'
+    }
+    return (
+      <div className='ml-2'>
+        <div className='d-inline'>
+          <input
+            className='mr-2'
+            checked={checked_val}
+            type='checkbox'
+            onChange={() => this.setLocalStateVar(field_name, !this.state[field_name])}
+            MAMA
+          />
+        </div>
+        <div className='d-inline'>
+          {label}
+        </div>
+      </div>
+    )
+  }
+
+  toggleBuildByHandValue() {
+    let display_mess = false
+    if (!this.state.build_by_hand) {
+      display_mess = true
+    }
+    this.setState({'build_by_hand': !this.state.build_by_hand})
+    if (display_mess) {
+      this.props.setGlobalStateVar('message', 'First, specify your apps name and metadata.  Next, find a frame in the scrubber, ocr it, and use the Delete Ocr Areas button to remove ocr results that are not part of the app.  When you are done, press the Submit for Compile button.')
+    }
+  }
+
   buildToggleField(field_name, label) {
     let checked_val = ''
     if (this.state[field_name]) {
@@ -200,7 +233,7 @@ class DataSifterControls extends React.Component {
             className='mr-2'
             checked={checked_val}
             type='checkbox'
-            onChange={() => this.setLocalStateVar(field_name, !this.state[field_name])}
+            onChange={() => this.toggleBuildByHandValue()}
           />
         </div>
         <div className='d-inline'>
@@ -524,28 +557,45 @@ class DataSifterControls extends React.Component {
     )
   }
 
+  buildNormalScanModeButtonsRow() {
+    if (this.state.build_by_hand) {
+      return ''
+    }
+    const load_button = this.buildLoadButton()
+    const delete_button = this.buildDeleteButton()
+    const save_to_db_button = this.buildSaveToDatabaseButton()
+    const clear_matches_button = this.buildClearMatchesButton2()
+    const build_button = this.buildBuildButton()
+    const run_button = this.buildRunButtonWrapper()
+    return (
+      <div className='row mt-2'>
+        {load_button}
+        {delete_button}
+        {save_to_db_button}
+        {clear_matches_button}
+        {build_button}
+        {run_button}
+      </div>
+    )
+  }
+
   render() {
     if (!this.props.visibilityFlags['data_sifter']) {
       return([])
     }
-    const load_button = this.buildLoadButton()
     const id_string = buildIdString(this.state.id, 'data_sifter', false)
     const name_field = this.buildNameField()
     const scale_dropdown = this.buildScaleDropdown()
     const ocr_job_id_dropdown = this.buildMatchIdField2('ocr', true) 
     const template_job_id_dropdown = this.buildMatchIdField2('template', true) 
     const fake_data_checkbox = this.buildToggleField('fake_data', 'Generate Fake Data')
-    const build_by_hand_checkbox = this.buildToggleField('build_by_hand', 'Build by Hand')
+    const build_by_hand_checkbox = this.buildToggleField('build_by_hand', 'Tune this Data Sifter by Hand')
     const debug_checkbox = this.buildToggleField('debug', 'Debug')
     const show_type_dropdown = this.buildShowType()
     const attributes_list = this.buildAttributesList()
     const scan_level_dropdown = this.buildScanLevelDropdown2()
-    const run_button = this.buildRunButtonWrapper()
-    const build_button = this.buildBuildButton()
-    const delete_button = this.buildDeleteButton()
-    const save_to_db_button = this.buildSaveToDatabaseButton()
-    const clear_matches_button = this.buildClearMatchesButton2()
-    const build_by_hand_buttons = this.buildBuildByHandButtons()
+    const normal_scan_mode_buttons_row = this.buildNormalScanModeButtonsRow()
+    const build_by_hand_buttons_row = this.buildBuildByHandButtonsRow()
     const header_row = makeHeaderRow(
       'data sifter',
       'data_sifter_body',
@@ -564,17 +614,12 @@ class DataSifterControls extends React.Component {
             >
               <div id='data_sifter_main' className='col'>
 
-                <div className='row'>
-                  {load_button}
-                  {delete_button}
-                  {save_to_db_button}
-                  {clear_matches_button}
-                  {build_button}
-                  {run_button}
-                </div>
+                {normal_scan_mode_buttons_row}
+
+                {build_by_hand_buttons_row}
 
                 <div className='row mt-2'>
-                  {build_by_hand_buttons}
+                  {build_by_hand_checkbox}
                 </div>
 
                 <div className='row mt-2'>
@@ -599,10 +644,6 @@ class DataSifterControls extends React.Component {
 
                 <div className='row mt-2'>
                   {fake_data_checkbox}
-                </div>
-
-                <div className='row mt-2'>
-                  {build_by_hand_checkbox}
                 </div>
 
                 <div className='row mt-2'>
