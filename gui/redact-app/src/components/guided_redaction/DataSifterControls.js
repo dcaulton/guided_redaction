@@ -146,6 +146,10 @@ class DataSifterControls extends React.Component {
   setCurrentItemVar(var_name, var_value) {
     let deepCopyItems= JSON.parse(JSON.stringify(this.state.items))
     deepCopyItems[this.state.highlighted_item_id][var_name] = var_value
+    if (deepCopyItems[this.state.highlighted_item_id]['type'] === 'label') {
+      deepCopyItems[this.state.highlighted_item_id]['is_pii'] = false
+      deepCopyItems[this.state.highlighted_item_id]['mask_this_field'] = false
+    }
     this.setLocalStateVar('items', deepCopyItems)
   }
 
@@ -216,7 +220,6 @@ class DataSifterControls extends React.Component {
       const item = this.state.items[item_key]
       if (this.itemContainsClick(item, clicked_coords)) {
         this.setState({'highlighted_item_id': item_key})
-        console.log('FOUND IT')
       }
     }
   }

@@ -9,10 +9,10 @@ from guided_redaction.analyze.classes.OcrRowColMaker import OcrRowColMaker
 
 class DataSifter:
 
-    def __init__(self, mesh_match_meta, *args, **kwargs):
+    def __init__(self, data_sifter_meta, *args, **kwargs):
         super(DataSifter, self).__init__(*args, **kwargs)
-        self.mesh_match_meta = mesh_match_meta
-        self.debug = mesh_match_meta.get('debug', False)
+        self.data_sifter_meta = data_sifter_meta
+        self.debug = data_sifter_meta.get('debug', False)
         self.app_data = self.get_app_data()
         self.ocr_rowcol_maker = OcrRowColMaker()
         self.min_app_score = 200
@@ -31,8 +31,8 @@ class DataSifter:
         self.template_results_this_frame = self.filter_results_by_t1_bounds(
             template_results_this_frame, other_t1_results_this_frame
         )
-        self.ocr_rows_dict = self.ocr_row_maker.gather_ocr_rows(self.ocr_results_this_frame)
-        self.ocr_left_cols_dict, self.ocr_right_cols_dict = self.ocr_row_maker.gather_ocr_cols(self.ocr_results_this_frame)
+        self.ocr_rows_dict = self.ocr_rowcol_maker.gather_ocr_rows(self.ocr_results_this_frame)
+        self.ocr_left_cols_dict, self.ocr_right_cols_dict = self.ocr_rowcol_maker.gather_ocr_cols(self.ocr_results_this_frame)
         self.add_rows_cols_to_response_and_stats('row', self.ocr_rows_dict)
         self.add_rows_cols_to_response_and_stats('left_col', self.ocr_left_cols_dict)
         self.add_rows_cols_to_response_and_stats('right_col', self.ocr_right_cols_dict)
@@ -724,6 +724,11 @@ class DataSifter:
                 },
             }
         }
+        print('BABBY {}'.format(build_obj))
+        print('CRAZZY {}'.format(self.data_sifter_meta))
+        self.data_sifter_meta['right_cols'] = []
+        print('we have {} right cols '.format(len(self.data_sifter_meta['right_cols'])))
+        return self.data_sifter_meta
         return build_obj
 
 
