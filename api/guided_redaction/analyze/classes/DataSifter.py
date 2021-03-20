@@ -726,6 +726,8 @@ class DataSifter:
         }
         print('BABBY {}'.format(build_obj))
         print('CRAZZY {}'.format(self.data_sifter_meta))
+        # THIs IS A HACK. we have a ton of single item right cols, it's killing our path optimization algo
+        #  give the user a way to specify the rows cols they want after manual compile
         self.data_sifter_meta['right_cols'] = []
         print('we have {} right cols '.format(len(self.data_sifter_meta['right_cols'])))
         return self.data_sifter_meta

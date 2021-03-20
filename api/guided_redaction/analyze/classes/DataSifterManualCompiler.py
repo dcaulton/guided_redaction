@@ -40,6 +40,8 @@ class DataSifterManualCompiler():
 
         self.shorten_app_entity_ids()
 
+        self.trim_weakest_columns()
+
         self.data_sifter['rows'] = self.app_rows
         self.data_sifter['left_cols'] = self.app_left_cols
         self.data_sifter['right_cols'] = self.app_right_cols
@@ -121,3 +123,43 @@ class DataSifterManualCompiler():
             self.app_left_cols = new_app_rowcols
         elif rowcol_type == 'right_col':
             self.app_right_cols = new_app_rowcols
+
+    def trim_weakest_columns(self):
+        # The idea here is that an item will be grouped into a left or right column, based on its alignment
+        #   or maybe neither, meaning it just floats horizontally on the page, like a center aligned heading
+        # But an item will only extremely rarely be left AND right aligned.  In fact if the whole column is like that
+        #   it's easier to just think of it as a left aligned column
+        # If we don't this, you end up with dozens of one member right hand cols (if stuff is left aligned), this
+        #   blows up our Data Sifter rowcol score ranking logic, more importantly it adds no useful information
+        left_column_counts = {}
+        for left_col in self.app_left_cols:
+            num_items = len(left_col)
+            for item_id in left_col:
+                left_column_counts[item_id] = num_items
+
+        right_column_ids = []
+        for right_col in self.app_right_cols:
+            num_items = len(right_col)
+            for item_id in right_col:
+                if num_items > left_column_counts[item_id]:
+                    right_column_ids.append(item_id)
+
+        build_left_cols = []
+        for left_col in self.app_left_cols:
+            new_col = []
+            for item_id in left_col:
+                if item_id not in right_column_ids:
+                    new_col.append(item_id)
+            if new_col:
+                build_left_cols.append(new_col)
+        self.app_left_cols = build_left_cols
+
+        build_right_cols = []
+        for right_col in self.app_right_cols:
+            new_col = []
+            for item_id in right_col:
+                if item_id in right_column_ids:
+                    new_col.append(item_id)
+            if new_col:
+                build_right_cols.append(new_col)
+        self.app_right_cols = build_right_cols
