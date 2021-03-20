@@ -53,6 +53,39 @@ class DataSifterControls extends React.Component {
     this.getDataSifterHighlightedItemId=this.getDataSifterHighlightedItemId.bind(this)
   }
 
+  deleteCurrentItem() {
+    const cols_ret_obj = this.buildRightLeftColsWithoutItem() 
+    const new_rows = this.buildRowsWithoutItem() 
+    let deepCopyItems= JSON.parse(JSON.stringify(this.state.items))
+    delete deepCopyItems[this.state.highlighted_item_id]
+    const set_var = {
+      rows: new_rows,
+      left_cols: cols_ret_obj['left_cols'],
+      right_cols: cols_ret_obj['right_cols'],
+      items: deepCopyItems,
+      highlighted_item_id: '',
+    }
+    this.setLocalStateVar(set_var)
+  }
+
+  buildItemDeleteButton() {
+    if (!this.state.highlighted_item_id) {
+      return ''
+    }
+    return (
+      <div
+          className='d-inline'
+      >
+        <button
+            className='btn btn-primary'
+            onClick={() => this.deleteCurrentItem() }
+        >
+          Delete
+        </button>
+      </div>
+    )
+  }
+
   buildItemWidthField(item) {
     if (!this.state.highlighted_item_id) {
       return ''
@@ -67,8 +100,38 @@ class DataSifterControls extends React.Component {
     )
   }
 
-  unalignCurrentItemColumn(value) {
-    let deepCopyLeftCols = JSON.parse(JSON.stringify(this.state.left_cols))
+  buildRowsWithoutItem() {
+    let build_rows = []
+    for (let i=0; i < this.state.rows.length; i++) {
+      const row = this.state.rows[i]
+      if (row.includes(this.state.highlighted_item_id)) {
+        let build_row = []
+        for (let j=0; j < row.length; j++) {
+          if (row[j] !== this.state.highlighted_item_id) {
+            build_row.push(row[j])
+          }
+        }
+        if (build_row.length > 0) {
+          build_rows.push(build_row)
+        }
+      } else {
+        build_rows.push(this.state.rows[i])
+      }
+    }
+    return build_rows
+  }
+
+  unalignCurrentItemColumn() {
+    const ret_obj = this.buildRightLeftColsWithoutItem()
+    const build_obj = {
+      left_cols: ret_obj['left_cols'],
+      right_cols: ret_obj['right_cols'],
+    }
+    this.setLocalStateVar(build_obj)
+  }
+
+  buildRightLeftColsWithoutItem() {
+    let build_left_cols = []
     for (let i=0; i < this.state.left_cols.length; i++) {
       const left_col = this.state.left_cols[i]
       if (left_col.includes(this.state.highlighted_item_id)) {
@@ -78,13 +141,15 @@ class DataSifterControls extends React.Component {
             build_left_col.push(left_col[j])
           }
         }
-        deepCopyLeftCols[i] = build_left_col
-        this.setLocalStateVar('left_cols', deepCopyLeftCols)
-        return
+        if (build_left_col.length > 0) {
+          build_left_cols.push(build_left_col)
+        }
+      } else {
+        build_left_cols.push(this.state.left_cols[i])
       }
     }
-    // if we're here it was a right column
-    let deepCopyRightCols = JSON.parse(JSON.stringify(this.state.right_cols))
+
+    let build_right_cols = []
     for (let i=0; i < this.state.right_cols.length; i++) {
       const right_col = this.state.right_cols[i]
       if (right_col.includes(this.state.highlighted_item_id)) {
@@ -94,11 +159,19 @@ class DataSifterControls extends React.Component {
             build_right_col.push(right_col[j])
           }
         }
-        deepCopyRightCols[i] = build_right_col
-        this.setLocalStateVar('right_cols', deepCopyRightCols)
-        return
+        if (build_right_col.length > 0) {
+          build_right_cols.push(build_right_col)
+        }
+      } else {
+        build_right_cols.push(this.state.right_cols[i])
       }
     }
+
+    const return_obj = {
+      left_cols: build_left_cols,
+      right_cols: build_right_cols,
+    }
+    return return_obj
   }
 
   buildItemHorizontalAlignmentField(item) {
@@ -248,16 +321,22 @@ class DataSifterControls extends React.Component {
   }
 
   setCurrentItemVar(var_name, var_value) {
+    const old_value = this.state.items[this.state.highlighted_item_id][var_name] 
     let deepCopyItems= JSON.parse(JSON.stringify(this.state.items))
     if (var_name === 'width') {
       deepCopyItems[this.state.highlighted_item_id]['size'][0] = var_value
     } else {
       deepCopyItems[this.state.highlighted_item_id][var_name] = var_value
     }
+
     if (deepCopyItems[this.state.highlighted_item_id]['type'] === 'label') {
       deepCopyItems[this.state.highlighted_item_id]['is_pii'] = false
       deepCopyItems[this.state.highlighted_item_id]['mask_this_field'] = false
+    } else if (var_name === 'type' && old_value === 'label' && var_value === 'user_data') {
+      deepCopyItems[this.state.highlighted_item_id]['is_pii'] = true
+      deepCopyItems[this.state.highlighted_item_id]['mask_this_field'] = true
     }
+
     this.setLocalStateVar('items', deepCopyItems)
   }
 
@@ -272,6 +351,7 @@ class DataSifterControls extends React.Component {
     const mask_this_field = this.buildItemMaskThisField(item) 
     const horiz_alignment_field = this.buildItemHorizontalAlignmentField(item) 
     const width_field = this.buildItemWidthField(item)
+    const delete_button = this.buildItemDeleteButton()
     return (
       <div className='row border m-2'>
         <div className='col ml-2'>
@@ -298,6 +378,9 @@ class DataSifterControls extends React.Component {
           </div>
           <div className='row mt-2'>
             {horiz_alignment_field}
+          </div>
+          <div className='row mt-2'>
+            {delete_button}
           </div>
         </div>
       </div>
@@ -578,12 +661,25 @@ class DataSifterControls extends React.Component {
       this.doSave()
       when_done()
     }
-    this.setState(
-      {
-        [var_name]: var_value,
-      },
-      anon_func
-    )
+    if (typeof var_name === 'string' || var_name instanceof String) {
+      // we have been given one key and one value
+      if (this.state[var_name] === var_value) {
+        when_done()
+      } else {
+        this.setState(
+          {
+            [var_name]: var_value,
+          },
+          anon_func
+        )
+      }
+    } else {
+      // var_name is actaully a dict
+      this.setState(
+        var_name,
+        anon_func
+      )
+    }
   }
 
   buildLoadButton() {                                                           
