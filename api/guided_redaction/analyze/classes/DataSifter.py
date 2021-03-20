@@ -521,6 +521,7 @@ class DataSifter:
                 self.add_zone_to_response(ocr_match_ele['location'], end_coords, [], 'fast_pass_anchor')
 
     def get_app_data(self):
+        return self.data_sifter_meta
 #   ITEM FIELDS:
 # type
 # text
@@ -546,191 +547,184 @@ class DataSifter:
 # anchors?  I'd like to hold base64 strings apart from the primary data structure, better for eyeballing output
 # landmarks - like a star chart, a few of these can orient you in the form, even if they scale
 # rowcol_rules.  things like you'll only see app rows 6,7,8 or 9,10,11 but never items from BOTH at the same time
-        build_obj = {
-            'rows': [
-                ['a1', 'a2', 'a3', 'a4', 'a5', 'a6'], 
-                ['b1'],
-                ['x1'],
-                ['d1', 'e1', 'c1', 'f1'],
-                ['c3', 'f2'],
-                ['c4', 'm1a'],
-                ['c5', 'm1b'],
-                ['c6', 'm1c'],
-                ['c7', 'm1d', 'f3'],
-            ],
-            'left_cols': [
-                ['d1', 'd2', 'd3', 'd4', 'd5', 'd6', 'd7', 'd8'],
-                ['c1', 'c2', 'c3', 'c4', 'c5', 'c6', 'c7'],
-                ['e1', 'e2'],
-                ['f1', 'f2', 'f3'],
-            ],
-            'right_cols': [],
-            'items': {
-                'a1': {
-                    'type': 'label',
-                    'text': 'Details',
-                },
-                'a2': {
-                    'type': 'label',
-                    'text': 'System',
-                },
-                'a3': {
-                    'type': 'label',
-                    'text': 'User',
-                },
-                'a4': {
-                    'type': 'label',
-                    'text': 'Offers',
-                },
-                'a5': {
-                    'type': 'label',
-                    'text': 'Beta',
-                },
-                'a6': {
-                    'type': 'label',
-                    'text': 'Subscriptions',
-                },
-                'b1': {
-                    'type': 'label',
-                    'text': 'Contact Information',
-                },
-                'c1': {
-                    'type': 'label',
-                    'text': 'Email',
-                },
-                'c2': {
-                    'type': 'label',
-                    'text': 'Preferred Contact Method',
-                },
-                'c3': {
-                    'type': 'label',
-                    'text': 'Preferred Language',
-                },
-                'c4': {
-                    'type': 'label',
-                    'text': 'Mobile',
-                },
-                'c5': {
-                    'type': 'label',
-                    'text': 'Work Phone',
-                },
-                'c6': {
-                    'type': 'label',
-                    'text': 'Home Phone',
-                },
-                'c7': {
-                    'type': 'label',
-                    'text': 'Other Phone',
-                },
-                'd1': {
-                    'type': 'label',
-                    'text': 'Name',
-                },
-                'd2': {
-                    'type': 'label',
-                    'text': 'Sonos ID',
-                },
-                'd3': {
-                    'type': 'label',
-                    'text': 'Email Opt Out',
-                },
-                'd4': {
-                    'type': 'label',
-                    'text': 'Survey Opt Out',
-                },
-                'd5': {
-                    'type': 'label',
-                    'text': 'In app Messaging Opt Out',
-                },
-                'd6': {
-                    'type': 'label',
-                    'text': 'Address',
-                },
-                'd7': {
-                    'type': 'label',
-                    'text': 'User Type',
-                },
-                'd8': {
-                    'type': 'label',
-                    'text': 'Lead Source',
-                },
-                'e1': {
-                    'type': 'user_data',
-                    'field_name_label': 'full_name',
-                    'mask_this_field': True,
-                    'is_pii': True,
-                    'data_type': 'string',
-                    'min_width': 50,
-                },
-                'e2': {
-                    'type': 'user_data',
-                    'field_name_label': 'sonos_id',
-                    'mask_this_field': True,
-                    'is_pii': True,
-                    'data_type': 'int',
-                    'min_width': 50,
-                },
-                'f1': {
-                    'type': 'user_data',
-                    'field_name_label': 'email',
-                    'mask_this_field': True,
-                    'is_pii': True,
-                    'data_type': 'string',
-                    'min_width': 50,
-                },
-                'f2': {
-                    'type': 'user_data',
-                    'field_name_label': 'preferred_lang',
-                    'mask_this_field': False,
-                    'is_pii': False,
-                    'data_type': 'string',
-                },
-                'f3': {
-                    'type': 'user_data',
-                    'field_name_label': 'other_phone',
-                    'mask_this_field': True,
-                    'is_pii': True,
-                    'data_type': 'phone',
-                    'min_width': 50,
-                },
-                'm1a': {
-                    'type': 'template_anchor',
-                    'anchor_id': 'anchor_590897819',
-                    'name': 'eyeball',
-                },
-                'm1b': {
-                    'type': 'template_anchor',
-                    'anchor_id': 'anchor_590897819',
-                    'name': 'eyeball',
-                },
-                'm1c': {
-                    'type': 'template_anchor',
-                    'anchor_id': 'anchor_590897819',
-                    'name': 'eyeball',
-                },
-                'm1d': {
-                    'type': 'template_anchor',
-                    'anchor_id': 'anchor_590897819',
-                    'name': 'eyeball',
-                },
-                'm2a': {
-                    'type': 'template_anchor',
-                    'anchor_id': 'anchor_46051205',
-                    'name': 'pencil',
-                },
-                'x1': {
-                    'type': 'label',
-                    'text': 'total nonsense should not match',
-                },
-            }
-        }
-        print('BABBY {}'.format(build_obj))
-        print('CRAZZY {}'.format(self.data_sifter_meta))
-        # THIs IS A HACK. we have a ton of single item right cols, it's killing our path optimization algo
-        #  give the user a way to specify the rows cols they want after manual compile
-        self.data_sifter_meta['right_cols'] = []
-        print('we have {} right cols '.format(len(self.data_sifter_meta['right_cols'])))
-        return self.data_sifter_meta
-        return build_obj
+#        build_obj = {
+#            'rows': [
+#                ['a1', 'a2', 'a3', 'a4', 'a5', 'a6'], 
+#                ['b1'],
+#                ['x1'],
+#                ['d1', 'e1', 'c1', 'f1'],
+#                ['c3', 'f2'],
+#                ['c4', 'm1a'],
+#                ['c5', 'm1b'],
+#                ['c6', 'm1c'],
+#                ['c7', 'm1d', 'f3'],
+#            ],
+#            'left_cols': [
+#                ['d1', 'd2', 'd3', 'd4', 'd5', 'd6', 'd7', 'd8'],
+#                ['c1', 'c2', 'c3', 'c4', 'c5', 'c6', 'c7'],
+#                ['e1', 'e2'],
+#                ['f1', 'f2', 'f3'],
+#            ],
+#            'right_cols': [],
+#            'items': {
+#                'a1': {
+#                    'type': 'label',
+#                    'text': 'Details',
+#                },
+#                'a2': {
+#                    'type': 'label',
+#                    'text': 'System',
+#                },
+#                'a3': {
+#                    'type': 'label',
+#                    'text': 'User',
+#                },
+#                'a4': {
+#                    'type': 'label',
+#                    'text': 'Offers',
+#                },
+#                'a5': {
+#                    'type': 'label',
+#                    'text': 'Beta',
+#                },
+#                'a6': {
+#                    'type': 'label',
+#                    'text': 'Subscriptions',
+#                },
+#                'b1': {
+#                    'type': 'label',
+#                    'text': 'Contact Information',
+#                },
+#                'c1': {
+#                    'type': 'label',
+#                    'text': 'Email',
+#                },
+#                'c2': {
+#                    'type': 'label',
+#                    'text': 'Preferred Contact Method',
+#                },
+#                'c3': {
+#                    'type': 'label',
+#                    'text': 'Preferred Language',
+#                },
+#                'c4': {
+#                    'type': 'label',
+#                    'text': 'Mobile',
+#                },
+#                'c5': {
+#                    'type': 'label',
+#                    'text': 'Work Phone',
+#                },
+#                'c6': {
+#                    'type': 'label',
+#                    'text': 'Home Phone',
+#                },
+#                'c7': {
+#                    'type': 'label',
+#                    'text': 'Other Phone',
+#                },
+#                'd1': {
+#                    'type': 'label',
+#                    'text': 'Name',
+#                },
+#                'd2': {
+#                    'type': 'label',
+#                    'text': 'Sonos ID',
+#                },
+#                'd3': {
+#                    'type': 'label',
+#                    'text': 'Email Opt Out',
+#                },
+#                'd4': {
+#                    'type': 'label',
+#                    'text': 'Survey Opt Out',
+#                },
+#                'd5': {
+#                    'type': 'label',
+#                    'text': 'In app Messaging Opt Out',
+#                },
+#                'd6': {
+#                    'type': 'label',
+#                    'text': 'Address',
+#                },
+#                'd7': {
+#                    'type': 'label',
+#                    'text': 'User Type',
+#                },
+#                'd8': {
+#                    'type': 'label',
+#                    'text': 'Lead Source',
+#                },
+#                'e1': {
+#                    'type': 'user_data',
+#                    'field_name_label': 'full_name',
+#                    'mask_this_field': True,
+#                    'is_pii': True,
+#                    'data_type': 'string',
+#                    'min_width': 50,
+#                },
+#                'e2': {
+#                    'type': 'user_data',
+#                    'field_name_label': 'sonos_id',
+#                    'mask_this_field': True,
+#                    'is_pii': True,
+#                    'data_type': 'int',
+#                    'min_width': 50,
+#                },
+#                'f1': {
+#                    'type': 'user_data',
+#                    'field_name_label': 'email',
+#                    'mask_this_field': True,
+#                    'is_pii': True,
+#                    'data_type': 'string',
+#                    'min_width': 50,
+#                },
+#                'f2': {
+#                    'type': 'user_data',
+#                    'field_name_label': 'preferred_lang',
+#                    'mask_this_field': False,
+#                    'is_pii': False,
+#                    'data_type': 'string',
+#                },
+#                'f3': {
+#                    'type': 'user_data',
+#                    'field_name_label': 'other_phone',
+#                    'mask_this_field': True,
+#                    'is_pii': True,
+#                    'data_type': 'phone',
+#                    'min_width': 50,
+#                },
+#                'm1a': {
+#                    'type': 'template_anchor',
+#                    'anchor_id': 'anchor_590897819',
+#                    'name': 'eyeball',
+#                },
+#                'm1b': {
+#                    'type': 'template_anchor',
+#                    'anchor_id': 'anchor_590897819',
+#                    'name': 'eyeball',
+#                },
+#                'm1c': {
+#                    'type': 'template_anchor',
+#                    'anchor_id': 'anchor_590897819',
+#                    'name': 'eyeball',
+#                },
+#                'm1d': {
+#                    'type': 'template_anchor',
+#                    'anchor_id': 'anchor_590897819',
+#                    'name': 'eyeball',
+#                },
+#                'm2a': {
+#                    'type': 'template_anchor',
+#                    'anchor_id': 'anchor_46051205',
+#                    'name': 'pencil',
+#                },
+#                'x1': {
+#                    'type': 'label',
+#                    'text': 'total nonsense should not match',
+#                },
+#            }
+#        }
+#        return build_obj
 
 
