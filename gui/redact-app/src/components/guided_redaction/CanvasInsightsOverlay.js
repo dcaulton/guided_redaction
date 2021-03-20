@@ -11,6 +11,9 @@ class CanvasInsightsOverlay extends React.Component {
     this.intersect_color = '#DE7'
     this.sum_color = '#7ED'
     this.selected_area_minimum_zone_color = '#3EA'
+    this.data_sifter_rows_color = '#F33'
+    this.data_sifter_left_cols_color = '#3F3'
+    this.data_sifter_right_cols_color = '#33F'
     this.selected_area_maximum_zone_color = '#A3A'
     this.selected_area_manual_zone_color = '#D9E'
     this.selected_area_origin_location_color = '#40D'
@@ -90,6 +93,49 @@ class CanvasInsightsOverlay extends React.Component {
           [mz],
           this.selected_area_manual_zone_color
         )
+      }
+    }
+  }
+
+  drawDataSifterAppRowCols() {
+    const app_rowcols = this.props.runCallbackFunction('getDataSifterAppRowCols')
+
+    if (!app_rowcols) {
+      return
+    }
+    const canvas = this.refs.insights_canvas
+    let ctx = canvas.getContext("2d")
+    ctx.strokeStyle = this.data_sifter_rows_color
+    ctx.lineWidth = 5
+    ctx.globalAlpha = 1
+
+    if (Object.keys(app_rowcols).includes('rows')) {
+      for (let i=0; i < app_rowcols['rows'].length; i++) {
+        const row_info = app_rowcols['rows'][i]
+        ctx.beginPath()
+        ctx.moveTo(row_info['start'][0]*this.props.insights_image_scale, row_info['start'][1]*this.props.insights_image_scale)
+        ctx.lineTo(row_info['end'][0]*this.props.insights_image_scale, row_info['end'][1]*this.props.insights_image_scale)
+        ctx.stroke()
+      }
+    }
+    ctx.strokeStyle = this.data_sifter_left_cols_color
+    if (Object.keys(app_rowcols).includes('left_cols')) {
+      for (let i=0; i < app_rowcols['left_cols'].length; i++) {
+        const row_info = app_rowcols['left_cols'][i]
+        ctx.beginPath()
+        ctx.moveTo(row_info['start'][0]*this.props.insights_image_scale, row_info['start'][1]*this.props.insights_image_scale)
+        ctx.lineTo(row_info['end'][0]*this.props.insights_image_scale, row_info['end'][1]*this.props.insights_image_scale)
+        ctx.stroke()
+      }
+    }
+    ctx.strokeStyle = this.data_sifter_right_cols_color
+    if (Object.keys(app_rowcols).includes('right_cols')) {
+      for (let i=0; i < app_rowcols['right_cols'].length; i++) {
+        const row_info = app_rowcols['right_cols'][i]
+        ctx.beginPath()
+        ctx.moveTo(row_info['start'][0]*this.props.insights_image_scale, row_info['start'][1]*this.props.insights_image_scale)
+        ctx.lineTo(row_info['end'][0]*this.props.insights_image_scale, row_info['end'][1]*this.props.insights_image_scale)
+        ctx.stroke()
       }
     }
   }
@@ -635,6 +681,7 @@ class CanvasInsightsOverlay extends React.Component {
     this.drawSelectionGrowerZones()
     this.drawDataSifterZones()
     this.drawDataSifterAppZones()
+    this.drawDataSifterAppRowCols()
   }
 
   componentDidUpdate() {
@@ -665,6 +712,7 @@ class CanvasInsightsOverlay extends React.Component {
     this.drawSelectionGrowerZones()
     this.drawDataSifterZones()
     this.drawDataSifterAppZones()
+    this.drawDataSifterAppRowCols()
   }
 
   render() {

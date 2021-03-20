@@ -25,6 +25,8 @@ class DataSifterControls extends React.Component {
       name: '',
       fake_data: false,
       build_by_hand: false,
+      show_app_boxes: false,
+      show_app_rowcols: false,
       debug: false,
       rows: [],
       left_cols: [],
@@ -47,10 +49,53 @@ class DataSifterControls extends React.Component {
     this.setLocalStateVar=this.setLocalStateVar.bind(this)
     this.getShowType=this.getShowType.bind(this)
     this.getAppZones=this.getAppZones.bind(this)
+    this.getAppRowCols=this.getAppRowCols.bind(this)
     this.deleteOcrAreaCallback=this.deleteOcrAreaCallback.bind(this)
     this.highlightAppItems=this.highlightAppItems.bind(this)
     this.loadCurrentDataSifter=this.loadCurrentDataSifter.bind(this)
     this.getDataSifterHighlightedItemId=this.getDataSifterHighlightedItemId.bind(this)
+  }
+
+  getAppRowCols() {
+    if (!this.state.id) {
+      return {}
+    }
+    if (!this.state.show_app_rowcols) {
+      return {}
+    }
+    let build_obj = {
+      rows:[],
+      left_cols:[],
+      right_cols:[],
+    }
+    build_obj['rows'].push({
+      start: [100, 140],
+      end: [800, 140],
+    })
+    build_obj['left_cols'].push({
+      start: [300, 20],
+      end: [300, 340],
+    })
+    build_obj['right_cols'].push({
+      start: [500, 60],
+      end: [500, 340],
+    })
+    return build_obj
+
+    for (let i=0; i < this.state.rows.length; i++) {
+      const rowcol = this.state.rows[i]
+      for (let j=0; j < rowcol.length; j++) {
+        const item_id = rowcol[j]
+        const item = this.state.items[item_id]
+        const build_item = {
+          location: item['location'],
+          size: item['size'],
+          type: item['type'],
+        }
+        build_obj[item_id] = build_item
+      }
+    }
+    return build_obj
   }
 
   deleteCurrentItem() {
@@ -394,6 +439,10 @@ class DataSifterControls extends React.Component {
   loadCurrentDataSifter() {
     const cur_ds_id = this.props.current_ids['t1_scanner']['data_sifter']
     this.loadDataSifter(cur_ds_id)
+    this.setState({
+      show_app_rowcols: true,
+      show_app_boxes: true,
+    })
     this.props.handleSetMode('ds_highlight_app_items')
   }
 
@@ -425,6 +474,9 @@ class DataSifterControls extends React.Component {
 
   getAppZones() {
     if (!this.state.id) {
+      return {}
+    }
+    if (!this.state.show_app_boxes) {
       return {}
     }
     let build_obj = {}
@@ -586,37 +638,8 @@ class DataSifterControls extends React.Component {
     )
   }
 
-  buildBuildByHandCheckbox(field_name, label) {
-    let checked_val = ''
-    if (this.state.build_by_hand) {
-      checked_val = 'checked'
-    }
-    return (
-      <div className='ml-2'>
-        <div className='d-inline'>
-          <input
-            className='mr-2'
-            checked={checked_val}
-            type='checkbox'
-            onChange={() => this.setLocalStateVar(field_name, !this.state[field_name])}
-          />
-        </div>
-        <div className='d-inline'>
-          {label}
-        </div>
-      </div>
-    )
-  }
-
-  toggleBuildByHandValue() {
-    let display_mess = false
-    if (!this.state.build_by_hand) {
-      display_mess = true
-    }
-    this.setState({'build_by_hand': !this.state.build_by_hand})
-    if (display_mess) {
-      this.props.setGlobalStateVar('message', 'First, specify your apps name and metadata.  Next, find a frame in the scrubber, ocr it, and use the Delete Ocr Areas button to remove ocr results that are not part of the app.  When you are done, press the Submit for Compile button.')
-    }
+  toggleLocalVar(var_name) {
+    this.setLocalStateVar(var_name, !this.state[var_name])
   }
 
   buildToggleField(field_name, label) {
@@ -631,7 +654,7 @@ class DataSifterControls extends React.Component {
             className='mr-2'
             checked={checked_val}
             type='checkbox'
-            onChange={() => this.toggleBuildByHandValue()}
+            onChange={() => this.toggleLocalVar(field_name)}
           />
         </div>
         <div className='d-inline'>
@@ -650,6 +673,7 @@ class DataSifterControls extends React.Component {
     this.loadNewDataSifter()
     this.props.addInsightsCallback('getDataSifterShowType', this.getShowType)
     this.props.addInsightsCallback('getDataSifterAppZones', this.getAppZones)
+    this.props.addInsightsCallback('getDataSifterAppRowCols', this.getAppRowCols)
     this.props.addInsightsCallback('getDataSifterHighlightedItemId', this.getDataSifterHighlightedItemId)
     this.props.addInsightsCallback('ds_delete_ocr_area_2', this.deleteOcrAreaCallback)
     this.props.addInsightsCallback('ds_highlight_app_items', this.highlightAppItems)
@@ -1020,6 +1044,8 @@ class DataSifterControls extends React.Component {
     const template_job_id_dropdown = this.buildMatchIdField2('template', true) 
     const fake_data_checkbox = this.buildToggleField('fake_data', 'Generate Fake Data')
     const build_by_hand_checkbox = this.buildToggleField('build_by_hand', 'Tune this Data Sifter by Hand')
+    const show_app_boxes_checkbox = this.buildToggleField('show_app_boxes', 'Show App Boxes')
+    const show_app_rowcols_checkbox = this.buildToggleField('show_app_rowcols', 'Show App RowCols')
     const debug_checkbox = this.buildToggleField('debug', 'Debug')
     const show_type_dropdown = this.buildShowType()
     const attributes_list = this.buildAttributesList()
@@ -1055,6 +1081,14 @@ class DataSifterControls extends React.Component {
                     </div>
 
                     <div className='row mt-2'>
+                      {show_app_boxes_checkbox}
+                    </div>
+
+                    <div className='row mt-2'>
+                      {show_app_rowcols_checkbox}
+                    </div>
+
+                    <div className='row mt-2'>
                       {id_string}
                     </div>
 
@@ -1064,14 +1098,6 @@ class DataSifterControls extends React.Component {
 
                     <div className='row mt-2'>
                       {scale_dropdown}
-                    </div>
-
-                    <div className='row mt-2'>
-                      {ocr_job_id_dropdown}
-                    </div>
-
-                    <div className='row mt-2'>
-                      {template_job_id_dropdown}
                     </div>
 
                     <div className='row mt-2'>
@@ -1089,6 +1115,15 @@ class DataSifterControls extends React.Component {
                     <div className='row mt-2'>
                       {scan_level_dropdown}
                     </div>
+
+                    <div className='row mt-2'>
+                      {ocr_job_id_dropdown}
+                    </div>
+
+                    <div className='row mt-2'>
+                      {template_job_id_dropdown}
+                    </div>
+
                   </div>
                   <div className='col-6'>
                     {item_info_area}
