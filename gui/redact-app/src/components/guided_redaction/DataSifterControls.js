@@ -53,6 +53,110 @@ class DataSifterControls extends React.Component {
     this.getDataSifterHighlightedItemId=this.getDataSifterHighlightedItemId.bind(this)
   }
 
+  buildItemWidthField(item) {
+    if (!this.state.highlighted_item_id) {
+      return ''
+    }
+    return buildLabelAndTextInput(
+      this.state.items[this.state.highlighted_item_id]['size'][0],
+      'Width',
+      'data_sifter_item_width',
+      'item_width',
+      4,
+      ((value)=>{this.setCurrentItemVar('width', value)})
+    )
+  }
+
+  unalignCurrentItemColumn(value) {
+    let deepCopyLeftCols = JSON.parse(JSON.stringify(this.state.left_cols))
+    for (let i=0; i < this.state.left_cols.length; i++) {
+      const left_col = this.state.left_cols[i]
+      if (left_col.includes(this.state.highlighted_item_id)) {
+        let build_left_col = []
+        for (let j=0; j < left_col.length; j++) {
+          if (left_col[j] !== this.state.highlighted_item_id) {
+            build_left_col.push(left_col[j])
+          }
+        }
+        deepCopyLeftCols[i] = build_left_col
+        this.setLocalStateVar('left_cols', deepCopyLeftCols)
+        return
+      }
+    }
+    // if we're here it was a right column
+    let deepCopyRightCols = JSON.parse(JSON.stringify(this.state.right_cols))
+    for (let i=0; i < this.state.right_cols.length; i++) {
+      const right_col = this.state.right_cols[i]
+      if (right_col.includes(this.state.highlighted_item_id)) {
+        let build_right_col = []
+        for (let j=0; j < right_col.length; j++) {
+          if (right_col[j] !== this.state.highlighted_item_id) {
+            build_right_col.push(right_col[j])
+          }
+        }
+        deepCopyRightCols[i] = build_right_col
+        this.setLocalStateVar('right_cols', deepCopyRightCols)
+        return
+      }
+    }
+  }
+
+  buildItemHorizontalAlignmentField(item) {
+    if (!this.state.highlighted_item_id) {
+      return ''
+    }
+    const cur_value = this.getItemAlignment(this.state.highlighted_item_id)
+    if (cur_value === 'none') {
+      return (
+        <div>
+          This item is not aligned with any columns
+        </div>
+      )
+    }
+    return (
+      <div className='col'>
+        <div className='row'>
+          <div className='d-inline'>
+            This item is
+          </div>
+          <div className='d-inline font-weight-bold ml-1'>
+            {cur_value}
+          </div>
+          <div className='d-inline ml-1'>
+            aligned in a column
+          </div>
+        </div>
+        <div className='row'>
+          <div className='d-inline ml-2'>
+            <input
+              type='checkbox'
+              onChange={() => this.unalignCurrentItemColumn()}
+            />
+          </div>
+          <div className='d-inline ml-2'>
+            Unalign?  (this is not reversible)
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  getItemAlignment(item_id) {
+    for (let i=0; i < this.state.left_cols.length; i++) {
+      const left_col = this.state.left_cols[i]
+      if (left_col.includes(item_id)) {
+        return 'left'
+      }
+    }
+    for (let i=0; i < this.state.right_cols.length; i++) {
+      const right_col = this.state.right_cols[i]
+      if (right_col.includes(item_id)) {
+        return 'right'
+      }
+    }
+    return 'none'
+  }
+
   buildItemMaskThisField(item) {
     if (!this.state.highlighted_item_id) {
       return ''
@@ -145,7 +249,11 @@ class DataSifterControls extends React.Component {
 
   setCurrentItemVar(var_name, var_value) {
     let deepCopyItems= JSON.parse(JSON.stringify(this.state.items))
-    deepCopyItems[this.state.highlighted_item_id][var_name] = var_value
+    if (var_name === 'width') {
+      deepCopyItems[this.state.highlighted_item_id]['size'][0] = var_value
+    } else {
+      deepCopyItems[this.state.highlighted_item_id][var_name] = var_value
+    }
     if (deepCopyItems[this.state.highlighted_item_id]['type'] === 'label') {
       deepCopyItems[this.state.highlighted_item_id]['is_pii'] = false
       deepCopyItems[this.state.highlighted_item_id]['mask_this_field'] = false
@@ -162,6 +270,8 @@ class DataSifterControls extends React.Component {
     const text_field = this.buildItemTextField(item)
     const is_pii_field = this.buildItemIsPiiField(item)
     const mask_this_field = this.buildItemMaskThisField(item) 
+    const horiz_alignment_field = this.buildItemHorizontalAlignmentField(item) 
+    const width_field = this.buildItemWidthField(item)
     return (
       <div className='row border m-2'>
         <div className='col ml-2'>
@@ -178,10 +288,16 @@ class DataSifterControls extends React.Component {
             {text_field}
           </div>
           <div className='row'>
+            {width_field}
+          </div>
+          <div className='row'>
             {is_pii_field}
           </div>
           <div className='row'>
             {mask_this_field}
+          </div>
+          <div className='row mt-2'>
+            {horiz_alignment_field}
           </div>
         </div>
       </div>
