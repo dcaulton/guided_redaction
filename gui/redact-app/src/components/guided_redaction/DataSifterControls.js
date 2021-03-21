@@ -68,33 +68,101 @@ class DataSifterControls extends React.Component {
       left_cols:[],
       right_cols:[],
     }
-    build_obj['rows'].push({
-      start: [100, 140],
-      end: [800, 140],
-    })
-    build_obj['left_cols'].push({
-      start: [300, 20],
-      end: [300, 340],
-    })
-    build_obj['right_cols'].push({
-      start: [500, 60],
-      end: [500, 340],
-    })
-    return build_obj
 
     for (let i=0; i < this.state.rows.length; i++) {
+      let start_x = -1
+      let end_x = -1
+      let y = -1
       const rowcol = this.state.rows[i]
       for (let j=0; j < rowcol.length; j++) {
         const item_id = rowcol[j]
         const item = this.state.items[item_id]
-        const build_item = {
-          location: item['location'],
-          size: item['size'],
-          type: item['type'],
+        const item_start = item['location']
+        const item_end = [
+          item['location'][0] + item['size'][0],
+          item['location'][1] + item['size'][1]
+        ]
+        if (start_x === -1) {
+          start_x = item_start[0]
+          end_x = item_start[0]
+          y = item_start[1]
         }
-        build_obj[item_id] = build_item
+        if (item_start[0] < start_x) {
+          start_x = item_start[0]
+        }
+        if (item_end[0] > end_x) {
+          end_x = item_end[0]
+        }
       }
+      const new_row_obj = {
+        start: [start_x, y],
+        end: [end_x, y],
+      }
+      build_obj['rows'].push(new_row_obj)
     }
+
+    for (let i=0; i < this.state.left_cols.length; i++) {
+      let start_y = -1
+      let end_y = -1
+      let x = -1
+      const rowcol = this.state.left_cols[i]
+      for (let j=0; j < rowcol.length; j++) {
+        const item_id = rowcol[j]
+        const item = this.state.items[item_id]
+        const item_start = item['location']
+        const item_end = [
+          item['location'][0] + item['size'][0],
+          item['location'][1] + item['size'][1]
+        ]
+        if (start_y === -1) {
+          start_y = item_start[1]
+          end_y = item_start[1]
+          x = item_start[0]
+        }
+        if (item_start[1] < start_y) {
+          start_y = item_start[1]
+        }
+        if (item_end[1] > end_y) {
+          end_y = item_end[1]
+        }
+      }
+      build_obj['left_cols'].push({
+        start: [x, start_y],
+        end: [x, end_y],
+      })
+    }
+
+    for (let i=0; i < this.state.right_cols.length; i++) {
+      let start_y = -1
+      let end_y = -1
+      let x = -1
+      const rowcol = this.state.right_cols[i]
+      for (let j=0; j < rowcol.length; j++) {
+        const item_id = rowcol[j]
+        const item = this.state.items[item_id]
+        const item_start = item['location']
+        const item_end = [
+          item['location'][0] + item['size'][0],
+          item['location'][1] + item['size'][1]
+        ]
+        if (start_y === -1) {
+          start_y = item_start[1]
+          end_y = item_start[1]
+          x = item_end[0]
+        }
+        if (item_start[1] < start_y) {
+          start_y = item_start[1]
+        }
+        if (item_end[1] > end_y) {
+          end_y = item_end[1]
+        }
+      }
+      build_obj['right_cols'].push({
+        start: [x, start_y],
+        end: [x, end_y],
+      })
+    }
+
     return build_obj
   }
 
