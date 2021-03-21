@@ -512,6 +512,11 @@ class DataSifterControls extends React.Component {
       show_app_boxes: true,
     })
     this.props.handleSetMode('ds_highlight_app_items')
+
+    const ds_panel_is_expanded = document.getElementById('data_sifter_body_button').getAttribute('aria-expanded')
+    if (ds_panel_is_expanded === 'false') {
+      document.getElementById('data_sifter_body_button').click()
+    }
   }
 
   itemContainsClick(item, clicked_coords) {
@@ -1111,7 +1116,7 @@ class DataSifterControls extends React.Component {
     const ocr_job_id_dropdown = this.buildMatchIdField2('ocr', true) 
     const template_job_id_dropdown = this.buildMatchIdField2('template', true) 
     const fake_data_checkbox = this.buildToggleField('fake_data', 'Generate Fake Data')
-    const build_by_hand_checkbox = this.buildToggleField('build_by_hand', 'Tune this Data Sifter by Hand')
+    const build_by_hand_checkbox = this.buildToggleField('build_by_hand', 'Build a Data Sifter from an Ocr scan')
     const show_app_boxes_checkbox = this.buildToggleField('show_app_boxes', 'Show App Boxes')
     const show_app_rowcols_checkbox = this.buildToggleField('show_app_rowcols', 'Show App RowCols')
     const debug_checkbox = this.buildToggleField('debug', 'Debug')
@@ -1138,12 +1143,12 @@ class DataSifterControls extends React.Component {
                 className='row collapse bg-light'
             >
               <div id='data_sifter_main' className='col'>
+                {normal_scan_mode_buttons_row}
+
+                {build_by_hand_buttons_row}
+
                 <div className='row'>
                   <div className='col-6'>
-                    {normal_scan_mode_buttons_row}
-
-                    {build_by_hand_buttons_row}
-
                     <div className='row mt-2'>
                       {build_by_hand_checkbox}
                     </div>

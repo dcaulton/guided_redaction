@@ -314,6 +314,7 @@ export function makePlusMinusRowLight(label, body_id) {
 
 export function makeHeaderRow(label, body_id, show_visibility_callback=(()=>{})) {
   const datatarget = '#' + body_id
+  const button_id = body_id + '_button'
   return (
     <div className='row'>
       <div
@@ -324,6 +325,7 @@ export function makeHeaderRow(label, body_id, show_visibility_callback=(()=>{}))
       <div className='col-lg-1 float-right'>
         <button
             className='btn btn-link'
+            id={button_id}
             aria-expanded='false'
             data-target={datatarget}
             aria-controls={body_id}
