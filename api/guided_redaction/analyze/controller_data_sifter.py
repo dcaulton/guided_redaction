@@ -34,6 +34,11 @@ class DataSifterController(T1Controller):
         scanner_id = list(request_data["tier_1_scanners"]['data_sifter'].keys())[0]
         data_sifter_meta = request_data["tier_1_scanners"]['data_sifter'][scanner_id]
 
+        ocr_job_results = {'movies': {}}
+        if data_sifter_meta.get('ocr_job_id'):
+            ocr_job = Job.objects.get(pk=data_sifter_meta.get('ocr_job_id'))
+            ocr_job_results = json.loads(ocr_job.response_data)
+
         template_job_results = {'movies': {}}
         if data_sifter_meta.get('template_job_id'):
             template_job = Job.objects.get(pk=data_sifter_meta.get('template_job_id'))
@@ -52,15 +57,15 @@ class DataSifterController(T1Controller):
             ocr_matches_in = {}
             template_matches_in = {}
             if frameset_hash in movie['framesets']:
-                for match_id in movie['framesets'][frameset_hash]:
-                    if movie['framesets'][frameset_hash][match_id]['scanner_type'] == 'ocr':
-                        ocr_matches_in[match_id] = movie['framesets'][frameset_hash][match_id]
-                    else:
-                        other_t1_matches_in[match_id] = movie['framesets'][frameset_hash][match_id]
+                other_t1_matches_in = movie['framesets'][frameset_hash]
             if 'movies' in template_job_results and \
                 movie_url in template_job_results['movies'] and \
                 frameset_hash in template_job_results['movies'][movie_url]['framesets']:
                 template_matches_in = template_job_results['movies'][movie_url]['framesets'][frameset_hash]
+            if 'movies' in ocr_job_results and \
+                movie_url in ocr_job_results['movies'] and \
+                frameset_hash in ocr_job_results['movies'][movie_url]['framesets']:
+                ocr_matches_in = ocr_job_results['movies'][movie_url]['framesets'][frameset_hash]
 
             image_url = source_movie['framesets'][frameset_hash]['images'][0]
             print('sifting image {}'.format(image_url.split('/')[-1]))
@@ -69,9 +74,6 @@ class DataSifterController(T1Controller):
             if type(cv2_image) == type(None):
                 print('error fetching image for data_sifter')
                 continue
-            if movie_url in ocr_job_results['movies'] and frameset_hash in ocr_job_results['movies'][movie_url]['framesets']:
-                ocr_matches_in = ocr_job_results['movies'][movie_url]['framesets'][frameset_hash]
-
             match_obj, match_stats, mask = data_sifter.sift_data(
                 cv2_image, ocr_matches_in, other_t1_matches_in, template_matches_in
             )

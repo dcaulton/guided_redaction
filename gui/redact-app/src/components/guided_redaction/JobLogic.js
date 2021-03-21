@@ -350,7 +350,6 @@ class JobLogic extends React.Component {
       setGlobalStateVar, 
       getGlobalStateVar
     )
-
     const request_data = JSON.parse(job.request_data)
     if (request_data['scan_level'] === 'tier_2') {
       this.loadTier2RedactData(job, request_data, resp_obj, setGlobalStateVar)
