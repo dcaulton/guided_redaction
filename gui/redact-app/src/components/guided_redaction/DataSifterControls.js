@@ -56,6 +56,34 @@ class DataSifterControls extends React.Component {
     this.getDataSifterHighlightedItemId=this.getDataSifterHighlightedItemId.bind(this)
   }
 
+  showSourceFrameWrapper() {
+    if (!this.state.movie_url || !this.state.image_url) {
+      return ''
+    }
+    if (!Object.keys(this.props.movies).includes(this.state.movie_url)) {
+      return ''
+    }
+    const movie = this.props.movies[this.state.movie_url]
+    const frameset_hash = this.props.getFramesetHashForImageUrl(this.state.image_url, movie['framesets'])
+    const movie_framesets = this.props.getFramesetHashesInOrder(movie)
+    const image_frameset_index = movie_framesets.indexOf(frameset_hash)
+    this.props.setCurrentVideo(this.state.movie_url)
+    setTimeout((() => {this.props.setScrubberToIndex(image_frameset_index)}), 1000)
+  }
+
+  buildShowSourceFrameLink() {
+    return (
+      <div>
+        <button
+            className='btn btn-link'
+            onClick={() => this.showSourceFrameWrapper() }
+        >
+          show source frame
+        </button>
+      </div>
+    )
+  }
+
   getAppRowCols() {
     if (!this.state.id) {
       return {}
@@ -505,6 +533,7 @@ class DataSifterControls extends React.Component {
   }
 
   loadCurrentDataSifter() {
+    // we go here after loading a manual compile, so we want the source frame up and the data sifter loaded and panel expanded
     const cur_ds_id = this.props.current_ids['t1_scanner']['data_sifter']
     this.loadDataSifter(cur_ds_id)
     this.setState({
@@ -517,6 +546,7 @@ class DataSifterControls extends React.Component {
     if (ds_panel_is_expanded === 'false') {
       document.getElementById('data_sifter_body_button').click()
     }
+    this.showSourceFrameWrapper()
   }
 
   itemContainsClick(item, clicked_coords) {
@@ -735,11 +765,6 @@ class DataSifterControls extends React.Component {
         </div>
       </div>
     )
-  }
-
-  showSourceFrame(movie_url, image_frameset_index) {
-    this.props.setCurrentVideo(movie_url)
-    setTimeout((() => {this.props.setScrubberToIndex(image_frameset_index)}), 1000)
   }
 
   componentDidMount() {
@@ -1126,6 +1151,7 @@ class DataSifterControls extends React.Component {
     const normal_scan_mode_buttons_row = this.buildNormalScanModeButtonsRow()
     const build_by_hand_buttons_row = this.buildBuildByHandButtonsRow()
     const item_info_area = this.buildItemInfoArea()
+    const show_source_frame_link = this.buildShowSourceFrameLink()
     const header_row = makeHeaderRow(
       'data sifter',
       'data_sifter_body',
@@ -1159,6 +1185,10 @@ class DataSifterControls extends React.Component {
 
                     <div className='row mt-2'>
                       {show_app_rowcols_checkbox}
+                    </div>
+
+                    <div className='row mt-2'>
+                      {show_source_frame_link}
                     </div>
 
                     <div className='row mt-2'>

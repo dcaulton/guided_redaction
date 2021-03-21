@@ -137,6 +137,10 @@ class BottomInsightsControls extends React.Component {
           submitInsightsJob={this.props.submitInsightsJob}
           jobs={this.props.jobs}
           getFramesetHashForImageUrl={this.props.getFramesetHashForImageUrl}
+          getFramesetHashesInOrder={this.props.getFramesetHashesInOrder}
+          campaign_movies={this.props.campaign_movies}
+          setCurrentVideo={this.props.setCurrentVideo}
+          setScrubberToIndex={this.props.setScrubberToIndex}
         />
 
         <HogControls
