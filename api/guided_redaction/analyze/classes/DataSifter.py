@@ -525,18 +525,17 @@ class DataSifter:
 #   ITEM FIELDS:
 # type
 # text
-# field name label   *so we can refer to it in other rules, across other apps even, so not just key in this app
-# text size label
-# background color label
-# text color label
-# column_align_left_right
+# field name  *so we can refer to it in other rules, across other apps even, so not just key in this app
+# font_size
+# font_color
+# background_color
+# rowcol_type
 # always present
-# can have dropdown?   *probably not, labels don't, almost any variable text does
-# mask this field
-# is pii
-# is pci
-# ref location   * if it's on its own row, col this becomes very important
-# ref size    * if it's on its own row, col this becomes very important
+# can have dropdown    ?*probably not, labels don't, almost any variable text does
+# is_pii
+# mask_this_field
+# location   * if it's on its own row, col this becomes very important
+# size    * if it's on its own row, col this becomes very important
 # allowed_values
 # regex
 # fuzzy_match_threshold  # would allow some nice customization for fields that never seem to come in cleanly with ocr
