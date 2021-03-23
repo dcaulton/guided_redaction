@@ -112,7 +112,7 @@ class DataSifterControls extends React.Component {
         ]
         if (start_x === -1) {
           start_x = item_start[0]
-          end_x = item_start[0]
+          end_x = item_end[0]
           y = item_start[1]
         }
         if (item_start[0] < start_x) {
@@ -224,6 +224,34 @@ class DataSifterControls extends React.Component {
           Delete
         </button>
       </div>
+    )
+  }
+
+  buildItemYLocationField(item) {
+    if (!this.state.highlighted_item_id) {
+      return ''
+    }
+    return buildLabelAndTextInput(
+      this.state.items[this.state.highlighted_item_id]['location'][1],
+      'Y Location',
+      'data_sifter_item_y_location',
+      'item_y_location',
+      8,
+      ((value)=>{this.setCurrentItemVar('y_location', value)})
+    )
+  }
+
+  buildItemXLocationField(item) {
+    if (!this.state.highlighted_item_id) {
+      return ''
+    }
+    return buildLabelAndTextInput(
+      this.state.items[this.state.highlighted_item_id]['location'][0],
+      'X Location',
+      'data_sifter_item_x_location',
+      'item_x_location',
+      8,
+      ((value)=>{this.setCurrentItemVar('x_location', value)})
     )
   }
 
@@ -466,6 +494,10 @@ class DataSifterControls extends React.Component {
     let deepCopyItems= JSON.parse(JSON.stringify(this.state.items))
     if (var_name === 'width') {
       deepCopyItems[this.state.highlighted_item_id]['size'][0] = var_value
+    } else if (var_name === 'x_location') {
+      deepCopyItems[this.state.highlighted_item_id]['location'][0] = var_value
+    } else if (var_name === 'y_location') {
+      deepCopyItems[this.state.highlighted_item_id]['location'][1] = var_value
     } else {
       deepCopyItems[this.state.highlighted_item_id][var_name] = var_value
     }
@@ -493,6 +525,8 @@ class DataSifterControls extends React.Component {
     const horiz_alignment_field = this.buildItemHorizontalAlignmentField(item) 
     const width_field = this.buildItemWidthField(item)
     const delete_button = this.buildItemDeleteButton()
+    const x_location_field = this.buildItemXLocationField(item)
+    const y_location_field = this.buildItemYLocationField(item)
     return (
       <div className='row border m-2'>
         <div className='col ml-2'>
@@ -510,6 +544,12 @@ class DataSifterControls extends React.Component {
           </div>
           <div className='row'>
             {width_field}
+          </div>
+          <div className='row'>
+            {x_location_field}
+          </div>
+          <div className='row'>
+            {y_location_field}
           </div>
           <div className='row'>
             {is_pii_field}
