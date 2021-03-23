@@ -38,12 +38,12 @@ class DataSifterControls extends React.Component {
       show_type: 'all',
       highlighted_item_id: '',
       ocr_job_id: '',
-      template_job_id: '',
       attributes: {},
       scan_level: 'tier_1',
       attribute_search_name: '',
       attribute_search_value: '',
       first_click_coords: [],
+      delete_column_id: '',
     }
     this.getDataSifterFromState=this.getDataSifterFromState.bind(this)
     this.setLocalStateVar=this.setLocalStateVar.bind(this)
@@ -54,6 +54,42 @@ class DataSifterControls extends React.Component {
     this.highlightAppItems=this.highlightAppItems.bind(this)
     this.loadCurrentDataSifter=this.loadCurrentDataSifter.bind(this)
     this.getDataSifterHighlightedItemId=this.getDataSifterHighlightedItemId.bind(this)
+  }
+
+  deleteSelectedColumn() {
+    if (this.state.delete_column_id.startsWith('left_col_')) {
+      let offset_to_delete = parseInt(this.state.delete_column_id.substring(9))
+      let deepCopyCols = JSON.parse(JSON.stringify(this.state.left_cols))
+      deepCopyCols.splice(offset_to_delete, 1)
+      const set_var = {
+        left_cols: deepCopyCols,
+        delete_column_id: '',
+      }
+      this.setLocalStateVar(set_var)
+    } else if (this.state.delete_column_id.startsWith('right_col_')) {
+      let offset_to_delete = parseInt(this.state.delete_column_id.substring(10))
+      let deepCopyCols = JSON.parse(JSON.stringify(this.state.right_cols))
+      deepCopyCols.splice(offset_to_delete, 1)
+      const set_var = {
+        right_cols: deepCopyCols,
+        delete_column_id: '',
+      }
+      this.setLocalStateVar(set_var)
+    }
+  }
+
+  setCurrentItemAlignment(var_value) {
+    if (var_value === 'none') {
+      this.unalignCurrentItemColumn()
+    } else if (var_value.startsWith('left_col_')) {
+      this.alignCurrentItemToColumns('left', parseInt(var_value.substring(9)))
+    } else if (var_value === 'new_left_col') {
+      this.alignCurrentItemToColumns('left', -1)
+    } else if (var_value === 'new_right_col') {
+      this.alignCurrentItemToColumns('right', -1)
+    } else {
+      this.alignCurrentItemToColumns('right', parseInt(var_value.substring(10)))
+    }
   }
 
   showSourceFrameWrapper() {
@@ -290,6 +326,59 @@ class DataSifterControls extends React.Component {
     return build_rows
   }
 
+  alignCurrentItemToColumns(right_or_left, col_number) {
+    const highlighted_item = this.state.items[this.state.highlighted_item_id]
+    const stripped_ret_obj = this.buildRightLeftColsWithoutItem()
+    let app_cols_list = this.state.left_cols
+    if (right_or_left === 'right' || right_or_left === 'new_right_column') {
+      app_cols_list = this.state.right_cols
+    }
+
+    let build_app_cols = []
+    let item_was_added = false
+    if (right_or_left === 'left') {
+      for (let i=0; i < app_cols_list.length; i++) {
+        // if its insert new left col, check for that here
+        let first_item_start_location = this.state.items[app_cols_list[i][0]]['location'][0]
+        if (col_number === -1 && !item_was_added && first_item_start_location > highlighted_item['location'][0]) {
+          build_app_cols.push([this.state.highlighted_item_id])
+          item_was_added = true
+        }
+
+        if (i !== col_number || col_number === -1) {
+          build_app_cols.push(app_cols_list[i])
+          continue
+        }
+        const app_col = app_cols_list[i]
+        let build_app_col = []
+        for (let j=0; j < app_col.length; j++) {
+          const app_item_id = app_col[j]
+          const app_item = this.state.items[app_item_id]
+          if (app_item['location'][0] <= highlighted_item['location'][0]) {
+            build_app_col.push(app_item_id)
+          } else if (!item_was_added) {
+            build_app_col.push(this.state.highlighted_item_id)
+            item_was_added = true
+            continue
+          } else {
+            build_app_col.push(app_item_id)
+          }
+        }
+        if (!item_was_added) {
+          build_app_col.push(this.state.highlighted_item_id)
+        }
+        build_app_cols.push(build_app_col)
+      }
+
+      const build_obj = {
+        left_cols: build_app_cols,
+        right_cols: stripped_ret_obj['right_cols'],
+      }
+      this.setLocalStateVar(build_obj)
+
+    }
+  }
+
   unalignCurrentItemColumn() {
     const ret_obj = this.buildRightLeftColsWithoutItem()
     const build_obj = {
@@ -343,41 +432,107 @@ class DataSifterControls extends React.Component {
     return return_obj
   }
 
+  buildDeleteColumnRow() {
+    if (!this.state.left_cols && !this.state.right_cols) {
+      return ''
+    }
+    if (!this.state.show_app_rowcols) {
+      return ''
+    }
+    let values = [
+      {'none': 'no column'}
+    ]
+    for (let i=0; i < this.state.left_cols.length; i++) {
+      values.push({
+        ['left_col_' + i.toString()]:'left column '+i.toString(),
+      })
+    }
+    for (let i=0; i < this.state.right_cols.length; i++) {
+      values.push({
+        ['right_col_' + i.toString()]:'right column '+i.toString(),
+      })
+    }
+    const delete_dropdown = buildLabelAndDropdown(
+      values,
+      '',
+      this.state.delete_column_id,
+      'data_sifter_delete_column_id',
+      ((value)=>{this.setState({'delete_column_id': value})})
+    )
+    return (
+      <div className='row'>
+        <div className='d-inline'>
+          Delete a column?
+        </div>
+        <div className='d-inline ml-2'>
+          {delete_dropdown}
+        </div>
+        <div className='d-inline ml-2'>
+          <button
+              className='btn btn-primary p-0'
+              onClick={() => this.deleteSelectedColumn() }
+          >
+            Go
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  buildAlignToColumnDropdown() {
+    if (!this.state.highlighted_item_id) {
+      return ''
+    }
+    let values = [
+      {'none': 'no column'}
+    ]
+    for (let i=0; i < this.state.left_cols.length; i++) {
+      values.push({
+        ['left_col_' + i.toString()]:'left column '+i.toString(),
+      })
+    }
+    values.push({'new_left_col': 'create new left column'})
+    for (let i=0; i < this.state.right_cols.length; i++) {
+      values.push({
+        ['right_col_' + i.toString()]:'right column '+i.toString(),
+      })
+    }
+    values.push({'new_right_col': 'create new right column'})
+    let cur_value_string = 'none'
+    const resp_obj = this.getItemAlignment(this.state.highlighted_item_id)
+    if (resp_obj['col_align_type'] === 'right') {
+      cur_value_string = 'right_col_' + resp_obj['col_num'].toString()
+    } else if (resp_obj['col_align_type'] === 'left') {
+      cur_value_string = 'left_col_' + resp_obj['col_num'].toString()
+    }
+    return buildLabelAndDropdown(
+      values,
+      'Align to Column',
+      cur_value_string,
+      'data_sifter_item_alignment',
+      ((value)=>{this.setCurrentItemVar('col_alignment', value)})
+    )
+  }
+
   buildItemHorizontalAlignmentField(item) {
     if (!this.state.highlighted_item_id) {
       return ''
     }
-    const cur_value = this.getItemAlignment(this.state.highlighted_item_id)
-    if (cur_value === 'none') {
-      return (
-        <div>
-          This item is not aligned with any columns
-        </div>
-      )
+    const resp_obj = this.getItemAlignment(this.state.highlighted_item_id)
+    const cur_value = resp_obj['col_align_type']
+    const col_num = resp_obj['col_num']
+    const align_dropdown = this.buildAlignToColumnDropdown()
+    let align_message = 'This item is not aligned with any columns'
+    if (cur_value !== 'none') {
+      align_message = 'This item is ' + cur_value + ' aligned in column ' + col_num.toString()
     }
     return (
       <div className='col'>
         <div className='row'>
-          <div className='d-inline'>
-            This item is
-          </div>
-          <div className='d-inline font-weight-bold ml-1'>
-            {cur_value}
-          </div>
-          <div className='d-inline ml-1'>
-            aligned in a column
-          </div>
+          {align_message}
         </div>
         <div className='row'>
-          <div className='d-inline ml-2'>
-            <input
-              type='checkbox'
-              onChange={() => this.unalignCurrentItemColumn()}
-            />
-          </div>
-          <div className='d-inline ml-2'>
-            Unalign?  (this is not reversible)
-          </div>
+          {align_dropdown}
         </div>
       </div>
     )
@@ -387,16 +542,26 @@ class DataSifterControls extends React.Component {
     for (let i=0; i < this.state.left_cols.length; i++) {
       const left_col = this.state.left_cols[i]
       if (left_col.includes(item_id)) {
-        return 'left'
+        return {
+          col_align_type: 'left',
+          col_num: i,
+        }
       }
     }
     for (let i=0; i < this.state.right_cols.length; i++) {
       const right_col = this.state.right_cols[i]
       if (right_col.includes(item_id)) {
+        return {
+          col_align_type: 'right',
+          col_num: i,
+        }
         return 'right'
       }
     }
-    return 'none'
+    return {
+      col_align_type: 'none',
+      col_num: 0,
+    }
   }
 
   buildItemMaskThisField(item) {
@@ -498,6 +663,8 @@ class DataSifterControls extends React.Component {
       deepCopyItems[this.state.highlighted_item_id]['location'][0] = var_value
     } else if (var_name === 'y_location') {
       deepCopyItems[this.state.highlighted_item_id]['location'][1] = var_value
+    } else if (var_name === 'col_alignment') {
+      return this.setCurrentItemAlignment(var_value)
     } else {
       deepCopyItems[this.state.highlighted_item_id][var_name] = var_value
     }
@@ -870,7 +1037,6 @@ class DataSifterControls extends React.Component {
         movie_url: sam['movie_url'],
         scale: sam['scale'],
         ocr_job_id: sam['ocr_job_id'],
-        template_job_id: sam['template_job_id'],
         attributes: sam['attributes'],
         scan_level: sam['scan_level'],
       })
@@ -900,7 +1066,6 @@ class DataSifterControls extends React.Component {
       movie_url: '',
       scale: '1:1',
       ocr_job_id: '',
-      template_job_id: '',
       attributes: {},
       scan_level: 'tier_1',
     })
@@ -920,7 +1085,6 @@ class DataSifterControls extends React.Component {
       movie_url: this.state.movie_url,
       scale: this.state.scale,
       ocr_job_id: this.state.ocr_job_id,
-      template_job_id: this.state.template_job_id,
       attributes: this.state.attributes,
       scan_level: this.state.scan_level,
     }
@@ -1179,7 +1343,6 @@ class DataSifterControls extends React.Component {
     const name_field = this.buildNameField()
     const scale_dropdown = this.buildScaleDropdown()
     const ocr_job_id_dropdown = this.buildMatchIdField2('ocr', true) 
-    const template_job_id_dropdown = this.buildMatchIdField2('template', true) 
     const fake_data_checkbox = this.buildToggleField('fake_data', 'Generate Fake Data')
     const build_by_hand_checkbox = this.buildToggleField('build_by_hand', 'Build a Data Sifter from an Ocr scan')
     const show_app_boxes_checkbox = this.buildToggleField('show_app_boxes', 'Show App Boxes')
@@ -1197,6 +1360,7 @@ class DataSifterControls extends React.Component {
       'data_sifter_body',
       (() => this.props.toggleShowVisibility('data_sifter'))
     )
+    const delete_column_row = this.buildDeleteColumnRow()
 
     return (
         <div className='row bg-light rounded mt-3'>
@@ -1213,7 +1377,7 @@ class DataSifterControls extends React.Component {
 
                 {build_by_hand_buttons_row}
 
-                <div className='row'>
+                <div className='row ml-1'>
                   <div className='col-6'>
                     <div className='row mt-2'>
                       {build_by_hand_checkbox}
@@ -1259,13 +1423,7 @@ class DataSifterControls extends React.Component {
                       {scan_level_dropdown}
                     </div>
 
-                    <div className='row mt-2'>
-                      {ocr_job_id_dropdown}
-                    </div>
-
-                    <div className='row mt-2'>
-                      {template_job_id_dropdown}
-                    </div>
+                    {delete_column_row}
 
                   </div>
                   <div className='col-6'>
@@ -1274,6 +1432,10 @@ class DataSifterControls extends React.Component {
                 </div>
 
                 <div className='row mt-1 mr-1 ml-1 border-top'>
+                  <div className='row mt-2'>
+                    {ocr_job_id_dropdown}
+                  </div>
+
                   {attributes_list}
                 </div>
 

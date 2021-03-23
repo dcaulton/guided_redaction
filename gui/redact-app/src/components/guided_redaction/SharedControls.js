@@ -558,30 +558,34 @@ export function buildMatchIdField(
     matches.push(build_obj)
   }
 
-  let required_block = ''
+  let required_text = ''
   if (is_required) {
-    required_block = (
-      <div className='col text-danger'>
-        * Required
-      </div>
-    )
+    required_text = '* Required'
   }
 
-  const label_and_drop = buildLabelAndDropdown(
+  const label = job_type + ' job id'
+  const drop = buildLabelAndDropdown(
     matches,
-    job_type + ' job id',
+    '',
     cur_value,
     job_type +'_job_id',
     ((value)=>{setLocalStateVar(job_type + '_job_id', value)})
   )
   return (
     <div className='col'>
-    <div className='row'>
-      <div className='col'>
-        {label_and_drop}
+      <div className='row'>
+        <div className='col'>
+          <div className='d-inline'>
+            {label}
+          </div>
+          <div className='d-inline ml-2'>
+            {drop}
+          </div>
+          <div className='d-inline ml-2 text-danger'>
+            {required_text}
+          </div>
+        </div>
       </div>
-      {required_block}
-    </div>
     </div>
   )
 }
