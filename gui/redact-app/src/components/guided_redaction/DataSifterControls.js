@@ -395,47 +395,49 @@ class DataSifterControls extends React.Component {
 
     let build_app_cols = []
     let item_was_added = false
-    if (right_or_left === 'left') {
-      for (let i=0; i < app_cols_list.length; i++) {
-        // if its insert new left col, check for that here
-        let first_item_start_location = this.state.items[app_cols_list[i][0]]['location'][0]
-        if (col_number === -1 && !item_was_added && first_item_start_location > highlighted_item['location'][0]) {
-          build_app_cols.push([this.state.highlighted_item_id])
-          item_was_added = true
-        }
+    for (let i=0; i < app_cols_list.length; i++) {
+      let first_item_start_location = this.state.items[app_cols_list[i][0]]['location'][0]
+      if (col_number === -1 && !item_was_added && first_item_start_location > highlighted_item['location'][0]) {
+        build_app_cols.push([this.state.highlighted_item_id])
+        item_was_added = true
+      }
 
-        if (i !== col_number || col_number === -1) {
-          build_app_cols.push(app_cols_list[i])
-          continue
-        }
-        const app_col = app_cols_list[i]
-        let build_app_col = []
-        for (let j=0; j < app_col.length; j++) {
-          const app_item_id = app_col[j]
-          const app_item = this.state.items[app_item_id]
-          if (app_item['location'][0] <= highlighted_item['location'][0]) {
-            build_app_col.push(app_item_id)
-          } else if (!item_was_added) {
-            build_app_col.push(this.state.highlighted_item_id)
-            item_was_added = true
-            continue
-          } else {
-            build_app_col.push(app_item_id)
-          }
-        }
-        if (!item_was_added) {
+      if (i !== col_number || col_number === -1) {
+        build_app_cols.push(app_cols_list[i])
+        continue
+      }
+      const app_col = app_cols_list[i]
+      let build_app_col = []
+      for (let j=0; j < app_col.length; j++) {
+        const app_item_id = app_col[j]
+        const app_item = this.state.items[app_item_id]
+        if (app_item['location'][0] <= highlighted_item['location'][0]) {
+          build_app_col.push(app_item_id)
+        } else if (!item_was_added) {
           build_app_col.push(this.state.highlighted_item_id)
+          item_was_added = true
+          continue
+        } else {
+          build_app_col.push(app_item_id)
         }
-        build_app_cols.push(build_app_col)
       }
-
-      const build_obj = {
-        left_cols: build_app_cols,
-        right_cols: stripped_ret_obj['right_cols'],
+      if (!item_was_added) {
+        build_app_col.push(this.state.highlighted_item_id)
       }
-      this.setLocalStateVar(build_obj)
-
+      build_app_cols.push(build_app_col)
     }
+
+    let build_obj = {
+      left_cols: build_app_cols,
+      right_cols: stripped_ret_obj['right_cols'],
+    }
+    if (right_or_left === 'right') {
+      build_obj = {
+        right_cols: build_app_cols,
+        left_cols: stripped_ret_obj['left_cols'],
+      }
+    }
+    this.setLocalStateVar(build_obj)
   }
 
   unalignCurrentItemColumn() {
