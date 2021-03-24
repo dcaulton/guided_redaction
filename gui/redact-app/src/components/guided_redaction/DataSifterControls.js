@@ -44,6 +44,7 @@ class DataSifterControls extends React.Component {
       attribute_search_value: '',
       first_click_coords: [],
       delete_column_id: '',
+      show_rowcol_id: '',
     }
     this.getDataSifterFromState=this.getDataSifterFromState.bind(this)
     this.setLocalStateVar=this.setLocalStateVar.bind(this)
@@ -54,6 +55,45 @@ class DataSifterControls extends React.Component {
     this.highlightAppItems=this.highlightAppItems.bind(this)
     this.loadCurrentDataSifter=this.loadCurrentDataSifter.bind(this)
     this.getDataSifterHighlightedItemId=this.getDataSifterHighlightedItemId.bind(this)
+  }
+
+  buildShowColumnRow() {
+    if (!this.state.left_cols && !this.state.right_cols) {
+      return ''
+    }
+    if (!this.state.show_app_rowcols) {
+      return ''
+    }
+    let values = [
+      {'': 'all rows and columns'}
+    ]
+    for (let i=0; i < this.state.rows.length; i++) {
+      values.push({
+        ['row_' + i.toString()]:' row '+i.toString(),
+      })
+    }
+    for (let i=0; i < this.state.left_cols.length; i++) {
+      values.push({
+        ['left_col_' + i.toString()]:'left column '+i.toString(),
+      })
+    }
+    for (let i=0; i < this.state.right_cols.length; i++) {
+      values.push({
+        ['right_col_' + i.toString()]:'right column '+i.toString(),
+      })
+    }
+    const the_dropdown = buildLabelAndDropdown(
+      values,
+      'Show only this row or column:',
+      this.state.show_rowcol_id,
+      'data_sifter_show_rowcol_id',
+      ((value)=>{this.setState({'show_rowcol_id': value})})
+    )
+    return (
+      <div className='row'>
+        {the_dropdown}
+      </div>
+    )
   }
 
   deleteSelectedColumn() {
@@ -134,6 +174,9 @@ class DataSifterControls extends React.Component {
     }
 
     for (let i=0; i < this.state.rows.length; i++) {
+      if (this.state.show_rowcol_id && !this.state.show_rowcol_id.startsWith('row_')) {
+        break
+      }
       let start_x = -1
       let end_x = -1
       let y = -1
@@ -166,6 +209,9 @@ class DataSifterControls extends React.Component {
     }
 
     for (let i=0; i < this.state.left_cols.length; i++) {
+      if (this.state.show_rowcol_id && !this.state.show_rowcol_id.startsWith('left_col_')) {
+        break
+      }
       let start_y = -1
       let end_y = -1
       let x = -1
@@ -197,6 +243,9 @@ class DataSifterControls extends React.Component {
     }
 
     for (let i=0; i < this.state.right_cols.length; i++) {
+      if (this.state.show_rowcol_id && !this.state.show_rowcol_id.startsWith('right_col_')) {
+        break
+      }
       let start_y = -1
       let end_y = -1
       let x = -1
@@ -227,6 +276,16 @@ class DataSifterControls extends React.Component {
       })
     }
 
+    if (this.state.show_rowcol_id.startsWith('left_col_')) {
+      const rowcol_num = parseInt(this.state.show_rowcol_id.substring(9))
+      build_obj['left_cols'] = [build_obj['left_cols'][rowcol_num]]
+    } else if (this.state.show_rowcol_id.startsWith('right_col_')) {
+      const rowcol_num = parseInt(this.state.show_rowcol_id.substring(10))
+      build_obj['right_cols'] = [build_obj['right_cols'][rowcol_num]]
+    } else if (this.state.show_rowcol_id.startsWith('row_')) {
+      const rowcol_num = parseInt(this.state.show_rowcol_id.substring(4))
+      build_obj['rows'] = [build_obj['rows'][rowcol_num]]
+    }
     return build_obj
   }
 
@@ -452,7 +511,7 @@ class DataSifterControls extends React.Component {
         ['right_col_' + i.toString()]:'right column '+i.toString(),
       })
     }
-    const delete_dropdown = buildLabelAndDropdown(
+    const the_dropdown = buildLabelAndDropdown(
       values,
       '',
       this.state.delete_column_id,
@@ -465,7 +524,7 @@ class DataSifterControls extends React.Component {
           Delete a column?
         </div>
         <div className='d-inline ml-2'>
-          {delete_dropdown}
+          {the_dropdown}
         </div>
         <div className='d-inline ml-2'>
           <button
@@ -555,7 +614,6 @@ class DataSifterControls extends React.Component {
           col_align_type: 'right',
           col_num: i,
         }
-        return 'right'
       }
     }
     return {
@@ -1361,6 +1419,7 @@ class DataSifterControls extends React.Component {
       (() => this.props.toggleShowVisibility('data_sifter'))
     )
     const delete_column_row = this.buildDeleteColumnRow()
+    const show_column_row = this.buildShowColumnRow()
 
     return (
         <div className='row bg-light rounded mt-3'>
@@ -1424,6 +1483,8 @@ class DataSifterControls extends React.Component {
                     </div>
 
                     {delete_column_row}
+
+                    {show_column_row}
 
                   </div>
                   <div className='col-6'>
