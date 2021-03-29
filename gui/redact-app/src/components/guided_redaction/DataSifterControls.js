@@ -23,7 +23,7 @@ class DataSifterControls extends React.Component {
     this.state = {
       id: '',
       name: '',
-      fake_data: false,
+      generate_fake_data: false,
       build_by_hand: false,
       show_app_boxes: false,
       show_app_rowcols: false,
@@ -714,6 +714,46 @@ class DataSifterControls extends React.Component {
     )
   }
 
+  buildItemSyntheticDatatypeField(item) {
+    if (!this.state.highlighted_item_id) {
+      return ''
+    }
+    if (!this.state.generate_fake_data) {
+      return ''
+    }
+    if (item['type'] !== 'user_data') {
+      return ''
+    }
+    const values = [
+      {'': ''},
+      {'person.name': 'full name'},
+      {'person.first_name': 'first name'},
+      {'person.last_name': 'last name'},
+      {'phone_number.phone_number': 'phone number'},
+      {'ssn.ssn': 'social security number'},
+      {'internet.email': 'email'},
+      {'internet.url': 'url'},
+      {'address.address': 'full physical address'},
+      {'address.city': 'city'},
+      {'address.country': 'country'},
+      {'address.postcode': 'zip code'},
+      {'address.street_address': 'street address'},
+      {'credit_card.credit_card_expire': 'credit card expiration date MM/YY'},
+      {'credit_card.credit_card_number': 'credit card number'},
+      {'credit_card.security_code': 'credit card security code'},
+      {'random-5': 'random alphanumeric - 5 chars'},
+      {'random-10': 'random alphanumeric - 10 chars'},
+      {'random-20': 'random alphanumeric - 20 chars'}
+    ]
+    return buildLabelAndDropdown(
+      values,
+      'Synthetic Data Type',
+      item['synthetic_datatype'],
+      'data_sifter_item_synthetic_datatype',
+      ((value)=>{this.setCurrentItemVar('synthetic_datatype', value)})
+    )
+  }
+
   setCurrentItemVar(var_name, var_value) {
     const old_value = this.state.items[this.state.highlighted_item_id][var_name] 
     let deepCopyItems= JSON.parse(JSON.stringify(this.state.items))
@@ -754,6 +794,7 @@ class DataSifterControls extends React.Component {
     const delete_button = this.buildItemDeleteButton()
     const x_location_field = this.buildItemXLocationField(item)
     const y_location_field = this.buildItemYLocationField(item)
+    const synthetic_datatype_field = this.buildItemSyntheticDatatypeField(item)
     return (
       <div className='row border m-2'>
         <div className='col ml-2'>
@@ -768,6 +809,9 @@ class DataSifterControls extends React.Component {
           </div>
           <div className='row'>
             {text_field}
+          </div>
+          <div className='row mt-2'>
+            {synthetic_datatype_field}
           </div>
           <div className='row'>
             {width_field}
@@ -1087,7 +1131,7 @@ class DataSifterControls extends React.Component {
       this.setState({
         id: sam['id'],
         name: sam['name'],
-        fake_data: sam['fake_data'],
+        generate_fake_data: sam['generate_fake_data'],
         debug: sam['debug'],
         rows: sam['rows'],
         left_cols: sam['left_cols'],
@@ -1116,7 +1160,7 @@ class DataSifterControls extends React.Component {
     this.setState({
       id: the_id,
       name: '',
-      fake_data: false,
+      generate_fake_data: false,
       debug: false,
       rows: [],
       left_cols: [],
@@ -1135,7 +1179,7 @@ class DataSifterControls extends React.Component {
     const data_sifter = {                                                          
       id: this.state.id,
       name: this.state.name,
-      fake_data: this.state.fake_data,
+      generate_fake_data: this.state.generate_fake_data,
       debug: this.state.debug,
       rows: this.state.rows,
       left_cols: this.state.left_cols,
@@ -1403,7 +1447,7 @@ class DataSifterControls extends React.Component {
     const name_field = this.buildNameField()
     const scale_dropdown = this.buildScaleDropdown()
     const ocr_job_id_dropdown = this.buildMatchIdField2('ocr', true) 
-    const fake_data_checkbox = this.buildToggleField('fake_data', 'Generate Fake Data')
+    const fake_data_checkbox = this.buildToggleField('generate_fake_data', 'Generate Fake Data')
     const build_by_hand_checkbox = this.buildToggleField('build_by_hand', 'Build a Data Sifter from an Ocr scan')
     const show_app_boxes_checkbox = this.buildToggleField('show_app_boxes', 'Show App Boxes')
     const show_app_rowcols_checkbox = this.buildToggleField('show_app_rowcols', 'Show App RowCols')

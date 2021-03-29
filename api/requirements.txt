@@ -16,6 +16,7 @@ django-extensions
 djangorestframework
 dlib
 eventlet
+faker
 ffmpeg-python
 future
 fuzzywuzzy

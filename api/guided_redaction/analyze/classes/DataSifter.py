@@ -661,6 +661,7 @@ class DataSifter:
 #                    'is_pii': True,
 #                    'data_type': 'string',
 #                    'min_width': 50,
+#                    'synthetic_datatype': 'person.name',
 #                },
 #                'e2': {
 #                    'type': 'user_data',
@@ -677,6 +678,7 @@ class DataSifter:
 #                    'is_pii': True,
 #                    'data_type': 'string',
 #                    'min_width': 50,
+#                    'synthetic_datatype': 'internet.email',
 #                },
 #                'f2': {
 #                    'type': 'user_data',
@@ -692,6 +694,7 @@ class DataSifter:
 #                    'is_pii': True,
 #                    'data_type': 'phone',
 #                    'min_width': 50,
+#                    'synthetic_datatype': 'phone_number.phone_number',
 #                },
 #                'm1a': {
 #                    'type': 'template_anchor',
