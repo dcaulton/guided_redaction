@@ -13,7 +13,7 @@ class DataSifter:
         super(DataSifter, self).__init__(*args, **kwargs)
         self.data_sifter_meta = data_sifter_meta
         self.debug = data_sifter_meta.get('debug', False)
-        self.app_data = self.get_app_data()
+        self.app_data = self.data_sifter_meta
         self.ocr_rowcol_maker = OcrRowColMaker()
         self.min_app_score = 200
         self.fuzz_match_threshold = 70
@@ -59,18 +59,7 @@ class DataSifter:
         if fast_pass_confirmed or slow_pass_confirmed:
             self.build_match_results(return_mask, fast_pass_confirmed, slow_pass_confirmed)
 
-        self.mask_data(ocr_results_this_frame)
-
         return self.all_zones, self.return_stats, return_mask
-
-    def mask_data(self, ocr_results_this_frame):
-        for ar in self.app_rows:
-            for app_row_item in ar:
-                app_id = app_row_item['app_id']
-                app_element = self.app_data['items'][app_id]
-                if app_element.get('mask_this_field') and 'ocr_id' in app_row_item: 
-                    # pass the ocr element through as an area to redact+data
-                    self.all_zones[app_id] = ocr_results_this_frame[app_row_item['ocr_id']]
 
     def fast_score_rowcol_data(self, rowcol_type):
         # this takes a set of app and ocr rows, left cols or right cols (let's just talk about rows here, they all act the same)
@@ -520,9 +509,7 @@ class DataSifter:
                 # TODO remove this later, just saving the ocr items we are confident are matches
                 self.add_zone_to_response(ocr_match_ele['location'], end_coords, [], 'fast_pass_anchor')
 
-    def get_app_data(self):
-        return self.data_sifter_meta
-#   ITEM FIELDS:
+#   DATA SIFTER ITEM FIELDS:
 # type
 # text
 # field name  *so we can refer to it in other rules, across other apps even, so not just key in this app
@@ -727,6 +714,3 @@ class DataSifter:
 #                },
 #            }
 #        }
-#        return build_obj
-
-
