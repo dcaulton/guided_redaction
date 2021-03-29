@@ -115,6 +115,13 @@ class DataSifterControls extends React.Component {
         delete_column_id: '',
       }
       this.setLocalStateVar(set_var)
+    } else if (this.state.delete_column_id === 'all') {
+      const set_var = {
+        left_cols: [],
+        right_cols: [],
+        delete_column_id: '',
+      }
+      this.setLocalStateVar(set_var)
     }
   }
 
@@ -124,9 +131,9 @@ class DataSifterControls extends React.Component {
     } else if (var_value.startsWith('left_col_')) {
       this.alignCurrentItemToColumns('left', parseInt(var_value.substring(9)))
     } else if (var_value === 'new_left_col') {
-      this.alignCurrentItemToColumns('left', -1)
+      this.insertCurrentItemInNewCol('left')
     } else if (var_value === 'new_right_col') {
-      this.alignCurrentItemToColumns('right', -1)
+      this.insertCurrentItemInNewCol('right')
     } else {
       this.alignCurrentItemToColumns('right', parseInt(var_value.substring(10)))
     }
@@ -385,11 +392,64 @@ class DataSifterControls extends React.Component {
     return build_rows
   }
 
+  insertCurrentItemInNewCol(col_type, build_cols) {
+    const highlighted_item = this.state.items[this.state.highlighted_item_id]
+    const stripped_ret_obj = this.buildRightLeftColsWithoutItem()
+    let build_obj = {
+      left_cols: stripped_ret_obj['left_cols'],
+      right_cols: stripped_ret_obj['right_cols'],
+    }
+    let item_was_added = false
+    build_cols = []
+    if (col_type === 'left') {
+      for (let i=0; i < this.state.left_cols.length; i++) {
+        const col = this.state.left_cols[i]
+        const first_item = this.state.items[col[0]]
+        if (first_item['location'][0] < highlighted_item['location'][0]) {
+          build_cols.push(col)
+        } else if (!item_was_added) {
+          build_cols.push([this.state.highlighted_item_id])
+          build_cols.push(col)
+          item_was_added = true
+        } else {
+          build_cols.push(col)
+        }
+      }
+      if (build_cols.length === 0) {
+        build_cols.push([this.state.highlighted_item_id])
+      }
+      build_obj['left_cols'] = build_cols
+    } else if (col_type === 'right') {
+      for (let i=0; i < this.state.right_cols.length; i++) {
+        const col = this.state.right_cols[i]
+        const first_item = this.state.items[col[0]]
+        const hl_item_right_x = highlighted_item['location'][0] + highlighted_item['size'][0]
+        if (first_item['location'][0] < hl_item_right_x) {
+          build_cols.push(col)
+        } else if (!item_was_added) {
+          build_cols.push([this.state.highlighted_item_id])
+          build_cols.push(col)
+          item_was_added = true
+        } else {
+          build_cols.push(col)
+        }
+      }
+      if (!item_was_added) {
+        build_cols.push([this.state.highlighted_item_id])
+      }
+      if (build_cols.length === 0) {
+        build_cols.push([this.state.highlighted_item_id])
+      }
+      build_obj['right_cols'] = build_cols
+    }
+    this.setLocalStateVar(build_obj)
+  }
+
   alignCurrentItemToColumns(right_or_left, col_number) {
     const highlighted_item = this.state.items[this.state.highlighted_item_id]
     const stripped_ret_obj = this.buildRightLeftColsWithoutItem()
     let app_cols_list = this.state.left_cols
-    if (right_or_left === 'right' || right_or_left === 'new_right_column') {
+    if (right_or_left === 'right' || right_or_left === 'new_right_col') {
       app_cols_list = this.state.right_cols
     }
 
@@ -397,12 +457,8 @@ class DataSifterControls extends React.Component {
     let item_was_added = false
     for (let i=0; i < app_cols_list.length; i++) {
       let first_item_start_location = this.state.items[app_cols_list[i][0]]['location'][0]
-      if (col_number === -1 && !item_was_added && first_item_start_location > highlighted_item['location'][0]) {
-        build_app_cols.push([this.state.highlighted_item_id])
-        item_was_added = true
-      }
 
-      if (i !== col_number || col_number === -1) {
+      if (i !== col_number) {
         build_app_cols.push(app_cols_list[i])
         continue
       }
@@ -501,7 +557,8 @@ class DataSifterControls extends React.Component {
       return ''
     }
     let values = [
-      {'none': 'no column'}
+      {'none': 'no column'},
+      {'all': 'all columns'}
     ]
     for (let i=0; i < this.state.left_cols.length; i++) {
       values.push({

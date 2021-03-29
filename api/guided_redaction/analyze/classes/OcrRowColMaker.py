@@ -9,7 +9,7 @@ class OcrRowColMaker:
     def __init__(self):
         self.debug = False
         self.min_vertical_overlap_pixels = 5
-        self.max_column_misalign_pixels = 5
+        self.max_column_misalign_pixels = 15
         self.min_row_horizontal_overlap_pixels = 1000
         
     def gather_ocr_cols(self, ocr_results_this_frame):
