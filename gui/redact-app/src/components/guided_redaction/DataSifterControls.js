@@ -184,6 +184,7 @@ class DataSifterControls extends React.Component {
       if (this.state.show_rowcol_id && !this.state.show_rowcol_id.startsWith('row_')) {
         break
       }
+      let centers = []
       let start_x = -1
       let end_x = -1
       let y = -1
@@ -207,10 +208,12 @@ class DataSifterControls extends React.Component {
         if (item_end[0] > end_x) {
           end_x = item_end[0]
         }
+        centers.push(item['location'][0] + .5*item['size'][0])
       }
       const new_row_obj = {
         start: [start_x, y],
         end: [end_x, y],
+        centers: centers,
       }
       build_obj['rows'].push(new_row_obj)
     }
@@ -219,6 +222,7 @@ class DataSifterControls extends React.Component {
       if (this.state.show_rowcol_id && !this.state.show_rowcol_id.startsWith('left_col_')) {
         break
       }
+      let centers = []
       let start_y = -1
       let end_y = -1
       let x = -1
@@ -242,10 +246,12 @@ class DataSifterControls extends React.Component {
         if (item_end[1] > end_y) {
           end_y = item_end[1]
         }
+        centers.push(item['location'][1]+ .5*item['size'][1])
       }
       build_obj['left_cols'].push({
         start: [x, start_y],
         end: [x, end_y],
+        centers: centers,
       })
     }
 
@@ -253,6 +259,7 @@ class DataSifterControls extends React.Component {
       if (this.state.show_rowcol_id && !this.state.show_rowcol_id.startsWith('right_col_')) {
         break
       }
+      let centers = []
       let start_y = -1
       let end_y = -1
       let x = -1
@@ -276,10 +283,12 @@ class DataSifterControls extends React.Component {
         if (item_end[1] > end_y) {
           end_y = item_end[1]
         }
+        centers.push(item['location'][1]+ .5*item['size'][1])
       }
       build_obj['right_cols'].push({
         start: [x, start_y],
         end: [x, end_y],
+        centers: centers,
       })
     }
 

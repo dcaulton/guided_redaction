@@ -112,9 +112,13 @@ class CanvasInsightsOverlay extends React.Component {
     if (Object.keys(app_rowcols).includes('rows')) {
       for (let i=0; i < app_rowcols['rows'].length; i++) {
         const row_info = app_rowcols['rows'][i]
+        const row_start_x = row_info['start'][0]*this.props.insights_image_scale
+        const row_start_y = row_info['start'][1]*this.props.insights_image_scale
+        const row_end_x = row_info['end'][0]*this.props.insights_image_scale
+        const row_end_y = row_info['end'][1]*this.props.insights_image_scale
         ctx.beginPath()
-        ctx.moveTo(row_info['start'][0]*this.props.insights_image_scale, row_info['start'][1]*this.props.insights_image_scale)
-        ctx.lineTo(row_info['end'][0]*this.props.insights_image_scale, row_info['end'][1]*this.props.insights_image_scale)
+        ctx.moveTo(row_start_x, row_start_y)
+        ctx.lineTo(row_end_x, row_end_y)
         ctx.stroke()
       }
     }
@@ -122,20 +126,44 @@ class CanvasInsightsOverlay extends React.Component {
     if (Object.keys(app_rowcols).includes('left_cols')) {
       for (let i=0; i < app_rowcols['left_cols'].length; i++) {
         const row_info = app_rowcols['left_cols'][i]
+        const row_start_x = row_info['start'][0]*this.props.insights_image_scale
+        const row_start_y = row_info['start'][1]*this.props.insights_image_scale
+        const row_end_x = row_info['end'][0]*this.props.insights_image_scale
+        const row_end_y = row_info['end'][1]*this.props.insights_image_scale
+        const row_center_x = (row_start_x + row_end_x) / 2
         ctx.beginPath()
-        ctx.moveTo(row_info['start'][0]*this.props.insights_image_scale, row_info['start'][1]*this.props.insights_image_scale)
-        ctx.lineTo(row_info['end'][0]*this.props.insights_image_scale, row_info['end'][1]*this.props.insights_image_scale)
+        ctx.moveTo(row_start_x, row_start_y)
+        ctx.lineTo(row_end_x, row_end_y)
         ctx.stroke()
+        for (let j=0; j < row_info['centers'].length; j++) {
+          const center_y = row_info['centers'][j]*this.props.insights_image_scale
+          ctx.beginPath()
+          ctx.arc(row_center_x, center_y, 2, 0, 2 * Math.PI, false)
+          ctx.fillStyle = 'white'
+          ctx.fill()
+        }
       }
     }
     ctx.strokeStyle = this.data_sifter_right_cols_color
     if (Object.keys(app_rowcols).includes('right_cols')) {
       for (let i=0; i < app_rowcols['right_cols'].length; i++) {
         const row_info = app_rowcols['right_cols'][i]
+        const row_start_x = row_info['start'][0]*this.props.insights_image_scale
+        const row_start_y = row_info['start'][1]*this.props.insights_image_scale
+        const row_end_x = row_info['end'][0]*this.props.insights_image_scale
+        const row_end_y = row_info['end'][1]*this.props.insights_image_scale
+        const row_center_x = (row_start_x + row_end_x) / 2
         ctx.beginPath()
-        ctx.moveTo(row_info['start'][0]*this.props.insights_image_scale, row_info['start'][1]*this.props.insights_image_scale)
-        ctx.lineTo(row_info['end'][0]*this.props.insights_image_scale, row_info['end'][1]*this.props.insights_image_scale)
+        ctx.moveTo(row_start_x, row_start_y)
+        ctx.lineTo(row_end_x, row_end_y)
         ctx.stroke()
+        for (let j=0; j < row_info['centers'].length; j++) {
+          const center_y = row_info['centers'][j]*this.props.insights_image_scale
+          ctx.beginPath()
+          ctx.arc(row_center_x, center_y, 2, 0, 2 * Math.PI, false)
+          ctx.fillStyle = 'white'
+          ctx.fill()
+        }
       }
     }
   }
