@@ -61,28 +61,145 @@ class DataSifterControls extends React.Component {
     this.setHighlightedItem=this.setHighlightedItem.bind(this)
   }
 
+  getRowNumberForItemId(item_id) {
+    for (let i=0; i < this.state.rows.length; i++) {
+      const row = this.state.rows[i]
+      if (row.includes(item_id)) {
+        return i
+      }
+    }
+  }
+
+  addItemToRow(new_item_id, new_item, row_num) {
+    const build_rows = []
+    for (let i=0; i < this.state.rows.length; i++) {
+      const row = this.state.rows[i]
+      if (i === row_num) {
+        let build_row = []
+        let item_was_added = false
+        for (let j=0; j < row.length; j++) {
+          const jth_item = this.state.items[row[j]]
+          if (jth_item['location'][0] < new_item['location'][0]) {
+            build_row.push(row[j])
+          } else {
+            build_row.push(new_item_id)
+            build_row.push(row[j])
+            item_was_added = true
+          }
+        }
+        if (!item_was_added) {
+          build_row.push(new_item_id)
+        }
+        build_rows.push(build_row)
+      } else {
+        build_rows.push(row)
+      }
+    }
+    return build_rows
+  }
+
+  addLeftOfCurrentItem() {
+    const cur_item = this.state.items[this.state.highlighted_item_id]
+    const cur_row_num = this.getRowNumberForItemId(this.state.highlighted_item_id)
+    const cur_end = [
+      cur_item['location'][0] + cur_item['size'][0],
+      cur_item['location'][1] + cur_item['size'][1]
+    ]
+    const new_start = [
+      cur_item['location'][0] - 50,
+      cur_item['location'][1]
+    ]
+    const new_end = [
+      cur_item['location'][0] - 20,
+      cur_end[1]
+    ]
+    const the_id = this.getNewItemId()
+    if (!the_id) {
+      return
+    }
+    const build_item = this.buildBasicLabelItemFromCoords(new_start, new_end)
+    const new_rows = this.addItemToRow(the_id, build_item, cur_row_num)
+    let deepCopyItems= JSON.parse(JSON.stringify(this.state.items))
+    deepCopyItems[the_id] = build_item
+    const set_var = {
+      items: deepCopyItems,
+      rows: new_rows,
+      highlighted_item_id: the_id,
+    }
+    this.setLocalStateVar(set_var)
+  }
+
+  addRightOfCurrentItem() {
+    const cur_item = this.state.items[this.state.highlighted_item_id]
+    const cur_row_num = this.getRowNumberForItemId(this.state.highlighted_item_id)
+    const cur_end = [
+      cur_item['location'][0] + cur_item['size'][0],
+      cur_item['location'][1] + cur_item['size'][1]
+    ]
+    const new_start = [
+      cur_end[0] + 20,
+      cur_item['location'][1]
+    ]
+    const new_end = [
+      new_start[0] + 20,
+      cur_end[1]
+    ]
+    const the_id = this.getNewItemId()
+    if (!the_id) {
+      return
+    }
+    const build_item = this.buildBasicLabelItemFromCoords(new_start, new_end)
+    const new_rows = this.addItemToRow(the_id, build_item, cur_row_num)
+    let deepCopyItems= JSON.parse(JSON.stringify(this.state.items))
+    deepCopyItems[the_id] = build_item
+    const set_var = {
+      items: deepCopyItems,
+      rows: new_rows,
+      highlighted_item_id: the_id,
+    }
+    this.setLocalStateVar(set_var)
+  }
+
   deleteOcrCallback1() {
     this.props.handleSetMode('ds_delete_ocr_area_2')
   }
 
-  addItemCallback2(end_coords) {
+  getNewItemId() {
     let the_id = 'm' + Math.floor(Math.random(10000, 99999)*10000).toString()
     let tries = 0
     while (Object.keys(this.state.items).includes(the_id) && tries < 100) {
       the_id = 'm' + Math.floor(Math.random(10000, 99999)*10000).toString()
       tries++ 
     }
+    return the_id
+  }
+
+  buildBasicLabelItemFromCoords(start_coords, end_coords) {
     const size = [
-      end_coords[0] - this.props.clicked_coords[0],
-      end_coords[1] - this.props.clicked_coords[1]
+      end_coords[0] - start_coords[0],
+      end_coords[1] - start_coords[1]
     ]
     const build_item = {
       type: 'label',
       text: 'monkeys are funny',
-      location: this.props.clicked_coords,
+      location: start_coords,
       size: size,
     }
+    return build_item
+  }
+
+  addItemCallback2(end_coords) {
+    const the_id = this.getNewItemId()
+    if (!the_id) {
+      return
+    }
+    const build_item = this.buildBasicLabelItemFromCoords(this.props.clicked_coords, end_coords)
+    ////////////////////////////////////////////////
     // TODO try to quantize this item to a row, or create new row
+    // 
+    // HEY THIS IS A TODO
+    //
+    ////////////////////////////////////////////
     let deepCopyItems= JSON.parse(JSON.stringify(this.state.items))
     deepCopyItems[the_id] = build_item
     const set_var = {
@@ -416,6 +533,36 @@ console.log('MAMA')
       highlighted_item_id: '',
     }
     this.setLocalStateVar(set_var)
+  }
+
+  buildItemAddRightButton() {
+    return (
+      <div
+          className='d-inline ml-2'
+      >
+        <button
+            className='btn btn-primary'
+            onClick={() => this.addRightOfCurrentItem() }
+        >
+          Add Right
+        </button>
+      </div>
+    )
+  }
+
+  buildItemAddLeftButton() {
+    return (
+      <div
+          className='d-inline ml-2'
+      >
+        <button
+            className='btn btn-primary'
+            onClick={() => this.addLeftOfCurrentItem() }
+        >
+          Add Left
+        </button>
+      </div>
+    )
   }
 
   buildItemDeleteButton() {
@@ -1602,6 +1749,8 @@ console.log('MAMA')
     const vert_alignment_field = this.buildItemVerticalAlignmentField(item) 
     const width_field = this.buildItemWidthField(item)
     const delete_button = this.buildItemDeleteButton()
+    const add_left_button = this.buildItemAddLeftButton()
+    const add_right_button = this.buildItemAddRightButton()
     const x_location_field = this.buildItemXLocationField(item)
     const y_location_field = this.buildItemYLocationField(item)
     const synthetic_datatype_field = this.buildItemSyntheticDatatypeField(item)
@@ -1650,6 +1799,8 @@ console.log('MAMA')
           </div>
           <div className='row mt-2'>
             {delete_button}
+            {add_left_button}
+            {add_right_button}
           </div>
         </div>
       </div>
