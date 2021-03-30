@@ -24,7 +24,7 @@ class DataSifterControls extends React.Component {
       id: '',
       name: '',
       generate_fake_data: false,
-      build_by_hand: false,
+      edit_ocr_data: false,
       show_app_boxes: false,
       show_app_rowcols: false,
       debug: false,
@@ -52,13 +52,13 @@ class DataSifterControls extends React.Component {
     this.getAppZones=this.getAppZones.bind(this)
     this.getAppRowCols=this.getAppRowCols.bind(this)
     this.deleteOcrAreaCallback=this.deleteOcrAreaCallback.bind(this)
-    this.highlightAppItems=this.highlightAppItems.bind(this)
     this.loadCurrentDataSifter=this.loadCurrentDataSifter.bind(this)
     this.getDataSifterHighlightedItemId=this.getDataSifterHighlightedItemId.bind(this)
     this.addItemCallback1=this.addItemCallback1.bind(this)
     this.addItemCallback2=this.addItemCallback2.bind(this)
     this.afterAddItem=this.afterAddItem.bind(this)
     this.deleteOcrCallback1=this.deleteOcrCallback1.bind(this)
+    this.setHighlightedItem=this.setHighlightedItem.bind(this)
   }
 
   deleteOcrCallback1() {
@@ -96,7 +96,7 @@ class DataSifterControls extends React.Component {
   }
 
   afterAddItem() {
-    this.props.handleSetMode('ds_highlight_app_items')
+    this.props.handleSetMode('ds_inspect_item')
   }
 
   addItemCallback1() {
@@ -104,10 +104,24 @@ class DataSifterControls extends React.Component {
   }
 
   buildBuildItemButtonsRow() {
-    const add_item_button = this.buildAddItemButton()
     return (
-      <div className='row mt-2 ml-1'>
-        {add_item_button}
+      <div className='row mt-2'>
+        <div className='ml-2'>
+          <button
+              className='btn btn-primary'
+              onClick={() => this.props.handleSetMode('ds_add_item_1')}
+          >
+            Add Item
+          </button>
+        </div>
+        <div className='ml-2'>
+          <button
+              className='btn btn-primary'
+              onClick={() => this.props.handleSetMode('ds_inspect_item')}
+          >
+            Inspect Item
+          </button>
+        </div>
       </div>
     )
   }
@@ -118,21 +132,6 @@ class DataSifterControls extends React.Component {
       (this.state.image_url === this.props.insights_image)
     ) {
       return true
-    }
-  }
-
-  buildAddItemButton() {
-    if (this.weAreOnTheSourceFrame()) {
-      return (
-        <div>
-          <button
-              className='btn btn-primary'
-              onClick={() => this.props.handleSetMode('ds_add_item_1')}
-          >
-            Add Item
-          </button>
-        </div>
-      )
     }
   }
 
@@ -237,8 +236,18 @@ console.log('MAMA')
     setTimeout((() => {this.props.setScrubberToIndex(image_frameset_index)}), 1000)
   }
 
+  buildNoItemDataMessage() {
+    if (Object.keys(this.state.items).length === 0) {
+      return (
+        <div className='row font-italic h5 ml-2'>
+          No Application Data Exists for This Data Sifter
+        </div>
+      )
+    }
+  } 
+
   buildShowSourceFrameLink() {
-    if (this.weAreOnTheSourceFrame()) {
+    if (Object.keys(this.state.items).length === 0) {
       return ''
     }
     return (
@@ -410,9 +419,6 @@ console.log('MAMA')
   }
 
   buildItemDeleteButton() {
-    if (!this.state.highlighted_item_id) {
-      return ''
-    }
     return (
       <div
           className='d-inline'
@@ -428,9 +434,6 @@ console.log('MAMA')
   }
 
   buildItemYLocationField(item) {
-    if (!this.state.highlighted_item_id) {
-      return ''
-    }
     return buildLabelAndTextInput(
       this.state.items[this.state.highlighted_item_id]['location'][1],
       'Y Location',
@@ -442,9 +445,6 @@ console.log('MAMA')
   }
 
   buildItemXLocationField(item) {
-    if (!this.state.highlighted_item_id) {
-      return ''
-    }
     return buildLabelAndTextInput(
       this.state.items[this.state.highlighted_item_id]['location'][0],
       'X Location',
@@ -456,9 +456,6 @@ console.log('MAMA')
   }
 
   buildItemWidthField(item) {
-    if (!this.state.highlighted_item_id) {
-      return ''
-    }
     return buildLabelAndTextInput(
       this.state.items[this.state.highlighted_item_id]['size'][0],
       'Width',
@@ -756,9 +753,6 @@ console.log('MAMA')
   }
 
   buildItemVerticalAlignmentField(item) {
-    if (!this.state.highlighted_item_id) {
-      return ''
-    }
     const resp_obj = this.getItemAlignment(this.state.highlighted_item_id)
     const cur_value = resp_obj['row_num']
     const align_dropdown = this.buildAlignToRowDropdown()
@@ -779,9 +773,6 @@ console.log('MAMA')
   }
 
   buildItemHorizontalAlignmentField(item) {
-    if (!this.state.highlighted_item_id) {
-      return ''
-    }
     const resp_obj = this.getItemAlignment(this.state.highlighted_item_id)
     const cur_value = resp_obj['col_align_type']
     const col_num = resp_obj['col_num']
@@ -836,9 +827,6 @@ console.log('MAMA')
   }
 
   buildItemMaskThisField(item) {
-    if (!this.state.highlighted_item_id) {
-      return ''
-    }
     if (item['type'] !== 'user_data') {
       return ''
     }
@@ -864,9 +852,6 @@ console.log('MAMA')
   }
 
   buildItemIsPiiField(item) {
-    if (!this.state.highlighted_item_id) {
-      return ''
-    }
     if (item['type'] !== 'user_data') {
       return ''
     }
@@ -892,9 +877,6 @@ console.log('MAMA')
   }
 
   buildItemTextField(item) {
-    if (!this.state.highlighted_item_id) {
-      return ''
-    }
     if (item['type'] !== 'label') {
       return ''
     }
@@ -909,9 +891,6 @@ console.log('MAMA')
   }
 
   buildItemTypeDropdown(item) {
-    if (!this.state.highlighted_item_id) {
-      return ''
-    }
     const values = [
       {'label': 'label'},
       {'user_data': 'user data'}
@@ -926,9 +905,6 @@ console.log('MAMA')
   }
 
   buildItemSyntheticDatatypeField(item) {
-    if (!this.state.highlighted_item_id) {
-      return ''
-    }
     if (!this.state.generate_fake_data) {
       return ''
     }
@@ -1067,9 +1043,8 @@ console.log('MAMA')
     this.setState({
       show_app_rowcols: true,
       show_app_boxes: true,
+      edit_ocr_data: false,
     })
-    this.props.handleSetMode('ds_highlight_app_items')
-
     const ds_panel_is_expanded = document.getElementById('data_sifter_body_button').getAttribute('aria-expanded')
     if (ds_panel_is_expanded === 'false') {
       document.getElementById('data_sifter_body_button').click()
@@ -1093,7 +1068,7 @@ console.log('MAMA')
     }
   }
 
-  highlightAppItems(clicked_coords) {
+  setHighlightedItem(clicked_coords) {
     for (let i=0; i < Object.keys(this.state.items).length; i++) {
       const item_key = Object.keys(this.state.items)[i]
       const item = this.state.items[item_key]
@@ -1241,10 +1216,7 @@ console.log('MAMA')
     )
   }
 
-  buildBuildByHandButtonsRow() {
-    if (!this.state.build_by_hand) {
-      return ''
-    }
+  buildEditOcrAndCompileRow() {
     const delete_ocr_areas_button = this.buildDeleteOcrAreasButton()
     const submit_for_compile_button = this.buildSubmitCompileButton()
     return (
@@ -1271,30 +1243,6 @@ console.log('MAMA')
 
   toggleLocalVar(var_name) {
     this.setLocalStateVar(var_name, !this.state[var_name])
-  }
-
-  buildHighlightAppItemsField() {
-    let checked_val = ''
-    let new_mode = 'ds_highlight_app_items'
-    if (this.props.mode === 'ds_highlight_app_items') {
-      checked_val = 'checked'
-      new_mode = ''
-    }
-    return (
-      <div className='ml-2'>
-        <div className='d-inline'>
-          <input
-            className='mr-2'
-            checked={checked_val}
-            type='checkbox'
-            onChange={() => this.props.handleSetMode(new_mode)}
-          />
-        </div>
-        <div className='d-inline'>
-          Highlight App Items
-        </div>
-      </div>
-    )
   }
 
   buildToggleField(field_name, label) {
@@ -1327,10 +1275,10 @@ console.log('MAMA')
     this.props.addInsightsCallback('getDataSifterHighlightedItemId', this.getDataSifterHighlightedItemId)
     this.props.addInsightsCallback('ds_delete_ocr_area_1', this.deleteOcrCallback1)
     this.props.addInsightsCallback('ds_delete_ocr_area_2', this.deleteOcrAreaCallback)
-    this.props.addInsightsCallback('ds_highlight_app_items', this.highlightAppItems)
     this.props.addInsightsCallback('ds_load_current_data_sifter', this.loadCurrentDataSifter)
     this.props.addInsightsCallback('ds_add_item_1', this.addItemCallback1)
     this.props.addInsightsCallback('ds_add_item_2', this.addItemCallback2)
+    this.props.addInsightsCallback('ds_inspect_item', this.setHighlightedItem)
   }
 
   setLocalStateVar(var_name, var_value, when_done=(()=>{})) {
@@ -1670,9 +1618,6 @@ console.log('MAMA')
   }
 
   buildNormalScanModeButtonsRow() {
-    if (this.state.build_by_hand) {
-      return ''
-    }
     const load_button = this.buildLoadButton()
     const delete_button = this.buildDeleteButton()
     const save_to_db_button = this.buildSaveToDatabaseButton()
@@ -1697,22 +1642,41 @@ console.log('MAMA')
     }
     const id_string = buildIdString(this.state.id, 'data_sifter', false)
     const name_field = this.buildNameField()
-    const scale_dropdown = this.buildScaleDropdown()
-    const ocr_job_id_dropdown = this.buildMatchIdField2('ocr', true) 
-    const fake_data_checkbox = this.buildToggleField('generate_fake_data', 'Generate Fake Data')
-    const build_by_hand_checkbox = this.buildToggleField('build_by_hand', 'Build a Data Sifter from an Ocr scan')
-    const show_app_boxes_checkbox = this.buildToggleField('show_app_boxes', 'Show App Boxes')
-    const show_app_rowcols_checkbox = this.buildToggleField('show_app_rowcols', 'Show App RowCols')
-    const highlight_app_items_checkbox = this.buildHighlightAppItemsField()
-    const debug_checkbox = this.buildToggleField('debug', 'Debug')
-    const show_type_dropdown = this.buildShowType()
+    const edit_ocr_data_checkbox = this.buildToggleField('edit_ocr_data', 'Build a Data Sifter from an Ocr scan')
+    let fake_data_checkbox = ''
+    let show_app_boxes_checkbox = ''
+    let show_app_rowcols_checkbox = ''
+    let show_source_frame_link = ''
+    let scale_dropdown = ''
+    let debug_checkbox = ''
+    let show_type_dropdown = ''
+    let item_buttons_row = ''
+    let scan_level_dropdown = ''
+    let ocr_job_id_dropdown = ''
+    let edit_ocr_and_compile_buttons_row = ''
+    let normal_scan_mode_buttons_row = ''
+    let item_data_message = ''
+    if (this.state.edit_ocr_data) {
+      edit_ocr_and_compile_buttons_row = this.buildEditOcrAndCompileRow()
+    } else {
+      fake_data_checkbox = this.buildToggleField('generate_fake_data', 'Generate Fake Data')
+      if (this.weAreOnTheSourceFrame()) {
+        show_app_boxes_checkbox = this.buildToggleField('show_app_boxes', 'Show App Boxes')
+        show_app_rowcols_checkbox = this.buildToggleField('show_app_rowcols', 'Show App RowCols')
+        item_buttons_row = this.buildBuildItemButtonsRow()
+      } else {
+        show_source_frame_link = this.buildShowSourceFrameLink()
+      }
+      scale_dropdown = this.buildScaleDropdown()
+      debug_checkbox = this.buildToggleField('debug', 'Debug')
+      show_type_dropdown = this.buildShowType()
+      scan_level_dropdown = this.buildScanLevelDropdown2()
+      ocr_job_id_dropdown = this.buildMatchIdField2('ocr', true) 
+      normal_scan_mode_buttons_row = this.buildNormalScanModeButtonsRow()
+      item_data_message = this.buildNoItemDataMessage()
+    }
     const attributes_list = this.buildAttributesList()
-    const scan_level_dropdown = this.buildScanLevelDropdown2()
-    const normal_scan_mode_buttons_row = this.buildNormalScanModeButtonsRow()
-    const build_by_hand_buttons_row = this.buildBuildByHandButtonsRow()
-    const item_buttons_row = this.buildBuildItemButtonsRow()
     const item_info_area = this.buildItemInfoArea()
-    const show_source_frame_link = this.buildShowSourceFrameLink()
     const header_row = makeHeaderRow(
       'data sifter',
       'data_sifter_body',
@@ -1734,14 +1698,16 @@ console.log('MAMA')
               <div id='data_sifter_main' className='col'>
                 {normal_scan_mode_buttons_row}
 
-                {build_by_hand_buttons_row}
+                {edit_ocr_and_compile_buttons_row}
 
                 {item_buttons_row}
+
+                {item_data_message}
 
                 <div className='row ml-1'>
                   <div className='col-6'>
                     <div className='row mt-2'>
-                      {build_by_hand_checkbox}
+                      {edit_ocr_data_checkbox}
                     </div>
 
                     <div className='row mt-2'>
@@ -1750,10 +1716,6 @@ console.log('MAMA')
 
                     <div className='row mt-2'>
                       {show_app_rowcols_checkbox}
-                    </div>
-
-                    <div className='row mt-2'>
-                      {highlight_app_items_checkbox}
                     </div>
 
                     <div className='row mt-2'>
