@@ -55,6 +55,46 @@ class DataSifterControls extends React.Component {
     this.highlightAppItems=this.highlightAppItems.bind(this)
     this.loadCurrentDataSifter=this.loadCurrentDataSifter.bind(this)
     this.getDataSifterHighlightedItemId=this.getDataSifterHighlightedItemId.bind(this)
+    this.addItemCallback1=this.addItemCallback1.bind(this)
+    this.addItemCallback2=this.addItemCallback2.bind(this)
+    this.afterAddItem=this.afterAddItem.bind(this)
+  }
+
+  addItemCallback2(end_coords) {
+    let the_id = 'm' + Math.floor(Math.random(10000, 99999)*10000).toString()
+    let tries = 0
+    while (Object.keys(this.state.items).includes(the_id) && tries < 100) {
+      the_id = 'm' + Math.floor(Math.random(10000, 99999)*10000).toString()
+      tries++ 
+    }
+    const size = [
+      end_coords[0] - this.props.clicked_coords[0],
+      end_coords[1] - this.props.clicked_coords[1]
+    ]
+    const build_item = {
+      type: 'label',
+      text: 'monkeys are funny',
+      location: this.props.clicked_coords,
+      size: size,
+    }
+    let deepCopyItems= JSON.parse(JSON.stringify(this.state.items))
+    deepCopyItems[the_id] = build_item
+    const set_var = {
+      items: deepCopyItems,
+      highlighted_item_id: the_id,
+    }
+    this.setLocalStateVar(
+      set_var, 
+      this.afterAddItem
+    )
+  }
+
+  afterAddItem() {
+    this.props.handleSetMode('')
+  }
+
+  addItemCallback1() {
+    this.props.handleSetMode('ds_add_item_2')
   }
 
   buildBuildItemButtonsRow() {
@@ -81,7 +121,7 @@ class DataSifterControls extends React.Component {
         <div>
           <button
               className='btn btn-primary'
-              onClick={() => this.addItem() }
+              onClick={() => this.props.handleSetMode('ds_add_item_1')}
           >
             Add Item
           </button>
@@ -504,8 +544,6 @@ class DataSifterControls extends React.Component {
     let build_app_cols = []
     let item_was_added = false
     for (let i=0; i < app_cols_list.length; i++) {
-      let first_item_start_location = this.state.items[app_cols_list[i][0]]['location'][0]
-
       if (i !== col_number) {
         build_app_cols.push(app_cols_list[i])
         continue
@@ -1195,14 +1233,16 @@ class DataSifterControls extends React.Component {
     this.props.addInsightsCallback('ds_delete_ocr_area_2', this.deleteOcrAreaCallback)
     this.props.addInsightsCallback('ds_highlight_app_items', this.highlightAppItems)
     this.props.addInsightsCallback('ds_load_current_data_sifter', this.loadCurrentDataSifter)
+    this.props.addInsightsCallback('ds_add_item_1', this.addItemCallback1)
+    this.props.addInsightsCallback('ds_add_item_2', this.addItemCallback2)
   }
 
   setLocalStateVar(var_name, var_value, when_done=(()=>{})) {
-    function anon_func() {
-      this.doSave()
-      when_done()
-    }
     if (typeof var_name === 'string' || var_name instanceof String) {
+      function anon_func() {
+        this.doSave()
+        when_done()
+      }
       // we have been given one key and one value
       if (this.state[var_name] === var_value) {
         when_done()
@@ -1215,7 +1255,15 @@ class DataSifterControls extends React.Component {
         )
       }
     } else {
-      // var_name is actaully a dict
+      // var_name is actually a dict, second argument could be a callback
+      let the_callback = (()=>{})
+      if (typeof(var_value) === 'function') {
+        the_callback = var_value
+      }
+      function anon_func() {
+        this.doSave()
+        the_callback()
+      }
       this.setState(
         var_name,
         anon_func

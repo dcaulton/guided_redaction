@@ -1069,6 +1069,10 @@ class InsightsPanel extends React.Component {
       the_message = 'Select the upper left corner of the zone'
     } else if (the_mode === 'ds_delete_ocr_area_2') {
       the_message = 'click second corner'
+    } else if (the_mode === 'ds_add_item_1') {
+      the_message = 'Select the upper left corner of the item'
+    } else if (the_mode === 'ds_add_item_2') {
+      the_message = 'click second corner'
     }
     this.props.setGlobalStateVar('message', the_message)
     this.setState({
