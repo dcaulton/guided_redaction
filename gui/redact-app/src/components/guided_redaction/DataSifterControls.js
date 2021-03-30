@@ -57,6 +57,39 @@ class DataSifterControls extends React.Component {
     this.getDataSifterHighlightedItemId=this.getDataSifterHighlightedItemId.bind(this)
   }
 
+  buildBuildItemButtonsRow() {
+    const add_item_button = this.buildAddItemButton()
+    return (
+      <div className='row mt-2 ml-1'>
+        {add_item_button}
+      </div>
+    )
+  }
+
+  weAreOnTheSourceFrame() {
+    if (
+      (this.state.movie_url === this.props.movie_url) &&
+      (this.state.image_url === this.props.insights_image)
+    ) {
+      return true
+    }
+  }
+
+  buildAddItemButton() {
+    if (this.weAreOnTheSourceFrame()) {
+      return (
+        <div>
+          <button
+              className='btn btn-primary'
+              onClick={() => this.addItem() }
+          >
+            Add Item
+          </button>
+        </div>
+      )
+    }
+  }
+
   buildShowColumnRow() {
     if (!this.state.left_cols && !this.state.right_cols) {
       return ''
@@ -155,6 +188,9 @@ class DataSifterControls extends React.Component {
   }
 
   buildShowSourceFrameLink() {
+    if (this.weAreOnTheSourceFrame()) {
+      return ''
+    }
     return (
       <div>
         <button
@@ -178,6 +214,9 @@ class DataSifterControls extends React.Component {
       rows:[],
       left_cols:[],
       right_cols:[],
+    }
+    if (!this.weAreOnTheSourceFrame()) {
+      return build_obj
     }
 
     for (let i=0; i < this.state.rows.length; i++) {
@@ -960,6 +999,9 @@ class DataSifterControls extends React.Component {
       return {}
     }
     let build_obj = {}
+    if (!this.weAreOnTheSourceFrame()) {
+      return build_obj
+    }
     for (let i=0; i < this.state.rows.length; i++) {
       const rowcol = this.state.rows[i]
       for (let j=0; j < rowcol.length; j++) {
@@ -1523,6 +1565,7 @@ class DataSifterControls extends React.Component {
     const scan_level_dropdown = this.buildScanLevelDropdown2()
     const normal_scan_mode_buttons_row = this.buildNormalScanModeButtonsRow()
     const build_by_hand_buttons_row = this.buildBuildByHandButtonsRow()
+    const item_buttons_row = this.buildBuildItemButtonsRow()
     const item_info_area = this.buildItemInfoArea()
     const show_source_frame_link = this.buildShowSourceFrameLink()
     const header_row = makeHeaderRow(
@@ -1547,6 +1590,8 @@ class DataSifterControls extends React.Component {
                 {normal_scan_mode_buttons_row}
 
                 {build_by_hand_buttons_row}
+
+                {item_buttons_row}
 
                 <div className='row ml-1'>
                   <div className='col-6'>
