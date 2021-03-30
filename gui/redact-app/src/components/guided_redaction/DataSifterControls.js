@@ -77,6 +77,7 @@ class DataSifterControls extends React.Component {
       location: this.props.clicked_coords,
       size: size,
     }
+    // TODO try to quantize this item to a row, or create new row
     let deepCopyItems= JSON.parse(JSON.stringify(this.state.items))
     deepCopyItems[the_id] = build_item
     const set_var = {
@@ -90,7 +91,7 @@ class DataSifterControls extends React.Component {
   }
 
   afterAddItem() {
-    this.props.handleSetMode('')
+    this.props.handleSetMode('ds_highlight_app_items')
   }
 
   addItemCallback1() {
@@ -1040,18 +1041,15 @@ class DataSifterControls extends React.Component {
     if (!this.weAreOnTheSourceFrame()) {
       return build_obj
     }
-    for (let i=0; i < this.state.rows.length; i++) {
-      const rowcol = this.state.rows[i]
-      for (let j=0; j < rowcol.length; j++) {
-        const item_id = rowcol[j]
-        const item = this.state.items[item_id]
-        const build_item = {
-          location: item['location'],
-          size: item['size'],
-          type: item['type'],
-        }
-        build_obj[item_id] = build_item
+    for (let i=0; i < Object.keys(this.state.items).length; i++) {
+      const item_id = Object.keys(this.state.items)[i]
+      const item = this.state.items[item_id]
+      const build_item = {
+        location: item['location'],
+        size: item['size'],
+        type: item['type'],
       }
+      build_obj[item_id] = build_item
     }
     return build_obj
   }
