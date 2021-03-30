@@ -58,6 +58,11 @@ class DataSifterControls extends React.Component {
     this.addItemCallback1=this.addItemCallback1.bind(this)
     this.addItemCallback2=this.addItemCallback2.bind(this)
     this.afterAddItem=this.afterAddItem.bind(this)
+    this.deleteOcrCallback1=this.deleteOcrCallback1.bind(this)
+  }
+
+  deleteOcrCallback1() {
+    this.props.handleSetMode('ds_delete_ocr_area_2')
   }
 
   addItemCallback2(end_coords) {
@@ -197,6 +202,10 @@ class DataSifterControls extends React.Component {
       }
       this.setLocalStateVar(set_var)
     }
+  }
+
+  setCurrentItemRowAlignment(var_value) {
+console.log('MAMA')
   }
 
   setCurrentItemAlignment(var_value) {
@@ -719,6 +728,56 @@ class DataSifterControls extends React.Component {
     )
   }
 
+  buildAlignToRowDropdown() {
+    if (!this.state.highlighted_item_id) {
+      return ''
+    }
+    let values = [
+      {'none': 'no row'}
+    ]
+    for (let i=0; i < this.state.rows.length; i++) {
+      values.push({
+        ['row_' + i.toString()]:'row '+i.toString(),
+      })
+    }
+    values.push({'new_row': 'create new row'})
+    let cur_value_string = 'none'
+    const resp_obj = this.getItemAlignment(this.state.highlighted_item_id)
+    if (resp_obj['row_num'] !== -1) {
+      cur_value_string = 'row_' + resp_obj['row_num'].toString()
+    }
+    return buildLabelAndDropdown(
+      values,
+      'Align to Row',
+      cur_value_string,
+      'data_sifter_item_row_alignment',
+      ((value)=>{this.setCurrentItemVar('row_alignment', value)})
+    )
+  }
+
+  buildItemVerticalAlignmentField(item) {
+    if (!this.state.highlighted_item_id) {
+      return ''
+    }
+    const resp_obj = this.getItemAlignment(this.state.highlighted_item_id)
+    const cur_value = resp_obj['row_num']
+    const align_dropdown = this.buildAlignToRowDropdown()
+    let align_message = 'This item is not aligned with any rows'
+    if (cur_value !== -1) {
+      align_message = 'This item is aligned in row ' + cur_value.toString()
+    }
+    return (
+      <div className='col'>
+        <div className='row'>
+          {align_message}
+        </div>
+        <div className='row'>
+          {align_dropdown}
+        </div>
+      </div>
+    )
+  }
+
   buildItemHorizontalAlignmentField(item) {
     if (!this.state.highlighted_item_id) {
       return ''
@@ -744,28 +803,36 @@ class DataSifterControls extends React.Component {
   }
 
   getItemAlignment(item_id) {
+    let alignment_obj = {}
     for (let i=0; i < this.state.left_cols.length; i++) {
       const left_col = this.state.left_cols[i]
       if (left_col.includes(item_id)) {
-        return {
-          col_align_type: 'left',
-          col_num: i,
-        }
+        alignment_obj['col_align_type'] = 'left'
+        alignment_obj['col_num'] = i
+        break
       }
     }
     for (let i=0; i < this.state.right_cols.length; i++) {
       const right_col = this.state.right_cols[i]
       if (right_col.includes(item_id)) {
-        return {
-          col_align_type: 'right',
-          col_num: i,
-        }
+        alignment_obj['col_align_type'] = 'right'
+        alignment_obj['col_num'] = i
+        break
       }
     }
-    return {
-      col_align_type: 'none',
-      col_num: 0,
+    if (!Object.keys(alignment_obj).includes('col_align_type')) {
+      alignment_obj['col_align_type'] = 'none'
+      alignment_obj['col_num'] = 0
     }
+    alignment_obj['row_num'] = -1
+    for (let i=0; i < this.state.rows.length; i++) {
+      const row = this.state.rows[i]
+      if (row.includes(item_id)) {
+        alignment_obj['row_num'] = i
+        break
+      }
+    }
+    return alignment_obj
   }
 
   buildItemMaskThisField(item) {
@@ -909,6 +976,8 @@ class DataSifterControls extends React.Component {
       deepCopyItems[this.state.highlighted_item_id]['location'][1] = var_value
     } else if (var_name === 'col_alignment') {
       return this.setCurrentItemAlignment(var_value)
+    } else if (var_name === 'row_alignment') {
+      return this.setCurrentItemRowAlignment(var_value)
     } else {
       deepCopyItems[this.state.highlighted_item_id][var_name] = var_value
     }
@@ -934,6 +1003,7 @@ class DataSifterControls extends React.Component {
     const is_pii_field = this.buildItemIsPiiField(item)
     const mask_this_field = this.buildItemMaskThisField(item) 
     const horiz_alignment_field = this.buildItemHorizontalAlignmentField(item) 
+    const vert_alignment_field = this.buildItemVerticalAlignmentField(item) 
     const width_field = this.buildItemWidthField(item)
     const delete_button = this.buildItemDeleteButton()
     const x_location_field = this.buildItemXLocationField(item)
@@ -974,6 +1044,9 @@ class DataSifterControls extends React.Component {
           </div>
           <div className='row mt-2'>
             {horiz_alignment_field}
+          </div>
+          <div className='row mt-2'>
+            {vert_alignment_field}
           </div>
           <div className='row mt-2'>
             {delete_button}
@@ -1200,6 +1273,30 @@ class DataSifterControls extends React.Component {
     this.setLocalStateVar(var_name, !this.state[var_name])
   }
 
+  buildHighlightAppItemsField() {
+    let checked_val = ''
+    let new_mode = 'ds_highlight_app_items'
+    if (this.props.mode === 'ds_highlight_app_items') {
+      checked_val = 'checked'
+      new_mode = ''
+    }
+    return (
+      <div className='ml-2'>
+        <div className='d-inline'>
+          <input
+            className='mr-2'
+            checked={checked_val}
+            type='checkbox'
+            onChange={() => this.props.handleSetMode(new_mode)}
+          />
+        </div>
+        <div className='d-inline'>
+          Highlight App Items
+        </div>
+      </div>
+    )
+  }
+
   buildToggleField(field_name, label) {
     let checked_val = ''
     if (this.state[field_name]) {
@@ -1228,6 +1325,7 @@ class DataSifterControls extends React.Component {
     this.props.addInsightsCallback('getDataSifterAppZones', this.getAppZones)
     this.props.addInsightsCallback('getDataSifterAppRowCols', this.getAppRowCols)
     this.props.addInsightsCallback('getDataSifterHighlightedItemId', this.getDataSifterHighlightedItemId)
+    this.props.addInsightsCallback('ds_delete_ocr_area_1', this.deleteOcrCallback1)
     this.props.addInsightsCallback('ds_delete_ocr_area_2', this.deleteOcrAreaCallback)
     this.props.addInsightsCallback('ds_highlight_app_items', this.highlightAppItems)
     this.props.addInsightsCallback('ds_load_current_data_sifter', this.loadCurrentDataSifter)
@@ -1605,6 +1703,7 @@ class DataSifterControls extends React.Component {
     const build_by_hand_checkbox = this.buildToggleField('build_by_hand', 'Build a Data Sifter from an Ocr scan')
     const show_app_boxes_checkbox = this.buildToggleField('show_app_boxes', 'Show App Boxes')
     const show_app_rowcols_checkbox = this.buildToggleField('show_app_rowcols', 'Show App RowCols')
+    const highlight_app_items_checkbox = this.buildHighlightAppItemsField()
     const debug_checkbox = this.buildToggleField('debug', 'Debug')
     const show_type_dropdown = this.buildShowType()
     const attributes_list = this.buildAttributesList()
@@ -1651,6 +1750,10 @@ class DataSifterControls extends React.Component {
 
                     <div className='row mt-2'>
                       {show_app_rowcols_checkbox}
+                    </div>
+
+                    <div className='row mt-2'>
+                      {highlight_app_items_checkbox}
                     </div>
 
                     <div className='row mt-2'>

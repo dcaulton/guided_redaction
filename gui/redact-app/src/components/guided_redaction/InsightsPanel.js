@@ -1111,11 +1111,11 @@ class InsightsPanel extends React.Component {
     }, this.setImageSize(first_image))
   }
 
-  setCurrentVideo(video_url, when_done=(()=>{})) {
+  setCurrentVideo(video_url) {
     this.props.setActiveMovie(video_url, this.movieSplitDone)
   }
 
-  setInsightsImage(image_url, when_done=(()=>{})) {
+  setInsightsImage(image_url) {
     this.setState({
       insights_image: image_url,
     })
@@ -1145,8 +1145,6 @@ class InsightsPanel extends React.Component {
       this.handleSetMode('add_template_mask_zone_2') 
     } else if (this.state.mode === 'scan_ocr_1') {
       this.handleSetMode('scan_ocr_2') 
-    } else if (this.state.mode === 'ds_delete_ocr_area_1') {
-      this.handleSetMode('ds_delete_ocr_area_2') 
     }
   }
 
@@ -1500,6 +1498,7 @@ class InsightsPanel extends React.Component {
             getColorsInZone={this.props.getColorsInZone}
             detectScreens={this.props.detectScreens}
             loadInsightsJobResults={this.loadInsightsJobResults}
+            mode={this.state.mode}
           />
         </div>
 

@@ -141,6 +141,7 @@ class BottomInsightsControls extends React.Component {
           campaign_movies={this.props.campaign_movies}
           setCurrentVideo={this.props.setCurrentVideo}
           setScrubberToIndex={this.props.setScrubberToIndex}
+          mode={this.props.mode}
         />
 
         <HogControls
