@@ -1049,7 +1049,7 @@ console.log('MAMA')
     const values = [
       {'none': 'no special container'},
       {'bg_color': 'different background color'},
-      {'box': 'surrounding box, like for a standard type=input'},
+      {'box': 'surrounding box'},
       {'dropdown': 'dropdown'}
     ]
     let current_value = 'none'
