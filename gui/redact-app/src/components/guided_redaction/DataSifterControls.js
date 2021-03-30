@@ -691,9 +691,6 @@ console.log('MAMA')
   }
 
   buildAlignToColumnDropdown() {
-    if (!this.state.highlighted_item_id) {
-      return ''
-    }
     let values = [
       {'none': 'no column'}
     ]
@@ -726,9 +723,6 @@ console.log('MAMA')
   }
 
   buildAlignToRowDropdown() {
-    if (!this.state.highlighted_item_id) {
-      return ''
-    }
     let values = [
       {'none': 'no row'}
     ]
@@ -904,10 +898,27 @@ console.log('MAMA')
     )
   }
 
-  buildItemSyntheticDatatypeField(item) {
-    if (!this.state.generate_fake_data) {
-      return ''
+  buildItemFormElementTypeField(item) {
+    const values = [
+      {'none': 'no special container'},
+      {'bg_color': 'different background color'},
+      {'box': 'surrounding box, like for a standard type=input'},
+      {'dropdown': 'dropdown'}
+    ]
+    let current_value = 'none'
+    if (Object.keys(item).includes('form_element_type')) {
+      current_value = item['form_element_type']
     }
+    return buildLabelAndDropdown(
+      values,
+      'Form Element Type',
+      current_value,
+      'data_sifter_item_form_element_type',
+      ((value)=>{this.setCurrentItemVar('form_element_type', value)})
+    )
+  }
+
+  buildItemSyntheticDatatypeField(item) {
     if (item['type'] !== 'user_data') {
       return ''
     }
@@ -932,10 +943,14 @@ console.log('MAMA')
       {'random-10': 'random alphanumeric - 10 chars'},
       {'random-20': 'random alphanumeric - 20 chars'}
     ]
+    let current_value = ''
+    if (Object.keys(item).includes('synthetic_datatype')) {
+      current_value = item['synthetic_datatype']
+    }
     return buildLabelAndDropdown(
       values,
       'Synthetic Data Type',
-      item['synthetic_datatype'],
+      current_value,
       'data_sifter_item_synthetic_datatype',
       ((value)=>{this.setCurrentItemVar('synthetic_datatype', value)})
     )
@@ -967,69 +982,6 @@ console.log('MAMA')
     }
 
     this.setLocalStateVar('items', deepCopyItems)
-  }
-
-  buildItemInfoArea() {
-    if (!this.state.highlighted_item_id) {
-      return ''
-    }
-    const item = this.state.items[this.state.highlighted_item_id]
-    const type_dropdown = this.buildItemTypeDropdown(item)
-    const text_field = this.buildItemTextField(item)
-    const is_pii_field = this.buildItemIsPiiField(item)
-    const mask_this_field = this.buildItemMaskThisField(item) 
-    const horiz_alignment_field = this.buildItemHorizontalAlignmentField(item) 
-    const vert_alignment_field = this.buildItemVerticalAlignmentField(item) 
-    const width_field = this.buildItemWidthField(item)
-    const delete_button = this.buildItemDeleteButton()
-    const x_location_field = this.buildItemXLocationField(item)
-    const y_location_field = this.buildItemYLocationField(item)
-    const synthetic_datatype_field = this.buildItemSyntheticDatatypeField(item)
-    return (
-      <div className='row border m-2'>
-        <div className='col ml-2'>
-          <div className='row h5'>
-            Selected Item Information
-          </div>
-          <div className='row'>
-            id: {this.state.highlighted_item_id}
-          </div>
-          <div className='row'>
-            {type_dropdown}
-          </div>
-          <div className='row'>
-            {text_field}
-          </div>
-          <div className='row mt-2'>
-            {synthetic_datatype_field}
-          </div>
-          <div className='row'>
-            {width_field}
-          </div>
-          <div className='row'>
-            {x_location_field}
-          </div>
-          <div className='row'>
-            {y_location_field}
-          </div>
-          <div className='row'>
-            {is_pii_field}
-          </div>
-          <div className='row'>
-            {mask_this_field}
-          </div>
-          <div className='row mt-2'>
-            {horiz_alignment_field}
-          </div>
-          <div className='row mt-2'>
-            {vert_alignment_field}
-          </div>
-          <div className='row mt-2'>
-            {delete_button}
-          </div>
-        </div>
-      </div>
-    )
   }
 
   getDataSifterHighlightedItemId() {
@@ -1455,7 +1407,8 @@ console.log('MAMA')
   buildScanLevelDropdown2() {
     const scan_level_dropdown = [
       {'tier_1': 'Tier 1 (select only)'},
-      {'tier_3': 'Tier 3 (select and extract)'}
+      {'tier_2': 'Tier 2 (select and redact)'},
+      {'tier_3': 'Tier 3 (select and replace with fake data)'}
     ]
 
     return buildLabelAndDropdown(
@@ -1632,6 +1585,73 @@ console.log('MAMA')
         {clear_matches_button}
         {build_button}
         {run_button}
+      </div>
+    )
+  }
+
+  buildItemInfoArea() {
+    if (!this.state.highlighted_item_id) {
+      return ''
+    }
+    const item = this.state.items[this.state.highlighted_item_id]
+    const type_dropdown = this.buildItemTypeDropdown(item)
+    const text_field = this.buildItemTextField(item)
+    const is_pii_field = this.buildItemIsPiiField(item)
+    const mask_this_field = this.buildItemMaskThisField(item) 
+    const horiz_alignment_field = this.buildItemHorizontalAlignmentField(item) 
+    const vert_alignment_field = this.buildItemVerticalAlignmentField(item) 
+    const width_field = this.buildItemWidthField(item)
+    const delete_button = this.buildItemDeleteButton()
+    const x_location_field = this.buildItemXLocationField(item)
+    const y_location_field = this.buildItemYLocationField(item)
+    const synthetic_datatype_field = this.buildItemSyntheticDatatypeField(item)
+    const form_element_type_field = this.buildItemFormElementTypeField(item)
+    return (
+      <div className='row border rounded p-1 m-2'>
+        <div className='col ml-2'>
+          <div className='row h5'>
+            Selected Item Information
+          </div>
+          <div className='row'>
+            id: {this.state.highlighted_item_id}
+          </div>
+          <div className='row'>
+            {type_dropdown}
+          </div>
+          <div className='row'>
+            {text_field}
+          </div>
+          <div className='row mt-2'>
+            {synthetic_datatype_field}
+          </div>
+          <div className='row mt-2'>
+            {form_element_type_field}
+          </div>
+          <div className='row'>
+            {width_field}
+          </div>
+          <div className='row'>
+            {x_location_field}
+          </div>
+          <div className='row'>
+            {y_location_field}
+          </div>
+          <div className='row'>
+            {is_pii_field}
+          </div>
+          <div className='row'>
+            {mask_this_field}
+          </div>
+          <div className='row mt-2'>
+            {horiz_alignment_field}
+          </div>
+          <div className='row mt-2'>
+            {vert_alignment_field}
+          </div>
+          <div className='row mt-2'>
+            {delete_button}
+          </div>
+        </div>
       </div>
     )
   }
