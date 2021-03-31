@@ -471,7 +471,7 @@ console.log('MAMA')
       let centers = []
       let start_y = -1
       let end_y = -1
-      let x = -1
+      let all_x = []
       const rowcol = this.state.right_cols[i]
       for (let j=0; j < rowcol.length; j++) {
         const item_id = rowcol[j]
@@ -481,7 +481,7 @@ console.log('MAMA')
           item['location'][0] + item['size'][0],
           item['location'][1] + item['size'][1]
         ]
-        x = item_end[0]
+        all_x.push(item_end[0])
         if (start_y === -1) {
           start_y = item_start[1]
           end_y = item_start[1]
@@ -494,6 +494,7 @@ console.log('MAMA')
         }
         centers.push(item['location'][1]+ .5*item['size'][1])
       }
+      const x = all_x.reduce((a, b) => a + b) / all_x.length
       return_obj.push({
         start: [x, start_y],
         end: [x, end_y],
