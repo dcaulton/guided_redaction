@@ -84,6 +84,7 @@ class InsightsPanel extends React.Component {
     this.afterTier1JobLoaded=this.afterTier1JobLoaded.bind(this)
     this.setScrubberToFirstFrame=this.setScrubberToFirstFrame.bind(this)
     this.afterManualCompileDataSifterLoaded=this.afterManualCompileDataSifterLoaded.bind(this)
+    this.setImageSize=this.setImageSize.bind(this)
   }
 
   getTier1MatchHashesForMovie(scanner_type, movie_url) {
@@ -379,6 +380,7 @@ class InsightsPanel extends React.Component {
     this.props.getPipelines()
     document.getElementById('insights_link').classList.add('active')
     this.props.setActiveWorkflow('')
+    this.props.addGlobalCallback('set_insights_image_size', this.setImageSize)
   }
 
   componentWillUnmount() {                                                      
@@ -1159,7 +1161,10 @@ class InsightsPanel extends React.Component {
     })
   }
 
-  setImageSize(the_image) {
+  setImageSize(the_image='') {
+    if (!the_image) {
+      the_image = this.state.insights_image
+    }
     var app_this = this
     if (the_image) {
       let img = new Image()

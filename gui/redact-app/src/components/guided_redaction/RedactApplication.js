@@ -39,6 +39,7 @@ class RedactApplication extends React.Component {
       movies: {},
       breadcrumbs_title: '',
       breadcrumbs_subtitle: '',
+      callbacks: {},
       bypass_whoami: false,
       jobs: [],
       jobs_last_checked: '',
@@ -149,7 +150,6 @@ class RedactApplication extends React.Component {
 
     this.runExportTask=this.runExportTask.bind(this)
     this.handleMergeFramesetsWrapper=this.handleMergeFramesetsWrapper.bind(this)
-    this.setImageScale=this.setImageScale.bind(this)
     this.doPing=this.doPing.bind(this)
     this.getUrl=this.getUrl.bind(this)
     this.buildJsonHeaders=this.buildJsonHeaders.bind(this)
@@ -230,6 +230,15 @@ class RedactApplication extends React.Component {
     this.detectScreens=this.detectScreens.bind(this)
     this.setActiveMovieFirstFrame=this.setActiveMovieFirstFrame.bind(this)
     this.addToCampaignMovies=this.addToCampaignMovies.bind(this)
+    this.addGlobalCallback=this.addGlobalCallback.bind(this)
+  }
+
+  addGlobalCallback(the_key, the_callback) {
+    let new_callbacks = this.state.callbacks
+    new_callbacks[the_key] = the_callback
+    this.setState({
+      callbacks: new_callbacks,
+    })
   }
 
   async detectScreens(the_image_url = '', when_done=(()=>{})) {
@@ -1219,12 +1228,6 @@ class RedactApplication extends React.Component {
     await response
   }
 
-  setImageScale= () => {
-    const the_scale = (document.getElementById('base_image_id').width / 
-      document.getElementById('base_image_id').naturalWidth)
-    this.setGlobalStateVar('image_scale', the_scale)
-  }
-
   setWorkbooks(the_workbooks) {
     Workbooks.setWorkbooks(the_workbooks, this.setGlobalStateVar)
   }
@@ -2104,6 +2107,13 @@ class RedactApplication extends React.Component {
     }
   }
 
+  toggleSideNav() {
+    this.toggleShowVisibility('side_nav')
+    if (Object.keys(this.state.callbacks).includes('set_insights_image_size')) {
+      this.state.callbacks['set_insights_image_size']()
+    }
+  }
+
   buildNavBarCollapseButton() {
     const navbar_collapse_style = this.getBottomLinkStyle()
 
@@ -2128,7 +2138,7 @@ class RedactApplication extends React.Component {
           <div className='d-inline'>
             <button
               className='btn text-light btn-link pt-1 pl-0'
-              onClick={(()=>this.toggleShowVisibility('side_nav'))}
+              onClick={(()=>this.toggleSideNav())}
             >
               {collapse_nav_words}
             </button>
@@ -2136,7 +2146,7 @@ class RedactApplication extends React.Component {
           <div className='d-inline'>
             <button
               className='btn text-light btn-link pt-1 pr-0 pl-0'
-              onClick={(()=>this.toggleShowVisibility('side_nav'))}
+              onClick={(()=>this.toggleSideNav())}
             >
               {collapse_nav_link_words}
             </button>
@@ -2378,6 +2388,7 @@ class RedactApplication extends React.Component {
                 getColorAtPixel={this.getColorAtPixel}
                 getColorsInZone={this.getColorsInZone}
                 detectScreens={this.detectScreens}
+                addGlobalCallback={this.addGlobalCallback}
               />
             </Route>
             <Route path='/redact/pipeline'>
