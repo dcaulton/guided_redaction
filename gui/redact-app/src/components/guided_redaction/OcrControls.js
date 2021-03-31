@@ -30,6 +30,7 @@ class OcrControls extends React.Component {
       skip_frames: 0,
       skip_east: false,
       data_sifter_job_id: '',
+      ocr_job_id: '',
       scan_level: 'tier_1',
       start: [],
       end: [],
@@ -45,11 +46,21 @@ class OcrControls extends React.Component {
 
   buildMatchIdField2() {
     return buildMatchIdField(
-        'data_sifter',
-        this.props.jobs,
-        this.setLocalStateVar,
-        this.state.data_sifter_job_id,
-        false
+      'data_sifter',
+      this.props.jobs,
+      this.setLocalStateVar,
+      this.state.data_sifter_job_id,
+      false
+    )
+  }
+
+  buildMatchIdField3() {
+    return buildMatchIdField(
+      'ocr',
+      this.props.jobs,
+      this.setLocalStateVar,
+      this.state.ocr_job_id,
+      false
     )
   }
 
@@ -170,6 +181,7 @@ class OcrControls extends React.Component {
         skip_frames: ocr_rule['skip_frames'],
         skip_east: ocr_rule['skip_east'],
         data_sifter_job_id: ocr_rule['data_sifter_job_id'],
+        ocr_job_id: ocr_rule['ocr_job_id'],
         scan_level: ocr_rule['scan_level'],
         start: ocr_rule['start'],
         end: ocr_rule['end'],
@@ -197,6 +209,7 @@ class OcrControls extends React.Component {
       skip_frames: 0,
       skip_east: false,
       data_sifter_job_id: '',
+      ocr_job_id: '',
       scan_level: 'tier_1',
       start: [],
       end: [],
@@ -215,6 +228,7 @@ class OcrControls extends React.Component {
       skip_frames: this.state.skip_frames,
       skip_east: this.state.skip_east,
       data_sifter_job_id: this.state.data_sifter_job_id,
+      ocr_job_id: this.state.ocr_job_id,
       scan_level: this.state.scan_level,
       attributes: this.state.attributes,
     }
@@ -436,6 +450,7 @@ class OcrControls extends React.Component {
     const clear_matches_button = this.buildClearMatchesButton2()
     const match_text = this.buildMatchText()
     const data_sifter_job_id_field = this.buildMatchIdField2() 
+    const source_ocr_job_id_field = this.buildMatchIdField3() 
     const match_percent = this.buildMatchPercent()
     const skip_frames = this.buildSkipFrames()
     const skip_east = this.buildSkipEast()
@@ -486,6 +501,10 @@ class OcrControls extends React.Component {
 
                 <div className='row bg-light'>
                   {data_sifter_job_id_field}
+                </div>
+
+                <div className='row bg-light'>
+                  {source_ocr_job_id_field}
                 </div>
 
                 <div className='row bg-light'>

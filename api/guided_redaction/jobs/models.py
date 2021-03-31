@@ -71,6 +71,10 @@ class Job(models.Model):
                 return
             self.broadcast_percent_complete()
 
+    def quick_save(self, *args, **kwargs):
+        # only use this if you are saving non-payload changes, non percent complete changes, like status 
+        super(Job, self).save(*args, **kwargs)
+
     def re_initialize_as_running(self):
         self.status = 'running'
         self.percent_complete = 0

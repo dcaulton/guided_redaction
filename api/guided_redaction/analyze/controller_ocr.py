@@ -36,6 +36,11 @@ class OcrController(T1Controller):
             ds_job = Job.objects.get(pk=ocr_rule.get('data_sifter_job_id'))
             ds_job_results = json.loads(ds_job.response_data)
 
+        source_ocr_job_results = {}
+        if ocr_rule.get('ocr_job_id'):
+            so_job = Job.objects.get(pk=ocr_rule.get('ocr_job_id'))
+            source_ocr_job_results = json.loads(so_job.response_data)
+
         response_data = {
             'movies': {},
             'statistics': {},
@@ -70,7 +75,13 @@ class OcrController(T1Controller):
                     t1_frameset_data = movie['framesets'][frameset_hash]
                     image_url = source_movies[movie_url]['framesets'][frameset_hash]['images'][0]
 
-                found_areas = self.scan_ocr(image_url, ocr_rule, t1_frameset_data)
+                source_ocr_results_this_frame = {}
+                if source_ocr_job_results and movie_url in source_ocr_job_results['movies'] and \
+                    frameset_hash in source_ocr_job_results['movies'][movie_url]['framesets']:
+                    source_ocr_results_this_frame = source_ocr_job_results['movies'][movie_url]['framesets'][frameset_hash]
+
+                found_areas = self.scan_ocr(image_url, ocr_rule, t1_frameset_data, source_ocr_results_this_frame)
+
                 if found_areas:
                     if movie_url not in response_data['movies']:
                         response_data['movies'][movie_url] = {'framesets': {}}
@@ -91,7 +102,15 @@ class OcrController(T1Controller):
                     new_phrases.append(match_obj['text'])
         return new_phrases
 
-    def scan_ocr(self, image_url, ocr_rule, t1_frameset_data):
+    def phrase_match_found(self, input_text, phrases_to_match):
+        found_a_match = False
+        for phrase in phrases_to_match:
+            ratio = fuzz.ratio(phrase, input_text)
+            if ratio > self.fuzz_match_threshold:
+                return True
+
+    def scan_ocr(self, image_url, ocr_rule, t1_frameset_data, source_ocr_results_this_frame):
+        recognized_text_areas = {}
         analyzer = EastPlusTessGuidedAnalyzer()
         cv2_image = self.get_cv2_image_from_url(image_url, self.file_writer)
         if type(cv2_image) == type(None):
@@ -109,6 +128,13 @@ class OcrController(T1Controller):
             end = (cv2_image.shape[1], cv2_image.shape[0])
 
         phrases_to_match = ocr_rule['match_text']
+
+        if source_ocr_results_this_frame:
+            for match_id in source_ocr_results_this_frame:
+                match_obj = source_ocr_results_this_frame[match_id]
+                if phrases_to_match and self.phrase_match_found(match_obj['text'], phrases_to_match):
+                    recognized_text_areas[match_id] = match_obj
+            return recognized_text_areas
 
         if t1_frameset_data:
             cv2_image = self.apply_t1_limits_to_source_image(cv2_image, t1_frameset_data)
@@ -132,7 +158,6 @@ class OcrController(T1Controller):
                 cv2_image, [start, end]
             )
 
-        recognized_text_areas = {}
         for raw_rta in raw_recognized_text_areas:
             the_id = 'rta_' + str(random.randint(100000000, 999000000))
             
@@ -152,12 +177,16 @@ class OcrController(T1Controller):
                 returned_start_coords = start
 
             if phrases_to_match:
-                found_a_match = False
-                for phrase in phrases_to_match:
-                    ratio = fuzz.ratio(phrase, raw_rta['text'])
-                    if ratio > self.fuzz_match_threshold:
-                        found_a_match = True
-                if not found_a_match:
+                if not self.phrase_match_found(raw_rta['text'], phrases_to_match):
+                    continue
+
+#            if phrases_to_match:
+#                found_a_match = False
+#                for phrase in phrases_to_match:
+#                    ratio = fuzz.ratio(phrase, raw_rta['text'])
+#                    if ratio > self.fuzz_match_threshold:
+#                        found_a_match = True
+#                if not found_a_match:
                     continue
                 
             recognized_text_areas[the_id] = {

@@ -76,8 +76,9 @@ def build_and_dispatch_generic_batched_threaded_children(
     finish_operation_function,
     child_task
 ):
-    parent_job.status = 'running'
-    parent_job.save()
+    if parent_job.status != 'running': 
+        parent_job.status = 'running'
+        parent_job.quick_save()
     if parent_job.request_data_path and len(parent_job.request_data) < 3:
         parent_job.get_data_from_disk()
     request_data = json.loads(parent_job.request_data)
@@ -197,8 +198,9 @@ def build_and_dispatch_generic_threaded_children(
         finish_func
     ):
     request_data = json.loads(parent_job.request_data)
-    parent_job.status = 'running'
-    parent_job.save()
+    if parent_job.status != 'running':
+        parent_job.status = 'running'
+        parent_job.quick_save()
 
     scanner_metas = request_data['tier_1_scanners'][scanner_type]
     movies = request_data['movies']
@@ -255,7 +257,7 @@ def generic_worker_call(job_uuid, operation, worker_class):
         return                                                                  
     if job.status != 'running':
         job.status = 'running'
-        job.save()
+        job.quick_save()
     print('running ' + operation + ' job {}'.format(job_uuid))
     worker = worker_class()
     response = worker.process_create_request(json.loads(job.request_data))
@@ -438,7 +440,7 @@ def build_data_sifter(job_uuid):
         return                                                                  
     if job.status != 'running':
         job.status = 'running'
-        job.save()
+        job.quick_save()
     children = Job.objects.filter(parent=job)                                   
                                                                                 
     if not children.filter(operation='ocr_threaded').exists():  
@@ -487,8 +489,9 @@ def get_timestamp_threaded(job_uuid):
     )
 
 def build_and_dispatch_get_timestamp_threaded_children(parent_job):
-    parent_job.status = 'running'
-    parent_job.save()
+    if parent_job.status != 'running':
+        parent_job.status = 'running'
+        parent_job.quick_save()
     request_data = json.loads(parent_job.request_data)
     movies = request_data['movies']
     for index, movie_url in enumerate(movies.keys()):
@@ -520,8 +523,9 @@ def wrap_up_get_timestamp_threaded(job, children):
 def scan_template(job_uuid):
     if Job.objects.filter(pk=job_uuid).exists():
         job = Job.objects.get(pk=job_uuid)
-        job.status = 'running'
-        job.save()
+        if job.status != 'running':
+            job.status = 'running'
+            job.quick_save()
         print('scanning template for job {}'.format(job_uuid))
         avsst = AnalyzeViewSetScanTemplate()
         response = avsst.process_create_request(json.loads(job.request_data))

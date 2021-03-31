@@ -391,14 +391,11 @@ class DataSifter:
         pass
 
     def build_match_results(self, return_mask, fast_pass_confirmed, slow_pass_confirmed):
-        #MAMA
         for app_id in self.found_app_ids:
             ocr_id = self.found_app_ids[app_id]
             app_obj = self.app_data['items'][app_id]
             if app_obj.get('mask_this_field') and ocr_id not in self.all_zones:
                 self.all_zones[ocr_id] = self.ocr_results_this_frame[ocr_id]
-        
-
 
     def add_zone_to_response(self, zone_start, zone_end, ocr_member_ids=None, row_col_type=None):
         new_id = str(random.randint(1, 999999999))
