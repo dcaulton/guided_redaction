@@ -125,13 +125,13 @@ class DataSifter:
 
         # if we matched on an item in some column and it's in a row that was not matched, add it as a match for that row.
         #   same for if it's in a row and the col didn't get picked up.
-        found_app_ids = {}
-        self.get_ids_for_one_rowcol_type(found_app_ids, 'row')
-        self.get_ids_for_one_rowcol_type(found_app_ids, 'left_col')
-        self.get_ids_for_one_rowcol_type(found_app_ids, 'right_col')
-        self.insert_ids_for_one_rowcol_type(found_app_ids, 'row')
-        self.insert_ids_for_one_rowcol_type(found_app_ids, 'left_col')
-        self.insert_ids_for_one_rowcol_type(found_app_ids, 'right_col')
+        self.found_app_ids = {}
+        self.get_ids_for_one_rowcol_type(self.found_app_ids, 'row')
+        self.get_ids_for_one_rowcol_type(self.found_app_ids, 'left_col')
+        self.get_ids_for_one_rowcol_type(self.found_app_ids, 'right_col')
+        self.insert_ids_for_one_rowcol_type(self.found_app_ids, 'row')
+        self.insert_ids_for_one_rowcol_type(self.found_app_ids, 'left_col')
+        self.insert_ids_for_one_rowcol_type(self.found_app_ids, 'right_col')
 
         # for user fields, see if there are any adjacent, unclaimed ocr regions.  If so, absorb them in the user area
         #  this is because ocr can sometimes split a single word into a couple ones.
@@ -151,6 +151,7 @@ class DataSifter:
         print('confirmed rows {}'.format(self.app_rows))
         print('confirmed left cols {}'.format(self.app_left_cols))
         print('confirmed right cols {}'.format(self.app_right_cols))
+        return True
 
     def get_ids_for_one_rowcol_type(self, found_app_ids, rowcol_type):
         app_rowcols = []
@@ -390,7 +391,14 @@ class DataSifter:
         pass
 
     def build_match_results(self, return_mask, fast_pass_confirmed, slow_pass_confirmed):
-        pass
+        #MAMA
+        for app_id in self.found_app_ids:
+            ocr_id = self.found_app_ids[app_id]
+            app_obj = self.app_data['items'][app_id]
+            if app_obj.get('mask_this_field') and ocr_id not in self.all_zones:
+                self.all_zones[ocr_id] = self.ocr_results_this_frame[ocr_id]
+        
+
 
     def add_zone_to_response(self, zone_start, zone_end, ocr_member_ids=None, row_col_type=None):
         new_id = str(random.randint(1, 999999999))
