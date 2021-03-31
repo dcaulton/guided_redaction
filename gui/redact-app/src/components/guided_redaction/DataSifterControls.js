@@ -379,22 +379,8 @@ console.log('MAMA')
     )
   }
 
-  getAppRowCols() {
-    if (!this.state.id) {
-      return {}
-    }
-    if (!this.state.show_app_rowcols) {
-      return {}
-    }
-    let build_obj = {
-      rows:[],
-      left_cols:[],
-      right_cols:[],
-    }
-    if (!this.weAreOnTheSourceFrame()) {
-      return build_obj
-    }
-
+  getAppRows() {
+    let return_obj = []
     for (let i=0; i < this.state.rows.length; i++) {
       if (this.state.show_rowcol_id && !this.state.show_rowcol_id.startsWith('row_')) {
         break
@@ -430,9 +416,13 @@ console.log('MAMA')
         end: [end_x, y],
         centers: centers,
       }
-      build_obj['rows'].push(new_row_obj)
+      return_obj.push(new_row_obj)
     }
+    return return_obj
+  }
 
+  getAppLeftCols() {
+    let return_obj = []
     for (let i=0; i < this.state.left_cols.length; i++) {
       if (this.state.show_rowcol_id && !this.state.show_rowcol_id.startsWith('left_col_')) {
         break
@@ -463,13 +453,17 @@ console.log('MAMA')
         }
         centers.push(item['location'][1]+ .5*item['size'][1])
       }
-      build_obj['left_cols'].push({
+      return_obj.push({
         start: [x, start_y],
         end: [x, end_y],
         centers: centers,
       })
     }
+    return return_obj
+  }
 
+  getAppRightCols() {
+    let return_obj = []
     for (let i=0; i < this.state.right_cols.length; i++) {
       if (this.state.show_rowcol_id && !this.state.show_rowcol_id.startsWith('right_col_')) {
         break
@@ -487,10 +481,10 @@ console.log('MAMA')
           item['location'][0] + item['size'][0],
           item['location'][1] + item['size'][1]
         ]
+        x = item_end[0]
         if (start_y === -1) {
           start_y = item_start[1]
           end_y = item_start[1]
-          x = item_end[0]
         }
         if (item_start[1] < start_y) {
           start_y = item_start[1]
@@ -500,12 +494,39 @@ console.log('MAMA')
         }
         centers.push(item['location'][1]+ .5*item['size'][1])
       }
-      build_obj['right_cols'].push({
+      return_obj.push({
         start: [x, start_y],
         end: [x, end_y],
         centers: centers,
       })
     }
+    return return_obj
+  }
+
+  getAppRowCols() {
+    if (!this.state.id) {
+      return {}
+    }
+    if (!this.state.show_app_rowcols) {
+      return {}
+    }
+    let build_obj = {
+      rows:[],
+      left_cols:[],
+      right_cols:[],
+    }
+    if (!this.weAreOnTheSourceFrame()) {
+      return build_obj
+    }
+
+    const new_rows = this.getAppRows()
+    build_obj['rows'] = new_rows
+
+    const new_left_cols = this.getAppLeftCols()
+    build_obj['left_cols'] = new_left_cols
+
+    const new_right_cols = this.getAppRightCols()
+    build_obj['right_cols'] = new_right_cols
 
     if (this.state.show_rowcol_id.startsWith('left_col_')) {
       const rowcol_num = parseInt(this.state.show_rowcol_id.substring(9))
