@@ -168,7 +168,7 @@ def build_and_dispatch_generic_batched_threaded_children(
                 child_task.delay(job.id)
 
 def target_wants_ocr_data(operation, t1_scanner):
-    if operation in ['selection_grower', 'ocr_scene_analysis', 'data_sifter'] and \
+    if operation in ['selection_grower', 'ocr_scene_analysis'] and \
         'ocr_job_id' in t1_scanner and \
         t1_scanner['ocr_job_id']:
         return True

@@ -20,6 +20,7 @@ class DataSifterController(T1Controller):
 
     def sift_data(self, request_data):
         ocr_job_results = {'movies': {}}
+        source_movie_only = False
 
         response_obj = {
             'movies': {},
@@ -27,7 +28,11 @@ class DataSifterController(T1Controller):
         }
         source_movies = {}
         movies = request_data.get('movies')
-        source_movies = movies['source']
+        if 'source' in movies:
+            source_movies = movies['source']
+        else:
+            source_movies = movies
+            source_movie_only = True
         movie_url = list(source_movies.keys())[0]
         source_movie = source_movies[movie_url]
         movie = movies[movie_url]
@@ -59,7 +64,11 @@ class DataSifterController(T1Controller):
             other_t1_matches_in = {}
             ocr_matches_in = {}
             template_matches_in = {}
-            if frameset_hash in movie['framesets']:
+            image_url = source_movie['framesets'][frameset_hash]['images'][0]
+            if not source_movie_only and frameset_hash not in movie['framesets']:
+                print('passing on sift of image {}'.format(image_url.split('/')[-1]))
+                continue
+            if not source_movie_only and frameset_hash in movie['framesets']:
                 other_t1_matches_in = movie['framesets'][frameset_hash]
             if 'movies' in template_job_results and \
                 movie_url in template_job_results['movies'] and \
@@ -70,7 +79,6 @@ class DataSifterController(T1Controller):
                 frameset_hash in ocr_job_results['movies'][movie_url]['framesets']:
                 ocr_matches_in = ocr_job_results['movies'][movie_url]['framesets'][frameset_hash]
 
-            image_url = source_movie['framesets'][frameset_hash]['images'][0]
             print('sifting image {}'.format(image_url.split('/')[-1]))
             cv2_image = self.get_cv2_image_from_url(image_url, self.file_writer)
 
