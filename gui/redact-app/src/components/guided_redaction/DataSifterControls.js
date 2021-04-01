@@ -321,7 +321,8 @@ class DataSifterControls extends React.Component {
   }
 
   setCurrentItemRowAlignment(var_value) {
-console.log('MAMA')
+    // TODO, get this working
+    console.log('should be setting row alignment here')
   }
 
   setCurrentItemAlignment(var_value) {
@@ -1067,6 +1068,24 @@ console.log('MAMA')
     )
   }
 
+  buildItemEmptyValueField(item) {
+    if (item['type'] !== 'user_data') {
+      return ''
+    }
+    let cur_val = ''
+    if (Object.keys(item).includes('empty_value')) {
+      cur_val = item['empty_value']
+    }
+    return buildLabelAndTextInput(
+      cur_val,
+      'Empty Value',
+      'data_sifter_item_empty_value',
+      'item_empty_value',
+      25,
+      ((value)=>{this.setCurrentItemVar('empty_value', value)})
+    )
+  }
+
   buildItemFormElementTypeField(item) {
     const values = [
       {'none': 'no special container'},
@@ -1777,6 +1796,7 @@ console.log('MAMA')
     const y_location_field = this.buildItemYLocationField(item)
     const synthetic_datatype_field = this.buildItemSyntheticDatatypeField(item)
     const form_element_type_field = this.buildItemFormElementTypeField(item)
+    const empty_value_field = this.buildItemEmptyValueField(item)
     return (
       <div className='row border rounded p-1 m-2'>
         <div className='col ml-2'>
@@ -1797,6 +1817,9 @@ console.log('MAMA')
           </div>
           <div className='row mt-2'>
             {form_element_type_field}
+          </div>
+          <div className='row mt-2'>
+            {empty_value_field}
           </div>
           <div className='row'>
             {width_field}

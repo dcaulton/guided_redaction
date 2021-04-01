@@ -214,14 +214,14 @@ class DataSifter:
                         base_ocr_col += index+1
                         app_row_element['ocr_id'] = ocr_match_id
                 elif app_element['type'] == 'user_data':
-                        if app_element.get('min_width', 0) > ocr_match_ele['size'][0]:
-                            continue
-                        # a simple greedy algo for first cut, just pass the first element you see
-                        #   we will be qualifying these soon by font size, field length
-                        base_ocr_col += index+1
-                        app_row_element['ocr_id'] = ocr_match_id
-                        app_row_element['found_value'] = ocr_match_ele['text'].rstrip()
-                        break
+                    if app_element.get('min_width', 0) > ocr_match_ele['size'][0]:
+                        continue
+                    # a simple greedy algo for first cut, just pass the first element you see
+                    #   we will be qualifying these soon by font size, field length
+                    base_ocr_col += index+1
+                    app_row_element['ocr_id'] = ocr_match_id
+                    app_row_element['found_value'] = ocr_match_ele['text'].rstrip()
+                    break
 
     def fast_score_ocr_rowcol_to_app_rowcol(self, app_col, ocr_col):
         total_score = 0
@@ -396,6 +396,13 @@ class DataSifter:
             app_obj = self.app_data['items'][app_id]
             if app_obj.get('mask_this_field') and ocr_id not in self.all_zones:
                 self.all_zones[ocr_id] = self.ocr_results_this_frame[ocr_id]
+                if app_obj.get('empty_value'):
+                    ratio = fuzz.ratio(app_obj['empty_value'], ocr_match_ele['text'])
+                    if ratio >= self.fuzz_match_threshold:
+                        # these two things matched, but it's against an empty value for the user field and we don't 
+                        #   want to send it back representing user data
+                        # maybe I should add something to stats at least?
+                        self.all_zones[ocr_id]['text'] = ''
 
     def add_zone_to_response(self, zone_start, zone_end, ocr_member_ids=None, row_col_type=None):
         new_id = str(random.randint(1, 999999999))
@@ -654,6 +661,7 @@ class DataSifter:
 #                    'data_type': 'string',
 #                    'min_width': 50,
 #                    'synthetic_datatype': 'person.name',
+#                    'empty_value': '',
 #                },
 #                'e2': {
 #                    'type': 'user_data',
@@ -687,6 +695,7 @@ class DataSifter:
 #                    'data_type': 'phone',
 #                    'min_width': 50,
 #                    'synthetic_datatype': 'phone_number.phone_number',
+#                    'empty_value': '-None-',
 #                },
 #                'm1a': {
 #                    'type': 'template_anchor',
