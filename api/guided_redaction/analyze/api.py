@@ -1,4 +1,3 @@
-from guided_redaction.analyze.classes.TelemetryAnalyzer import TelemetryAnalyzer
 from guided_redaction.analyze.classes.TemplateMatcher import TemplateMatcher
 from guided_redaction.analyze.classes.ChartMaker import ChartMaker
 from guided_redaction.analyze.classes.HogScanner import HogScanner
@@ -8,7 +7,6 @@ from .controller_selected_area import SelectedAreaController
 from .controller_mesh_match import MeshMatchController
 from .controller_selection_grower import SelectionGrowerController
 from .controller_ocr import OcrController
-from .controller_ocr_scene_analysis import OcrSceneAnalysisController
 from .controller_template import TemplateController
 from .controller_filter import FilterController
 from .controller_timestamp import TimestampController
@@ -148,67 +146,6 @@ class AnalyzeViewSetFilter(viewsets.ViewSet):
         return Response({'movies': response_movies})
 
 
-class AnalyzeViewSetTelemetry(viewsets.ViewSet):
-    def create(self, request):
-        request_data = request.data
-        return self.process_create_request(request_data)
-
-    def process_create_request(self, request_data):
-        if not request_data.get("movies"):
-            return self.error("movies is required")
-        if not request_data.get("telemetry_data"):
-            return self.error("telemetry_data is required")
-        if not request_data.get("telemetry_rule"):
-            return self.error("telemetry_rule is required")
-        movies = request_data["movies"]
-        telemetry_rule = request_data["telemetry_rule"]
-        telemetry_data = request_data["telemetry_data"]
-        if 'raw_data_url' not in telemetry_data.keys():
-            return self.error("telemetry raw data is required")
-        if 'movie_mappings' not in telemetry_data.keys():
-            return self.error("telemetry movie mappings is required")
-        movie_mappings = telemetry_data['movie_mappings']
-        analyzer = TelemetryAnalyzer()
-        matching_frames = {}
-        matching_frames['movies'] = {}
-
-        telemetry_raw_data = requests.get(
-          telemetry_data['raw_data_url'],
-          verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
-        ).text
-        telemetry_data = telemetry_raw_data.split('\n')
-        if telemetry_data:
-            for movie_url in movies.keys():
-                print('scanning telemetry data for movie {}'.format(movie_url))
-                matching_frames_for_movie = []
-                movie_filename = movie_url.split('/')[-1]
-                movie_id = movie_filename.split('.')[0]
-                if movie_id not in movie_mappings:
-                    print('cannot find recording id for movie url {}, {}, skipping'.format(movie_url, movie_id ))
-                    continue
-                movie = movies[movie_url]
-                transaction_id = movie_mappings[movie_id]
-                relevant_telemetry_rows = self.get_relevant_telemetry_rows(transaction_id, telemetry_data)
-                if relevant_telemetry_rows:
-                    matching_frames_for_movie = analyzer.find_matching_frames(
-                        movie_url=movie_url,
-                        movie=movie, 
-                        telemetry_data=relevant_telemetry_rows, 
-                        telemetry_rule=telemetry_rule
-                    )
-                matching_frames['movies'][movie_url] = matching_frames_for_movie
-
-        return Response(matching_frames)
-
-    def get_relevant_telemetry_rows(self, transaction_id, telemetry_data):
-        matching_rows = []
-        regex = re.compile(transaction_id.upper())
-        for row in telemetry_data:
-            if regex.search(row):
-                matching_rows.append(row)
-        return matching_rows
-
-
 class AnalyzeViewSetTimestamp(viewsets.ViewSet):
     def create(self, request):
         request_data = request.data
@@ -246,26 +183,6 @@ class AnalyzeViewSetChart(viewsets.ViewSet):
         charts_obj = chart_maker.make_charts()
 
         return Response({'movies': charts_obj})
-
-
-class AnalyzeViewSetOcrSceneAnalysis(viewsets.ViewSet):
-    def create(self, request):
-        request_data = request.data
-        return self.process_create_request(request_data)
-
-    def process_create_request(self, request_data):
-        if not request_data.get("movies"):
-            return self.error("movies is required", status_code=400)
-        if not request_data.get("tier_1_scanners"):
-            return self.error("tier_1_scanners is required", status_code=400)
-        t1s = request_data.get("tier_1_scanners")
-        if 'ocr_scene_analysis' not in t1s:
-            return self.error("tier_1_scanners must have an ocr_scene_analysis element", status_code=400)
-
-        worker = OcrSceneAnalysisController()
-        build_response_data = worker.scan_scene(request_data)
-
-        return Response(build_response_data)
 
 
 class AnalyzeViewSetTrainHog(viewsets.ViewSet):

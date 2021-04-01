@@ -288,8 +288,6 @@ class MovieCard extends React.Component {
       scanner_type_short = 'sum'
     } else if (scanner_type === 'selection_grower') {
       scanner_type_short = 'sg'
-    } else if (scanner_type === 'ocr_scene_analysis') {
-      scanner_type_short = 'osa'
     } else if (scanner_type === 'data_sifter') {
       scanner_type_short = 'ds'
     }
@@ -443,50 +441,6 @@ class MovieCard extends React.Component {
     return ''
   }
 
-  showTelemetryFrame(movie_url, offset) {
-    const the_movie = this.props.movies[movie_url]
-    const the_image = the_movie['frames'][offset]
-    const the_frameset = this.props.getFramesetHashForImageUrl(the_image, the_movie['framesets'])
-    const movie_framesets = this.props.getFramesetHashesInOrder(the_movie)
-    const image_frameset_index = movie_framesets.indexOf(the_frameset)
-    this.props.setCurrentVideo(movie_url) 
-    setTimeout((() => {this.props.setScrubberToIndex(image_frameset_index)}), 1000)
-  }
-
-  buildHasTelemetryInfo() {
-    if (!this.props.current_ids['t1_scanner']) {
-      return ''
-    }
-    if (Object.keys(this.props.tier_1_matches['telemetry']).includes(this.props.current_ids['t1_scanner']['telemetry'])) {
-      const tel_matches = this.props.tier_1_matches['telemetry'][this.props.current_ids['t1_scanner']['telemetry']]
-      if (Object.keys(tel_matches['movies']).includes(this.props.this_cards_movie_url)) {
-        const offset = tel_matches['movies'][this.props.this_cards_movie_url][0]
-        return (
-          <div>
-            <div className='d-inline'>
-              has telemetry match 
-            </div>
-            <button
-              className='border-0 text-primary'
-              onClick={() => this.showTelemetryFrame(this.props.this_cards_movie_url, offset)}
-            >
-              show
-            </button>
-          </div>
-        )
-      } else {
-        return (
-          <div>
-            <div className='d-inline'>
-              no telemetry match 
-            </div>
-          </div>
-        )
-      }
-    }
-    return ''
-  }
-
   buildVideoSourceObject() {
     if (
       this.props.movies &&
@@ -567,7 +521,6 @@ class MovieCard extends React.Component {
     const remove_button = this.buildRemoveButton(this.props.this_cards_movie_url)
     const template_matches_string = this.getTier1MatchesString('template')
     const ocr_matches_string = this.getTier1MatchesString('ocr')
-    const ocr_scene_analysis_matches_string = this.getTier1MatchesString('ocr_scene_analysis')
     const selected_areas_string = this.getTier1MatchesString('selected_area')
     const mesh_match_string = this.getTier1MatchesString('mesh_match')
     const selection_grower_string = this.getTier1MatchesString('selection_grower')
@@ -585,7 +538,6 @@ class MovieCard extends React.Component {
     const movie = this.props.movies[this.props.this_cards_movie_url]
     const movie_header = this.buildMovieHeader(movie, movie_body_id)
     const has_timestamp_info = this.buildHasTimestampInfo()
-    const has_telemetry_info = this.buildHasTelemetryInfo()
     const video_source_object = this.buildVideoSourceObject()
 
     return (
@@ -633,9 +585,6 @@ class MovieCard extends React.Component {
                     {ocr_matches_string}
                   </div>
                   <div className='row'>
-                    {ocr_scene_analysis_matches_string}
-                  </div>
-                  <div className='row'>
                     {selected_areas_string}
                   </div>
                   <div className='row'>
@@ -658,9 +607,6 @@ class MovieCard extends React.Component {
                   </div>
                   <div className='row'>
                     {has_timestamp_info}
-                  </div>
-                  <div className='row'>
-                    {has_telemetry_info}
                   </div>
                   <div className='row'>
                     {areas_to_redact_string}

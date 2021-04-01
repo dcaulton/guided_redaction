@@ -14,10 +14,6 @@ class EastScanner:
     def __init__(self, debug=True):
         self.debug = debug
 
-    def get_areas_to_redact(self, source, input_filename, telemetry_data):
-        textareas = self.get_text_areas_from_east(source)
-        return textareas
-
     def get_text_areas_from_east(self, source):
         if self.debug:
             print("performing text detection with EAST")

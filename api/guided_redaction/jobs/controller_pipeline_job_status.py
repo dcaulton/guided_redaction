@@ -213,7 +213,7 @@ class PipelineJobStatusController:
     def get_node_task_description(self, node_id):
         node = self.content['node_metadata']['node'][node_id]
         desc_part2 = ''
-        if node['type'] in ('template', 'selected_area', 'mesh_match', 'ocr_scene_analysis', 'ocr', 'selection_grower') :
+        if node['type'] in ('template', 'selected_area', 'mesh_match', 'data_sifter', 'ocr', 'selection_grower') :
             scanner = self.content['node_metadata']['tier_1_scanners'][node['type']][node['entity_id']]
             desc_part2 = ' - ' + scanner['name']
         elif node['type'] == 'pipeline': 
@@ -230,8 +230,8 @@ class PipelineJobStatusController:
             return 'SA'
         elif long_type == 'mesh_match':
             return 'MM'
-        elif long_type == 'ocr_scene_analysis':
-            return 'OSA'
+        elif long_type == 'data_sifter':
+            return 'DS'
         elif long_type == 'selection_grower':
             return 'SG'
         elif long_type == 'split_and_hash':

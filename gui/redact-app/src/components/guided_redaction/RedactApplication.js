@@ -65,10 +65,6 @@ class RedactApplication extends React.Component {
       results: {},
       preserve_movie_audio: true,
       app_codebooks: {},
-      telemetry_data: {
-        raw_data_url: '',
-        movie_mappings: [],
-      },
       user: {
         id: '',
       },
@@ -81,11 +77,8 @@ class RedactApplication extends React.Component {
         'selectedArea': true,
         'mesh_match': true,
         'selection_grower': true,
-        'telemetry': true,
         'filesystem': true,
         'ocr': true,
-        'ocr_scene_analysis': true,
-        'ocr_movie_analysis': true,
         'set_tools': true,
         'results': true,
         'diffs': true,
@@ -102,10 +95,8 @@ class RedactApplication extends React.Component {
       tier_1_scanners: {
         'ocr': {},
         'hog': {},
-        'ocr_scene_analysis': {},
         'template': {},
         'data_sifter': {},
-        'telemetry': {},
         'selected_area': {},
         'mesh_match': {},
         'selection_grower': {},
@@ -114,10 +105,8 @@ class RedactApplication extends React.Component {
         't1_scanner': {
           'ocr': '',
           'hog': '',
-          'ocr_scene_analysis': '',
           'template': '',
           'data_sifter': '',
-          'telemetry': '',
           'selected_area': '',
           'mesh_match': '',
           'selection_grower': '',
@@ -130,10 +119,8 @@ class RedactApplication extends React.Component {
         'ocr': {},
         'hog': {},
         'hog_training': {},
-        'ocr_scene_analysis': {},
         'template': {},
         'data_sifter': {},
-        'telemetry': {},
         'selected_area': {},
         'mesh_match': {},
         'selection_grower': {},
@@ -524,15 +511,9 @@ class RedactApplication extends React.Component {
     let cur_url = new URL(window.location.href)
     cur_url.searchParams.set('save-point', workbook_id)
     window.history.pushState({}, cur_url)
-// DMC below is a hack to get save points working.  It's disruptive to the 
-//   workflow for now, you get a big old screen flicker when you load any job,
-//   The history approach above SHOULD work but needs tweaking I guess.
-//    window.location = cur_url
   }
 
   saveStateCheckpoint() {
-//    const the_name = 'workbook_autosave_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
-//    this.saveWorkbook(this.afterSaveWorkbookDone, the_name, '1hours')
   }
 
   async queryCvWorker(cv_worker_url, when_done=(()=>{})) {
@@ -2349,7 +2330,6 @@ class RedactApplication extends React.Component {
                 deleteFile={this.deleteFile}
                 preserveAllJobs={this.state.preserveAllJobs}
                 tier_1_matches={this.state.tier_1_matches}
-                telemetry_data={this.state.telemetry_data}
                 getJobResultData={this.getJobResultDataWrapper}
                 getJobFailedTasks={this.getJobFailedTasksWrapper}
                 saveScannerToDatabase={this.saveScannerToDatabase}
@@ -2448,7 +2428,6 @@ class RedactApplication extends React.Component {
                 getImageUrl={this.getImageUrl}
                 subsequences={this.state.subsequences}
                 submitJob={this.submitJobWrapper}
-                telemetry_data={this.state.telemetry_data}
                 attachToJob={this.attachToJobWrapper}
                 attached_job={this.state.attached_job}
                 message={this.state.message}

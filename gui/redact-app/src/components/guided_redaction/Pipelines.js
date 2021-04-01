@@ -42,7 +42,6 @@ class Pipelines extends React.Component {
         'template': {},
         'selected_area': {},
         'ocr': {},
-        'telemetry': {},
       },
       'node': {},
     }
@@ -89,7 +88,6 @@ class Pipelines extends React.Component {
         'template': {},
         'selected_area': {},
         'ocr': {},
-        'telemetry': {},
       },
       'node': {},
     }

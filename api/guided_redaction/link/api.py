@@ -112,41 +112,6 @@ class LinkViewSetCanReach(viewsets.ViewSet):
             print('can reach exception: ', e)
             return Response({"can_reach": False})
 
-class LinkViewSetGetTelemetryRows(viewsets.ViewSet):
-    def create(self, request):
-        if not request.data.get("raw_data_url"):
-            return self.error(["raw_data_url is required"], status_code=400)
-        if not request.data.get("transaction_id"):
-            return self.error(["transaction_id is required"], status_code=400)
-        url = request.data.get('raw_data_url')
-        transaction_id = request.data['transaction_id']
-        try:
-            response = requests.get(
-                url,
-                verify=False,
-            ).content
-            txn_id_regex = re.compile(transaction_id)
-            datetime_regex = re.compile('(\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d)')
-            by_date = {}
-            resp_lines = response.splitlines()
-            for line in resp_lines:
-                line_as_string = line.decode('utf-8')
-                if txn_id_regex.search(line_as_string):
-                    match = datetime_regex.search(line_as_string)
-                    if match:
-                      the_datetime_string = match.group(1)
-                      if the_datetime_string not in by_date:
-                        by_date[the_datetime_string] = []
-                    by_date[the_datetime_string].append(line_as_string)
-            matching_lines = []
-            for the_datetime_string in sorted(list(by_date.keys())):
-              for line_as_string in by_date[the_datetime_string]:
-                matching_lines.append(line_as_string)
-            return Response({"lines": matching_lines})
-        except Exception as e:
-            print('get telemetry data exception: ', e)
-            return Response({"lines": []})
-
 class LinkViewSetProxy(viewsets.ViewSet):
     def create(self, request):
         if not request.data.get("method"):

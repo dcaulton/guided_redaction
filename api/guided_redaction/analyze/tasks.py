@@ -19,12 +19,10 @@ from guided_redaction.analyze.api import (
     AnalyzeViewSetChart,
     AnalyzeViewSetFilter, 
     AnalyzeViewSetScanTemplate,
-    AnalyzeViewSetTelemetry,
     AnalyzeViewSetTimestamp,
     AnalyzeViewSetSelectedArea,
     AnalyzeViewSetMeshMatch,
     AnalyzeViewSetSelectionGrower,
-    AnalyzeViewSetOcrSceneAnalysis,
     AnalyzeViewSetTrainHog,
     AnalyzeViewSetTestHog,
     AnalyzeViewSetCompileDataSifter,
@@ -35,7 +33,6 @@ from guided_redaction.analyze.api import (
 )
 
 
-osa_batch_size = 20
 ocr_batch_size = 20
 sg_batch_size_with_ocr = 10
 sg_batch_size_no_ocr = 100
@@ -59,8 +56,6 @@ def dispatch_parent_job(job):
             mesh_match_threaded.delay(parent_job.id)
         if parent_job.app == 'analyze' and parent_job.operation == 'selection_grower_threaded':
             selection_grower_threaded.delay(parent_job.id)
-        if parent_job.app == 'analyze' and parent_job.operation == 'ocr_scene_analysis_threaded':
-            ocr_scene_analysis_threaded.delay(parent_job.id)
         if parent_job.app == 'analyze' and parent_job.operation == 'data_sifter_threaded':
             data_sifter_threaded.delay(parent_job.id)
         if parent_job.app == 'analyze' and parent_job.operation == 'hog_train_threaded':
@@ -168,7 +163,7 @@ def build_and_dispatch_generic_batched_threaded_children(
                 child_task.delay(job.id)
 
 def target_wants_ocr_data(operation, t1_scanner):
-    if operation in ['selection_grower', 'ocr_scene_analysis'] and \
+    if operation in ['selection_grower'] and \
         'ocr_job_id' in t1_scanner and \
         t1_scanner['ocr_job_id']:
         return True
@@ -956,70 +951,6 @@ def ocr_match_chart(job_uuid):
 def selected_area_chart(job_uuid):
     generic_chart(job_uuid, 'selected_area')
 
-@shared_task
-def ocr_scene_analysis_chart(job_uuid):
-    generic_chart(job_uuid, 'ocr_scene_analysis_match')
-
-#=====OSA===============================
-
-@shared_task
-def ocr_scene_analysis(job_uuid):
-    generic_worker_call(job_uuid, 'ocr_scene_analysis', AnalyzeViewSetOcrSceneAnalysis)
-
-@shared_task
-def ocr_scene_analysis_threaded(job_uuid):
-    generic_threaded(
-        job_uuid, 
-        'ocr_scene_analysis', 
-        'OCR SCENE ANALYSIS THREADED', 
-        build_and_dispatch_ocr_scene_analysis_threaded_children, 
-        finish_ocr_scene_analysis_threaded
-    )
-
-def finish_ocr_scene_analysis_threaded(job):
-    children = Job.objects.filter(parent=job)
-    wrap_up_ocr_scene_analysis_threaded(job, children)
-    pipeline = get_pipeline_for_job(job.parent)
-    if pipeline:
-        worker = PipelinesViewSetDispatch()
-        worker.handle_job_finished(job, pipeline)
-
-def build_and_dispatch_ocr_scene_analysis_threaded_children(parent_job):
-    build_and_dispatch_generic_batched_threaded_children(
-        parent_job,
-        'ocr_scene_analysis',
-        osa_batch_size,
-        'ocr_scene_analysis',
-        finish_ocr_scene_analysis_threaded,
-        ocr_scene_analysis
-    )
-
-def wrap_up_ocr_scene_analysis_threaded(job, children):
-    aggregate_response_data = {
-      'movies': {}
-    }
-    aggregate_stats = {'movies': {}}
-    for child in children:
-        child_response_movies = json.loads(child.response_data)['movies']
-        child_stats = json.loads(child.response_data)['statistics']
-        if len(child_response_movies.keys()) > 0:
-            movie_url = list(child_response_movies.keys())[0]
-            if movie_url not in aggregate_response_data['movies']:
-                aggregate_response_data['movies'][movie_url] = {'framesets': {}}
-            if movie_url not in aggregate_stats['movies']:
-                aggregate_stats['movies'][movie_url] = {'framesets': {}}
-            for frameset_hash in child_response_movies[movie_url]['framesets']:
-                aggregate_response_data['movies'][movie_url]['framesets'][frameset_hash] = \
-                    child_response_movies[movie_url]['framesets'][frameset_hash]
-                aggregate_stats['movies'][movie_url]['framesets'][frameset_hash] = \
-                    child_stats['movies'][movie_url]['framesets'][frameset_hash]
-
-    aggregate_response_data['statistics'] = aggregate_stats
-    print('wrap_up_ocr_scene_analysis_threaded: wrapping up parent job')
-    job.status = 'success'
-    job.response_data = json.dumps(aggregate_response_data)
-    job.save()
-
 #=====DATA SIFTER===============================
 
 @shared_task
@@ -1258,10 +1189,6 @@ def intersect(job_uuid):
     if pipeline:
         worker = PipelinesViewSetDispatch()
         worker.handle_job_finished(job, pipeline)
-
-@shared_task
-def telemetry_find_matching_frames(job_uuid):
-    generic_worker_call(job_uuid, 'telemetry_find_matching_frames', AnalyzeViewSetTelemetry)
 
 @shared_task
 def filter(job_uuid):

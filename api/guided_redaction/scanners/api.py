@@ -32,9 +32,6 @@ class ScannersViewSet(viewsets.ViewSet):
                 scanner_metadata['origin_entity_type'] = content['origin_entity_type']
                 scanner_metadata['origin_entity_id'] = content['origin_entity_id']
                 scanner_metadata['num_areas'] = len(content['areas'])
-            if scanner.type == 'ocr_scene_analysis':
-                scanner_metadata['apps'] = ','.join(content['apps'])
-                scanner_metadata['skip_frames'] = content['skip_frames']
             if scanner.type == 'ocr':
                 scanner_metadata['match_text'] = ','.join(content['match_text'])
                 scanner_metadata['match_percent'] = content['match_percent']

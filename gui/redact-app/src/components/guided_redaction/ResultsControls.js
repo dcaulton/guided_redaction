@@ -96,7 +96,6 @@ class ResultsControls extends React.Component {
             <option value='template_match_chart'>template match chart</option>
             <option value='selected_area_chart'>selected area chart</option>
             <option value='ocr_match_chart'>ocr match chart</option>
-            <option value='ocr_scene_analysis_chart'>ocr scene analysis chart</option>
             <option value='selection_grower_chart'>selection grower chart</option>
           </select>
         </div>
@@ -116,9 +115,6 @@ class ResultsControls extends React.Component {
         eligible_jobs.push(job)
       } else if (this.state.type === 'ocr_match_chart' && 
           job['operation'] === 'ocr_threaded') {
-        eligible_jobs.push(job)
-      } else if (this.state.type === 'ocr_scene_analysis_chart' && 
-          job['operation'] === 'ocr_scene_analysis_threaded') {
         eligible_jobs.push(job)
       } else if (this.state.type === 'selected_area_chart' && 
           job['operation'] === 'selected_area_threaded') {
@@ -356,7 +352,7 @@ class ResultsControls extends React.Component {
                         id={img_id}
                         src={chart_url}
                         style={image_fit_style}
-                        alt='chart displaying osa results'
+                        alt='chart displaying results'
                     />
                   </div>
                 )

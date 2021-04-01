@@ -430,17 +430,9 @@ console.log('get screens came back with ', response)
     if (this.props.visibilityFlags['filesystem']) {
       show_filesystem_checked = 'checked'
     }
-    let show_telemetry_checked = ''
-    if (this.props.visibilityFlags['telemetry']) {
-      show_telemetry_checked = 'checked'
-    }
     let show_ocr_checked = ''
     if (this.props.visibilityFlags['ocr']) {
       show_ocr_checked = 'checked'
-    }
-    let show_ocr_scene_analysis_checked = ''
-    if (this.props.visibilityFlags['ocr_scene_analysis']) {
-      show_ocr_scene_analysis_checked = 'checked'
     }
     let show_ocr_movie_analysis_checked = ''
     if (this.props.visibilityFlags['ocr_movie_analysis']) {
@@ -538,31 +530,11 @@ console.log('get screens came back with ', response)
         <div className='row mt-3 bg-light rounded'>
           <input
             className='ml-2 mr-2 mt-1'
-            checked={show_telemetry_checked}
-            type='checkbox'
-            onChange={() => this.props.toggleShowVisibility('telemetry')}
-          />
-          Show Telemetry
-        </div>
-
-        <div className='row mt-3 bg-light rounded'>
-          <input
-            className='ml-2 mr-2 mt-1'
             checked={show_ocr_checked}
             type='checkbox'
             onChange={() => this.props.toggleShowVisibility('ocr')}
           />
           Show Ocr
-        </div>
-
-        <div className='row mt-3 bg-light rounded'>
-          <input
-            className='ml-2 mr-2 mt-1'
-            checked={show_ocr_scene_analysis_checked}
-            type='checkbox'
-            onChange={() => this.props.toggleShowVisibility('ocr_scene_analysis')}
-          />
-          Show Ocr Scene Analysis
         </div>
 
         <div className='row mt-3 bg-light rounded'>

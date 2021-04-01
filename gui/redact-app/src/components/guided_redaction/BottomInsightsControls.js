@@ -12,8 +12,6 @@ import HogControls from './HogControls'
 import SelectedAreaControls from './SelectedAreaControls'
 import MeshMatchControls from './MeshMatchControls'
 import SelectionGrowerControls from './SelectionGrowerControls'
-import TelemetryControls from './TelemetryControls'
-import OcrSceneAnalysisControls from './OcrSceneAnalysisControls'
 import ImportExportControls from './ImportExportControls'
 import SetToolsControls from './SetToolsControls'
 
@@ -279,36 +277,6 @@ class BottomInsightsControls extends React.Component {
           tier_1_scanners={this.props.tier_1_scanners}
           current_ids={this.props.current_ids}
           tier_1_matches={this.props.tier_1_matches}
-          jobs={this.props.jobs}
-        />
-
-        <TelemetryControls
-          displayInsightsMessage={this.props.displayInsightsMessage}
-          submitInsightsJob={this.props.submitInsightsJob}
-          telemetry_data={this.props.telemetry_data}
-          setTelemetryData={this.props.setTelemetryData}
-          setGlobalStateVar={this.props.setGlobalStateVar}
-          visibilityFlags={this.props.visibilityFlags}
-          toggleShowVisibility={this.props.toggleShowVisibility}
-          tier_1_scanners={this.props.tier_1_scanners}
-          current_ids={this.props.current_ids}
-        />
-
-        <OcrSceneAnalysisControls
-          buildTier1RunOptions={this.buildTier1RunOptions}
-          displayInsightsMessage={this.props.displayInsightsMessage}
-          submitInsightsJob={this.props.submitInsightsJob}
-          app_codebooks={this.props.app_codebooks}
-          setGlobalStateVar={this.props.setGlobalStateVar}
-          visibilityFlags={this.props.visibilityFlags}
-          toggleShowVisibility={this.props.toggleShowVisibility}
-          tier_1_scanners={this.props.tier_1_scanners}
-          current_ids={this.props.current_ids}
-          scanners={this.props.scanners}
-          getScanners={this.props.getScanners}
-          deleteScanner={this.props.deleteScanner}
-          importScanner={this.props.importScanner}
-          saveScannerToDatabase={this.props.saveScannerToDatabase}
           jobs={this.props.jobs}
         />
 

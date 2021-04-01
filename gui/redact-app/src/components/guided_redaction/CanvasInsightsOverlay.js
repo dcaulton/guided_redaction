@@ -416,19 +416,6 @@ class CanvasInsightsOverlay extends React.Component {
     }
   }
 
-  drawOsaMatches() {
-    if (!this.props.currentImageIsOsaMatchImage()) {
-      return
-    }
-    const matches = this.props.getCurrentOcrSceneAnalysisMatches()
-    for (let i=0; i < Object.keys(matches).length; i++) {
-      const key = Object.keys(matches)[i]
-      const match = matches[key]
-      const rand_color = '#'+(Math.random()*0xFFFFFF<<0).toString(16);
-      this.drawShadedRectangleWithLabel(match['start'], match['end'], rand_color, match['name'])
-    }
-  }
-
   drawTemplateMaskZones() {
     if (!this.props.currentImageIsT1ScannerRootImage('template', ['anchors'])) {
       return
@@ -702,7 +689,6 @@ class CanvasInsightsOverlay extends React.Component {
     this.drawScannerOrigins()
     this.drawOcrMatches()
     this.drawOcrWindow()
-    this.drawOsaMatches()
     this.drawPipelineMatches()
     this.drawIntersectMatches()
     this.drawSumMatches()
@@ -733,7 +719,6 @@ class CanvasInsightsOverlay extends React.Component {
     this.drawScannerOrigins()
     this.drawOcrMatches()
     this.drawOcrWindow()
-    this.drawOsaMatches()
     this.drawPipelineMatches()
     this.drawIntersectMatches()
     this.drawSumMatches()

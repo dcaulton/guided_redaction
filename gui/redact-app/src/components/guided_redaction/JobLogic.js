@@ -469,20 +469,6 @@ class JobLogic extends React.Component {
     )
   } 
 
-  static loadOcrSceneAnalysisResults(
-    job, 
-    when_done, 
-    setGlobalStateVar, 
-    getGlobalStateVar
-  ) {
-    this.loadScannersMoviesAndMatchesFromTier1(
-      job, 
-      'ocr_scene_analysis', 
-      setGlobalStateVar, 
-      getGlobalStateVar
-    )
-  } 
-
   static loadMeshMatchResults(
     job, 
     when_done, 
@@ -991,7 +977,6 @@ class JobLogic extends React.Component {
           job, when_done, setGlobalStateVar, getGlobalStateVar
         )
 			} else if (
-        (job.app === 'analyze' && job.operation === 'ocr_scene_analysis_chart') ||
         (job.app === 'analyze' && job.operation === 'selection_grower_chart')
       ) {
         this.loadGetFramesetMatchChartResults(
@@ -1020,13 +1005,6 @@ class JobLogic extends React.Component {
         )
 			} else if (job.app === 'analyze' && job.operation === 'selection_grower_threaded') {
         this.loadSelectionGrowerResults(
-          job, 
-          when_done, 
-          setGlobalStateVar, 
-          getGlobalStateVar
-        )
-			} else if (job.app === 'analyze' && job.operation === 'ocr_scene_analysis_threaded') {
-        this.loadOcrSceneAnalysisResults(
           job, 
           when_done, 
           setGlobalStateVar, 

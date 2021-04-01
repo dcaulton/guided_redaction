@@ -194,7 +194,7 @@ class DispatchController:
                 next_node_id = content['edges'][node_id][0]
                 node = content['node_metadata']['node'][next_node_id]
         t1_scanner_types = [
-            'template', 'selected_area', 'ocr', 'ocr_scene_analysis', 'mesh_match', 'selection_grower'
+            'template', 'selected_area', 'ocr', 'data_sifter', 'mesh_match', 'selection_grower'
         ] 
         if node['type'] in t1_scanner_types:
             return self.build_tier_1_scanner_job(
@@ -635,18 +635,7 @@ class DispatchController:
             'tier_1_scanners': {},
         }
         build_request_data['tier_1_scanners'][scanner_type] = build_scanners
-        if scanner_type == 'template':
-            operation = 'template_threaded'
-        elif scanner_type == 'selected_area':
-            operation = 'selected_area_threaded'
-        elif scanner_type == 'ocr':
-            operation = 'ocr_threaded'
-        elif scanner_type == 'ocr_scene_analysis':
-            operation = 'ocr_scene_analysis_threaded'
-        elif scanner_type == 'mesh_match':
-            operation = 'mesh_match_threaded'
-        elif scanner_type == 'selection_grower':
-            operation = 'selection_grower_threaded'
+        operation = scanner_type + '_threaded'
         request_data = json.dumps(build_request_data)
 
         job = Job(

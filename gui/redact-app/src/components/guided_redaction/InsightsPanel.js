@@ -31,7 +31,6 @@ class InsightsPanel extends React.Component {
     }
     this.tier_1_scanner_types = [
       'selected_area',
-      'ocr_scene_analysis',
       'mesh_match',
       'template',
       'selection_grower',
@@ -40,7 +39,6 @@ class InsightsPanel extends React.Component {
     ]
     this.tier_1_job_operations = [
       'selected_area_threaded',
-      'ocr_scene_analysis_threaded',
       'mesh_match_threaded',
       'template_threaded',
       'selection_grower_threaded',
@@ -54,7 +52,6 @@ class InsightsPanel extends React.Component {
     this.handleSetMode=this.handleSetMode.bind(this)
     this.getTier1ScannerMatches=this.getTier1ScannerMatches.bind(this)
     this.currentImageIsT1ScannerRootImage=this.currentImageIsT1ScannerRootImage.bind(this)
-    this.currentImageIsOsaMatchImage=this.currentImageIsOsaMatchImage.bind(this)
     this.afterPingSuccess=this.afterPingSuccess.bind(this)
     this.afterPingFailure=this.afterPingFailure.bind(this)
     this.afterGetVersionSuccess=this.afterGetVersionSuccess.bind(this)
@@ -76,7 +73,6 @@ class InsightsPanel extends React.Component {
     this.getCurrentSumMatches=this.getCurrentSumMatches.bind(this)
     this.getCurrentAreasToRedact=this.getCurrentAreasToRedact.bind(this)
     this.setScrubberToIndex=this.setScrubberToIndex.bind(this)
-    this.getCurrentOcrSceneAnalysisMatches=this.getCurrentOcrSceneAnalysisMatches.bind(this)
     this.runCallbackFunction=this.runCallbackFunction.bind(this)
     this.loadOcrDataIntoMovies=this.loadOcrDataIntoMovies.bind(this)
     this.getTier1MatchHashesForMovie=this.getTier1MatchHashesForMovie.bind(this)
@@ -184,39 +180,6 @@ class InsightsPanel extends React.Component {
           return mask_bytes
         }
       }
-    }
-  }
-
-  getCurrentOcrSceneAnalysisMatches() {
-    const osa_key = this.props.current_ids['t1_scanner']['ocr_scene_analysis']
-    const frameset_hash = this.props.getFramesetHashForImageUrl(this.state.insights_image)
-
-    const data = this.props.tier_1_matches['ocr_scene_analysis'][osa_key]['movies'][this.props.movie_url]['framesets'][frameset_hash]
-    return data
-  }
-
-  currentImageIsOsaMatchImage() {
-    if (!this.state.insights_image) {
-      return
-    }
-    if (!this.props.tier_1_matches['ocr_scene_analysis']) {
-      return
-    }
-    if (this.props.current_ids['t1_scanner']['ocr_scene_analysis']) {
-      let osa_key = this.props.current_ids['t1_scanner']['ocr_scene_analysis']
-      if (!Object.keys(this.props.tier_1_scanners['ocr_scene_analysis']).includes(osa_key)) {
-        return false
-      }
-      if (!Object.keys(this.props.tier_1_matches['ocr_scene_analysis']).includes(osa_key)) {
-        return false
-      }
-      const frameset_hash = this.props.getFramesetHashForImageUrl(this.state.insights_image)
-      const frameset_hashes = Object.keys(
-        this.props.tier_1_matches['ocr_scene_analysis'][osa_key]['movies'][this.props.movie_url]['framesets']
-      )
-      return frameset_hashes.includes(frameset_hash)
-    } else {
-      return false
     }
   }
 
@@ -478,7 +441,6 @@ class InsightsPanel extends React.Component {
       selection_grower: 'selection_grower_threaded',
       mesh_match: 'mesh_match_threaded',
       data_sifter: 'data_sifter_threaded',
-      ocr_scene_analysis: 'ocr_scene_analysis_threaded',
     }
     if (!this.props.current_ids['t1_scanner'][scanner_type]) {
       this.displayInsightsMessage('no ' + scanner_type + ' rule selected, cannot submit a job')
@@ -572,13 +534,6 @@ class InsightsPanel extends React.Component {
       job_data['description'] += 'on t1 ocr results (ocr ' + t1_ocr_rule['name'] + ')'
       job_data['request_data']['movies'] = tier_1_output
       job_data['request_data']['movies']['source'] = this.makeSourceForPassedT1Output(tier_1_output)
-    } else if (scope.match(/_t1_osa$/)) {   
-      const osa_id = extra_data
-      const t1_osa_rule = this.props.tier_1_scanners['ocr_scene_analysis'][osa_id]
-      const tier_1_output = this.props.tier_1_matches['ocr_scene_analysis'][osa_id]['movies']
-      job_data['description'] += 'on t1 osa results (osa ' + t1_osa_rule['name'] + ')'
-      job_data['request_data']['movies'] = tier_1_output
-      job_data['request_data']['movies']['source'] = this.makeSourceForPassedT1Output(tier_1_output)
     } else if (scope.match(/_t1_ds$/)) {   
       const the_id = extra_data
       const t1_ds_rule = this.props.tier_1_scanners['data_sifter'][the_id]
@@ -587,24 +542,17 @@ class InsightsPanel extends React.Component {
       job_data['request_data']['movies'] = tier_1_output
       job_data['request_data']['movies']['source'] = this.makeSourceForPassedT1Output(tier_1_output)
     } else if (scope.match(/_t1_mesh_match$/)) {   
-      const osa_id = extra_data
-      const t1_osa_rule = this.props.tier_1_scanners['mesh_match'][osa_id]
-      const tier_1_output = this.props.tier_1_matches['mesh_match'][osa_id]['movies']
-      job_data['description'] += 'on t1 mesh_match results (mm ' + t1_osa_rule['name'] + ')'
+      const a_id = extra_data
+      const t1_a_rule = this.props.tier_1_scanners['mesh_match'][a_id]
+      const tier_1_output = this.props.tier_1_matches['mesh_match'][a_id]['movies']
+      job_data['description'] += 'on t1 mesh_match results (mm ' + t1_a_rule['name'] + ')'
       job_data['request_data']['movies'] = tier_1_output
       job_data['request_data']['movies']['source'] = this.makeSourceForPassedT1Output(tier_1_output)
     } else if (scope.match(/_t1_selection_grower$/)) {   
-      const osa_id = extra_data
-      const t1_osa_rule = this.props.tier_1_scanners['selection_grower'][osa_id]
-      const tier_1_output = this.props.tier_1_matches['selection_grower'][osa_id]['movies']
-      job_data['description'] += 'on t1 selection_grower results (mm ' + t1_osa_rule['name'] + ')'
-      job_data['request_data']['movies'] = tier_1_output
-      job_data['request_data']['movies']['source'] = this.makeSourceForPassedT1Output(tier_1_output)
-    } else if (scope.match(/_t1_telemetry$/)) {   
-      const telemetry_id = extra_data
-      const telemetry_rule = this.props.tier_1_scanners['telemetry'][telemetry_id]
-      const tier_1_output = this.props.tier_1_matches['telemetry'][telemetry_id]['movies']
-      job_data['description'] += 'on t1 telemetry results (telemetry ' + telemetry_rule['name'] + ')'
+      const a_id = extra_data
+      const t1_a_rule = this.props.tier_1_scanners['selection_grower'][a_id]
+      const tier_1_output = this.props.tier_1_matches['selection_grower'][a_id]['movies']
+      job_data['description'] += 'on t1 selection_grower results (mm ' + t1_a_rule['name'] + ')'
       job_data['request_data']['movies'] = tier_1_output
       job_data['request_data']['movies']['source'] = this.makeSourceForPassedT1Output(tier_1_output)
     }
@@ -1410,7 +1358,6 @@ class InsightsPanel extends React.Component {
               width={this.state.image_width}
               height={this.state.image_height}
               clickCallback={this.handleImageClick}
-              currentImageIsOsaMatchImage={this.currentImageIsOsaMatchImage}
               currentImageIsT1ScannerRootImage={this.currentImageIsT1ScannerRootImage}
               insights_image_scale={this.state.insights_image_scale}
               getTier1ScannerMatches={this.getTier1ScannerMatches}
@@ -1419,7 +1366,6 @@ class InsightsPanel extends React.Component {
               getCurrentAreasToRedact={this.getCurrentAreasToRedact}
               movie_url={this.props.movie_url}
               runCallbackFunction={this.runCallbackFunction}
-              getCurrentOcrSceneAnalysisMatches={this.getCurrentOcrSceneAnalysisMatches}
               getCurrentPipelineMatches={this.getCurrentPipelineMatches}
               getCurrentIntersectMatches={this.getCurrentIntersectMatches}
               getCurrentSumMatches={this.getCurrentSumMatches}
@@ -1495,7 +1441,6 @@ class InsightsPanel extends React.Component {
             dispatchFetchSplitAndHash={this.props.dispatchFetchSplitAndHash}
             deleteOldJobs={this.props.deleteOldJobs}
             job_polling_interval_seconds={this.props.job_polling_interval_seconds}
-            telemetry_data={this.props.telemetry_data}
             getJobResultData={this.props.getJobResultData}
             runExportTask={this.props.runExportTask}
             postImportArchiveCall={this.props.postImportArchiveCall}

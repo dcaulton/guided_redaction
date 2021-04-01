@@ -28,8 +28,7 @@ class PipelineControls extends React.Component {
           'mesh_match': {},
           'selection_grower': {},
           'ocr': {},
-          'ocr_scene_analysis': {},
-          'telemetry': {},
+          'data_sifter': {},
         },
         'redact_rules': {},
         'split_and_hash': {},
@@ -49,7 +48,7 @@ class PipelineControls extends React.Component {
       json: '',
     }
     this.t1_scanner_types = [
-      'template', 'selected_area', 'mesh_match', 'selection_grower', 'ocr', 'ocr_scene_analysis', 'telemetry'
+      'template', 'selected_area', 'mesh_match', 'selection_grower', 'ocr', 'data_sifter'
     ]
     this.afterPipelineSaved=this.afterPipelineSaved.bind(this)
     this.deletePipeline=this.deletePipeline.bind(this)
@@ -365,7 +364,7 @@ class PipelineControls extends React.Component {
 
   buildT1PipelineRunOptions() {
     const scanner_types = [
-      'template', 'selected_area', 'ocr_scene_analysis', 'ocr', 'mesh_match', 'selection_grower', 'data_sifter'
+      'template', 'selected_area', 'data_sifter', 'ocr', 'mesh_match', 'selection_grower', 'data_sifter'
     ]
     return (
       <div>
@@ -803,7 +802,7 @@ class NodeCard extends React.Component {
 
     const node_type = this.props.node_metadata['node'][this.props.node_id]['type']
     const good_types = [
-      'template', 'selected_area', 'mesh_match', 'selection_grower', 'ocr', 'telemetry', 'ocr_scene_analysis'
+      'template', 'selected_area', 'mesh_match', 'selection_grower', 'ocr', 'data_sifter'
     ]
     if (good_types.includes(node_type)) {
       const node_keys =  Object.keys(this.props.tier_1_scanners[node_type])
@@ -847,7 +846,7 @@ class NodeCard extends React.Component {
       return ''
     }
     const id_types = [
-      'template', 'selected_area', 'mesh_match', 'selection_grower', 'ocr', 'telemetry', 'ocr_scene_analysis'
+      'template', 'selected_area', 'mesh_match', 'selection_grower', 'ocr', 'data_sifter'
     ]
     if (
       !id_types.includes(this.props.node_metadata['node'][this.props.node_id]['type'])
@@ -1066,7 +1065,7 @@ class NodeCard extends React.Component {
   buildPipelineDescendantNodeList(prefix, name_prefix, nodes, build_obj, ms_type) {
     const node_dropdown_id_types = [
       'template', 'selected_area', 'mesh_match', 'selection_grower', 'ocr', 
-      'telemetry', 'ocr_scene_analysis', 'pipeline', 'intersect', 't1_diff', 't1_sum'
+      'data_sifter', 'pipeline', 'intersect', 't1_diff', 't1_sum'
     ]
     let eligible_nodes = this.getEligibleNodes(ms_type, nodes, this.props.node_id, prefix)
     for (let i=0; i < Object.keys(eligible_nodes).length; i++) {
@@ -1143,7 +1142,7 @@ class NodeCard extends React.Component {
           }
           const node_dropdown_id_types = [
             'template', 'selected_area', 'mesh_match', 'selection_grower', 'ocr', 
-            'telemetry', 'ocr_scene_analysis', 'pipeline', 'intersect', 't1_diff', 't1_sum'
+            'data_sifter', 'pipeline', 'intersect', 't1_diff', 't1_sum'
           ]
           if (
             !node_dropdown_id_types.includes(this.props.node_metadata['node'][node_id]['type'])
@@ -1244,10 +1243,9 @@ class NodeCard extends React.Component {
             <option value='template'>template</option>
             <option value='selected_area'>selected area</option>
             <option value='mesh_match'>mesh match</option>
-            <option value='selection_grower'>selection_grower</option>
+            <option value='selection_grower'>selection grower</option>
             <option value='ocr'>ocr</option>
-            <option value='ocr_scene_analysis'>ocr scene analysis</option>
-            <option value='telemetry'>telemetry</option>
+            <option value='data_sifter'>data sifter</option>
             <option value='pipeline'>pipeline</option>
             <option value='t1_sum'>sum t1 outputs</option>
             <option value='t1_diff'>difference of t1 outputs</option>
@@ -1296,7 +1294,7 @@ class NodeCard extends React.Component {
     const the_style = {}
     let errors = []
     const t1_id_types = [
-      'template', 'selected_area', 'mesh_match', 'selection_grower', 'ocr', 'telemetry', 'ocr_scene_analysis'
+      'template', 'selected_area', 'mesh_match', 'selection_grower', 'ocr', 'data_sifter'
     ]
     const node = this.props.node_metadata['node'][this.props.node_id]
     if (!node['type']) {
