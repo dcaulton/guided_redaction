@@ -1330,7 +1330,11 @@ class RedactApplication extends React.Component {
     let frameset = local_framesets[frameset_hash]
     frameset['redacted_image'] = responseJson['redacted_image_url']
     local_framesets[frameset_hash] = frameset
-    this.state.movies[this.state.movie_url]['framesets'][frameset_hash] = frameset
+    let deepCopyMovies = JSON.parse(JSON.stringify(this.state.movies))
+    deepCopyMovies[this.state.movie_url]['framesets'][frameset_hash] = frameset
+    this.setState({
+      movies: deepCopyMovies,
+    })
   }
 
   addMovieAndSetActive(movie_url, movies, theCallback=(()=>{})) {

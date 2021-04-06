@@ -1512,6 +1512,13 @@ class DataSifterControls extends React.Component {
   }
 
   getDataSifterFromState() {
+    let build_items = JSON.parse(JSON.stringify(this.state.items))
+    for (let i=0; i < Object.keys(this.state.items).length; i++) {
+      const item_key = Object.keys(this.state.items)[i]
+      if (this.state.items[item_key]['type'] === 'user_data') {
+        build_items[item_key]['text'] = ''
+      }
+    }
     const data_sifter = {                                                          
       id: this.state.id,
       name: this.state.name,
@@ -1520,7 +1527,7 @@ class DataSifterControls extends React.Component {
       rows: this.state.rows,
       left_cols: this.state.left_cols,
       right_cols: this.state.right_cols,
-      items: this.state.items,
+      items: build_items,
       image_url: this.state.image_url,
       movie_url: this.state.movie_url,
       scale: this.state.scale,
