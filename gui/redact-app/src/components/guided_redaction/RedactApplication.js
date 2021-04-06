@@ -1330,7 +1330,7 @@ class RedactApplication extends React.Component {
     let frameset = local_framesets[frameset_hash]
     frameset['redacted_image'] = responseJson['redacted_image_url']
     local_framesets[frameset_hash] = frameset
-    this.handleUpdateFrameset(frameset_hash, frameset)
+    this.state.movies[this.state.movie_url]['framesets'][frameset_hash] = frameset
   }
 
   addMovieAndSetActive(movie_url, movies, theCallback=(()=>{})) {
@@ -1974,12 +1974,6 @@ class RedactApplication extends React.Component {
       visibilityFlags: deepCopyVFs,
     })
     document.getElementById('movie_panel_link').style.display = 'block'
-  }
-
-  handleUpdateFrameset = (the_hash, the_frameset) => {
-    let deepCopyMovies= JSON.parse(JSON.stringify(this.state.movies))
-    deepCopyMovies[this.state.movie_url]['framesets'][the_hash] = the_frameset
-    this.setGlobalStateVar('movies', deepCopyMovies)
   }
 
   handleMergeFramesetsWrapper(target_hash, source_hash) {

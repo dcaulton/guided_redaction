@@ -1329,9 +1329,7 @@ class DataSifterControls extends React.Component {
       }
       
       if (something_changed) {
-        let deepCopyT1Matches= JSON.parse(JSON.stringify(this.props.tier_1_matches))
-        deepCopyT1Matches['ocr'][cur_ocr_id]['movies'][this.props.movie_url]['framesets'][frameset_hash] = build_matches
-        this.props.setGlobalStateVar('tier_1_matches', deepCopyT1Matches)
+        this.props.tier_1_matches['ocr'][cur_ocr_id]['movies'][this.props.movie_url]['framesets'][frameset_hash] = build_matches
       }
     }
     this.props.handleSetMode('ds_delete_ocr_area_1')
@@ -1485,9 +1483,7 @@ class DataSifterControls extends React.Component {
         scan_level: sam['scan_level'],
       })
     }
-    let deepCopyIds = JSON.parse(JSON.stringify(this.props.current_ids))
-    deepCopyIds['t1_scanner']['data_sifter'] = data_sifter_id
-    this.props.setGlobalStateVar('current_ids', deepCopyIds)
+    this.props.current_ids['t1_scanner']['data_sifter'] = data_sifter_id
     this.props.displayInsightsMessage('Data sifter has been loaded')
   }
 
@@ -1722,15 +1718,9 @@ class DataSifterControls extends React.Component {
   }
 
   deleteDataSifter(sam_id) {
-    let deepCopyScanners = JSON.parse(JSON.stringify(this.props.tier_1_scanners))
-    let deepCopyDataSifters = deepCopyScanners['data_sifter']
-    delete deepCopyDataSifters[sam_id]
-    deepCopyScanners['data_sifter'] = deepCopyDataSifters
-    this.props.setGlobalStateVar('tier_1_scanners', deepCopyScanners)
+    delete this.props.tier_1_scanners['data_sifter'][sam_id]
     if (sam_id === this.props.current_ids['t1_scanner']['data_sifter']) {
-      let deepCopyIds = JSON.parse(JSON.stringify(this.props.current_ids))
-      deepCopyIds['t1_scanner']['data_sifter'] = ''
-      this.props.setGlobalStateVar('current_ids', deepCopyIds)
+      this.props.current_ids['t1_scanner']['data_sifter'] = ''
     }
     this.props.displayInsightsMessage('Data Sifter was deleted')
   }
