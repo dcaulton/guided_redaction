@@ -395,9 +395,17 @@ class DataSifter:
             ocr_id = self.found_app_ids[app_id]
             app_obj = self.app_data['items'][app_id]
             if app_obj.get('mask_this_field') and ocr_id not in self.all_zones:
-                self.all_zones[ocr_id] = self.ocr_results_this_frame[ocr_id]
+                build_obj = self.ocr_results_this_frame[ocr_id]
+                build_obj['scanner_type'] = 'data_sifter'
+                build_obj['app_id'] = app_id
+                # this lets us merge the output from several data sifters and still be able to add synthetic data
+                build_obj['data_sifter_meta_id'] = self.data_sifter_meta['id']
+                if 'source' in build_obj: del build_obj['source'] 
+                if 'ocr_window_start' in build_obj: del build_obj['ocr_window_start'] 
+                # TODO set scale and origin when we start dealing with geometry
+                self.all_zones[ocr_id] = build_obj
                 if app_obj.get('empty_value'):
-                    ratio = fuzz.ratio(app_obj['empty_value'], ocr_match_ele['text'])
+                    ratio = fuzz.ratio(app_obj['empty_value'], self.ocr_results_this_frame[ocr_id]['text'])
                     if ratio >= self.fuzz_match_threshold:
                         # these two things matched, but it's against an empty value for the user field and we don't 
                         #   want to send it back representing user data
