@@ -27,9 +27,11 @@ class OcrController(T1Controller):
         ocr_rule = request_data['tier_1_scanners']['ocr'][ocr_rule_id]
         self.fuzz_match_threshold = int(ocr_rule['match_percent'])
 
-        base_phrases = ocr_rule['match_text']
-        if len(base_phrases) == 1 and not base_phrases[0]:
-            base_phrases = []
+        all_phrases = {}
+        if ocr_rule['match_text']:
+            for phrase in ocr_rule['match_text']:
+                if phrase.strip():
+                    all_phrases[phrase.strip()] = {'source': 'ocr_rule_match_text'}
 
         ds_job_results = {}
         if ocr_rule.get('data_sifter_job_id'):
@@ -61,7 +63,8 @@ class OcrController(T1Controller):
             movie = movies[movie_url]
             new_phrases = self.get_phrases_for_ds_movie(ocr_rule, movie_url, ds_job_results)
             if new_phrases:
-                ocr_rule['match_text'] = [*base_phrases, *new_phrases]
+                for phrase in new_phrases:
+                    all_phrases[phrase] = new_phrases[phrase]
             for frameset_hash in movie['framesets']:
                 number_considered += 1
                 if skip_frames != 0 and number_considered < skip_frames + 1:
@@ -80,7 +83,7 @@ class OcrController(T1Controller):
                     frameset_hash in source_ocr_job_results['movies'][movie_url]['framesets']:
                     source_ocr_results_this_frame = source_ocr_job_results['movies'][movie_url]['framesets'][frameset_hash]
 
-                found_areas = self.scan_ocr(image_url, ocr_rule, t1_frameset_data, source_ocr_results_this_frame)
+                found_areas = self.scan_ocr(image_url, ocr_rule, t1_frameset_data, source_ocr_results_this_frame, all_phrases)
 
                 if found_areas:
                     if movie_url not in response_data['movies']:
@@ -94,12 +97,18 @@ class OcrController(T1Controller):
             return
         if movie_url not in ds_job_results['movies']:
             return
-        new_phrases = []
+        new_phrases = {}
         for frameset_hash in ds_job_results['movies'][movie_url]['framesets']:
             for match_id in ds_job_results['movies'][movie_url]['framesets'][frameset_hash]:
                 match_obj = ds_job_results['movies'][movie_url]['framesets'][frameset_hash][match_id]
                 if 'text' in match_obj and match_obj['text'] not in new_phrases:
-                    new_phrases.append(match_obj['text'])
+                    build_obj = {
+                        'source': 'data_sifter',
+                        'data_sifter_meta_id': match_obj['data_sifter_meta_id'],
+                        'app_id': match_obj['app_id'],
+                    }
+                    new_phrases[match_obj['text']] = build_obj
+        print('phrases for ds movie are {} '.format(new_phrases.keys()))
         return new_phrases
 
     def phrase_match_found(self, input_text, phrases_to_match):
@@ -107,9 +116,9 @@ class OcrController(T1Controller):
         for phrase in phrases_to_match:
             ratio = fuzz.ratio(phrase, input_text)
             if ratio > self.fuzz_match_threshold:
-                return True
+                return phrases_to_match[phrase]
 
-    def scan_ocr(self, image_url, ocr_rule, t1_frameset_data, source_ocr_results_this_frame):
+    def scan_ocr(self, image_url, ocr_rule, t1_frameset_data, source_ocr_results_this_frame, phrases_to_match):
         recognized_text_areas = {}
         analyzer = EastPlusTessGuidedAnalyzer()
         cv2_image = self.get_cv2_image_from_url(image_url, self.file_writer)
@@ -127,13 +136,16 @@ class OcrController(T1Controller):
         else:
             end = (cv2_image.shape[1], cv2_image.shape[0])
 
-        phrases_to_match = ocr_rule['match_text']
-
         if source_ocr_results_this_frame:
             for match_id in source_ocr_results_this_frame:
                 match_obj = source_ocr_results_this_frame[match_id]
-                if phrases_to_match and self.phrase_match_found(match_obj['text'], phrases_to_match):
-                    recognized_text_areas[match_id] = match_obj
+                if phrases_to_match:
+                    phrase_match_results = self.phrase_match_found(match_obj['text'], phrases_to_match)
+                    if phrase_match_results:
+                        if phrase_match_results['source'] == 'data_sifter':
+                            match_obj['data_sifter_meta_id'] = phrase_match_results['data_sifter_meta_id']
+                            match_obj['app_id'] = phrase_match_results['app_id']
+                        recognized_text_areas[match_id] = match_obj
             return recognized_text_areas
 
         if t1_frameset_data:

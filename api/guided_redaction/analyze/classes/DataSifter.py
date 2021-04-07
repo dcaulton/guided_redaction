@@ -22,6 +22,8 @@ class DataSifter:
     def sift_data(self, cv2_image, ocr_results_this_frame, other_t1_results_this_frame, template_results_this_frame):
         self.app_rows, self.app_left_cols, self.app_right_cols = self.build_app_rowcol_data()
         self.all_zones = {}
+        self.y_origin = 0
+        self.scale = 1
         self.return_stats = {}
         return_mask = np.zeros((20, 20, 1), 'uint8')
         fast_pass = fast_pass_confirmed = slow_pass_confirmed = False
@@ -133,10 +135,10 @@ class DataSifter:
         self.insert_ids_for_one_rowcol_type(self.found_app_ids, 'left_col')
         self.insert_ids_for_one_rowcol_type(self.found_app_ids, 'right_col')
 
-        # for user fields, see if there are any adjacent, unclaimed ocr regions.  If so, absorb them in the user area
-        #  this is because ocr can sometimes split a single word into a couple ones.
-
         # gather size info for ocr objects (get title sizes, standard text sizes, etc as defined in the spec)
+        self.y_origin, self.scale = self.get_y_origin_and_scale()
+        print('CANFIELD 22', self.y_origin)
+
         # gather background color near some of the labels (as specified in the app spec)
         # look for conflicts in fast_pass_match_obj, rule out rows/cols which break things
         # look for app rows/cols that had no match with an ocr row, see if any unmatched ocr rows now look better, 
@@ -144,6 +146,8 @@ class DataSifter:
         #     into multiples, and user data rules
         # use contours to automatically detect template like things?  
         #     *if we mask off just this row on cv2_image it should be fast and only at one scale
+        # for user fields, see if there are any adjacent, unclaimed ocr regions.  If so, absorb them in the user area
+        #  this is because ocr can sometimes split a single word into a couple ones.
         # match against remaining fields that were missed in fast_pass_match_obj (e.g. variable data, templates)
         # use logic shared with selection grower to find color fields and lines
         # use color fields, lines and matched colors to establish app 'sections'
@@ -152,6 +156,52 @@ class DataSifter:
         print('confirmed left cols {}'.format(self.app_left_cols))
         print('confirmed right cols {}'.format(self.app_right_cols))
         return True
+
+    def get_y_origin_and_scale(self):
+        origin = 0
+        scale = 1
+        # first, get vertical scale based on all row pairs
+        app_row_tops = []
+        for app_row in self.app_rows:
+            ocr_match_item_top = 0
+            app_item_top = 0
+            for app_item in app_row:
+                if 'ocr_id' in app_item:
+                    ocr_match_item = self.ocr_results_this_frame[app_item['ocr_id']]
+                    ocr_match_item_top = ocr_match_item['location'][1]
+                    app_element = self.app_data['items'][app_item['app_id']]
+                    app_item_top = app_element['location'][1]
+                    app_row_tops.append({
+                        'app_id': app_item['app_id'],
+                        'app_top': app_item_top,
+                        'ocr_top': ocr_match_item_top,
+                    })
+                    break
+        if len(app_row_tops) < 2:
+            # not enough rows to compare,
+            return origin, scale
+
+        scales = []
+        for count, app_row_top in enumerate(app_row_tops):
+            if count == 0:
+                first_ocr_top = app_row_top['ocr_top']
+                first_app_top = app_row_top['app_top']
+                continue
+            ocr_diff = app_row_top['ocr_top'] - first_ocr_top
+            app_diff = app_row_top['app_top'] - first_app_top
+            this_scale = ocr_diff / app_diff
+            scales.append(this_scale)
+        scale = sum(scales) / len(scales)
+
+        first_app_row = self.app_data['rows'][0]
+        first_app_item_id = first_app_row[0]
+        first_app_item = self.app_data['items'][first_app_item_id]
+        first_app_item_spec_y = first_app_item['location'][1]
+        first_found_item_spec_y = app_row_tops[0]['app_top']
+        first_found_item_actual_y = app_row_tops[0]['ocr_top']
+        expected_up = (first_found_item_spec_y - first_app_item_spec_y) * scale
+        origin = first_found_item_actual_y - expected_up
+        return origin, scale
 
     def get_ids_for_one_rowcol_type(self, found_app_ids, rowcol_type):
         app_rowcols = []
@@ -179,7 +229,7 @@ class DataSifter:
         for app_rowcol in app_rowcols:
             for rowcol_ele in app_rowcol:
                 if rowcol_ele['app_id'] in found_app_ids and 'ocr_id' not in rowcol_ele:
-                    print('FILLING IN A VALUE FOR  {}'.format(rowcol_ele['app_id']))
+                    print('using fast matched rowcol points to add a second rowcol value for {}'.format(rowcol_ele['app_id']))
                     rowcol_ele['ocr_id'] = found_app_ids[rowcol_ele['app_id']]
 
     def slow_score_all_of_one_type_of_rowcol(self, fast_pass_match_obj, rc_type):
@@ -398,6 +448,8 @@ class DataSifter:
                 build_obj = self.ocr_results_this_frame[ocr_id]
                 build_obj['scanner_type'] = 'data_sifter'
                 build_obj['app_id'] = app_id
+                build_obj['scale'] = self.scale
+                build_obj['origin'] = (0, self.y_origin)
                 # this lets us merge the output from several data sifters and still be able to add synthetic data
                 build_obj['data_sifter_meta_id'] = self.data_sifter_meta['id']
                 if 'source' in build_obj: del build_obj['source'] 
@@ -422,7 +474,8 @@ class DataSifter:
             'id': new_id, 
             'location': zone_start,
             'size': new_size,
-            'scale': 1,
+            'scale': self.scale,
+            'origin': (0, self.y_origin),
             'scanner_type': 'data_sifter',
         }
         if ocr_member_ids:
