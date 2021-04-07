@@ -118,11 +118,8 @@ class DataSifter:
         self.slow_score_all_of_one_type_of_rowcol(fast_pass_match_obj, 'left_col')
         self.slow_score_all_of_one_type_of_rowcol(fast_pass_match_obj, 'right_col')
 
-        # disqualify 'fast pass matched' rows on geometry
         #   for each fast pass row, l col, r col, guess the origin location based on each matched ocr element and app ref coords
-        #   use the spacing between two recognized rows to get a sense of scale compared to app ref coords
         #   some features should be designed as landmarks, things that scale in a predictable way, e.g. certain row heights 
-        #   if there is a big consensus, fire any dissenters
         # enforce rowcol rules, like you'll only see 'credit card details' OR 'checking details', never both
 
         # if we matched on an item in some column and it's in a row that was not matched, add it as a match for that row.
@@ -135,9 +132,13 @@ class DataSifter:
         self.insert_ids_for_one_rowcol_type(self.found_app_ids, 'left_col')
         self.insert_ids_for_one_rowcol_type(self.found_app_ids, 'right_col')
 
-        # gather size info for ocr objects (get title sizes, standard text sizes, etc as defined in the spec)
+        # gather scale info for ocr objects
         self.y_origin, self.scale = self.get_y_origin_and_scale()
-        print('CANFIELD 22', self.y_origin)
+
+        # disqualify 'fast pass matched' rows on geometry
+
+        # add unexpected matches on geometry
+        self.trawl_for_good_spatial_matches()
 
         # gather background color near some of the labels (as specified in the app spec)
         # look for conflicts in fast_pass_match_obj, rule out rows/cols which break things
@@ -156,6 +157,65 @@ class DataSifter:
         print('confirmed left cols {}'.format(self.app_left_cols))
         print('confirmed right cols {}'.format(self.app_right_cols))
         return True
+
+    def trawl_for_good_spatial_matches(self):
+        print('trawling baby, getting some CRAB CAKES')
+        for app_row in self.app_rows:
+            for row_item in app_row:
+                if 'ocr_id' in row_item:
+                    continue
+                left_x, right_x = self.get_left_right_found_col_position(row_item['app_id'])
+                expected_y = self.get_expected_y_for_app_id(row_item['app_id'])
+                if left_x:
+                    print('could find something here {} its left is {} {} '.format(row_item, left_x, expected_y))
+                elif right_x:
+                    print('could find something here {} its right is {} {} '.format(row_item, right_x, expected_y))
+                # if it has a column and anything else matched in that column:
+                #   see if anything else in that column matched
+                # else:
+
+    def get_expected_y_for_app_id(self, app_id):
+        app_item = self.app_data['items'][app_id]
+        app_spec_y = app_item['location'][1]
+        first_row_spec_y = self.get_first_app_row_item_spec_y()
+        y_actual_offset_from_origin = int((app_spec_y - first_row_spec_y) * self.scale)
+        y_actual = y_actual_offset_from_origin + self.y_origin
+        return y_actual
+
+    def get_left_right_found_col_position(self, app_id):
+        for col in self.app_left_cols:
+            this_cols_x = 0
+            item_is_in_this_col = False
+            for app_item in col:
+                if app_item['app_id'] == app_id:
+                    item_is_in_this_col = True
+            if not item_is_in_this_col:
+                continue
+            for app_item in col:
+                if 'ocr_id' in app_item:
+                    ocr_match_item = self.ocr_results_this_frame[app_item['ocr_id']]
+                    this_cols_x = ocr_match_item['location'][0]
+                    break
+            if item_is_in_this_col:
+                return this_cols_x, 0
+
+        for col in self.app_right_cols:
+            this_cols_x = 0
+            item_is_in_this_col = False
+            for app_item in col:
+                if app_item['app_id'] == app_id:
+                    item_is_in_this_col = True
+            if not item_is_in_this_col:
+                continue
+            for app_item in col:
+                if 'ocr_id' in app_item:
+                    ocr_match_item = self.ocr_results_this_frame[app_item['ocr_id']]
+                    this_cols_x = ocr_match_item['location'][0] + ocr_match_item['size'][0]
+                    break
+            if item_is_in_this_col:
+                return 0, this_cols_x
+
+        return 0, 0
 
     def get_y_origin_and_scale(self):
         origin = 0
@@ -193,15 +253,19 @@ class DataSifter:
             scales.append(this_scale)
         scale = sum(scales) / len(scales)
 
-        first_app_row = self.app_data['rows'][0]
-        first_app_item_id = first_app_row[0]
-        first_app_item = self.app_data['items'][first_app_item_id]
-        first_app_item_spec_y = first_app_item['location'][1]
+        first_app_item_spec_y = self.get_first_app_row_item_spec_y()
         first_found_item_spec_y = app_row_tops[0]['app_top']
         first_found_item_actual_y = app_row_tops[0]['ocr_top']
         expected_up = (first_found_item_spec_y - first_app_item_spec_y) * scale
         origin = first_found_item_actual_y - expected_up
         return origin, scale
+
+    def get_first_app_row_item_spec_y(self):
+        first_app_row = self.app_data['rows'][0]
+        first_app_item_id = first_app_row[0]
+        first_app_item = self.app_data['items'][first_app_item_id]
+        first_app_item_spec_y = first_app_item['location'][1]
+        return first_app_item_spec_y 
 
     def get_ids_for_one_rowcol_type(self, found_app_ids, rowcol_type):
         app_rowcols = []
