@@ -474,9 +474,11 @@ class DataSifterControls extends React.Component {
       let end_y = -1
       let all_x = []
       const rowcol = this.state.right_cols[i]
+  console.log('one right col is ', rowcol)
       for (let j=0; j < rowcol.length; j++) {
         const item_id = rowcol[j]
         const item = this.state.items[item_id]
+  console.log('   one item is ', item)
         const item_start = item['location']
         const item_end = [
           item['location'][0] + item['size'][0],
@@ -495,12 +497,14 @@ class DataSifterControls extends React.Component {
         }
         centers.push(item['location'][1]+ .5*item['size'][1])
       }
-      const x = all_x.reduce((a, b) => a + b) / all_x.length
-      return_obj.push({
+      const x = all_x.reduce((a, b) => a + b, 0) / all_x.length
+ console.log('right col x value is ', all_x)
+      const build_obj = {
         start: [x, start_y],
         end: [x, end_y],
         centers: centers,
-      })
+      }
+      return_obj.push(build_obj)
     }
     return return_obj
   }
@@ -1148,11 +1152,11 @@ class DataSifterControls extends React.Component {
     const old_value = this.state.items[this.state.highlighted_item_id][var_name] 
     let deepCopyItems= JSON.parse(JSON.stringify(this.state.items))
     if (var_name === 'width') {
-      deepCopyItems[this.state.highlighted_item_id]['size'][0] = var_value
+      deepCopyItems[this.state.highlighted_item_id]['size'][0] = parseInt(var_value)
     } else if (var_name === 'x_location') {
-      deepCopyItems[this.state.highlighted_item_id]['location'][0] = var_value
+      deepCopyItems[this.state.highlighted_item_id]['location'][0] = parseInt(var_value)
     } else if (var_name === 'y_location') {
-      deepCopyItems[this.state.highlighted_item_id]['location'][1] = var_value
+      deepCopyItems[this.state.highlighted_item_id]['location'][1] = parseInt(var_value)
     } else if (var_name === 'col_alignment') {
       return this.setCurrentItemAlignment(var_value)
     } else if (var_name === 'row_alignment') {
