@@ -23,7 +23,7 @@ class DataSifter:
         self.trawling_distance_threshold = 200
         self.faker = Faker()
 
-    def sift_data(self, cv2_image, ocr_results_this_frame, other_t1_results_this_frame, template_results_this_frame):
+    def sift_data(self, cv2_image, ocr_results_this_frame, other_t1_results_this_frame, template_results_this_frame, synthetic_data):
         self.app_rows, self.app_left_cols, self.app_right_cols = self.build_app_rowcol_data()
         self.all_zones = {}
         self.y_origin = 0
@@ -32,6 +32,7 @@ class DataSifter:
         return_mask = np.zeros((20, 20, 1), 'uint8')
         fast_pass = fast_pass_confirmed = slow_pass_confirmed = False
         self.cv2_image = cv2_image
+        self.synthetic_data = synthetic_data
 
         self.ocr_results_this_frame = self.filter_results_by_t1_bounds(ocr_results_this_frame, other_t1_results_this_frame)
         self.template_results_this_frame = self.filter_results_by_t1_bounds(
@@ -579,7 +580,7 @@ class DataSifter:
             if app_obj.get('mask_this_field') and ocr_id not in self.all_zones:
                 build_obj = self.ocr_results_this_frame[ocr_id]
                 if app_obj.get('type') == 'user_data' and app_obj.get('mask_this_field'):
-                    build_obj['synthetic_text'] = self.make_synthetic_data(app_obj, build_obj)
+                    build_obj['synthetic_text'] = self.synthetic_data[app_id]
                 build_obj['scanner_type'] = 'data_sifter'
                 build_obj['app_id'] = app_id
                 build_obj['scale'] = self.scale
@@ -588,7 +589,6 @@ class DataSifter:
                 build_obj['data_sifter_meta_id'] = self.data_sifter_meta['id']
                 if 'source' in build_obj: del build_obj['source'] 
                 if 'ocr_window_start' in build_obj: del build_obj['ocr_window_start'] 
-                # TODO set scale and origin when we start dealing with geometry
                 self.all_zones[ocr_id] = build_obj
                 if app_obj.get('empty_value'):
                     ratio = fuzz.ratio(app_obj['empty_value'], self.ocr_results_this_frame[ocr_id]['text'])
@@ -597,6 +597,15 @@ class DataSifter:
                         #   want to send it back representing user data
                         # maybe I should add something to stats at least?
                         self.all_zones[ocr_id]['text'] = ''
+
+    def build_all_synthetic_data(self):
+        build_obj = {}
+        for app_id in self.app_data['items']:
+            app_obj = self.app_data['items'][app_id]
+            if app_obj.get('type') == 'user_data' and app_obj.get('mask_this_field'):
+                synthetic_text = self.make_synthetic_data(app_obj, build_obj)
+                build_obj[app_id] = synthetic_text
+        return build_obj
 
     def make_synthetic_data(self, app_obj, build_obj):
         if app_obj.get('synthetic_datatype') == 'person.first_name':

@@ -53,6 +53,7 @@ class DataSifterController(T1Controller):
         data_sifter = DataSifter(data_sifter_meta)
         if data_sifter_meta['scan_level'] != 'tier_1':
             data_sifter_redactor = DataSifterRedactor(data_sifter_meta)
+        synthetic_data = data_sifter.build_all_synthetic_data()
 
         response_obj['movies'][movie_url] = {}
         response_obj['movies'][movie_url]['framesets'] = {}
@@ -86,7 +87,7 @@ class DataSifterController(T1Controller):
                 print('error fetching image for data_sifter')
                 continue
             match_obj, match_stats, mask = data_sifter.sift_data(
-                cv2_image, ocr_matches_in, other_t1_matches_in, template_matches_in
+                cv2_image, ocr_matches_in, other_t1_matches_in, template_matches_in, synthetic_data
             )
             if match_obj:
                 response_obj['movies'][movie_url]['framesets'][frameset_hash] = match_obj
