@@ -18,6 +18,7 @@ class DataSifter:
         self.min_app_score = 200
         self.fuzz_match_threshold = 70
         self.fast_pass_app_score_threshold = 500
+        self.trawling_distance_threshold = 200
 
     def sift_data(self, cv2_image, ocr_results_this_frame, other_t1_results_this_frame, template_results_this_frame):
         self.app_rows, self.app_left_cols, self.app_right_cols = self.build_app_rowcol_data()
@@ -124,13 +125,7 @@ class DataSifter:
 
         # if we matched on an item in some column and it's in a row that was not matched, add it as a match for that row.
         #   same for if it's in a row and the col didn't get picked up.
-        self.found_app_ids = {}
-        self.get_ids_for_one_rowcol_type(self.found_app_ids, 'row')
-        self.get_ids_for_one_rowcol_type(self.found_app_ids, 'left_col')
-        self.get_ids_for_one_rowcol_type(self.found_app_ids, 'right_col')
-        self.insert_ids_for_one_rowcol_type(self.found_app_ids, 'row')
-        self.insert_ids_for_one_rowcol_type(self.found_app_ids, 'left_col')
-        self.insert_ids_for_one_rowcol_type(self.found_app_ids, 'right_col')
+        self.propogate_match_app_ids_to_other_rowcols()
 
         # gather scale info for ocr objects
         self.y_origin, self.scale = self.get_y_origin_and_scale()
@@ -139,6 +134,8 @@ class DataSifter:
 
         # add unexpected matches on geometry
         self.trawl_for_good_spatial_matches()
+
+        self.propogate_match_app_ids_to_other_rowcols()
 
         # gather background color near some of the labels (as specified in the app spec)
         # look for conflicts in fast_pass_match_obj, rule out rows/cols which break things
@@ -158,8 +155,17 @@ class DataSifter:
         print('confirmed right cols {}'.format(self.app_right_cols))
         return True
 
+    def propogate_match_app_ids_to_other_rowcols(self):
+        self.found_app_ids = {}
+        self.get_ids_for_one_rowcol_type(self.found_app_ids, 'row')
+        self.get_ids_for_one_rowcol_type(self.found_app_ids, 'left_col') 
+        self.get_ids_for_one_rowcol_type(self.found_app_ids, 'right_col')
+        self.insert_ids_for_one_rowcol_type(self.found_app_ids, 'row')
+        self.insert_ids_for_one_rowcol_type(self.found_app_ids, 'left_col')
+        self.insert_ids_for_one_rowcol_type(self.found_app_ids, 'right_col')
+
     def trawl_for_good_spatial_matches(self):
-        print('trawling baby, getting some CRAB CAKES')
+        claimed_ocr_ids = self.get_claimed_ocr_ids()
         for app_row in self.app_rows:
             for row_item in app_row:
                 if 'ocr_id' in row_item:
@@ -167,12 +173,71 @@ class DataSifter:
                 left_x, right_x = self.get_left_right_found_col_position(row_item['app_id'])
                 expected_y = self.get_expected_y_for_app_id(row_item['app_id'])
                 if left_x:
-                    print('could find something here {} its left is {} {} '.format(row_item, left_x, expected_y))
+                    start_coords = (left_x, expected_y)
+                    ocr_id, distance = self.find_closest_unmatched_ocr('lower_left', start_coords, claimed_ocr_ids)
+                    if distance <= self.trawling_distance_threshold:
+                        claimed_ocr_ids.append(ocr_id)
+                        ocr_match_item = self.ocr_results_this_frame[ocr_id]
+                        app_item = self.app_data['items'][row_item['app_id']]
+                        if app_item['type'] == 'user_data':
+                            row_item['text'] = ocr_match_item['text']
+                        row_item['ocr_id'] = ocr_id
+                        print('found a geometric match for app id {} on the left col'.format(row_item['app_id']))
                 elif right_x:
-                    print('could find something here {} its right is {} {} '.format(row_item, right_x, expected_y))
-                # if it has a column and anything else matched in that column:
-                #   see if anything else in that column matched
-                # else:
+                    start_coords = (right_x, expected_y)
+                    ocr_id, distance = self.find_closest_unmatched_ocr('lower_right', start_coords, claimed_ocr_ids)
+                    if distance <= self.trawling_distance_threshold:
+                        claimed_ocr_ids.append(ocr_id)
+                        ocr_match_item = self.ocr_results_this_frame[ocr_id]
+                        app_item = self.app_data['items'][row_item['app_id']]
+                        if app_item['type'] == 'user_data':
+                            row_item['text'] = ocr_match_item['text']
+                        row_item['ocr_id'] = ocr_id
+                        print('found a geometric match for app id {} on the right col'.format(row_item['app_id']))
+
+    def get_claimed_ocr_ids(self):
+        claimed_ocr_ids = []
+        for app_rowcol in self.app_rows:
+            for app_rowcol_item in app_rowcol:
+                if 'ocr_id' in app_rowcol_item and app_rowcol_item['ocr_id'] not in claimed_ocr_ids:
+                    claimed_ocr_ids.append(app_rowcol_item['ocr_id'])
+        for app_rowcol in self.app_left_cols:
+            for app_rowcol_item in app_rowcol:
+                if 'ocr_id' in app_rowcol_item and app_rowcol_item['ocr_id'] not in claimed_ocr_ids:
+                    claimed_ocr_ids.append(app_rowcol_item['ocr_id'])
+        for app_rowcol in self.app_right_cols:
+            for app_rowcol_item in app_rowcol:
+                if 'ocr_id' in app_rowcol_item and app_rowcol_item['ocr_id'] not in claimed_ocr_ids:
+                    claimed_ocr_ids.append(app_rowcol_item['ocr_id'])
+        return claimed_ocr_ids
+
+    def find_closest_unmatched_ocr(self, direction, target_coords, claimed_ocr_ids):
+        ocr_id = ''
+        best_distance = 99999999
+        for ocr_item_id in self.ocr_results_this_frame:
+            if ocr_item_id in claimed_ocr_ids:
+                continue
+            ocr_item = self.ocr_results_this_frame[ocr_item_id]
+            if direction == 'lower_left':
+                ocr_start = ocr_item['location']
+            elif direction == 'lower_right':
+                ocr_start = (
+                    ocr_item['location'][0] + ocr_item['size'][0],
+                    ocr_item['location'][1]
+                )
+
+            dist = self.get_dist_from_coords(ocr_start, target_coords)
+            if dist < best_distance:
+                best_distance = dist
+                ocr_id = ocr_item_id
+
+        return ocr_id, best_distance
+
+    def get_dist_from_coords(self, coords1, coords2):
+        dist = math.sqrt(
+            abs(coords2[0]-coords1[0])**2 + abs(coords2[1]-coords1[1])**2
+        )
+        return dist
 
     def get_expected_y_for_app_id(self, app_id):
         app_item = self.app_data['items'][app_id]
