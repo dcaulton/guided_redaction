@@ -6,6 +6,7 @@ from guided_redaction.utils.classes.FileWriter import FileWriter
 from guided_redaction.redact.classes.ImageMasker import ImageMasker
 from guided_redaction.redact.classes.TextEraser import TextEraser
 from guided_redaction.redact.classes.ImageIllustrator import ImageIllustrator
+from guided_redaction.redact.classes.DataSynthesizer import DataSynthesizer
 import numpy as np
 from base import viewsets
 from rest_framework.response import Response
@@ -83,6 +84,12 @@ class RedactViewSetRedactImage(viewsets.ViewSet):
                 masker = TextEraser(request_data['redact_rule'])
                 masked_image = masker.mask_all_regions(
                     cv2_image, areas_to_redact
+                )
+            elif request_data['redact_rule']['mask_method'] == 'data_synthesizer':
+                synthesizer = DataSynthesizer(request_data['redact_rule'])
+                masked_image = synthesizer.synthesize_data(
+                    cv2_image, 
+                    request_data['areas_to_redact']
                 )
             else:
                 image_masker = ImageMasker()
