@@ -579,7 +579,9 @@ class DataSifter:
             app_obj = self.app_data['items'][app_id]
             if app_obj.get('mask_this_field') and ocr_id not in self.all_zones:
                 build_obj = self.ocr_results_this_frame[ocr_id]
-                if app_obj.get('type') == 'user_data' and app_obj.get('mask_this_field'):
+                if app_obj.get('type') == 'user_data' and \
+                    self.data_sifter_meta['scan_level'] == 'tier_3' and \
+                    app_obj.get('mask_this_field'):
                     build_obj['synthetic_text'] = self.synthetic_data[app_id]
                 build_obj['scanner_type'] = 'data_sifter'
                 build_obj['app_id'] = app_id

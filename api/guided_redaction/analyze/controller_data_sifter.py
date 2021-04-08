@@ -4,7 +4,6 @@ from guided_redaction.jobs.models import Job
 from guided_redaction.utils.classes.FileWriter import FileWriter
 from .controller_t1 import T1Controller
 from guided_redaction.analyze.classes.DataSifter import DataSifter
-from guided_redaction.analyze.classes.DataSifterRedactor import DataSifterRedactor
 
 
 class DataSifterController(T1Controller):
@@ -51,8 +50,6 @@ class DataSifterController(T1Controller):
             template_job_results = json.loads(template_job.response_data)
 
         data_sifter = DataSifter(data_sifter_meta)
-        if data_sifter_meta['scan_level'] != 'tier_1':
-            data_sifter_redactor = DataSifterRedactor(data_sifter_meta)
         synthetic_data = data_sifter.build_all_synthetic_data()
 
         response_obj['movies'][movie_url] = {}
@@ -92,9 +89,6 @@ class DataSifterController(T1Controller):
             if match_obj:
                 response_obj['movies'][movie_url]['framesets'][frameset_hash] = match_obj
             response_obj['statistics']['movies'][movie_url]['framesets'][frameset_hash] = match_stats
-
-            if data_sifter_meta['scan_level'] != 'tier_1':
-                self.redact_or_replace_user_data(response_obj, data_sifter_redactor, movie_url, frameset_hash, cv2_image)
 
         return response_obj
 

@@ -23,7 +23,6 @@ class DataSifterControls extends React.Component {
     this.state = {
       id: '',
       name: '',
-      generate_fake_data: false,
       edit_ocr_data: false,
       show_app_boxes: false,
       show_app_rowcols: false,
@@ -1473,7 +1472,6 @@ class DataSifterControls extends React.Component {
       this.setState({
         id: sam['id'],
         name: sam['name'],
-        generate_fake_data: sam['generate_fake_data'],
         debug: sam['debug'],
         rows: sam['rows'],
         left_cols: sam['left_cols'],
@@ -1500,7 +1498,6 @@ class DataSifterControls extends React.Component {
     this.setState({
       id: the_id,
       name: '',
-      generate_fake_data: false,
       debug: false,
       rows: [],
       left_cols: [],
@@ -1526,7 +1523,6 @@ class DataSifterControls extends React.Component {
     const data_sifter = {                                                          
       id: this.state.id,
       name: this.state.name,
-      generate_fake_data: this.state.generate_fake_data,
       debug: this.state.debug,
       rows: this.state.rows,
       left_cols: this.state.left_cols,
@@ -1602,8 +1598,7 @@ class DataSifterControls extends React.Component {
   buildScanLevelDropdown2() {
     const scan_level_dropdown = [
       {'tier_1': 'Tier 1 (select only)'},
-      {'tier_2': 'Tier 2 (select and redact)'},
-      {'tier_3': 'Tier 3 (select and replace with fake data)'}
+      {'tier_3': 'Tier 3 (select and generate synthetic data)'}
     ]
 
     return buildLabelAndDropdown(
@@ -1860,7 +1855,6 @@ class DataSifterControls extends React.Component {
     const id_string = buildIdString(this.state.id, 'data_sifter', false)
     const name_field = this.buildNameField()
     const edit_ocr_data_checkbox = this.buildToggleField('edit_ocr_data', 'Build a Data Sifter from an Ocr scan')
-    let fake_data_checkbox = ''
     let show_app_boxes_checkbox = ''
     let show_app_rowcols_checkbox = ''
     let show_source_frame_link = ''
@@ -1876,7 +1870,6 @@ class DataSifterControls extends React.Component {
     if (this.state.edit_ocr_data) {
       edit_ocr_and_compile_buttons_row = this.buildEditOcrAndCompileRow()
     } else {
-      fake_data_checkbox = this.buildToggleField('generate_fake_data', 'Generate Fake Data')
       if (this.weAreOnTheSourceFrame()) {
         show_app_boxes_checkbox = this.buildToggleField('show_app_boxes', 'Show App Boxes')
         show_app_rowcols_checkbox = this.buildToggleField('show_app_rowcols', 'Show App RowCols')
@@ -1949,10 +1942,6 @@ class DataSifterControls extends React.Component {
 
                     <div className='row mt-2'>
                       {scale_dropdown}
-                    </div>
-
-                    <div className='row mt-2'>
-                      {fake_data_checkbox}
                     </div>
 
                     <div className='row mt-2'>
