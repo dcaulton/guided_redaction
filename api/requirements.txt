@@ -10,7 +10,7 @@ chardet
 cryptography
 cycler
 decorator
-Django==2.2.6
+Django==2.2.20
 django-cors-headers
 django-extensions
 djangorestframework
