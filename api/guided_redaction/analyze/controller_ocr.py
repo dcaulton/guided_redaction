@@ -105,10 +105,10 @@ class OcrController(T1Controller):
                     build_obj = {
                         'source': 'data_sifter',
                         'data_sifter_meta_id': match_obj['data_sifter_meta_id'],
+                        'synthetic_text': match_obj['synthetic_text'],
                         'app_id': match_obj['app_id'],
                     }
                     new_phrases[match_obj['text']] = build_obj
-        print('phrases for ds movie are {} '.format(new_phrases.keys()))
         return new_phrases
 
     def phrase_match_found(self, input_text, phrases_to_match):
@@ -142,9 +142,9 @@ class OcrController(T1Controller):
                 if phrases_to_match:
                     phrase_match_results = self.phrase_match_found(match_obj['text'], phrases_to_match)
                     if phrase_match_results:
-                        if phrase_match_results['source'] == 'data_sifter':
-                            match_obj['data_sifter_meta_id'] = phrase_match_results['data_sifter_meta_id']
-                            match_obj['app_id'] = phrase_match_results['app_id']
+                        if phrase_match_results['source'] == 'data_sifter' and \
+                            phrase_match_results.get('synthetic_text'):
+                            match_obj['synthetic_text'] = phrase_match_results.get('synthetic_text')
                         recognized_text_areas[match_id] = match_obj
             return recognized_text_areas
 
