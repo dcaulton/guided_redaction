@@ -1,5 +1,7 @@
 import random
+import string
 import math
+from faker import Faker
 from fuzzywuzzy import fuzz
 import cv2
 import numpy as np
@@ -19,6 +21,7 @@ class DataSifter:
         self.fuzz_match_threshold = 70
         self.fast_pass_app_score_threshold = 500
         self.trawling_distance_threshold = 200
+        self.faker = Faker()
 
     def sift_data(self, cv2_image, ocr_results_this_frame, other_t1_results_this_frame, template_results_this_frame):
         self.app_rows, self.app_left_cols, self.app_right_cols = self.build_app_rowcol_data()
@@ -575,6 +578,8 @@ class DataSifter:
             app_obj = self.app_data['items'][app_id]
             if app_obj.get('mask_this_field') and ocr_id not in self.all_zones:
                 build_obj = self.ocr_results_this_frame[ocr_id]
+                if app_obj.get('type') == 'user_data' and app_obj.get('mask_this_field'):
+                    build_obj['synthetic_text'] = self.make_synthetic_data(app_obj, build_obj)
                 build_obj['scanner_type'] = 'data_sifter'
                 build_obj['app_id'] = app_id
                 build_obj['scale'] = self.scale
@@ -592,6 +597,46 @@ class DataSifter:
                         #   want to send it back representing user data
                         # maybe I should add something to stats at least?
                         self.all_zones[ocr_id]['text'] = ''
+
+    def make_synthetic_data(self, app_obj, build_obj):
+        if app_obj.get('synthetic_datatype') == 'person.first_name':
+            return self.faker.first_name()
+        elif app_obj.get('synthetic_datatype') == 'person.last_name':
+            return self.faker.last_name()
+        elif app_obj.get('synthetic_datatype') == 'person.name':
+            return self.faker.name()
+        elif app_obj.get('synthetic_datatype') == 'phone_number.phone_number':
+            return self.faker.phone_number()
+        elif app_obj.get('synthetic_datatype') == 'ssn.ssn':
+            return self.faker.ssn()
+        elif app_obj.get('synthetic_datatype') == 'internet.email':
+            return self.faker.email()
+        elif app_obj.get('synthetic_datatype') == 'internet.url':
+            return self.faker.url()
+        elif app_obj.get('synthetic_datatype') == 'address.address':
+            return self.faker.address()
+        elif app_obj.get('synthetic_datatype') == 'address.city':
+            return self.faker.city()
+        elif app_obj.get('synthetic_datatype') == 'address.country':
+            return self.faker.country()
+        elif app_obj.get('synthetic_datatype') == 'address.postcode':
+            return self.faker.postcode()
+        elif app_obj.get('synthetic_datatype') == 'address.street_address':
+            return self.faker.street_address()
+        elif app_obj.get('synthetic_datatype') == 'credit_card.credit_card_expire':
+            return self.faker.credit_card_expire()
+        elif app_obj.get('synthetic_datatype') == 'credit_card.credit_card_number':
+            return self.faker.credit_card_number()
+        elif app_obj.get('synthetic_datatype') == 'credit_card.security_code':
+            return self.faker.security_code()
+        elif app_obj.get('synthetic_datatype') == 'random-5':
+            return ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(5))
+        elif app_obj.get('synthetic_datatype') == 'random-10':
+            return ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(10))
+        elif app_obj.get('synthetic_datatype') == 'random-20':
+            return ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(20))
+        else:
+            return ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(10))
 
     def add_zone_to_response(self, zone_start, zone_end, ocr_member_ids=None, row_col_type=None):
         new_id = str(random.randint(1, 999999999))
