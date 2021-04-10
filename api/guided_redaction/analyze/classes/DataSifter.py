@@ -59,7 +59,6 @@ class DataSifter:
         if fast_pass:
             if self.debug:
                 print('FAST PASS HAS A LEAD ON THE APP - fp match obj is {}'.format(fast_pass))
-                self.add_fast_pass_to_results(fast_pass)
             fast_pass_confirmed = self.confirm_fast_pass(fast_pass)
         if not fast_pass_confirmed:
             slow_pass_confirmed = self.slow_pass_for_labels()
@@ -498,7 +497,7 @@ class DataSifter:
         #   across a scores matrix that will normally be very sparse (so n**2 approaches would be much too wasteful)
 
         new_list = [*caller_list, this_row_num]
-        if this_col_num >= (len(self.ocr_rowcol_scores[0])-1):    # we're in the final column
+        if self.ocr_rowcol_scores and this_col_num >= (len(self.ocr_rowcol_scores[0])-1):    # we're in the final column
             self.paths.append(new_list)
             return
         next_col_num = this_col_num+1
@@ -528,6 +527,8 @@ class DataSifter:
                         total += self.ocr_rowcol_scores[ocr_col_num][app_col_num]
 
     def add_rows_cols_to_response_and_stats(self, row_col_type, existing_classes):
+        if not self.debug:
+            return
         build_classes = {}
         for row_class_id in existing_classes:
             build_classes[row_class_id] = {
@@ -536,13 +537,6 @@ class DataSifter:
                 'row_column_type': row_col_type,
                 'ocr_member_ids': existing_classes[row_class_id]['member_ids'],
             }
-            if self.debug:
-                self.add_zone_to_response(
-                    existing_classes[row_class_id]['start'], 
-                    existing_classes[row_class_id]['end'],
-                    existing_classes[row_class_id]['member_ids'],
-                    row_col_type,
-                )
 
         group_name = row_col_type + 's'
         self.return_stats[group_name] = build_classes
@@ -576,29 +570,34 @@ class DataSifter:
     def build_match_results(self, return_mask, fast_pass_confirmed, slow_pass_confirmed):
         for app_id in self.found_app_ids:
             ocr_id = self.found_app_ids[app_id]
-            app_obj = self.app_data['items'][app_id]
-            if app_obj.get('mask_this_field') and ocr_id not in self.all_zones:
-                build_obj = self.ocr_results_this_frame[ocr_id]
-                if app_obj.get('type') == 'user_data' and \
-                    self.data_sifter_meta['scan_level'] == 'tier_3' and \
-                    app_obj.get('mask_this_field'):
-                    build_obj['synthetic_text'] = self.synthetic_data[app_id]
-                build_obj['scanner_type'] = 'data_sifter'
-                build_obj['app_id'] = app_id
-                build_obj['scale'] = self.scale
-                build_obj['origin'] = (0, self.y_origin)
-                # this lets us merge the output from several data sifters and still be able to add synthetic data
-                build_obj['data_sifter_meta_id'] = self.data_sifter_meta['id']
-                if 'source' in build_obj: del build_obj['source'] 
-                if 'ocr_window_start' in build_obj: del build_obj['ocr_window_start'] 
-                self.all_zones[ocr_id] = build_obj
-                if app_obj.get('empty_value'):
-                    ratio = fuzz.ratio(app_obj['empty_value'], self.ocr_results_this_frame[ocr_id]['text'])
-                    if ratio >= self.fuzz_match_threshold:
-                        # these two things matched, but it's against an empty value for the user field and we don't 
-                        #   want to send it back representing user data
-                        # maybe I should add something to stats at least?
-                        self.all_zones[ocr_id]['text'] = ''
+            if self.app_data['items'][app_id].get('mask_this_field') and ocr_id not in self.all_zones:
+                self.add_match_to_results(app_id, ocr_id)
+            elif self.debug:
+                self.add_match_to_results(app_id, ocr_id)
+
+    def add_match_to_results(self, app_id, ocr_id):
+        app_obj = self.app_data['items'][app_id]
+        build_obj = self.ocr_results_this_frame[ocr_id]
+        if app_obj.get('type') == 'user_data' and \
+            self.data_sifter_meta['scan_level'] == 'tier_3' and \
+            app_obj.get('mask_this_field'):
+            build_obj['synthetic_text'] = self.synthetic_data[app_id]
+        build_obj['scanner_type'] = 'data_sifter'
+        build_obj['app_id'] = app_id
+        build_obj['scale'] = self.scale
+        build_obj['origin'] = (0, self.y_origin)
+        # this lets us merge the output from several data sifters and still be able to add synthetic data
+        build_obj['data_sifter_meta_id'] = self.data_sifter_meta['id']
+        if 'source' in build_obj: del build_obj['source'] 
+        if 'ocr_window_start' in build_obj: del build_obj['ocr_window_start'] 
+        self.all_zones[ocr_id] = build_obj
+        if app_obj.get('empty_value'):
+            ratio = fuzz.ratio(app_obj['empty_value'], self.ocr_results_this_frame[ocr_id]['text'])
+            if ratio >= self.fuzz_match_threshold:
+                # these two things matched, but it's against an empty value for the user field and we don't 
+                #   want to send it back representing user data
+                # maybe I should add something to stats at least?
+                self.all_zones[ocr_id]['text'] = ''
 
     def build_all_synthetic_data(self):
         build_obj = {}
@@ -648,26 +647,6 @@ class DataSifter:
             return ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(20))
         else:
             return ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(10))
-
-    def add_zone_to_response(self, zone_start, zone_end, ocr_member_ids=None, row_col_type=None):
-        new_id = str(random.randint(1, 999999999))
-        new_size = [
-            zone_end[0] - zone_start[0],
-            zone_end[1] - zone_start[1]
-        ]
-        one_zone = {
-            'id': new_id, 
-            'location': zone_start,
-            'size': new_size,
-            'scale': self.scale,
-            'origin': (0, self.y_origin),
-            'scanner_type': 'data_sifter',
-        }
-        if ocr_member_ids:
-            one_zone['ocr_member_ids'] = ocr_member_ids
-        if row_col_type:
-            one_zone['row_column_type'] = row_col_type
-        self.all_zones[one_zone['id']] = one_zone
 
     def build_app_rowcol_data(self):
         app_rows = []
@@ -724,48 +703,6 @@ class DataSifter:
 
             return build_ocr_results
         return ocr_results_this_frame
-
-    def add_fast_pass_to_results(self, fast_pass_obj):
-        if not self.debug:
-            return
-        for row_id in fast_pass_obj['row']['ids']:
-            if not row_id: 
-                continue  # that means no ocr row matched the app row in that position
-            ocr_row = self.ocr_rows_dict[row_id]
-            for ocr_match_id in ocr_row['member_ids']:
-                ocr_match_ele = self.ocr_results_this_frame[ocr_match_id]
-                end_coords = [
-                    ocr_match_ele['location'][0] + ocr_match_ele['size'][0],
-                    ocr_match_ele['location'][1] + ocr_match_ele['size'][1]
-                ]
-                # TODO remove this later, just saving the ocr items we are confident are matches
-                self.add_zone_to_response(ocr_match_ele['location'], end_coords, [], 'fast_pass_anchor')
-
-        for col_id in fast_pass_obj['left_col']['ids']:
-            if not col_id: 
-                continue  # that means no ocr col matched the app col in that position
-            ocr_col = self.ocr_left_cols_dict[col_id]
-            for ocr_match_id in ocr_col['member_ids']:
-                ocr_match_ele = self.ocr_results_this_frame[ocr_match_id]
-                end_coords = [
-                    ocr_match_ele['location'][0] + ocr_match_ele['size'][0],
-                    ocr_match_ele['location'][1] + ocr_match_ele['size'][1]
-                ]
-                # TODO remove this later, just saving the ocr items we are confident are matches
-                self.add_zone_to_response(ocr_match_ele['location'], end_coords, [], 'fast_pass_anchor')
-
-        for col_id in fast_pass_obj['right_col']['ids']:
-            if not col_id: 
-                continue  # that means no ocr col matched the app col in that position
-            ocr_col = self.ocr_right_cols_dict[col_id]
-            for ocr_match_id in ocr_col['member_ids']:
-                ocr_match_ele = self.ocr_results_this_frame[ocr_match_id]
-                end_coords = [
-                    ocr_match_ele['location'][0] + ocr_match_ele['size'][0],
-                    ocr_match_ele['location'][1] + ocr_match_ele['size'][1]
-                ]
-                # TODO remove this later, just saving the ocr items we are confident are matches
-                self.add_zone_to_response(ocr_match_ele['location'], end_coords, [], 'fast_pass_anchor')
 
 #   DATA SIFTER ITEM FIELDS:
 # type
