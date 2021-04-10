@@ -531,11 +531,15 @@ class DataSifter:
             return
         build_classes = {}
         for row_class_id in existing_classes:
+            ocr_found_texts = []
+            ocr_member_ids = existing_classes[row_class_id]['member_ids']
+            ocr_texts = [self.ocr_results_this_frame[ocr_id]['text'] for ocr_id in ocr_member_ids]
             build_classes[row_class_id] = {
                 'start': existing_classes[row_class_id]['start'], 
                 'end': existing_classes[row_class_id]['end'], 
                 'row_column_type': row_col_type,
-                'ocr_member_ids': existing_classes[row_class_id]['member_ids'],
+                'ocr_member_ids': ocr_member_ids,
+                'ocr_texts': ocr_texts,
             }
 
         group_name = row_col_type + 's'
