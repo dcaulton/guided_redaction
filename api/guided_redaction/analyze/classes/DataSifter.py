@@ -22,6 +22,58 @@ class DataSifter:
         self.fast_pass_app_score_threshold = 500
         self.trawling_distance_threshold = 200
         self.faker = Faker()
+        self.us_states = {
+          'AL': 'Alabama',	
+          'AK': 'Alaska', 
+          'AZ': 'Arizona', 
+          'AR': 'Arkansas', 
+          'CA': 'California',	
+          'CO': 'Colorado', 
+          'CT': 'Connecticut', 
+          'DE': 'Delaware', 
+          'FL': 'Florida', 
+          'GA': 'Georgia', 
+          'HI': 'Hawaii', 
+          'ID': 'Idaho', 
+          'IL': 'Illinois',	
+          'IN': 'Indiana', 
+          'IA': 'Iowa',	
+          'KS': 'Kansas', 
+          'KY': 'Kentucky',	
+          'LA': 'Louisiana',	
+          'ME': 'Maine', 
+          'MD': 'Maryland', 
+          'MA': 'Massachusetts',	
+          'MI': 'Michigan', 
+          'MN': 'Minnesota', 
+          'MS': 'Mississippi', 
+          'MO': 'Missouri',	
+          'MT': 'Montana',	
+          'NE': 'Nebraska', 
+          'NV': 'Nevada', 
+          'NH': 'New Hampshire',	
+          'NJ': 'New Jersey', 
+          'NM': 'New Mexico', 
+          'NY': 'New York',	
+          'NC': 'North Carolina', 
+          'ND': 'North Dakota', 
+          'OH': 'Ohio', 
+          'OK': 'Oklahoma',	
+          'OR': 'Oregon', 
+          'PA': 'Pennsylvania', 
+          'RI': 'Rhode Island', 
+          'SC': 'South Carolina', 
+          'SD': 'South Dakota', 
+          'TN': 'Tennessee', 
+          'TX': 'Texas', 
+          'UT': 'Utah', 
+          'VT': 'Vermont', 
+          'VA': 'Virginia', 
+          'WA': 'Washington', 
+          'WV': 'West Virginia', 
+          'WI': 'Wisconsin', 	
+          'WY': 'Wyoming', 
+        }
 
     def sift_data(self, cv2_image, ocr_results_this_frame, other_t1_results_this_frame, template_results_this_frame, synthetic_data):
         self.app_rows, self.app_left_cols, self.app_right_cols = self.build_app_rowcol_data()
@@ -631,6 +683,10 @@ class DataSifter:
             return self.faker.address()
         elif app_obj.get('synthetic_datatype') == 'address.city':
             return self.faker.city()
+        elif app_obj.get('synthetic_datatype') == 'address.state_short':
+            return self.get_short_state()
+        elif app_obj.get('synthetic_datatype') == 'address.state_long':
+            return self.get_long_state()
         elif app_obj.get('synthetic_datatype') == 'address.country':
             return self.faker.country()
         elif app_obj.get('synthetic_datatype') == 'address.postcode':
@@ -915,3 +971,10 @@ class DataSifter:
 #                },
 #            }
 #        }
+    def get_short_state(self):
+        random_short_state_name = random.choice(list(self.us_states.keys()))
+        return random_short_state_name
+
+    def get_long_state(self):
+        random_short_state_name = random.choice(list(self.us_states.keys()))
+        return self.us_states[random_short_state_name]

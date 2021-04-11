@@ -1124,6 +1124,8 @@ class DataSifterControls extends React.Component {
       {'internet.url': 'url'},
       {'address.address': 'full physical address'},
       {'address.city': 'city'},
+      {'address.state_short': 'state short'},
+      {'address.state_full': 'state full'},
       {'address.country': 'country'},
       {'address.postcode': 'zip code'},
       {'address.street_address': 'street address'},
