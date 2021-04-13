@@ -406,6 +406,7 @@ def get_movie_length_in_seconds(movie_url):
     
 def make_and_dispatch_split_tasks(parent_job):
     request_data = json.loads(parent_job.request_data)
+    num_tasks = 0
     for movie_url in request_data['movie_urls']:
         movie_length_seconds = get_movie_length_in_seconds(movie_url)
         build_request_data = {'movie_url': movie_url}
