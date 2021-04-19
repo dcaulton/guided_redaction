@@ -320,8 +320,8 @@ class DataSifterControls extends React.Component {
   }
 
   setCurrentItemRowAlignment(var_value) {
-    // TODO, get this working
-    console.log('should be setting row alignment here')
+    const row_number = parseInt(var_value.substring(4))
+    this.alignCurrentItemToRow(row_number)
   }
 
   setCurrentItemAlignment(var_value) {
@@ -473,11 +473,9 @@ class DataSifterControls extends React.Component {
       let end_y = -1
       let all_x = []
       const rowcol = this.state.right_cols[i]
-  console.log('one right col is ', rowcol)
       for (let j=0; j < rowcol.length; j++) {
         const item_id = rowcol[j]
         const item = this.state.items[item_id]
-  console.log('   one item is ', item)
         const item_start = item['location']
         const item_end = [
           item['location'][0] + item['size'][0],
@@ -497,7 +495,6 @@ class DataSifterControls extends React.Component {
         centers.push(item['location'][1]+ .5*item['size'][1])
       }
       const x = all_x.reduce((a, b) => a + b, 0) / all_x.length
- console.log('right col x value is ', all_x)
       const build_obj = {
         start: [x, start_y],
         end: [x, end_y],
@@ -639,27 +636,6 @@ class DataSifterControls extends React.Component {
     )
   }
 
-  buildRowsWithoutItem() {
-    let build_rows = []
-    for (let i=0; i < this.state.rows.length; i++) {
-      const row = this.state.rows[i]
-      if (row.includes(this.state.highlighted_item_id)) {
-        let build_row = []
-        for (let j=0; j < row.length; j++) {
-          if (row[j] !== this.state.highlighted_item_id) {
-            build_row.push(row[j])
-          }
-        }
-        if (build_row.length > 0) {
-          build_rows.push(build_row)
-        }
-      } else {
-        build_rows.push(this.state.rows[i])
-      }
-    }
-    return build_rows
-  }
-
   insertCurrentItemInNewCol(col_type, build_cols) {
     const highlighted_item = this.state.items[this.state.highlighted_item_id]
     const stripped_ret_obj = this.buildRightLeftColsWithoutItem()
@@ -769,6 +745,61 @@ class DataSifterControls extends React.Component {
       right_cols: ret_obj['right_cols'],
     }
     this.setLocalStateVar(build_obj)
+  }
+
+  alignCurrentItemToRow(row_number) {
+    const highlighted_item = this.state.items[this.state.highlighted_item_id]
+    const stripped_rows = this.buildRowsWithoutItem()
+
+    let build_rows = []
+    let item_was_added = false
+    for (let i=0; i < stripped_rows.length; i++) {
+      if (i !== row_number) {
+        build_rows.push(stripped_rows[i])
+        continue
+      }
+      const app_row = stripped_rows[i]
+      let build_app_row = []
+      for (let j=0; j < app_row.length; j++) {
+        const app_item_id = app_row[j]
+        const app_item = this.state.items[app_item_id]
+        if (app_item['location'][0] <= highlighted_item['location'][0]) {
+          build_app_row.push(app_item_id)
+        } else if (!item_was_added) {
+          build_app_row.push(this.state.highlighted_item_id)
+          item_was_added = true
+          continue
+        } else {
+          build_app_row.push(app_item_id)
+        }
+      }
+      if (!item_was_added) {
+        build_app_row.push(this.state.highlighted_item_id)
+      }
+      build_rows.push(build_app_row)
+    }
+    this.setLocalStateVar({'rows': build_rows})
+  }
+
+  buildRowsWithoutItem() {
+    let build_rows = []
+    for (let i=0; i < this.state.rows.length; i++) {
+      const row = this.state.rows[i]
+      if (row.includes(this.state.highlighted_item_id)) {
+        let build_row = []
+        for (let j=0; j < row.length; j++) {
+          if (row[j] !== this.state.highlighted_item_id) {
+            build_row.push(row[j])
+          }
+        }
+        if (build_row.length > 0) {
+          build_rows.push(build_row)
+        }
+      } else {
+        build_rows.push(this.state.rows[i])
+      }
+    }
+    return build_rows
   }
 
   buildRightLeftColsWithoutItem() {
@@ -896,15 +927,12 @@ class DataSifterControls extends React.Component {
   }
 
   buildAlignToRowDropdown() {
-    let values = [
-      {'none': 'no row'}
-    ]
+    let values = []
     for (let i=0; i < this.state.rows.length; i++) {
       values.push({
         ['row_' + i.toString()]:'row '+i.toString(),
       })
     }
-    values.push({'new_row': 'create new row'})
     let cur_value_string = 'none'
     const resp_obj = this.getItemAlignment(this.state.highlighted_item_id)
     if (resp_obj['row_num'] !== -1) {
