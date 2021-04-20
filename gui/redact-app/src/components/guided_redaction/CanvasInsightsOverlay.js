@@ -221,6 +221,9 @@ class CanvasInsightsOverlay extends React.Component {
     if (!matches) {
       return
     }
+    if (!this.props.visibilityFlags['t1_matches']['data_sifter']) {
+      return
+    }
     const show_type = this.props.runCallbackFunction('getDataSifterShowType')
     const canvas = this.refs.insights_canvas
     let ctx = canvas.getContext('2d')
@@ -546,6 +549,9 @@ class CanvasInsightsOverlay extends React.Component {
   }
 
   drawTier1Matches(scanner_type, fill_color, edge_color) {
+    if (!this.props.visibilityFlags['t1_matches'][scanner_type]) {
+      return
+    }
     let matches = this.props.getTier1ScannerMatches(scanner_type)
     fill_color = fill_color || this.template_match_color
     edge_color = edge_color || this.red_color

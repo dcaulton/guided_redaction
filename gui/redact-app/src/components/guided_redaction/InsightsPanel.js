@@ -1327,6 +1327,8 @@ class InsightsPanel extends React.Component {
             displayInsightsMessage={this.displayInsightsMessage}
             setScrubberToNextTier1Hit={this.setScrubberToNextTier1Hit}
             getTier1MatchHashesForMovie={this.getTier1MatchHashesForMovie}
+            toggleHideScannerResults={this.props.toggleHideScannerResults}
+            visibilityFlags={this.props.visibilityFlags}
           />
         </div>
 
@@ -1369,6 +1371,7 @@ class InsightsPanel extends React.Component {
               getCurrentPipelineMatches={this.getCurrentPipelineMatches}
               getCurrentIntersectMatches={this.getCurrentIntersectMatches}
               getCurrentSumMatches={this.getCurrentSumMatches}
+              visibilityFlags={this.props.visibilityFlags}
             />
           </div>
 

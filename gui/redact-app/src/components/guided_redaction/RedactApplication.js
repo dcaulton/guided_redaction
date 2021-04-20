@@ -77,8 +77,8 @@ class RedactApplication extends React.Component {
         'selectedArea': true,
         'mesh_match': true,
         'selection_grower': true,
-        'filesystem': true,
         'ocr': true,
+        'filesystem': true,
         'set_tools': true,
         'results': true,
         'diffs': true,
@@ -91,6 +91,15 @@ class RedactApplication extends React.Component {
         'insights_link': true,
         'compose_link': true,
         'side_nav': true,
+        't1_matches': {
+          'template': true,
+          'data_sifter': true,
+          'hog': true,
+          'selected_area': true,
+          'mesh_match': true,
+          'selection_grower': true,
+          'ocr': true,
+        }
       },
       tier_1_scanners: {
         'ocr': {},
@@ -218,6 +227,11 @@ class RedactApplication extends React.Component {
     this.setActiveMovieFirstFrame=this.setActiveMovieFirstFrame.bind(this)
     this.addToCampaignMovies=this.addToCampaignMovies.bind(this)
     this.addGlobalCallback=this.addGlobalCallback.bind(this)
+    this.toggleHideScannerResults=this.toggleHideScannerResults.bind(this)
+  }
+
+  toggleHideScannerResults(scanner_type) {
+    this.state.visibilityFlags['t1_matches'][scanner_type] = !this.state.visibilityFlags['t1_matches'][scanner_type]
   }
 
   addGlobalCallback(the_key, the_callback) {
@@ -2367,6 +2381,7 @@ class RedactApplication extends React.Component {
                 getColorsInZone={this.getColorsInZone}
                 detectScreens={this.detectScreens}
                 addGlobalCallback={this.addGlobalCallback}
+                toggleHideScannerResults={this.toggleHideScannerResults}
               />
             </Route>
             <Route path='/redact/pipeline'>

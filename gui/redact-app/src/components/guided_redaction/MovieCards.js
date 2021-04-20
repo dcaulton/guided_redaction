@@ -86,6 +86,8 @@ class MovieCardList extends React.Component {
               displayInsightsMessage={this.props.displayInsightsMessage}
               setScrubberToNextTier1Hit={this.props.setScrubberToNextTier1Hit}
               getTier1MatchHashesForMovie={this.props.getTier1MatchHashesForMovie}
+              toggleHideScannerResults={this.props.toggleHideScannerResults}
+              visibilityFlags={this.props.visibilityFlags}
           />
           )
         })}
@@ -275,9 +277,9 @@ class MovieCard extends React.Component {
     }
     let scanner_type_short = scanner_type
     if (scanner_type === 'template') {
-      scanner_type_short = 'temp'
+      scanner_type_short = 'tmp'
     } else if (scanner_type === 'selected_area') {
-      scanner_type_short = 'sel ar'
+      scanner_type_short = 'sa'
     } else if (scanner_type === 'mesh_match') {
       scanner_type_short = 'mm'
     } else if (scanner_type === 'pipeline') {
@@ -293,14 +295,20 @@ class MovieCard extends React.Component {
     }
     let matches_button = ''
     let clear_button = ''
-    let clear_button_class = 'border-0 text-primary p-1 '
-    let next_button_class = 'border-0 text-primary p-1 ml-2 '
+    let hide_show_button = ''
+    let clear_button_class = 'border-0 text-primary pl-1 pr-1'
+    let next_button_class = 'border-0 text-primary pl-1 pr-1 ml-1 '
     if (this.props.this_cards_movie_url === this.props.active_movie_url) {
       clear_button_class += ' active_button'
       next_button_class += ' active_button'
     } else {
       clear_button_class += ' bg-white'
       next_button_class += ' bg-white'
+    }
+
+    let show_hide_label = 'hid'
+    if (!this.props.visibilityFlags['t1_matches'][scanner_type]) {
+      show_hide_label = 'shw'
     }
 
     if (count > 0) {
@@ -320,13 +328,22 @@ class MovieCard extends React.Component {
           nxt
         </button>
       )
+      hide_show_button = (
+        <button
+          className={clear_button_class}
+          onClick={() => this.props.toggleHideScannerResults(scanner_type)}
+        >
+          {show_hide_label}
+        </button>
+      )
     }
 
     return (
       <div>
-        {count.toString()} {scanner_type_short} matches
+        {scanner_type_short}:{count.toString()} hits
         {matches_button}
         {clear_button}
+        {hide_show_button}
       </div>
     )
   }
