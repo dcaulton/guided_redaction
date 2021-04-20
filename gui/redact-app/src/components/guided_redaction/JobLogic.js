@@ -760,6 +760,14 @@ class JobLogic extends React.Component {
     )
     const resp_data = JSON.parse(job.response_data)
     const scanner_id = resp_data['id']
+
+    const tier_1_matches = getGlobalStateVar('tier_1_matches')
+    let deepCopyMatches = JSON.parse(JSON.stringify(tier_1_matches))
+    for (let i=0; i < Object.keys(tier_1_matches).length; i++) {
+      const scanner_type = Object.keys(tier_1_matches)[i]
+      deepCopyMatches[scanner_type] = {}
+    }
+
     const tier_1_scanners = getGlobalStateVar('tier_1_scanners')
     let deepCopyScanners = JSON.parse(JSON.stringify(tier_1_scanners))
     let deepCopyThisScanners = deepCopyScanners['data_sifter']
@@ -769,6 +777,7 @@ class JobLogic extends React.Component {
     deepCopyIds['t1_scanner']['data_sifter'] = scanner_id
     setGlobalStateVar({
       tier_1_scanners: deepCopyScanners,
+      tier_1_matches: deepCopyMatches,
       current_ids: deepCopyIds,
     })
     // TODO I should be able to hang this in setGlobalStateVar, but it's not getting picked up
