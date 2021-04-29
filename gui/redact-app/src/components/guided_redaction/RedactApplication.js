@@ -710,6 +710,7 @@ class RedactApplication extends React.Component {
     if (!frameset_hash) {
       frameset_hash = this.makeNewFrameFrameset(the_url) 
     }
+
     var img = new Image()
     var app_this = this
     img.onload = function(){
@@ -718,9 +719,20 @@ class RedactApplication extends React.Component {
         image_height: this.height,
         frameset_hash: frameset_hash,
       })
-      when_done(frameset_hash)
+      app_this.setImageScale((()=>{ when_done(frameset_hash)}))
     }
     img.src = the_url
+  }
+
+  setImageScale(when_done=(()=>{})) {
+    if (!document.getElementById('insights_image')) {
+      return when_done()
+    }
+    const scale = (document.getElementById('insights_image').width /
+        document.getElementById('insights_image').naturalWidth)
+    this.setState({
+      image_scale: scale,
+    }, when_done())
   }
 
   async getCurrentUser() {
@@ -2382,6 +2394,11 @@ class RedactApplication extends React.Component {
                 detectScreens={this.detectScreens}
                 addGlobalCallback={this.addGlobalCallback}
                 toggleHideScannerResults={this.toggleHideScannerResults}
+                frameset_hash={this.state.frameset_hash}
+                image_width2={this.state.image_width}
+                image_height2={this.state.image_height}
+                image_scale={this.state.image_scale}
+                setFramesetHash={this.setFramesetHash}
               />
             </Route>
             <Route path='/redact/pipeline'>

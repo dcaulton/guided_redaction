@@ -17,8 +17,6 @@ class InsightsPanel extends React.Component {
       campaigns: [],
       frameset_starts: {},
       insights_image: '',
-      image_width: 1000,
-      image_height: 1000,
       insights_image_scale: 1,
       insights_title: 'Insights, load a movie to get started',
       prev_coords: (0,0),
@@ -1037,6 +1035,8 @@ class InsightsPanel extends React.Component {
     const new_frameset_hash = keys[value]
     if (Object.keys(framesets).includes(new_frameset_hash) && 
         Object.keys(framesets[new_frameset_hash]).includes('images')) {
+      this.props.setFramesetHash(new_frameset_hash, framesets)
+      // TODO remove below when we're done moving over to RedactApplication frameset_hash as prime key
       const the_url = framesets[new_frameset_hash]['images'][0]
       this.displayInsightsMessage('.')
       this.setState({
@@ -1080,7 +1080,7 @@ class InsightsPanel extends React.Component {
     );
     const x_scaled = parseInt(x / scale)
     const y_scaled = parseInt(y / scale)
-    if (x_scaled > this.state.image_width || y_scaled > this.state.image_height) {
+    if (x_scaled > this.props.image_width || y_scaled > this.props.image_height) {
         return
     }
     this.setState({
@@ -1104,6 +1104,8 @@ class InsightsPanel extends React.Component {
     }
     const scale = (document.getElementById('insights_image').width / 
         document.getElementById('insights_image').naturalWidth)
+    this.props.setGlobalStateVar('image_scale', scale)
+    // TODO delete this when insights image refactor is done
     this.setState({
       insights_image_scale: scale,
     })
@@ -1357,8 +1359,8 @@ class InsightsPanel extends React.Component {
           >
             {image_element}
             <CanvasInsightsOverlay 
-              width={this.state.image_width}
-              height={this.state.image_height}
+              width={this.props.image_width}
+              height={this.props.image_height}
               clickCallback={this.handleImageClick}
               currentImageIsT1ScannerRootImage={this.currentImageIsT1ScannerRootImage}
               insights_image_scale={this.state.insights_image_scale}
