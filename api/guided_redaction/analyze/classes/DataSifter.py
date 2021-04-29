@@ -74,6 +74,13 @@ class DataSifter:
           'WI': 'Wisconsin', 	
           'WY': 'Wyoming', 
         }
+        self.x_kernel = np.zeros((3,3), np.uint8)
+        self.x_kernel[1] = [1,1,1]
+        self.y_kernel = np.zeros((3,3), np.uint8)
+        self.y_kernel[0][1] = 1
+        self.y_kernel[1][1] = 1
+        self.y_kernel[2][1] = 1
+        self.xy_kernel = np.ones((3,3), np.uint8)
 
     def sift_data(self, cv2_image, ocr_results_this_frame, other_t1_results_this_frame, template_results_this_frame, synthetic_data):
         self.app_rows, self.app_left_cols, self.app_right_cols = self.build_app_rowcol_data()
@@ -87,6 +94,7 @@ class DataSifter:
         self.synthetic_data = synthetic_data
 
         self.ocr_results_this_frame = self.filter_results_by_t1_bounds(ocr_results_this_frame, other_t1_results_this_frame)
+        self.thresholded_and_masked_cv2_image = self.mask_and_threshold_image_by_t1_bounds(other_t1_results_this_frame)
         self.template_results_this_frame = self.filter_results_by_t1_bounds(
             template_results_this_frame, other_t1_results_this_frame
         )
@@ -167,6 +175,31 @@ class DataSifter:
 
         return best_ocr_rowcol_ids, best_ocr_rowcol_score
 
+    def add_boxed_areas(self):
+        copy = self.thresholded_and_masked_cv2_image.copy()
+        cnts = cv2.findContours(copy, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+        cnts = imutils.grab_contours(cnts)
+        for cnt in cnts:
+            x,y,w,h = cv2.boundingRect(cnt)
+            start = (x, y)
+            end = (x+w, y+h)
+            # TODO these four numbers are kind of arbitrary, let them be configurable
+            if 10 < w < 500 and 20 < h < 500: 
+                cv2.rectangle(
+                    copy,
+                    start, 
+                    end,
+                    (0, 0, 0),
+                    -1
+                )
+        # for each valid boxed area:
+        #   for each user data field of type boxed data:
+        #       if it looks like the geometry matches based on scale:
+        #           add it to results and break out of inner for loop
+
+#        cv2.imwrite('/Users/davecaulton/Desktop/penguino.png', copy)
+#        print('adding boxed areas baby')
+
     def confirm_fast_pass(self, fast_pass_match_obj):
         # first, do a complete match on all fields in each rowcol that fastpass picked up on, 
         #   this time, store ocr match_ids in the respective objects in app_rows, app_left_cols, app_right_cols
@@ -192,6 +225,8 @@ class DataSifter:
 
         self.propogate_match_app_ids_to_other_rowcols()
 
+#       TODO this is just for the case where we want to delete everything in boxes, maybe it's not a real use case
+#        self.add_boxed_areas()
         # gather background color near some of the labels (as specified in the app spec)
         # look for conflicts in fast_pass_match_obj, rule out rows/cols which break things
         # look for app rows/cols that had no match with an ocr row, see if any unmatched ocr rows now look better, 
@@ -763,6 +798,85 @@ class DataSifter:
 
             return build_ocr_results
         return ocr_results_this_frame
+
+    def threshold_image_for_boxes(self, new_image):
+        new_x_image = new_image.copy()
+        new_x_image = cv2.dilate(
+            new_image,
+            self.x_kernel,
+            iterations=1
+        )
+        new_x_image = cv2.erode(
+            new_image,
+            self.x_kernel,
+            iterations=1
+        )
+        new_y_image = new_image.copy()
+        new_y_image = cv2.dilate(
+            new_image,
+            self.y_kernel,
+            iterations=1
+        )
+        new_y_image = cv2.erode(
+            new_image,
+            self.y_kernel,
+            iterations=1
+        )
+        new_image = cv2.bitwise_or(new_x_image, new_y_image)
+        return new_image
+
+    def mask_and_threshold_image_by_t1_bounds(self, other_t1_results_this_frame):
+        new_image = self.cv2_image.copy()
+        (T, new_image) = cv2.threshold(new_image, 170, 255, cv2.THRESH_BINARY)
+        new_image = cv2.cvtColor(new_image, cv2.COLOR_BGR2GRAY)
+#        new_image = self.threshold_image_for_boxes(new_image)
+
+        if other_t1_results_this_frame:
+            build_ocr_results = {}
+            for t1_match_id in other_t1_results_this_frame:
+                t1_ele = other_t1_results_this_frame[t1_match_id]
+                start = t1_ele.get('start')
+                if not start:
+                    start = t1_ele.get('location')
+                end = t1_ele.get('end')
+                if not end:
+                    t1_size = t1_ele.get('size')
+                    end = (
+                        start[0] + t1_size[0],
+                        start[1] + t1_size[1]
+                    )
+                start = tuple(start)
+                end = tuple(end)
+                cv2.rectangle(
+                    new_image,
+                    (0, 0),
+                    (new_image.shape[1], start[1]),
+                    (0,0,0),
+                    -1
+                )
+                cv2.rectangle(
+                    new_image,
+                    (0, 0),
+                    (start[0], new_image.shape[0]),
+                    (0,0,0),
+                    -1
+                )
+                cv2.rectangle(
+                    new_image,
+                    (0, end[1]),
+                    (new_image.shape[1], new_image.shape[0]),
+                    (0,0,0),
+                    -1
+                )
+                cv2.rectangle(
+                    new_image,
+                    (end[0], 0),
+                    (new_image.shape[1], new_image.shape[0]),
+                    (0,0,0),
+                    -1
+                )
+
+        return new_image
 
 #   DATA SIFTER ITEM FIELDS:
 # type
