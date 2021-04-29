@@ -17,7 +17,6 @@ class InsightsPanel extends React.Component {
       campaigns: [],
       frameset_starts: {},
       insights_image: '',
-      insights_image_scale: 1,
       insights_title: 'Insights, load a movie to get started',
       prev_coords: (0,0),
       clicked_coords: (0,0),
@@ -78,7 +77,6 @@ class InsightsPanel extends React.Component {
     this.afterTier1JobLoaded=this.afterTier1JobLoaded.bind(this)
     this.setScrubberToFirstFrame=this.setScrubberToFirstFrame.bind(this)
     this.afterManualCompileDataSifterLoaded=this.afterManualCompileDataSifterLoaded.bind(this)
-    this.setImageSize=this.setImageSize.bind(this)
   }
 
   getTier1MatchHashesForMovie(scanner_type, movie_url) {
@@ -341,7 +339,6 @@ class InsightsPanel extends React.Component {
     this.props.getPipelines()
     document.getElementById('insights_link').classList.add('active')
     this.props.setActiveWorkflow('')
-    this.props.addGlobalCallback('set_insights_image_size', this.setImageSize)
   }
 
   componentWillUnmount() {                                                      
@@ -1042,7 +1039,7 @@ class InsightsPanel extends React.Component {
       this.setState({
         insights_image: the_url,
         insights_title: the_url,
-      }, this.setImageSize(the_url))
+      })
     }
   }
   
@@ -1058,7 +1055,7 @@ class InsightsPanel extends React.Component {
     this.setState({
       insights_image: first_image,
       insights_title: first_image,
-    }, this.setImageSize(first_image))
+    })
   }
 
   setCurrentVideo(video_url) {
@@ -1074,10 +1071,7 @@ class InsightsPanel extends React.Component {
   handleImageClick = (e) => {
     const x = e.nativeEvent.offsetX
     const y = e.nativeEvent.offsetY
-    const imageEl = document.getElementById('insights_image');
-    const scale = (
-      ((imageEl && imageEl.width) || 100) / ((imageEl && imageEl.naturalWidth) || 100)
-    );
+    const scale = this.props.image_scale
     const x_scaled = parseInt(x / scale)
     const y_scaled = parseInt(y / scale)
     if (x_scaled > this.props.image_width || y_scaled > this.props.image_height) {
@@ -1085,7 +1079,6 @@ class InsightsPanel extends React.Component {
     }
     this.setState({
       clicked_coords: [x_scaled, y_scaled],
-      insights_image_scale: scale,
     })
     if (this.state.mode === 'add_template_anchor_1') {
       this.handleSetMode('add_template_anchor_2') 
@@ -1095,37 +1088,6 @@ class InsightsPanel extends React.Component {
       this.handleSetMode('add_template_mask_zone_2') 
     } else if (this.state.mode === 'scan_ocr_1') {
       this.handleSetMode('scan_ocr_2') 
-    }
-  }
-
-  setImageScale() {
-    if (!document.getElementById('insights_image')) {
-      return
-    }
-    const scale = (document.getElementById('insights_image').width / 
-        document.getElementById('insights_image').naturalWidth)
-    this.props.setGlobalStateVar('image_scale', scale)
-    // TODO delete this when insights image refactor is done
-    this.setState({
-      insights_image_scale: scale,
-    })
-  }
-
-  setImageSize(the_image='') {
-    if (!the_image) {
-      the_image = this.state.insights_image
-    }
-    var app_this = this
-    if (the_image) {
-      let img = new Image()
-      img.src = the_image
-      img.onload = function() {
-        app_this.setState({
-          image_width: this.width,
-          image_height: this.height,
-        }, app_this.setImageScale()
-        )
-      }
     }
   }
 
@@ -1139,7 +1101,6 @@ class InsightsPanel extends React.Component {
         }
       }
     }
-
   }
 
   getTier1ScannerMatches(scanner_type) {
@@ -1287,10 +1248,6 @@ class InsightsPanel extends React.Component {
     if (!this.props.current_workbook_id) {
       workbook_name += ' (unsaved)'
     }
-    let imageDivStyle= {
-      width: this.props.image_width,
-      height: this.props.image_height,
-    }
     let the_message = this.props.message
     let message_style = {}
     if (!the_message || the_message === '.') {
@@ -1355,7 +1312,6 @@ class InsightsPanel extends React.Component {
           <div 
               id='insights_image_div' 
               className='row'
-              style={imageDivStyle}
           >
             {image_element}
             <CanvasInsightsOverlay 
@@ -1363,7 +1319,7 @@ class InsightsPanel extends React.Component {
               height={this.props.image_height}
               clickCallback={this.handleImageClick}
               currentImageIsT1ScannerRootImage={this.currentImageIsT1ScannerRootImage}
-              insights_image_scale={this.state.insights_image_scale}
+              insights_image_scale={this.props.image_scale}
               getTier1ScannerMatches={this.getTier1ScannerMatches}
               mode={this.state.mode}
               clicked_coords={this.state.clicked_coords}

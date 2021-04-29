@@ -2395,8 +2395,8 @@ class RedactApplication extends React.Component {
                 addGlobalCallback={this.addGlobalCallback}
                 toggleHideScannerResults={this.toggleHideScannerResults}
                 frameset_hash={this.state.frameset_hash}
-                image_width2={this.state.image_width}
-                image_height2={this.state.image_height}
+                image_width={this.state.image_width}
+                image_height={this.state.image_height}
                 image_scale={this.state.image_scale}
                 setFramesetHash={this.setFramesetHash}
               />
