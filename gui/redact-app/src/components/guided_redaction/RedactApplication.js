@@ -2399,6 +2399,7 @@ class RedactApplication extends React.Component {
                 image_height={this.state.image_height}
                 image_scale={this.state.image_scale}
                 setFramesetHash={this.setFramesetHash}
+                getImageUrl={this.getImageUrl}
               />
             </Route>
             <Route path='/redact/pipeline'>

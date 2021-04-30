@@ -16,7 +16,6 @@ class InsightsPanel extends React.Component {
       currentCampaign: '',
       campaigns: [],
       frameset_starts: {},
-      insights_image: '',
       insights_title: 'Insights, load a movie to get started',
       prev_coords: (0,0),
       clicked_coords: (0,0),
@@ -43,7 +42,6 @@ class InsightsPanel extends React.Component {
       'ocr_threaded'
     ]
     this.setCurrentVideo=this.setCurrentVideo.bind(this)
-    this.setInsightsImage=this.setInsightsImage.bind(this)
     this.movieSplitDone=this.movieSplitDone.bind(this)
     this.scrubberOnChange=this.scrubberOnChange.bind(this)
     this.handleSetMode=this.handleSetMode.bind(this)
@@ -135,7 +133,7 @@ class InsightsPanel extends React.Component {
       }
       setTimeout((() => {this.setScrubberToIndex(lowest_position)}), 1000)
     } else {
-      const cur_hash = this.props.getFramesetHashForImageUrl(this.state.insights_image)
+      const cur_hash = this.props.frameset_hash
       const cur_position = movie_frameset_hashes.indexOf(cur_hash)
       const remaining_hashes = movie_frameset_hashes.slice(cur_position+1)
       for (let i=0; i < remaining_hashes.length; i++) {
@@ -164,7 +162,7 @@ class InsightsPanel extends React.Component {
       if (!Object.keys(movie_match_obj['movies']).includes(this.props.movie_url)) {
         continue
       }
-      const frameset_hash = this.props.getFramesetHashForImageUrl(this.state.insights_image)
+      const frameset_hash = this.props.getFramesetHashesInOrder()[0]
       if (!Object.keys(movie_match_obj['movies'][this.props.movie_url]['framesets']).includes(frameset_hash)) {
         continue
       }
@@ -192,17 +190,16 @@ class InsightsPanel extends React.Component {
   }
 
   getCurrentAreasToRedact() {
-    if (!this.state.insights_image) {
-      return []
-    }
-    const frameset_hash = this.props.getFramesetHashForImageUrl(this.state.insights_image)
-    if (!frameset_hash) {
+    if (!this.props.frameset_hash) {
       return []
     }
     if (!this.props.movies || !this.props.movie_url) {
       return []
     }
-    const this_frameset = this.props.movies[this.props.movie_url]['framesets'][frameset_hash]
+    if (!Object.keys(this.props.movies[this.props.movie_url]['framesets']).includes(this.props.frameset_hash)) {
+      return []
+    }
+    const this_frameset = this.props.movies[this.props.movie_url]['framesets'][this.props.frameset_hash]
     if (Object.keys(this_frameset).includes('areas_to_redact')) {
       return this_frameset['areas_to_redact']
     }
@@ -227,9 +224,8 @@ class InsightsPanel extends React.Component {
       const cur_matches = this.props.tier_1_matches[scanner_type][ks[0]]  
       if (Object.keys(cur_matches['movies']).includes(this.props.movie_url)) {
         const this_movies_matches = cur_matches['movies'][this.props.movie_url]
-        const frameset_hash = this.props.getFramesetHashForImageUrl(this.state.insights_image)
-        if (Object.keys(this_movies_matches['framesets']).includes(frameset_hash)) {
-          const this_framesets_matches = this_movies_matches['framesets'][frameset_hash]
+        if (Object.keys(this_movies_matches['framesets']).includes(this.props.frameset_hash)) {
+          const this_framesets_matches = this_movies_matches['framesets'][this.props.frameset_hash]
           return this_framesets_matches
         }
       }
@@ -242,9 +238,8 @@ class InsightsPanel extends React.Component {
       const this_pipeline_matches = this.props.tier_1_matches[scanner_type][scanner_id]  
       if (Object.keys(this_pipeline_matches['movies']).includes(this.props.movie_url)) {
         const this_movies_matches = this_pipeline_matches['movies'][this.props.movie_url]
-        const frameset_hash = this.props.getFramesetHashForImageUrl(this.state.insights_image)
-        if (Object.keys(this_movies_matches['framesets']).includes(frameset_hash)) {
-          const this_framesets_matches = this_movies_matches['framesets'][frameset_hash]
+        if (Object.keys(this_movies_matches['framesets']).includes(this.props.frameset_hash)) {
+          const this_framesets_matches = this_movies_matches['framesets'][this.props.frameset_hash]
           if (Object.keys(this_framesets_matches).length) {
             let return_arr = []
             for (let i=0; i < Object.keys(this_framesets_matches).length; i++) {
@@ -554,14 +549,13 @@ class InsightsPanel extends React.Component {
   }
 
   buildOneFrameMovieForCurrentInsightsImage() {
-    const cur_hash = this.props.getFramesetHashForImageUrl(this.state.insights_image)
     let movies_wrap = {}
     movies_wrap[this.props.movie_url] = {}
     movies_wrap[this.props.movie_url]['framesets'] = {}
-    movies_wrap[this.props.movie_url]['framesets'][cur_hash] = (
-       this.props.movies[this.props.movie_url]['framesets'][cur_hash]
+    movies_wrap[this.props.movie_url]['framesets'][this.props.frameset_hash] = (
+       this.props.movies[this.props.movie_url]['framesets'][this.props.frameset_hash]
     )
-    movies_wrap[this.props.movie_url]['frames'] = [this.state.insights_image]
+    movies_wrap[this.props.movie_url]['frames'] = this.props.getImageUrl()
     return movies_wrap
   }
 
@@ -928,7 +922,7 @@ class InsightsPanel extends React.Component {
           const anchor = scanner[anchor_name][j]
           if (
             Object.keys(anchor).includes('image') && 
-            anchor['image'] === this.state.insights_image
+            anchor['image'] === this.props.getImageUrl()
           ) {
             return true
           }
@@ -1037,7 +1031,6 @@ class InsightsPanel extends React.Component {
       const the_url = framesets[new_frameset_hash]['images'][0]
       this.displayInsightsMessage('.')
       this.setState({
-        insights_image: the_url,
         insights_title: the_url,
       })
     }
@@ -1053,19 +1046,12 @@ class InsightsPanel extends React.Component {
     const first_image = new_movie['frames'][0]
     this.props.setGlobalStateVar('message', '.')
     this.setState({
-      insights_image: first_image,
       insights_title: first_image,
     })
   }
 
   setCurrentVideo(video_url) {
     this.props.setActiveMovie(video_url, this.movieSplitDone)
-  }
-
-  setInsightsImage(image_url) {
-    this.setState({
-      insights_image: image_url,
-    })
   }
 
   handleImageClick = (e) => {
@@ -1092,11 +1078,12 @@ class InsightsPanel extends React.Component {
   }
 
   getScrubberFramesetHash() {
+    const cur_image = this.props.getImageUrl()
     const framesets = this.props.getCurrentFramesets()
     if (this.props.movie_url && 
         Object.keys(this.props.movies).includes(this.props.movie_url)) {
       for (let frameset_hash in framesets) {
-        if (framesets[frameset_hash]['images'].includes(this.state.insights_image)) {
+        if (framesets[frameset_hash]['images'].includes(cur_image)) {
           return frameset_hash
         }
       }
@@ -1104,7 +1091,7 @@ class InsightsPanel extends React.Component {
   }
 
   getTier1ScannerMatches(scanner_type) {
-    if (!this.state.insights_image) {
+    if (!this.props.frameset_hash) {
       return
     }
     const current_scanner_id = this.props.current_ids['t1_scanner'][scanner_type]
@@ -1119,41 +1106,20 @@ class InsightsPanel extends React.Component {
     }
     const cur_movies_matches = cur_scanners_matches['movies'][this.props.movie_url]
     // TODO this looks redundant, can we use getScrubberFramesetHash and eliminate this method?
-    const insight_image_hash = this.props.getFramesetHashForImageUrl(this.state.insights_image)
-    if (!Object.keys(cur_movies_matches['framesets']).includes(insight_image_hash)) {
+    if (!Object.keys(cur_movies_matches['framesets']).includes(this.props.frameset_hash)) {
       return
     }
-    return cur_movies_matches['framesets'][insight_image_hash]
+    return cur_movies_matches['framesets'][this.props.frameset_hash]
   }
 
   getScrubberHeight() {
     let bottom_y = 100
-    if (this.state.insights_image) {
+    if (this.props.frameset_hash) {
       bottom_y += document.getElementById('insights_image_div').offsetHeight
     } else if (this.props.movie_url) {
       bottom_y += 385
     }
     return bottom_y
-  }
-
-  getInsightsImage() {
-    if (this.state.insights_image) {
-      return this.state.insights_image
-    } else if (this.props.movie_url) {
-      if (!Object.keys(this.props.movies).includes(this.props.movie_url)) {
-        return
-      }
-      const frameset_hashes = this.props.getFramesetHashesInOrder()
-      if (!Object.keys(this.props.movies).includes(this.props.movie_url)) {
-        return
-      }
-      const movie = this.props.movies[this.props.movie_url]
-      if (!Object.keys(movie).includes('framesets')) {
-        return
-      }
-      const image_url = movie['framesets'][frameset_hashes[0]]['images'][0]
-      return image_url
-    }
   }
 
   buildImageElement(insights_image) {
@@ -1242,7 +1208,7 @@ class InsightsPanel extends React.Component {
 
   render() {
     let workbook_name = this.props.current_workbook_name
-    const insights_image = this.getInsightsImage()
+    const insights_image = this.props.getImageUrl()
     const image_element = this.buildImageElement(insights_image)
     const scrubber_div = this.buildScrubberDiv(insights_image)
     if (!this.props.current_workbook_id) {
@@ -1377,7 +1343,6 @@ class InsightsPanel extends React.Component {
             getFramesetHashesInOrder={this.props.getFramesetHashesInOrder}
             movies={this.props.movies}
             setCurrentVideo={this.setCurrentVideo}
-            setInsightsImage={this.setInsightsImage}
             saveScannerToDatabase={this.props.saveScannerToDatabase}
             scanners={this.props.scanners}
             getScanners={this.props.getScanners}
