@@ -1853,10 +1853,6 @@ class RedactApplication extends React.Component {
 
     const hashes = Object.keys(framesets)
     for (let i=0; i < hashes.length; i++) {
-      let the_images = framesets[hashes[i]]['images']
-      if (the_images.includes(image_url)) {
-        return hashes[i]
-      }
       if (Object.keys(framesets[hashes[i]]).includes('redacted_image')) {
         const redacted_image = framesets[hashes[i]]['redacted_image']
         if (redacted_image === image_url) {
@@ -1869,6 +1865,12 @@ class RedactApplication extends React.Component {
           return hashes[i]
         }
       }
+
+      let the_images = framesets[hashes[i]]['images']
+      if (the_images && the_images.includes(image_url)) {
+        return hashes[i]
+      }
+
     }
   }
 

@@ -38,7 +38,8 @@ class OcrControls extends React.Component {
       attribute_search_value: '',
       first_click_coords: [],
     }
-    this.addOcrZoneCallback=this.addOcrZoneCallback.bind(this)
+    this.addOcrZoneCallback1=this.addOcrZoneCallback1.bind(this)
+    this.addOcrZoneCallback2=this.addOcrZoneCallback2.bind(this)
     this.getOcrMetaFromState=this.getOcrMetaFromState.bind(this)
     this.setLocalStateVar=this.setLocalStateVar.bind(this)
     this.getOcrWindow=this.getOcrWindow.bind(this)
@@ -72,7 +73,8 @@ class OcrControls extends React.Component {
   }
 
   componentDidMount() {
-    this.props.addInsightsCallback('scan_ocr_2', this.addOcrZoneCallback)
+    this.props.addInsightsCallback('scan_ocr_1', this.addOcrZoneCallback1)
+    this.props.addInsightsCallback('scan_ocr_2', this.addOcrZoneCallback2)
     this.props.addInsightsCallback('getOcrWindow', this.getOcrWindow)
     this.loadNewOcrRule()
   }
@@ -141,7 +143,11 @@ class OcrControls extends React.Component {
     )
   }
 
-  addOcrZoneCallback(end) {
+  addOcrZoneCallback1(end) {
+    this.props.handleSetMode('scan_ocr_2')
+  }
+
+  addOcrZoneCallback2(end) {
     const start= this.props.clicked_coords
     this.setState({
       start: start,

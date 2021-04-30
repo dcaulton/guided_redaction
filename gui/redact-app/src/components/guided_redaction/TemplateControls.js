@@ -36,13 +36,23 @@ class TemplateControls extends React.Component {
       attribute_search_value: '',
     }
     this.anchorSliceDone=this.anchorSliceDone.bind(this)
-    this.addAnchorCallback=this.addAnchorCallback.bind(this)
-    this.addMaskZoneCallback=this.addMaskZoneCallback.bind(this)
+    this.addAnchorCallback1=this.addAnchorCallback1.bind(this)
+    this.addAnchorCallback2=this.addAnchorCallback2.bind(this)
+    this.addMaskZoneCallback1=this.addMaskZoneCallback1.bind(this)
+    this.addMaskZoneCallback2=this.addMaskZoneCallback2.bind(this)
     this.setLocalVarsFromTemplate=this.setLocalVarsFromTemplate.bind(this)
     this.getCurrentAnchors=this.getCurrentAnchors.bind(this)
     this.getCurrentMaskZones=this.getCurrentMaskZones.bind(this)
     this.getTemplateFromState=this.getTemplateFromState.bind(this)
     this.setLocalStateVar=this.setLocalStateVar.bind(this)
+  }
+
+  addAnchorCallback1() {
+    this.props.handleSetMode('add_template_anchor_2')
+  }
+
+  addMaskZoneCallback1() {
+    this.props.handleSetMode('add_template_mask_zone_2')
   }
 
   setLocalStateVar(var_name, var_value, when_done=(()=>{})) {
@@ -88,8 +98,10 @@ class TemplateControls extends React.Component {
     }
     this.props.addInsightsCallback('getCurrentTemplateAnchors', this.getCurrentAnchors)
     this.props.addInsightsCallback('getCurrentTemplateMaskZones', this.getCurrentMaskZones)
-    this.props.addInsightsCallback('add_template_anchor_2', this.addAnchorCallback)
-    this.props.addInsightsCallback('add_template_mask_zone_2', this.addMaskZoneCallback)
+    this.props.addInsightsCallback('add_template_anchor_1', this.addAnchorCallback1)
+    this.props.addInsightsCallback('add_template_anchor_2', this.addAnchorCallback2)
+    this.props.addInsightsCallback('add_template_mask_zone_1', this.addMaskZoneCallback1)
+    this.props.addInsightsCallback('add_template_mask_zone_2', this.addMaskZoneCallback2)
     this.loadNewTemplate()
   }
 
@@ -281,7 +293,7 @@ class TemplateControls extends React.Component {
     this.props.handleSetMode('add_template_anchor_1')
   }
 
-  addAnchorCallback(end_coords) {
+  addAnchorCallback2(end_coords) {
     const start_coords = this.props.clicked_coords
     const anchor_id = 'anchor_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
     const the_anchor = {
@@ -301,7 +313,7 @@ class TemplateControls extends React.Component {
     this.props.handleSetMode('add_template_mask_zone_1')
   }
 
-  addMaskZoneCallback(end_coords) {
+  addMaskZoneCallback2(end_coords) {
     const start_coords = this.props.clicked_coords
     const mask_zone_id = 'mask_zone_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
     const the_mask_zone = {

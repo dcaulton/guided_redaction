@@ -1027,8 +1027,7 @@ class InsightsPanel extends React.Component {
     if (Object.keys(framesets).includes(new_frameset_hash) && 
         Object.keys(framesets[new_frameset_hash]).includes('images')) {
       this.props.setFramesetHash(new_frameset_hash, framesets)
-      // TODO remove below when we're done moving over to RedactApplication frameset_hash as prime key
-      const the_url = framesets[new_frameset_hash]['images'][0]
+      const the_url = this.props.getImageUrl()
       this.displayInsightsMessage('.')
       this.setState({
         insights_title: the_url,
@@ -1066,27 +1065,8 @@ class InsightsPanel extends React.Component {
     this.setState({
       clicked_coords: [x_scaled, y_scaled],
     })
-    if (this.state.mode === 'add_template_anchor_1') {
-      this.handleSetMode('add_template_anchor_2') 
-    } else if (Object.keys(this.state.callbacks).includes(this.state.mode)) {
+    if (Object.keys(this.state.callbacks).includes(this.state.mode)) {
       this.state.callbacks[this.state.mode]([x_scaled, y_scaled])
-    } else if (this.state.mode === 'add_template_mask_zone_1') {
-      this.handleSetMode('add_template_mask_zone_2') 
-    } else if (this.state.mode === 'scan_ocr_1') {
-      this.handleSetMode('scan_ocr_2') 
-    }
-  }
-
-  getScrubberFramesetHash() {
-    const cur_image = this.props.getImageUrl()
-    const framesets = this.props.getCurrentFramesets()
-    if (this.props.movie_url && 
-        Object.keys(this.props.movies).includes(this.props.movie_url)) {
-      for (let frameset_hash in framesets) {
-        if (framesets[frameset_hash]['images'].includes(cur_image)) {
-          return frameset_hash
-        }
-      }
     }
   }
 
@@ -1105,7 +1085,6 @@ class InsightsPanel extends React.Component {
       return
     }
     const cur_movies_matches = cur_scanners_matches['movies'][this.props.movie_url]
-    // TODO this looks redundant, can we use getScrubberFramesetHash and eliminate this method?
     if (!Object.keys(cur_movies_matches['framesets']).includes(this.props.frameset_hash)) {
       return
     }
