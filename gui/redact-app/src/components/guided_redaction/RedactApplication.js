@@ -231,7 +231,11 @@ class RedactApplication extends React.Component {
   }
 
   toggleHideScannerResults(scanner_type) {
-    this.state.visibilityFlags['t1_matches'][scanner_type] = !this.state.visibilityFlags['t1_matches'][scanner_type]
+    let deepCopyVFs = JSON.parse(JSON.stringify(this.state.visibilityFlags))
+    deepCopyVFs['t1_matches'][scanner_type] = !this.state.visibilityFlags['t1_matches'][scanner_type]
+    this.setState({
+      'visibilityFlags': deepCopyVFs,
+    })
   }
 
   addGlobalCallback(the_key, the_callback) {
@@ -719,7 +723,7 @@ class RedactApplication extends React.Component {
         image_height: this.height,
         frameset_hash: frameset_hash,
       })
-      app_this.setImageScale((()=>{ when_done(frameset_hash)}))
+      app_this.setImageScale((()=>{when_done(frameset_hash)}))
     }
     img.src = the_url
   }
@@ -2116,9 +2120,8 @@ class RedactApplication extends React.Component {
 
   toggleSideNav() {
     this.toggleShowVisibility('side_nav')
-    if (Object.keys(this.state.callbacks).includes('set_insights_image_size')) {
-      this.state.callbacks['set_insights_image_size']()
-    }
+    // calling setFramesetHash will force a re-eval of image_scale and size parameters, which will preserve t1 boxes
+    this.setFramesetHash(this.state.frameset_hash, this.state.movies[this.state.movie_url]['framesets'])
   }
 
   buildNavBarCollapseButton() {
