@@ -1,3 +1,4 @@
+import itertools
 import random
 import string
 import math
@@ -161,7 +162,7 @@ class DataSifter:
                 app_rowcol_scores.append(app_rowcol_score)
             self.ocr_rowcol_scores.append(app_rowcol_scores)
 
-        best_ocr_offsets, best_ocr_rowcol_score = self.scan_best_scores()
+        best_ocr_offsets, best_ocr_rowcol_score = self.scan_best_scores(rowcol_type)
 
         best_ocr_rowcol_ids = []
         for app_rowcol_offset, x in enumerate(best_ocr_offsets):
@@ -509,12 +510,14 @@ class DataSifter:
                     break
         return total_score
 
-    def scan_best_scores(self, enforce_order=True):
+    def scan_best_scores(self, rowcol_type):
         self.paths = []
+        self.paths2 = []
         self.print_app_ocr_scores_matrix()
         # if we have no rows or cols, bail
         # if we have one col (so only one app_rowcol defined), build for this col only and bail
         # else we have multi app_rowcols
+        self.get_all_paths_forward2()
         self.get_all_paths_forward([], -1, 0) # handle the 'skip first col' case
         for row_number, ocr_score_row in enumerate(self.ocr_rowcol_scores):
             if ocr_score_row and ocr_score_row[0]:
@@ -531,7 +534,7 @@ class DataSifter:
                 best_path = one_path
         
         if self.debug:
-            print('-- winners are ========')
+            print('== winning ocr ' + rowcol_type + 's for app ' + rowcol_type + 's are ========')
             print(best_path)
 
 # below is the naive way we used to solve best scores.  It was broken because it couldn't force ocr cols
@@ -552,6 +555,33 @@ class DataSifter:
             if ocr_row_num != -1:
                 total += self.ocr_rowcol_scores[ocr_row_num][app_row_num]
         return total
+
+    def get_all_paths_forward2(self):
+        build_paths2 = {}
+        for ors_row_index, ors_row in enumerate(self.ocr_rowcol_scores):
+            for ors_cell_index, ors_score in enumerate(ors_row):
+                if ors_cell_index not in build_paths2:
+                    build_paths2[ors_cell_index] = {-1}
+                if ors_score > 0:
+                    build_paths2[ors_cell_index].add(ors_row_index)
+
+        build_paths3 = [build_paths2[k] for k in build_paths2.keys()]
+
+        build_paths4 = []
+        for build_path in itertools.product(*build_paths3):
+            if self.can_be_traversed(build_path):
+                build_paths4.append(build_path)
+
+        self.paths2 = build_paths4
+
+    def can_be_traversed(self, path):
+        no_minus_ones = [x for x in path if x != -1]
+        prev_val = -1
+        for x in no_minus_ones:
+            if x <= prev_val:
+                return False
+            prev_val = x
+        return True
 
     def get_all_paths_forward(self, caller_list, this_row_num, this_col_num):
         #  let's say you have 4 app rows defined, and 6 ocr rows detcted with a scores matrix like this 
@@ -610,6 +640,13 @@ class DataSifter:
                 total = 0
                 score = self.get_score_for_path(one_path)
                 print('one path is {} score is {}'.format(one_path, score))
+                for app_col_num, ocr_col_num in enumerate(one_path):
+                    if ocr_col_num != -1:
+                        total += self.ocr_rowcol_scores[ocr_col_num][app_col_num]
+            for one_path in self.paths2:
+                total = 0
+                score = self.get_score_for_path(one_path)
+                print('one path2 is {} score is {}'.format(one_path, score))
                 for app_col_num, ocr_col_num in enumerate(one_path):
                     if ocr_col_num != -1:
                         total += self.ocr_rowcol_scores[ocr_col_num][app_col_num]
