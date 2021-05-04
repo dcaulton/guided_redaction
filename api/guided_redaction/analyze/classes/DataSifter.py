@@ -113,12 +113,13 @@ class DataSifter:
                 'row': {'ids': best_ocr_row_ids, 'score': best_ocr_row_score},
                 'left_col': {'ids': best_ocr_lcol_ids, 'score': best_ocr_lcol_score},
                 'right_col': {'ids': best_ocr_rcol_ids, 'score': best_ocr_rcol_score},
-                'total_score': total_score
+                'total_score': total_score,
             }
 
         if fast_pass:
             if self.debug:
-                print('FAST PASS HAS A LEAD ON THE APP - fp match obj is {}'.format(fast_pass))
+#                print('FAST PASS HAS A LEAD ON THE APP - fp match obj is {}'.format(fast_pass))
+                self.return_stats['fast_pass'] = fast_pass
             fast_pass_confirmed = self.confirm_fast_pass(fast_pass)
         if not fast_pass_confirmed:
             slow_pass_confirmed = self.slow_pass_for_labels()
@@ -448,7 +449,7 @@ class DataSifter:
         for app_rowcol in app_rowcols:
             for rowcol_ele in app_rowcol:
                 if rowcol_ele['app_id'] in found_app_ids and 'ocr_id' not in rowcol_ele:
-                    print('using fast matched rowcol points to add a second rowcol value for {}'.format(rowcol_ele['app_id']))
+                    print('using fast matched rowcol points to add a second {} value for {}'.format(rowcol_type, rowcol_ele['app_id']))
                     rowcol_ele['ocr_id'] = found_app_ids[rowcol_ele['app_id']]
 
     def slow_score_all_of_one_type_of_rowcol(self, fast_pass_match_obj, rc_type):
@@ -675,7 +676,7 @@ class DataSifter:
             build_obj['synthetic_text'] = self.synthetic_data[app_id]
         build_obj['scanner_type'] = 'data_sifter'
         build_obj['app_id'] = app_id
-        build_obj['scale'] = self.scale
+        build_obj['detected_scale'] = round(self.scale, 3)
         build_obj['origin'] = (0, self.y_origin)
         # this lets us merge the output from several data sifters and still be able to add synthetic data
         build_obj['data_sifter_meta_id'] = self.data_sifter_meta['id']

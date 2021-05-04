@@ -33,7 +33,7 @@ class OcrRowColMaker:
 
             if closest_left_col_id:
                 left_col = left_cols[closest_left_col_id]
-                self.grow_object_to_accomodate(left_col, ocr_match_obj)
+#                self.grow_object_to_accomodate(left_col, ocr_match_obj)
                 left_col['member_ids'].append(match_id)
             else:
                 new_element = self.build_new_row_col_element('left_col', match_id, ocr_match_obj)
@@ -41,7 +41,7 @@ class OcrRowColMaker:
 
             if closest_right_col_id:
                 right_col = right_cols[closest_right_col_id]
-                self.grow_object_to_accomodate(right_col, ocr_match_obj)
+#                self.grow_object_to_accomodate(right_col, ocr_match_obj)
                 right_col['member_ids'].append(match_id)
             else:
                 new_element = self.build_new_row_col_element('right_col', match_id, ocr_match_obj)
@@ -64,7 +64,7 @@ class OcrRowColMaker:
                     closest_class_id = class_id
             if closest_class_id:
                 row = rows[closest_class_id]
-                self.grow_object_to_accomodate(row, match_obj)
+#                self.grow_object_to_accomodate(row, match_obj)
                 row['member_ids'].append(match_id)
             else:
                 new_element = self.build_new_row_col_element('row', match_id, match_obj)
@@ -88,23 +88,27 @@ class OcrRowColMaker:
         }
         return build_obj
 
-    def grow_object_to_accomodate(self, match_object, new_ocr_obj):
-        new_obj_start = new_ocr_obj['location']
-        new_obj_end = [
-            new_ocr_obj['location'][0] + new_ocr_obj['size'][0],
-            new_ocr_obj['location'][1] + new_ocr_obj['size'][1]
-        ]
-        if 'start' not in match_object:
-            print('PROBLEM, were getting weird envelope vars')
-        if new_obj_start[0] < match_object['start'][0]:
-            match_object['start'][0] = new_obj_start[0]
-        if new_obj_start[1] < match_object['start'][1]:
-            match_object['start'][1] = new_obj_start[1]
-        if new_obj_end[0] > match_object['end'][0]:
-            match_object['end'][0] = new_obj_end[0]
-        if new_obj_end[1] > match_object['end'][1]:
-            match_object['end'][1] = new_obj_end[1]
-        return match_object
+# I think this should go away.  We already track what's getting matched on.  Doing the below distorts that.  
+#   if you want to grow, use this as the origin, then use the DS spec size to give you new extents
+# keeping it in here for a few iterations to see if removing it breaks anything
+#
+#    def grow_object_to_accomodate(self, match_object, new_ocr_obj):
+#        new_obj_start = new_ocr_obj['location']
+#        new_obj_end = [
+#            new_ocr_obj['location'][0] + new_ocr_obj['size'][0],
+#            new_ocr_obj['location'][1] + new_ocr_obj['size'][1]
+#        ]
+#        if 'start' not in match_object:
+#            print('PROBLEM, were getting weird envelope vars')
+#        if new_obj_start[0] < match_object['start'][0]:
+#            match_object['start'][0] = new_obj_start[0]
+#        if new_obj_start[1] < match_object['start'][1]:
+#            match_object['start'][1] = new_obj_start[1]
+#        if new_obj_end[0] > match_object['end'][0]:
+#            match_object['end'][0] = new_obj_end[0]
+#        if new_obj_end[1] > match_object['end'][1]:
+#            match_object['end'][1] = new_obj_end[1]
+#        return match_object
 
     def is_close_enough(self, ocr_match_obj, envelope, group_type='row'):
         ocr_start = ocr_match_obj['location']
