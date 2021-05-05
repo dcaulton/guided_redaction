@@ -30,3 +30,8 @@ class BaseGuidedRedactionController:
             nparr = np.fromstring(image, np.uint8)
             cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
         return cv2_image
+
+    def get_uuid_from_url(self, the_url):
+        (x_part, file_part) = os.path.split(the_url)
+        (y_part, uuid_part) = os.path.split(x_part)
+        return uuid_part

@@ -7,7 +7,11 @@ from guided_redaction.utils.task_shared import (
     build_file_directory_user_attributes_from_movies,
     get_pipeline_for_job
 )
-from guided_redaction.redact.api import RedactViewSetRedactImage, RedactViewSetIllustrateImage
+from guided_redaction.redact.api import (
+    RedactViewSetRedactImage, 
+    RedactViewSetIllustrateImage, 
+    RedactViewSetRedactT1Movie
+)
 from guided_redaction.attributes.models import Attribute
 from guided_redaction.pipelines.api import PipelinesViewSetDispatch
 
@@ -16,8 +20,10 @@ dispatch_movies_threshold = 10
 def dispatch_parent_job(job):
     if job.parent_id:
         parent_job = Job.objects.get(pk=job.parent_id)
-        if parent_job.app == 'redact' and parent_job.operation == 'redact':
+        if parent_job.app == 'redact' and parent_job.operation == 'redact' and parent_job.status not in ['success', 'failed']:
             redact_threaded.delay(parent_job.id)
+        if parent_job.app == 'redact' and parent_job.operation == 'redact_t1' and parent_job.status not in ['success', 'failed']:
+            redact_t1_threaded.delay(parent_job.id)
 
 def build_default_redact_rule(request_data):
     request_data['redact_rule'] = {
@@ -27,9 +33,9 @@ def build_default_redact_rule(request_data):
     }
 
 @shared_task
-def redact_t1_movie(job_uuid):
+def redact_t1_single(job_uuid):
     if not Job.objects.filter(pk=job_uuid).exists():
-        print('redact movie job not found, exiting')
+        print('redact t1 job not found, exiting')
         return
 
     job = Job.objects.get(pk=job_uuid)
@@ -38,16 +44,13 @@ def redact_t1_movie(job_uuid):
     if job.status != 'running':
         job.status = 'running'
         job.quick_save()
-    print('running redact movie job {}'.format(job_uuid))
+    print('running redact t1 job {}'.format(job_uuid))
 
     parsed_request_data = json.loads(job.request_data)
     if 'redact_rule' not in parsed_request_data:
         build_default_redact_rule(parsed_request_data)
     worker = RedactViewSetRedactT1Movie()
     response = worker.process_create_request(parsed_request_data)
-    response = {
-        'heebie': 'jeebies',
-    }
 
     if not Job.objects.filter(pk=job_uuid).exists():
         return
@@ -93,6 +96,24 @@ def redact_single(job_uuid):
 
     dispatch_parent_job(job)
 
+def build_and_dispatch_redact_t1_threaded_children(parent_job):
+    if parent_job.status != 'running':
+        parent_job.status = 'running'
+        parent_job.quick_save()
+    job_counter = 0
+    request_data = json.loads(parent_job.request_data)
+    redact_rule = request_data['redact_rule']
+    meta = request_data['meta']
+    movies = request_data['movies']
+    source_movies = False
+    if 'source' in movies:
+        source_movies = movies['source']
+        del movies['source']
+    if 'redact_rule' not in request_data:
+        build_default_redact_rule(request_data)
+    print('there will be {} t1 redact jobs'.format(len(movies)))
+    dispatch_redact_by_movie(movies, source_movies, redact_rule, meta, parent_job)
+
 def build_and_dispatch_redact_threaded_children(parent_job):
     if parent_job.status != 'running':
         parent_job.status = 'running'
@@ -131,13 +152,13 @@ def dispatch_redact_by_movie(movies, source_movies, redact_rule, meta, parent_jo
             status='created',
             description='redact image for movie {}'.format(movie_url),
             app='redact',
-            operation='redact_t1_movie',
+            operation='redact_t1',
             sequence=job_counter,
             parent=parent_job,
         )
         job.save()
-        print('dispatching redact job {} for movie {}'.format(job.id, movie_url))
-        redact_t1_movie.delay(job.id)
+        print('dispatching redact t1 job {} for movie {}'.format(job.id, movie_url))
+        redact_t1_single.delay(job.id)
         job_counter += 1
 
 def dispatch_redact_by_framesets(movies, source_movies, redact_rule, meta, parent_job):
@@ -226,6 +247,22 @@ def build_t2_image_request_data(movie_url, frameset_hash, frameset, redact_rule,
     }
     return request_data
 
+def wrap_up_redact_t1_threaded(job, children):
+    build_response_data = {
+      'movies': {}
+    }
+    for child in children:
+        child_response_data = json.loads(child.response_data)
+        for movie_url in child_response_data['movies']:
+            if movie_url not in build_response_data['movies']:
+                build_response_data['movies'][movie_url] = {'framesets': {}}
+            for frameset_hash in child_response_data['movies'][movie_url]['framesets']:
+                frameset_data = child_response_data['movies'][movie_url]['framesets'][frameset_hash]
+                build_response_data['movies'][movie_url]['framesets'][frameset_hash] = frameset_data
+    job.status = 'success'
+    job.response_data = json.dumps(build_response_data)
+    job.save()
+
 def wrap_up_redact_threaded(job, children):
     aggregate_response_data = {
       'movies': {},
@@ -251,6 +288,31 @@ def wrap_up_redact_threaded(job, children):
     job.status = 'success'
     job.response_data = json.dumps(aggregate_response_data)
     job.save()
+
+@shared_task
+def redact_t1_threaded(job_uuid):
+    if Job.objects.filter(pk=job_uuid).exists():
+        job = Job.objects.get(pk=job_uuid)
+        if job.status in ['success', 'failed']:
+            return
+        children = Job.objects.filter(parent=job)
+        next_step = evaluate_children('T1 REDACT', 'redact_t1', children)
+
+        print('next step is {}'.format(next_step))
+        if next_step == 'build_child_tasks':
+            build_and_dispatch_redact_threaded_children(job)
+        elif next_step == 'noop':
+            pass
+        elif next_step == 'wrap_up' and job.status not in ['success', 'failed']:
+            wrap_up_redact_t1_threaded(job, children)
+            pipeline = get_pipeline_for_job(job.parent)
+            if pipeline:
+                worker = PipelinesViewSetDispatch()
+                worker.handle_job_finished(job, pipeline)
+        elif next_step == 'abort':
+            job.status = 'failed'
+            job.save()
+        return
 
 @shared_task
 def redact_threaded(job_uuid):

@@ -185,6 +185,8 @@ def dispatch_job(job):
         parse_tasks.render_subsequence.delay(job_uuid)
     if job.app == 'redact' and job.operation == 'redact':
         redact_tasks.redact_threaded.delay(job_uuid)
+    if job.app == 'redact' and job.operation == 'redact_t1':
+        redact_tasks.redact_t1_threaded.delay(job_uuid)
     if job.app == 'redact' and job.operation == 'redact_single':
         redact_tasks.redact_single.delay(job_uuid)
     if job.app == 'redact' and job.operation == 'illustrate':

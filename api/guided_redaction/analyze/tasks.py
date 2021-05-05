@@ -276,7 +276,7 @@ def generic_threaded(job_uuid, child_operation, title, build_and_dispatch_func, 
         print('next step is {}'.format(next_step))
         if next_step == 'build_child_tasks':
           build_and_dispatch_func(job)
-        elif next_step == 'wrap_up':
+        elif next_step == 'wrap_up' and job.status not in ['success', 'failed']:
           finish_func(job)
         elif next_step == 'abort':
           job.status = 'failed'

@@ -275,17 +275,6 @@ class RedactControls extends React.Component {
           Run
         </button>
         <div className='dropdown-menu' aria-labelledby='redactDropdownButton'>
-          <button className='dropdown-item'
-              onClick={() => this.props.submitInsightsJob('redact_current_movie')}
-          >
-            Movie
-          </button>
-          <button className='dropdown-item'
-              onClick={() => this.props.submitInsightsJob('redact_all_movies')}
-          >
-            All Movies
-          </button>
-
           {t1_options}
           {pipeline_options}
         </div>
