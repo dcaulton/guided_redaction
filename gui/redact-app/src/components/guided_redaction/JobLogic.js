@@ -1081,7 +1081,10 @@ class JobLogic extends React.Component {
         this.loadRenderSubsequenceResults(
           job, when_done, setGlobalStateVar, getGlobalStateVar
         )
-			} else if (job.app === 'redact' && job.operation === 'redact') {
+			} else if (
+          (job.app === 'redact' && job.operation === 'redact') ||
+          (job.app === 'redact' && job.operation === 'redact_t1')
+      ) {
         this.loadRedactResults(
           job, when_done, setGlobalStateVar, getGlobalStateVar
         )

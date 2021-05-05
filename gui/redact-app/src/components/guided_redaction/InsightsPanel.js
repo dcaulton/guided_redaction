@@ -1087,7 +1087,9 @@ class InsightsPanel extends React.Component {
   getScrubberHeight() {
     let bottom_y = 100
     if (this.props.frameset_hash) {
-      bottom_y += document.getElementById('insights_image_div').offsetHeight
+      if (document.getElementById('insights_image_div')) {
+        bottom_y += document.getElementById('insights_image_div').offsetHeight
+      }
     } else if (this.props.movie_url) {
       bottom_y += 385
     }

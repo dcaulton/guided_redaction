@@ -54,7 +54,7 @@ class RedactMovieController(BaseGuidedRedactionController):
 
             redacted_image_url = self.save_redacted_image(redacted_cv2_image, inbound_image_url)
             response_data['movies'][movie_url]['framesets'][frameset_hash] = {
-                'redacted_image_url': redacted_image_url,
+                'redacted_image': redacted_image_url,
                 'original_image_url': inbound_image_url,
             }
 
