@@ -11,6 +11,7 @@ from guided_redaction.redact.api import RedactViewSetRedactImage, RedactViewSetI
 from guided_redaction.attributes.models import Attribute
 from guided_redaction.pipelines.api import PipelinesViewSetDispatch
 
+dispatch_movies_threshold = 10
 
 def dispatch_parent_job(job):
     if job.parent_id:
@@ -26,29 +27,80 @@ def build_default_redact_rule(request_data):
     }
 
 @shared_task
-def redact_single(job_uuid):
+def redact_t1_movie(job_uuid):
+    if not Job.objects.filter(pk=job_uuid).exists():
+        print('redact movie job not found, exiting')
+        return
+
     job = Job.objects.get(pk=job_uuid)
-    if job:
-        parsed_request_data = json.loads(job.request_data)
-        if 'redact_rule' not in parsed_request_data:
-            build_default_redact_rule(parsed_request_data)
+    if job.status in ['success', 'failed']:
+        return
+    if job.status != 'running':
         job.status = 'running'
-        job.save()
-        worker = RedactViewSetRedactImage()
-        response = worker.process_create_request(parsed_request_data)
-        job.response_data = json.dumps(response.data)
-        job.status = 'success'
-        job.save()
+        job.quick_save()
+    print('running redact movie job {}'.format(job_uuid))
 
-        build_file_directory_user_attributes_from_movies(job, response.data)
+    parsed_request_data = json.loads(job.request_data)
+    if 'redact_rule' not in parsed_request_data:
+        build_default_redact_rule(parsed_request_data)
+    worker = RedactViewSetRedactT1Movie()
+    response = worker.process_create_request(parsed_request_data)
+    response = {
+        'heebie': 'jeebies',
+    }
 
-        dispatch_parent_job(job)
+    if not Job.objects.filter(pk=job_uuid).exists():
+        return
+    job.response_data = json.dumps(response.data)
+    job.status = 'success'
+    if 'errors' in response.data:
+        job.status = 'failed'
+    job.save()
+
+    build_file_directory_user_attributes_from_movies(job, response.data)
+
+    dispatch_parent_job(job)
+
+@shared_task
+def redact_single(job_uuid):
+    if not Job.objects.filter(pk=job_uuid).exists():
+        print('redact job not found, exiting')
+        return
+
+    job = Job.objects.get(pk=job_uuid)
+    if job.status in ['success', 'failed']:
+        return
+    if job.status != 'running':
+        job.status = 'running'
+        job.quick_save()
+    print('running redact job {}'.format(job_uuid))
+
+    parsed_request_data = json.loads(job.request_data)
+    if 'redact_rule' not in parsed_request_data:
+        build_default_redact_rule(parsed_request_data)
+    worker = RedactViewSetRedactImage()
+    response = worker.process_create_request(parsed_request_data)
+
+    if not Job.objects.filter(pk=job_uuid).exists():
+        return
+    job.response_data = json.dumps(response.data)
+    job.status = 'success'
+    if 'errors' in response.data:
+        job.status = 'failed'
+    job.save()
+
+    build_file_directory_user_attributes_from_movies(job, response.data)
+
+    dispatch_parent_job(job)
 
 def build_and_dispatch_redact_threaded_children(parent_job):
-    parent_job.status = 'running'
-    parent_job.save()
+    if parent_job.status != 'running':
+        parent_job.status = 'running'
+        parent_job.quick_save()
     job_counter = 0
     request_data = json.loads(parent_job.request_data)
+    redact_rule = request_data['redact_rule']
+    meta = request_data['meta']
     movies = request_data['movies']
     source_movies = False
     if 'source' in movies:
@@ -56,6 +108,40 @@ def build_and_dispatch_redact_threaded_children(parent_job):
         del movies['source']
     if 'redact_rule' not in request_data:
         build_default_redact_rule(request_data)
+    tot_num_frames = sum([len(movies[movie_url]['framesets']) for movie_url in movies])
+    tot_num_jobs = tot_num_frames
+    if tot_num_frames > dispatch_movies_threshold: 
+        tot_num_jobs = len(movies)
+    print('there will be {} frames, {} redact jobs'.format(tot_num_frames, tot_num_jobs))
+    if tot_num_frames > dispatch_movies_threshold:
+        dispatch_redact_by_movie(movies, source_movies, redact_rule, meta, parent_job)
+    else:
+        dispatch_redact_by_framesets(movies, source_movies, redact_rule, meta, parent_job)
+
+def dispatch_redact_by_movie(movies, source_movies, redact_rule, meta, parent_job):
+    job_counter = 0
+    for movie_url in movies:
+        movie = movies[movie_url]
+        source_movie = {}
+        if movie_url in source_movies:
+            source_movie = source_movies[movie_url]
+        build_request_data = build_movie_request_data(movie, movie_url, redact_rule, meta, source_movie)
+        job = Job(
+            request_data=json.dumps(build_request_data),
+            status='created',
+            description='redact image for movie {}'.format(movie_url),
+            app='redact',
+            operation='redact_t1_movie',
+            sequence=job_counter,
+            parent=parent_job,
+        )
+        job.save()
+        print('dispatching redact job {} for movie {}'.format(job.id, movie_url))
+        redact_t1_movie.delay(job.id)
+        job_counter += 1
+
+def dispatch_redact_by_framesets(movies, source_movies, redact_rule, meta, parent_job):
+    job_counter = 0
     for movie_url in movies:
         movie = movies[movie_url]
         for frameset_hash in movie['framesets']:
@@ -70,24 +156,28 @@ def build_and_dispatch_redact_threaded_children(parent_job):
                   movie_url, 
                   frameset_hash, 
                   frameset, 
-                  request_data['redact_rule'], 
-                  request_data['meta'], 
+                  redact_rule,
+                  meta,
                   source_movies
                 )
 
             if build_request_data:
-                job_counter += 1
                 job = Job(
                     request_data=json.dumps(build_request_data),
                     status='created',
                     description='redact image for frameset {}'.format(frameset_hash),
                     app='redact',
                     operation='redact',
-                    sequence=0,
+                    sequence=job_counter,
                     parent=parent_job,
                 )
                 job.save()
+                print('dispatching redact job {} for frameset'.format(job.id, frameset_hash))
                 redact_single.delay(job.id)
+                job_counter += 1
+
+                if job_counter % 100 == 0:
+                    print('---redact job number {} has been dispatched'.format(job_counter))
 
 def frameset_is_tier_1(frameset):
     if 'images' not in frameset.keys():
@@ -96,6 +186,16 @@ def frameset_is_tier_1(frameset):
 def frameset_is_tier_2(frameset):
     if 'areas_to_redact' in frameset.keys():
         return True
+
+def build_movie_request_data(movie, movie_url, redact_rule, meta, source_movie):
+    request_data = {
+        'movie_url': movie_url,
+        'movie': movie,
+        'source_movie': source_movie,
+        'redact_rule': redact_rule,
+        'meta': meta,
+    }
+    return request_data
 
 def build_t1_image_request_data(movie_url, frameset_hash, frameset, redact_rule, meta, source_movies):
     areas_to_redact = []

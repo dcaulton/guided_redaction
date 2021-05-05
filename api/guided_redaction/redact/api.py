@@ -7,6 +7,8 @@ from guided_redaction.redact.classes.ImageMasker import ImageMasker
 from guided_redaction.redact.classes.TextEraser import TextEraser
 from guided_redaction.redact.classes.ImageIllustrator import ImageIllustrator
 from guided_redaction.redact.classes.DataSynthesizer import DataSynthesizer
+from .controller_movie import RedactMovieController
+from .controller_illustrate import IllustrateController
 import numpy as np
 from base import viewsets
 from rest_framework.response import Response
@@ -32,6 +34,29 @@ def get_uuid_from_url(the_url):
     (x_part, file_part) = os.path.split(the_url)
     (y_part, uuid_part) = os.path.split(x_part)
     return uuid_part
+
+
+class RedactViewSetRedactT1Movie(viewsets.ViewSet):
+    def create(self, request):
+        request_data = request.data
+        return self.process_create_request(request_data)
+
+    def process_create_request(self, request_data):
+        if not request_data.get("movie_url"):
+            return self.error("movie_url is required")
+        if not request_data.get("movie"):
+            return self.error("movie is required")
+        if not request_data.get("source_movie"):
+            return self.error("source_movie is required")
+        if not request_data.get("redact_rule"):
+            return self.error("redact_rule is required")
+        if 'mask_method' not in request_data['redact_rule']:
+            return self.error("mask_method is required")
+
+        worker = RedactMovieController()
+        redacted_movie = worker.redact_movie(request_data)
+
+        return Response(redacted_movie)
 
 class RedactViewSetRedactImage(viewsets.ViewSet):
     def create(self, request):
@@ -140,55 +165,7 @@ class RedactViewSetIllustrateImage(viewsets.ViewSet):
             return self.error("image_url is required")
         if not request_data.get("illustration_data"):
             return self.error("illustration_data is required")
-        inbound_image_url = request_data["image_url"]
-        try:
-            pic_response = requests.get(
-              request_data["image_url"],
-              verify=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
-            )
-            image = pic_response.content
-            if image:
-                nparr = np.fromstring(image, np.uint8)
-                cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 
-                ill_data = request_data.get('illustration_data')
-                image_illustrator = ImageIllustrator()
-                illustrated_image = image_illustrator.illustrate(
-                    cv2_image, ill_data
-                )
-
-                return_type = request_data.get("return_type", "not_inline")
-                if return_type == "inline":
-                    image_bytes = cv2.imencode(".png", illustrated_image)[1].tostring()
-                    #TODO FIX THIS WHEN THE REST OF THE API IS STABLE AND WE CAN RESEARCH
-                    response = HttpResponse(content_type="image/png")
-                    new_name = "image_" + str(uuid.uuid4()) + ".png"
-                    response["Content-Disposition"] = "attachment; filename=" + new_name
-                    response.write(image_bytes)
-                    return response
-                else:
-                    image_hash = str(uuid.uuid4())
-                    if ('preserve_working_dir_across_batch' in request_data and
-                            request_data['preserve_working_dir_across_batch'] == 'true' and
-                            request_data['working_dir']):
-                        image_hash = request_data['working_dir']
-                    inbound_filename = (urlsplit(inbound_image_url)[2]).split("/")[-1]
-                    (file_basename, file_extension) = os.path.splitext(inbound_filename)
-                    new_filename = file_basename + "_illustrated" + file_extension
-                    the_url = save_image_to_disk(
-                        illustrated_image, 
-                        new_filename, 
-                        image_hash
-                    )
-                    return Response({
-                        "illustrated_image_url": the_url,
-                        "original_image_url": request_data["image_url"],
-                    })
-            else:
-                return self.error(
-                    'unable to retrieve image specified by inbound image_url', 
-                    status_code=422
-                )
-        except Exception as err:
-            print('exception while illustrating an image: {}'.format(err))
-            return self.error('exception occurred while illustrating image')
+        worker = IllustrateController()
+        response_data = worker.illustrate_image(request_data)
+        return Response(response_data)
