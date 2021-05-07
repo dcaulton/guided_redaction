@@ -652,10 +652,13 @@ class InsightsPanel extends React.Component {
     return job_data
   }
 
-  buildRedactedMovieFilename() {
+  buildRedactedMovieFilename(movie_url='') {
     //TODO this is not friendly to file names with more than one period, or with a slash in them
     // TODO this method is duplicated in MoviePanel
-    let parts = this.props.movie_url.split('/')
+    if (!movie_url) {
+      movie_url = this.props.movie_url
+    }
+    let parts = movie_url.split('/')
     let file_parts = parts[parts.length-1].split('.')
     let new_filename = file_parts[0] + '_redacted.' + file_parts[1]
     return new_filename
@@ -693,7 +696,8 @@ class InsightsPanel extends React.Component {
       const image_urls = this.buildImageUrlsToZip(movie)
       job_data['request_data']['image_urls'] = image_urls
     } else if (job_type === 'zip_all_movies') {
-      // TODO build this when we support multiple movie zip in one job
+      job_data['operation'] = 'zip_movie_threaded'
+      job_data['request_data']['movies'] = this.props.movies
       job_data['description'] = 'zip all movies'
     }
     return job_data
