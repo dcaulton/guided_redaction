@@ -1793,11 +1793,10 @@ class RedactApplication extends React.Component {
     })
   }
 
-  async saveWorkbook(when_done=(()=>{}), workbook_name='', auto_delete_age='') {
+  async saveWorkbook(when_done=(()=>{}), workbook_name='') {
     Workbooks.saveWorkbook(
       when_done,
       workbook_name,
-      auto_delete_age,
       this.state,
       this.state.current_workbook_name,
       this.state.user['id'],

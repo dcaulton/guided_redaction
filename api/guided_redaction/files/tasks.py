@@ -28,8 +28,9 @@ def get_secure_file(job_uuid):
         print('calling get_secure_file on nonexistent job: '+ job_uuid)
         return
     job = Job.objects.get(pk=job_uuid)
-    job.status = 'running'
-    job.save()
+    if job.status != 'running':
+        job.status = 'running'
+        job.quick_save()
     print('running get_secure_file for job {}'.format(job_uuid))
     worker = FilesViewSetDownloadSecureFile()
     response = worker.process_create_request(json.loads(job.request_data))
@@ -53,8 +54,9 @@ def save_movie_metadata(job_uuid):
         print('calling save_movie_metadata on nonexistent job: '+ job_uuid)
         return
     job = Job.objects.get(pk=job_uuid)
-    job.status = 'running'
-    job.save()
+    if job.status != 'running':
+        job.status = 'running'
+        job.quick_save()
     print('running save_movie_metadata for job {}'.format(job_uuid))
     worker = FilesViewSetMovieMetadata()
     response = worker.process_create_request(json.loads(job.request_data))
@@ -71,8 +73,9 @@ def load_movie_metadata(job_uuid):
         print('calling load_movie_metadata on nonexistent job: '+ job_uuid)
         return
     job = Job.objects.get(pk=job_uuid)
-    job.status = 'running'
-    job.save()
+    if job.status != 'running':
+        job.status = 'running'
+        job.quick_save()
     print('running load_movie_metadata for job {}'.format(job_uuid))
     worker = FilesViewSetMovieMetadata()
     response = worker.process_retrieve_request(json.loads(job.request_data))
@@ -90,8 +93,9 @@ def unzip_archive(job_uuid):
         print('calling unzip_archive on nonexistent job: '+ job_uuid)
         return
     job = Job.objects.get(pk=job_uuid)
-    job.status = 'running'
-    job.save()
+    if job.status != 'running':
+        job.status = 'running'
+        job.quick_save()
     print('running unzip_archive for job {}'.format(job_uuid))
     worker = FilesViewSetUnzipArchive()
     response = worker.process_unzip_request(json.loads(job.request_data))

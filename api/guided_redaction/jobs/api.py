@@ -96,6 +96,7 @@ def handle_delete_job(pk):
     job = Job.objects.get(pk=pk)
     file_dirs = get_job_file_dirs(job)
     job_attrs = Attribute.objects.filter(job=job)
+
     if (job_attrs.filter(name='delete_files_with_job').exists() and
             job_attrs.filter(name='delete_files_with_job').first().value == 'True'):
         try:
@@ -593,6 +594,12 @@ class JobsViewSetDeleteOld(viewsets.ViewSet):
                     if attribute.name == 'auto_delete_age':
                         job_age = datetime.now() - job.created_on.replace(tzinfo=None)
                         log.info('job age is {}'.format(job_age))
+                        if attribute.value == '20minutes' and job_age > timedelta(minutes=20):
+                            job_ids_to_delete.append(job.id)
+                        if attribute.value == '1hours' and job_age > timedelta(hours=1):
+                            job_ids_to_delete.append(job.id)
+                        if attribute.value == '8hours' and job_age > timedelta(hours=8):
+                            job_ids_to_delete.append(job.id)
                         if attribute.value == '1days' and job_age > timedelta(days=1):
                             job_ids_to_delete.append(job.id)
                         if attribute.value == '7days' and job_age > timedelta(days=7):

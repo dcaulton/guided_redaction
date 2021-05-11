@@ -47,7 +47,6 @@ class Workbooks extends React.Component {
   static async saveWorkbook(
       when_done=(()=>{}), 
       workbook_name, 
-      auto_delete_age, 
       the_state, 
       current_workbook_name, 
       user_id,
@@ -68,9 +67,6 @@ class Workbooks extends React.Component {
       state_data: the_state,
       owner: current_user,
       name: wb_name,
-    }
-    if (auto_delete_age) {
-      data_to_save['auto_delete_age'] = auto_delete_age
     }
     await fetch(getUrl('workbooks_url'), {
       method: 'POST',

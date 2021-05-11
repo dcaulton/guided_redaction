@@ -892,9 +892,13 @@ console.log('get screens came back with ', response)
               value={this.props.job_lifecycle_data['auto_delete_age']}
               onChange={(event) => this.setLifecycleVariable('auto_delete_age', event.target.value)}
            >
+            <option value='20minutes'>20 minutes</option>
+            <option value='1hours'>1 hour</option>
+            <option value='8hours'>8 hours</option>
             <option value='1days'>24 hours</option>
             <option value='7days'>7 days</option>
             <option value='31days'>31 days</option>
+            <option value='never'>never</option>
           </select>
         </div>
       </div>
