@@ -68,6 +68,10 @@ class RedactApplication extends React.Component {
       user: {
         id: '',
       },
+      job_lifecycle_data: {
+        auto_delete_age: '1days', 
+        delete_files_with_job: true,
+      },
       message: '',
       cv_workers: {},
       visibilityFlags: {
@@ -1629,9 +1633,6 @@ class RedactApplication extends React.Component {
       input: specified_input,
       owner: this.state.user['id'],
     }
-    if (Object.keys(input_obj.extra_data).includes['lifecycle_data']) {
-      build_payload['lifecycle_data'] = input_obj.extra_data['lifecycle_data']
-    }
 
     if (this.state.current_workbook_id) {
       build_payload['workbook_id'] = this.state.current_workbook_id
@@ -1742,6 +1743,8 @@ class RedactApplication extends React.Component {
   }
 
   async submitJobWrapper(hash_in) {
+    // inject our global lifecycle data for the job
+    hash_in['lifecycle_data'] = this.state.job_lifecycle_data
     JobLogic.submitJob(
       hash_in, 
       this.state.whenJobLoaded, 
@@ -2405,6 +2408,7 @@ class RedactApplication extends React.Component {
                 image_scale={this.state.image_scale}
                 setFramesetHash={this.setFramesetHash}
                 getImageUrl={this.getImageUrl}
+                job_lifecycle_data={this.state.job_lifecycle_data}
               />
             </Route>
             <Route path='/redact/pipeline'>

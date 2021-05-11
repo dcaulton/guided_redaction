@@ -1353,6 +1353,7 @@ class InsightsPanel extends React.Component {
             detectScreens={this.props.detectScreens}
             loadInsightsJobResults={this.loadInsightsJobResults}
             mode={this.state.mode}
+            job_lifecycle_data={this.props.job_lifecycle_data}
           />
         </div>
 

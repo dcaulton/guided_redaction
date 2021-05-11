@@ -404,6 +404,7 @@ class BottomInsightsControls extends React.Component {
           detectScreens={this.props.detectScreens}
           insights_image={this.props.insights_image}
           loadInsightsJobResults={this.props.loadInsightsJobResults}
+          job_lifecycle_data={this.props.job_lifecycle_data}
         />
 
       </div>

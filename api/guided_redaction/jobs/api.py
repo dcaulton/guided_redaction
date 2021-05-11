@@ -271,12 +271,8 @@ class JobsViewSet(viewsets.ViewSet):
             if desired_cv_worker_id:
                 if job.get_cv_worker_id() != desired_cv_worker_id:
                     continue
-            attrs = {}
-            for attribute in job.attributes.all():
-                if attribute.name not in ['user_id', 'file_dir_user']:
-                    attrs[attribute.name] = attribute.value
-                if attribute.name == 'pipeline_job_link':
-                    attrs[attribute.name] = attribute.pipeline_id
+
+            attrs = self.get_attributes_as_dict(job)
 
             response_data_size = 0
             if job.response_data:
@@ -316,6 +312,18 @@ class JobsViewSet(viewsets.ViewSet):
         job = Job.objects.get(pk=pk)
         job_data = job.as_dict()
         owner = get_job_owner(job)
+        if owner:
+            job_data['owner'] = owner
+        file_dirs = get_job_file_dirs(job)
+        if file_dirs:
+            job_data['file_dirs'] = file_dirs
+        attrs = self.get_attributes_as_dict(job)
+        if attrs:
+            job_data['attributes'] = attrs
+
+        return Response({"job": job_data})
+
+    def get_attributes_as_dict(self, job):
         attrs = {}
         if Attribute.objects.filter(job=job).exists():
             attributes = Attribute.objects.filter(job=job)
@@ -324,15 +332,7 @@ class JobsViewSet(viewsets.ViewSet):
                     attrs[attribute.name] = attribute.value
                 if attribute.name == 'pipeline_job_link':
                     attrs[attribute.name] = attribute.pipeline_id
-        if owner:
-            job_data['owner'] = owner
-        if attrs:
-            job_data['attributes'] = attrs
-        file_dirs = get_job_file_dirs(job)
-        if file_dirs:
-            job_data['file_dirs'] = file_dirs
-
-        return Response({"job": job_data})
+        return attrs
 
     def build_job(self, request):
         job = Job(
@@ -591,16 +591,16 @@ class JobsViewSetDeleteOld(viewsets.ViewSet):
                 attributes = Attribute.objects.filter(job=job)
                 for attribute in attributes:
                     if attribute.name == 'auto_delete_age':
-                        print('sassie baby')
                         job_age = datetime.now() - job.created_on.replace(tzinfo=None)
                         log.info('job age is {}'.format(job_age))
-                        if attribute.value == '7days':
-                            if job_age > timedelta(days=7):
-                                job_ids_to_delete.append(job.id)
-        print('barley bubbles')
+                        if attribute.value == '1days' and job_age > timedelta(days=1):
+                            job_ids_to_delete.append(job.id)
+                        if attribute.value == '7days' and job_age > timedelta(days=7):
+                            job_ids_to_delete.append(job.id)
+                        if attribute.value == '31days' and job_age > timedelta(days=31):
+                            job_ids_to_delete.append(job.id)
         for job_id in job_ids_to_delete:
-            print('gimpies trying to delete job {}'.format(job_id))
-#            handle_delete_job(job_id)
+            handle_delete_job(job_id)
 
         resp_msg = '{} jobs deleted'.format(len(job_ids_to_delete))
         return Response({'message': resp_msg})

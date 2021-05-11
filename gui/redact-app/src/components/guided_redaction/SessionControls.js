@@ -873,6 +873,61 @@ console.log('get screens came back with ', response)
     w.document.write('</textarea>')                                             
   }                                                                             
 
+  setLifecycleVariable(var_name, value) {
+    let deepCopyLifecycleData = JSON.parse(JSON.stringify(this.props.job_lifecycle_data))
+    deepCopyLifecycleData[var_name] = value
+    this.props.setGlobalStateVar('job_lifecycle_data', deepCopyLifecycleData)
+  }
+
+  buildAutoDeleteAgeDropdown() {
+    return (
+      <div className='row'>
+        <div className='d-inline'>
+          Job Auto Delete Age
+        </div>
+        <div
+            className='d-inline ml-2'
+        >   
+           <select
+              value={this.props.job_lifecycle_data['auto_delete_age']}
+              onChange={(event) => this.setLifecycleVariable('auto_delete_age', event.target.value)}
+           >
+            <option value='1days'>24 hours</option>
+            <option value='7days'>7 days</option>
+            <option value='31days'>31 days</option>
+          </select>
+        </div>
+      </div>
+    )
+  }
+
+  toggleDeleteFilesWithJobValue() {
+    let deepCopyLifecycleData = JSON.parse(JSON.stringify(this.props.job_lifecycle_data))
+    deepCopyLifecycleData['delete_files_with_job'] = !this.props.job_lifecycle_data['delete_files_with_job']
+    this.props.setGlobalStateVar('job_lifecycle_data', deepCopyLifecycleData)
+  }
+
+  buildDeleteFilesWithJobCheckbox() {
+    return (
+      <div className='row'>
+        <div className='d-inline'>
+          Delete Files with Job?
+        </div>
+        <div
+            className='d-inline ml-2'
+        >   
+          <input
+            className='ml-2 mr-2 mt-1'
+            id='toggle_delete_files_with_job'
+            checked={this.props.job_lifecycle_data['delete_files_with_job']}
+            type='checkbox'
+            onChange={(event) => this.toggleDeleteFilesWithJobValue()}
+          />
+        </div>
+      </div>
+    )
+  }
+
   render() {
     const campaign_movies_box = this.buildCampaignMoviesBox()
     const update_state_box = this.buildGlobalStateBox()
@@ -889,6 +944,8 @@ console.log('get screens came back with ', response)
     const panels_checkboxes = this.buildPanelsCheckboxes() 
     const job_view_area = this.buildViewJobArea()
     const load_sub_job_area = this.buildLoadSubJobAsT1Area()
+    const auto_delete_age_dropdown_row = this.buildAutoDeleteAgeDropdown()
+    const delete_files_with_job_row = this.buildDeleteFilesWithJobCheckbox()
 
     let preserve_all_jobs_checked = ''
     if (this.props.preserveAllJobs) {
@@ -987,6 +1044,9 @@ console.log('get screens came back with ', response)
                   />
                   Preserve All Jobs (typically for troubleshooting)
                 </div>
+
+                {auto_delete_age_dropdown_row}
+                {delete_files_with_job_row}
 
                 <div className='row mt-3 bg-light rounded'>                     
                   <div className='d-inline'>                                    
