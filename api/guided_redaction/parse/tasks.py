@@ -411,8 +411,7 @@ def make_and_dispatch_split_tasks(parent_job):
         movie_length_seconds = get_movie_length_in_seconds(movie_url)
         build_request_data = {'movie_url': movie_url}
         if movie_length_seconds < split_frames_multithreaded_threshold:
-            parent_job.status = 'running'
-            parent_job.save()
+            Job.objects.filter(pk=parent_job.id).update(status='running')
             job = Job(
                 request_data=json.dumps(build_request_data),
                 status='created',

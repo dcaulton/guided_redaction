@@ -27,10 +27,8 @@ def get_secure_file(job_uuid):
     if not Job.objects.filter(pk=job_uuid).exists():
         print('calling get_secure_file on nonexistent job: '+ job_uuid)
         return
+    Job.objects.filter(pk=job_uuid).update(status='running')
     job = Job.objects.get(pk=job_uuid)
-    if job.status != 'running':
-        job.status = 'running'
-        job.quick_save()
     print('running get_secure_file for job {}'.format(job_uuid))
     worker = FilesViewSetDownloadSecureFile()
     response = worker.process_create_request(json.loads(job.request_data))
@@ -53,10 +51,8 @@ def save_movie_metadata(job_uuid):
     if not Job.objects.filter(pk=job_uuid).exists():
         print('calling save_movie_metadata on nonexistent job: '+ job_uuid)
         return
+    Job.objects.filter(pk=job_uuid).update(status='running')
     job = Job.objects.get(pk=job_uuid)
-    if job.status != 'running':
-        job.status = 'running'
-        job.quick_save()
     print('running save_movie_metadata for job {}'.format(job_uuid))
     worker = FilesViewSetMovieMetadata()
     response = worker.process_create_request(json.loads(job.request_data))
@@ -72,10 +68,8 @@ def load_movie_metadata(job_uuid):
     if not Job.objects.filter(pk=job_uuid).exists():
         print('calling load_movie_metadata on nonexistent job: '+ job_uuid)
         return
+    Job.objects.filter(pk=job_uuid).update(status='running')
     job = Job.objects.get(pk=job_uuid)
-    if job.status != 'running':
-        job.status = 'running'
-        job.quick_save()
     print('running load_movie_metadata for job {}'.format(job_uuid))
     worker = FilesViewSetMovieMetadata()
     response = worker.process_retrieve_request(json.loads(job.request_data))
@@ -92,10 +86,8 @@ def unzip_archive(job_uuid):
     if not Job.objects.filter(pk=job_uuid).exists():
         print('calling unzip_archive on nonexistent job: '+ job_uuid)
         return
+    Job.objects.filter(pk=job_uuid).update(status='running')
     job = Job.objects.get(pk=job_uuid)
-    if job.status != 'running':
-        job.status = 'running'
-        job.quick_save()
     print('running unzip_archive for job {}'.format(job_uuid))
     worker = FilesViewSetUnzipArchive()
     response = worker.process_unzip_request(json.loads(job.request_data))

@@ -72,8 +72,7 @@ def build_and_dispatch_generic_batched_threaded_children(
     child_task
 ):
     if parent_job.status != 'running': 
-        parent_job.status = 'running'
-        parent_job.quick_save()
+        Job.objects.filter(pk=parent_job.id).update(status='running')
     if parent_job.request_data_path and len(parent_job.request_data) < 3:
         parent_job.get_data_from_disk()
     request_data = json.loads(parent_job.request_data)
@@ -194,8 +193,7 @@ def build_and_dispatch_generic_threaded_children(
     ):
     request_data = json.loads(parent_job.request_data)
     if parent_job.status != 'running':
-        parent_job.status = 'running'
-        parent_job.quick_save()
+        Job.objects.filter(pk=parent_job.id).update(status='running')
 
     scanner_metas = request_data['tier_1_scanners'][scanner_type]
     movies = request_data['movies']
@@ -251,8 +249,7 @@ def generic_worker_call(job_uuid, operation, worker_class):
     if job.status in ['success', 'failed']:                                     
         return                                                                  
     if job.status != 'running':
-        job.status = 'running'
-        job.quick_save()
+        Job.objects.filter(pk=job_uuid).update(status='running')
     print('running ' + operation + ' job {}'.format(job_uuid))
     worker = worker_class()
     response = worker.process_create_request(json.loads(job.request_data))
@@ -517,10 +514,8 @@ def wrap_up_get_timestamp_threaded(job, children):
 @shared_task
 def scan_template(job_uuid):
     if Job.objects.filter(pk=job_uuid).exists():
+        Job.objects.filter(pk=job_uuid).update(status='running')
         job = Job.objects.get(pk=job_uuid)
-        if job.status != 'running':
-            job.status = 'running'
-            job.quick_save()
         print('scanning template for job {}'.format(job_uuid))
         avsst = AnalyzeViewSetScanTemplate()
         response = avsst.process_create_request(json.loads(job.request_data))
