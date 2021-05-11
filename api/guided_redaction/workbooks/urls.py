@@ -5,8 +5,8 @@ from guided_redaction.workbooks import api
 router = get_router()
 
 router.register(
-    r"v1/workbooks", api.WorkbooksViewSet, basename="MikeMeyers"
+    r"redact/v1/workbooks", api.WorkbooksViewSet, basename="MikeMeyers"
 )
 router.register(
-    r"v1/delete-old-workbooks", api.WorkbooksViewSetDeleteOld, basename="KyleBrovlovsky"
+    r"redact/v1/delete-old-workbooks", api.WorkbooksViewSetDeleteOld, basename="KyleBrovlovsky"
 )

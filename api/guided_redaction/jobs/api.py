@@ -591,13 +591,16 @@ class JobsViewSetDeleteOld(viewsets.ViewSet):
                 attributes = Attribute.objects.filter(job=job)
                 for attribute in attributes:
                     if attribute.name == 'auto_delete_age':
+                        print('sassie baby')
                         job_age = datetime.now() - job.created_on.replace(tzinfo=None)
                         log.info('job age is {}'.format(job_age))
                         if attribute.value == '7days':
                             if job_age > timedelta(days=7):
                                 job_ids_to_delete.append(job.id)
+        print('barley bubbles')
         for job_id in job_ids_to_delete:
-            handle_delete_job(job_id)
+            print('gimpies trying to delete job {}'.format(job_id))
+#            handle_delete_job(job_id)
 
         resp_msg = '{} jobs deleted'.format(len(job_ids_to_delete))
         return Response({'message': resp_msg})

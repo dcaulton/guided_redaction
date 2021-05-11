@@ -205,6 +205,9 @@ class GetScreens:
         image_height, image_width = cv2_image.shape[:2]
         vlines_thresh = self.get_line_mask(cv2_image, 'vertical', image_name)
         vlines_thresh = cv2.cvtColor(vlines_thresh, cv2.COLOR_BGR2GRAY)
+        (T, vlines_thresh) = \
+            cv2.threshold(vlines_thresh, 100, 255, cv2.THRESH_BINARY)
+        cv2.imwrite('/Users/davecaulton/Desktop/dungy.png', vlines_thresh)
         vlines_contours = cv2.findContours(
             vlines_thresh,
             cv2.RETR_LIST,
@@ -212,31 +215,42 @@ class GetScreens:
         )
         vlines_contours = imutils.grab_contours(vlines_contours)
         # TODO find a better way to do this
-        # all_xs = {}
-        # app_height_threshold = .9
-        # top_bottom_height_threshold = .5
-        # touches_top_bottom_margin_of_error_px = 10
-        # for each contour:
-        #   x, y, w, h = cv2.boundingRect(contour)
-        #   percent_height = h / image_height
-        #   if it touches the top or bottom edge:
-        #   touches_top = False
-        #   touches_bottom = False
-        #   if y < touches_top_bottom_margin_of_error_px :
-        #     touches_top = True
-        #   if image_height - (y+h) < touches_top_bottom_margin_of_error_px:
-        #     touches_bottom = True
-        #   if percent_height > 20 or 
-        #      touches_top or
-        #      touches_bottom:
-        #     all_xs[x_value] = {
-        #       'percent_height': percent_height, 
-        #       'touches_top': touches_top,
-        #       'touches_bottom': touches_bottom,
-        #     }
-        # used_xs = []
-        #  
-        # for x_value in all_xs:
+        all_xs = {}
+        app_height_threshold = .9
+        top_bottom_height_threshold = .5
+        touches_top_bottom_margin_of_error_px = 10
+        vlines_contours_dict = {}
+        for cnt in vlines_contours:
+           x, y, w, h = cv2.boundingRect(cnt)
+           if x not in vlines_contours_dict:
+             vlines_contours_dict[x] = []
+           vlines_contours_dict[x].append((x, y, w, h))
+        for x_value in sorted(vlines_contours_dict.keys()):
+          print('contours for {}'.format(x_value))
+          for content_obj in vlines_contours_dict[x_value]:
+            x, y, w, h = content_obj
+            print('  charles h {}'.format(content_obj))
+            percent_height = content_obj[3] / image_height
+
+            touches_top = False
+            touches_bottom = False
+            if y < touches_top_bottom_margin_of_error_px :
+              print('  topper')
+              touches_top = True
+            if image_height - (y+h) < touches_top_bottom_margin_of_error_px:
+              print('  bottoms')
+              touches_bottom = True
+            if percent_height > .2 or touches_top or touches_bottom:
+              print('XXXXXXXXXXXXXXXXYYYYYYYYYYYYEEEEEEEAAAAAAAAAAAAAAAAAHHHHHHHHHHH')
+#             all_xs[x_value] = {
+#               'percent_height': percent_height, 
+#               'touches_top': touches_top,
+#               'touches_bottom': touches_bottom,
+#             }
+#        used_xs = []
+#          
+#        for x_value in all_xs:
+#          print('marnie looking at x val {}'.format(x_value))
         #   if x_value in used_xs:
         #     continue
         #   working_xs = all_xs_within_range_of(x_value)   # so basically this value up to plus 10
@@ -255,6 +269,8 @@ class GetScreens:
         #   else if touches_top and touches_bottom and total_percent_height > top_bottom_height_threshold:
         #     add this one
         #
+
+
         for contour in vlines_contours:
             (box_x, box_y, box_w, box_h) = cv2.boundingRect(contour)
             percent_height = box_h / image_height
@@ -308,5 +324,5 @@ class GetScreens:
             img_string = self.get_base64_image_string(lines_thresh)
             key = 'threshold_'+direction+'_'+image_name+ '.png'
             self.response_data['statistics'][key] = img_string
-#            cv2.imwrite('/Users/davecaulton/Desktop/' + key, lines_thresh)
+            cv2.imwrite('/Users/davecaulton/Desktop/' + key, lines_thresh)
         return lines_thresh

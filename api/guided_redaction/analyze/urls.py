@@ -5,5 +5,5 @@ from . import api
 router = get_router()
 
 router.register(
-    r"v1/analyze/get-screens", api.AnalyzeViewSetGetScreens, basename="CousinGeri"
+    r"redact/v1/analyze/get-screens", api.AnalyzeViewSetGetScreens, basename="CousinGeri"
 )

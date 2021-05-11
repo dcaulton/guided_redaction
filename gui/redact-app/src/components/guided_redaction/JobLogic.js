@@ -27,10 +27,18 @@ class JobLogic extends React.Component {
     setGlobalStateVar('attached_job', attached_job)
   }
 
-  static getJobLifecycleData(job) {
+  static getJobLifecycleData(hash_in) {
+    let auto_delete_age = '1days'
+    if (Object.keys(hash_in['lifecycle_data']).includes('auto_delete_age')) {
+      auto_delete_age = hash_in['lifecycle_data']['auto_delete_age']
+    }
+    let delete_files_with_job = true
+    if (Object.keys(hash_in['lifecycle_data']).includes('delete_files_with_job')) {
+      delete_files_with_job = hash_in['lifecycle_data']['delete_files_with_job']
+    }
     return {
-      delete_files_with_job: true,
-      auto_delete_age: '7days',
+      delete_files_with_job: delete_files_with_job,
+      auto_delete_age: auto_delete_age,
     }
   }
 
@@ -1217,12 +1225,12 @@ class JobLogic extends React.Component {
     const cv_workers = getGlobalStateVar('cv_workers')
     const current_workbook_id = getGlobalStateVar('current_workbook_id')
     const user = getGlobalStateVar('user')
-    let the_job_data = hash_in.hasOwnProperty('job_data')? hash_in['job_data'] : {}
-    let when_submit_complete = hash_in.hasOwnProperty('after_submit')? hash_in['after_submit'] : (()=>{})
-    let delete_job_after_loading = hash_in.hasOwnProperty('delete_job_after_loading')? hash_in['delete_job_after_loading'] : false
-    let when_fetched = hash_in.hasOwnProperty('after_loaded')? hash_in['after_loaded'] : (()=>{})
-    let when_failed = hash_in.hasOwnProperty('when_failed')? hash_in['when_failed'] : (()=>{})
-    let enforce_lifecycle = hash_in.hasOwnProperty('enforce_lifecycle')? hash_in['enforce_lifecycle'] : false
+    let the_job_data = hash_in.hasOwnProperty('job_data') ? hash_in['job_data'] : {}
+    let when_submit_complete = hash_in.hasOwnProperty('after_submit') ? hash_in['after_submit'] : (()=>{})
+    let delete_job_after_loading = hash_in.hasOwnProperty('delete_job_after_loading') ? hash_in['delete_job_after_loading'] : false
+    let when_fetched = hash_in.hasOwnProperty('after_loaded') ? hash_in['after_loaded'] : (()=>{})
+    let when_failed = hash_in.hasOwnProperty('when_failed') ? hash_in['when_failed'] : (()=>{})
+    let enforce_lifecycle = hash_in.hasOwnProperty('lifecycle_data') ? hash_in['lifecycle_data'] : false
     let current_user = ''
     if (user && Object.keys(user).includes('id')) {
       current_user = user['id']
@@ -1243,7 +1251,7 @@ class JobLogic extends React.Component {
     }
 
     if (enforce_lifecycle) {
-      const lifecycle_data = this.getJobLifecycleData(build_obj)
+      const lifecycle_data = this.getJobLifecycleData(hash_in)
       if (lifecycle_data) {
         build_obj['lifecycle_data'] = lifecycle_data
       }

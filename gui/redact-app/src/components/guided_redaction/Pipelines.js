@@ -68,9 +68,7 @@ class Pipelines extends React.Component {
     const pipeline = {
       name: pipeline_name,
       description: 'scan ocr and redact for ocr rule ' + ocr_rule['id'],
-      attributes: {
-        auto_delete_age: '7days',
-      },
+      attributes: {},
       edges: edges,
       node_metadata: node_metadata,
       movies: {},
@@ -115,9 +113,7 @@ class Pipelines extends React.Component {
     const pipeline = {
       name: pipeline_name,
       description: 'scan template and redact for template ' + template['name'],
-      attributes: {
-        auto_delete_age: '7days',
-      },
+      attributes: {},
       edges: edges,
       node_metadata: node_metadata,
       movies: {},

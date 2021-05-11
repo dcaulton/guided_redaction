@@ -588,57 +588,57 @@ class RedactApplication extends React.Component {
     api_server_url = this.props.getBaseUrl()
 
     if (url_name === 'ping_url') {
-      return api_server_url + 'v1/parse/ping'
+      return api_server_url + 'redact/v1/parse/ping'
     } else if (url_name === 'crop_url') {
-      return api_server_url + 'v1/parse/crop-image'
+      return api_server_url + 'redact/v1/parse/crop-image'
     } else if (url_name === 'get_images_for_uuid_url') {
-      return api_server_url + 'v1/parse/get-images-for-uuid'
+      return api_server_url + 'redact/v1/parse/get-images-for-uuid'
     } else if (url_name === 'jobs_url') {
-      return api_server_url + 'v1/jobs'
+      return api_server_url + 'redact/v1/jobs'
     } else if (url_name === 'wrap_up_job_url') {
-      return api_server_url + 'v1/wrap-up-jobs'
+      return api_server_url + 'redact/v1/wrap-up-jobs'
     } else if (url_name === 'job_failed_tasks_url') {
-      return api_server_url + 'v1/job-failed-tasks'
+      return api_server_url + 'redact/v1/job-failed-tasks'
     } else if (url_name === 'restart_pipeline_job_url') {
-      return api_server_url + 'v1/restart-pipeline-job'
+      return api_server_url + 'redact/v1/restart-pipeline-job'
     } else if (url_name === 'pipeline_job_status_url') {
-      return api_server_url + 'v1/jobs/pipeline-job-status'
+      return api_server_url + 'redact/v1/jobs/pipeline-job-status'
     } else if (url_name === 'workbooks_url') {
-      return api_server_url + 'v1/workbooks'
+      return api_server_url + 'redact/v1/workbooks'
     } else if (url_name === 'link_url') {
-      return api_server_url + 'v1/link/learn'
+      return api_server_url + 'redact/v1/link/learn'
     } else if (url_name === 'link_proxy') {
-      return api_server_url + 'v1/link/proxy'
+      return api_server_url + 'redact/v1/link/proxy'
     } else if (url_name === 'make_url_url') {
-      return api_server_url + 'v1/files/make-url'
+      return api_server_url + 'redact/v1/files/make-url'
     } else if (url_name === 'scanners_url') {
-      return api_server_url + 'v1/scanners'
+      return api_server_url + 'redact/v1/scanners'
     } else if (url_name === 'files_url') {
-      return api_server_url + 'v1/files'
+      return api_server_url + 'redact/v1/files'
     } else if (url_name === 'export_url') {
-      return api_server_url + 'v1/files/export'
+      return api_server_url + 'redact/v1/files/export'
     } else if (url_name === 'pipelines_url') {
-      return api_server_url + 'v1/pipelines'
+      return api_server_url + 'redact/v1/pipelines'
     } else if (url_name === 'attributes_url') {
-      return api_server_url + 'v1/attributes'
+      return api_server_url + 'redact/v1/attributes'
     } else if (url_name === 'version_url') {
-      return api_server_url + 'v1/files/get-version'
+      return api_server_url + 'redact/v1/files/get-version'
     } else if (url_name === 'delete_old_jobs_url') {
-      return api_server_url + 'v1/delete-old-jobs'
+      return api_server_url + 'redact/v1/delete-old-jobs'
     } else if (url_name === 'delete_old_workbooks_url') {
-      return api_server_url + 'v1/delete-old-workbooks'
+      return api_server_url + 'redact/v1/delete-old-workbooks'
     } else if (url_name === 'import_archive_url') {
-      return api_server_url + 'v1/files/import-archive'
+      return api_server_url + 'redact/v1/files/import-archive'
     } else if (url_name === 'get_color_at_pixel_url') {
-      return api_server_url + 'v1/parse/get-color-at-pixel'
+      return api_server_url + 'redact/v1/parse/get-color-at-pixel'
     } else if (url_name === 'get_colors_in_zone_url') {
-      return api_server_url + 'v1/parse/get-colors-in-zone'
+      return api_server_url + 'redact/v1/parse/get-colors-in-zone'
     } else if (url_name === 'get_screens_url') {
-      return api_server_url + 'v1/analyze/get-screens'
+      return api_server_url + 'redact/v1/analyze/get-screens'
     } else if (url_name === 'job_eval_objectives_url') {
-      return api_server_url + 'v1/job-eval-objectives'
+      return api_server_url + 'redact/v1/job-eval-objectives'
     } else if (url_name === 'job_run_summaries_url') {
-      return api_server_url + 'v1/job-run-summaries'
+      return api_server_url + 'redact/v1/job-run-summaries'
     }
   }
 

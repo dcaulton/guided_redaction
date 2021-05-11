@@ -5,20 +5,20 @@ from guided_redaction.files import api
 router = get_router()
 
 router.register(
-    r"v1/files/export", api.FilesViewSetExport, basename="HughJackman"
+    r"redact/v1/files/export", api.FilesViewSetExport, basename="HughJackman"
 )
 router.register(
-    r"v1/files/import-archive", api.FilesViewSetImportArchive, basename="CarrollOConnor"
+    r"redact/v1/files/import-archive", api.FilesViewSetImportArchive, basename="CarrollOConnor"
 )
 router.register(
-    r"v1/files/make-url", api.FilesViewSetMakeUrl, basename="JackTorrance"
+    r"redact/v1/files/make-url", api.FilesViewSetMakeUrl, basename="JackTorrance"
 )
 router.register(
-    r"v1/files/get-version", api.FilesViewSetGetVersion, basename="Cicada"
+    r"redact/v1/files/get-version", api.FilesViewSetGetVersion, basename="Cicada"
 )
 router.register(
-    r"v1/files", api.FilesViewSet, basename="RickyRicardo"
+    r"redact/v1/files", api.FilesViewSet, basename="RickyRicardo"
 )
 router.register(
-    r"v1/download-secure-file", api.FilesViewSetDownloadSecureFile, basename="KeyzerSoze"
+    r"redact/v1/download-secure-file", api.FilesViewSetDownloadSecureFile, basename="KeyzerSoze"
 )

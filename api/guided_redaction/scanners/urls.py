@@ -5,5 +5,5 @@ from guided_redaction.scanners import api
 router = get_router()
 
 router.register(
-    r"v1/scanners", api.ScannersViewSet, basename="DinoMartino"
+    r"redact/v1/scanners", api.ScannersViewSet, basename="DinoMartino"
 )
