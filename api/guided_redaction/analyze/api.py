@@ -1,8 +1,6 @@
 from guided_redaction.analyze.classes.TemplateMatcher import TemplateMatcher
 from guided_redaction.analyze.classes.ChartMaker import ChartMaker
 from guided_redaction.analyze.classes.HogScanner import HogScanner
-from guided_redaction.analyze.classes.DataSifterCompiler import DataSifterCompiler
-from guided_redaction.analyze.classes.DataSifterManualCompiler import DataSifterManualCompiler
 from .controller_selected_area import SelectedAreaController
 from .controller_mesh_match import MeshMatchController
 from .controller_selection_grower import SelectionGrowerController
@@ -13,6 +11,7 @@ from .controller_timestamp import TimestampController
 from .controller_intersect import IntersectController
 from .controller_get_screens import GetScreensController
 from .controller_data_sifter import DataSifterController
+from .controller_data_sifter_manual_compile import DataSifterManualCompileController
 import json
 from django.conf import settings
 from django.shortcuts import render
@@ -248,43 +247,16 @@ class AnalyzeViewSetManualCompileDataSifter(viewsets.ViewSet) :
 
     def process_create_request(self, request_data):
         if not request_data.get("tier_1_scanners"):
-            return self.error("tier_1_scanners is required", status_code=400)
+            return self.error("tier_1_scanners is required")
         if not request_data.get("movies"):
-            return self.error("movies is required", status_code=400)
-        response_movies = {}
-        t1_scanners = request_data.get('tier_1_scanners')
-        first_key = list(t1_scanners['data_sifter'].keys())[0]
-        data_sifter = t1_scanners['data_sifter'][first_key]
-        movies = request_data.get("movies")
-        worker = DataSifterManualCompiler(data_sifter, movies)
-        results = worker.compile()
+            return self.error("movies is required")
+        if 'data_sifter' not in request_data['tier_1_scanners']:
+            return self.error("tier_1_scanners > data_sifter is required")
 
-        return Response(results)
+        worker = DataSifterManualCompileController()
+        data_sifter = worker.compile(request_data)
 
-class AnalyzeViewSetCompileDataSifter(viewsets.ViewSet) :
-    def create(self, request):
-        request_data = request.data
-        return self.process_create_request(request_data)
-
-    def process_create_request(self, request_data):
-        if not request_data.get("tier_1_scanners"):
-            return self.error("tier_1_scanners is required", status_code=400)
-        if not request_data.get("movies"):
-            return self.error("movies is required", status_code=400)
-        response_movies = {}
-        t1_scanners = request_data.get('tier_1_scanners')
-        first_key = list(t1_scanners['data_sifter'].keys())[0]
-        data_sifter = t1_scanners['data_sifter'][first_key]
-        movies = request_data.get("movies")
-        file_writer = FileWriter(
-            working_dir=settings.REDACT_FILE_STORAGE_DIR,
-            base_url=settings.REDACT_FILE_BASE_URL,
-            image_request_verify_headers=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
-        )
-        worker = DataSifterCompiler(data_sifter, movies, file_writer)
-        results = worker.compile()
-
-        return Response(results)
+        return Response(data_sifter)
 
 class AnalyzeViewSetIntersect(viewsets.ViewSet) :
     def create(self, request):

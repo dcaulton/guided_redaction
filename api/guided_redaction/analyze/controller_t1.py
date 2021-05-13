@@ -4,6 +4,10 @@ import numpy as np
 from django.conf import settings
 from guided_redaction.utils.classes.FileWriter import FileWriter
 from guided_redaction.utils.controller_base_guided_redaction import BaseGuidedRedactionController
+from guided_redaction.utils.image_shared import (
+    get_base64_image_string, 
+    get_cv2_image_from_base64_string
+)
 
 
 class T1Controller(BaseGuidedRedactionController):
@@ -76,16 +80,10 @@ class T1Controller(BaseGuidedRedactionController):
         return adjusted_coords
 
     def get_base64_image_string(self, cv2_image):
-        image_bytes = cv2.imencode(".png", cv2_image)[1].tostring()
-        image_base64 = base64.b64encode(image_bytes)
-        image_base64_string = image_base64.decode('utf-8')
-        return image_base64_string
+        return get_cv2_image_from_base64_string(cv2_image)
 
     def get_cv2_image_from_base64_string(self, img_base64):
-        img_bytes = base64.b64decode(img_base64)
-        nparr = np.fromstring(img_bytes, np.uint8)
-        cv2_image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-        return cv2_image
+        return get_cv2_image_from_base64_string(img_base64)
 
     def we_should_use_a_mask(self, scanner_meta, num_regions):
         # if the regions are complicated enough, or a mask has been requested, return True

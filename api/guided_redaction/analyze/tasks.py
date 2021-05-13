@@ -25,7 +25,6 @@ from guided_redaction.analyze.api import (
     AnalyzeViewSetSelectionGrower,
     AnalyzeViewSetTrainHog,
     AnalyzeViewSetTestHog,
-    AnalyzeViewSetCompileDataSifter,
     AnalyzeViewSetManualCompileDataSifter,
     AnalyzeViewSetIntersect,
     AnalyzeViewSetDataSifter,
@@ -44,8 +43,6 @@ def dispatch_parent_job(job):
             template_threaded.delay(parent_job.id)
         if parent_job.app == 'analyze' and parent_job.operation == 'scan_template_multi':
             scan_template_multi.delay(parent_job.id)
-        if parent_job.app == 'analyze' and parent_job.operation == 'build_data_sifter':
-            build_data_sifter.delay(parent_job.id)
         if parent_job.app == 'analyze' and parent_job.operation == 'get_timestamp_threaded':
             get_timestamp_threaded.delay(parent_job.id)
         if parent_job.app == 'analyze' and parent_job.operation == 'ocr_threaded':
@@ -339,131 +336,9 @@ def movie_is_full_movie(movie):
     return False
                     
 #=====DATA SIFTER COMPILER========================
-def make_and_dispatch_cds_task(parent_job):
-    prd = json.loads(parent_job.request_data)
-    build_movies = {}
-    children = Job.objects.filter(parent=parent_job).filter(operation='ocr_threaded')
-    for child in children:
-        crd = json.loads(child.response_data)
-        for movie_url in crd['movies']:
-            build_movies[movie_url] = crd['movies'][movie_url]
-        build_movies['source'] = prd['movies']['source']
-    build_request_data = {
-        'movies': build_movies,
-        'tier_1_scanners': prd['tier_1_scanners'],
-    }
-    job = Job(
-        request_data=json.dumps(build_request_data),
-        status='created',
-        description='compile ocr for for data sifter',
-        app='analyze',
-        operation='compile_data_sifter',
-        sequence=0,
-        parent=parent_job,
-    )
-    job.save()
-    print('make_and_dispatch_cds_task: dispatching job')
-    compile_data_sifter.delay(job.id)
-
-def dispatch_ds_scan_ocr(parent_job):
-    prd = json.loads(parent_job.request_data)
-    ocr_rule_id = str(uuid.uuid4())
-    build_ocr_rule = {
-        'id': ocr_rule_id,
-        'start': [],
-        'end': [],
-        'attributes': {},
-        'image': '',
-        'movie': '',
-        'match_text': '', 
-        'match_percent': 0,
-        'skip_frames': 0,
-        'name': 'autogen ocr rule',
-        'origin_entity_location': [],
-        'scan_level': 'tier_1',
-        'skip_east': 0,
-    }
-    build_t1_scanners = {
-      'ocr': {
-          ocr_rule_id: build_ocr_rule,
-      },
-    }
-    for movie_url in prd['movies']:
-        if movie_url == 'source':
-            continue
-        sa_mov = prd['movies'][movie_url]
-        build_movies = {}
-        build_movies[movie_url] = sa_mov
-        source_movie = prd['movies']['source'][movie_url]
-        build_movies['source'] = {}
-        build_movies['source'][movie_url] = source_movie
-        build_request_data = {}
-        build_request_data = {
-            'movies': build_movies,
-            'tier_1_scanners': build_t1_scanners,
-        }
-        job = Job(
-            request_data=json.dumps(build_request_data),
-            status='created',
-            description='scan_ocr for movie {}'.format(movie_url),
-            app='analyze',
-            operation='ocr_threaded',
-            sequence=0,
-            parent=parent_job,
-        )
-        job.save()
-        print('dispatch ds scan ocr kids: dispatching job for movie {}'.format(movie_url))
-        ocr_threaded.delay(job.id)
-
 @shared_task
 def manual_compile_data_sifter(job_uuid):
     generic_worker_call(job_uuid, 'manual_compile_data_sifter', AnalyzeViewSetManualCompileDataSifter)
-
-@shared_task
-def compile_data_sifter(job_uuid):
-    generic_worker_call(job_uuid, 'compile_data_sifter', AnalyzeViewSetCompileDataSifter)
-
-@shared_task
-def build_data_sifter(job_uuid):
-    if not Job.objects.filter(pk=job_uuid).exists():
-        print('calling build_data_sifter on nonexistent job: {}'.format(job_uuid))
-    job = Job.objects.get(pk=job_uuid)
-    if job.status in ['success', 'failed']:                                     
-        return                                                                  
-    if job.status != 'running':
-        job.status = 'running'
-        job.quick_save()
-    children = Job.objects.filter(parent=job)                                   
-                                                                                
-    if not children.filter(operation='ocr_threaded').exists():  
-        dispatch_ds_scan_ocr(job)
-        return
-    next_step = evaluate_children(
-        'BUILD DATA SIFTER - SCAN OCR',
-        'ocr_threaded',
-        children
-    )
-    print('next step is {}'.format(next_step))
-    if next_step == 'wrap_up':
-        if not children.filter(operation='compile_data_sifter').exists():  
-            make_and_dispatch_cds_task(job)
-            return
-        cds_child = children.filter(operation='compile_data_sifter').first()
-        if cds_child.status == 'success':
-            job.status = 'success'
-            job.response_data = cds_child.response_data
-            job.save()
-            return
-        else:
-            job.status = 'failed'
-            job.harvest_failed_child_job_errors(children.filter(operation='compile_data_sifter'))
-            job.save()
-            return
-    elif next_step == 'abort':
-        job.status = 'failed'
-        job.harvest_failed_child_job_errors(children)
-        job.save()
-        return
 
 #=======GET TIMESTAMP=============================
 @shared_task
