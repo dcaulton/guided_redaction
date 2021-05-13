@@ -497,6 +497,10 @@ class MovieCard extends React.Component {
   }
 
   removeVideo(movie_url) {
+    if (this.props.active_movie_url === movie_url) {
+      this.props.displayInsightsMessage('cannot delete the active movie')
+      return
+    }
     const new_campaign_movies = []
     for (let i=0; i < this.props.campaign_movies.length; i++) {
       if (this.props.campaign_movies[i] !== movie_url) {

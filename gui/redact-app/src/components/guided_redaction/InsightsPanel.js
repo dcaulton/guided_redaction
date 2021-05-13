@@ -16,7 +16,7 @@ class InsightsPanel extends React.Component {
       currentCampaign: '',
       campaigns: [],
       frameset_starts: {},
-      insights_title: 'Insights, load a movie to get started',
+      insights_title: '',
       prev_coords: (0,0),
       clicked_coords: (0,0),
       selected_area_template_anchor: '',
@@ -57,7 +57,7 @@ class InsightsPanel extends React.Component {
     this.setSelectedAreaTemplateAnchor=this.setSelectedAreaTemplateAnchor.bind(this)
     this.displayInsightsMessage=this.displayInsightsMessage.bind(this)
     this.setKeyDownCallback=this.setKeyDownCallback.bind(this)
-    this.keyDownCallbacks = {}
+    this.keyDownCallbacks={}
     this.setDraggedId=this.setDraggedId.bind(this)
     this.loadInsightsJobResults=this.loadInsightsJobResults.bind(this)
     this.afterMovieSplitInsightsJobLoaded=this.afterMovieSplitInsightsJobLoaded.bind(this)
@@ -1024,11 +1024,6 @@ class InsightsPanel extends React.Component {
     if (Object.keys(framesets).includes(new_frameset_hash) && 
         Object.keys(framesets[new_frameset_hash]).includes('images')) {
       this.props.setFramesetHash(new_frameset_hash, framesets)
-      const the_url = this.props.getImageUrl()
-      this.displayInsightsMessage('.')
-      this.setState({
-        insights_title: the_url,
-      })
     }
   }
   
@@ -1039,15 +1034,13 @@ class InsightsPanel extends React.Component {
   movieSplitDone(new_movie) {
     const len = Object.keys(new_movie['framesets']).length
     document.getElementById('movie_scrubber').max = len-1
-    const first_image = new_movie['frames'][0]
-    this.props.setGlobalStateVar('message', '.')
-    this.setState({
-      insights_title: first_image,
-    })
+    this.props.setGlobalStateVar('message', '')
   }
 
   setCurrentVideo(video_url) {
-    this.props.setActiveMovie(video_url, this.movieSplitDone)
+    const new_movie = this.props.movies[video_url]
+    this.props.setActiveMovieFirstFrame(video_url, '', this.movieSplitDone(new_movie))
+    document.getElementById('movie_scrubber').value = 0
   }
 
   handleImageClick = (e) => {
@@ -1189,6 +1182,10 @@ class InsightsPanel extends React.Component {
     const insights_image = this.props.getImageUrl()
     const image_element = this.buildImageElement(insights_image)
     const scrubber_div = this.buildScrubberDiv(insights_image)
+    let insights_title = this.state.insights_title
+    if (!insights_title && ! this.props.movie_url) {
+      insights_title = 'load a movie or job to get started'
+    }
     if (!this.props.current_workbook_id) {
       workbook_name += ' (unsaved)'
     }
@@ -1245,7 +1242,10 @@ class InsightsPanel extends React.Component {
                 <h4>{workbook_name}</h4>
               </div>
               <div className='row' id='insights_title'>
-                {this.state.insights_title}
+                {insights_title}
+              </div>
+              <div className='row' id='insights_image_name'>
+                {insights_image}
               </div>
               <div className='row' id='message' style={message_style}>
                 {the_message}

@@ -2352,6 +2352,7 @@ class RedactApplication extends React.Component {
                 setMovieNickname={this.setMovieNickname}
                 frameset_discriminator={this.state.frameset_discriminator}
                 setActiveMovie={this.setActiveMovie}
+                setActiveMovieFirstFrame={this.setActiveMovieFirstFrame}
                 updateGlobalState={this.updateGlobalState}
                 campaign_movies={this.state.campaign_movies}
                 setCampaignMovies={this.setCampaignMovies}

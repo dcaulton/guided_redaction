@@ -300,12 +300,16 @@ class JobLogic extends React.Component {
     let movie_url = ''
     let deepCopyMovies= JSON.parse(JSON.stringify(movies))
     let something_changed = false
+    let active_movie_url = ''
     for (let i=0; i < Object.keys(request_data['movies']).length; i++) {
       if (Object.keys(request_data['movies'])[i] === 'source') {
         continue
       }
       movie_url = Object.keys(request_data['movies'])[i]
       if (!Object.keys(deepCopyMovies).includes(movie_url)) {
+        if (!active_movie_url) {
+          active_movie_url = movie_url
+        }
         if ((Object.keys(request_data['movies']).includes('source')) &&
             (Object.keys(request_data['movies']['source']).includes(movie_url))) {
             deepCopyMovies[movie_url] = request_data['movies']['source'][movie_url]
@@ -323,11 +327,11 @@ class JobLogic extends React.Component {
       setGlobalStateVar({
         campaign_movies: campaign_movies,
         movies: deepCopyMovies,
-        movie_url: movie_url,
+        movie_url: active_movie_url,
       })
     }
     return {
-      movie_url: movie_url,
+      movie_url: active_movie_url,
     }
   }
 
@@ -578,16 +582,20 @@ class JobLogic extends React.Component {
     let job_data = JSON.parse(job.response_data)
     const movies = getGlobalStateVar('movies')
     let deepCopyMovies = JSON.parse(JSON.stringify(movies))
+    let active_movie_url = ''
     let movie_url = ''
     for (let i=0; i < Object.keys(job_data['movies']).length; i++) {
       movie_url = Object.keys(job_data['movies'])[i]
+      if (!active_movie_url) {
+        active_movie_url = movie_url
+      }
       if (!Object.keys(deepCopyMovies).includes(movie_url)) {
         deepCopyMovies[movie_url] = job_data['movies'][movie_url]
         deepCopyMovies[movie_url]['nickname'] = this.getMovieNicknameFromUrl(movie_url)
       }
     }
     addMovieAndSetActive(
-      movie_url,
+      active_movie_url,
       deepCopyMovies,
       when_done,
     )
