@@ -232,6 +232,31 @@ class RedactApplication extends React.Component {
     this.addToCampaignMovies=this.addToCampaignMovies.bind(this)
     this.addGlobalCallback=this.addGlobalCallback.bind(this)
     this.toggleHideScannerResults=this.toggleHideScannerResults.bind(this)
+    this.urlReturnsOk=this.urlReturnsOk.bind(this)
+  }
+
+  async urlReturnsOk(the_url, when_done=(()=>{})) {
+    const payload = {
+      url: the_url,
+      method: 'GET',
+    }
+    let response = await fetch(this.getUrl('can_reach_url'), {
+      method: 'POST',
+      headers: this.buildJsonHeaders(),
+      body: JSON.stringify(payload),
+    })
+    .then((response) => response.json())
+    .then((responseJson) => {
+      if (Object.keys(responseJson).includes('can_reach') && responseJson['can_reach']) {
+        when_done(true)
+      } else {
+        when_done(false)
+      }
+    })
+    .catch((error) => {
+      when_done(false)
+    })
+    await response
   }
 
   toggleHideScannerResults(scanner_type) {
@@ -611,6 +636,8 @@ class RedactApplication extends React.Component {
       return api_server_url + 'redact/v1/workbooks'
     } else if (url_name === 'link_url') {
       return api_server_url + 'redact/v1/link/learn'
+    } else if (url_name === 'can_reach_url') {
+      return api_server_url + 'redact/v1/link/can-reach'
     } else if (url_name === 'link_proxy') {
       return api_server_url + 'redact/v1/link/proxy'
     } else if (url_name === 'make_url_url') {
@@ -1035,6 +1062,7 @@ class RedactApplication extends React.Component {
   async postMakeUrlCall(hash_in) {
     let image_data = hash_in.hasOwnProperty('data_uri')? hash_in['data_uri'] : ''
     let image_name = hash_in.hasOwnProperty('filename')? hash_in['filename'] : 'no filename'
+    let directory = hash_in.hasOwnProperty('directory')? hash_in['directory'] : ''
     let when_done = hash_in.hasOwnProperty('when_done')? hash_in['when_done'] : (()=>{})
     let when_failed = hash_in.hasOwnProperty('when_failed')? hash_in['when_failed'] : (()=>{})
     let response = await fetch(this.getUrl('make_url_url'), {
@@ -1043,6 +1071,7 @@ class RedactApplication extends React.Component {
       body: JSON.stringify({
         data_uri: image_data,
         filename: image_name,
+        directory: directory,
       }),
     })
     .then((response) => response.json())
@@ -2409,6 +2438,10 @@ class RedactApplication extends React.Component {
                 setFramesetHash={this.setFramesetHash}
                 getImageUrl={this.getImageUrl}
                 job_lifecycle_data={this.state.job_lifecycle_data}
+                establishNewEmptyMovie={this.establishNewEmptyMovieWrapper}
+                addImageToMovie={this.addImageToMovie}
+                postMakeUrlCall={this.postMakeUrlCall}
+                urlReturnsOk={this.urlReturnsOk}
               />
             </Route>
             <Route path='/redact/pipeline'>

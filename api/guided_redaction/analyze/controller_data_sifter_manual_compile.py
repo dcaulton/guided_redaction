@@ -29,7 +29,8 @@ class DataSifterManualCompileController(T1Controller):
         source_image = self.get_cv2_image_from_url(data_sifter['image_url'], self.file_writer)
         source_image = self.trim_cv2_image_to_ocr_inputs(source_image, movies)
         source_image_base64 = get_base64_image_string(source_image)
-        data_sifter['source_image_base64'] = source_image_base64
+        # TODO push this up to the utils method when I can confirm it doesnt break anything
+        data_sifter['source_image_base64'] = 'data:image/png;base64,' + source_image_base64
 
         return data_sifter
 

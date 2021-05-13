@@ -1354,6 +1354,10 @@ class InsightsPanel extends React.Component {
             loadInsightsJobResults={this.loadInsightsJobResults}
             mode={this.state.mode}
             job_lifecycle_data={this.props.job_lifecycle_data}
+            establishNewEmptyMovie={this.props.establishNewEmptyMovie}
+            addImageToMovie={this.props.addImageToMovie}
+            postMakeUrlCall={this.props.postMakeUrlCall}
+            urlReturnsOk={this.props.urlReturnsOk}
           />
         </div>
 

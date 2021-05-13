@@ -4,6 +4,16 @@ export const getFileNameFromUrl = function(the_url) {
   return the_url.split('/').slice(-1)[0]
 }
 
+export const getFileAndDirNameFromUrl = function(the_url) {
+  const filename = the_url.split('/').slice(-1)[0]
+  const dir = the_url.split('/').slice(-2)[0]
+  const ret_obj = {
+    filename: filename,
+    directory: dir,
+  }
+  return ret_obj
+}
+
 export const buildIllustrateColorSelect = function(name, value, onchange) {
   return (
     <select

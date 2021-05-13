@@ -517,9 +517,10 @@ class FilesViewSetMakeUrl(viewsets.ViewSet):
         elif request.method == "POST" and request.data.get("data_uri") and request.data.get('filename'):
             filename = request.data.get("filename")
             data_uri = request.data.get('data_uri')
+            directory = request.data.get('directory', '')
             header, image_data= data_uri.split(",", 1)
             image_binary = base64.b64decode(image_data)
-            file_url = make_url_from_file(filename, image_binary)
+            file_url = make_url_from_file(filename, image_binary, directory)
             return Response({"url": file_url})
         else:
             return self.error(

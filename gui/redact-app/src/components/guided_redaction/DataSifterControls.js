@@ -1,5 +1,6 @@
 import React from 'react';
 import ScannerSearchControls from './ScannerSearchControls'
+import {getFileAndDirNameFromUrl} from './redact_utils.js'
 import {
   buildAttributesAddRow, buildLabelAndTextInput, buildLabelAndDropdown,
   buildMatchIdField,
@@ -32,6 +33,7 @@ class DataSifterControls extends React.Component {
       right_cols: [],
       movie_url: '',
       image_url: '',
+      source_image_base64: '',
       items: {},
       scale: '1:1',
       show_type: 'all',
@@ -58,6 +60,8 @@ class DataSifterControls extends React.Component {
     this.afterAddItem=this.afterAddItem.bind(this)
     this.deleteOcrCallback1=this.deleteOcrCallback1.bind(this)
     this.setHighlightedItem=this.setHighlightedItem.bind(this)
+    this.afterMovieCreated=this.afterMovieCreated.bind(this)
+    this.enableMovie=this.enableMovie.bind(this)
   }
 
   getRowNumberForItemId(item_id) {
@@ -338,19 +342,53 @@ class DataSifterControls extends React.Component {
     }
   }
 
+  afterMovieCreated(new_movie) {
+    const img_url = this.state.image_url
+    this.props.addImageToMovie({
+      url: img_url,
+      movie_url: this.state.movie_url,
+      update_frameset_hash: false,
+      movie: new_movie,
+    })
+  }
+
+  enableMovie(image_url_returns_ok) {
+    let image_frameset_index = 0
+    if (image_url_returns_ok) {
+      if (this.state.movie_url !== this.props.movie_url) {
+        this.props.setGlobalStateVar('movie_url', this.state.movie_url)
+      }
+      const the_movie = this.props.movies[this.state.movie_url]
+      const frameset_hash = this.props.getFramesetHashForImageUrl(this.state.image_url, the_movie['framesets'])
+      const movie_framesets = this.props.getFramesetHashesInOrder(the_movie)
+      image_frameset_index = movie_framesets.indexOf(frameset_hash)
+    } else {
+      this.uploadImageFromBase64AndEstablish()
+    }
+    setTimeout((() => {this.props.setScrubberToIndex(image_frameset_index)}), 1000)
+  }
+
+  uploadImageFromBase64AndEstablish() {
+    const filename_obj = getFileAndDirNameFromUrl(this.state.image_url)
+    this.props.postMakeUrlCall({
+      data_uri: this.state.source_image_base64, //e.target.result,
+      filename: filename_obj['filename'],
+      directory: filename_obj['directory'],
+      when_done: ((x)=>{
+        this.props.establishNewEmptyMovie(
+          this.state.movie_url,
+          false,
+          this.afterMovieCreated
+        )
+      }),
+    })
+  }
+
   showSourceFrameWrapper() {
     if (!this.state.movie_url || !this.state.image_url) {
       return ''
     }
-    if (!Object.keys(this.props.movies).includes(this.state.movie_url)) {
-      return ''
-    }
-    const movie = this.props.movies[this.state.movie_url]
-    const frameset_hash = this.props.getFramesetHashForImageUrl(this.state.image_url, movie['framesets'])
-    const movie_framesets = this.props.getFramesetHashesInOrder(movie)
-    const image_frameset_index = movie_framesets.indexOf(frameset_hash)
-    this.props.setCurrentVideo(this.state.movie_url)
-    setTimeout((() => {this.props.setScrubberToIndex(image_frameset_index)}), 1000)
+    this.props.urlReturnsOk(this.state.image_url, this.enableMovie)
   }
 
   buildNoItemDataMessage() {
@@ -1508,6 +1546,7 @@ class DataSifterControls extends React.Component {
         right_cols: sam['right_cols'],
         items: sam['items'],
         image_url: sam['image_url'],
+        source_image_base64: sam['source_image_base64'],
         movie_url: sam['movie_url'],
         scale: sam['scale'],
         ocr_job_id: sam['ocr_job_id'],
@@ -1534,6 +1573,7 @@ class DataSifterControls extends React.Component {
       right_cols: [],
       items: {},
       image_url: '',
+      source_image_base64: '',
       movie_url: '',
       scale: '1:1',
       ocr_job_id: '',
@@ -1559,6 +1599,7 @@ class DataSifterControls extends React.Component {
       right_cols: this.state.right_cols,
       items: build_items,
       image_url: this.state.image_url,
+      source_image_base64: this.state.source_image_base64,
       movie_url: this.state.movie_url,
       scale: this.state.scale,
       ocr_job_id: this.state.ocr_job_id,

@@ -140,6 +140,10 @@ class BottomInsightsControls extends React.Component {
           setCurrentVideo={this.props.setCurrentVideo}
           setScrubberToIndex={this.props.setScrubberToIndex}
           mode={this.props.mode}
+          establishNewEmptyMovie={this.props.establishNewEmptyMovie}
+          addImageToMovie={this.props.addImageToMovie}
+          postMakeUrlCall={this.props.postMakeUrlCall}
+          urlReturnsOk={this.props.urlReturnsOk}
         />
 
         <HogControls
