@@ -34,7 +34,7 @@ class Job(models.Model):
     response_data_path = models.CharField(max_length=255, null=True)
     response_data_checksum = models.CharField(max_length=255, null=True)
     parent = models.ForeignKey(
-        'Job', on_delete=models.CASCADE, null=True, related_name="children"
+        'Job', on_delete=models.CASCADE, null=True, related_name="children", unique=False
     )
     workbook = models.ForeignKey(
         'workbooks.Workbook', on_delete=models.CASCADE, null=True
@@ -61,6 +61,13 @@ class Job(models.Model):
             self.percent_complete = percent_complete
 
         save_external_payloads(self) 
+
+        # because we override from_db() because of external payloads and because 
+        #  it doesn't look like super() is doing what we want on from_db (probably because 
+        #  it's a classmethod), we have to force an internal variable here.  we're duplicating the 
+        #  behavior from django's from_db()
+        if self.id:
+            self._state.adding = False
 
         super(Job, self).save(*args, **kwargs)
 

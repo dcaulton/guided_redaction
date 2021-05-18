@@ -2,4 +2,4 @@ from django.apps import AppConfig
 
 
 class JobRunSummariesConfig(AppConfig):
-    name = 'job_run_summaries'
+    name = 'guided_redaction.job_run_summaries'

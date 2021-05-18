@@ -33,10 +33,17 @@ def get_secure_file(job_uuid):
     worker = FilesViewSetDownloadSecureFile()
     response = worker.process_create_request(json.loads(job.request_data))
     if not Job.objects.filter(pk=job_uuid).exists():
+        print('calling get_secure_file on nonexistent job: '+ job_uuid)
         return
     job = Job.objects.get(pk=job_uuid)
-    job.response_data = json.dumps(response.data)
-    job.status = 'success'
+    if response.status_code != 200:
+        error_string = 'get secure file failed: {}'.format(response)
+        print(error_string)
+        job.response_data = json.dumps(error_string)
+        job.status = 'failed'
+    else:
+        job.response_data = json.dumps(response.data)
+        job.status = 'success'
     job.save()
 
     build_file_directory_user_attributes_from_movies(job, response.data)

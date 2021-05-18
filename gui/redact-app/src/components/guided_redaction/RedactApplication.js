@@ -1911,7 +1911,7 @@ class RedactApplication extends React.Component {
 
   async dispatchFetchSplitAndHash(
     recording_id, 
-    use_lifecycle_data=false, 
+    use_lifecycle_data=false, // get rid of this soon, it's not used
     after_loaded=(()=>{})
   ) {
     if (!recording_id) {
@@ -1922,10 +1922,6 @@ class RedactApplication extends React.Component {
     .then(() => {
       const input_obj = {
         'recording_ids': [recording_id],
-      }
-      if (use_lifecycle_data) {
-        const lifecycle_data = JobLogic.getJobLifecycleData({})
-        input_obj['lifecycle_data'] = lifecycle_data
       }
       let fetch_split_pipeline_id = ''
       for (let i=0; i < Object.keys(this.state.pipelines).length; i++) {
