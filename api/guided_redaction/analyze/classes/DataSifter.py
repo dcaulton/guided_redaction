@@ -199,9 +199,6 @@ class DataSifter:
         #       if it looks like the geometry matches based on scale:
         #           add it to results and break out of inner for loop
 
-#        cv2.imwrite('/Users/davecaulton/Desktop/penguino.png', copy)
-#        print('adding boxed areas baby')
-
     def confirm_fast_pass(self, fast_pass_match_obj):
         # first, do a complete match on all fields in each rowcol that fastpass picked up on, 
         #   this time, store ocr match_ids in the respective objects in app_rows, app_left_cols, app_right_cols

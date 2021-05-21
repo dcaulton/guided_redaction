@@ -20,6 +20,7 @@ class GetScreens:
         self.app_height_threshold = meta_obj.get('app_height_threshold', .9)
         self.min_contour_height = meta_obj.get('min_contour_height', 20)
         self.min_aspect_ratio = meta_obj.get('min_aspect_ratio', 1)
+        self.local_write_filepath = meta_obj.get('local_write_filepath')
 
         self.response_data = {}
         self.response_data['statistics'] = {}
@@ -246,4 +247,5 @@ class GetScreens:
         img_string = self.get_base64_image_string(cv2_image)
         key = image_name+ '.png'
         self.response_data['statistics'][key] = img_string
-        cv2.imwrite('/Users/davecaulton/Desktop/' + key, cv2_image)
+        if self.local_write_filepath:
+            cv2.imwrite(self.local_write_filepath + key, cv2_image)
