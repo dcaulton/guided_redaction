@@ -41,13 +41,13 @@ class GetScreens:
     def get_screens(self, source_image):
         screen_rows = self.get_screen_rows_for_image(source_image)
         for row_index, row in enumerate(screen_rows):
-            print('processing screen row {}'.format(row))
+            if self.debug:
+                print('processing screen row {}'.format(row))
             row_image = source_image[
                 row['start'][1]:row['end'][1], row['start'][0]:row['end'][0]
             ]
             row_image = self.trim_off_taskbar(row_image, row_index)
             left_trim, right_trim = self.find_left_right_dead_space(row_image, row_index)
-            print('  left right trims are {} {}'.format(left_trim, right_trim))
             x_values = self.find_vertical_divisions(row_image, row_index, left_trim, right_trim)
             # this is the old way of returning screen areas, just the x, assuming one row
             [self.response_data['x_values'].append(x) for x in x_values]
@@ -101,6 +101,9 @@ class GetScreens:
             (box_x, box_y, box_w, box_h) = cv2.boundingRect(biggest_contour)
             if box_w > 100 and box_h == row_image.shape[0]:
                 right_trim = box_x
+
+        if self.debug:
+            print('  left right trims are {} {}'.format(left_trim, right_trim))
 
         return left_trim, right_trim
 
@@ -165,7 +168,8 @@ class GetScreens:
                         y_cut_height = box_y
                     elif box_y > y_cut_height:
                         y_cut_height = box_y
-                    print('one keeper area {}, {} {}'.format(area, percent_width, percent_up_from_bottom))
+                    if self.debug:
+                        print('one keeper area {}, {} {}'.format(area, percent_width, percent_up_from_bottom))
 
         if y_cut_height < image_height:
             self.response_data['statistics']['taskbar_y_start'] = y_cut_height
@@ -188,9 +192,11 @@ class GetScreens:
             percent_height = h / screen_height
             if percent_height > self.app_height_threshold:
                 all_xs.append(x)
-                print('  -- cnt -- {}*'.format((x, y, w, h)))
+                if self.debug:
+                    print('  -- cnt -- {}*'.format((x, y, w, h)))
             else:
-                print('  -- cnt -- {}'.format((x, y, w, h)))
+                if self.debug:
+                    print('  -- cnt -- {}'.format((x, y, w, h)))
 
         if not all_xs:
            return []
