@@ -752,6 +752,7 @@ class ComposePanel extends React.Component {
       })
     } else if (job_string === 'redact') {
       const job_data = this.buildRedactJobData(extra_data)
+ console.log('PIPI POLLY')
       this.props.submitJob({
         job_data:job_data,
         after_submit: () => {this.setMessage('redact job was submitted')},

@@ -36,13 +36,10 @@ def get_secure_file(job_uuid):
         print('calling get_secure_file on nonexistent job: '+ job_uuid)
         return
     job = Job.objects.get(pk=job_uuid)
+    job.response_data = json.dumps(response.data)
     if response.status_code != 200:
-        error_string = 'get secure file failed: {}'.format(response)
-        print(error_string)
-        job.response_data = json.dumps(error_string)
         job.status = 'failed'
     else:
-        job.response_data = json.dumps(response.data)
         job.status = 'success'
     job.save()
 

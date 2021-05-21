@@ -7,21 +7,24 @@ import copy
 
 
 class GetScreens:
-    def __init__(self, generate_statistics=False):
+    def __init__(self, meta_obj={}):
         self.x_kernel = np.zeros((3,3), np.uint8)
         self.x_kernel[1] = [1,1,1]
         self.y_kernel = np.zeros((3,3), np.uint8)
         self.y_kernel[0][1] = 1
         self.y_kernel[1][1] = 1
         self.y_kernel[2][1] = 1
-        self.erode_iterations = 5
-        self.taskbar_min_height_percent = .5
-        self.main_screen_min_height_percent = .7
-        self.debug = generate_statistics
+        self.erode_iterations = meta_obj.get('erode_iterations', 5)
+        self.main_screen_min_height_percent = meta_obj.get('main_screen_min_height_percent', .7)
+        self.debug = meta_obj.get('debug')
+        self.app_height_threshold = meta_obj.get('app_height_threshold', .9)
+        self.min_contour_height = meta_obj.get('min_contour_height', 20)
+        self.min_aspect_ratio = meta_obj.get('min_aspect_ratio', 1)
 
         self.response_data = {}
-        if self.debug:
-            self.response_data['statistics'] = {}
+        self.response_data['statistics'] = {}
+        self.response_data['x_values'] = []
+        self.response_data['screen_bounding_boxes'] = []
 
     def get_base64_image_string(self, cv2_image):
         image_bytes = cv2.imencode(".png", cv2_image)[1].tostring()
@@ -32,32 +35,20 @@ class GetScreens:
     def get_screens(self, source_image):
         screen_rows = self.get_screen_rows_for_image(source_image)
         for row_index, row in enumerate(screen_rows):
-            print('zippy processing screen row {}'.format(row))
+            print('processing screen row {}'.format(row))
             row_image = source_image[
                 row['start'][1]:row['end'][1], row['start'][0]:row['end'][0]
             ]
-            row_image, tb_x_divs = self.trim_off_taskbar(row_image)
+            row_image = self.trim_off_taskbar(row_image, row_index)
             left_trim, right_trim = self.find_left_right_dead_space(row_image, row_index)
             print('  left right trims are {} {}'.format(left_trim, right_trim))
-            horiz_points = self.find_vertical_divisions(
-                row_image, 
-                'upper_half',
-                self.main_screen_min_height_percent
-            )
+            x_values = self.find_vertical_divisions(row_image, row_index, left_trim, right_trim)
             # this is the old way of returning screen areas, just the x, assuming one row
-            self.response_data['x_values'] = horiz_points
-            final_points = [x for x in horiz_points if self.close_enough(x, tb_x_divs, 20)]
-            print('final points are {}'.format(final_points))
-            if self.debug and len(final_points) < len(horiz_points):
-                print('trimmed out some points because of no match on taskbar')
-                self.response_data['x_values'] = final_points
+            [self.response_data['x_values'].append(x) for x in x_values]
 
             # the new way of return screen areas, by start and end boxes
-            if 'screen_bounding_boxes' not in self.response_data:
-                self.response_data['screen_bounding_boxes'] = []
             prev_x = left_trim
-            for fp in final_points:
-                print('ganga one fp is {}'.format(fp))
+            for fp in x_values:
                 if fp <= left_trim:
                     continue
                 if fp >= right_trim:
@@ -68,12 +59,10 @@ class GetScreens:
                 start = (prev_x, row['start'][1])
                 end = (fp, row['end'][1])
                 build_obj = {'start': start, 'end': end}
-                if end[0] - start[0] > 100: # only add screens that's at least 100px wide
-                    print('adding ganga')
-                    self.response_data['screen_bounding_boxes'].append(build_obj)
-                    prev_x = fp + 1
+                self.response_data['screen_bounding_boxes'].append(build_obj)
+                prev_x = fp + 1
             start = (prev_x, row['start'][1])
-            end = (row_image.shape[1]-1, row['end'][1])
+            end = (right_trim, row['end'][1])
             build_obj = {'start': start, 'end': end}
             self.response_data['screen_bounding_boxes'].append(build_obj)
 
@@ -111,14 +100,8 @@ class GetScreens:
 
     def get_screen_rows_for_image(self, cv2_image):
         return_obj = []
-        hlines_thresh = self.get_line_mask(cv2_image, 'horizontal', 'screen_rows')
-        hlines_thresh = cv2.cvtColor(hlines_thresh, cv2.COLOR_BGR2GRAY)
-        hlines_contours = cv2.findContours(
-            hlines_thresh,
-            cv2.RETR_LIST,
-            cv2.CHAIN_APPROX_SIMPLE
-        )
-        hlines_contours = imutils.grab_contours(hlines_contours)
+        hlines_thresh, hlines_contours = self.get_line_mask_and_contours(cv2_image, 'horizontal')
+        self.write_image('threshold_horizontal_screen_rows', hlines_thresh)
         image_height, image_width = hlines_thresh.shape[:2]
         for contour in hlines_contours:
             area = cv2.contourArea(contour)
@@ -141,7 +124,6 @@ class GetScreens:
                 'end': (cv2_image.shape[1], cv2_image.shape[0]),
             }]
         if self.debug:
-            print('screen rows are {}'.format(return_obj))
             self.response_data['statistics']['screen_rows'] = return_obj
         return return_obj
 
@@ -151,22 +133,17 @@ class GetScreens:
             if abs(x-value) <= threshold:
                 return True
 
-    def trim_off_taskbar(self, cv2_image):
-        hlines_thresh = self.get_line_mask(cv2_image, 'horizontal', 'all_hlines')
+    def trim_off_taskbar(self, cv2_image, screen_row_number):
+        hlines_thresh = cv2_image.copy()
+        hlines_thresh[:,0] = 255
+        hlines_thresh[:,hlines_thresh.shape[1]-1] = 255
+        hlines_thresh, hlines_contours = self.get_line_mask_and_contours(hlines_thresh, 'horizontal')
+        self.write_image('threshold_horizontal_to_find_taskbar_'+str(screen_row_number), hlines_thresh)
         # paint the left and right edges white, so horizontal lines dont
         #  hit the edge.  When they do, the system will make one big contour
         #  that goes around the image perimeter, then the hlines perimeter
         # we discard the image perimeter one so we don't want to dump these
         #  hlines with the bathwater
-        hlines_thresh[:,0] = (255, 255, 255)
-        hlines_thresh[:,hlines_thresh.shape[1]-1] = (255, 255, 255)
-        hlines_thresh = cv2.cvtColor(hlines_thresh, cv2.COLOR_BGR2GRAY)
-        hlines_contours = cv2.findContours(
-            hlines_thresh,
-            cv2.RETR_LIST,
-            cv2.CHAIN_APPROX_SIMPLE
-        )
-        hlines_contours = imutils.grab_contours(hlines_contours)
         biggest_contour = max(hlines_contours, key=cv2.contourArea)
         copy = cv2_image.copy()
         image_height, image_width = copy.shape[:2]
@@ -184,114 +161,50 @@ class GetScreens:
                         y_cut_height = box_y
                     print('one keeper area {}, {} {}'.format(area, percent_width, percent_up_from_bottom))
 
-        taskbar_x_markers = []
         if y_cut_height < image_height:
-            taskbar_image = copy[y_cut_height:,]
-            if self.debug:
-                self.response_data['statistics']['taskbar_y_start'] = y_cut_height
-            taskbar_x_markers = self.find_vertical_divisions(
-                taskbar_image, 
-                'taskbar',
-                self.taskbar_min_height_percent
-            )
-            if self.debug:
-                print('taskbar found and trimmed.  its x markers are {} '.format(taskbar_x_markers))
+            self.response_data['statistics']['taskbar_y_start'] = y_cut_height
             copy = copy[0:y_cut_height,]
 
-        return copy, taskbar_x_markers
+        return copy
         
-    def find_vertical_divisions(self, cv2_image, image_name, min_height_percent=.9):
+    def find_vertical_divisions(self, cv2_image, row_index, left_trim, right_trim):
         screen_x_markers = []
-        image_height, image_width = cv2_image.shape[:2]
-        vlines_thresh = self.get_line_mask(cv2_image, 'vertical', image_name)
-        vlines_thresh = cv2.cvtColor(vlines_thresh, cv2.COLOR_BGR2GRAY)
-        (T, vlines_thresh) = \
-            cv2.threshold(vlines_thresh, 100, 255, cv2.THRESH_BINARY)
-        cv2.imwrite('/Users/davecaulton/Desktop/dungy.png', vlines_thresh)
-        vlines_contours = cv2.findContours(
-            vlines_thresh,
-            cv2.RETR_LIST,
-            cv2.CHAIN_APPROX_SIMPLE
-        )
-        vlines_contours = imutils.grab_contours(vlines_contours)
-        # TODO find a better way to do this
-        all_xs = {}
-        app_height_threshold = .9
-        top_bottom_height_threshold = .5
-        touches_top_bottom_margin_of_error_px = 10
-        vlines_contours_dict = {}
+        screen_height, screen_width = cv2_image.shape[:2]
+        vlines_thresh, vlines_contours = self.get_line_mask_and_contours(cv2_image, 'vertical')
+        self.write_image('threshold_vertical_'+str(row_index), vlines_thresh)
+
+        all_xs = []
+
         for cnt in vlines_contours:
-           x, y, w, h = cv2.boundingRect(cnt)
-           if x not in vlines_contours_dict:
-             vlines_contours_dict[x] = []
-           vlines_contours_dict[x].append((x, y, w, h))
-        for x_value in sorted(vlines_contours_dict.keys()):
-          print('contours for {}'.format(x_value))
-          for content_obj in vlines_contours_dict[x_value]:
-            x, y, w, h = content_obj
-            print('  charles h {}'.format(content_obj))
-            percent_height = content_obj[3] / image_height
-
-            touches_top = False
-            touches_bottom = False
-            if y < touches_top_bottom_margin_of_error_px :
-              print('  topper')
-              touches_top = True
-            if image_height - (y+h) < touches_top_bottom_margin_of_error_px:
-              print('  bottoms')
-              touches_bottom = True
-            if percent_height > .2 or touches_top or touches_bottom:
-              print('XXXXXXXXXXXXXXXXYYYYYYYYYYYYEEEEEEEAAAAAAAAAAAAAAAAAHHHHHHHHHHH')
-#             all_xs[x_value] = {
-#               'percent_height': percent_height, 
-#               'touches_top': touches_top,
-#               'touches_bottom': touches_bottom,
-#             }
-#        used_xs = []
-#          
-#        for x_value in all_xs:
-#          print('marnie looking at x val {}'.format(x_value))
-        #   if x_value in used_xs:
-        #     continue
-        #   working_xs = all_xs_within_range_of(x_value)   # so basically this value up to plus 10
-        #   total_percent_height = 0
-        #   touches_top = False
-        #   touches_bottom = False
-        #   for wx in working_xs:
-        #     used_xs.append(wx)
-        #     total_percent_height += all_xs[wx]['percent_height']
-        #     if all_xs[wx]['touches_top']:
-        #       touches_top = True
-        #     if all_xs[wx]['touches_bottom']:
-        #       touches_bottom = True
-        #   if total_percent_height > app_height_threshold
-        #     add this one
-        #   else if touches_top and touches_bottom and total_percent_height > top_bottom_height_threshold:
-        #     add this one
-        #
-
-
-        for contour in vlines_contours:
-            (box_x, box_y, box_w, box_h) = cv2.boundingRect(contour)
-            percent_height = box_h / image_height
-            if box_x == 0:
+            x, y, w, h = cv2.boundingRect(cnt)
+            if h < self.min_contour_height:
                 continue
-            if percent_height < .1:
-                continue
-            if image_name == 'upper_half': #MAMA
-                print('uv cont {} {} '.format(box_x, percent_height))
-            if percent_height > min_height_percent:
-                print(' ginsu adding')
-                screen_x_markers.append(box_x)
-        final_x = []
-        if screen_x_markers:
-           final_x.append(sorted(screen_x_markers)[0])
-           for x_val in sorted(screen_x_markers):
-               if abs(final_x[-1] - x_val) > 20:
-                   final_x.append(x_val)
-        return final_x
+            percent_height = h / screen_height
+            if percent_height > self.app_height_threshold:
+                all_xs.append(x)
+                print('  -- cnt -- {}*'.format((x, y, w, h)))
+            else:
+                print('  -- cnt -- {}'.format((x, y, w, h)))
 
-    def get_line_mask(self, image_in, direction, image_name):
+        if not all_xs:
+           return []
+
+        final_xs = []
+        start_x = left_trim
+        for x in sorted(all_xs):
+            if x < left_trim+10:
+                continue
+            if (x - start_x) / screen_height < self.min_aspect_ratio:
+                continue
+            final_xs.append(x)
+            start_x = x
+        if x not in final_xs:
+            final_xs.append(x)
+
+        return final_xs
+
+    def get_line_mask_and_contours(self, image_in, direction):
+        image_in = cv2.cvtColor(image_in, cv2.COLOR_BGR2GRAY)
         gX = cv2.Sobel(image_in, ddepth=cv2.CV_64F, dx=1, dy=0)
         gY = cv2.Sobel(image_in, ddepth=cv2.CV_64F, dx=0, dy=1)
         gX = cv2.convertScaleAbs(gX)
@@ -320,9 +233,17 @@ class GetScreens:
         (T, lines_thresh) = \
             cv2.threshold(lines, 100, 255, cv2.THRESH_BINARY_INV)
 
-        if self.debug:
-            img_string = self.get_base64_image_string(lines_thresh)
-            key = 'threshold_'+direction+'_'+image_name+ '.png'
-            self.response_data['statistics'][key] = img_string
-            cv2.imwrite('/Users/davecaulton/Desktop/' + key, lines_thresh)
-        return lines_thresh
+        contours = cv2.findContours(
+            lines_thresh,
+            cv2.RETR_LIST,
+            cv2.CHAIN_APPROX_SIMPLE
+        )
+        contours = imutils.grab_contours(contours)
+
+        return lines_thresh, contours
+
+    def write_image(self, image_name, cv2_image):
+        img_string = self.get_base64_image_string(cv2_image)
+        key = image_name+ '.png'
+        self.response_data['statistics'][key] = img_string
+        cv2.imwrite('/Users/davecaulton/Desktop/' + key, cv2_image)

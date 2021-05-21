@@ -577,8 +577,10 @@ def get_area_to_redact_from_template_match(
         anchor_found_coords, 
         anchor_found_scale
     ):
+    anchor = None
     for x in template['anchors']:
-        if x['id'] == anchor_id:
+        # it looks like we get anchor id as xxx-0 from the compose panel, where xxx is the real anchor id
+        if x['id'] in anchor_id:
             anchor = x
     if not anchor: 
         print('cant find anchor in template match')

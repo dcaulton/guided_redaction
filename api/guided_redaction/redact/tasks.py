@@ -170,7 +170,7 @@ def dispatch_redact_by_framesets(movies, source_movies, redact_rule, meta, paren
             build_request_data = None
             if frameset_is_tier_2(frameset):
                 build_request_data = build_t2_image_request_data(
-                  movie_url, frameset_hash, frameset, request_data['redact_rule'], request_data['meta']
+                  movie_url, frameset_hash, frameset, redact_rule, meta
                 )
             elif frameset_is_tier_1(frameset):
                 build_request_data = build_t1_image_request_data(

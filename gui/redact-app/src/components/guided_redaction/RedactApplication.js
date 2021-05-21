@@ -427,15 +427,17 @@ class RedactApplication extends React.Component {
       const pipeline_obj = this.buildOcrRedactPipelineObject(ocr_rule, pipeline_name)
       this.savePipelineToDatabase(
         pipeline_obj,
-        ((response) => {this.dispatchPipeline(
-          {
-            pipeline_id: response['pipeline_id'], 
-            extra_data: input_obj, 
-            attach_to_job: true,
-            delete_job_after_loading: true,
-            after_submit: (()=>{this.setState({message: 'ocr+redact job submitted'})}),
-          }
-        )})
+        ((response) => {
+          this.dispatchPipeline(
+            {
+              pipeline_id: response['pipeline_id'], 
+              extra_data: input_obj, 
+              attach_to_job: true,
+              delete_job_after_loading: true,
+              after_submit: (()=>{this.setState({message: 'ocr+redact job submitted'})}),
+            }
+          )
+        })
       )
     }
   } 
@@ -1648,8 +1650,11 @@ class RedactApplication extends React.Component {
     } else if (input_obj.scope === 'input_json') {
       if (
         Object.keys(input_obj).includes('extra_data') &&
-        Object.keys(input_obj['extra_data']).includes('recording_ids')
-      ) {  // it's coming in through the recording-id get parm
+          (
+            Object.keys(input_obj['extra_data']).includes('recording_ids') ||
+            Object.keys(input_obj['extra_data']).includes('movies')
+          )
+      ) {  // it's coming in through the recording-id get parm or from the compose panel
         specified_input = input_obj.extra_data
       } else {  // it's coming through in formdata from the pipeline controls on insights
         specified_input = JSON.parse(input_obj.extra_data)

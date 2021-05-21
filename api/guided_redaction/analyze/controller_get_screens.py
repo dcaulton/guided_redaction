@@ -16,8 +16,8 @@ class GetScreensController(T1Controller):
     def get_screens(self, request_data):
         response_data = {}
         image_url = request_data.get('image_url')
-        generate_statistics = request_data.get('generate_statistics', True)
+        get_screens_meta = request_data.get('meta', {})
         cv2_image = self.get_cv2_image_from_url(image_url, self.file_writer)
-        get_screens_worker = GetScreens(generate_statistics=generate_statistics)
+        get_screens_worker = GetScreens(get_screens_meta)
         response_data = get_screens_worker.get_screens(cv2_image)
         return response_data

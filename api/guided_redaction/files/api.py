@@ -481,7 +481,7 @@ class FilesViewSetDownloadSecureFile(viewsets.ViewSet):
                 build_urls[file_url] = {}
             return Response({"movies": build_urls})
         except Exception as e:
-            return self.error(e, status_code=400)
+            return self.error(str(e), status_code=400)
 
 
 class FilesViewSetMakeUrl(viewsets.ViewSet):
