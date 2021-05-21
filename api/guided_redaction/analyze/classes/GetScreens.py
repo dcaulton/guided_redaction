@@ -1,13 +1,18 @@
-import cv2 
+#import copy
+import os
+import random
 import base64
+import cv2 
 import imutils
 import numpy as np
-import random
-import copy
+import uuid
 
 
 class GetScreens:
-    def __init__(self, meta_obj={}):
+    def __init__(self, meta_obj, file_writer):
+        self.file_writer = file_writer
+        the_uuid = str(uuid.uuid4())
+        self.image_directory = self.file_writer.create_unique_directory(the_uuid)
         self.x_kernel = np.zeros((3,3), np.uint8)
         self.x_kernel[1] = [1,1,1]
         self.y_kernel = np.zeros((3,3), np.uint8)
@@ -20,7 +25,7 @@ class GetScreens:
         self.app_height_threshold = meta_obj.get('app_height_threshold', .9)
         self.min_contour_height = meta_obj.get('min_contour_height', 20)
         self.min_aspect_ratio = meta_obj.get('min_aspect_ratio', 1)
-        self.local_write_filepath = meta_obj.get('local_write_filepath')
+        self.debug_image_return_type = meta_obj.get('debug_image_return_type', 'url')
 
         self.response_data = {}
         self.response_data['statistics'] = {}
@@ -245,7 +250,16 @@ class GetScreens:
 
     def write_image(self, image_name, cv2_image):
         img_string = self.get_base64_image_string(cv2_image)
-        key = image_name+ '.png'
-        self.response_data['statistics'][key] = img_string
-        if self.local_write_filepath:
-            cv2.imwrite(self.local_write_filepath + key, cv2_image)
+        if not self.debug:
+            return
+        if self.debug_image_return_type == 'inline':
+            self.response_data['statistics'][image_name] = img_string
+        elif self.debug_image_return_type == 'url':
+            fn_key = image_name + '.png'
+            stats_key = image_name + '_url'
+            file_fullpath = os.path.join(self.image_directory, fn_key)
+            self.file_writer.write_cv2_image_to_filepath(cv2_image, file_fullpath)
+            image_url = self.file_writer.get_url_for_file_path(file_fullpath)
+            self.response_data['statistics'][stats_key] = image_url
+
+
