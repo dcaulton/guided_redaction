@@ -70,6 +70,7 @@ def build_and_dispatch_generic_batched_threaded_children(
 ):
     if parent_job.status != 'running': 
         Job.objects.filter(pk=parent_job.id).update(status='running')
+        parent_job = Job.objects.get(pk=parent_job.id)
     if parent_job.request_data_path and len(parent_job.request_data) < 3:
         parent_job.get_data_from_disk()
     request_data = json.loads(parent_job.request_data)
@@ -191,6 +192,7 @@ def build_and_dispatch_generic_threaded_children(
     request_data = json.loads(parent_job.request_data)
     if parent_job.status != 'running':
         Job.objects.filter(pk=parent_job.id).update(status='running')
+        parent_job = Job.objects.get(pk=parent_job.id)
 
     scanner_metas = request_data['tier_1_scanners'][scanner_type]
     movies = request_data['movies']
@@ -247,6 +249,7 @@ def generic_worker_call(job_uuid, operation, worker_class):
         return                                                                  
     if job.status != 'running':
         Job.objects.filter(pk=job_uuid).update(status='running')
+        job = Job.objects.get(pk=job_uuid)
     print('running ' + operation + ' job {}'.format(job_uuid))
     worker = worker_class()
     response = worker.process_create_request(json.loads(job.request_data))
