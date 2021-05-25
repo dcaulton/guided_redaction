@@ -5,7 +5,7 @@ import math
 
 class ImageMasker:
 
-    def mask_all_regions(self, source, regions_to_mask, mask_method):
+    def mask_all_regions(self, source, regions_to_mask, mask_method='blur_7x7'):
         output = source.copy()
         mask = np.zeros((output.shape[0], output.shape[1]))
         combine_via_mask = False
@@ -16,8 +16,10 @@ class ImageMasker:
             black_mask_color = 0
             green_mask_color = 128
         
+        if self.mask_method_is_blur(mask_method):
+            blurred_source = self.apply_blur(mask_method, source)
+
         for masking_region in regions_to_mask:
-            mask_method = mask_method or "blur_7x7"
             if mask_method == "black_rectangle":
                 cv2.rectangle(
                     output,
@@ -44,18 +46,27 @@ class ImageMasker:
                     -1,
                 )
             elif mask_method in ("blur_7x7", "blur_21x21", "blur_median"):
-                cv2.rectangle(
-                    mask, masking_region["start"], masking_region["end"], (255), -1
-                )
-                if mask_method == "blur_7x7":
-                    altered = cv2.blur(output, (7, 7))
-                if mask_method == "blur_21x21":
-                    altered = cv2.blur(output, (21, 21))
-                elif mask_method == "blur_median":
-                    altered = cv2.medianBlur(output, 7)
-                output[np.where(mask == 255)] = altered[np.where(mask == 255)]
+                output[
+                    masking_region['start'][1]:masking_region['end'][1],
+                    masking_region['start'][0]:masking_region['end'][0]
+                ] = blurred_source[
+                    masking_region['start'][1]:masking_region['end'][1],
+                    masking_region['start'][0]:masking_region['end'][0]
+                ]
 
         return output
+
+    def apply_blur(self, mask_method, image_in):
+        if mask_method == "blur_7x7":
+            altered = cv2.blur(image_in, (7, 7))
+        if mask_method == "blur_21x21":
+            altered = cv2.blur(image_in, (21, 21))
+        elif mask_method == "blur_median":
+            altered = cv2.medianBlur(image_in, 7)
+        return altered
+
+    def mask_method_is_blur(self, mask_method):
+        return mask_method in ("blur_7x7", "blur_21x21", "blur_median")
 
     def get_background_color(self, image, masking_region):
         i2 = image[

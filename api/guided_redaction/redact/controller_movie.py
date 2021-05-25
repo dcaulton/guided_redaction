@@ -39,6 +39,7 @@ class RedactMovieController(BaseGuidedRedactionController):
         self.target_directory_uuid = self.get_uuid_from_url(movie_url)
 
         for frameset_hash in movie['framesets']:
+            print('redacting frameset {}'.format(frameset_hash))
             if frameset_hash not in source_movie['framesets']:
                 print('error, no source frame for {} to redact'.format(frameset_hash))
                 return self.error('exception occurred while getting image name for {}'.format(frameset_hash))
