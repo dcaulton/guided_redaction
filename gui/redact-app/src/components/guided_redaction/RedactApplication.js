@@ -70,7 +70,7 @@ class RedactApplication extends React.Component {
       },
       job_lifecycle_data: {
         auto_delete_age: '1days', 
-        delete_files_with_job: true,
+        delete_files_with_job: false,
       },
       message: '',
       cv_workers: {},
