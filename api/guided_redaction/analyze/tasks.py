@@ -890,6 +890,16 @@ def data_sifter_threaded(job_uuid):
 def finish_data_sifter_threaded(job):
     children = Job.objects.filter(parent=job, operation='data_sifter')
     wrap_up_generic_threaded(job, children, 'data_sifter')
+
+    if Job.objects.filter(parent=job, operation='scan_ocr').count() > 0:
+        # ocr was run on the fly, we don't want this ocr job ids for future runs
+        request_data = json.loads(job.request_data)
+        data_sifter_id = list(request_data['tier_1_scanners']['data_sifter'].keys())[0]
+        data_sifter = request_data['tier_1_scanners']['data_sifter'][data_sifter_id]
+        data_sifter['ocr_job_id'] = ''
+        job.request_data = json.dumps(request_data)
+        job.save()
+
     pipeline = get_pipeline_for_job(job.parent)
     if pipeline:
         worker = PipelinesViewSetDispatch()
