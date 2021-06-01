@@ -1637,7 +1637,7 @@ class DataSifterControls extends React.Component {
         this.props.jobs,
         this.setLocalStateVar,
         this.state[job_type + '_job_id'],
-        true
+        is_required
     )
   }
 
@@ -1776,9 +1776,6 @@ class DataSifterControls extends React.Component {
 
   buildRunButtonWrapper() {
     if (!Object.keys(this.props.tier_1_scanners['data_sifter']).includes(this.state.id)) {
-      return
-    }
-    if (!this.state.ocr_job_id) {
       return
     }
     return buildRunButton(
@@ -1952,7 +1949,7 @@ class DataSifterControls extends React.Component {
       debug_checkbox = this.buildToggleField('debug', 'Debug')
       show_type_dropdown = this.buildShowType()
       scan_level_dropdown = this.buildScanLevelDropdown2()
-      ocr_job_id_dropdown = this.buildMatchIdField2('ocr', true) 
+      ocr_job_id_dropdown = this.buildMatchIdField2('ocr', false) 
       normal_scan_mode_buttons_row = this.buildNormalScanModeButtonsRow()
       item_data_message = this.buildNoItemDataMessage()
     }

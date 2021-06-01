@@ -834,6 +834,51 @@ def data_sifter(job_uuid):
 
 @shared_task
 def data_sifter_threaded(job_uuid):
+    if Job.objects.filter(pk=job_uuid).exists():
+        job = Job.objects.get(pk=job_uuid)
+    request_data = json.loads(job.request_data)
+    data_sifter_id = list(request_data['tier_1_scanners']['data_sifter'].keys())[0]
+    data_sifter = request_data['tier_1_scanners']['data_sifter'][data_sifter_id]
+    if 'ocr_job_id' not in data_sifter or not data_sifter['ocr_job_id']:
+        if Job.objects.filter(parent=job).count() > 0:
+            print('loading ocr jobs results')
+            ocr_job_id = Job.objects.filter(parent=job).first().id
+            data_sifter['ocr_job_id'] = str(ocr_job_id)
+            request_data['tier_1_scanners']['data_sifter'][data_sifter['id']] = data_sifter
+            job.request_data = json.dumps(request_data)
+            job.save()
+        else:    
+            print('data sifter: dispatching required ocr jobs first')
+            ocr_id = 'ocr_' + str(uuid.uuid4())
+            stub_ocr_meta = {
+                "id": ocr_id,
+                "name": "stub",
+                "start": [],
+                "end": [],
+                "match_text": [],
+                "match_percent": 70,
+                "skip_frames": 0,
+                "skip_east": False,
+                "data_sifter_job_id": "",
+                "ocr_job_id": "",
+                "scan_level": "tier_1",
+                "attributes": {}
+            }
+            if 'ocr' not in request_data['tier_1_scanners']:
+                request_data['tier_1_scanners']['ocr'] = {}
+            request_data['tier_1_scanners']['ocr'][ocr_id] = stub_ocr_meta
+            job.request_data = json.dumps(request_data)
+            job.save()
+
+            build_and_dispatch_generic_batched_threaded_children(
+                job,
+                'ocr',
+                ocr_batch_size,
+                'scan_ocr',
+                None,
+                scan_ocr
+            )
+            return
     generic_threaded(
         job_uuid, 
         'data_sifter', 
@@ -843,7 +888,7 @@ def data_sifter_threaded(job_uuid):
     )
 
 def finish_data_sifter_threaded(job):
-    children = Job.objects.filter(parent=job)
+    children = Job.objects.filter(parent=job, operation='data_sifter')
     wrap_up_generic_threaded(job, children, 'data_sifter')
     pipeline = get_pipeline_for_job(job.parent)
     if pipeline:
