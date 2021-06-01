@@ -259,6 +259,13 @@ class JobsViewSet(viewsets.ViewSet):
         info = get_jobs_info()
         file_dirs = info["file_dirs"]
         owners = info["owners"]
+
+        fw = FileWriter(
+            working_dir=settings.REDACT_FILE_STORAGE_DIR,
+            base_url=settings.REDACT_FILE_BASE_URL,
+            image_request_verify_headers=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
+        )
+
         for job in jobs:
             job_id = str(job.id)
             child_ids = [child.id for child in job.children.order_by('created_on').all()]
@@ -274,15 +281,18 @@ class JobsViewSet(viewsets.ViewSet):
             attrs = self.get_attributes_as_dict(job)
 
             response_data_size = 0
+            response_data_url = request_data_url = ''
             if job.response_data:
                 response_data_size = len(job.response_data)
             if job.response_data_path:
                 response_data_size = 'very large'
+                response_data_url = fw.get_url_for_file_path(job.response_data_path)
             request_data_size = 0
             if job.request_data:
                 request_data_size = len(job.request_data)
             if job.request_data_path:
                 request_data_size = 'very large'
+                request_data_url = fw.get_url_for_file_path(job.request_data_path)
             job_obj = {
                 'id': job_id,
                 'status': job.status,
@@ -304,6 +314,10 @@ class JobsViewSet(viewsets.ViewSet):
                 job_obj['file_dirs'] = file_dirs[job_id]
             if attrs:
                 job_obj['attributes'] = attrs
+            if response_data_url:
+                job_obj['response_data_url'] = response_data_url
+            if request_data_url:
+                job_obj['request_data_url'] = request_data_url
             jobs_list.append(job_obj)
         return Response({"jobs": jobs_list})
 

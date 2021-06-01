@@ -461,11 +461,44 @@ class JobCard extends React.Component {
       return true
     }
   }
+
   buildLargeWarning() {
     if (this.jobIsLarge()) {
+      let request_data_link = ''
+      if (Object.keys(this.props.job_data).includes('request_data_url')) {
+        const request_data_url = this.props.job_data['request_data_url']
+        request_data_link = (
+          <div className='d-inline ml-1'>
+            <button
+              className='btn btn-link text-light p-0 m-0'
+              onClick={() => window.open(request_data_url)}
+            >
+              Q
+            </button>
+          </div>
+        )
+      }
+      let response_data_link = ''
+      if (Object.keys(this.props.job_data).includes('response_data_url')) {
+        const response_data_url = this.props.job_data['response_data_url']
+        response_data_link = (
+          <div className='d-inline ml-1'>
+            <button
+              className='btn btn-link text-light p-0 m-0'
+              onClick={() => window.open(response_data_url)}
+            >
+              R
+            </button>
+          </div>
+        )
+      }
       return (
-        <div className='col bg-danger rounded text-light font-weight-bold'>
-          XL Payloads
+        <div className='col bg-danger rounded font-weight-bold'>
+          <div className='d-inline text-light'>
+            XL Payloads
+          </div>
+          {request_data_link}
+          {response_data_link}
         </div>
       )
     }
