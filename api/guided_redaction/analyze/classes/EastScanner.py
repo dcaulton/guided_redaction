@@ -11,12 +11,8 @@ class EastScanner:
     path_to_east_text_detector = settings.REDACT_EAST_FILE_PATH
     min_confidence = 0.5
 
-    def __init__(self, debug=True):
-        self.debug = debug
-
     def get_text_areas_from_east(self, source):
-        if self.debug:
-            print("performing text detection with EAST")
+        print("performing text detection with EAST")
         image = source.copy()
 
         # EAST requires h and w to be multiples of 32
@@ -42,8 +38,6 @@ class EastScanner:
         net.setInput(blob)
         (scores, geometry) = net.forward(layerNames)
         end = time.time()
-        if self.debug:
-            print("text detection took "+ str(int(math.ceil(end - start)))+ " seconds")
 
         (numRows, numCols) = scores.shape[2:4]
         rects = []
@@ -86,6 +80,6 @@ class EastScanner:
             endY = int(endY * rH)
             text_areas.append([(startX, startY), (endX, endY)])
 
-        if self.debug:
-            print("text detection complete")
+        print("text detection complete in {} seconds ".format(int(math.ceil(end - start))))
+
         return text_areas

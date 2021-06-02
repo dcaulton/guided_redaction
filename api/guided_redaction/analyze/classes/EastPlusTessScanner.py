@@ -62,15 +62,8 @@ class EastPlusTessScanner(EastScanner):
             }
             text_regions.append(recognized_text_area)
 
-        if self.debug:
-            sum_text = (
-                "total text recognition time: "
-                + str(math.ceil(total_tess_time))
-                + " seconds for "
-                + str(len(contours))
-                + " calls"
-            )
-            print(sum_text)
+        print("text recognition completed in {} seconds for {} calls ".format(math.ceil(total_tess_time), len(contours)))
+
         return text_regions
 
     def do_tess_on_whole_image(self, image):
@@ -94,13 +87,8 @@ class EastPlusTessScanner(EastScanner):
         }
         text_regions.append(recognized_text_area)
 
-        if self.debug:
-            sum_text = (
-                "total text recognition time: "
-                + str(math.ceil(total_tess_time))
-                + " seconds for 1 call"
-            )
-            print(sum_text)
+        print("text recognition completed in {} seconds for 1 call ".format(math.ceil(total_tess_time), len(contours)))
+
         return text_regions
 
     def get_centroid(self, contour):

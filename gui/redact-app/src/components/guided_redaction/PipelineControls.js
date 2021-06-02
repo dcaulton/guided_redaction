@@ -43,6 +43,7 @@ class PipelineControls extends React.Component {
       intersect_feeds: {},
       mandatory_nodes: {},
       ocr_jobs: {},
+      data_sifter_jobs: {},
       redact_rule_edges: {},
       attribute_search_value: '',
       use_parsed_movies: false,
@@ -158,6 +159,7 @@ class PipelineControls extends React.Component {
       intersect_feeds: this.state.intersect_feeds,
       mandatory_nodes: this.state.mandatory_nodes,
       ocr_jobs: this.state.ocr_jobs,
+      data_sifter_jobs: this.state.data_sifter_jobs,
       redact_rule_edges: this.state.redact_rule_edges,
       node_metadata: this.state.node_metadata,
       movies: build_movies,
@@ -240,6 +242,7 @@ class PipelineControls extends React.Component {
       intersect_feeds: {},
       mandatory_nodes: {},
       ocr_jobs: {},
+      data_sifter_jobs: {},
       redact_rule_edges: {},
     })
   }
@@ -283,6 +286,10 @@ class PipelineControls extends React.Component {
       if (Object.keys(content).includes('ocr_jobs')) {
         ocr_jobs = content['ocr_jobs']
       }
+      let data_sifter_jobs = {}
+      if (Object.keys(content).includes('data_sifter_jobs')) {
+        data_sifter_jobs = content['data_sifter_jobs']
+      }
       let redact_rule_edges = {}
       if (Object.keys(content).includes('redact_rule_edges')) {
         redact_rule_edges= content['redact_rule_edges']
@@ -305,6 +312,7 @@ class PipelineControls extends React.Component {
         intersect_feeds: intersect_feeds,
         mandatory_nodes: mandatory_nodes,
         ocr_jobs: ocr_jobs,
+        data_sifter_jobs: data_sifter_jobs,
         redact_rule_edges: redact_rule_edges,
         node_metadata: content['node_metadata'],
       })
@@ -647,6 +655,7 @@ class PipelineControls extends React.Component {
                       intersect_feeds={this.state.intersect_feeds}
                       mandatory_nodes={this.state.mandatory_nodes}
                       ocr_jobs={this.state.ocr_jobs}
+                      data_sifter_jobs={this.state.data_sifter_jobs}
                       addNode={this.addNode}
                       deleteNode={this.deleteNode}
                       updateNodeValue={this.updateNodeValue}
@@ -717,6 +726,7 @@ class NodeCardList extends React.Component {
                   intersect_feeds={this.props.intersect_feeds}
                   mandatory_nodes={this.props.mandatory_nodes}
                   ocr_jobs={this.props.ocr_jobs}
+                  data_sifter_jobs={this.props.data_sifter_jobs}
                   setLocalStateVar={this.props.setLocalStateVar}
                   deleteNode={this.props.deleteNode}
                   redact_rule_edges={this.props.redact_rule_edges}
@@ -973,13 +983,21 @@ class NodeCard extends React.Component {
   }
 
   toggleNodeInList(type, parent_node_id, minuend_node_id) {
+    let multiple_values_permitted = true
+    if (type === 'ocr_jobs' || type === 'data_sifter_jobs') {
+      multiple_values_permitted = false
+    }
     let deepCopyMins = JSON.parse(JSON.stringify(this.props[type]))
     if (Object.keys(deepCopyMins).includes(parent_node_id)) {
       if (deepCopyMins[parent_node_id].includes(minuend_node_id)) {
         const ind = deepCopyMins[parent_node_id].indexOf(minuend_node_id)
         deepCopyMins[parent_node_id].splice(ind, 1)
       } else {
-        deepCopyMins[parent_node_id].push(minuend_node_id)
+        if (multiple_values_permitted) {
+          deepCopyMins[parent_node_id].push(minuend_node_id)
+        } else {
+          deepCopyMins[parent_node_id] = [minuend_node_id]
+        }
       }
     } else {
       deepCopyMins[parent_node_id] = [minuend_node_id]
@@ -1019,6 +1037,12 @@ class NodeCard extends React.Component {
     ) {
       return ''
     }
+    if (
+      this.props.node_metadata['node'][this.props.node_id]['type'] !== 'ocr'
+      && ms_type === 'data_sifter_jobs'
+    ) {
+      return ''
+    }
     let title = 'Minuends'
     if (ms_type === 'subtrahends') {
       title = 'Subtrahends'
@@ -1030,6 +1054,8 @@ class NodeCard extends React.Component {
       title = 'Mandatory Nodes'
     } else if (ms_type === 'ocr_jobs') {
       title = 'Ocr Jobs'
+    } else if (ms_type === 'data_sifter_jobs') {
+      title = 'Data Sifter Jobs'
     } 
 
     let select_none_comment = ''
@@ -1152,6 +1178,16 @@ class NodeCard extends React.Component {
         const node_id = Object.keys(node_list)[i]
         const node = node_list[node_id]
         if (node['type'] !== 'ocr') {
+          continue
+        }
+        eligible_nodes[node_id] = node_list[node_id]
+      }
+    } else if (ms_type === 'data_sifter_jobs') {
+      eligible_nodes = {}
+      for (let i=0; i < Object.keys(node_list).length; i++) {
+        const node_id = Object.keys(node_list)[i]
+        const node = node_list[node_id]
+        if (node['type'] !== 'data_sifter') {
           continue
         }
         eligible_nodes[node_id] = node_list[node_id]
@@ -1455,6 +1491,7 @@ class NodeCard extends React.Component {
     const intersect_feeds_field = this.buildNodePickerField('intersect_feeds')
     const mandatory_nodes_field = this.buildNodePickerField('mandatory_nodes')
     const ocr_job_field = this.buildNodePickerField('ocr_jobs')
+    const data_sifter_job_field = this.buildNodePickerField('data_sifter_jobs')
     const redaction_rules_field = this.buildRedactionRulesField()
     const entity_id_field = this.buildEntityIdField()
     const first_indicator = this.buildFirstIndicator()
@@ -1511,6 +1548,9 @@ class NodeCard extends React.Component {
         </div>
         <div className='row'>
           {ocr_job_field}
+        </div>
+        <div className='row'>
+          {data_sifter_job_field}
         </div>
         <div className='row'>
           {redaction_rules_field}

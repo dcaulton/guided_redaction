@@ -322,7 +322,7 @@ class DispatchController:
         source_movies = self.get_source_movies_from_parent_job(parent_job)
 
         if previous_job:
-            if 'input' in node:
+            if node.get('input'):
                 input_job = get_job_for_node(node['input'], parent_job)
                 if input_job:
                     input_response = json.loads(input_job.response_data)
@@ -354,7 +354,10 @@ class DispatchController:
         build_request_data['tier_1_scanners'][scanner_type] = build_scanners
 
         if node['type'] == 'data_sifter':
-            self.try_to_add_ocr_job_for_data_sifter(build_request_data, node, content, parent_job)
+            self.try_to_add_ocr_subjob(build_request_data, node, content, parent_job, 'data_sifter')
+        elif node['type'] == 'ocr':
+            self.try_to_add_ocr_subjob(build_request_data, node, content, parent_job, 'ocr')
+            self.try_to_add_data_sifter_subjob(build_request_data, node, content, parent_job)
 
         operation = scanner_type + '_threaded'
         request_data = json.dumps(build_request_data)
@@ -376,14 +379,25 @@ class DispatchController:
         ).save()
         return job
 
-    def try_to_add_ocr_job_for_data_sifter(self, build_request_data, node, content, parent_job):
-        data_sifter_id = list(build_request_data['tier_1_scanners']['data_sifter'].keys())[0]
-        data_sifter = build_request_data['tier_1_scanners']['data_sifter'][data_sifter_id]
+    def try_to_add_ocr_subjob(self, build_request_data, node, content, parent_job, scanner_type):
+        scanner_id = list(build_request_data['tier_1_scanners'][scanner_type].keys())[0]
+        scanner = build_request_data['tier_1_scanners'][scanner_type][scanner_id]
 
         if 'ocr_jobs' in content and node['id'] in content['ocr_jobs']:
             ocr_node_ids = content['ocr_jobs'][node['id']]
             for node_id in ocr_node_ids:
                 ocr_job = get_job_for_node(node_id, parent_job)
+                scanner['ocr_job_id'] = str(ocr_job.id)
+
+    def try_to_add_data_sifter_subjob(self, build_request_data, node, content, parent_job):
+        scanner_id = list(build_request_data['tier_1_scanners']['ocr'].keys())[0]
+        scanner = build_request_data['tier_1_scanners']['ocr'][scanner_id]
+
+        if 'data_sifter_jobs' in content and node['id'] in content['data_sifter_jobs']:
+            ds_node_ids = content['data_sifter_jobs'][node['id']]
+            for node_id in ds_node_ids:
+                ds_job = get_job_for_node(node_id, parent_job)
+                scanner['data_sifter_job_id'] = str(ds_job.id)
 
     def build_intersect_job(self, content, node, parent_job):
         input_node_ids = []

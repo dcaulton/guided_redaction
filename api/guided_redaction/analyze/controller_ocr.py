@@ -102,10 +102,11 @@ class OcrController(T1Controller):
             for match_id in ds_job_results['movies'][movie_url]['framesets'][frameset_hash]:
                 match_obj = ds_job_results['movies'][movie_url]['framesets'][frameset_hash][match_id]
                 if 'text' in match_obj and match_obj['text'] not in new_phrases:
+                    synthetic_text = match_obj.get('synthetic_text')
                     build_obj = {
                         'source': 'data_sifter',
                         'data_sifter_meta_id': match_obj['data_sifter_meta_id'],
-                        'synthetic_text': match_obj['synthetic_text'],
+                        'synthetic_text': synthetic_text,
                         'app_id': match_obj['app_id'],
                     }
                     new_phrases[match_obj['text']] = build_obj
