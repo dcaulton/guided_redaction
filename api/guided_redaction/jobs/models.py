@@ -97,8 +97,7 @@ class Job(models.Model):
         return wall_clock_run_time 
 
     def as_dict(self):
-        print('JOHN POPPER ')
-        children = Job.objects.filter(parent_id=self.id).order_by('sequence')
+        children = Job.objects.filter(parent_id=self.id).order_by('created_on')
         child_ids = [str(child.id) + ' : ' + child.operation for child in children]
         pretty_time = self.pretty_date(self.created_on)
         seconds = (self.updated - self.created_on).seconds
