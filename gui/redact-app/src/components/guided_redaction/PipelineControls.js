@@ -1012,8 +1012,9 @@ class NodeCard extends React.Component {
     ) {
       return ''
     }
+    const ocr_node_types = ['data_sifter', 'ocr']
     if (
-      this.props.node_metadata['node'][this.props.node_id]['type'] !== 'data_sifter'
+      !ocr_node_types.includes(this.props.node_metadata['node'][this.props.node_id]['type'])
       && ms_type === 'ocr_jobs'
     ) {
       return ''
