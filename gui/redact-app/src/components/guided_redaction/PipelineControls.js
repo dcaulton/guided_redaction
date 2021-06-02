@@ -1153,7 +1153,6 @@ class NodeCard extends React.Component {
         if (node['type'] !== 'ocr') {
           continue
         }
-        const node_key = prefix + node_id
         eligible_nodes[node_id] = node_list[node_id]
       }
     }
