@@ -81,6 +81,11 @@ def build_and_dispatch_generic_batched_threaded_children(
     if 'source' in movies:
         source_movies = movies['source']
         del movies['source']
+        # there are cases where the ONLY movies we get into a t1 scanner are source movies.  
+        #  (in this case a pipeline, using its main input as input to a particular node)
+        # when so upgrade them to regular movies
+        if not movies:
+            movies = source_movies
 
     if len(movies) == 0:
         finish_operation_function(parent_job)

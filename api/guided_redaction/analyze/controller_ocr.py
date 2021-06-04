@@ -62,7 +62,6 @@ class OcrController(T1Controller):
         for movie_url in movies:
             movie = movies[movie_url]
             new_phrases = self.get_phrases_for_ds_movie(ocr_rule, movie_url, ds_job_results)
-            print('poopy new phrases are {}'.format(new_phrases))
             if new_phrases:
                 for phrase in new_phrases:
                     all_phrases[phrase] = new_phrases[phrase]
