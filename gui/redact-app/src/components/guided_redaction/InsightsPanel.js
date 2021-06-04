@@ -31,6 +31,7 @@ class InsightsPanel extends React.Component {
       'template',
       'selection_grower',
       'data_sifter',
+      'focus_finder',
       'ocr'
     ]
     this.tier_1_job_operations = [
@@ -39,6 +40,7 @@ class InsightsPanel extends React.Component {
       'template_threaded',
       'selection_grower_threaded',
       'data_sifter_threaded',
+      'focus_finder_threaded',
       'ocr_threaded'
     ]
     this.setCurrentVideo=this.setCurrentVideo.bind(this)
@@ -431,6 +433,7 @@ class InsightsPanel extends React.Component {
       selection_grower: 'selection_grower_threaded',
       mesh_match: 'mesh_match_threaded',
       data_sifter: 'data_sifter_threaded',
+      focus_finder: 'focus_finder_threaded',
     }
     if (!this.props.current_ids['t1_scanner'][scanner_type]) {
       this.displayInsightsMessage('no ' + scanner_type + ' rule selected, cannot submit a job')

@@ -139,8 +139,11 @@ class FileWriter():
   
     def create_unique_directory(self, working_uuid):
         unique_working_dir = os.path.join(self.working_dir, working_uuid)
-        if not os.path.isdir(unique_working_dir):
-            os.mkdir(unique_working_dir)
+        try:
+            if not os.path.isdir(unique_working_dir):
+                os.mkdir(unique_working_dir)
+        except Exception as e:
+            print('error dir for {}, {}'.format(unique_working_dir, e))
         return unique_working_dir
 
     def write_video(self, image_url_list, output_file_name):

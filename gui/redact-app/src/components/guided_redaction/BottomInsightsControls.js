@@ -2,6 +2,7 @@ import React from 'react';
 import TemplateControls from './TemplateControls'
 import DataSifterControls from './DataSifterControls'
 import OcrControls from './OcrControls'
+import FocusFinderControls from './FocusFinderControls'
 import RedactControls from './RedactControls'
 import ZipControls from './ZipControls'
 import ResultsControls from './ResultsControls'
@@ -83,6 +84,24 @@ class BottomInsightsControls extends React.Component {
           id='bottom_insights_controls' 
           style={controls_style}
       >
+
+        <FocusFinderControls 
+          setGlobalStateVar={this.props.setGlobalStateVar}
+          handleSetMode={this.props.handleSetMode}
+          jobs={this.props.jobs}
+          submitInsightsJob={this.props.submitInsightsJob}
+          displayInsightsMessage={this.props.displayInsightsMessage}
+          visibilityFlags={this.props.visibilityFlags}
+          buildTier1RunOptions={this.buildTier1RunOptions}
+          saveScannerToDatabase={this.props.saveScannerToDatabase}
+          scanners={this.props.scanners}
+          getScanners={this.props.getScanners}
+          deleteScanner={this.props.deleteScanner}
+          importScanner={this.props.importScanner}
+          tier_1_scanners={this.props.tier_1_scanners}
+          current_ids={this.props.current_ids}
+          tier_1_matches={this.props.tier_1_matches}
+        />
 
         <TemplateControls 
           setGlobalStateVar={this.props.setGlobalStateVar}
