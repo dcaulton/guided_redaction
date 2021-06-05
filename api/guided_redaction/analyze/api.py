@@ -11,6 +11,7 @@ from .controller_timestamp import TimestampController
 from .controller_intersect import IntersectController
 from .controller_get_screens import GetScreensController
 from .controller_data_sifter import DataSifterController
+from .controller_focus_finder import FocusFinderController
 from .controller_data_sifter_manual_compile import DataSifterManualCompileController
 import json
 from django.conf import settings
@@ -301,5 +302,23 @@ class AnalyzeViewSetDataSifter(viewsets.ViewSet):
 
         worker = DataSifterController()
         matches = worker.sift_data(request_data)
+
+        return Response(matches)
+
+class AnalyzeViewSetFocusFinder(viewsets.ViewSet):
+    def create(self, request):
+        request_data = request.data
+        return self.process_create_request(request_data)
+
+    def process_create_request(self, request_data):
+        if not request_data.get("tier_1_scanners"):
+            return self.error("tier_1_scanners is required")
+        if not request_data.get("movies"):
+            return self.error("movies is required")
+        if 'focus_finder' not in request_data['tier_1_scanners']:
+            return self.error("tier_1_scanners > focus_finder is required")
+
+        worker = FocusFinderController()
+        matches = worker.find_focus(request_data)
 
         return Response(matches)

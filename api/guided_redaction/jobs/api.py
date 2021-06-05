@@ -166,6 +166,8 @@ def dispatch_job(job):
         analyze_tasks.manual_compile_data_sifter.delay(job_uuid)
     if job.app == 'analyze' and job.operation == 'data_sifter_threaded':
         analyze_tasks.data_sifter_threaded.delay(job_uuid)
+    if job.app == 'analyze' and job.operation == 'focus_finder_threaded':
+        analyze_tasks.focus_finder_threaded.delay(job_uuid)
     if job.app == 'analyze' and job.operation == 'intersect':
         analyze_tasks.intersect.delay(job_uuid)
     if job.app == 'parse' and job.operation == 'split_and_hash_threaded':
