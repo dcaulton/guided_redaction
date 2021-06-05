@@ -466,6 +466,20 @@ class JobLogic extends React.Component {
     )
   } 
 
+  static loadFocusFinderResults(
+    job, 
+    when_done, 
+    setGlobalStateVar, 
+    getGlobalStateVar
+  ) {
+    this.loadScannersMoviesAndMatchesFromTier1(
+      job, 
+      'focus_finder', 
+      setGlobalStateVar, 
+      getGlobalStateVar
+    )
+  } 
+
   static loadMeshMatchResults(
     job, 
     when_done, 
@@ -1022,6 +1036,13 @@ class JobLogic extends React.Component {
         )
 			} else if (job.app === 'analyze' && job.operation === 'data_sifter_threaded') {
         this.loadDataSifterResults(
+          job, 
+          when_done, 
+          setGlobalStateVar, 
+          getGlobalStateVar
+        )
+			} else if (job.app === 'analyze' && job.operation === 'focus_finder_threaded') {
+        this.loadFocusFinderResults(
           job, 
           when_done, 
           setGlobalStateVar, 

@@ -54,10 +54,10 @@ class FocusFinderController(T1Controller):
 
         cv2_image = None
         prev_cv2_image = None
+        prev_ocr_matches_in = {}
+        ocr_matches_in = {}
         for index, frameset_hash in enumerate(ordered_hashes):
             other_t1_matches_in = {}
-            ocr_matches_in = {}
-            prev_ocr_matches_in = {}
             image_url = source_movie['framesets'][frameset_hash]['images'][0]
             if not source_movie_only and frameset_hash not in movie['framesets']:
                 print('passing on sift of image {}'.format(image_url.split('/')[-1]))
