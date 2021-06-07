@@ -1,19 +1,19 @@
 import random
 from fuzzywuzzy import fuzz
+from guided_redaction.analyze.classes.ExtentsFinder import ExtentsFinder
+
 
 class FocusFinder:
 
     def __init__(self, focus_finder_meta, *args, **kwargs):
         super(FocusFinder, self).__init__(*args, **kwargs)
         self.focus_finder_meta = focus_finder_meta
-        self.debug = focus_finder_meta.get('debug', False)
+        self.debug = focus_finder_meta.get('debug')
         self.fuzz_match_threshold = 70
 
     def find_focus(self, cv2_img, prev_cv2_img, ocr_matches, prev_ocr_matches, other_t1_matches):
-#        print('STARTING new: {} old: {}'.format(len(ocr_matches), len(prev_ocr_matches)))
-#        print('START {} {}'.format(len(ocr_matches), len(prev_ocr_matches)))
         match_obj = {}
-        match_stats = {}
+        stats = {}
         masks = {}
 
         # first, harvest the words from the prev frame that have disappeared or been altered
@@ -21,13 +21,19 @@ class FocusFinder:
         no_change_match_ids = []
         new_match_ids = []
         altered_match_ids = []
+        stats = {
+            'altered': {},
+        }
+        app_extents_per_field = {}
         for prev_match_id in prev_ocr_matches:
             prev_match = prev_ocr_matches[prev_match_id]
             prev_value = prev_match['text']
             its_in_current = False
             current_value = ''
+            current_val_id = ''
             centroid = self.get_centroid(prev_match)
             current_value = ''
+            cur_match = {}
             for cur_match_id in ocr_matches:
                 cur_match = ocr_matches[cur_match_id]
                 if self.point_is_within_ocr_ele(centroid, cur_match):
@@ -40,6 +46,13 @@ class FocusFinder:
                 ratio = fuzz.ratio(prev_value, current_value)
                 if ratio < self.fuzz_match_threshold:
                     altered_match_ids.append(current_val_id)
+                    app_extents_per_field[current_val_id] = self.get_extents_for_match(ocr_matches[current_val_id], cv2_img)
+                    if self.debug:
+                        stats['altered'][current_val_id] = {
+                            'prev_id': prev_match_id,
+                            'prev_value': prev_value,
+                            'cur_value': current_value,
+                        }
                 else:
                     no_change_match_ids.append(current_val_id)
                     
@@ -47,6 +60,7 @@ class FocusFinder:
         for cur_match_id in ocr_matches:
             if cur_match_id not in altered_match_ids and cur_match_id not in no_change_match_ids:
                 new_match_ids.append(cur_match_id)
+                app_extents_per_field[cur_match_id] = self.get_extents_for_match(ocr_matches[cur_match_id], cv2_img)
 
         # now, those three match ids arrays have every ocr field that has been changed.
         # if that totals to one new field, save the 'focused field'
@@ -56,13 +70,27 @@ class FocusFinder:
         # try to find the cursor using a template with multiple anchors, one for each kind of cursor
         # if no good ocr results, try to find cv2 contours based on a cv2.diff of new and old cv2 image
 
-#        print('DONE alt: {} '.format(altered_match_ids))
-#        print('DONE new: {}'.format(new_match_ids))
-        print('new: {} no change: {}, altered: {}, deleted: {}'.format(len(new_match_ids), len(no_change_match_ids), len(altered_match_ids), len(disappeared_prev_match_ids)))
+        if self.debug:
+            print('new: {} no change: {}, altered: {}, deleted: {}'.format(
+                len(new_match_ids), len(no_change_match_ids), len(altered_match_ids), len(disappeared_prev_match_ids))
+            )
 
-        match_obj = self.build_response_data(new_match_ids, no_change_match_ids, altered_match_ids, ocr_matches)
+        match_obj = self.build_response_data(
+            new_match_ids, no_change_match_ids, altered_match_ids, ocr_matches, app_extents_per_field
+        )
 
-        return match_obj, match_stats, masks 
+        return match_obj, stats, masks 
+
+    def get_extents_for_match(self, ocr_match, cv2_image): 
+        # returns a tuple of (start_coords, end_coords)
+        match_offset_px = -20
+        finder = ExtentsFinder()
+        after_coords = (
+            ocr_match['location'][0] + ocr_match['size'][0] + match_offset_px,
+            ocr_match['location'][1] + ocr_match['size'][1] + match_offset_px
+        )
+        region, mask = finder.determine_flood_fill_area(cv2_image, after_coords)
+        return region
 
     def get_centroid(self, ocr_match_ele): 
         x = ocr_match_ele['location'][0] +  int(.5 * ocr_match_ele['size'][0])
@@ -78,7 +106,7 @@ class FocusFinder:
             if ocr_match_ele['location'][1] <= coords[1] <= ocr_end[1]:
                 return True
 
-    def build_response_data(self, new_match_ids, no_change_match_ids, altered_match_ids, ocr_matches):
+    def build_response_data(self, new_match_ids, no_change_match_ids, altered_match_ids, ocr_matches, app_extents_per_field):
         build_response_data = {}
         env_start_x = False
         env_end_x = False
@@ -108,6 +136,9 @@ class FocusFinder:
                 env_end_y = ocr_end[1]
             build_ele = self.build_match_obj_for_field_type('new', ocr_ele)
             build_response_data[build_ele['id']] = build_ele
+            if self.debug:  # save extents too
+                bg_build_ele = self.build_background_ele_for_field_ele(build_ele, app_extents_per_field, nid)
+                build_response_data[bg_build_ele['id']] = bg_build_ele
         for aid in altered_match_ids:
             ocr_ele = ocr_matches[aid]
             ocr_end = (
@@ -132,6 +163,10 @@ class FocusFinder:
                 env_end_y = ocr_end[1]
             build_ele = self.build_match_obj_for_field_type('altered', ocr_ele)
             build_response_data[build_ele['id']] = build_ele
+            if self.debug:  # save extents too
+                new_id = build_ele['id'] + '_bg'
+                bg_build_ele = self.build_background_ele_for_field_ele(build_ele, app_extents_per_field, aid)
+                build_response_data[bg_build_ele['id']] = bg_build_ele
 
         if env_start_x and env_end_x and env_start_y and env_end_y:
             the_id = 'ff_' + str(random.randint(100000000, 999000000))
@@ -150,6 +185,18 @@ class FocusFinder:
             build_response_data[build_ele['id']] = build_ele
 
         return build_response_data
+
+    def build_background_ele_for_field_ele(self, field_build_ele, app_extents_per_field, ocr_match_id):
+        new_id = field_build_ele['id'] + '_bg'
+        build_ele = {
+            'id': new_id,
+            'scanner_type': 'focus_finder',
+            'field_type': 'field_bg', 
+            'field_id': field_build_ele['id'],
+            'start': app_extents_per_field[ocr_match_id][0],
+            'end': app_extents_per_field[ocr_match_id][1],
+        }
+        return build_ele
 
     def build_match_obj_for_field_type(self, field_type, ocr_ele):
         the_id = 'ff_' + str(random.randint(100000000, 999000000))

@@ -15,7 +15,7 @@ class DataSifter:
     def __init__(self, data_sifter_meta, *args, **kwargs):
         super(DataSifter, self).__init__(*args, **kwargs)
         self.data_sifter_meta = data_sifter_meta
-        self.debug = data_sifter_meta.get('debug', False)
+        self.debug = data_sifter_meta.get('debug')
         self.app_data = self.data_sifter_meta
         self.ocr_rowcol_maker = OcrRowColMaker()
         self.min_app_score = 200
