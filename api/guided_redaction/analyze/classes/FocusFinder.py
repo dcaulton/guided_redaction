@@ -207,5 +207,6 @@ class FocusFinder:
             'field_type': 'new',
             'location': ocr_ele['location'],
             'size': ocr_ele['size'],
+            'text': ocr_ele['text'],
         }
         return build_ele
