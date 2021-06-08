@@ -62,6 +62,11 @@ class DispatchController:
             parent_job.save()
         node_id = Attribute.objects.filter(job=job, name='node_id').first().value
         if node_id not in content['edges']: # no nodes left to dispatch, wrap up
+            # if the child jobs were big, they may need a reload.
+            # this is because in save_external_payload, we clear out the response_data field and just use the path.
+            # that is typically desired behavior, because we don't usually do much post save.  in this case we need that data
+            #   because the job to pipeline hand off is diff than job to job hand off
+            job = Job.objects.get(pk=job.id)
             parent_job.response_data = job.response_data
             parent_job.status = 'success'
             parent_job.save()
@@ -194,7 +199,7 @@ class DispatchController:
                 next_node_id = content['edges'][node_id][0]
                 node = content['node_metadata']['node'][next_node_id]
         t1_scanner_types = [
-            'template', 'selected_area', 'ocr', 'data_sifter', 'mesh_match', 'selection_grower'
+            'template', 'selected_area', 'ocr', 'data_sifter', 'mesh_match', 'selection_grower', 'focus_finder'
         ] 
         if node['type'] in t1_scanner_types:
             return self.build_tier_1_scanner_job(
@@ -355,6 +360,8 @@ class DispatchController:
 
         if node['type'] == 'data_sifter':
             self.try_to_add_ocr_subjob(build_request_data, node, content, parent_job, 'data_sifter')
+        elif node['type'] == 'focus_finder':
+            self.try_to_add_ocr_subjob(build_request_data, node, content, parent_job, 'focus_finder')
         elif node['type'] == 'ocr':
             self.try_to_add_ocr_subjob(build_request_data, node, content, parent_job, 'ocr')
             self.try_to_add_data_sifter_subjob(build_request_data, node, content, parent_job)
