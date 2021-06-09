@@ -740,6 +740,18 @@ class InsightsPanel extends React.Component {
     return job_data
   }
 
+  buildT1FilterData(extra_data) {
+    let job_data = {
+      request_data: {},
+    }
+    job_data['app'] = 'pipeline'
+    job_data['operation'] = 't1_filter'
+    job_data['request_data']['job_ids'] = extra_data['job_ids']
+    job_data['request_data']['criteria'] = extra_data['criteria']
+    job_data['description'] = 't1 filter of ' + extra_data['job_ids'].length.toString() + ' jobs'
+    return job_data
+  }
+
   buildGetTimestampJobData(scope, extra_data) {
     let job_data = {
       request_data: {},
@@ -818,6 +830,11 @@ class InsightsPanel extends React.Component {
       })
     } else if (job_string === 't1_sum') {
       let job_data = this.buildT1SumData(extra_data)
+      this.props.submitJob({
+        job_data: job_data,
+      })
+    } else if (job_string === 't1_filter') {
+      let job_data = this.buildT1FilterData(extra_data)
       this.props.submitJob({
         job_data: job_data,
       })
