@@ -215,6 +215,7 @@ class SetToolsControls extends React.Component {
       this.props.submitInsightsJob('t1_sum', pass_data)
     } else if (this.state.operation === 't1_filter') {
       pass_data['job_ids'] = this.state.job_ids
+      pass_data['filter_criteria'] = this.state.filter_criteria
       this.props.submitInsightsJob('t1_filter', pass_data)
     }
   }
@@ -238,7 +239,7 @@ class SetToolsControls extends React.Component {
       '',
       'set_tools_attr_name',
       'name',
-      25,
+      20,
       ((value)=>{this.setLocalStateVar('attr_name', value)})
     )
   }
@@ -249,7 +250,7 @@ class SetToolsControls extends React.Component {
       '',
       'set_tools_attr_value',
       'value',
-      25,
+      20,
       ((value)=>{this.setLocalStateVar('attr_value', value)})
     )
   }

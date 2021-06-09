@@ -747,7 +747,7 @@ class InsightsPanel extends React.Component {
     job_data['app'] = 'pipeline'
     job_data['operation'] = 't1_filter'
     job_data['request_data']['job_ids'] = extra_data['job_ids']
-    job_data['request_data']['criteria'] = extra_data['criteria']
+    job_data['request_data']['filter_criteria'] = extra_data['filter_criteria']
     job_data['description'] = 't1 filter of ' + extra_data['job_ids'].length.toString() + ' jobs'
     return job_data
   }
