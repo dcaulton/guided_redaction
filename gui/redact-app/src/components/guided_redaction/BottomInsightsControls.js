@@ -3,6 +3,7 @@ import TemplateControls from './TemplateControls'
 import DataSifterControls from './DataSifterControls'
 import OcrControls from './OcrControls'
 import FocusFinderControls from './FocusFinderControls'
+import T1FilterControls from './T1FilterControls'
 import RedactControls from './RedactControls'
 import ZipControls from './ZipControls'
 import ResultsControls from './ResultsControls'
@@ -101,6 +102,34 @@ class BottomInsightsControls extends React.Component {
           tier_1_scanners={this.props.tier_1_scanners}
           current_ids={this.props.current_ids}
           tier_1_matches={this.props.tier_1_matches}
+        />
+
+        <T1FilterControls
+          displayInsightsMessage={this.props.displayInsightsMessage}
+          addInsightsCallback={this.props.addInsightsCallback}
+          visibilityFlags={this.props.visibilityFlags}
+          toggleShowVisibility={this.props.toggleShowVisibility}
+          submitInsightsJob={this.props.submitInsightsJob}
+          handleSetMode={this.props.handleSetMode}
+          clicked_coords={this.props.clicked_coords}
+          buildTier1RunOptions={this.buildTier1RunOptions}
+          setGlobalStateVar={this.props.setGlobalStateVar}
+          scanners={this.props.scanners}
+          getScanners={this.props.getScanners}
+          importScanner={this.props.importScanner}
+          deleteScanner={this.props.deleteScanner}
+          saveScannerToDatabase={this.props.saveScannerToDatabase}
+          insights_image={this.props.insights_image}
+          movie_url={this.props.movie_url}
+          movies={this.props.movies}
+          setCurrentVideo={this.props.setCurrentVideo}
+          setScrubberToIndex={this.props.setScrubberToIndex}
+          getFramesetHashesInOrder={this.props.getFramesetHashesInOrder}
+          getFramesetHashForImageUrl={this.props.getFramesetHashForImageUrl}
+          tier_1_scanners={this.props.tier_1_scanners}
+          current_ids={this.props.current_ids}
+          tier_1_matches={this.props.tier_1_matches}
+          jobs={this.props.jobs}
         />
 
         <TemplateControls 
