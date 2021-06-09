@@ -18,6 +18,7 @@ from guided_redaction.pipelines.api import PipelinesViewSetDispatch
 from guided_redaction.analyze.api import (
     AnalyzeViewSetChart,
     AnalyzeViewSetFilter, 
+    AnalyzeViewSetT1Filter, 
     AnalyzeViewSetScanTemplate,
     AnalyzeViewSetTimestamp,
     AnalyzeViewSetSelectedArea,
@@ -1189,4 +1190,13 @@ def intersect(job_uuid):
 @shared_task
 def filter(job_uuid):
     generic_worker_call(job_uuid, 'filter', AnalyzeViewSetFilter)
+
+@shared_task
+def t1_filter(job_uuid):
+    generic_worker_call(job_uuid, 't1_filter', AnalyzeViewSetT1Filter)
+    job = Job.objects.get(pk=job_uuid)
+    pipeline = get_pipeline_for_job(job.parent)
+    if pipeline:
+        worker = PipelinesViewSetDispatch()
+        worker.handle_job_finished(job, pipeline)
 

@@ -7,6 +7,7 @@ from .controller_selection_grower import SelectionGrowerController
 from .controller_ocr import OcrController
 from .controller_template import TemplateController
 from .controller_filter import FilterController
+from .controller_t1_filter import T1FilterController
 from .controller_timestamp import TimestampController
 from .controller_intersect import IntersectController
 from .controller_get_screens import GetScreensController
@@ -141,6 +142,23 @@ class AnalyzeViewSetFilter(viewsets.ViewSet):
             return self.error("filter_parameters is required")
 
         worker = FilterController()
+        response_movies = worker.run_filter(request_data)
+
+        return Response({'movies': response_movies})
+
+
+class AnalyzeViewSetT1Filter(viewsets.ViewSet):
+    def create(self, request):
+        request_data = request.data
+        return self.process_create_request(request_data)
+
+    def process_create_request(self, request_data):
+        if not request_data.get("job_ids"):
+            return self.error("job_ids is required", status_code=400)
+        if not request_data.get("filter_criteria"):
+            return self.error("filter_criteria is required")
+
+        worker = T1FilterController()
         response_movies = worker.run_filter(request_data)
 
         return Response({'movies': response_movies})
