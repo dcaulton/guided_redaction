@@ -27,7 +27,6 @@ class T1FilterControls extends React.Component {
       id: '',
       name: '',
       match_text: [],
-      match_percent: 70,
       job_id: '',
       filter_criteria: {},
       scan_level: 'tier_1',
@@ -41,6 +40,7 @@ class T1FilterControls extends React.Component {
     this.setLocalStateVar=this.setLocalStateVar.bind(this)
     this.doSave=this.doSave.bind(this)
     this.setState=this.setState.bind(this)
+    this.submitJob=this.submitJob.bind(this)
   }
 
   buildMatchIdField3() {
@@ -136,7 +136,6 @@ class T1FilterControls extends React.Component {
         id: meta['id'],
         name: meta['name'],
         match_text: meta['match_text'],
-        match_percent: meta['match_percent'],
         filter_criteria: meta['filter_criteria'],
         job_id: meta['job_id'],
         scan_level: meta['scan_level'],
@@ -160,7 +159,6 @@ class T1FilterControls extends React.Component {
       id: the_id,
       name: '',
       match_text: [],
-      match_percent: 70,
       filter_criteria: {},
       job_id: '',
       scan_level: 'tier_1',
@@ -173,7 +171,6 @@ class T1FilterControls extends React.Component {
       id: this.state.id,
       name: this.state.name,
       match_text: this.state.match_text,
-      match_percent: this.state.match_percent,
       filter_criteria: this.state.filter_criteria,
       job_id: this.state.job_id,
       scan_level: this.state.scan_level,
@@ -187,8 +184,16 @@ class T1FilterControls extends React.Component {
       return ''
     }
     return buildRunButton(
-      this.props.tier_1_scanners, 't1_filter', this.props.buildTier1RunOptions, this.props.submitInsightsJob
+      this.props.tier_1_scanners, 't1_filter', this.props.buildTier1RunOptions, this.submitJob
     )
+  }
+
+  submitJob() {
+    let pass_data = {
+      job_ids: [this.state.job_id],
+      filter_criteria: this.state.filter_criteria,
+    }
+    this.props.submitInsightsJob('t1_filter', pass_data)
   }
 
   buildMatchText() {
@@ -222,26 +227,6 @@ class T1FilterControls extends React.Component {
     } else {
       this.setLocalStateVar('match_text', the_value.split('\n'))
     }
-  }
-
-  buildMatchPercent() {
-    return (
-      <div
-        className='d-inline ml-2 mt-2'
-      >   
-        <div className='d-inline'>
-          Match Percent:
-        </div>
-        <div className='d-inline ml-2'>
-          <input 
-            id='match_percent'
-            size='4'
-            value={this.state.match_percent}
-            onChange={(event) => this.setLocalStateVar('match_percent', event.target.value)}
-          />
-        </div>
-      </div>
-    )
   }
 
   buildNameField() {
@@ -539,7 +524,6 @@ class T1FilterControls extends React.Component {
     const clear_matches_button = this.buildClearMatchesButton2()
     const match_text = this.buildMatchText()
     const source_job_id_field = this.buildMatchIdField3() 
-    const match_percent = this.buildMatchPercent()
     const attributes_list = this.buildAttributesList()
     const header_row = makeHeaderRow(
       't1 filter',
@@ -584,10 +568,6 @@ class T1FilterControls extends React.Component {
 
                 <div>
                   {source_job_id_field}
-                </div>
-
-                <div className='row bg-light'>
-                  {match_percent}
                 </div>
 
                 <div className='row bg-light'>

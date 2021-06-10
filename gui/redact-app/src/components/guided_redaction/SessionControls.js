@@ -434,10 +434,6 @@ console.log('get screens came back with ', response)
     if (this.props.visibilityFlags['ocr']) {
       show_ocr_checked = 'checked'
     }
-    let show_ocr_movie_analysis_checked = ''
-    if (this.props.visibilityFlags['ocr_movie_analysis']) {
-      show_ocr_movie_analysis_checked = 'checked'
-    }
     let show_diffs_checked = ''
     if (this.props.visibilityFlags['diffs']) {
       show_diffs_checked = 'checked'
@@ -453,6 +449,14 @@ console.log('get screens came back with ', response)
     let show_pipelines_checked = ''
     if (this.props.visibilityFlags['pipelines']) {
       show_pipelines_checked = 'checked'
+    }
+    let show_focus_finder_checked = ''
+    if (this.props.visibilityFlags['focus_finder']) {
+      show_focus_finder_checked = 'checked'
+    }
+    let show_t1_filter_checked = ''
+    if (this.props.visibilityFlags['t1_filter']) {
+      show_t1_filter_checked = 'checked'
     }
 
     return (
@@ -580,16 +584,6 @@ console.log('get screens came back with ', response)
         <div className='row mt-3 bg-light rounded'>
           <input
             className='ml-2 mr-2 mt-1'
-            checked={show_ocr_movie_analysis_checked}
-            type='checkbox'
-            onChange={() => this.props.toggleShowVisibility('ocr_movie_analysis')}
-          />
-          Show Ocr Movie Analysis
-        </div>
-
-        <div className='row mt-3 bg-light rounded'>
-          <input
-            className='ml-2 mr-2 mt-1'
             checked={show_set_tools_checked}
             type='checkbox'
             onChange={() => this.props.toggleShowVisibility('set_tools')}
@@ -605,6 +599,26 @@ console.log('get screens came back with ', response)
             onChange={() => this.props.toggleShowVisibility('filesystem')}
           />
           Show Filesystem
+        </div>
+
+        <div className='row mt-3 bg-light rounded'>
+          <input
+            className='ml-2 mr-2 mt-1'
+            checked={show_focus_finder_checked}
+            type='checkbox'
+            onChange={() => this.props.toggleShowVisibility('focus_finder')}
+          />
+          Show Focus Finder
+        </div>
+
+        <div className='row mt-3 bg-light rounded'>
+          <input
+            className='ml-2 mr-2 mt-1'
+            checked={show_t1_filter_checked}
+            type='checkbox'
+            onChange={() => this.props.toggleShowVisibility('t1_filter')}
+          />
+          Show T1 Filter
         </div>
 
         <div className='row mt-3 bg-light rounded'>
