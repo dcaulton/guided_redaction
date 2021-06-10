@@ -1,4 +1,3 @@
-#from guided_redaction.analyze.classes.TemplateMatcher import TemplateMatcher
 import os
 import datetime
 import uuid
@@ -232,6 +231,10 @@ class PipelineJobStatusController:
             return 'MM'
         elif long_type == 'data_sifter':
             return 'DS'
+        elif long_type == 'focus_finder':
+            return 'FF'
+        elif long_type == 't1_filter':
+            return 'T1F'
         elif long_type == 'selection_grower':
             return 'SG'
         elif long_type == 'split_and_hash':
