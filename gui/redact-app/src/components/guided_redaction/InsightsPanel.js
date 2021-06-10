@@ -32,6 +32,7 @@ class InsightsPanel extends React.Component {
       'selection_grower',
       'data_sifter',
       'focus_finder',
+      't1_filter',
       'ocr'
     ]
     this.tier_1_job_operations = [
@@ -41,6 +42,7 @@ class InsightsPanel extends React.Component {
       'selection_grower_threaded',
       'data_sifter_threaded',
       'focus_finder_threaded',
+      't1_filter',
       'ocr_threaded'
     ]
     this.setCurrentVideo=this.setCurrentVideo.bind(this)
@@ -434,6 +436,7 @@ class InsightsPanel extends React.Component {
       mesh_match: 'mesh_match_threaded',
       data_sifter: 'data_sifter_threaded',
       focus_finder: 'focus_finder_threaded',
+      t1_filter: 't1_filter',
     }
     if (!this.props.current_ids['t1_scanner'][scanner_type]) {
       this.displayInsightsMessage('no ' + scanner_type + ' rule selected, cannot submit a job')
@@ -532,6 +535,13 @@ class InsightsPanel extends React.Component {
       const t1_ds_rule = this.props.tier_1_scanners['data_sifter'][the_id]
       const tier_1_output = this.props.tier_1_matches['data_sifter'][the_id]['movies']
       job_data['description'] += 'on t1 ds results (ds ' + t1_ds_rule['name'] + ')'
+      job_data['request_data']['movies'] = tier_1_output
+      job_data['request_data']['movies']['source'] = this.makeSourceForPassedT1Output(tier_1_output)
+    } else if (scope.match(/_t1_ff$/)) {   
+      const the_id = extra_data
+      const t1_ds_rule = this.props.tier_1_scanners['focus_finder'][the_id]
+      const tier_1_output = this.props.tier_1_matches['focus_finder'][the_id]['movies']
+      job_data['description'] += 'on t1 ff results (ff ' + t1_ds_rule['name'] + ')'
       job_data['request_data']['movies'] = tier_1_output
       job_data['request_data']['movies']['source'] = this.makeSourceForPassedT1Output(tier_1_output)
     } else if (scope.match(/_t1_mesh_match$/)) {   

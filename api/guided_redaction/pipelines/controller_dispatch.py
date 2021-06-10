@@ -199,7 +199,7 @@ class DispatchController:
                 next_node_id = content['edges'][node_id][0]
                 node = content['node_metadata']['node'][next_node_id]
         t1_scanner_types = [
-            'template', 'selected_area', 'ocr', 'data_sifter', 'mesh_match', 'selection_grower', 'focus_finder'
+            'template', 'selected_area', 'ocr', 'data_sifter', 'mesh_match', 'selection_grower', 'focus_finder', 't1_filter'
         ] 
         if node['type'] in t1_scanner_types:
             return self.build_tier_1_scanner_job(

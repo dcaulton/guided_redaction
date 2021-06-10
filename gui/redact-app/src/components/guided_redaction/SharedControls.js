@@ -48,6 +48,8 @@ export function buildRunButton(
   const tier_1_selection_grower_run_options = buildTier1RunOptions('selection_grower', scanner_type + '_t1_selection_grower')
   const tier_1_ocr_run_options = buildTier1RunOptions('ocr', scanner_type + '_t1_ocr')
   const tier_1_ds_run_options = buildTier1RunOptions('data_sifter', scanner_type + '_t1_ds')
+  const tier_1_ff_run_options = buildTier1RunOptions('focus_finder', scanner_type + '_t1_ff')
+  const tier_1_t1f_run_options = buildTier1RunOptions('t1_filter', scanner_type + '_t1_t1f')
 
   const dropdown_id = 'scan_' + scanner_type + '_DropdownButton'
   let frame_movie_movies = (
@@ -91,6 +93,8 @@ export function buildRunButton(
         {tier_1_selection_grower_run_options}
         {tier_1_ocr_run_options}
         {tier_1_ds_run_options}
+        {tier_1_ff_run_options}
+        {tier_1_t1f_run_options}
       </div>
     </div>
   )

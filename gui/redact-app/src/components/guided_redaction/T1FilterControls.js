@@ -27,7 +27,6 @@ class T1FilterControls extends React.Component {
       id: '',
       name: '',
       match_text: [],
-      job_id: '',
       filter_criteria: {},
       scan_level: 'tier_1',
       attributes: {},
@@ -40,28 +39,6 @@ class T1FilterControls extends React.Component {
     this.setLocalStateVar=this.setLocalStateVar.bind(this)
     this.doSave=this.doSave.bind(this)
     this.setState=this.setState.bind(this)
-    this.submitJob=this.submitJob.bind(this)
-  }
-
-  buildMatchIdField3() {
-    let matches = []
-    matches.push({'': ''})
-    for (let i=0; i < this.props.jobs.length; i++) {
-      const job = this.props.jobs[i]
-      const build_obj = {}
-      const desc = job['description'] + ' ' + job['id'].slice(0,3) + '...'
-      build_obj[job['id']] = desc
-      matches.push(build_obj)
-    }
-
-    const drop = buildLabelAndDropdown(
-      matches,
-      'Job Id',
-      this.state.job_id,
-      'job_id',
-      ((value)=>{this.setLocalStateVar('job_id', value)})
-    )
-    return drop
   }
 
   componentDidMount() {
@@ -137,7 +114,6 @@ class T1FilterControls extends React.Component {
         name: meta['name'],
         match_text: meta['match_text'],
         filter_criteria: meta['filter_criteria'],
-        job_id: meta['job_id'],
         scan_level: meta['scan_level'],
         attributes: meta['attributes'],
       })
@@ -160,7 +136,6 @@ class T1FilterControls extends React.Component {
       name: '',
       match_text: [],
       filter_criteria: {},
-      job_id: '',
       scan_level: 'tier_1',
       attributes: {},
     })                                                                          
@@ -172,7 +147,6 @@ class T1FilterControls extends React.Component {
       name: this.state.name,
       match_text: this.state.match_text,
       filter_criteria: this.state.filter_criteria,
-      job_id: this.state.job_id,
       scan_level: this.state.scan_level,
       attributes: this.state.attributes,
     }
@@ -184,16 +158,8 @@ class T1FilterControls extends React.Component {
       return ''
     }
     return buildRunButton(
-      this.props.tier_1_scanners, 't1_filter', this.props.buildTier1RunOptions, this.submitJob
+      this.props.tier_1_scanners, 't1_filter', this.props.buildTier1RunOptions, this.props.submitInsightsJob
     )
-  }
-
-  submitJob() {
-    let pass_data = {
-      job_ids: [this.state.job_id],
-      filter_criteria: this.state.filter_criteria,
-    }
-    this.props.submitInsightsJob('t1_filter', pass_data)
   }
 
   buildMatchText() {
@@ -489,7 +455,7 @@ class T1FilterControls extends React.Component {
             const attr_value = this.state.filter_criteria[attr_name]['value']
             const delete_button = this.buildDeleteFilterCriteriaButton(attr_name)
             return (
-              <tr>
+              <tr key={index}>
                 <td>
                   {attr_name}
                 </td>
@@ -523,7 +489,6 @@ class T1FilterControls extends React.Component {
     const save_to_database_button = this.buildSaveToDatabaseButton()
     const clear_matches_button = this.buildClearMatchesButton2()
     const match_text = this.buildMatchText()
-    const source_job_id_field = this.buildMatchIdField3() 
     const attributes_list = this.buildAttributesList()
     const header_row = makeHeaderRow(
       't1 filter',
@@ -564,10 +529,6 @@ class T1FilterControls extends React.Component {
 
                 <div className='row bg-light'>
                   {match_text}
-                </div>
-
-                <div>
-                  {source_job_id_field}
                 </div>
 
                 <div className='row bg-light'>

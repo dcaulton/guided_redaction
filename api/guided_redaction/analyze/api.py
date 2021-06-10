@@ -153,10 +153,13 @@ class AnalyzeViewSetT1Filter(viewsets.ViewSet):
         return self.process_create_request(request_data)
 
     def process_create_request(self, request_data):
-        if not request_data.get("job_ids"):
-            return self.error("job_ids is required", status_code=400)
-        if not request_data.get("filter_criteria"):
-            return self.error("filter_criteria is required")
+        if not request_data.get("tier_1_scanners"):
+            return self.error("tier_1_scanners is required")
+        t1s = request_data.get("tier_1_scanners")
+        if 't1_filter' not in t1s:
+            return self.error("tier_1_scanners needs to have a t1_filter child")
+        if not request_data.get("movies"):
+            return self.error("movies are required", status_code=400)
 
         worker = T1FilterController()
         response_movies = worker.run_filter(request_data)
