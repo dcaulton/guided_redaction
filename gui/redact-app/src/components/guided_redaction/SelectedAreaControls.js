@@ -11,6 +11,7 @@ import {
   clearTier1Matches,
   buildClearMatchesButton,
   buildRunButton,
+  setLocalT1ScannerStateVar,
   doTier1Save,
   } from './SharedControls'
 
@@ -57,6 +58,8 @@ class SelectedAreaControls extends React.Component {
     this.addManualZoneCallback2=this.addManualZoneCallback2.bind(this)
     this.getSelectedAreaMetaFromState=this.getSelectedAreaMetaFromState.bind(this)
     this.setLocalStateVar=this.setLocalStateVar.bind(this)
+    this.doSave=this.doSave.bind(this)
+    this.setState=this.setState.bind(this)
   }
 
   buildToggleField(field_name, label) {
@@ -247,16 +250,11 @@ class SelectedAreaControls extends React.Component {
   }
   
   setLocalStateVar(var_name, var_value, when_done=(()=>{})) {
-    function anon_func() {
-      this.doSave()
-      when_done()
+    let var_value_in_state = ''
+    if (Object.keys(this.state).includes(var_name)) {
+      var_value_in_state = this.state[var_name]
     }
-    this.setState(
-      {
-        [var_name]: var_value,
-      },
-      anon_func
-    )
+    setLocalT1ScannerStateVar(var_name, var_value, var_value_in_state, this.doSave, this.setState, when_done)
   }
 
   buildLoadButton() {                                                           

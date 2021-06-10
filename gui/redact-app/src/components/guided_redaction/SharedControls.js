@@ -1,5 +1,41 @@
 import React from 'react';
 
+export function setLocalT1ScannerStateVar(
+    var_name, var_value, var_value_in_state, save_function, set_state_function, when_done=(()=>{})
+) {
+  if (typeof var_name === 'string' || var_name instanceof String) {
+    function anon_func() {
+      save_function()
+      when_done()
+    }
+    // we have been given one key and one value
+    if (var_value_in_state === var_value) {
+      when_done()
+    } else {
+      set_state_function(
+        {
+          [var_name]: var_value,
+        },
+        anon_func
+      )
+    }
+  } else {
+    // var_name is actually a dict, second argument could be a callback
+    let the_callback = (()=>{})
+    if (typeof(var_value) === 'function') {
+      the_callback = var_value
+    }
+    function anon_func() {
+      save_function()
+      the_callback()
+    }
+    set_state_function(
+      var_name,
+      anon_func
+    )
+  }
+}
+
 export function buildRunButton(
     tier_1_scanners, 
     scanner_type, 

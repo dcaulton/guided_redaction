@@ -12,6 +12,7 @@ import {
   buildClearMatchesButton,
   buildT1ScannerScaleDropdown,
   buildRunButton,
+  setLocalT1ScannerStateVar,
   doTier1Save,
 } from './SharedControls'
 
@@ -45,6 +46,8 @@ class TemplateControls extends React.Component {
     this.getCurrentMaskZones=this.getCurrentMaskZones.bind(this)
     this.getTemplateFromState=this.getTemplateFromState.bind(this)
     this.setLocalStateVar=this.setLocalStateVar.bind(this)
+    this.doSave=this.doSave.bind(this)
+    this.setState=this.setState.bind(this)
   }
 
   addAnchorCallback1() {
@@ -56,16 +59,11 @@ class TemplateControls extends React.Component {
   }
 
   setLocalStateVar(var_name, var_value, when_done=(()=>{})) {
-    function anon_func() {
-      this.doSave()
-      when_done()
+    let var_value_in_state = ''
+    if (Object.keys(this.state).includes(var_name)) {
+      var_value_in_state = this.state[var_name]
     }
-    this.setState(
-      {
-        [var_name]: var_value,
-      },
-      anon_func
-    )
+    setLocalT1ScannerStateVar(var_name, var_value, var_value_in_state, this.doSave, this.setState, when_done)
   }
 
   getCurrentAnchors() {

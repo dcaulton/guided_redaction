@@ -13,6 +13,7 @@ import {
   clearTier1Matches,
   buildClearMatchesButton,
   buildRunButton,
+  setLocalT1ScannerStateVar,
   doTier1Save,
 } from './SharedControls'
 
@@ -62,6 +63,8 @@ class DataSifterControls extends React.Component {
     this.setHighlightedItem=this.setHighlightedItem.bind(this)
     this.afterMovieCreated=this.afterMovieCreated.bind(this)
     this.enableMovie=this.enableMovie.bind(this)
+    this.doSave=this.doSave.bind(this)
+    this.setState=this.setState.bind(this)
   }
 
   getRowNumberForItemId(item_id) {
@@ -1491,37 +1494,11 @@ class DataSifterControls extends React.Component {
   }
 
   setLocalStateVar(var_name, var_value, when_done=(()=>{})) {
-    if (typeof var_name === 'string' || var_name instanceof String) {
-      function anon_func() {
-        this.doSave()
-        when_done()
-      }
-      // we have been given one key and one value
-      if (this.state[var_name] === var_value) {
-        when_done()
-      } else {
-        this.setState(
-          {
-            [var_name]: var_value,
-          },
-          anon_func
-        )
-      }
-    } else {
-      // var_name is actually a dict, second argument could be a callback
-      let the_callback = (()=>{})
-      if (typeof(var_value) === 'function') {
-        the_callback = var_value
-      }
-      function anon_func() {
-        this.doSave()
-        the_callback()
-      }
-      this.setState(
-        var_name,
-        anon_func
-      )
+    let var_value_in_state = ''
+    if (Object.keys(this.state).includes(var_name)) {
+      var_value_in_state = this.state[var_name]
     }
+    setLocalT1ScannerStateVar(var_name, var_value, var_value_in_state, this.doSave, this.setState, when_done)
   }
 
   buildLoadButton() {                                                           

@@ -2163,6 +2163,10 @@ class RedactApplication extends React.Component {
   toggleSideNav() {
     this.toggleShowVisibility('side_nav')
     // calling setFramesetHash will force a re-eval of image_scale and size parameters, which will preserve t1 boxes
+    if ((!this.state.movie_url) ||
+        (!Object.keys(this.state.movies).includes(this.state.movie_url))) {
+      return ''
+    }
     this.setFramesetHash(this.state.frameset_hash, this.state.movies[this.state.movie_url]['framesets'])
   }
 

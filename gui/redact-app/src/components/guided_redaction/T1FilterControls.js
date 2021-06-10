@@ -15,6 +15,7 @@ import {
   buildRunButton,
   buildAttributesAddRow,
   buildMatchIdField,
+  setLocalT1ScannerStateVar,
   buildSkipCountDropdown,
 } from './SharedControls'
 
@@ -28,12 +29,18 @@ class T1FilterControls extends React.Component {
       match_text: [],
       match_percent: 70,
       job_id: '',
+      filter_criteria: {},
       scan_level: 'tier_1',
       attributes: {},
       attribute_search_value: '',
+      attr_name: '',
+      attr_operator: '',
+      attr_value: '',
     }
     this.getMetaFromState=this.getMetaFromState.bind(this)
     this.setLocalStateVar=this.setLocalStateVar.bind(this)
+    this.doSave=this.doSave.bind(this)
+    this.setState=this.setState.bind(this)
   }
 
   buildMatchIdField3() {
@@ -62,16 +69,11 @@ class T1FilterControls extends React.Component {
   }
 
   setLocalStateVar(var_name, var_value, when_done=(()=>{})) {
-    function anon_func() {
-      this.doSave()
-      when_done()
+    let var_value_in_state = ''
+    if (Object.keys(this.state).includes(var_name)) {
+      var_value_in_state = this.state[var_name]
     }
-    this.setState(
-      {
-        [var_name]: var_value,
-      },
-      anon_func
-    )
+    setLocalT1ScannerStateVar(var_name, var_value, var_value_in_state, this.doSave, this.setState, when_done)
   }
 
   setAttribute(name, value) {
@@ -135,6 +137,7 @@ class T1FilterControls extends React.Component {
         name: meta['name'],
         match_text: meta['match_text'],
         match_percent: meta['match_percent'],
+        filter_criteria: meta['filter_criteria'],
         job_id: meta['job_id'],
         scan_level: meta['scan_level'],
         attributes: meta['attributes'],
@@ -158,6 +161,7 @@ class T1FilterControls extends React.Component {
       name: '',
       match_text: [],
       match_percent: 70,
+      filter_criteria: {},
       job_id: '',
       scan_level: 'tier_1',
       attributes: {},
@@ -170,6 +174,7 @@ class T1FilterControls extends React.Component {
       name: this.state.name,
       match_text: this.state.match_text,
       match_percent: this.state.match_percent,
+      filter_criteria: this.state.filter_criteria,
       job_id: this.state.job_id,
       scan_level: this.state.scan_level,
       attributes: this.state.attributes,
@@ -328,6 +333,200 @@ class T1FilterControls extends React.Component {
     )
   }
 
+  buildAttrNameField() {
+    return buildLabelAndTextInput(
+      this.state.attr_name,
+      '',
+      'set_tools_attr_name',
+      'name',
+      20,
+      ((value)=>{this.setLocalStateVar('attr_name', value)})
+    )
+  }
+
+
+  buildAttrValueField() {
+    return buildLabelAndTextInput(
+      this.state.attr_value,
+      '',
+      'set_tools_attr_value',
+      'value',
+      20,
+      ((value)=>{this.setLocalStateVar('attr_value', value)})
+    )
+  }
+
+  buildAddFilterCriterionButton() {
+    return (
+      <div>
+        <button
+            className='btn btn-primary'
+            onClick={() => this.addFilterCriterion()}
+        >
+          Add
+        </button>
+      </div>
+    )
+  }
+
+  buildDeleteFilterCriteriaButton(attr_name) {
+    return (
+      <div>
+        <button
+            className='btn btn-primary'
+            onClick={() => this.deleteFilterCriterion(attr_name)}
+        >
+          Del
+        </button>
+      </div>
+    )
+  }
+
+  deleteFilterCriterion(attr_name) {
+    let deepCopyFcs = JSON.parse(JSON.stringify(this.state.filter_criteria))
+    delete deepCopyFcs[attr_name]
+    this.setLocalStateVar('filter_criteria', deepCopyFcs)
+  }
+
+  addFilterCriterion() {
+    let deepCopyFcs = JSON.parse(JSON.stringify(this.state.filter_criteria))
+    const build_obj = {
+      operator: this.state.attr_operator,
+      value: this.state.attr_value,
+    }
+    deepCopyFcs[this.state.attr_name] = build_obj
+    const new_state_obj = {
+      filter_criteria: deepCopyFcs,
+      attr_name: '',
+      attr_operator: '',
+      attr_value: '',
+    }
+    this.setLocalStateVar(new_state_obj)
+  }
+
+  buildNewFilterCriteriaLine() {
+    const attr_name_field = this.buildAttrNameField()
+    const attr_oper_field = this.buildAttrOperatorField()
+    const attr_value_field = this.buildAttrValueField()
+    const add_button = this.buildAddFilterCriterionButton()
+    return (
+      <div className='border p-2 ml-2'>
+        <div className='h5'>
+          Add Filter Criteria
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <td>
+                attr name
+              </td>
+              <td>
+                operator
+              </td>
+              <td>
+                value
+              </td>
+              <td>
+              </td>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                {attr_name_field}
+              </td>
+              <td className='pt-2'>
+                {attr_oper_field}
+              </td>
+              <td>
+                {attr_value_field}
+              </td>
+              <td>
+                {add_button}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    )
+  }
+
+  buildAttrOperatorField(){
+    const operators = {
+      'equals': 'equals',
+      'in_list': 'is in list',
+      'matches_regex_list': 'matches regexes',
+    }
+    return (
+      <div>
+          <select
+              name='set_tools_attr_operator'
+              value={this.state.attr_operator}
+              onChange={(event) => this.setLocalStateVar('attr_operator', event.target.value)}
+          >
+            <option value=''></option>
+            {Object.keys(operators).map((operation_id, index) => {
+              return (
+                <option value={operation_id} key={index}>{operators[operation_id]}</option>
+              )
+            })}
+          </select>
+      </div>
+    )
+  }
+
+  buildFilterCriteriaLines() {
+    return (
+      <div className='border p-2 ml-2'>
+        <div className='h5'>
+          Existing Filter Criteria
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <td>
+                attr name
+              </td>
+              <td>
+                operator
+              </td>
+              <td>
+                value
+              </td>
+              <td>
+              </td>
+            </tr>
+          </thead>
+          <tbody>
+          {Object.keys(this.state.filter_criteria).map((attr_name, index) => {
+            const attr_oper = this.state.filter_criteria[attr_name]['operator']
+            const attr_value = this.state.filter_criteria[attr_name]['value']
+            const delete_button = this.buildDeleteFilterCriteriaButton(attr_name)
+            return (
+              <tr>
+                <td>
+                  {attr_name}
+                </td>
+                <td className='pt-2'>
+                  {attr_oper}
+                </td>
+                <td>
+                  {attr_value}
+                </td>
+                <td>
+                  {delete_button}
+                </td>
+              </tr>
+            )
+          })}
+          </tbody>
+        </table>
+
+      </div>
+    )
+  }
+
   render() {
     if (!this.props.visibilityFlags['t1_filter']) {
       return([])
@@ -348,6 +547,8 @@ class T1FilterControls extends React.Component {
       (() => this.props.toggleShowVisibility('t1_filter'))
     )
     const name_field = this.buildNameField()
+    const new_filter_criteria = this.buildNewFilterCriteriaLine()
+    const existing_filter_criteria = this.buildFilterCriteriaLines()
 
     return (
         <div className='row bg-light rounded mt-3'>
@@ -387,6 +588,14 @@ class T1FilterControls extends React.Component {
 
                 <div className='row bg-light'>
                   {match_percent}
+                </div>
+
+                <div className='row bg-light'>
+                  {new_filter_criteria}
+                </div>
+
+                <div className='row bg-light'>
+                  {existing_filter_criteria}
                 </div>
 
                 <div className='row mt-1 mr-1 ml-1 border-top'>                 
