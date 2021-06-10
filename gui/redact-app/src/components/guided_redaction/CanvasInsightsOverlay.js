@@ -32,6 +32,7 @@ class CanvasInsightsOverlay extends React.Component {
     this.data_sifter_app_cool_userdata_rowcol_fill_color = '#7F9'
     this.selected_area_center_color = '#9F3'
     this.focus_finder_field_color = '#9F3'
+    this.t1_filter_field_color = '#9FA'
     this.ocr_color = '#CC0'
     this.area_to_redact_color = '#D6D'
     this.ocr_window_color = '#DA9'
@@ -680,6 +681,10 @@ class CanvasInsightsOverlay extends React.Component {
     this.drawTier1Matches('focus_finder', this.focus_finder_field_color, this.red_color) 
   }
 
+  drawT1FilterZones() {
+    this.drawTier1Matches('t1_filter', this.t1_filter_field_color, this.red_color) 
+  }
+
   componentDidMount() {
     this.clearCanvasItems()
     this.drawSelectedAreas()
@@ -709,6 +714,7 @@ class CanvasInsightsOverlay extends React.Component {
     this.drawDataSifterAppZones()
     this.drawDataSifterAppRowCols()
     this.drawFocusFinderZones()
+    this.drawT1FilterZones()
   }
 
   componentDidUpdate() {
@@ -740,6 +746,7 @@ class CanvasInsightsOverlay extends React.Component {
     this.drawDataSifterAppZones()
     this.drawDataSifterAppRowCols()
     this.drawFocusFinderZones()
+    this.drawT1FilterZones()
   }
 
   render() {

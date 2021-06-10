@@ -466,6 +466,20 @@ class JobLogic extends React.Component {
     )
   } 
 
+  static loadT1FilterResults(
+    job, 
+    when_done, 
+    setGlobalStateVar, 
+    getGlobalStateVar
+  ) {
+    this.loadScannersMoviesAndMatchesFromTier1(
+      job, 
+      't1_filter', 
+      setGlobalStateVar, 
+      getGlobalStateVar
+    )
+  } 
+
   static loadFocusFinderResults(
     job, 
     when_done, 
@@ -1043,6 +1057,13 @@ class JobLogic extends React.Component {
         )
 			} else if (job.app === 'analyze' && job.operation === 'focus_finder_threaded') {
         this.loadFocusFinderResults(
+          job, 
+          when_done, 
+          setGlobalStateVar, 
+          getGlobalStateVar
+        )
+			} else if (job.app === 'analyze' && job.operation === 't1_filter') {
+        this.loadT1FilterResults(
           job, 
           when_done, 
           setGlobalStateVar, 

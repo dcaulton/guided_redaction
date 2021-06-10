@@ -294,6 +294,8 @@ class MovieCard extends React.Component {
       scanner_type_short = 'ds'
     } else if (scanner_type === 'focus_finder') {
       scanner_type_short = 'ff'
+    } else if (scanner_type === 't1_filter') {
+      scanner_type_short = 't1f'
     }
     let matches_button = ''
     let clear_button = ''
@@ -552,6 +554,7 @@ class MovieCard extends React.Component {
     const sum_match_string = this.getTier1MatchesString('t1_sum')
     const ds_match_string = this.getTier1MatchesString('data_sifter')
     const ff_match_string = this.getTier1MatchesString('focus_finder')
+    const t1f_match_string = this.getTier1MatchesString('t1_filter')
     const areas_to_redact_string = this.getAreasToRedactString()
     const dims_string = this.getMovieDimensions(this.props.this_cards_movie_url, this.props.movies)
     let top_div_classname = "row mt-2 card"
@@ -631,6 +634,9 @@ class MovieCard extends React.Component {
                   </div>
                   <div className='row'>
                     {ff_match_string}
+                  </div>
+                  <div className='row'>
+                    {t1f_match_string}
                   </div>
                   <div className='row'>
                     {has_timestamp_info}
