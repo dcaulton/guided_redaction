@@ -26,6 +26,7 @@ class FocusFinderControls extends React.Component {
       id: '',
       name: '',
       track_cursor: false,
+      ignore_hotspots: true,
       track_cv2_contours: true,
       debug: true,
       ocr_job_id: '',
@@ -96,6 +97,7 @@ class FocusFinderControls extends React.Component {
         name: s['name'],
         debug: s['debug'],
         track_cursor: s['track_cursor'],
+        ignore_hotspots: s['ignore_hotspots'],
         track_cv2_contours: s['track_cv2_contours'],
         ocr_job_id: s['ocr_job_id'],
         attributes: s['attributes'],
@@ -117,6 +119,7 @@ class FocusFinderControls extends React.Component {
       name: '',
       debug: true,
       track_cursor: false,
+      ignore_hotspots: true,
       track_cv2_contours: true,
       ocr_job_id: '',
       attributes: {},
@@ -130,6 +133,7 @@ class FocusFinderControls extends React.Component {
       name: this.state.name,
       debug: this.state.debug,
       track_cursor: this.state.track_cursor,
+      ignore_hotspots: this.state.ignore_hotspots,
       track_cv2_contours: this.state.track_cv2_contours,
       ocr_job_id: this.state.ocr_job_id,
       attributes: this.state.attributes,
@@ -298,6 +302,7 @@ class FocusFinderControls extends React.Component {
     const id_string = buildIdString(this.state.id, 'focus_finder', false)
     const name_field = this.buildNameField()
     const track_cursor_checkbox = this.buildToggleField('track_cursor', 'Track cursor position')
+    const ignore_hotspots_checkbox = this.buildToggleField('ignore_hotspots', 'Ignore Hotspots')
     const track_contours_checkbox = this.buildToggleField('track_cv2_contours', 'Track large area changes')
     const debug_checkbox = this.buildToggleField('debug', 'debug')
     const ocr_job_id_dropdown = this.buildMatchIdField2('ocr', false) 
@@ -342,6 +347,10 @@ class FocusFinderControls extends React.Component {
 
                 <div className='row mt-1 mr-1 ml-1'>
                   {track_cursor_checkbox}
+                </div>
+
+                <div className='row mt-1 mr-1 ml-1'>
+                  {ignore_hotspots_checkbox}
                 </div>
 
                 <div className='row mt-1 mr-1 ml-1'>

@@ -80,7 +80,7 @@ class T1Controller(BaseGuidedRedactionController):
         return adjusted_coords
 
     def get_base64_image_string(self, cv2_image):
-        return get_cv2_image_from_base64_string(cv2_image)
+        return get_base64_image_string(cv2_image)
 
     def get_cv2_image_from_base64_string(self, img_base64):
         return get_cv2_image_from_base64_string(img_base64)
