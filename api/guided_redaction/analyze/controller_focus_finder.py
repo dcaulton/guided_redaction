@@ -1,5 +1,7 @@
 import json
 import os
+import math
+from matplotlib import pyplot as plt
 import uuid
 import cv2
 import numpy as np
@@ -20,7 +22,13 @@ class FocusFinderController(T1Controller):
             image_request_verify_headers=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
         )
         self.debug = True
-        self.image_directory = self.file_writer.create_unique_directory(str(uuid.uuid4()))
+        self.image_uuid = str(uuid.uuid4())
+        self.image_directory = self.file_writer.create_unique_directory(self.image_uuid)
+        self.num_histogram_bins = 8
+        self.hotspot_min_pixels= 100
+        self.top_trough_min_ratio = 3
+        self.hotspot_data_type = np.uint16
+        self.hotspot_max_allowed_value = 2**15-1
 
     def find_focus(self, request_data):
         ocr_job_results = {'movies': {}}
@@ -107,8 +115,9 @@ class FocusFinderController(T1Controller):
         )
 
     def trim_hotspots(self, response_obj, source_movies):
+        # TODO the below only works up to 255 incidences of a field.  Any more are lost.  So for large movies use
+        #   np.uint16 to hold the value
         for movie_url in response_obj['movies']:
-            print('considering movie {}'.format(movie_url))
             movie = response_obj['movies'][movie_url]
             source_movie = source_movies[movie_url]
             frame_shape = (1, 1, 1)
@@ -117,14 +126,10 @@ class FocusFinderController(T1Controller):
             else:
                 first_image_url = source_movie['frames'][0]
                 frame_shape = self.get_image_shape(first_image_url)
-            print('minkie frame shape {}'.format(frame_shape))
-            # TODO the below only works up to 255 incidences of a field.  Any more are lost.  So for large movies use
-            #   np.uint16 to hold the value
-            hotspot_mask = np.zeros(frame_shape, np.uint8)
+            hotspot_mask = np.zeros(frame_shape, self.hotspot_data_type)
             ordered_hashes = self.get_frameset_hashes_in_order(source_movie['frames'], source_movie['framesets'])
             for frameset_hash in ordered_hashes:
-                print('considering frameset {}'.format(frameset_hash))
-                this_frames_mask = np.zeros(frame_shape, np.uint8)
+                this_frames_mask = np.zeros(frame_shape, self.hotspot_data_type)
                 if frameset_hash not in movie['framesets']:
                     continue # either the first frame or some other unchanged frame
                 for match_object_id in movie['framesets'][frameset_hash]:
@@ -140,25 +145,59 @@ class FocusFinderController(T1Controller):
                         this_frames_mask,
                         tuple(start),
                         tuple(end),
-                        1,   # DMC FIX THIS
+                        1,
                         -1
                     )
 
                 hotspot_mask = cv2.add(hotspot_mask, this_frames_mask)
 
-                file_fullpath = os.path.join(self.image_directory, 'hotspots.png')
-                self.file_writer.write_cv2_image_to_filepath(hotspot_mask, file_fullpath)
-                hotspot_mask_url = self.file_writer.get_url_for_file_path(file_fullpath)
+            # scale the hotspot so the hottest area will be full brightness
+            (minVal, maxVal, minLoc, maxLoc) = cv2.minMaxLoc(hotspot_mask)
+            print('goober brightest hotspot is {} at {}'.format(maxVal, maxLoc))
+            brightness_scale = math.floor((self.hotspot_max_allowed_value) / maxVal)
 
-                response_obj['statistics']['movies'][movie_url]['hotspot_mask_url'] = hotspot_mask_url
+            hotspot_mask = hotspot_mask * brightness_scale
+            hotspot_mask_url = self.save_image_to_workdir(hotspot_mask, 'hotspots.png')
+            response_obj['statistics']['movies'][movie_url]['hotspot_mask_url'] = hotspot_mask_url
 
-#            cv2.imwrite('/Users/davecaulton/Desktop/tippy.png', hotspot_mask)
+            hist = cv2.calcHist([hotspot_mask], [0], None, [self.num_histogram_bins], [0, self.hotspot_max_allowed_value+1])
+            response_obj['statistics']['movies'][movie_url]['hotspot_histogram'] = str(hist)
 
+            hotspot_brightness_cutoff = self.get_hist_trough_cutoff(hist)
+            if hotspot_brightness_cutoff:
+                # spin through the results for every page, trim out all items whose centroid falls on a point in the 
+                #  hotspot mask where the brightness is over hotspot_brightness_cutoff
+                pass
+                
 
-#find_focus_hotspots(movie)
-#    mask_composite  = black image, dimensions of movie
-#    foreach frameset_hash of movie:
-#        mask_single  = make a mask of the ocr matches.  give positive ones a grayscale value of 1
-#        mask_composite = cv2.add(mask_composite, mask_single).  # actually np.add is what well prolly want, lets us go over 255 frames for a movie
-#    when done, mask_composite should have all the areas that are changing.  Brightest are that grayscale values worth of change.
+    def get_hist_trough_cutoff(self, hist):
+        top_value = hist[self.num_histogram_bins-1][0]
+        if top_value < self.hotspot_min_pixels:
+            print('not enough hotspot area')
+            return
+        trough_indices = []
+        for i in range(self.num_histogram_bins-2, 0, -1):
+            ratio = top_value / hist[i][0]
+            if ratio > self.top_trough_min_ratio:
+                trough_indices.append(i)
+            else:
+                break
 
+        if self.debug:
+            response_obj['statistics']['movies'][movie_url]['hotspot_trough_indices'] = trough_indices
+            response_obj['statistics']['movies'][movie_url]['hotspot_trough_top_value'] = top_value
+
+        if trough_indices:
+            trough_top_index = trough_indices[0]
+            brightness_per_bin =  self.hotspot_max_allowed_value / self.num_histogram_bins
+            # the below number represents 'brightness' threshold for the hotspot mask.  When you're at a point
+            #  above that level of brightness, you are considered a high frequency / hotspot item.
+            brightness_upper_threshold = (trough_top_index+1) * brightness_per_bin
+            response_obj['statistics']['movies'][movie_url]['hotspot_brightness_upper_threshold'] = brightness_upper_threshold
+            return brightness_upper_threshold
+
+    def save_image_to_workdir(self, cv2_image, file_name):
+        file_fullpath = os.path.join(self.image_directory, file_name)
+        self.file_writer.write_cv2_image_to_filepath(cv2_image, file_fullpath)
+        image_url = self.file_writer.get_url_for_file_path(file_fullpath)
+        return image_url
