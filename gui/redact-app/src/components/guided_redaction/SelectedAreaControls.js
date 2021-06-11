@@ -376,6 +376,7 @@ class SelectedAreaControls extends React.Component {
       {'flood': 'flood simple'},
       {'arrow': 'arrow simple'},
       {'manual': 'pick areas manually with mouse'},
+      {'invert': 'invert whatever comes in'},
     ]
     return buildLabelAndDropdown(
       values,
