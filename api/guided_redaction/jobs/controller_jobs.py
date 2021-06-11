@@ -316,7 +316,7 @@ class JobDeleteOldController:
                 for attribute in attributes:
                     if attribute.name == 'auto_delete_age':
                         job_age = datetime.now() - job.created_on.replace(tzinfo=None)
-                        log.info('job age is {}'.format(job_age))
+                        print('job age is {}'.format(job_age))
                         if attribute.value == '20minutes' and job_age > timedelta(minutes=20):
                             job_ids_to_delete.append(job.id)
                         if attribute.value == '1hours' and job_age > timedelta(hours=1):

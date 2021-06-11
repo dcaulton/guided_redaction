@@ -1,8 +1,8 @@
 import React from 'react';
 import ScannerSearchControls from './ScannerSearchControls'
-import {getFileAndDirNameFromUrl} from './redact_utils.js'
 import {
-  buildAttributesAddRow, buildLabelAndTextInput, buildLabelAndDropdown,
+  buildAttributesAddRow, 
+  buildLabelAndTextInput,
   buildMatchIdField,
   buildInlinePrimaryButton, 
   buildTier1LoadButton, 

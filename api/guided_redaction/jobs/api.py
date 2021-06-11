@@ -22,6 +22,9 @@ from .controller_dispatch import JobDispatchController
 from guided_redaction.utils.task_shared import get_pipeline_for_job, get_job_for_node
 
 
+def dispatch_job_wrapper(job):
+    worker = JobDispatchController()
+    worker.dispatch_job(job)
 
 class JobsViewSet(viewsets.ViewSet):
 

@@ -20,14 +20,14 @@ class JobDispatchController:
                         log.info(
                             're-displatching grandchild job {}'.format(grandchild)
                         )
-                        dispatch_job(grandchild)
+                        self.dispatch_job(grandchild)
             else:
                 if child_to_restart.status != 'success':
                     log.info('re-displatching child job {}'.format(child_to_restart))
                     child_to_restart.re_initialize_as_running()
                     child_to_restart.save()
-                    dispatch_job(child_to_restart)
-        dispatch_job(job)
+                    self.dispatch_job(child_to_restart)
+        self.dispatch_job(job)
 
     def dispatch_job(self, job):
         job_uuid = job.id
@@ -65,7 +65,7 @@ class JobDispatchController:
             analyze_tasks.focus_finder_threaded.delay(job_uuid)
         if job.app == 'analyze' and job.operation == 'intersect':
             analyze_tasks.intersect.delay(job_uuid)
-        if job.app == 'analyze' and job.operation == 't1_filter':
+        if job.app == 'analyze' and job.operation == 't1_filter_threaded':
             analyze_tasks.t1_filter.delay(job_uuid)
         if job.app == 'parse' and job.operation == 'split_and_hash_threaded':
             parse_tasks.split_and_hash_threaded.delay(job_uuid)

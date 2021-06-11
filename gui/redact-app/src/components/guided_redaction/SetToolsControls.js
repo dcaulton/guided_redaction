@@ -1,6 +1,5 @@
 import React from 'react';
 import {
-  buildLabelAndTextInput,
   setLocalT1ScannerStateVar,
   makeHeaderRow,
 } from './SharedControls'

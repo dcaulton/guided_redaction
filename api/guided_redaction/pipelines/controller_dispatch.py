@@ -11,7 +11,6 @@ from guided_redaction.jobs.models import Job
 import guided_redaction.jobs.api as jobs_api
 
 
-
 class DispatchController:
 
     def __init__(self):
@@ -109,7 +108,7 @@ class DispatchController:
                 parent_job.save()
             self.dispatch_pipeline(child_pipeline_id, input_data, workbook_id, owner, child_job)
         else:
-            jobs_api.dispatch_job(child_job)
+            jobs_api.dispatch_job_wrapper(child_job)
             parent_job.status = 'running'
             parent_job.save()
 

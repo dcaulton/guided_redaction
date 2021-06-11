@@ -1062,7 +1062,7 @@ class JobLogic extends React.Component {
           setGlobalStateVar, 
           getGlobalStateVar
         )
-			} else if (job.app === 'analyze' && job.operation === 't1_filter') {
+			} else if (job.app === 'analyze' && job.operation === 't1_filter_threaded') {
         this.loadT1FilterResults(
           job, 
           when_done, 

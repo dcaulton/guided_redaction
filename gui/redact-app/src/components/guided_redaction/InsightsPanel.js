@@ -436,7 +436,7 @@ class InsightsPanel extends React.Component {
       mesh_match: 'mesh_match_threaded',
       data_sifter: 'data_sifter_threaded',
       focus_finder: 'focus_finder_threaded',
-      t1_filter: 't1_filter',
+      t1_filter: 't1_filter_threaded',
     }
     if (!this.props.current_ids['t1_scanner'][scanner_type]) {
       this.displayInsightsMessage('no ' + scanner_type + ' rule selected, cannot submit a job')
@@ -754,8 +754,9 @@ class InsightsPanel extends React.Component {
     let job_data = {
       request_data: {},
     }
+console.log('monkey donle8')
     job_data['app'] = 'analyze'
-    job_data['operation'] = 't1_filter'
+    job_data['operation'] = 't1_filter_threaded'
     job_data['request_data']['job_ids'] = extra_data['job_ids']
     job_data['request_data']['filter_criteria'] = extra_data['filter_criteria']
     job_data['description'] = 't1 filter of ' + extra_data['job_ids'].length.toString() + ' jobs'
@@ -840,11 +841,6 @@ class InsightsPanel extends React.Component {
       })
     } else if (job_string === 't1_sum') {
       let job_data = this.buildT1SumData(extra_data)
-      this.props.submitJob({
-        job_data: job_data,
-      })
-    } else if (job_string === 't1_filter') {
-      let job_data = this.buildT1FilterData(extra_data)
       this.props.submitJob({
         job_data: job_data,
       })

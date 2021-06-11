@@ -2,7 +2,6 @@ import React from 'react';
 import ScannerSearchControls from './ScannerSearchControls'                     
 import {
   makeHeaderRow,
-  buildLabelAndDropdown,
   buildLabelAndTextInput,
   buildInlinePrimaryButton,
   doTier1Save,
@@ -14,9 +13,7 @@ import {
   buildAttributesAsRows,
   buildRunButton,
   buildAttributesAddRow,
-  buildMatchIdField,
   setLocalT1ScannerStateVar,
-  buildSkipCountDropdown,
 } from './SharedControls'
 
 class T1FilterControls extends React.Component {
