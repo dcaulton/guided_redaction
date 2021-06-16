@@ -30,6 +30,7 @@ class FocusFinderControls extends React.Component {
       track_cv2_contours: true,
       debug: true,
       ocr_job_id: '',
+      return_type: 'screen',
       attributes: {},
       scan_level: 'tier_1',
       attribute_search_name: '',
@@ -100,6 +101,7 @@ class FocusFinderControls extends React.Component {
         ignore_hotspots: s['ignore_hotspots'],
         track_cv2_contours: s['track_cv2_contours'],
         ocr_job_id: s['ocr_job_id'],
+        return_type: s['return_type'],
         attributes: s['attributes'],
         scan_level: s['scan_level'],
       })
@@ -122,6 +124,7 @@ class FocusFinderControls extends React.Component {
       ignore_hotspots: true,
       track_cv2_contours: true,
       ocr_job_id: '',
+      return_type: 'screen',
       attributes: {},
       scan_level: 'tier_1',
     })
@@ -136,6 +139,7 @@ class FocusFinderControls extends React.Component {
       ignore_hotspots: this.state.ignore_hotspots,
       track_cv2_contours: this.state.track_cv2_contours,
       ocr_job_id: this.state.ocr_job_id,
+      return_type: this.state.return_type,
       attributes: this.state.attributes,
       scan_level: this.state.scan_level,
     }
@@ -295,6 +299,22 @@ class FocusFinderControls extends React.Component {
     )
   }
 
+  buildReturnTypeDropdown() {
+    const values = [
+      {'app_effective': 'App Effective'},
+      {'screen': 'Active Screen'},
+      {'screen_fields': 'Active Screen and Fields'},
+      {'app_effective_fields': 'App Effective and Fields'},
+    ]
+    return buildLabelAndDropdown(
+      values,
+      'Return Type',
+      this.state.return_type,
+      'focus_finder_return_type',
+      ((value)=>{this.setLocalStateVar('return_type', value)})
+    )
+  }
+
   render() {
     if (!this.props.visibilityFlags['focus_finder']) {
       return([])
@@ -306,6 +326,7 @@ class FocusFinderControls extends React.Component {
     const track_contours_checkbox = this.buildToggleField('track_cv2_contours', 'Track large area changes')
     const debug_checkbox = this.buildToggleField('debug', 'debug')
     const ocr_job_id_dropdown = this.buildMatchIdField2('ocr', false) 
+    const return_type_dropdown = this.buildReturnTypeDropdown()
     const attributes_list = this.buildAttributesList()
     const header_row = makeHeaderRow(
       'focus finder',
@@ -361,11 +382,15 @@ class FocusFinderControls extends React.Component {
                   {debug_checkbox}
                 </div>
 
-                <div className='row mt-1 mr-1 ml-1'>
-                  <div className='row mt-2'>
-                    {ocr_job_id_dropdown}
-                  </div>
+                <div className='row ml-1'>
+                  {ocr_job_id_dropdown}
+                </div>
 
+                <div className='row ml-1'>
+                  {return_type_dropdown}
+                </div>
+
+                <div className='row mt-1 mr-1 ml-1'>
                   {attributes_list}
                 </div>
 
