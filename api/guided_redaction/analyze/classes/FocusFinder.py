@@ -106,14 +106,13 @@ class FocusFinder:
             if ocr_match_ele['location'][1] <= coords[1] <= ocr_end[1]:
                 return True
 
-    def build_response_data(self, new_match_ids, no_change_match_ids, altered_match_ids, ocr_matches, app_extents_per_field):
-        build_response_data = {}
+    def get_app_effective_window(self, match_objects):
         env_start_x = False
         env_end_x = False
         env_start_y = False
         env_end_y = False
-        for nid in new_match_ids:
-            ocr_ele = ocr_matches[nid]
+        for match_obj_id in match_objects:
+            ocr_ele = match_objects[match_obj_id]
             ocr_end = (
                 ocr_ele['location'][0] + ocr_ele['size'][0],
                 ocr_ele['location'][1] + ocr_ele['size'][1]
@@ -134,55 +133,29 @@ class FocusFinder:
                 env_end_y = ocr_end[1]
             elif ocr_end[1] > env_end_y:
                 env_end_y = ocr_end[1]
+        return (
+            (env_start_x, env_start_y),
+            (env_end_x, env_end_y)
+        )
+
+    def build_response_data(self, new_match_ids, no_change_match_ids, altered_match_ids, ocr_matches, app_extents_per_field):
+        build_response_data = {}
+        for nid in new_match_ids:
+            ocr_ele = ocr_matches[nid]
             build_ele = self.build_match_obj_for_field_type('new', ocr_ele)
             build_response_data[build_ele['id']] = build_ele
             if self.debug:  # save extents too
                 bg_build_ele = self.build_background_ele_for_field_ele(build_ele, app_extents_per_field, nid)
-                build_response_data[bg_build_ele['id']] = bg_build_ele
+# DEBUGGING, return this line soon
+#                build_response_data[bg_build_ele['id']] = bg_build_ele
         for aid in altered_match_ids:
             ocr_ele = ocr_matches[aid]
-            ocr_end = (
-                ocr_ele['location'][0] + ocr_ele['size'][0],
-                ocr_ele['location'][1] + ocr_ele['size'][1]
-            )
-            if not env_start_x:
-                env_start_x = ocr_ele['location'][0]
-            elif ocr_ele['location'][0] < env_start_x:
-                env_start_x = ocr_ele['location'][0]
-            if not env_end_x:
-                env_end_x = ocr_end[0]
-            elif ocr_end[0] > env_end_x:
-                env_end_x = ocr_end[0]
-            if not env_start_y:
-                env_start_y = ocr_ele['location'][1]
-            elif ocr_ele['location'][1] < env_start_y:
-                env_start_y = ocr_ele['location'][1]
-            if not env_end_y:
-                env_end_y = ocr_end[1]
-            elif ocr_end[1] > env_end_y:
-                env_end_y = ocr_end[1]
             build_ele = self.build_match_obj_for_field_type('altered', ocr_ele)
             build_response_data[build_ele['id']] = build_ele
             if self.debug:  # save extents too
-                new_id = build_ele['id'] + '_bg'
                 bg_build_ele = self.build_background_ele_for_field_ele(build_ele, app_extents_per_field, aid)
-                build_response_data[bg_build_ele['id']] = bg_build_ele
-
-        if env_start_x and env_end_x and env_start_y and env_end_y:
-            the_id = 'ff_' + str(random.randint(100000000, 999000000))
-            location = (env_start_x, env_start_y)
-            size = (
-                env_end_x - env_start_x,
-                env_end_y - env_start_y
-            )
-            build_ele = {
-                'id': the_id,
-                'scanner_type': 'focus_finder',
-                'focus_object_type': 'app',
-                'location': location,
-                'size': size,
-            }
-            build_response_data[build_ele['id']] = build_ele
+# DEBUGGING, return this line soon
+#                build_response_data[bg_build_ele['id']] = bg_build_ele
 
         return build_response_data
 
