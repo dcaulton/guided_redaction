@@ -27,11 +27,6 @@ class GetScreens:
         self.min_aspect_ratio = meta_obj.get('min_aspect_ratio', 1)
         self.debug_image_return_type = meta_obj.get('debug_image_return_type', 'url')
 
-        self.response_data = {}
-        self.response_data['statistics'] = {}
-        self.response_data['x_values'] = []
-        self.response_data['screen_bounding_boxes'] = []
-
     def get_base64_image_string(self, cv2_image):
         image_bytes = cv2.imencode(".png", cv2_image)[1].tostring()
         image_base64 = base64.b64encode(image_bytes)
@@ -39,6 +34,11 @@ class GetScreens:
         return image_base64_string
 
     def get_screens(self, source_image):
+        self.response_data = {}
+        self.response_data['statistics'] = {}
+        self.response_data['x_values'] = []
+        self.response_data['screen_bounding_boxes'] = []
+
         screen_rows = self.get_screen_rows_for_image(source_image)
         for row_index, row in enumerate(screen_rows):
             if self.debug:

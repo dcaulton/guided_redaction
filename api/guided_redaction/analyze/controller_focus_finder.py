@@ -11,6 +11,7 @@ from guided_redaction.jobs.models import Job
 from guided_redaction.utils.classes.FileWriter import FileWriter
 from .controller_t1 import T1Controller
 from guided_redaction.analyze.classes.FocusFinder import FocusFinder
+from guided_redaction.analyze.classes.GetScreens import GetScreens
 
 
 class FocusFinderController(T1Controller):
@@ -33,6 +34,9 @@ class FocusFinderController(T1Controller):
         # for debugging, knocks all other frameset hashes out of the response
         self.debugging_frameset_hash = ''
 #        self.debugging_frameset_hash = '6179022026561607781936378558488872309785506353468273592312'
+        get_screens_meta = {}
+        self.get_screens_worker = GetScreens(get_screens_meta, self.file_writer)
+
 
     def find_focus(self, request_data):
         ocr_job_results = {'movies': {}}
@@ -67,7 +71,7 @@ class FocusFinderController(T1Controller):
         response_obj['movies'][movie_url]['framesets'] = {}
         ordered_hashes = self.get_frameset_hashes_in_order(source_movie['frames'], source_movie['framesets'])
         response_obj['statistics'] = {'movies': {}}
-        response_obj['statistics']['movies'][movie_url] = {'framesets': {}}
+        response_obj['statistics']['movies'][movie_url] = {'framesets': {}, 'screens': {}}
 
         cv2_image = None
         prev_cv2_image = None
@@ -76,8 +80,9 @@ class FocusFinderController(T1Controller):
         for index, frameset_hash in enumerate(ordered_hashes):
             other_t1_matches_in = {}
             image_url = source_movie['framesets'][frameset_hash]['images'][0]
+            image_name = image_url.split('/')[-1]
             if not source_movie_only and frameset_hash not in movie['framesets']:
-                print('passing on sift of image {}'.format(image_url.split('/')[-1]))
+                print('passing on sift of image {}'.format(image_name))
                 continue
             if not source_movie_only and frameset_hash in movie['framesets']:
                 other_t1_matches_in = movie['framesets'][frameset_hash]
@@ -103,10 +108,16 @@ class FocusFinderController(T1Controller):
             )
             if match_obj:
                 response_obj['movies'][movie_url]['framesets'][frameset_hash] = match_obj
+
+            screens_for_frame = self.get_screens_worker.get_screens(cv2_image)
+            response_obj['statistics']['movies'][movie_url]['screens'][frameset_hash] = screens_for_frame['screen_bounding_boxes']
+
             response_obj['statistics']['movies'][movie_url]['framesets'][frameset_hash] = match_stats
 
         if focus_finder_meta.get('ignore_hotspots'):
             self.trim_hotspots(response_obj, source_movies)
+
+        self.trim_to_single_screen(response_obj, movie_url, image_name)
 
         if self.debugging_frameset_hash:
             self.limit_response_to_frameset_hash(response_obj, movie_url, self.debugging_frameset_hash)
@@ -114,6 +125,55 @@ class FocusFinderController(T1Controller):
         self.add_app_windows(response_obj, movie_url)
 
         return response_obj
+
+    def trim_to_single_screen(self, response_obj, movie_url, image_name):
+        for frameset_hash in response_obj['statistics']['movies'][movie_url]['screens']:
+            build_response_obj = {}
+            if frameset_hash not in response_obj['movies'][movie_url]['framesets']:
+                continue
+            frameset_screens = response_obj['statistics']['movies'][movie_url]['screens'][frameset_hash]
+            frameset_matches = response_obj['movies'][movie_url]['framesets'][frameset_hash]
+            # for each field
+            # add to the tally for that screen in the hash
+            # hash with the highest value wins
+            screen_members = {}
+            for screen_number, screen_bounding_box in enumerate(frameset_screens):
+                screen_members[screen_number] = []
+                for match_obj_id in frameset_matches:
+                    match_object = frameset_matches[match_obj_id]
+                    if self.object_contains_object(screen_bounding_box, match_object):
+                        screen_members[screen_number].append(match_obj_id)
+            most_popular_screen_index = -1
+            most_popular_screen_value = -1
+            other_values_exist = 0
+            for screen_num in screen_members:
+                if len(screen_members[screen_num]) > most_popular_screen_value:
+                    most_popular_screen_index = screen_num
+                    most_popular_screen_value = len(screen_members[screen_num])
+            for screen_num in screen_members:
+                if screen_num != most_popular_screen_index:
+                    if len(screen_members[screen_num]):
+                        other_values_exist += 1
+            if other_values_exist:
+                for match_obj_id in screen_members[most_popular_screen_index]:
+                    build_response_obj[match_obj_id] = frameset_matches[match_obj_id]
+                if self.debug:
+                    print('retaining {} on-screen elements for image {}'.format(len(build_response_obj), image_name))
+                    for match_obj_id in frameset_matches:
+                        if match_obj_id not in build_response_obj:
+                            print('trimming off-screen elements for image {}: {}'.format(image_name, frameset_matches[match_obj_id]))
+                response_obj['movies'][movie_url]['framesets'][frameset_hash] = build_response_obj
+                    
+    def object_contains_object(self, outer_object, inner_object):
+        outer_start_x = outer_object['start'][0]
+        outer_start_y = outer_object['start'][1]
+        outer_end_x = outer_object['end'][0]
+        outer_end_y = outer_object['end'][1]
+        inner_center_x = inner_object['location'][0] + math.floor(.5 * inner_object['size'][0])
+        inner_center_y = inner_object['location'][1] + math.floor(.5 * inner_object['size'][1])
+        if outer_start_x <= inner_center_x <= outer_end_x:
+            if outer_start_y <= inner_center_y <= outer_end_y:
+                return True
 
     def limit_response_to_frameset_hash(self, response_obj, movie_url, frameset_hash):
         response_obj['movies'] = {

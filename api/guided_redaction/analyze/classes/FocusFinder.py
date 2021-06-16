@@ -144,17 +144,17 @@ class FocusFinder:
             ocr_ele = ocr_matches[nid]
             build_ele = self.build_match_obj_for_field_type('new', ocr_ele)
             build_response_data[build_ele['id']] = build_ele
-            if self.debug:  # save extents too
-                bg_build_ele = self.build_background_ele_for_field_ele(build_ele, app_extents_per_field, nid)
-# DEBUGGING, return this line soon
+# DEBUGGING
+#            if self.debug:  # save extents too
+#                bg_build_ele = self.build_background_ele_for_field_ele(build_ele, app_extents_per_field, nid)
 #                build_response_data[bg_build_ele['id']] = bg_build_ele
         for aid in altered_match_ids:
             ocr_ele = ocr_matches[aid]
             build_ele = self.build_match_obj_for_field_type('altered', ocr_ele)
             build_response_data[build_ele['id']] = build_ele
-            if self.debug:  # save extents too
-                bg_build_ele = self.build_background_ele_for_field_ele(build_ele, app_extents_per_field, aid)
-# DEBUGGING, return this line soon
+# DEBUGGING
+#            if self.debug:  # save extents too
+#                bg_build_ele = self.build_background_ele_for_field_ele(build_ele, app_extents_per_field, aid)
 #                build_response_data[bg_build_ele['id']] = bg_build_ele
 
         return build_response_data
