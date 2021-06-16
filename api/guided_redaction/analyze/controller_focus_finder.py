@@ -117,16 +117,31 @@ class FocusFinderController(T1Controller):
         if focus_finder_meta.get('ignore_hotspots'):
             self.trim_hotspots(response_obj, source_movies)
 
-        self.trim_to_single_screen(response_obj, movie_url, image_name)
+        self.trim_to_single_screen(response_obj, movie_url, image_name, focus_finder_meta)
 
         if self.debugging_frameset_hash:
             self.limit_response_to_frameset_hash(response_obj, movie_url, self.debugging_frameset_hash)
 
-        self.add_app_windows(response_obj, movie_url)
+        if focus_finder_meta.get('return_type') in ['app_effective', 'app_effective_fields']:
+            self.add_app_windows(response_obj, movie_url)
+
+        if focus_finder_meta.get('return_type') not in ['screen_fields', 'app_effective_fields']:
+            self.remove_field_objects(response_obj, movie_url)
 
         return response_obj
 
-    def trim_to_single_screen(self, response_obj, movie_url, image_name):
+    def remove_field_objects(self, response_obj, movie_url):
+        build_movie = {'framesets': {}}
+        for frameset_hash in response_obj['movies'][movie_url]['framesets']:
+            for match_obj_id in response_obj['movies'][movie_url]['framesets'][frameset_hash]:
+                match_obj = response_obj['movies'][movie_url]['framesets'][frameset_hash][match_obj_id]
+                if match_obj.get('focus_object_type') != 'field':
+                    if frameset_hash not in build_movie['framesets']:
+                        build_movie['framesets'][frameset_hash] = {}
+                    build_movie['framesets'][frameset_hash][match_obj['id']] = match_obj
+        response_obj['movies'][movie_url] = build_movie
+
+    def trim_to_single_screen(self, response_obj, movie_url, image_name, focus_finder_meta):
         for frameset_hash in response_obj['statistics']['movies'][movie_url]['screens']:
             build_response_obj = {}
             if frameset_hash not in response_obj['movies'][movie_url]['framesets']:
@@ -163,6 +178,23 @@ class FocusFinderController(T1Controller):
                         if match_obj_id not in build_response_obj:
                             print('trimming off-screen elements for image {}: {}'.format(image_name, frameset_matches[match_obj_id]))
                 response_obj['movies'][movie_url]['framesets'][frameset_hash] = build_response_obj
+
+            if focus_finder_meta.get('return_type') in ['screen_fields', 'screen']:
+                screen_bounding_box = frameset_screens[most_popular_screen_index]
+                the_id = 'ff_' + str(random.randint(100000000, 999000000))
+                location = screen_bounding_box['start']
+                size = (
+                    screen_bounding_box['end'][0] - screen_bounding_box['start'][0],
+                    screen_bounding_box['end'][1] - screen_bounding_box['start'][1]
+                )
+                build_ele = {
+                    'id': the_id,
+                    'scanner_type': 'focus_finder',
+                    'focus_object_type': 'screen',
+                    'location': location,
+                    'size': size,
+                }
+                response_obj['movies'][movie_url]['framesets'][frameset_hash][build_ele['id']] = build_ele
                     
     def object_contains_object(self, outer_object, inner_object):
         outer_start_x = outer_object['start'][0]
