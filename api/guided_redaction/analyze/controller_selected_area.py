@@ -133,7 +133,7 @@ class SelectedAreaController(T1Controller):
         return return_obj
 
     def get_dimensions_from_source_movie(self, movie):
-        if 'frame_dimensions' in movie:
+        if 'frame_dimensions' in movie and movie['frame_dimensions']:
             return movie['frame_dimensions']
         if 'frames' in movie and movie['frames']:
             first_image_url = movie['frames'][0]

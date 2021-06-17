@@ -940,7 +940,7 @@ class JobLogic extends React.Component {
     )
   }
 
-  static async getJobResultData(job_id, when_done=(()=>{}), getUrl, fetch, buildJsonHeaders) {
+  static async getJobResultData(job_id, when_done=(()=>{}), parts_to_return, getUrl, fetch, buildJsonHeaders) {
     let job_url = getUrl('jobs_url') + '/' + job_id
     await fetch(job_url, {
       method: 'GET',
@@ -961,16 +961,29 @@ class JobLogic extends React.Component {
       delete responseJson['job']['request_data']
       delete responseJson['job']['response_data']
       const pretty_job = JSON.stringify(responseJson, undefined, 2)
-      const pretty_composite = (
-        '============== JOB CONTROL DATA ===============\n' + 
-        pretty_job + 
-        "\n\n" + 
-        '============== RESPONSE DATA ===============\n' + 
-        pretty_response +
-        "\n\n" + 
-        '============== REQUEST DATA ===============\n' + 
-        pretty_request
-      )
+      let pretty_composite = ''
+      if (!parts_to_return) {
+        pretty_composite = (
+          '============== JOB CONTROL DATA ===============\n' + 
+          pretty_job + 
+          "\n\n" + 
+          '============== RESPONSE DATA ===============\n' + 
+          pretty_response +
+          "\n\n" + 
+          '============== REQUEST DATA ===============\n' + 
+          pretty_request
+        )
+      } else if (parts_to_return === 'response') {
+        pretty_composite = (
+          '============== RESPONSE DATA ===============\n' + 
+          pretty_response
+        )
+      } else if (parts_to_return === 'request') {
+        pretty_composite = (
+          '============== REQUEST DATA ===============\n' + 
+          pretty_request
+        )
+      }
       when_done(pretty_composite)
     })
   }

@@ -1495,8 +1495,8 @@ class RedactApplication extends React.Component {
     return mask_zones
   }
 
-  async getJobResultDataWrapper(job_id, when_done=(()=>{})) {
-    JobLogic.getJobResultData(job_id, when_done, this.getUrl, fetch, this.buildJsonHeaders)
+  async getJobResultDataWrapper(job_id, when_done=(()=>{}), parts_to_return) {
+    JobLogic.getJobResultData(job_id, when_done, parts_to_return, this.getUrl, fetch, this.buildJsonHeaders)
   }
 
   async getJobFailedTasksWrapper(job_id, when_done=(()=>{})) {

@@ -383,7 +383,7 @@ class JobCard extends React.Component {
           <button
               type="button"
               className="border-0 bg-white"
-              onClick={() => this.showJobResults(this.props.job_data['id'], this.jobIsLarge())}
+              onClick={() => this.showJobResults(this.props.job_data['id'])}
               data-toggle="modal"
               data-target="#insightsPanelModal"
           >
@@ -394,8 +394,8 @@ class JobCard extends React.Component {
     )
   }
 
-  showJobResults(job_id, job_is_large=false) {
-    if (job_is_large) {
+  showJobResults(job_id) {
+    if (this.jobIsLarge()) {
       for (let i=0; i < this.props.jobs.length; i++) {
         if (this.props.jobs[i]['id'] === job_id) {
           const job = this.props.jobs[i]
@@ -463,45 +463,58 @@ class JobCard extends React.Component {
   }
 
   buildLargeWarning() {
-    if (this.jobIsLarge()) {
-      let request_data_link = ''
-      if (Object.keys(this.props.job_data).includes('request_data_url')) {
-        const request_data_url = this.props.job_data['request_data_url']
-        request_data_link = (
-          <div className='d-inline ml-1'>
-            <button
-              className='btn btn-link text-light p-0 m-0'
-              onClick={() => window.open(request_data_url)}
-            >
-              Q
-            </button>
-          </div>
-        )
-      }
-      let response_data_link = ''
-      if (Object.keys(this.props.job_data).includes('response_data_url')) {
-        const response_data_url = this.props.job_data['response_data_url']
-        response_data_link = (
-          <div className='d-inline ml-1'>
-            <button
-              className='btn btn-link text-light p-0 m-0'
-              onClick={() => window.open(response_data_url)}
-            >
-              R
-            </button>
-          </div>
-        )
-      }
-      return (
-        <div className='col bg-danger rounded font-weight-bold'>
-          <div className='d-inline text-light'>
-            XL Payloads
-          </div>
-          {request_data_link}
-          {response_data_link}
-        </div>
-      )
+    if (!this.jobIsLarge()) {
+      return ''
     }
+
+    let request_data_link = ''
+    function request_data_action() {}
+    if (Object.keys(this.props.job_data).includes('request_data_url')) {
+      const request_data_url = this.props.job_data['request_data_url']
+      request_data_action = () => window.open(request_data_url)
+    } else {
+      request_data_action = () => this.props.getJobResultData(this.props.job_data['id'], this.displayInNewTab, 'request')
+    }
+    request_data_link = (
+      <div className='d-inline ml-1'>
+        <button
+          className='btn btn-link text-light p-0 m-0'
+          onClick={request_data_action}
+        >
+          Q
+        </button>
+      </div>
+    )
+
+    let response_data_link = ''
+    function response_data_action() {}
+    if (Object.keys(this.props.job_data).includes('response_data_url')) {
+      const response_data_url = this.props.job_data['response_data_url']
+      response_data_action = () => window.open(response_data_url)
+    } else {
+      response_data_action = () => this.props.getJobResultData(this.props.job_data['id'], this.displayInNewTab, 'response')
+    }
+    response_data_link = (
+      <div className='d-inline ml-1'>
+        <button
+          className='btn btn-link text-light p-0 m-0'
+          onClick={response_data_action}
+        >
+          R
+        </button>
+      </div>
+    )
+
+    return (
+      <div className='col bg-danger rounded font-weight-bold'>
+        <div className='d-inline text-light'>
+          XL Payloads
+        </div>
+        {request_data_link}
+        {response_data_link}
+      </div>
+    )
+
   }
 
   buildViewFailedTasksLink() {
