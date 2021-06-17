@@ -2232,9 +2232,6 @@ class RedactApplication extends React.Component {
       job_eval_name = 'JE'
       top_div_classnames = 'h-100 col-1 bg-dark navbar-dark pl-2 font-weight-bold'
     }
-    if (!this.props.show_insights) {
-      insights_name = ''
-    }
     if (this.props.hide_precision_learning) {
       pl_name = ''
     }
