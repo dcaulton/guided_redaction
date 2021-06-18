@@ -123,9 +123,12 @@ class FocusFinderController(T1Controller):
             self.limit_response_to_frameset_hash(response_obj, movie_url, self.debugging_frameset_hash)
 
         if focus_finder_meta.get('return_type') in ['app_effective', 'app_effective_fields']:
-            self.add_app_windows(response_obj, movie_url)
+            self.add_app_effective_windows(response_obj, movie_url)
 
-        if focus_finder_meta.get('return_type') not in ['screen_fields', 'app_effective_fields']:
+        if focus_finder_meta.get('return_type') in ['app_flood', 'app_flood_fields']:
+            self.add_app_flood_windows(response_obj, movie_url)
+
+        if focus_finder_meta.get('return_type') not in ['screen_fields', 'app_effective_fields', 'app_flood_fields']:
             self.remove_field_objects(response_obj, movie_url)
 
         return response_obj
@@ -223,7 +226,28 @@ class FocusFinderController(T1Controller):
             }
         }
 
-    def add_app_windows(self, response_obj, movie_url):
+    def add_app_flood_windows(self, response_obj, movie_url):
+#MAMA
+        for frameset_hash in response_obj['movies'][movie_url]['framesets']:
+            match_objects = response_obj['movies'][movie_url]['framesets'][frameset_hash]
+            app_start, app_end = self.focus_finder.get_app_effective_window(match_objects)
+            if app_start[0] and app_start[1] and app_end[0]  and app_end[1]:
+                the_id = 'ff_' + str(random.randint(100000000, 999000000))
+                location = app_start
+                size = (
+                    app_end[0] - app_start[0],
+                    app_end[1] - app_start[1]
+                )
+                build_ele = {
+                    'id': the_id,
+                    'scanner_type': 'focus_finder',
+                    'focus_object_type': 'app_flood',
+                    'location': location,
+                    'size': size,
+                }
+                response_obj['movies'][movie_url]['framesets'][frameset_hash][build_ele['id']] = build_ele
+
+    def add_app_effective_windows(self, response_obj, movie_url):
         for frameset_hash in response_obj['movies'][movie_url]['framesets']:
             match_objects = response_obj['movies'][movie_url]['framesets'][frameset_hash]
             app_start, app_end = self.focus_finder.get_app_effective_window(match_objects)
