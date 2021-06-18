@@ -708,6 +708,9 @@ class InsightsPanel extends React.Component {
       const movie = this.props.movies[this.props.movie_url]
       const image_urls = this.buildImageUrlsToZip(movie)
       job_data['request_data']['image_urls'] = image_urls
+      if (Object.keys(movie).includes('audio_url') && movie['audio_url']) {
+        job_data['request_data']['audio_url'] = movie['audio_url']
+      }
     } else if (job_type === 'zip_all_movies') {
       job_data['operation'] = 'zip_movie_threaded'
       job_data['request_data']['movies'] = this.props.movies

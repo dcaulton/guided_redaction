@@ -4,6 +4,7 @@ import ffmpeg
 import requests
 import os
 import shutil
+import uuid
 
 
 requests.packages.urllib3.disable_warnings()
@@ -153,7 +154,8 @@ class FileWriter():
         (x_part, file_part) = os.path.split(image_url_list[0])
         (y_part, uuid_part) = os.path.split(x_part)
         # make a new subdirectory
-        new_subdir = os.path.join(uuid_part, 'build')
+#        new_subdir = os.path.join(uuid_part, 'build')
+        new_subdir = str(uuid.uuid4())
         print('new subdir is {}'.format(new_subdir))
         self.create_unique_directory(new_subdir)
         # copy images to a new directory, give them sequential numbers

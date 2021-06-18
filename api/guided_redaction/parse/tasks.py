@@ -95,11 +95,16 @@ def build_and_dispatch_zip_movie_tasks(parent_job):
         inbound_filename = (urlsplit(movie_url)[2]).split("/")[-1]
         (file_basename, file_extension) = os.path.splitext(inbound_filename)
         new_filename = file_basename + "_redacted" + file_extension
-        build_request_data = json.dumps({
+        payload_obj = {
             'image_urls': build_image_urls,
             'new_movie_name': new_filename,
             'movie_url': movie_url,
-        })
+        }
+        if movie.get('audio_url'):
+            payload_obj['audio_url'] = movie.get('audio_url')
+
+        build_request_data = json.dumps(payload_obj)
+
         job = Job(
             request_data=build_request_data,
             status='created',
