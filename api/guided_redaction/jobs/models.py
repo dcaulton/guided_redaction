@@ -42,7 +42,7 @@ class Job(models.Model):
 
     EXTERNAL_PAYLOAD_FIELDS = ['response_data', 'request_data']
     MIN_PERCENT_COMPLETE_INCREMENT = .05
-    MAX_DB_PAYLOAD_SIZE = 1000000  
+    MAX_DB_PAYLOAD_SIZE = getattr(settings, 'REDACT_MAX_DB_PAYLOAD_SIZE', 1000000)
 
     def __str__(self):
         disp_hash = {
@@ -59,18 +59,8 @@ class Job(models.Model):
         percent_complete = self.get_percent_complete()
         if percent_complete != self.percent_complete:
             self.percent_complete = percent_complete
-
         save_external_payloads(self) 
-
-        # because we override from_db() because of external payloads and because 
-        #  it doesn't look like super() is doing what we want on from_db (probably because 
-        #  it's a classmethod), we have to force an internal variable here.  we're duplicating the 
-        #  behavior from django's from_db()
-        if self.id:
-            self._state.adding = False
-
         super(Job, self).save(*args, **kwargs)
-
         if self.parent:
             self.parent.update_percent_complete()
         else:
@@ -97,7 +87,7 @@ class Job(models.Model):
         return wall_clock_run_time 
 
     def as_dict(self):
-        children = Job.objects.filter(parent_id=self.id).order_by('created_on')
+        children = Job.objects.filter(parent_id=self.id).order_by('sequence')
         child_ids = [str(child.id) + ' : ' + child.operation for child in children]
         pretty_time = self.pretty_date(self.created_on)
         seconds = (self.updated - self.created_on).seconds
@@ -146,6 +136,13 @@ class Job(models.Model):
     def from_db(cls, db, field_names, values):
         instance = cls(*values)
         get_data_from_disk_for_model_instance(instance)
+        ##############################################
+        # Internal Django bookkeeping                #
+        # See: django.db.models.base.Model.from_db() #
+        ##############################################
+        instance._state.adding = False
+        instance._state.db = db
+        ############################################
         return instance
 
     def get_data_from_disk(self):
@@ -176,6 +173,8 @@ class Job(models.Model):
                 keep_attr.job = None
                 keep_attr.save()
         delete_external_payloads(self)
+        for child in self.children.all():
+            child.delete()
         super(Job, self).delete()
 
     def add_owner(self, owner_id):

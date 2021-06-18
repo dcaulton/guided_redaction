@@ -62,11 +62,7 @@ class DispatchController:
             parent_job.save()
         node_id = Attribute.objects.filter(job=job, name='node_id').first().value
         if node_id not in content['edges']: # no nodes left to dispatch, wrap up
-            # if the child jobs were big, they may need a reload.
-            # this is because in save_external_payload, we clear out the response_data field and just use the path.
-            # that is typically desired behavior, because we don't usually do much post save.  in this case we need that data
-            #   because the job to pipeline hand off is diff than job to job hand off
-            job = Job.objects.get(pk=job.id)
+            job.get_data_from_disk()
             parent_job.response_data = job.response_data
             parent_job.status = 'success'
             parent_job.save()
@@ -199,7 +195,7 @@ class DispatchController:
                 next_node_id = content['edges'][node_id][0]
                 node = content['node_metadata']['node'][next_node_id]
         t1_scanner_types = [
-            'template', 'selected_area', 'ocr', 'data_sifter', 'mesh_match', 'selection_grower', 'focus_finder', 't1_filter'
+            'template', 'selected_area', 'ocr', 'data_sifter', 'mesh_match', 'selection_grower'
         ] 
         if node['type'] in t1_scanner_types:
             return self.build_tier_1_scanner_job(
@@ -305,106 +301,6 @@ class DispatchController:
             job=job,
         ).save()
         return job
-
-    def build_tier_1_scanner_job(
-        self, 
-        scanner_type, 
-        content, 
-        node, 
-        parent_job, 
-        previous_job
-    ):
-        if parent_job.request_data_path and len(parent_job.request_data) < 3:
-            parent_job.get_data_from_disk()
-
-        parent_job_request_data = json.loads(parent_job.request_data)
-        desc_string = 'scan ' + scanner_type + ' threaded '
-        build_scanners = {}
-        scanner = content['node_metadata']['tier_1_scanners'][scanner_type][node['entity_id']]
-        build_scanners[node['entity_id']] = scanner
-        build_movies = {}
-
-        source_movies = self.get_source_movies_from_parent_job(parent_job)
-
-        if previous_job:
-            if node.get('input'):
-                input_job = get_job_for_node(node['input'], parent_job)
-                if input_job:
-                    input_response = json.loads(input_job.response_data)
-                    # this is a hack, not sure why it doesn't get picked up with the normal job fetch
-                    if not input_response and input_job.response_data_path:
-                        input_job.get_data_from_disk()
-                        input_response = json.loads(input_job.response_data)
-                    build_movies = input_response['movies']
-            else:
-                previous_result = json.loads(previous_job.response_data)
-                if not previous_result and previous_job.response_data_path:
-                    # this is a hack, not sure why it doesn't get picked up with the normal job fetch
-                    previous_job.get_data_from_disk()
-                    previous_result = json.loads(previous_job.response_data)
-                if previous_result.get('movies'):
-                    build_movies = previous_result['movies']
-            if source_movies and 'source' not in build_movies:
-                build_movies['source'] = source_movies
-        else:
-            if parent_job_request_data and 'movies' in parent_job_request_data:
-                build_movies = parent_job_request_data['movies']
-
-        build_request_data = {
-            'movies': build_movies,
-            'scan_level': scanner['scan_level'],
-            'id': scanner['id'],
-            'tier_1_scanners': {},
-        }
-        build_request_data['tier_1_scanners'][scanner_type] = build_scanners
-
-        if node['type'] == 'data_sifter':
-            self.try_to_add_ocr_subjob(build_request_data, node, content, parent_job, 'data_sifter')
-        elif node['type'] == 'focus_finder':
-            self.try_to_add_ocr_subjob(build_request_data, node, content, parent_job, 'focus_finder')
-        elif node['type'] == 'ocr':
-            self.try_to_add_ocr_subjob(build_request_data, node, content, parent_job, 'ocr')
-            self.try_to_add_data_sifter_subjob(build_request_data, node, content, parent_job)
-
-        operation = scanner_type + '_threaded'
-        request_data = json.dumps(build_request_data)
-
-        job = Job(
-            status='created',
-            description=desc_string,
-            app='analyze',
-            operation=operation,
-            sequence=0,
-            request_data=request_data,
-            parent=parent_job,
-        )
-        job.save()
-        Attribute(
-            name='node_id',
-            value=node['id'],
-            job=job,
-        ).save()
-        return job
-
-    def try_to_add_ocr_subjob(self, build_request_data, node, content, parent_job, scanner_type):
-        scanner_id = list(build_request_data['tier_1_scanners'][scanner_type].keys())[0]
-        scanner = build_request_data['tier_1_scanners'][scanner_type][scanner_id]
-
-        if 'ocr_jobs' in content and node['id'] in content['ocr_jobs']:
-            ocr_node_ids = content['ocr_jobs'][node['id']]
-            for node_id in ocr_node_ids:
-                ocr_job = get_job_for_node(node_id, parent_job)
-                scanner['ocr_job_id'] = str(ocr_job.id)
-
-    def try_to_add_data_sifter_subjob(self, build_request_data, node, content, parent_job):
-        scanner_id = list(build_request_data['tier_1_scanners']['ocr'].keys())[0]
-        scanner = build_request_data['tier_1_scanners']['ocr'][scanner_id]
-
-        if 'data_sifter_jobs' in content and node['id'] in content['data_sifter_jobs']:
-            ds_node_ids = content['data_sifter_jobs'][node['id']]
-            for node_id in ds_node_ids:
-                ds_job = get_job_for_node(node_id, parent_job)
-                scanner['data_sifter_job_id'] = str(ds_job.id)
 
     def build_intersect_job(self, content, node, parent_job):
         input_node_ids = []
@@ -688,6 +584,77 @@ class DispatchController:
                     if 'frames' in movie and movie['frames']:
                         source_movies = request_movies
         return source_movies
+
+    def build_tier_1_scanner_job(
+        self, 
+        scanner_type, 
+        content, 
+        node, 
+        parent_job, 
+        previous_job
+    ):
+        if parent_job.request_data_path and len(parent_job.request_data) < 3:
+            parent_job.get_data_from_disk()
+
+        parent_job_request_data = json.loads(parent_job.request_data)
+        desc_string = 'scan ' + scanner_type + ' threaded '
+        build_scanners = {}
+        scanner = content['node_metadata']['tier_1_scanners'][scanner_type][node['entity_id']]
+        build_scanners[node['entity_id']] = scanner
+        build_movies = {}
+
+        source_movies = self.get_source_movies_from_parent_job(parent_job)
+
+        if previous_job:
+            if 'input' in node:
+                input_job = get_job_for_node(node['input'], parent_job)
+                if input_job:
+                    input_response = json.loads(input_job.response_data)
+                    # this is a hack, not sure why it doesn't get picked up with the normal job fetch
+                    if not input_response and input_job.response_data_path:
+                        input_job.get_data_from_disk()
+                        input_response = json.loads(input_job.response_data)
+                    build_movies = input_response['movies']
+            else:
+                previous_result = json.loads(previous_job.response_data)
+                if not previous_result and previous_job.response_data_path:
+                    # this is a hack, not sure why it doesn't get picked up with the normal job fetch
+                    previous_job.get_data_from_disk()
+                    previous_result = json.loads(previous_job.response_data)
+                if previous_result.get('movies'):
+                    build_movies = previous_result['movies']
+            if source_movies and 'source' not in build_movies:
+                build_movies['source'] = source_movies
+        else:
+            if parent_job_request_data and 'movies' in parent_job_request_data:
+                build_movies = parent_job_request_data['movies']
+
+        build_request_data = {
+            'movies': build_movies,
+            'scan_level': scanner['scan_level'],
+            'id': scanner['id'],
+            'tier_1_scanners': {},
+        }
+        build_request_data['tier_1_scanners'][scanner_type] = build_scanners
+        operation = scanner_type + '_threaded'
+        request_data = json.dumps(build_request_data)
+
+        job = Job(
+            status='created',
+            description=desc_string,
+            app='analyze',
+            operation=operation,
+            sequence=0,
+            request_data=request_data,
+            parent=parent_job,
+        )
+        job.save()
+        Attribute(
+            name='node_id',
+            value=node['id'],
+            job=job,
+        ).save()
+        return job
 
     def node_has_no_job_yet(self, next_node_id, parent_job):
         job_for_node = get_job_for_node(next_node_id, parent_job)
