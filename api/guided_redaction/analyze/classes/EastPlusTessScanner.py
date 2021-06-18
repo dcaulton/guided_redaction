@@ -1,13 +1,17 @@
-import cv2
-from guided_redaction.analyze.classes.EastScanner import EastScanner
-from imutils import grab_contours
 import math
-import numpy as np
 import os
-import pytesseract
 import random
 import time
 import uuid
+
+import cv2
+import pytesseract
+from django.conf import settings
+from imutils import grab_contours
+import numpy as np
+
+from guided_redaction.analyze.classes.EastScanner import EastScanner
+
 
 # tools to use East and Tesseract to find word regions in an image
 class EastPlusTessScanner(EastScanner):
@@ -39,6 +43,7 @@ class EastPlusTessScanner(EastScanner):
         total_tess_time = 0
         copy = image.copy()
         config = "-l eng --oem 1 --psm 7"
+        config = getattr(settings, 'REDACT_TESSERACT_CONFIG', config)
         for contour in contours:
             (x, y, w, h) = cv2.boundingRect(contour)
             roi = gray[y : y + h, x : x + w]
@@ -62,8 +67,15 @@ class EastPlusTessScanner(EastScanner):
             }
             text_regions.append(recognized_text_area)
 
-        print("text recognition completed in {} seconds for {} calls ".format(math.ceil(total_tess_time), len(contours)))
-
+        if self.debug:
+            sum_text = (
+                "total text recognition time: "
+                + str(math.ceil(total_tess_time))
+                + " seconds for "
+                + str(len(contours))
+                + " calls"
+            )
+            print(sum_text)
         return text_regions
 
     def do_tess_on_whole_image(self, image):
@@ -77,6 +89,7 @@ class EastPlusTessScanner(EastScanner):
         total_tess_time = 0
         copy = image.copy()
         config = "-l eng --oem 1 --psm 7"
+        config = getattr(settings, 'REDACT_TESSERACT_CONFIG', config)
         start = time.time()
         text = pytesseract.image_to_string(gray, config=config)
         end = time.time()
@@ -87,8 +100,13 @@ class EastPlusTessScanner(EastScanner):
         }
         text_regions.append(recognized_text_area)
 
-        print("text recognition completed in {} seconds for 1 call ".format(math.ceil(total_tess_time), len(contours)))
-
+        if self.debug:
+            sum_text = (
+                "total text recognition time: "
+                + str(math.ceil(total_tess_time))
+                + " seconds for 1 call"
+            )
+            print(sum_text)
         return text_regions
 
     def get_centroid(self, contour):
