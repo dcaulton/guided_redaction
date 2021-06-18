@@ -11,6 +11,7 @@ from guided_redaction.jobs.models import Job
 from guided_redaction.utils.classes.FileWriter import FileWriter
 from .controller_t1 import T1Controller
 from guided_redaction.analyze.classes.FocusFinder import FocusFinder
+from guided_redaction.analyze.classes.ExtentsFinder import ExtentsFinder
 from guided_redaction.analyze.classes.GetScreens import GetScreens
 
 
@@ -126,7 +127,7 @@ class FocusFinderController(T1Controller):
             self.add_app_effective_windows(response_obj, movie_url)
 
         if focus_finder_meta.get('return_type') in ['app_flood', 'app_flood_fields']:
-            self.add_app_flood_windows(response_obj, movie_url)
+            self.add_app_flood_windows(response_obj, movie_url, cv2_image)
 
         if focus_finder_meta.get('return_type') not in ['screen_fields', 'app_effective_fields', 'app_flood_fields']:
             self.remove_field_objects(response_obj, movie_url)
@@ -225,27 +226,6 @@ class FocusFinderController(T1Controller):
                 }
             }
         }
-
-    def add_app_flood_windows(self, response_obj, movie_url):
-#MAMA
-        for frameset_hash in response_obj['movies'][movie_url]['framesets']:
-            match_objects = response_obj['movies'][movie_url]['framesets'][frameset_hash]
-            app_start, app_end = self.focus_finder.get_app_effective_window(match_objects)
-            if app_start[0] and app_start[1] and app_end[0]  and app_end[1]:
-                the_id = 'ff_' + str(random.randint(100000000, 999000000))
-                location = app_start
-                size = (
-                    app_end[0] - app_start[0],
-                    app_end[1] - app_start[1]
-                )
-                build_ele = {
-                    'id': the_id,
-                    'scanner_type': 'focus_finder',
-                    'focus_object_type': 'app_flood',
-                    'location': location,
-                    'size': size,
-                }
-                response_obj['movies'][movie_url]['framesets'][frameset_hash][build_ele['id']] = build_ele
 
     def add_app_effective_windows(self, response_obj, movie_url):
         for frameset_hash in response_obj['movies'][movie_url]['framesets']:
@@ -411,4 +391,54 @@ class FocusFinderController(T1Controller):
             cv2_image.shape[1],
             1
         )
+
+    def add_app_flood_windows(self, response_obj, movie_url, cv2_image):
+        finder = ExtentsFinder()
+        for frameset_hash in response_obj['movies'][movie_url]['framesets']:
+            match_objects = response_obj['movies'][movie_url]['framesets'][frameset_hash]
+            app_start, app_end = self.focus_finder.get_app_effective_window(match_objects)
+            if not app_start[0] or not app_start[1] or not app_end[0] or not app_end[1]:
+                continue
+            just_before = (
+                app_start[0] - 5,
+                app_start[1] - 5
+            )
+            before_start_end, before_mask = finder.determine_flood_fill_area(cv2_image, just_before)
+            before_start = before_start_end[0]
+            before_end = before_start_end[1]
+
+            just_after = (
+                app_end[0] + 5,
+                app_end[1] + 5
+            )
+            after_start_end, after_mask = finder.determine_flood_fill_area(cv2_image, just_after)
+            after_start = after_start_end[0]
+            after_end = after_start_end[1]
+            
+            agg_start = list(before_start)
+            if agg_start[0] > after_start[0]:
+                agg_start[0] = after_start[0]
+            if agg_start[1] > after_start[1]:
+                agg_start[1] = after_start[1]
+
+            agg_end = list(before_end)
+            if agg_end[0] < after_end[0]:
+                agg_end[0] = after_end[0]
+            if agg_end[1] < after_end[1]:
+                agg_end[1] = after_end[1]
+
+            the_id = 'ff_' + str(random.randint(100000000, 999000000))
+            location = agg_start
+            size = (
+                agg_end[0] - agg_start[0],
+                agg_end[1] - agg_start[1]
+            )
+            build_ele = {
+                'id': the_id,
+                'scanner_type': 'focus_finder',
+                'focus_object_type': 'app_flood',
+                'location': location,
+                'size': size,
+            }
+            response_obj['movies'][movie_url]['framesets'][frameset_hash][build_ele['id']] = build_ele
 
