@@ -301,10 +301,12 @@ class FocusFinderControls extends React.Component {
 
   buildReturnTypeDropdown() {
     const values = [
-      {'app_effective': 'App Effective'},
       {'screen': 'Active Screen'},
+      {'app_effective': 'App Effective'},
+      {'app_flood': 'App Flood'},
       {'screen_fields': 'Active Screen and Fields'},
       {'app_effective_fields': 'App Effective and Fields'},
+      {'app_flood_fields': 'App Flood and Fields'},
     ]
     return buildLabelAndDropdown(
       values,

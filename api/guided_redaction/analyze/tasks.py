@@ -28,6 +28,8 @@ from guided_redaction.analyze.api import (
     AnalyzeViewSetManualCompileDataSifter,
     AnalyzeViewSetIntersect,
     AnalyzeViewSetDataSifter,
+    AnalyzeViewSetT1Filter,
+    AnalyzeViewSetFocusFinder,
     AnalyzeViewSetOcr
 )
 
@@ -55,6 +57,8 @@ def dispatch_parent_job(job):
             selection_grower_threaded.delay(parent_job.id)
         if parent_job.app == 'analyze' and parent_job.operation == 'data_sifter_threaded':
             data_sifter_threaded.delay(parent_job.id)
+        if parent_job.app == 'analyze' and parent_job.operation == 'focus_finder_threaded':
+            focus_finder_threaded.delay(parent_job.id)
         if parent_job.app == 'analyze' and parent_job.operation == 'hog_train_threaded':
             train_hog_threaded.delay(parent_job.id)
         if parent_job.app == 'analyze' and parent_job.operation == 'oma_first_scan_threaded':
@@ -81,6 +85,11 @@ def build_and_dispatch_generic_batched_threaded_children(
     if 'source' in movies:
         source_movies = movies['source']
         del movies['source']
+        # there are cases where the ONLY movies we get into a t1 scanner are source movies.
+        #  (in this case a pipeline, using its main input as input to a particular node)
+        # when so upgrade them to regular movies
+        if not movies:
+            movies = source_movies
 
     if len(movies) == 0:
         finish_operation_function(parent_job)
@@ -313,6 +322,66 @@ def wrap_up_generic_threaded(job, children, scanner_type):
     job.status = 'success'
     job.response_data = json.dumps(aggregate_response_data)
     job.save()
+
+def generic_top_level_threaded_with_optional_ocr_id(
+    job_uuid,
+    scanner_type,
+    scanner_type_title,
+    build_dispatch_children_routine,
+    finish_routine
+):
+    if Job.objects.filter(pk=job_uuid).exists():
+        job = Job.objects.get(pk=job_uuid)
+    request_data = json.loads(job.request_data)
+    scanner_id = list(request_data['tier_1_scanners'][scanner_type].keys())[0]
+    scanner = request_data['tier_1_scanners'][scanner_type][scanner_id]
+    if 'ocr_job_id' not in scanner or not scanner['ocr_job_id']:
+        if Job.objects.filter(parent=job).count() > 0:
+            print('loading ocr jobs results')
+            ocr_job_id = Job.objects.filter(parent=job).first().id
+            scanner['ocr_job_id'] = str(ocr_job_id)
+            request_data['tier_1_scanners'][scanner_type][scanner['id']] = scanner
+            job.request_data = json.dumps(request_data)
+            job.save()
+        else:
+            print('{}: dispatching required ocr jobs first'.format(scanner_type))
+            ocr_id = 'ocr_' + str(uuid.uuid4())
+            stub_ocr_meta = {
+                "id": ocr_id,
+                "name": "stub",
+                "start": [],
+                "end": [],
+                "match_text": [],
+                "match_percent": 70,
+                "skip_frames": 0,
+                "skip_east": False,
+                "data_sifter_job_id": "",
+                "ocr_job_id": "",
+                "scan_level": "tier_1",
+                "attributes": {}
+            }
+            if 'ocr' not in request_data['tier_1_scanners']:
+                request_data['tier_1_scanners']['ocr'] = {}
+            request_data['tier_1_scanners']['ocr'][ocr_id] = stub_ocr_meta
+            job.request_data = json.dumps(request_data)
+            job.save()
+
+            build_and_dispatch_generic_batched_threaded_children(
+                job,
+                'ocr',
+                ocr_batch_size,
+                'scan_ocr',
+                None,
+                scan_ocr
+            )
+            return
+    generic_threaded(
+        job_uuid,
+        scanner_type,
+        scanner_type_title,
+        build_dispatch_children_routine,
+        finish_routine
+    )
 
 def get_frameset_hash_for_frame(frame, framesets):
     for frameset_hash in framesets:
@@ -834,17 +903,27 @@ def data_sifter(job_uuid):
 
 @shared_task
 def data_sifter_threaded(job_uuid):
-    generic_threaded(
-        job_uuid, 
-        'data_sifter', 
-        'DATA SIFTER THREADED', 
-        build_and_dispatch_data_sifter_threaded_children, 
-        finish_data_sifter_threaded
+    scanner_type = 'data_sifter'
+    scanner_type_title = 'DATA SIFTER THREADED'
+    build_dispatch_children_routine = build_and_dispatch_data_sifter_threaded_children
+    finish_routine = finish_data_sifter_threaded
+    return generic_top_level_threaded_with_optional_ocr_id(
+        job_uuid, scanner_type, scanner_type_title, build_dispatch_children_routine, finish_routine
     )
 
 def finish_data_sifter_threaded(job):
-    children = Job.objects.filter(parent=job)
+    children = Job.objects.filter(parent=job, operation='data_sifter')
     wrap_up_generic_threaded(job, children, 'data_sifter')
+
+    if Job.objects.filter(parent=job, operation='scan_ocr').count() > 0:
+        # ocr was run on the fly, we don't want this ocr job ids for future runs
+        request_data = json.loads(job.request_data)
+        data_sifter_id = list(request_data['tier_1_scanners']['data_sifter'].keys())[0]
+        data_sifter = request_data['tier_1_scanners']['data_sifter'][data_sifter_id]
+        data_sifter['ocr_job_id'] = ''
+        job.request_data = json.dumps(request_data)
+        job.save()
+
     pipeline = get_pipeline_for_job(job.parent)
     if pipeline:
         worker = PipelinesViewSetDispatch()
@@ -857,6 +936,49 @@ def build_and_dispatch_data_sifter_threaded_children(parent_job):
         'data_sifter', 
         data_sifter, 
         finish_data_sifter_threaded
+    )
+
+#=====FOCUS FINDER ===============================
+
+@shared_task
+def focus_finder(job_uuid):
+    generic_worker_call(job_uuid, 'focus_finder', AnalyzeViewSetFocusFinder)
+
+@shared_task
+def focus_finder_threaded(job_uuid):
+    scanner_type = 'focus_finder'
+    scanner_type_title = 'FOCUS FINDER THREADED'
+    build_dispatch_children_routine = build_and_dispatch_focus_finder_threaded_children
+    finish_routine = finish_focus_finder_threaded
+    return generic_top_level_threaded_with_optional_ocr_id(
+        job_uuid, scanner_type, scanner_type_title, build_dispatch_children_routine, finish_routine
+    )
+
+def finish_focus_finder_threaded(job):
+    children = Job.objects.filter(parent=job, operation='focus_finder')
+    wrap_up_generic_threaded(job, children, 'focus_finder')
+
+    if Job.objects.filter(parent=job, operation='scan_ocr').count() > 0:
+        # ocr was run on the fly, we don't want this ocr job ids for future runs
+        request_data = json.loads(job.request_data)
+        scanner_id = list(request_data['tier_1_scanners']['focus_finder'].keys())[0]
+        scanner = request_data['tier_1_scanners']['focus_finder'][scanner_id]
+        scanner['ocr_job_id'] = ''
+        job.request_data = json.dumps(request_data)
+        job.save()
+
+    pipeline = get_pipeline_for_job(job.parent)
+    if pipeline:
+        worker = PipelinesViewSetDispatch()
+        worker.handle_job_finished(job, pipeline)
+
+def build_and_dispatch_focus_finder_threaded_children(parent_job):
+    build_and_dispatch_generic_threaded_children(
+        parent_job,
+        'focus_finder',
+        'focus_finder',
+        focus_finder,
+        finish_focus_finder_threaded
     )
 
 #===HOG=================================
@@ -1069,3 +1191,11 @@ def intersect(job_uuid):
 def filter(job_uuid):
     generic_worker_call(job_uuid, 'filter', AnalyzeViewSetFilter)
 
+@shared_task
+def t1_filter(job_uuid):
+    generic_worker_call(job_uuid, 't1_filter', AnalyzeViewSetT1Filter)
+    job = Job.objects.get(pk=job_uuid)
+    pipeline = get_pipeline_for_job(job.parent)
+    if pipeline:
+        worker = PipelinesViewSetDispatch()
+        worker.handle_job_finished(job, pipeline)
