@@ -18,13 +18,12 @@ from guided_redaction.analyze.classes.GetScreens import GetScreens
 class FocusFinderController(T1Controller):
 
     def __init__(self):
-        self.debug = True
         self.file_writer = FileWriter(
             working_dir=settings.REDACT_FILE_STORAGE_DIR,
             base_url=settings.REDACT_FILE_BASE_URL,
             image_request_verify_headers=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
         )
-        self.debug = True
+        self.debug = False
         self.image_uuid = str(uuid.uuid4())
         self.image_directory = self.file_writer.create_unique_directory(self.image_uuid)
         self.num_histogram_bins = 8
@@ -60,6 +59,7 @@ class FocusFinderController(T1Controller):
 
         scanner_id = list(request_data["tier_1_scanners"]['focus_finder'].keys())[0]
         focus_finder_meta = request_data["tier_1_scanners"]['focus_finder'][scanner_id]
+        self.debug = focus_finder_meta.get('debug', False)
 
         ocr_job_results = {'movies': {}}
         if focus_finder_meta.get('ocr_job_id'):
@@ -180,7 +180,9 @@ class FocusFinderController(T1Controller):
                     print('retaining {} on-screen elements for image {}'.format(len(build_response_obj), image_name))
                     for match_obj_id in frameset_matches:
                         if match_obj_id not in build_response_obj:
-                            print('trimming off-screen elements for image {}: {}'.format(image_name, frameset_matches[match_obj_id]))
+                            print('trimming off-screen elements for image {}: {}'.format(
+                                image_name, frameset_matches[match_obj_id]
+                            ))
                 response_obj['movies'][movie_url]['framesets'][frameset_hash] = build_response_obj
 
             if focus_finder_meta.get('return_type') in ['screen_fields', 'screen']:
@@ -359,7 +361,9 @@ class FocusFinderController(T1Controller):
             return
         trough_indices = []
         for i in range(self.num_histogram_bins-2, 0, -1):
-            ratio = top_value / hist[i][0]
+            ratio = 0
+            if hist[i][0]:
+                ratio = top_value / hist[i][0]
             if ratio > self.top_trough_min_ratio:
                 trough_indices.append(i)
             else:
@@ -399,17 +403,26 @@ class FocusFinderController(T1Controller):
             app_start, app_end = self.focus_finder.get_app_effective_window(match_objects)
             if not app_start[0] or not app_start[1] or not app_end[0] or not app_end[1]:
                 continue
+            dims = cv2_image.shape[:2]
+            if app_start[0] < 0 or app_start[0] > dims[1]-1:
+                continue
+            if app_start[1] < 0 or app_start[1] > dims[0]-1:
+                continue
+            if app_end[0] < 0 or app_end[0] > dims[1]-1:
+                continue
+            if app_end[1] < 0 or app_end[1] > dims[0]-1:
+                continue
             just_before = (
-                app_start[0] - 5,
-                app_start[1] - 5
+                app_start[0] - 0,
+                app_start[1] - 0
             )
             before_start_end, before_mask = finder.determine_flood_fill_area(cv2_image, just_before)
             before_start = before_start_end[0]
             before_end = before_start_end[1]
 
             just_after = (
-                app_end[0] + 5,
-                app_end[1] + 5
+                app_end[0] + 0,
+                app_end[1] + 0
             )
             after_start_end, after_mask = finder.determine_flood_fill_area(cv2_image, just_after)
             after_start = after_start_end[0]
