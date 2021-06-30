@@ -2,7 +2,6 @@ import hashlib
 import uuid
 from django.conf import settings
 from django.db import models
-from guided_redaction.utils.classes.FileWriter import FileWriter
 from guided_redaction.utils.external_payload_utils import (
     save_external_payloads,
     get_data_from_disk_for_model_instance,

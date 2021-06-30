@@ -67,15 +67,15 @@ class EastPlusTessScanner(EastScanner):
             }
             text_regions.append(recognized_text_area)
 
-        if self.debug:
-            sum_text = (
-                "total text recognition time: "
-                + str(math.ceil(total_tess_time))
-                + " seconds for "
-                + str(len(contours))
-                + " calls"
-            )
-            print(sum_text)
+        sum_text = (
+            "total text recognition time: "
+            + str(math.ceil(total_tess_time))
+            + " seconds for "
+            + str(len(contours))
+            + " calls"
+        )
+        print(sum_text)
+
         return text_regions
 
     def do_tess_on_whole_image(self, image):

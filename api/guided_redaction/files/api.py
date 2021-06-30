@@ -1,21 +1,24 @@
-import os
-import json
-import uuid
 import base64
+import json
+import os
 import shutil
-from django.conf import settings
 import time
+import uuid
+
 import requests
+from django.conf import settings
 from rest_framework.response import Response
-from base import viewsets
-from guided_redaction.utils.classes.FileWriter import FileWriter
 from zipfile import ZipFile
+
+from base import viewsets
+from guided_redaction.files import tasks as files_tasks
+from guided_redaction.job_eval_objectives.models import JobEvalObjective
+from guided_redaction.job_run_summaries.models import JobRunSummary
 from guided_redaction.jobs.models import Job
 from guided_redaction.pipelines.models import Pipeline
-from guided_redaction.job_run_summaries.models import JobRunSummary
-from guided_redaction.job_eval_objectives.models import JobEvalObjective
 from guided_redaction.scanners.models import Scanner
-from guided_redaction.files import tasks as files_tasks
+from guided_redaction.task_queues import get_task_queue
+from guided_redaction.utils.classes.FileWriter import FileWriter
 
 
 class FilesViewSet(viewsets.ViewSet):
@@ -272,7 +275,8 @@ class FilesViewSetImportArchive(viewsets.ViewSet):
                 sequence=0,
             )
             job.save()
-            files_tasks.unzip_archive.delay(job.id)
+            queue = get_task_queue()
+            files_tasks.unzip_archive.apply_async(args=(job.id,), queue=queue)
             return Response({"job_id": job.id})
         except Exception as e:
             return self.error(e, status_code=400)

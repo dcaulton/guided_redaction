@@ -93,7 +93,7 @@ def split_movie_audio(file_writer, movie_url):
 
 def add_movie_audio(file_writer, movie_url, audio_url):
     movie_filepath = file_writer.get_file_path_for_url(movie_url)
-    new_movie_url = movie_url[0:movie_url.rfind('.')] + '_aud' + movie_url[movie_url.rfind('.'):]
+    new_movie_url = movie_url[0:movie_url.rfind('.')] + '_audio_added' + movie_url[movie_url.rfind('.'):]
     new_movie_filepath = file_writer.get_file_path_for_url(new_movie_url)
     audio_filepath = file_writer.get_file_path_for_url(audio_url)
 
@@ -259,7 +259,10 @@ class ParseViewSetSplitMovie(viewsets.ViewSet):
         )
         movie_fullpath = file_writer.get_file_path_for_url(movie_url)
         probe = ffmpeg.probe(movie_fullpath)
-        video_stream = next((stream for stream in probe['streams'] if stream['codec_type'] == 'video'), None)
+        video_stream = next(
+            (stream for stream in probe['streams'] if stream['codec_type'] == 'video'),
+            None
+        )
         duration = int(float(video_stream['duration']))
         return duration
 

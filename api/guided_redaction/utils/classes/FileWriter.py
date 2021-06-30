@@ -1,10 +1,11 @@
 import cv2
-import numpy as np
 import ffmpeg
-import requests
+import numpy as np
 import os
+import requests
 import shutil
-import uuid
+
+from guided_redaction.task_queues import get_path_routing_segment
 
 
 requests.packages.urllib3.disable_warnings()
@@ -15,7 +16,8 @@ class FileWriter():
 
     def __init__(self, working_dir, base_url, image_request_verify_headers):
         self.working_dir = working_dir
-        self.base_url = base_url
+        path_routing_segment = get_path_routing_segment()
+        self.base_url = base_url.format(route=path_routing_segment)
         self.image_request_verify_headers = image_request_verify_headers
 
     def delete_directory(self, the_uuid):
@@ -140,11 +142,8 @@ class FileWriter():
   
     def create_unique_directory(self, working_uuid):
         unique_working_dir = os.path.join(self.working_dir, working_uuid)
-        try:
-            if not os.path.isdir(unique_working_dir):
-                os.mkdir(unique_working_dir)
-        except Exception as e:
-            print('error dir for {}, {}'.format(unique_working_dir, e))
+        if not os.path.isdir(unique_working_dir):
+            os.mkdir(unique_working_dir)
         return unique_working_dir
 
     def write_video(self, image_url_list, output_file_name):
@@ -154,8 +153,7 @@ class FileWriter():
         (x_part, file_part) = os.path.split(image_url_list[0])
         (y_part, uuid_part) = os.path.split(x_part)
         # make a new subdirectory
-#        new_subdir = os.path.join(uuid_part, 'build')
-        new_subdir = str(uuid.uuid4())
+        new_subdir = os.path.join(uuid_part, 'build')
         print('new subdir is {}'.format(new_subdir))
         self.create_unique_directory(new_subdir)
         # copy images to a new directory, give them sequential numbers
