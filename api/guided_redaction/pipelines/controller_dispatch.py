@@ -1,4 +1,10 @@
 import json
+
+from celery import current_app
+
+import guided_redaction.jobs.api as jobs_api
+from guided_redaction.attributes.models import Attribute
+from guided_redaction.jobs.models import Job
 from guided_redaction.pipelines.models import Pipeline
 from guided_redaction.utils.task_shared import (
     make_child_time_fractions_attribute_for_job,
@@ -6,18 +12,13 @@ from guided_redaction.utils.task_shared import (
     get_job_owner,
     get_job_for_node
 )
-from guided_redaction.attributes.models import Attribute
-from guided_redaction.jobs.models import Job
-import guided_redaction.jobs.api as jobs_api
-
 
 
 class DispatchController:
 
-    def __init__(self):
-        pass
-
-    def dispatch_pipeline(self, pipeline_id, input_data, workbook_id=None, owner=None, parent_job=None):
+    def dispatch_pipeline(self, pipeline_id, input_data,
+        workbook_id=None, owner=None, parent_job=None, is_batch=False
+    ):
         pipeline = Pipeline.objects.get(pk=pipeline_id)
         content = json.loads(pipeline.content)
         child_job_count = self.get_number_of_child_jobs(content) 
@@ -36,7 +37,10 @@ class DispatchController:
         if first_node_id:
             child_job = self.build_job(content, first_node_id, parent_job)
             if child_job:
-                self.dispatch_child(parent_job, child_job, input_data, workbook_id, owner)
+                self.dispatch_child(
+                    parent_job, child_job, input_data, workbook_id, owner,
+                    is_batch=is_batch
+                )
         return parent_job.id
 
     def handle_job_finished(self, job, pipeline):
@@ -91,10 +95,16 @@ class DispatchController:
                             workbook_id = job.workbook.id
                         owner = get_job_owner(job)
                         self.dispatch_child(
-                            parent_job, child_job, json.loads(job.response_data), workbook_id, owner
+                            parent_job,
+                            child_job,
+                            json.loads(job.response_data),
+                            workbook_id,
+                            owner
                         )
 
-    def dispatch_child(self, parent_job, child_job, input_data, workbook_id, owner):
+    def dispatch_child(self,
+        parent_job, child_job, input_data, workbook_id, owner, is_batch=False
+    ):
         if child_job.operation == 'pipeline' and child_job.app == 'pipeline':
             child_pipeline_id = \
                 Attribute.objects.filter(job=child_job, name='pipeline_job_link').first().pipeline.id
@@ -105,7 +115,7 @@ class DispatchController:
                 parent_job.save()
             self.dispatch_pipeline(child_pipeline_id, input_data, workbook_id, owner, child_job)
         else:
-            jobs_api.dispatch_job(child_job)
+            jobs_api.dispatch_job(child_job, is_batch=is_batch)
             parent_job.status = 'running'
             parent_job.save()
 

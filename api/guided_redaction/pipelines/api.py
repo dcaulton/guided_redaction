@@ -88,9 +88,10 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
     # this is the entry point for starting a pipeline from the web
     def create(self, request):
         request_data = request.data
-        return self.process_create_request(request_data)
+        is_batch = "batch" in request.query_params
+        return self.process_create_request(request_data, is_batch)
 
-    def process_create_request(self, request_data):
+    def process_create_request(self, request_data, is_batch):
         if not request_data.get("pipeline_id"):
             return self.error("pipeline_id is required", status_code=400)
         if not request_data.get("input"):
@@ -101,10 +102,10 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
         input_data = request_data['input']
         workbook_id = request_data.get("workbook_id")
         owner = request_data.get("owner")
-
         worker = DispatchController()
-        parent_job_id = worker.dispatch_pipeline(pipeline_id, input_data, workbook_id, owner)
-
+        parent_job_id = worker.dispatch_pipeline(
+            pipeline_id, input_data, workbook_id, owner, is_batch=is_batch
+        )
         return Response({'job_id': parent_job_id})
 
     def handle_job_finished(self, job, pipeline):
