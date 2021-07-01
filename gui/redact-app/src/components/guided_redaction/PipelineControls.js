@@ -48,7 +48,7 @@ class PipelineControls extends React.Component {
       data_sifter_jobs: {},
       redact_rule_edges: {},
       attribute_search_value: '',
-      use_parsed_movies: false,
+      use_parsed_movies: true,
       json: '',
     }
     this.t1_scanner_types = [
@@ -490,6 +490,29 @@ class PipelineControls extends React.Component {
     )
   }
 
+  buildDisplayOnPipelinePanelCheckbox() {
+    let its_checked = ''
+    if (
+      this.state.attributes 
+      && Object.keys(this.state.attributes).includes('display_on_pipelines_panel')
+      && this.state.attributes['display_on_pipelines_panel']
+    ) {
+      its_checked = 'checked'
+    }
+    return (
+      <div>
+        <input
+          className='ml-2 mr-2 mt-1'
+          id='toggle_display_on_pipeline_panel'
+          checked={its_checked}
+          type='checkbox'
+          onChange={() => this.toggleDisplayOnPipelinePanel()}
+        />
+        Display on Pipelines Panel
+      </div>
+    )
+  }
+
   buildUseParsedMoviesCheckbox() {
     let use_parsed_movies_checked = ''
     if (this.state.use_parsed_movies) {
@@ -527,6 +550,20 @@ class PipelineControls extends React.Component {
         </div>
       </div>
     )
+  }
+
+  toggleDisplayOnPipelinePanel() {
+    let deepCopyAttributes = JSON.parse(JSON.stringify(this.state.attributes))
+    if (!Object.keys(deepCopyAttributes).includes('display_on_pipelines_panel')) {
+      deepCopyAttributes['display_on_pipelines_panel'] = 'sure'
+    } else {
+      if (Object.keys(deepCopyAttributes).includes('display_on_pipelines_panel')) {
+        delete deepCopyAttributes['display_on_pipelines_panel']
+      } else {
+        deepCopyAttributes['display_on_pipelines_panel'] = 'sure'
+      }
+    }
+    this.setLocalStateVar('attributes', deepCopyAttributes)
   }
 
   toggleUseParsedMovies() {
@@ -591,6 +628,7 @@ class PipelineControls extends React.Component {
     const description_field = this.buildDescriptionField()
     const attributes_list = this.buildAttributesList()
     const use_parsed_movies_checkbox = this.buildUseParsedMoviesCheckbox()
+    const display_on_pipeline_panel_checkbox = this.buildDisplayOnPipelinePanelCheckbox()
     const input_json_textarea = this.buildInputJson()
     const header_row = makeHeaderRow(
       'pipelines',
@@ -631,6 +669,10 @@ class PipelineControls extends React.Component {
 
               <div className='row mt-2'>
                 {use_parsed_movies_checkbox}
+              </div>
+
+              <div className='row mt-2'>
+                {display_on_pipeline_panel_checkbox}
               </div>
 
               <div className='row mt-2'>
