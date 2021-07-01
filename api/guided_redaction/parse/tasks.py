@@ -294,8 +294,7 @@ def split_and_hash_threaded(job_uuid):
         print('next step is {}'.format(next_step))
         if next_step == 'build_child_tasks':
             num_tasks = make_and_dispatch_split_tasks(job)
-            # assume twice as many hash tasks as split tasks
-            make_anticipated_operation_count_attribute_for_job(job, num_tasks * 3)
+            make_anticipated_operation_count_attribute_for_job(job, num_tasks)
         elif next_step == 'wrap_up':
             make_and_dispatch_hash_tasks(job, children)
         elif next_step == 'abort':

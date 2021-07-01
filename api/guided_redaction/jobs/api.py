@@ -224,9 +224,6 @@ def dispatch_job(job, is_batch=False):
     if job.app == 'job_run_summaries' and job.operation == 'create_automatic_jrs':
         jrs_tasks.create_automatic_jrs.apply_async(args=(job_uuid,), queue=queue)
 
-def dispatch_job_wrapper(job):
-    worker = JobDispatchController()
-    worker.dispatch_job(job)
 
 class JobsViewSet(viewsets.ViewSet):
 
