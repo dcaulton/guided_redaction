@@ -102,6 +102,8 @@ def build_and_dispatch_generic_batched_threaded_children(
         make_anticipated_operation_count_attribute_for_job(parent_job, num_jobs)
     print('dispatch generic batched threaded: preparing to dispatch {} jobs'.format(num_jobs))
 
+    job_ids_to_dispatch = {}
+
     for scanner_id in scanners:
         scanner = scanners[scanner_id]
         if target_wants_ocr_data(operation_name, scanner):
@@ -162,10 +164,14 @@ def build_and_dispatch_generic_batched_threaded_children(
                     parent=parent_job,
                 )
                 job.save()
-                the_str = 'build_and_dispatch batched threaded children for ' +\
-                    scanner_type + ': dispatching job for movie {}'
-                print(the_str.format(movie_url))
-                child_task.delay(job.id)
+                job_ids_to_dispatch[job.id] = movie_url
+
+    for job_id in job_ids_to_dispatch:
+        movie_url = job_ids_to_dispatch[job_id]
+        the_str = 'build_and_dispatch batched threaded children for ' +\
+            scanner_type + ': dispatching job for movie {}'
+        print(the_str.format(movie_url))
+        child_task.delay(job_id)
 
 def target_wants_ocr_data(operation, t1_scanner):
     if operation in ['selection_grower'] and \
@@ -214,6 +220,7 @@ def build_and_dispatch_generic_threaded_children(
         finish_func(parent_job)
         return
 
+    job_ids_to_dispatch = {}
     for scanner_meta_id in scanner_metas:
         t1_scanner = scanner_metas[scanner_meta_id]
         if target_wants_ocr_data(operation, t1_scanner):
@@ -244,9 +251,13 @@ def build_and_dispatch_generic_threaded_children(
                 parent=parent_job,
             )
             job.save()
-            the_str = 'build_and_dispatch_'+operation+'_threaded_children: dispatching job for movie {}'
-            print(the_str.format(movie_url))
-            child_task.delay(job.id)
+            job_ids_to_dispatch[job.id] = movie_url
+
+    for job_id in job_ids_to_dispatch:
+        movie_url = job_ids_to_dispatch[job_id]
+        the_str = 'build_and_dispatch_'+operation+'_threaded_children: dispatching job for movie {}'
+        print(the_str.format(movie_url))
+        child_task.delay(job_id)
 
 def generic_worker_call(job_uuid, operation, worker_class):
     if not Job.objects.filter(pk=job_uuid).exists():

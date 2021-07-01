@@ -110,6 +110,8 @@ def dispatch_movie_split_jobs(response_data):
     if 'movies' in response_data:
         for movie_url in response_data['movies']:
             movies_to_dispatch.append(movie_url)
+
+    job_ids_to_dispatch = []
     if movies_to_dispatch:
         build_request_data = {
             'movie_urls': movies_to_dispatch,
@@ -125,7 +127,7 @@ def dispatch_movie_split_jobs(response_data):
             sequence=0,
         )
         job.save()
+        job_ids_to_dispatch.append(job.id)
 
-        split_and_hash_threaded.delay(job.id)
-
-    
+    for job_id in job_ids_to_dispatch:
+        split_and_hash_threaded.delay(job_id)

@@ -386,6 +386,7 @@ def make_and_dispatch_hash_tasks(parent_job, split_tasks):
     movies_obj = gather_split_threaded_data(split_tasks)
     add_hash_counts_to_parent_job_operation_count(parent_job, movies_obj)
     request_data = json.loads(parent_job.request_data)
+    job_ids_to_dispatch = []
     for movie_url in movies_obj['movies']:
         frameset_discriminator = request_data['frameset_discriminator']
         frames = movies_obj['movies'][movie_url]['frames']
@@ -415,8 +416,11 @@ def make_and_dispatch_hash_tasks(parent_job, split_tasks):
                 parent=parent_job,
             )
             job.save()
-            print('make and dispatch hash tasks, dispatching job {}'.format(job.id))
-            hash_frames.delay(job.id)
+            job_ids_to_dispatch.append(job.id)
+
+    for job_id in job_ids_to_dispatch:
+        print('make and dispatch hash tasks, dispatching job {}'.format(job_id))
+        hash_frames.delay(job_id)
 
 def get_movie_length_in_seconds(movie_url):
     worker = ParseViewSetSplitMovie()
@@ -426,6 +430,7 @@ def get_movie_length_in_seconds(movie_url):
 def make_and_dispatch_split_tasks(parent_job):
     request_data = json.loads(parent_job.request_data)
     num_tasks = 0
+    job_ids_to_dispatch = []
     for movie_url in request_data['movie_urls']:
         movie_length_seconds = get_movie_length_in_seconds(movie_url)
         build_request_data = {'movie_url': movie_url}
@@ -441,8 +446,7 @@ def make_and_dispatch_split_tasks(parent_job):
                 parent=parent_job,
             )
             job.save()
-            print('make and dispatch split tasks, dispatching job {} for {}'.format(job.id, movie_url))
-            split_movie.delay(job.id)
+            job_ids_to_dispatch.append(job.id)
             num_tasks += 1
         else: 
             num_tasks = build_and_dispatch_split_tasks_multithreaded(
@@ -450,6 +454,11 @@ def make_and_dispatch_split_tasks(parent_job):
                 movie_url, 
                 movie_length_seconds
             )
+
+    for job_id in job_ids_to_dispatch:
+        print('make and dispatch split tasks, dispatching job {} for {}'.format(job_id, movie_url))
+        split_movie.delay(job_id)
+
     return num_tasks
 
 def build_and_dispatch_split_tasks_multithreaded(

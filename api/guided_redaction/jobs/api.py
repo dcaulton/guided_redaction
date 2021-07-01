@@ -173,6 +173,10 @@ def dispatch_job(job, is_batch=False):
         )
     if job.app == 'analyze' and job.operation == 'data_sifter_threaded':
         analyze_tasks.data_sifter_threaded.apply_async(args=(job_uuid,), queue=queue)
+    if job.app == 'analyze' and job.operation == 'focus_finder_threaded':
+        analyze_tasks.focus_finder_threaded.apply_async(args=(job_uuid,), queue=queue)
+    if job.app == 'analyze' and job.operation == 't1_filter_threaded':
+        analyze_tasks.t1_filter_threaded.apply_async(args=(job_uuid,), queue=queue)
     if job.app == 'analyze' and job.operation == 'intersect':
         analyze_tasks.intersect.apply_async(args=(job_uuid,), queue=queue)
     if job.app == 'parse' and job.operation == 'split_and_hash_threaded':

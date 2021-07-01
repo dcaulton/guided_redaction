@@ -291,6 +291,8 @@ class FocusFinderController(T1Controller):
             (minVal, maxVal, minLoc, maxLoc) = cv2.minMaxLoc(hotspot_mask)
             response_obj['statistics']['movies'][movie_url]['brightest_hotspot_val'] = maxVal
             response_obj['statistics']['movies'][movie_url]['brightest_hotspot_loc'] = maxLoc
+            if not maxVal:
+                continue
             brightness_scale = math.floor((self.hotspot_max_allowed_value) / maxVal)
 
             hotspot_mask = hotspot_mask * brightness_scale
