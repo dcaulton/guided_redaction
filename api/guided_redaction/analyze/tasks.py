@@ -9,7 +9,6 @@ import os
 from guided_redaction.jobs.models import Job
 from guided_redaction.utils.task_shared import (
     evaluate_children,
-    job_has_anticipated_operation_count_attribute,
     make_anticipated_operation_count_attribute_for_job,
     get_pipeline_for_job
 )
@@ -99,7 +98,7 @@ def build_and_dispatch_generic_batched_threaded_children(
     for index, movie_url in enumerate(movies.keys()):
         movie = movies[movie_url]
         num_jobs += math.ceil(len(movie['framesets']) / batch_size)
-    if not job_has_anticipated_operation_count_attribute(parent_job) and num_jobs > 1:
+    if num_jobs > 1:
         make_anticipated_operation_count_attribute_for_job(parent_job, num_jobs)
     print('dispatch generic batched threaded: preparing to dispatch {} jobs'.format(num_jobs))
 
@@ -995,8 +994,7 @@ def train_hog(job_uuid):
 def train_hog_threaded(job_uuid):
     if Job.objects.filter(pk=job_uuid).exists():
         job = Job.objects.get(pk=job_uuid)
-        if not job_has_anticipated_operation_count_attribute(job):
-            make_anticipated_operation_count_attribute_for_job(job, 2)
+        make_anticipated_operation_count_attribute_for_job(job, 2)
         if job.status in ['success', 'failed']:
             return
         children = Job.objects.filter(parent=job)

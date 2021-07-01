@@ -81,6 +81,22 @@ def evaluate_children(operation, child_operation, children):
     elif all_children > 0:
         return 'noop'
 
+def get_job_anticipated_operation_count(job):
+    if Attribute.objects \
+        .filter(job=job) \
+        .filter(name='anticipated_operation_count') \
+        .exists():
+        attribute = Attribute.objects \
+            .filter(job=job) \
+            .filter(name='anticipated_operation_count') \
+            .first()
+        return int(attribute.value)
+    elif Job.objects \
+        .filter(parent=job) \
+        .exists():
+        return Job.objects.filter(parent=job).count()
+    return 1
+
 def job_has_anticipated_operation_count_attribute(job):
     if Attribute.objects \
         .filter(job=job) \
@@ -89,13 +105,16 @@ def job_has_anticipated_operation_count_attribute(job):
         return True
 
 def make_anticipated_operation_count_attribute_for_job(job, the_count):
-    if job_has_anticipated_operation_count_attribute(job):
-        return
     attribute = Attribute(
         name='anticipated_operation_count',
-        value=the_count,
         job=job,
     )
+    if job_has_anticipated_operation_count_attribute(job):
+        attribute = Attribute.objects \
+            .filter(job=job) \
+            .filter(name='anticipated_operation_count') \
+            .first()
+    attribute.value = the_count
     attribute.save()
 
 def job_has_child_time_fractions_attribute(job):

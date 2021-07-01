@@ -7,7 +7,7 @@ import json
 from guided_redaction.jobs.models import Job                                    
 from guided_redaction.utils.task_shared import (
     evaluate_children,
-    job_has_anticipated_operation_count_attribute,
+    get_job_anticipated_operation_count,
     make_anticipated_operation_count_attribute_for_job,
     build_file_directory_user_attributes_from_movies,
     get_pipeline_for_job
@@ -294,9 +294,8 @@ def split_and_hash_threaded(job_uuid):
         print('next step is {}'.format(next_step))
         if next_step == 'build_child_tasks':
             num_tasks = make_and_dispatch_split_tasks(job)
-            if not job_has_anticipated_operation_count_attribute(job):
-                # assume twice as many hash tasks as split tasks
-                make_anticipated_operation_count_attribute_for_job(job, num_tasks * 3)
+            # assume twice as many hash tasks as split tasks
+            make_anticipated_operation_count_attribute_for_job(job, num_tasks * 3)
         elif next_step == 'wrap_up':
             make_and_dispatch_hash_tasks(job, children)
         elif next_step == 'abort':
@@ -329,9 +328,16 @@ def wrap_up_split_and_hash_threaded(parent_job, children):
                framesets[movie_url][frameset_hash]['images'] = child_response_images
             framesets[movie_url][frameset_hash]['images'].sort()
         
-    resp_data = json.loads(parent_job.response_data)
-    req_data = json.loads(parent_job.request_data)
+    resp_data = {}
+    if parent_job.response_data:
+        resp_data = json.loads(parent_job.response_data)
+    req_data = {}
+    if parent_job.request_data:
+        req_data = json.loads(parent_job.request_data)
+
     for movie_url in framesets:
+        if 'movies' not in resp_data:
+            continue
         resp_data['movies'][movie_url]['framesets'] = framesets[movie_url]
         resp_data['movies'][movie_url]['frameset_discriminator'] = frameset_discriminators[movie_url]
     parent_job.response_data = json.dumps(resp_data)
@@ -368,10 +374,18 @@ def gather_split_threaded_data(split_tasks):
 
     return movies_obj
 
+def add_hash_counts_to_parent_job_operation_count(parent_job, movies_obj):
+    num_jobs = 0
+    earlier_job_count = get_job_anticipated_operation_count(parent_job)
+    for movie_url in movies_obj['movies']:
+        frames = movies_obj['movies'][movie_url]['frames']
+        num_jobs += math.ceil(len(frames) / hash_frames_batch_size)
+    make_anticipated_operation_count_attribute_for_job(parent_job, earlier_job_count + num_jobs)
+
 def make_and_dispatch_hash_tasks(parent_job, split_tasks):
     movies_obj = gather_split_threaded_data(split_tasks)
+    add_hash_counts_to_parent_job_operation_count(parent_job, movies_obj)
     request_data = json.loads(parent_job.request_data)
-    movie_urls = request_data['movie_urls']
     for movie_url in movies_obj['movies']:
         frameset_discriminator = request_data['frameset_discriminator']
         frames = movies_obj['movies'][movie_url]['frames']

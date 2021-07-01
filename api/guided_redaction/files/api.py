@@ -21,6 +21,21 @@ from guided_redaction.task_queues import get_task_queue
 from guided_redaction.utils.classes.FileWriter import FileWriter
 
 
+def make_url_from_file(filename, file_binary_data, the_uuid=''):
+    file_writer = FileWriter(
+        working_dir=settings.REDACT_FILE_STORAGE_DIR,
+        base_url=settings.REDACT_FILE_BASE_URL,
+        image_request_verify_headers=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
+    )
+    if not the_uuid:
+        the_uuid = str(uuid.uuid4())
+    file_writer.create_unique_directory(the_uuid)
+    file_fullpath = file_writer.build_file_fullpath_for_uuid_and_filename(the_uuid, filename)
+    file_url = file_writer.get_url_for_file_path(file_fullpath)
+    file_writer.write_binary_data_to_filepath(file_binary_data, file_fullpath)
+    return file_url
+
+
 class FilesViewSet(viewsets.ViewSet):
     def list(self, request):
         files_list = {}
@@ -578,20 +593,6 @@ class FilesViewSetMovieMetadata(viewsets.ViewSet):
         file_fullpath = file_writer.build_file_fullpath_for_uuid_and_filename(uuid_part, file_part)
         metadata = file_writer.get_text_data_from_filepath(file_fullpath)
         return Response(json.loads(metadata))
-
-def make_url_from_file(filename, file_binary_data, the_uuid=''):
-    file_writer = FileWriter(
-        working_dir=settings.REDACT_FILE_STORAGE_DIR,
-        base_url=settings.REDACT_FILE_BASE_URL,
-        image_request_verify_headers=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
-    )
-    if not the_uuid:
-        the_uuid = str(uuid.uuid4())
-    file_writer.create_unique_directory(the_uuid)
-    file_fullpath = file_writer.build_file_fullpath_for_uuid_and_filename(the_uuid, filename)
-    file_url = file_writer.get_url_for_file_path(file_fullpath)
-    file_writer.write_binary_data_to_filepath(file_binary_data, file_fullpath)
-    return file_url
 
 class FilesViewSetGetVersion(viewsets.ViewSet):
     def list(self, request):

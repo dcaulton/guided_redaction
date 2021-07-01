@@ -114,11 +114,7 @@ class DispatchController:
                 parent_job.save()
             self.dispatch_pipeline(child_pipeline_id, input_data, workbook_id, owner, child_job)
         else:
-<<<<<<< HEAD
-            jobs_api.dispatch_job_wrapper(child_job)
-=======
             jobs_api.dispatch_job(child_job, is_batch=is_batch)
->>>>>>> @{-1}
             parent_job.status = 'running'
             parent_job.save()
 

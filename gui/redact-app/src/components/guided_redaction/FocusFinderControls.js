@@ -3,6 +3,7 @@ import ScannerSearchControls from './ScannerSearchControls'
 import {
   buildAttributesAddRow, 
   buildLabelAndTextInput,
+  buildLabelAndDropdown,
   buildMatchIdField,
   buildInlinePrimaryButton, 
   buildTier1LoadButton, 
