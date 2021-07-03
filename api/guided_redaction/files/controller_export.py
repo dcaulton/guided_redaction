@@ -41,7 +41,7 @@ class ExportController():
 
             return {"archive_url": download_url}
         except Exception as e:
-            return self.error(e, status_code=400)
+            return {'errors' : str(e)}
 
 
     def build_zip_file(self, fw, output_file_fullpath, request_data, workdir_uuid):
@@ -55,7 +55,9 @@ class ExportController():
             'job_eval_objectives': {},
             'meta': {},
         }
+        print('aa 01')
         zipObj = ZipFile(output_file_fullpath, 'w')
+        print('aa 02')
 
         build_obj['meta']['base_url'] = fw.base_url
         build_obj['meta']['working_dir'] = fw.working_dir
@@ -91,12 +93,13 @@ class ExportController():
         json_file_fullpath = fw.build_file_fullpath_for_uuid_and_filename(workdir_uuid, json_filename)
         text_data = json.dumps(build_obj)
         x = fw.write_text_data_to_filepath(text_data, json_file_fullpath)
-        zipObj.write(json_file_fullpath, json_archive_path)
+        zipObj.write(json_file_fullpath, json_filename)
 
         zipObj.close()
         print('zip written')
 
     def add_job_to_dict(self, job, build_dict, zipObj, request_data, fw):
+        print('gg 02')
         if job.id in build_dict['jobs']:
             return
         print('adding job {}'.format(job.id))
@@ -146,13 +149,32 @@ class ExportController():
             return
         build_dict['movies'][movie_url] = movie
         movie_url_fullpath = fw.get_file_path_for_url(movie_url)
-        print('adding movie file {}'.format(movie_url))
-        zipObj.write(movie_url_fullpath)
-        if 'frames' in movie and request_data.get('include_child_movie_frames'):
-            for image_url in movie['frames']:
-                image_fullpath = fw.get_file_path_for_url(image_url)
-                print('adding image file {}'.format(image_url))
-                zipObj.write(image_fullpath)
+        (x_part, file_part) = os.path.split(movie_url)
+        (y_part, uuid_part) = os.path.split(x_part)
+        new_path = os.path.join(uuid_part, file_part)
+        print('adding movie file {}'.format(new_path))
+        zipObj.write(movie_url_fullpath, new_path)
+
+        # if the movie has refs to objects in other dirs (eg redacted files), add those dirs too
+        uuid_dirs_to_add = [uuid_part]
+        for frameset_hash in movie['framesets']:
+            frameset = movie['framesets'][frameset_hash]
+            if 'redacted_image' in frameset:
+                image_url = frameset['redacted_image']
+                (x_part, file_part) = os.path.split(image_url)
+                (y_part, uuid_part) = os.path.split(x_part)
+                if uuid_part not in uuid_dirs_to_add:
+                    uuid_dirs_to_add.append(uuid_part)
+            if 'illustrated_image' in frameset:
+                image_url = frameset['illustrated_image']
+                (x_part, file_part) = os.path.split(image_url)
+                (y_part, uuid_part) = os.path.split(x_part)
+                if uuid_part not in uuid_dirs_to_add:
+                    uuid_dirs_to_add.append(uuid_part)
+        if len(uuid_dirs_to_add) > 1:
+            for uuid_dir in uuid_dirs_to_add[1:]:
+                old_dir_filepath = fw.build_file_fullpath_for_uuid_and_filename(uuid_dir)
+                zipObj.write(old_dir_filepath, uuid_dir)
 
     def add_pipeline_to_dict(self, pipeline, build_dict):
         print('adding pipeline {}'.format(pipeline.id))

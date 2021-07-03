@@ -91,7 +91,7 @@ class RedactApplication extends React.Component {
         'redact': true,
         'zip': true,
         'pipelines': true,
-        'import_export': true,
+        'import_export': false,
         'redaction_borders': true,
         'movie_parser_link': true,
         'insights_link': true,
