@@ -35,6 +35,8 @@ class PipelineControls extends React.Component {
         'redact_rules': {},
         'split_and_hash': {},
         'secure_files_import': {},
+        'secure_files_export': {},
+        'purge_job_resources': {},
         'zip': {},
       },
       movie_urls: [],
@@ -1363,6 +1365,8 @@ class NodeCard extends React.Component {
             <option value='intersect'>intersection of t1 outputs</option>
             <option value='redact'>redact</option>
             <option value='zip'>zip</option>
+            <option value='secure_files_export'>secure files export</option>
+            <option value='purge_job_resources'>purge job resources</option>
             <option value='noop'>noop</option>
           </select>
         </div>
