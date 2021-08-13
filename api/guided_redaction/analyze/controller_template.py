@@ -109,7 +109,7 @@ class TemplateController(T1Controller):
             build_key = '{}-{}'.format(anchor_id, match_counter)
             matches['movies'][movie_url]['framesets'][frameset_hash][build_key] = build_obj
 
-            if self.template.get('fetch_multiple') == 'yes':
+            if self.template.get('fetch_multiple'):
                 end_coords = (
                     match_coords[0] + size[0],
                     match_coords[1] + size[1]

@@ -1,16 +1,17 @@
-import simplejson as json
-from base import viewsets
-from rest_framework.response import Response
-
-from django.shortcuts import render
-from django.conf import settings
-import requests
 import base64
 import binascii
 import os
 import ssl
 import re
+import requests
+from traceback import format_exc
 
+from django.conf import settings
+from django.shortcuts import render
+from rest_framework.response import Response
+import simplejson as json
+
+from base import viewsets
 
 class LinkViewSetLearn(viewsets.ViewSet):
     def create(self, request):
@@ -105,11 +106,11 @@ class LinkViewSetCanReach(viewsets.ViewSet):
         url = request.data.get('url')
         try:
             response = requests.head(url)
-            if response.status_code == 200:
+            if 200 <= response.status_code < 300:
                 return Response({"can_reach": True})
             return Response({"can_reach": False})
         except Exception as e:
-            print('can reach exception: ', e)
+            print(format_exc())
             return Response({"can_reach": False})
 
 class LinkViewSetProxy(viewsets.ViewSet):
@@ -125,6 +126,6 @@ class LinkViewSetProxy(viewsets.ViewSet):
                 the_url,
                 verify=False,
             )
-            if response.status_code == 200:
+            if 200 <= response.status_code < 300:
                 return Response({"response": response.content})
         return self.error(response.content, status_code=400)

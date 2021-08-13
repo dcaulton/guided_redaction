@@ -4,12 +4,15 @@ import math
 import os
 import shutil
 import uuid
+from collections import defaultdict
+from traceback import format_exc
 from datetime import datetime, timedelta
 from itertools import chain
 
 import pytz
 import requests
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from rest_framework.response import Response
 
 from base import viewsets, utils
@@ -23,14 +26,17 @@ from guided_redaction.pipelines import tasks as pipelines_tasks
 from guided_redaction.redact import tasks as redact_tasks
 from guided_redaction.task_queues import get_task_queue
 from guided_redaction.utils.classes.FileWriter import FileWriter
-from guided_redaction.utils.task_shared import get_job_owner, query_profiler
-from guided_redaction.utils.task_shared import get_pipeline_for_job, get_job_for_node
+from guided_redaction.utils.task_shared import (
+    get_job_owner, query_profiler, get_pipeline_for_job, get_job_for_node, 
+    get_job_file_dirs, build_lifecycle_attribute
+)
 
 from .controller_pipeline_job_status import PipelineJobStatusController
+from .controller_preserve_job import PreserveJobController
 
+hostname = os.environ.get("HOSTNAME")
 
 log = logging.getLogger(__name__)
-
 
 def get_top_parent(job_id, parent_data):
     while True:
@@ -42,35 +48,35 @@ def get_top_parent(job_id, parent_data):
 
 def get_jobs_info():
     # dict of child_id:parent_id for all child jobs
-    jobs_list = list(Job.objects.select_related("parent").values("id", "parent_id"))
-    parent_data = { str(j["id"]):str(j["parent_id"] or "") for j in jobs_list }
+    parent_data = {
+        str(j["id"]):str(j["parent_id"] or "") 
+        for j in Job.objects.values("id", "parent_id")
+    }
     file_dir_attrs = (Attribute.objects
             .filter(name="file_dir_user")
             .exclude(job=None)
-            .select_related("job")
     )
     owner_attrs = (Attribute.objects
             .filter(name="user_id")
             .exclude(job=None)
-            .select_related("job")
     )
     info_data = {"file_dirs": {}, "owners": {}}
     file_dir_data = info_data["file_dirs"]
     owner_data = info_data["owners"]
     info = {}
-    for key, attr_var in (("file_dirs", file_dir_attrs), ("owners", owner_attrs)):
+    for key, attr_records in (("file_dirs", file_dir_attrs), ("owners", owner_attrs)):
         sub_data = info_data[key]
-        for attr in attr_var:
-            if attr.job and attr.job.id in sub_data:
+        for attr in attr_records:
+            if attr.job_id in sub_data:
                 if key == "file_dirs":
-                    sub_data[str(attr.job.id)].add(attr.value.split(":")[-2])
+                    sub_data[str(attr.job_id)].add(attr.value.split(":")[-2])
                 else:
-                    sub_data[str(attr.job.id)].add(attr.value)
-            elif attr.job:
+                    sub_data[str(attr.job_id)].add(attr.value)
+            else:
                 if key == "file_dirs":
-                    sub_data[str(attr.job.id)] = set([attr.value.split(":")[-2]])
+                    sub_data[str(attr.job_id)] = set([attr.value.split(":")[-2]])
                 else:
-                    sub_data[str(attr.job.id)] = set([attr.value])
+                    sub_data[str(attr.job_id)] = set([attr.value])
         info[key] = {}
         for job_id in parent_data.keys():
             top_parent_id = get_top_parent(job_id, parent_data)
@@ -82,39 +88,38 @@ def get_jobs_info():
                     info[key][top_parent_id] = sub_data[job_id]
     return info
 
-def get_job_file_dirs(job):
-    return get_job_file_dirs_recursive(job)
-
-def get_job_file_dirs_recursive(job):
-    file_dirs = job.get_file_dirs()
-    for child in job.children.all():
-        job_file_dirs = get_job_file_dirs_recursive(child)
-        for fd in job_file_dirs:
-            if fd not in file_dirs:
-                file_dirs.append(fd)
-    return file_dirs
 
 def handle_delete_job(pk):
-    job = Job.objects.get(pk=pk)
-    file_dirs = get_job_file_dirs(job)
+    try:
+        job = Job.objects.get(pk=pk)
+    except Job.DoesNotExist:
+        return None
     job_attrs = Attribute.objects.filter(job=job)
 
     if (job_attrs.filter(name='delete_files_with_job').exists() and
-            job_attrs.filter(name='delete_files_with_job').first().value == 'True'):
+            job_attrs.filter(name='delete_files_with_job').first().value):
         try:
             fw = FileWriter(
                 working_dir=settings.REDACT_FILE_STORAGE_DIR,
                 base_url=settings.REDACT_FILE_BASE_URL,
                 image_request_verify_headers=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
             )
+            file_dirs = get_job_file_dirs(job)
             for file_dir_uuid in file_dirs:
                 log.info('deleting the files in directory {}'.format(file_dir_uuid))
                 fw.delete_directory(file_dir_uuid)
         except Exception as err:
+            log.error(format_exc())
             log.info('error deleting directory {} with job'.format(job.id))
     job.delete()
+    return pk
 
-def dispatch_job_wrapper(job, restart_unfinished_children=True, is_batch=False):
+def dispatch_job_wrapper(job, restart_unfinished_children=True):
+    if job.app == 'pipeline' and job.operation == 'pipeline':
+        for child in job.children.all():
+            if child.status != 'success':
+                dispatch_job_wrapper(child, restart_unfinished_children)
+                break
     if restart_unfinished_children:
         children = Job.objects.filter(parent=job)
         for child_to_restart in children:
@@ -127,102 +132,114 @@ def dispatch_job_wrapper(job, restart_unfinished_children=True, is_batch=False):
                         log.info(
                             're-displatching grandchild job {}'.format(grandchild)
                         )
-                        dispatch_job(grandchild, is_batch=is_batch)
+                        dispatch_job(grandchild)
             else:
                 if child_to_restart.status != 'success':
                     log.info('re-displatching child job {}'.format(child_to_restart))
                     child_to_restart.re_initialize_as_running()
                     child_to_restart.save()
-                    dispatch_job(child_to_restart, is_batch=is_batch)
-    dispatch_job(job, is_batch=is_batch)
+                    dispatch_job(child_to_restart)
+    dispatch_job(job)
 
-def dispatch_job(job, is_batch=False):
+def dispatch_job(job):
     job_uuid = job.id
-    queue = get_task_queue(is_batch)
+    print(f"dispatching job {hostname} {job.app} {job.operation} {job.pk}")
     if job.app == 'analyze' and job.operation == 'template_threaded':
-        analyze_tasks.template_threaded.apply_async(args=(job_uuid,), queue=queue)
+        analyze_tasks.template_threaded.apply_async(args=(job_uuid,))
     if job.app == 'analyze' and job.operation == 'scan_template_multi':
-        analyze_tasks.scan_template_multi.apply_async(args=(job_uuid,), queue=queue)
+        analyze_tasks.scan_template_multi.apply_async(args=(job_uuid,))
     if job.app == 'analyze' and job.operation == 'filter':
-        analyze_tasks.filter.apply_async(args=(job_uuid,), queue=queue)
+        analyze_tasks.filter.apply_async(args=(job_uuid,))
     if job.app == 'analyze' and job.operation == 'ocr_threaded':
-        analyze_tasks.ocr_threaded.apply_async(args=(job_uuid,), queue=queue)
+        analyze_tasks.ocr_threaded.apply_async(args=(job_uuid,))
     if job.app == 'analyze' and job.operation == 'scan_ocr':
-        analyze_tasks.scan_ocr.apply_async(args=(job_uuid,), queue=queue)
+        analyze_tasks.scan_ocr.apply_async(args=(job_uuid,))
     if job.app == 'analyze' and job.operation == 'get_timestamp':
-        analyze_tasks.get_timestamp.apply_async(args=(job_uuid,), queue=queue)
+        analyze_tasks.get_timestamp.apply_async(args=(job_uuid,))
     if job.app == 'analyze' and job.operation == 'get_timestamp_threaded':
-        analyze_tasks.get_timestamp_threaded.apply_async(args=(job_uuid,), queue=queue)
+        analyze_tasks.get_timestamp_threaded.apply_async(args=(job_uuid,))
     if job.app == 'analyze' and job.operation == 'template_match_chart':
-        analyze_tasks.template_match_chart.apply_async(args=(job_uuid,), queue=queue)
+        analyze_tasks.template_match_chart.apply_async(args=(job_uuid,))
     if job.app == 'analyze' and job.operation == 'ocr_match_chart':
-        analyze_tasks.ocr_match_chart.apply_async(args=(job_uuid,), queue=queue)
+        analyze_tasks.ocr_match_chart.apply_async(args=(job_uuid,))
     if job.app == 'analyze' and job.operation == 'selection_grower_chart':
-        analyze_tasks.selection_grower_chart.apply_async(args=(job_uuid,), queue=queue)
+        analyze_tasks.selection_grower_chart.apply_async(args=(job_uuid,))
     if job.app == 'analyze' and job.operation == 'selected_area_threaded':
-        analyze_tasks.selected_area_threaded.apply_async(args=(job_uuid,), queue=queue)
+        analyze_tasks.selected_area_threaded.apply_async(args=(job_uuid,))
     if job.app == 'analyze' and job.operation == 'mesh_match_threaded':
-        analyze_tasks.mesh_match_threaded.apply_async(args=(job_uuid,), queue=queue)
+        analyze_tasks.mesh_match_threaded.apply_async(args=(job_uuid,))
+    if job.app == 'analyze' and job.operation == 'focus_finder_threaded':
+        analyze_tasks.focus_finder_threaded.apply_async(args=(job_uuid,))
+    if job.app == 'analyze' and job.operation == 't1_filter_threaded':
+        analyze_tasks.t1_filter_threaded.apply_async(args=(job_uuid,))
+    if job.app == 'analyze' and job.operation == 'diff_threaded':
+        analyze_tasks.diff_threaded.apply_async(args=(job_uuid,))
+    if job.app == 'analyze' and job.operation == 'feature_threaded':
+        analyze_tasks.feature_threaded.apply_async(args=(job_uuid,))
     if job.app == 'analyze' and job.operation == 'selection_grower_threaded':
         analyze_tasks.selection_grower_threaded.apply_async(
-            args=(job_uuid,), queue=queue
+            args=(job_uuid,)
         )
     if job.app == 'analyze' and job.operation == 'manual_compile_data_sifter':
         analyze_tasks.manual_compile_data_sifter.apply_async(
-            args=(job_uuid,), queue=queue
+            args=(job_uuid,)
         )
     if job.app == 'analyze' and job.operation == 'data_sifter_threaded':
-        analyze_tasks.data_sifter_threaded.apply_async(args=(job_uuid,), queue=queue)
-    if job.app == 'analyze' and job.operation == 'focus_finder_threaded':
-        analyze_tasks.focus_finder_threaded.apply_async(args=(job_uuid,), queue=queue)
-    if job.app == 'analyze' and job.operation == 't1_filter_threaded':
-        analyze_tasks.t1_filter_threaded.apply_async(args=(job_uuid,), queue=queue)
+        analyze_tasks.data_sifter_threaded.apply_async(args=(job_uuid,))
     if job.app == 'analyze' and job.operation == 'intersect':
-        analyze_tasks.intersect.apply_async(args=(job_uuid,), queue=queue)
+        analyze_tasks.intersect.apply_async(args=(job_uuid,))
+    if job.app == 'analyze' and job.operation == 'train_feature_anchor':
+        analyze_tasks.train_feature_anchor.apply_async(args=(job_uuid,))
     if job.app == 'parse' and job.operation == 'split_and_hash_threaded':
-        parse_tasks.split_and_hash_threaded.apply_async(args=(job_uuid,), queue=queue)
+        parse_tasks.split_and_hash_threaded.apply_async(args=(job_uuid,))
     if job.app == 'parse' and job.operation == 'split_threaded':
-        parse_tasks.split_threaded.apply_async(args=(job_uuid,), queue=queue)
+        parse_tasks.split_threaded.apply_async(args=(job_uuid,))
     if job.app == 'parse' and job.operation == 'hash_movie':
-        parse_tasks.hash_frames.apply_async(args=(job_uuid,), queue=queue)
+        parse_tasks.hash_frames.apply_async(args=(job_uuid,))
     if job.app == 'parse' and job.operation == 'copy_movie':
-        parse_tasks.copy_movie.apply_async(args=(job_uuid,), queue=queue)
+        parse_tasks.copy_movie.apply_async(args=(job_uuid,))
     if job.app == 'parse' and job.operation == 'change_movie_resolution':
-        parse_tasks.change_movie_resolution.apply_async(args=(job_uuid,), queue=queue)
+        parse_tasks.change_movie_resolution.apply_async(args=(job_uuid,))
     if job.app == 'parse' and job.operation == 'rebase_movies':
-        parse_tasks.rebase_movies.apply_async(args=(job_uuid,), queue=queue)
+        parse_tasks.rebase_movies.apply_async(args=(job_uuid,))
     if job.app == 'parse' and job.operation == 'render_subsequence':
-        parse_tasks.render_subsequence.apply_async(args=(job_uuid,), queue=queue)
+        parse_tasks.render_subsequence.apply_async(args=(job_uuid,))
     if job.app == 'redact' and job.operation == 'redact':
-        redact_tasks.redact_threaded.apply_async(args=(job_uuid,), queue=queue)
+        redact_tasks.redact_threaded.apply_async(args=(job_uuid,))
     if job.app == 'redact' and job.operation == 'redact_t1':
-        redact_tasks.redact_t1_threaded.apply_async(args=(job_uuid,), queue=queue)
+        redact_tasks.redact_t1_threaded.apply_async(args=(job_uuid,))
     if job.app == 'redact' and job.operation == 'redact_single':
-        redact_tasks.redact_single.apply_async(args=(job_uuid,), queue=queue)
+        redact_tasks.redact_single.apply_async(args=(job_uuid,))
     if job.app == 'redact' and job.operation == 'illustrate':
-        redact_tasks.illustrate.apply_async(args=(job_uuid,), queue=queue)
+        redact_tasks.illustrate.apply_async(args=(job_uuid,))
     if job.app == 'parse' and job.operation == 'zip_movie':
-        parse_tasks.zip_movie.apply_async(args=(job_uuid,), queue=queue)
+        parse_tasks.zip_movie.apply_async(args=(job_uuid,))
     if job.app == 'parse' and job.operation == 'zip_movie_threaded':
-        parse_tasks.zip_movie_threaded.apply_async(args=(job_uuid,), queue=queue)
+        parse_tasks.zip_movie_threaded.apply_async(args=(job_uuid,))
     if job.app == 'files' and job.operation == 'get_secure_file':
-        files_tasks.get_secure_file.apply_async(args=(job_uuid,), queue=queue)
+        files_tasks.get_secure_file.apply_async(args=(job_uuid,))
+    if job.app == 'files' and job.operation == 'put_secure_file':
+        files_tasks.put_secure_file.apply_async(args=(job_uuid,))
+    if job.app == 'files' and job.operation == 'save_gt_attribute':
+        files_tasks.save_gt_attribute.apply_async(args=(job_uuid,))
     if job.app == 'files' and job.operation == 'save_movie_metadata':
-        files_tasks.save_movie_metadata.apply_async(args=(job_uuid,), queue=queue)
+        files_tasks.save_movie_metadata.apply_async(args=(job_uuid,))
     if job.app == 'files' and job.operation == 'load_movie_metadata':
-        files_tasks.load_movie_metadata.apply_async(args=(job_uuid,), queue=queue)
+        files_tasks.load_movie_metadata.apply_async(args=(job_uuid,))
     if job.app == 'files' and job.operation == 'unzip_archive':
-        files_tasks.unzip_archive.apply_async(args=(job_uuid,), queue=queue)
+        files_tasks.unzip_archive.apply_async(args=(job_uuid,))
+    if job.app == 'files' and job.operation == 'remove_directories':
+        files_tasks.purge_job.apply_async(args=(job_uuid,))
     if job.app == 'pipeline' and job.operation == 't1_sum':
-        pipelines_tasks.t1_sum.apply_async(args=(job_uuid,), queue=queue)
+        pipelines_tasks.t1_sum.apply_async(args=(job_uuid,))
     if job.app == 'pipeline' and job.operation == 't1_diff':
-        pipelines_tasks.t1_diff.apply_async(args=(job_uuid,), queue=queue)
+        pipelines_tasks.t1_diff.apply_async(args=(job_uuid,))
     if job.app == 'pipeline' and job.operation == 'noop':
-        pipelines_tasks.noop.apply_async(args=(job_uuid,), queue=queue)
+        pipelines_tasks.noop.apply_async(args=(job_uuid,))
     if job.app == 'job_run_summaries' and job.operation == 'create_manual_jrs':
-        jrs_tasks.create_manual_jrs.apply_async(args=(job_uuid,), queue=queue)
+        jrs_tasks.create_manual_jrs.apply_async(args=(job_uuid,))
     if job.app == 'job_run_summaries' and job.operation == 'create_automatic_jrs':
-        jrs_tasks.create_automatic_jrs.apply_async(args=(job_uuid,), queue=queue)
+        jrs_tasks.create_automatic_jrs.apply_async(args=(job_uuid,))
 
 
 class JobsViewSet(viewsets.ViewSet):
@@ -249,18 +266,15 @@ class JobsViewSet(viewsets.ViewSet):
 
     def list(self, request):
         jobs_list = []
-        if 'workbook_id' in request.GET.keys():
-            noparent_jobs = Job.objects.filter(workbook_id=request.GET['workbook_id'])
-            noparent_jobs = noparent_jobs.prefetch_related("children", "attributes")
-        else:
+        if 'all_pipeline_jobs' in request.GET.keys():
             noparent_jobs = Job.objects.filter(parent_id=None)
-            noparent_jobs = noparent_jobs.prefetch_related("children", "attributes")
-        pipeline_jobs = Job.objects.filter(app='pipeline').filter(operation='pipeline').exclude(parent_id=None)
-        pipeline_jobs = pipeline_jobs.prefetch_related("children", "attributes")
-        jobs = chain(noparent_jobs, pipeline_jobs)
-        desired_cv_worker_id = ''
-        if 'pick-up-for' in request.GET.keys():
-            desired_cv_worker_id = request.GET['pick-up-for']
+            pipeline_jobs = (Job.objects
+                .filter(app='pipeline', operation='pipeline')
+                .exclude(parent_id=None)
+            )
+            jobs = list(chain(noparent_jobs, pipeline_jobs))
+        else:
+            jobs = Job.objects.filter(parent_id=None)
         user_id = ''
         if 'user_id' in request.GET.keys():
             if request.GET['user_id'] and \
@@ -270,30 +284,30 @@ class JobsViewSet(viewsets.ViewSet):
         info = get_jobs_info()
         file_dirs = info["file_dirs"]
         owners = info["owners"]
+        all_attrs = self.get_attributes_as_dict(jobs)
+        pretty_child_ids = self.get_pretty_child_ids(jobs)
+
         for job in jobs:
             job_id = str(job.id)
-            child_ids = [child.id for child in job.children.order_by('created_on').all()]
+            child_ids = pretty_child_ids[str(job.id)]
             pretty_time = job.pretty_date(job.created_on)
             wall_clock_run_time = job.get_wall_clock_run_time_string()
             owner = owners[job_id] if job_id in owners else ""
             if user_id and owner != user_id:
                 continue
-            if desired_cv_worker_id:
-                if job.get_cv_worker_id() != desired_cv_worker_id:
-                    continue
 
-            attrs = self.get_attributes_as_dict(job)
+            attrs = all_attrs[str(job.pk)]
 
             response_data_size = 0
             if job.response_data:
                 response_data_size = len(job.response_data)
             if job.response_data_path:
-                response_data_size = 'very large'
+                response_data_size = 'external file'
             request_data_size = 0
             if job.request_data:
                 request_data_size = len(job.request_data)
             if job.request_data_path:
-                request_data_size = 'very large'
+                request_data_size = 'external file'
             job_obj = {
                 'id': job_id,
                 'status': job.status,
@@ -305,24 +319,29 @@ class JobsViewSet(viewsets.ViewSet):
                 'wall_clock_run_time': wall_clock_run_time,
                 'app': job.app,
                 'operation': job.operation,
-                'workbook_id': job.workbook_id,
                 'owner': owner,
                 'children': child_ids,
                 'response_size': response_data_size,
+                'response_data_path': job.response_data_path,
                 'request_size': request_data_size,
+                'request_data_path': job.request_data_path,
+                'hostname': job.hostname,
             }
             if job_id in file_dirs:
                 job_obj['file_dirs'] = file_dirs[job_id]
             if attrs:
                 job_obj['attributes'] = attrs
             jobs_list.append(job_obj)
-        return Response({"jobs": jobs_list})
+        return Response({
+          "jobs": jobs_list,
+        })
 
     def retrieve(self, request, pk):
         try:
             job = Job.objects.get(pk=pk)
-        except job.DoesNotExist:
+        except (ValidationError, Job.DoesNotExist):
             return self.error("Not Found", 404)
+
         job_data = job.as_dict()
         owner = get_job_owner(job)
         if owner:
@@ -330,22 +349,30 @@ class JobsViewSet(viewsets.ViewSet):
         file_dirs = get_job_file_dirs(job)
         if file_dirs:
             job_data['file_dirs'] = file_dirs
-        attrs = self.get_attributes_as_dict(job)
+        attrs = self.get_attributes_as_dict([job])[str(job.pk)]
         if attrs:
             job_data['attributes'] = attrs
 
         return Response({"job": job_data})
 
-    def get_attributes_as_dict(self, job):
-        attrs = {}
-        if Attribute.objects.filter(job=job).exists():
-            attributes = Attribute.objects.filter(job=job)
-            for attribute in attributes:
-                if attribute.name not in ['user_id', 'file_dir_user']:
-                    attrs[attribute.name] = attribute.value
-                if attribute.name == 'pipeline_job_link':
-                    attrs[attribute.name] = attribute.pipeline_id
-        return attrs
+    def get_attributes_as_dict(self, jobs):
+        all_attrs = defaultdict(dict)
+        attributes = Attribute.objects.filter(job__in=jobs)
+        for attribute in attributes:
+            if attribute.name not in ['user_id', 'file_dir_user']:
+                all_attrs[str(attribute.job_id)][attribute.name] = attribute.value
+            if attribute.name == 'pipeline_job_link':
+                all_attrs[str(attribute.job_id)][attribute.name] = attribute.pipeline_id
+        return all_attrs
+
+    def get_pretty_child_ids(self, jobs):
+        pretty_child_ids = defaultdict(list)
+        children = Job.objects.filter(parent__in=jobs)
+        for child in children:
+            pretty_child_ids[str(child.parent_id)].append(
+                f"{str(child.pk)} : {child.operation}"
+            )
+        return pretty_child_ids
 
     def build_job(self, request):
         job = Job(
@@ -355,92 +382,30 @@ class JobsViewSet(viewsets.ViewSet):
             app=request.data.get('app', 'bridezilla'),
             operation=request.data.get('operation', 'chucky'),
             sequence=0,
-            workbook_id=request.data.get('workbook_id'),
         )
         job.save()
 
-        owner_id = request.data.get('owner')
-        if owner_id:
-            job.add_owner(owner_id)
-        if request.data.get('routing_data'):
-            routing_data = request.data.get('routing_data')
-            if (
-                'cv_worker_id' in routing_data and 
-                routing_data['cv_worker_id'] and
-                'cv_worker_type' in routing_data and 
-                routing_data['cv_worker_type']
-            ):
-                attribute = Attribute(
-                    name='cv_worker_id',
-                    value=routing_data['cv_worker_id'],
-                    job=job,
-                )
-                attribute.save()
-                attribute = Attribute(
-                    name='cv_worker_type',
-                    value=routing_data['cv_worker_type'],
-                    job=job,
-                )
-                attribute.save()
+        try:
+            owner = request.user.username
+            job.add_owner(owner)
+        except:
+            pass
         if request.data.get('lifecycle_data'):
             lifecycle_data = request.data.get('lifecycle_data')
-            if 'delete_files_with_job' in lifecycle_data and lifecycle_data['delete_files_with_job']:
-                attribute = Attribute(
-                    name='delete_files_with_job',
-                    value=lifecycle_data['delete_files_with_job'],
-                    job=job,
-                )
-                attribute.save()
-            if 'auto_delete_age' in lifecycle_data and lifecycle_data['auto_delete_age']:
-                attribute = Attribute(
-                    name='auto_delete_age',
-                    value=lifecycle_data['auto_delete_age'],
-                    job=job,
-                )
-                attribute.save()
+            build_lifecycle_attribute('delete_files_with_job', lifecycle_data, job)
+            build_lifecycle_attribute('auto_delete_age', lifecycle_data, job)
         return job
-
-    def dispatch_cv_worker_job(self, job):
-        build_payload = {
-          'operation': job.operation,
-          'request_data': job.request_data,
-          'job_update_url': 'http://localhost:8000/api/v1/jobs/' + str(job.id),
-        }
-        worker_url = job.get_cv_worker_id()
-        worker_url = worker_url.replace('operations', 'tasks')
-
-        response = requests.post(
-            worker_url,
-            data=build_payload,
-        )
-        resp_data = json.loads(response.content)
-        if response.status_code == 200 and 'task_id' in resp_data:
-            task_id = resp_data['task_id']
-            attribute = Attribute(
-                name='cv_task_id',
-                value=task_id,
-                job=job,
-            )
-            attribute.save()
-        else:
-            job.status = 'failed'
-            job.response_data = json.dumps(['unhappy response from cv worker job dispatch'])
-            job.save()
 
     def create(self, request):
         job = self.build_job(request)
-
-        if job.is_cv_worker_task():
-            if job.get_cv_worker_type() == 'accepts_calls':
-                self.dispatch_cv_worker_job(job)
-        else:
-            self.schedule_job(job)
-
+        self.schedule_job(job)
         return Response({"job_id": job.id})
 
     def delete(self, request, pk, format=None):
-        handle_delete_job(pk)
-        return Response('', status=204)
+        deleted_pk = handle_delete_job(pk)
+        if deleted_pk:
+            return Response({"deleted": deleted_pk})
+        return self.error("Not Found", 404)
 
     def replace_movie_uuids(self, movies_obj, movie_mappings):
         new_movies = {}
@@ -535,7 +500,10 @@ class JobsViewSetWrapUp(viewsets.ViewSet):
     def create(self, request):
         if not request.data.get("job_id"):
             return self.error("job_id is required")
-        job = Job.objects.get(pk=request.data.get('job_id'))
+        try:
+            job = Job.objects.get(pk=request.data.get('job_id'))
+        except Job.DoesNotExist:
+            return self.error("Not Found", 404) 
         self.clear_out_job_recursive(job)
         children = Job.objects.filter(parent=job)
         unfinished_children_exist = False
@@ -635,4 +603,19 @@ class JobsViewSetPipelineJobStatus(viewsets.ViewSet):
         worker = PipelineJobStatusController(fw)
 
         worker_response = worker.build_status(job)
+        return Response(worker_response)
+
+class JobsViewSetPreserve(viewsets.ViewSet):
+    def retrieve(self, request, pk):
+        print('diggy 01')
+        try:
+            job = Job.objects.get(pk=pk)
+        except (ValidationError, Job.DoesNotExist):
+            return self.error("Not Found", 404)
+        print('diggy 02')
+        worker = PreserveJobController()
+        print('diggy 03')
+
+        worker_response = worker.preserve_job(job)
+        print('diggy 04')
         return Response(worker_response)

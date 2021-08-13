@@ -16,15 +16,7 @@ class MeshMatchController(T1Controller):
 
     def process_mesh_match(self, request_data):
         response_movies = {}
-        source_movies = {}
-        movies = request_data.get('movies')
-        if 'source' in movies:
-            source_movies = movies['source']
-            del movies['source']
-        movie_url = list(movies.keys())[0]
-        movie = movies[movie_url]
-        source_movie = source_movies[movie_url]
-
+        movie_url, movie, source_movie = self.get_movie_and_source_movie(request_data)
         mesh_match_id = list(request_data["tier_1_scanners"]['mesh_match'].keys())[0]
         mesh_match_meta = request_data["tier_1_scanners"]['mesh_match'][mesh_match_id]
 

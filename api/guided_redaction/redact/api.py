@@ -1,25 +1,28 @@
-import cv2
-from urllib.parse import urlsplit
 import os
+import requests
+from traceback import format_exc
+from urllib.parse import urlsplit
+import uuid
+
+import cv2
 from django.conf import settings
-from guided_redaction.utils.classes.FileWriter import FileWriter
+from django.http import HttpResponse
+import numpy as np
+from rest_framework.response import Response
+
+from base import viewsets
+from guided_redaction.redact.classes.DataSynthesizer import DataSynthesizer
+from guided_redaction.redact.classes.ImageIllustrator import ImageIllustrator
 from guided_redaction.redact.classes.ImageMasker import ImageMasker
 from guided_redaction.redact.classes.TextEraser import TextEraser
-from guided_redaction.redact.classes.ImageIllustrator import ImageIllustrator
-from guided_redaction.redact.classes.DataSynthesizer import DataSynthesizer
+from guided_redaction.utils.classes.FileWriter import FileWriter
 from .controller_movie import RedactMovieController
 from .controller_illustrate import IllustrateController
-import numpy as np
-from base import viewsets
-from rest_framework.response import Response
-from django.http import HttpResponse
-import requests
-import uuid
 
 
 requests.packages.urllib3.disable_warnings()
 
-def save_image_to_disk(cv2_image, image_name, the_uuid):
+def save_image_to_cache(cv2_image, image_name, the_uuid):
     fw = FileWriter(
         working_dir=settings.REDACT_FILE_STORAGE_DIR,
         base_url=settings.REDACT_FILE_BASE_URL,
@@ -143,7 +146,7 @@ class RedactViewSetRedactImage(viewsets.ViewSet):
                 inbound_filename = (urlsplit(inbound_image_url)[2]).split("/")[-1]
                 (file_basename, file_extension) = os.path.splitext(inbound_filename)
                 new_filename = file_basename + "_redacted" + file_extension
-                the_url = save_image_to_disk(
+                the_url = save_image_to_cache(
                     masked_image, new_filename, image_hash
                 )
                 return Response({
@@ -151,7 +154,7 @@ class RedactViewSetRedactImage(viewsets.ViewSet):
                     "original_image_url": request_data["image_url"],
                 })
         except Exception as err:
-            print('exception in redacting image: {}'.format(err))
+            print(format_exc())
             return self.error('exception occurred while redacting image')
 
 

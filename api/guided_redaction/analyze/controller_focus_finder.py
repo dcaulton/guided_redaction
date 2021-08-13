@@ -1,18 +1,20 @@
 import json
+import math
 import os
 import random
-import math
-from matplotlib import pyplot as plt
-import uuid
+
 import cv2
-import numpy as np
 from django.conf import settings
+from matplotlib import pyplot as plt
+import numpy as np
+import uuid
+
+from .controller_t1 import T1Controller
+from guided_redaction.analyze.classes.ExtentsFinder import ExtentsFinder
+from guided_redaction.analyze.classes.FocusFinder import FocusFinder
+from guided_redaction.analyze.classes.GetScreens import GetScreens
 from guided_redaction.jobs.models import Job
 from guided_redaction.utils.classes.FileWriter import FileWriter
-from .controller_t1 import T1Controller
-from guided_redaction.analyze.classes.FocusFinder import FocusFinder
-from guided_redaction.analyze.classes.ExtentsFinder import ExtentsFinder
-from guided_redaction.analyze.classes.GetScreens import GetScreens
 
 
 class FocusFinderController(T1Controller):
@@ -33,7 +35,6 @@ class FocusFinderController(T1Controller):
         self.hotspot_max_allowed_value = 2**16-1
         # for debugging, knocks all other frameset hashes out of the response
         self.debugging_frameset_hash = ''
-#        self.debugging_frameset_hash = '6179022026561607781936378558488872309785506353468273592312'
         get_screens_meta = {}
         self.get_screens_worker = GetScreens(get_screens_meta, self.file_writer)
 
@@ -42,10 +43,7 @@ class FocusFinderController(T1Controller):
         ocr_job_results = {'movies': {}}
         source_movie_only = False
 
-        response_obj = {
-            'movies': {},
-            'statistics': {'movies': {}},
-        }
+        response_obj = self.get_empty_t1_response_obj()
         source_movies = {}
         movies = request_data.get('movies')
         if 'source' in movies:
@@ -291,8 +289,6 @@ class FocusFinderController(T1Controller):
             (minVal, maxVal, minLoc, maxLoc) = cv2.minMaxLoc(hotspot_mask)
             response_obj['statistics']['movies'][movie_url]['brightest_hotspot_val'] = maxVal
             response_obj['statistics']['movies'][movie_url]['brightest_hotspot_loc'] = maxLoc
-            if not maxVal:
-                continue
             brightness_scale = math.floor((self.hotspot_max_allowed_value) / maxVal)
 
             hotspot_mask = hotspot_mask * brightness_scale

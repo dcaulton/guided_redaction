@@ -82,7 +82,7 @@ class PipelineJobStatusController:
                 movie_uuid = movie_url.split('/')[-2]
                 if movie_uuid: 
                     return movie_uuid
-            return str(uuid.uuid4())
+        return str(uuid.uuid4())
 
     def get_node_status_color(self, node_id):
         status = self.node_statuses[node_id]['status']
@@ -227,6 +227,8 @@ class PipelineJobStatusController:
             return 'T'
         elif long_type == 'selected_area':
             return 'SA'
+        elif long_type == 'secure_files_import':
+            return 'IMP'
         elif long_type == 'mesh_match':
             return 'MM'
         elif long_type == 'data_sifter':
@@ -237,12 +239,18 @@ class PipelineJobStatusController:
             return 'T1F'
         elif long_type == 'selection_grower':
             return 'SG'
+        elif long_type == 'ocr':
+            return 'OCR'
         elif long_type == 'split_and_hash':
             return 'S|H'
         elif long_type == 'redact':
             return 'R'
         elif long_type == 'zip':
             return 'Z'
+        elif long_type == 'remove_job_resources':
+            return 'RM'
+        elif long_type == 'save_gt_attribute':
+            return 'EXP'
         elif long_type == 't1_sum':
             return 'SUM'
 #            return '\u03A3'

@@ -13,6 +13,9 @@ from .controller_intersect import IntersectController
 from .controller_get_screens import GetScreensController
 from .controller_data_sifter import DataSifterController
 from .controller_focus_finder import FocusFinderController
+from .controller_diff import DiffController
+from .controller_feature import FeatureController
+from .controller_train_feature_anchor import TrainFeatureAnchorController
 from .controller_data_sifter_manual_compile import DataSifterManualCompileController
 import json
 from django.conf import settings
@@ -343,3 +346,58 @@ class AnalyzeViewSetFocusFinder(viewsets.ViewSet):
         matches = worker.find_focus(request_data)
 
         return Response(matches)
+
+class AnalyzeViewSetDiff(viewsets.ViewSet):
+    def create(self, request):
+        request_data = request.data
+        return self.process_create_request(request_data)
+
+    def process_create_request(self, request_data):
+        if not request_data.get("tier_1_scanners"):
+            return self.error("tier_1_scanners is required")
+        if not request_data.get("movies"):
+            return self.error("movies is required")
+        if 'diff' not in request_data['tier_1_scanners']:
+            return self.error("tier_1_scanners > diff is required")
+
+        worker = DiffController()
+        matches = worker.find_diff(request_data)
+
+        return Response(matches)
+
+class AnalyzeViewSetFeature(viewsets.ViewSet):
+    def create(self, request):
+        request_data = request.data
+        return self.process_create_request(request_data)
+
+    def process_create_request(self, request_data):
+        if not request_data.get("tier_1_scanners"):
+            return self.error("tier_1_scanners is required")
+        if not request_data.get("movies"):
+            return self.error("movies is required")
+        if 'feature' not in request_data['tier_1_scanners']:
+            return self.error("tier_1_scanners > feature is required")
+
+        worker = FeatureController()
+        matches = worker.find_features(request_data)
+
+        return Response(matches)
+
+class AnalyzeViewSetTrainFeatureWorker(viewsets.ViewSet):
+    def create(self, request):
+        request_data = request.data
+        return self.process_create_request(request_data)
+
+    def process_create_request(self, request_data):
+        if not request_data.get("tier_1_scanners"):
+            return self.error("tier_1_scanners is required")
+        if not request_data.get("movies"):
+            return self.error("movies is required")
+        if 'feature' not in request_data['tier_1_scanners']:
+            return self.error("tier_1_scanners > feature is required")
+
+        worker = TrainFeatureAnchorController()
+        matches = worker.train_anchor(request_data)
+
+        return Response(matches)
+

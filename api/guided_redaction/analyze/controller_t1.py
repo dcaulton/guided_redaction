@@ -1,7 +1,9 @@
 import base64
 import cv2
+
 import numpy as np
 from django.conf import settings
+
 from guided_redaction.utils.classes.FileWriter import FileWriter
 from guided_redaction.utils.controller_base_guided_redaction import BaseGuidedRedactionController
 from guided_redaction.utils.image_shared import (
@@ -13,6 +15,12 @@ from guided_redaction.utils.image_shared import (
 class T1Controller(BaseGuidedRedactionController):
 
     max_num_regions_before_mask_is_smarter = 5
+
+    def get_empty_t1_response_obj(self):
+        return {
+            'movies': {},
+            'statistics': {'movies': {}},
+        }
 
     def get_frameset_hash_for_frame(self, frame, framesets):
         for frameset_hash in framesets:
@@ -115,8 +123,21 @@ class T1Controller(BaseGuidedRedactionController):
                         mask_image,
                         zone_start,
                         zone_end,
-                        255,
+                        (255, 255, 255),
                         -1
                     )
                     cv2_image = cv2.bitwise_and(cv2_image, mask_image)
         return cv2_image
+
+    def get_movie_and_source_movie(self, request_data):
+        source_movies = {}
+        movies = request_data.get('movies')
+        if 'source' in movies:
+            source_movies = movies['source']
+        else:
+            source_movies = movies
+            source_movie_only = True
+        movie_url = list(source_movies.keys())[0]
+        source_movie = source_movies[movie_url]
+        movie = movies[movie_url]
+        return movie_url, movie, source_movie

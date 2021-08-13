@@ -1,14 +1,17 @@
 import json
+from traceback import format_exc
+from uuid import uuid4
+
 from rest_framework.response import Response
+
 from base import viewsets
 from guided_redaction.pipelines.models import Pipeline
 from guided_redaction.attributes.models import Attribute
 from guided_redaction.jobs.models import Job
-
+from guided_redaction.task_queues import get_task_queue
 from .controller_t1_sum import T1SumController
 from .controller_t1_diff import T1DiffController
 from .controller_dispatch import DispatchController
-
 
 
 class PipelinesViewSet(viewsets.ViewSet):
@@ -43,7 +46,7 @@ class PipelinesViewSet(viewsets.ViewSet):
                     'job_ids': job_ids,
                 }
             )
-
+        pipelines_list = sorted(pipelines_list, key=lambda x: x.get("name"))
         return Response({"pipelines": pipelines_list})
 
     def retrieve(self, request, pk):
@@ -65,15 +68,20 @@ class PipelinesViewSet(viewsets.ViewSet):
                 description=request.data.get('description'),
             )
             pipeline.save()
+        for attribute in Attribute.objects.filter(pipeline=pipeline):
+            if attribute.name not in request_content.get('attributes', {}):
+                attribute.delete()
         if 'attributes' in request_content:
+            attributes = [ a.name for a in Attribute.objects.filter(pipeline=pipeline) ]
             for attribute_name in request_content['attributes']:
                 attribute_value = request_content['attributes'][attribute_name]
-                attribute = Attribute(
-                    name=attribute_name,
-                    value=attribute_value,
-                    pipeline=pipeline,
-                )
-                attribute.save()
+                if attribute_name not in attributes:
+                    attribute = Attribute(
+                        name=attribute_name,
+                        value=attribute_value,
+                        pipeline=pipeline,
+                    )
+                    attribute.save()
             del request_content['attributes']
         pipeline.content=json.dumps(request_content)
         pipeline.save()
@@ -81,7 +89,7 @@ class PipelinesViewSet(viewsets.ViewSet):
 
     def delete(self, request, pk, format=None):
         Pipeline.objects.get(pk=pk).delete()
-        return Response('', status=204)
+        return Response()
 
 
 class PipelinesViewSetDispatch(viewsets.ViewSet):
@@ -89,29 +97,25 @@ class PipelinesViewSetDispatch(viewsets.ViewSet):
     def create(self, request):
         request_data = request.data
         is_batch = "batch" in request.query_params
-        return self.process_create_request(request_data, is_batch)
+        owner = ''
+        try:
+            owner = request.user.username
+        except:
+            pass
+        return self.process_create_request(request_data, is_batch, owner)
 
-    def process_create_request(self, request_data, is_batch):
+    def process_create_request(self, request_data=None, is_batch=None, owner=None):
         if not request_data.get("pipeline_id"):
             return self.error("pipeline_id is required", status_code=400)
         if not request_data.get("input"):
             return self.error("input is required", status_code=400)
-        pipeline_id = request_data['pipeline_id']
-        if not Pipeline.objects.filter(id=pipeline_id).exists():
-            return self.error("invalid pipeline id specified", status_code=400)
-        input_data = request_data['input']
-        workbook_id = request_data.get("workbook_id")
-        owner = request_data.get("owner")
-        worker = DispatchController()
-        parent_job_id = worker.dispatch_pipeline(
-            pipeline_id, input_data, workbook_id, owner, is_batch=is_batch
+        queue = get_task_queue(is_batch)
+        new_job_id = str(uuid4())
+        from . import tasks
+        tasks.dispatch_pipeline.apply_async(
+            args=(request_data, owner, new_job_id), queue=queue
         )
-        return Response({'job_id': parent_job_id})
-
-    def handle_job_finished(self, job, pipeline):
-        worker = DispatchController()
-        worker.handle_job_finished(job, pipeline)
-        return Response()
+        return Response({"job_id": new_job_id, "is_batch": is_batch})
 
 
 class PipelineT1SumViewSet(viewsets.ViewSet):

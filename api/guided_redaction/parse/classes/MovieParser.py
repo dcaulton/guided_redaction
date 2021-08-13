@@ -1,13 +1,16 @@
-import cv2
-from django import db
-from django.conf import settings
 import math
 from operator import add
 import os
-import numpy as np
 import re
 import requests
+from traceback import format_exc
 import uuid
+
+import cv2
+from django import db
+from django.conf import settings
+import numpy as np
+
 
 # Handles getting from a series of images to a movie and vise versa
 class MovieParser:
@@ -81,7 +84,7 @@ class MovieParser:
                     next_time_msec = next_frame_pos * interval_msec
                 current_position_msec = video_capture.get(cv2.CAP_PROP_POS_MSEC)
         except Exception as e:
-            print("exception encountered unzipping movie frames: "+ e)
+            print(format_exc())
         print("{} frames created".format(str(created_count)))
         return files_created
 
@@ -93,9 +96,8 @@ class MovieParser:
                 if type(cv2_image) != type(None):
                     self.advance_one_frame(cv2_image, image_url, unique_frames)
             except Exception as err:
-                print('MovieParser.load_and_hash_frames DIED TRYING TO READ A FRAME: {}'.format(image_url))
-                print(err)
-
+                print(format_exc())
+                print(image_url)
         return unique_frames
 
     def advance_one_frame(self, image, image_url, unique_frames):

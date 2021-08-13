@@ -3,6 +3,7 @@ import json
 import os
 import shutil
 import time
+from traceback import format_exc
 import uuid
 
 from django.conf import settings
@@ -15,9 +16,13 @@ from guided_redaction.task_queues import get_task_queue
 from guided_redaction.utils.classes.FileWriter import FileWriter
 from .controller_export import ExportController
 from .controller_unzip_archive import UnzipArchiveController
+from .controller_save_gt_attribute import SaveGTAttributeController
+from .controller_upload_secure_file import UploadSecureFileController
 
 
 def make_url_from_file(filename, file_binary_data, the_uuid=''):
+    if not file_binary_data:
+        return
     file_writer = FileWriter(
         working_dir=settings.REDACT_FILE_STORAGE_DIR,
         base_url=settings.REDACT_FILE_BASE_URL,
@@ -64,9 +69,42 @@ class FilesViewSet(viewsets.ViewSet):
         dirpath = os.path.join(settings.REDACT_FILE_STORAGE_DIR, pk)
         try:
             shutil.rmtree(dirpath)
-            return Response('', status=204)
+            return Response()
         except Exception as e:
-            return self.error(e, status_code=400)
+            print(format_exc())
+            return self.error(f'file delete failed for {pk}', status_code=400)
+
+
+class FilesViewSetSaveGTAttribute(viewsets.ViewSet):
+    def create(self, request):
+        request_data = request.data
+        return self.process_create_request(request_data)
+
+    def process_create_request(self, request_data):
+        if 'status' not in request_data or request_data['status'] != 'success':
+            return self.error("a successful secure files status is required")
+        if not request_data.get('new_file_info'):
+            return self.error("new_file_info is required")
+        if not request_data.get('new_file_info')[0].get('recording_id'):
+            return self.error("first new_file_info.recording_id is required")
+        if not request_data.get('new_file_info')[0].get('source_movie_url'):
+            return self.error("first new_file_info.source_movie_url is required")
+        if not request_data.get('new_file_info')[0].get('source_movie_recording_id'):
+            return self.error("first new_file_info.source_movie_recording_id is required")
+        if 'original_transaction_id' not in request_data:
+            return self.error("original_transaction_id is required")
+        if 'original_timestamp' not in request_data:
+            return self.error("original_timestamp is required")
+        if 'original_account_id' not in request_data:
+            return self.error("original_account_id is required")
+
+        worker = SaveGTAttributeController()
+        response_obj= worker.save_gt_attribute(request_data)
+
+        if response_obj.get('errors'):
+            return self.error(response_obj.get('errors'), status_code=400)
+        else:
+            return Response(response_obj)
 
 
 class FilesViewSetUnzipArchive(viewsets.ViewSet):
@@ -81,6 +119,37 @@ class FilesViewSetUnzipArchive(viewsets.ViewSet):
             return self.error(response_obj.get('errors'), status_code=400)
         else:
             return Response(response_obj)
+
+
+class FilesViewSetPurgeJob(viewsets.ViewSet):
+    def create(self, request):
+        request_data = request.data
+        return self.process_create_request(request_data)
+
+    def process_create_request(self, request_data, purge_job_id):
+        if 'directories' not in request_data:
+            return self.error("directories is required")
+        if 'primary_job_id' not in request_data:
+            return self.error("primary_job_id is required")
+        directories = request_data.get('directories')
+        primary_job_id = request_data.get('primary_job_id')
+        try:
+            file_writer = FileWriter(
+                working_dir=settings.REDACT_FILE_STORAGE_DIR,
+                base_url=settings.REDACT_FILE_BASE_URL,
+                image_request_verify_headers=settings.REDACT_IMAGE_REQUEST_VERIFY_HEADERS,
+            )
+            for directory in directories:
+                file_writer.delete_directory(directory)
+            primary_job = Job.objects.get(pk=primary_job_id)
+            for child in primary_job.children.all():
+                if str(child.id) == purge_job_id:
+                    continue # don't try to delete the job we're running as, silly!
+                child.delete()
+            return Response({'status': 'purged'})
+        except Exception as e:
+            print(format_exc())
+            return self.error(f'directory delete failed for {directory}', status_code=400)
 
 
 class FilesViewSetImportArchive(viewsets.ViewSet):
@@ -113,11 +182,11 @@ class FilesViewSetImportArchive(viewsets.ViewSet):
                 sequence=0,
             )
             job.save()
-            queue = get_task_queue()
-            files_tasks.unzip_archive.apply_async(args=(job.id,), queue=queue)
+            files_tasks.unzip_archive.apply(args=(job.id,))
             return Response({"job_id": job.id})
         except Exception as e:
-            return self.error(e, status_code=400)
+            print(format_exc())
+            return self.error('import archive failed', status_code=400)
 
 
 class FilesViewSetExport(viewsets.ViewSet):
@@ -161,10 +230,34 @@ class FilesViewSetDownloadSecureFile(viewsets.ViewSet):
                 data = get_file(recording_id)
                 filename = recording_id + '.mp4'
                 file_url = make_url_from_file(filename, data['content'])
-                build_urls[file_url] = {}
+                if file_url:
+                    build_urls[file_url] = {'recording_id': recording_id}
+                else:
+                    return self.error(
+                      f'download secure file failed for {recording_id}',
+                      status_code=400
+                    )
             return Response({"movies": build_urls})
         except Exception as e:
-            return self.error(str(e), status_code=400)
+            print(format_exc())
+            return self.error(
+              'exception during download secure file', status_code=400
+            )
+
+
+class FilesViewSetUploadSecureFile(viewsets.ViewSet):
+    def create(self, request):
+        request_data = request.data
+        return self.process_create_request(request_data)
+
+    def process_create_request(self, request_data):
+        worker = UploadSecureFileController()
+        response_obj= worker.upload_secure_file(request_data)
+
+        if response_obj.get('errors'):
+            return self.error(response_obj.get('errors'), status_code=400)
+        else:
+            return Response(response_obj)
 
 
 class FilesViewSetMakeUrl(viewsets.ViewSet):
@@ -196,7 +289,8 @@ class FilesViewSetMakeUrl(viewsets.ViewSet):
 
                     return Response({"url": file_url})
             except Exception as e:
-                return self.error([e], status_code=400)
+                print(format_exc())
+                return self.error('make url failed', status_code=400)
         elif request.method == "POST" and request.data.get("data_uri") and request.data.get('filename'):
             filename = request.data.get("filename")
             data_uri = request.data.get('data_uri')

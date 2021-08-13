@@ -1,7 +1,8 @@
 import base64
+import requests
+
 import cv2
 import imutils
-import requests
 import numpy as np
 
 

@@ -74,4 +74,4 @@ class AttributesViewSet(viewsets.ViewSet):
 
     def delete(self, request, pk, format=None):
         Attribute.objects.get(pk=pk).delete()
-        return Response('', status=204)
+        return Response()

@@ -88,8 +88,8 @@ class EastPlusTessScanner(EastScanner):
         text_regions = []
         total_tess_time = 0
         copy = image.copy()
-        config = "-l eng --oem 1 --psm 7"
-        config = getattr(settings, 'REDACT_TESSERACT_CONFIG', config)
+        config = "-l eng --oem 1 --psm 3"
+        config = getattr(settings, 'REDACT_TESSERACT_WHOLE_IMAGE_CONFIG', config)
         start = time.time()
         text = pytesseract.image_to_string(gray, config=config)
         end = time.time()
@@ -100,13 +100,12 @@ class EastPlusTessScanner(EastScanner):
         }
         text_regions.append(recognized_text_area)
 
-        if self.debug:
-            sum_text = (
-                "total text recognition time: "
-                + str(math.ceil(total_tess_time))
-                + " seconds for 1 call"
-            )
-            print(sum_text)
+        sum_text = (
+            "total text recognition time: "
+            + str(math.ceil(total_tess_time))
+            + " seconds for 1 call"
+        )
+        print(sum_text)
         return text_regions
 
     def get_centroid(self, contour):

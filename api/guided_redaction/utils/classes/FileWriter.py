@@ -1,9 +1,12 @@
+import os
+import shutil
+from traceback import format_exc
+from urllib.parse import urlsplit
+
 import cv2
 import ffmpeg
 import numpy as np
-import os
 import requests
-import shutil
 
 from guided_redaction.task_queues import get_path_routing_segment
 
@@ -20,9 +23,17 @@ class FileWriter():
         self.base_url = base_url.format(route=path_routing_segment)
         self.image_request_verify_headers = image_request_verify_headers
 
+    def get_recording_id_from_url(self, movie_url):
+        # relies on the assumption that we're using stuff from secure files.
+        #   but it's just for storing info back in a related system
+        (x_part, file_name) = os.path.split(movie_url)
+        (file_basename, file_extension) = os.path.splitext(file_name)
+        file_basename_first_segment = file_basename.split('_')[0]
+        return file_basename_first_segment 
+
     def delete_directory(self, the_uuid):
         dirpath = os.path.join(self.working_dir, the_uuid)
-        shutil.rmtree(dirpath)
+        shutil.rmtree(dirpath, ignore_errors=True)
 
     def get_images_from_uuid(self, the_uuid):
         the_path = os.path.join(self.working_dir, the_uuid)
@@ -40,29 +51,40 @@ class FileWriter():
         (y_part, uuid_part) = os.path.split(x_part)
         file_fullpath = os.path.join(self.working_dir, uuid_part, file_part)
 
-        fh = open(file_fullpath, 'wb')
-        fh.write(image_bytes)
-        fh.close()
+        with open(file_fullpath, 'wb') as fh:
+            fh.write(image_bytes)
 
         return the_url
   
+    def get_uuid_directory_from_url(self, the_url):
+        (x_part, file_part) = os.path.split(the_url)
+        (y_part, uuid_part) = os.path.split(x_part)
+        if uuid_part == 'build': # sometimes we have a build dir
+            (y_part, uuid_part) = os.path.split(y_part)
+        return uuid_part
+
     def get_file_path_for_url(self, the_url):
         (x_part, file_part) = os.path.split(the_url)
         (y_part, uuid_part) = os.path.split(x_part)
-        file_fullpath = os.path.join(self.working_dir, uuid_part, file_part)
+        if uuid_part == 'build': # sometimes we have a build dir
+            (y_part, uuid_part) = os.path.split(y_part)
+            file_fullpath = os.path.join(self.working_dir, uuid_part, 'build', file_part)
+        else:
+            file_fullpath = os.path.join(self.working_dir, uuid_part, file_part)
         return file_fullpath
 
     def get_url_for_file_path(self, the_filepath):
         (x_part, file_part) = os.path.split(the_filepath)
         (y_part, uuid_part) = os.path.split(x_part)
-        new_url = '/'.join([self.base_url, uuid_part, file_part])
+        if uuid_part == 'build': # sometimes we have a build dir
+            (y_part, uuid_part) = os.path.split(y_part)
+            new_url = '/'.join([self.base_url, uuid_part, 'build', file_part])
+        else:
+            new_url = '/'.join([self.base_url, uuid_part, file_part])
         return new_url
 
     def build_file_fullpath_for_uuid_and_filename(self, the_uuid, the_file_name):
-        if the_uuid and the_file_name:
-            return os.path.join(self.working_dir, the_uuid, the_file_name)
-        if the_uuid and not the_file_name:
-            return os.path.join(self.working_dir, the_uuid)
+        return os.path.join(self.working_dir, the_uuid, the_file_name)
 
     def get_file_pattern_fullpath_for_movie_split(self, movie_url, file_pattern):
         (x_part, file_part) = os.path.split(movie_url)
@@ -71,33 +93,33 @@ class FileWriter():
         return file_pattern_fullpath
 
     def write_cv2_image_to_filepath(self, cv2_image, file_fullpath):
+        # assumes we just have uuid and file name, no other segments in the relative path
         image_bytes = cv2.imencode('.png', cv2_image)[1].tostring()
         (x_part, file_part) = os.path.split(file_fullpath)
         (y_part, uuid_part) = os.path.split(x_part)
         new_url = '/'.join([self.base_url, uuid_part, file_part])
 
-        fh = open(file_fullpath, 'wb')
-        fh.write(image_bytes)
-        fh.close()
+        if not os.path.exists(x_part):
+            self.create_unique_directory(uuid_part)
+
+        with open(file_fullpath, 'wb') as fh:
+            fh.write(image_bytes)
 
         return new_url
   
     def read_binary_data_from_filepath(self, file_fullpath):
-        fh = open(file_fullpath, 'rb')
-        ret_obj = fh.read()
-        fh.close()
+        with open(file_fullpath, 'rb') as fh:
+            ret_obj = fh.read()
         return ret_obj
 
     def write_binary_data_to_filepath(self, binary_data, file_fullpath):
-        fh = open(file_fullpath, 'wb')
-        fh.write(binary_data)
-        fh.close()
+        with open(file_fullpath, 'wb') as fh:
+            fh.write(binary_data)
         return 0
 
     def write_text_data_to_filepath(self, text_data, file_fullpath):
-        fh = open(file_fullpath, 'w')
-        fh.write(text_data)
-        fh.close()
+        with open(file_fullpath, 'w') as fh:
+            fh.write(text_data)
         return 0
 
     def delete_item_at_filepath(self, file_fullpath):
@@ -110,9 +132,8 @@ class FileWriter():
     def get_text_data_from_filepath(self, file_fullpath):
         if not os.path.exists(file_fullpath):
             return ''
-        fh = open(file_fullpath, 'r')
-        text_data = fh.read()
-        fh.close()
+        with open(file_fullpath, 'r') as fh:
+            text_data = fh.read()
         return text_data
 
     def copy_file(self, source_url, new_uuid, new_filename=None):
@@ -133,13 +154,11 @@ class FileWriter():
         (y_part, uuid_part) = os.path.split(x_part)
         new_url = '/'.join([self.base_url, uuid_part, file_part])
 
-        in_fh = open(video_source_file, 'rb')
-        video_bytes = in_fh.read()
-        in_fh.close()
+        with open(video_source_file, 'rb') as in_fh:
+            video_bytes = in_fh.read()
 
-        fh = open(file_fullpath, 'wb')
-        fh.write(video_bytes)
-        fh.close()
+        with open(file_fullpath, 'wb') as fh:
+            fh.write(video_bytes)
 
         return new_url
   
@@ -179,7 +198,7 @@ class FileWriter():
             output_url = '/'.join([self.base_url, new_subdir, output_file_name])
             return output_url
         except Exception as err:
-            print('exception in write video: {}'.format(err))
+            print(format_exc())
             return ''
 
     def find_dir_with_files(self, filenames_in):

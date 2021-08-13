@@ -101,7 +101,7 @@ class WorkbooksViewSet(viewsets.ViewSet):
 
     def delete(self, request, pk, format=None):
         Workbook.objects.get(pk=pk).delete()
-        return Response('', status=204)
+        return Response()
 
 class WorkbooksViewSetDeleteOld(viewsets.ViewSet):
     def list(self, request):

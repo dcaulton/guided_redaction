@@ -1,15 +1,17 @@
-import cv2
 import json
-import random
 import os
+import random
 from urllib.parse import urlsplit
+
+import cv2
 from django.conf import settings
+
 from guided_redaction.jobs.models import Job
-from guided_redaction.utils.classes.FileWriter import FileWriter
-from guided_redaction.utils.controller_base_guided_redaction import BaseGuidedRedactionController
+from guided_redaction.redact.classes.DataSynthesizer import DataSynthesizer
 from guided_redaction.redact.classes.ImageMasker import ImageMasker
 from guided_redaction.redact.classes.TextEraser import TextEraser
-from guided_redaction.redact.classes.DataSynthesizer import DataSynthesizer
+from guided_redaction.utils.classes.FileWriter import FileWriter
+from guided_redaction.utils.controller_base_guided_redaction import BaseGuidedRedactionController
 
 
 class RedactMovieController(BaseGuidedRedactionController):
@@ -65,6 +67,7 @@ class RedactMovieController(BaseGuidedRedactionController):
         areas_to_redact = []
         for match_obj_key in frameset_data:
             match_obj = frameset_data[match_obj_key]
+            coords_dict = None
             if 'start' in match_obj and 'end' in match_obj:
                 coords_dict = {
                     "start": tuple(match_obj['start']),
@@ -74,11 +77,12 @@ class RedactMovieController(BaseGuidedRedactionController):
                 coords_dict = {
                     "start": tuple(match_obj['location']),
                     "end": tuple((
-                        match_obj['location'][0] + match_obj['size'][0],
-                        match_obj['location'][1] + match_obj['size'][1]
+                        int(match_obj['location'][0] + match_obj['size'][0]),
+                        int(match_obj['location'][1] + match_obj['size'][1])
                     ))
                 }
-            areas_to_redact.append(coords_dict)
+            if coords_dict:
+                areas_to_redact.append(coords_dict)
 
 
         if self.redact_rule['mask_method'] == 'text_eraser':

@@ -1,4 +1,5 @@
 import os
+from traceback import format_exc
 import uuid
 
 import simplejson as json
@@ -53,7 +54,7 @@ def get_movie_frame_dimensions(frames):
         else:
             return (0, 0)
     except Exception as err:
-        print('exception getting movie frame dimensions: {}'.format(err))
+        print(format_exc())
         return (0, 0)
 
 def get_url_as_cv2_image(the_url):
@@ -71,7 +72,7 @@ def get_url_as_cv2_image(the_url):
         else:
             return empty_image
     except Exception as err:
-        print('exception getting url as cv2 image: {}'.format(err))
+        print(format_exc())
         return empty_image
 
 def split_movie_audio(file_writer, movie_url):
@@ -87,7 +88,7 @@ def split_movie_audio(file_writer, movie_url):
             .run()
         )
     except Exception as err:
-        print('exception while trying to split movie audio')
+        print(format_exc())
         audio_url = ''
     return audio_url
 
@@ -121,7 +122,7 @@ def split_movie_partial(file_writer, movie_url, start_seconds_offset, num_frames
             .run()
         )
     except Exception as err:
-        print('exception in split movie partial: {}'.format(err))
+        print(format_exc())
         return []
     files_created = []
     for i in range(start_seconds_offset,start_seconds_offset+num_frames):
@@ -312,7 +313,7 @@ class ParseViewSetSplitMovie(viewsets.ViewSet):
             "framesets": {},
         }
 
-        if request_data.get('preserve_movie_audio'):
+        if request_data.get('preserve_movie_audio', True):
             audio_url = split_movie_audio(fw, movie_url)
             return_data['movies'][movie_url]['audio_url'] = audio_url
 
@@ -438,7 +439,7 @@ class ParseViewSetCropImage(viewsets.ViewSet):
               'cropped_image_bytes': cropped_base64,
             })
         except Exception as err:
-            print('exception creating a cropped image: {}'.format(err))
+            print(format_exc())
             return self.error('could not crop image', status_code=400)
 
 
@@ -564,7 +565,8 @@ class ParseViewSetGetColorAtPixel(viewsets.ViewSet):
                 return_color = (int(color[2]), int(color[1]), int(color[0]))
             return Response({'color': return_color})
         except Exception as err:
-            return self.error('exception getting color at pixel: {}'.format(err))
+            print(format_exc())
+            return self.error('exception getting color at pixel')
 
 class ParseViewSetGetColorsInZone(viewsets.ViewSet):
     def create(self, request):
@@ -598,4 +600,5 @@ class ParseViewSetGetColorsInZone(viewsets.ViewSet):
                 colors = color_getter.get_colors()
             return Response({'colors': colors})
         except Exception as err:
-            return self.error('exception getting color for zone: {}'.format(err))
+            print(format_exc())
+            return self.error('exception getting color for zone')

@@ -4,7 +4,7 @@ from django.conf import settings
 from django.db import models
 from guided_redaction.utils.external_payload_utils import (
     save_external_payloads,
-    get_data_from_disk_for_model_instance,
+    get_data_from_cache_for_model_instance,
     delete_external_payloads
 )
 
@@ -54,5 +54,5 @@ class JobRunSummary(models.Model):
     @classmethod
     def from_db(cls, db, field_names, values):
         instance = cls(*values)
-        get_data_from_disk_for_model_instance(instance)
+        get_data_from_cache_for_model_instance(instance)
         return instance

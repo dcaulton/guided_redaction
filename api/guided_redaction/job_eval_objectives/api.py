@@ -53,6 +53,6 @@ class JobEvalObjectivesViewSet(viewsets.ViewSet):
     def delete(self, request, pk, format=None):
         if pk and JobEvalObjective.objects.filter(pk=pk).exists():
             JobEvalObjective.objects.get(pk=pk).delete()
-            return Response({}, status=204)
+            return Response()
         else:
             return Response({}, status=404)

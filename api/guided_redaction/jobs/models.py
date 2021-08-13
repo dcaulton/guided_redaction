@@ -1,19 +1,24 @@
-import uuid
-import pytz
 import hashlib
 import json
+import os
+import pytz
+import uuid
 from datetime import datetime
+from pathlib import Path
 
 from django.conf import settings
 from django.db import models
 
+from base import cache
 from guided_redaction.attributes.models import Attribute
 from guided_redaction.utils.external_payload_utils import (
     save_external_payloads,
-    get_data_from_disk_for_model_instance,
+    get_data_from_cache_for_model_instance,
     delete_external_payloads
 )
 from guided_redaction.utils.classes.FileWriter import FileWriter
+
+hostname = os.environ.get("HOSTNAME")
 
 
 class Job(models.Model):
@@ -39,10 +44,15 @@ class Job(models.Model):
     workbook = models.ForeignKey(
         'workbooks.Workbook', on_delete=models.CASCADE, null=True
     )
+    hostname = models.CharField(max_length=255, default=hostname)
 
     EXTERNAL_PAYLOAD_FIELDS = ['response_data', 'request_data']
     MIN_PERCENT_COMPLETE_INCREMENT = .05
     MAX_DB_PAYLOAD_SIZE = getattr(settings, 'REDACT_MAX_DB_PAYLOAD_SIZE', 1000000)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._presave_status = self.status
 
     def __str__(self):
         disp_hash = {
@@ -59,11 +69,15 @@ class Job(models.Model):
         percent_complete = self.get_percent_complete()
         if percent_complete != self.percent_complete:
             self.percent_complete = percent_complete
-        save_external_payloads(self) 
-        super(Job, self).save(*args, **kwargs)
-        if self.parent:
-            self.parent.update_percent_complete()
-        else:
+        if not self.hostname:
+            self.hostname = ''
+        paths = save_external_payloads(self) 
+        super().save(*args, **kwargs)
+        self._presave_status = self.status
+
+        get_data_from_cache_for_model_instance(self)
+
+        if not self.parent:
             if hasattr(settings,'SUPPRESS_WEBSOCKETS') and settings.SUPPRESS_WEBSOCKETS:
                 return
             self.broadcast_percent_complete()
@@ -86,9 +100,16 @@ class Job(models.Model):
         wall_clock_run_time = '{}:{:02d}:{:02d}'.format(hours, minutes, seconds)
         return wall_clock_run_time 
 
+    def get_pretty_child_ids_list(self):
+        children = Job.objects.filter(parent_id=self.id).order_by('created_on')
+        child_ids = [
+            f"{i+1: 4d}. {child.id} : {child.operation}"
+            for i, child in enumerate(children)
+        ]
+        return child_ids
+
     def as_dict(self):
-        children = Job.objects.filter(parent_id=self.id).order_by('sequence')
-        child_ids = [str(child.id) + ' : ' + child.operation for child in children]
+        child_ids = self.get_pretty_child_ids_list()
         pretty_time = self.pretty_date(self.created_on)
         seconds = (self.updated - self.created_on).seconds
         hours = seconds // 3600
@@ -119,10 +140,13 @@ class Job(models.Model):
             'workbook_id': str(self.workbook_id or ''),
             'parent_id': str(self.parent_id or ''),
             'request_data': build_request_data,
+            'request_data_path': self.request_data_path,
             'response_data': build_response_data,
+            'response_data_path': self.response_data_path,
             'sequence': self.sequence,
             'children': child_ids,
             'attributes': build_attributes,
+            'hostname': self.hostname,
         }
         return job_data
 
@@ -135,7 +159,7 @@ class Job(models.Model):
     @classmethod
     def from_db(cls, db, field_names, values):
         instance = cls(*values)
-        get_data_from_disk_for_model_instance(instance)
+        get_data_from_cache_for_model_instance(instance)
         ##############################################
         # Internal Django bookkeeping                #
         # See: django.db.models.base.Model.from_db() #
@@ -145,8 +169,8 @@ class Job(models.Model):
         ############################################
         return instance
 
-    def get_data_from_disk(self):
-        get_data_from_disk_for_model_instance(self)
+    def get_data_from_cache(self):
+        get_data_from_cache_for_model_instance(self)
 
     def broadcast_percent_complete(self):
         try:
@@ -195,30 +219,6 @@ class Job(models.Model):
             return True
         return False
 
-    def is_cv_worker_task(self):
-        if Attribute.objects.filter(job=self).exists():
-            attributes = Attribute.objects.filter(job=self)
-            for attribute in attributes:
-                if attribute.name == 'cv_worker_id':
-                    return True
-        return False
-
-    def get_cv_worker_id(self):
-        if Attribute.objects.filter(job=self).exists():
-            attributes = Attribute.objects.filter(job=self)
-            for attribute in attributes:
-                if attribute.name == 'cv_worker_id':
-                    return attribute.value
-        return False
-
-    def get_cv_worker_type(self):
-        if Attribute.objects.filter(job=self).exists():
-            attributes = Attribute.objects.filter(job=self)
-            for attribute in attributes:
-                if attribute.name == 'cv_worker_type':
-                    return attribute.value
-        return False
-
     def get_file_dirs(self):
         file_dirs = []
         if Attribute.objects.filter(job=self).filter(name='file_dir_user').exists():
@@ -228,7 +228,7 @@ class Job(models.Model):
         return file_dirs
 
     def get_percent_complete(self):
-        if self.status in ['success', 'failed']: 
+        if self.status in ['success', 'failed', 'bypassed', 'purged']: 
             return 1
         if self.status == 'created': 
             return 0

@@ -99,4 +99,4 @@ class ScannersViewSet(viewsets.ViewSet):
 
     def delete(self, request, pk, format=None):
         Scanner.objects.get(pk=pk).delete()
-        return Response('', status=204)
+        return Response()

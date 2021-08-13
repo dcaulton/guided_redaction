@@ -193,7 +193,7 @@ class HogScanner:
     def train_model(self):
 #        if os.path.exists(self.features_path):
 #            if self.debug:
-#                print('loading features from disk')
+#                print('loading features from cache')
 #            (self.data, self.labels) = self.load_dataset(
 #                self.features_path, 
 #                "features"

@@ -22,3 +22,6 @@ router.register(
 router.register(
     r"redact/v1/jobs/pipeline-job-status", api.JobsViewSetPipelineJobStatus, basename="MrGarrison"
 )
+router.register(
+    r"redact/v1/preserve-jobs", api.JobsViewSetPreserve, basename="Stanley"
+)

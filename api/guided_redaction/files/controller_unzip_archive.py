@@ -192,6 +192,7 @@ class UnzipArchiveController():
         for pipeline_id in master_json.get('pipelines', {}):
             input_pipeline = master_json['pipelines'][pipeline_id]
             pipeline = Pipeline(
+                id=pipeline_id,
                 name=input_pipeline['name'],
                 description=input_pipeline['description'],
                 content=input_pipeline['content'],

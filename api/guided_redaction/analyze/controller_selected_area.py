@@ -1,10 +1,13 @@
-import cv2
 import math
-import numpy as np
 import random
+import uuid
+
+import cv2
 from django.conf import settings
-from guided_redaction.analyze.classes.ExtentsFinder import ExtentsFinder
+import numpy as np
+
 from .controller_t1 import T1Controller
+from guided_redaction.analyze.classes.ExtentsFinder import ExtentsFinder
 from guided_redaction.utils.classes.FileWriter import FileWriter
 
 
@@ -39,6 +42,9 @@ class SelectedAreaController(T1Controller):
         if self.selected_area_meta['select_type'] == 'invert':
             return self.build_inverted_selected_areas(source_movies, movies)
             
+        if self.selected_area_meta['select_type'] == 'full_screen':
+            return self.build_full_screen_selected_areas(source_movies, movies)
+
         finder = ExtentsFinder()
         response_movies[movie_url] = {}
         response_movies[movie_url]['framesets'] = {}
@@ -141,45 +147,66 @@ class SelectedAreaController(T1Controller):
             return (cv2_image.shape[1], cv2_image.shape[0])
         return [100, 100]
 
+    def build_man_zone_mask_for_movie(self, source_movie, man_zones):
+        dims = source_movie.get('frame_dimensions', (800, 800))
+        mask = np.zeros((dims[1], dims[0]))
+        for man_zone_key in man_zones:
+            man_zone = man_zones[man_zone_key]
+            cv2.rectangle(
+                mask,
+                tuple(man_zone['start']),
+                tuple(man_zone['end']),
+                255,
+                -1
+            )
+        mask_base64 = self.get_base64_image_string(mask)
+        return mask_base64
+
+    def build_full_screen_selected_areas(self, source_movies, movies):
+        build_movies = {}
+        for movie_url in movies:
+            build_movies[movie_url] = {'framesets': {}}
+            movie = movies[movie_url]
+            dims = movie.get('frame_dimensions', (9999, 9999))
+            for frameset_hash in movie['framesets']:
+                build_movies[movie_url]['framesets'][frameset_hash] = {}
+                new_key = 'selected_area_' + str(uuid.uuid4())
+                build_obj = {
+                  'id': new_key,
+                  'start': (0, 0),
+                  'end': dims,
+                  'scale': 1,
+                  'scanner_type': 'selected_area',
+                }
+                build_movies[movie_url]['framesets'][frameset_hash][new_key] = \
+                    build_obj
+        return build_movies
+
     def build_manual_selected_areas(self, source_movies, movies):
         if not source_movies:
             source_movies = movies
         man_zones = self.selected_area_meta['manual_zones']
+        build_man_zones = {}
+        for man_zone_key in man_zones:
+            man_zone = man_zones[man_zone_key]
+            build_man_zones[man_zone_key] = {
+              'start': man_zone['start'],
+              'end': man_zone['end'],
+              'scale': 1,
+              'scanner_type': 'selected_area',
+            }
         resp_movies = {}
-        for movie_url in man_zones:
-            if movie_url not in source_movies:
-                continue
+        for movie_url in source_movies:
+            source_movie = source_movies[movie_url]
+            mask = None
+            if self.we_should_use_a_mask(self.selected_area_meta, len(man_zones)):
+                mask = self.build_man_zone_mask_for_movie(source_movie, man_zones)
             resp_movies[movie_url] = {'framesets': {}}
-            for frameset_hash in man_zones[movie_url]['framesets']:
-                resp_movies[movie_url]['framesets'][frameset_hash] = {}
-                for area_key in man_zones[movie_url]['framesets'][frameset_hash]:
-                    man_zone = man_zones[movie_url]['framesets'][frameset_hash][area_key]
-                    size = [
-                        man_zone['end'][0] - man_zone['start'][0],   
-                        man_zone['end'][1] - man_zone['start'][1]
-                    ]
-                    build_obj = {
-                        'location': man_zone['start'],
-                        'size': size,
-                        'scanner_type': 'selected_area',
-                        'origin': [0, 0],
-                        'scale': 1,
-                    }
-                    if self.we_should_use_a_mask(self.selected_area_meta, len(man_zones[movie_url]['framesets'][frameset_hash])):
-                        s_mov = source_movies[movie_url]
-                        if 'frame_dimensions' not in s_mov:
-                            continue
-                        dims = s_mov['frame_dimensions']
-                        mask = np.zeros((dims[1], dims[0]))
-                        cv2.rectangle(
-                            mask,
-                            tuple(man_zone['start']),
-                            tuple(man_zone['end']),
-                            255,
-                            -1
-                        )
-                        build_obj['mask'] = self.get_base64_image_string(mask)
-                    resp_movies[movie_url]['framesets'][frameset_hash][area_key] = build_obj
+            for frameset_hash in source_movie['framesets']:
+                print('building manual SA for fsh {}'.format(frameset_hash))
+                resp_movies[movie_url]['framesets'][frameset_hash] = man_zones
+                if mask:
+                    resp_movies[movie_url]['framesets'][frameset_hash]['mask'] = mask
         return resp_movies
 
     def build_sa_regions(self, frameset, cv2_image, finder):

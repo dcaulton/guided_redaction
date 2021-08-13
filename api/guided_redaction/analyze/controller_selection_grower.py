@@ -20,15 +20,7 @@ class SelectionGrowerController(T1Controller):
 
     def process_selection_grower(self, request_data):
         response_movies = {}
-        source_movies = {}
-        movies = request_data.get('movies')
-        if 'source' in movies:
-            source_movies = movies['source']
-            del movies['source']
-        movie_url = list(movies.keys())[0]
-        movie = movies[movie_url]
-        source_movie = source_movies[movie_url]
-
+        movie_url, movie, source_movie = self.get_movie_and_source_movie(request_data)
         sg_id = list(request_data["tier_1_scanners"]['selection_grower'].keys())[0]
         sg_meta = request_data["tier_1_scanners"]['selection_grower'][sg_id]
 
@@ -40,15 +32,15 @@ class SelectionGrowerController(T1Controller):
         statistics = {'movies': {}}
         statistics['movies'][movie_url] = {'framesets': {}}
         for frameset_hash in ordered_hashes:
-            image_url = source_movies[movie_url]['framesets'][frameset_hash]['images'][0]
-            if frameset_hash in movies[movie_url]['framesets']:
+            image_url = source_movie['framesets'][frameset_hash]['images'][0]
+            if frameset_hash in movie['framesets']:
                 if self.debug:
                     image_name = image_url.split('/')[-1]
                     print('selection grower trying image {}'.format(image_name))
                 cv2_image = self.get_cv2_image_from_url(image_url)
                 if type(cv2_image) == type(None):
                     continue
-                t1_match_data = movies[movie_url]['framesets'][frameset_hash]
+                t1_match_data = movie['framesets'][frameset_hash]
                 if sg_meta['usage_mode'] == 'capture_grid' and \
                         not self.match_data_contains_scanner_type('ocr',          t1_match_data):
                     if sg_meta['skip_if_ocr_needed']:

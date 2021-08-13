@@ -2,14 +2,18 @@ import cv2
 import json
 import random
 import os
-from fuzzywuzzy import fuzz
+import re
+from traceback import format_exc
+
 from django.conf import settings
-from guided_redaction.jobs.models import Job
-from guided_redaction.utils.classes.FileWriter import FileWriter
+from fuzzywuzzy import fuzz
+
+from .controller_t1 import T1Controller
 from guided_redaction.analyze.classes.EastPlusTessGuidedAnalyzer import (
     EastPlusTessGuidedAnalyzer,
 )
-from .controller_t1 import T1Controller
+from guided_redaction.jobs.models import Job
+from guided_redaction.utils.classes.FileWriter import FileWriter
 
 
 class OcrController(T1Controller):
@@ -24,23 +28,23 @@ class OcrController(T1Controller):
 
     def scan_ocr_all(self, request_data):
         ocr_rule_id = list(request_data['tier_1_scanners']['ocr'].keys())[0]
-        ocr_rule = request_data['tier_1_scanners']['ocr'][ocr_rule_id]
-        self.fuzz_match_threshold = int(ocr_rule['match_percent'])
+        self.ocr_rule = request_data['tier_1_scanners']['ocr'][ocr_rule_id]
+        self.fuzz_match_threshold = int(self.ocr_rule['match_percent'])
 
         all_phrases = {}
-        if ocr_rule['match_text']:
-            for phrase in ocr_rule['match_text']:
+        if self.ocr_rule.get('match_text'):
+            for phrase in self.ocr_rule['match_text']:
                 if phrase.strip():
                     all_phrases[phrase.strip()] = {'source': 'ocr_rule_match_text'}
 
         ds_job_results = {}
-        if ocr_rule.get('data_sifter_job_id'):
+        if self.ocr_rule.get('data_sifter_job_id'):
             ds_job = Job.objects.get(pk=ocr_rule.get('data_sifter_job_id'))
             ds_job_results = json.loads(ds_job.response_data)
 
         source_ocr_job_results = {}
-        if ocr_rule.get('ocr_job_id'):
-            so_job = Job.objects.get(pk=ocr_rule.get('ocr_job_id'))
+        if self.ocr_rule.get('ocr_job_id'):
+            so_job = Job.objects.get(pk=self.ocr_rule.get('ocr_job_id'))
             source_ocr_job_results = json.loads(so_job.response_data)
 
         response_data = {
@@ -54,14 +58,14 @@ class OcrController(T1Controller):
             del movies['source']
 
         number_considered = 0
-        if 'skip_frames' in ocr_rule:
-            skip_frames = int(ocr_rule['skip_frames'])
+        if 'skip_frames' in self.ocr_rule:
+            skip_frames = int(self.ocr_rule['skip_frames'])
         else:
             skip_frames = 0
 
         for movie_url in movies:
             movie = movies[movie_url]
-            new_phrases = self.get_phrases_for_ds_movie(ocr_rule, movie_url, ds_job_results)
+            new_phrases = self.get_phrases_for_ds_movie(movie_url, ds_job_results)
             if new_phrases:
                 for phrase in new_phrases:
                     all_phrases[phrase] = new_phrases[phrase]
@@ -83,7 +87,7 @@ class OcrController(T1Controller):
                     frameset_hash in source_ocr_job_results['movies'][movie_url]['framesets']:
                     source_ocr_results_this_frame = source_ocr_job_results['movies'][movie_url]['framesets'][frameset_hash]
 
-                found_areas = self.scan_ocr(image_url, ocr_rule, t1_frameset_data, source_ocr_results_this_frame, all_phrases)
+                found_areas = self.scan_ocr(image_url, t1_frameset_data, source_ocr_results_this_frame, all_phrases)
 
                 if found_areas:
                     if movie_url not in response_data['movies']:
@@ -92,7 +96,7 @@ class OcrController(T1Controller):
 
         return response_data
 
-    def get_phrases_for_ds_movie(self, ocr_rule, movie_url, ds_job_results):
+    def get_phrases_for_ds_movie(self, movie_url, ds_job_results):
         if not ds_job_results:
             return
         if movie_url not in ds_job_results['movies']:
@@ -113,13 +117,28 @@ class OcrController(T1Controller):
         return new_phrases
 
     def phrase_match_found(self, input_text, phrases_to_match):
-        found_a_match = False
         for phrase in phrases_to_match:
-            ratio = fuzz.ratio(phrase, input_text)
-            if ratio > self.fuzz_match_threshold:
-                return phrases_to_match[phrase]
+            if self.ocr_rule.get('match_as_regex'):
+                return self.match_with_regex_phrase(input_text, phrase, phrases_to_match[phrase])
+            else:
+                ratio = fuzz.ratio(phrase, input_text)
+                if ratio > self.fuzz_match_threshold:
+                    return phrases_to_match[phrase]
 
-    def scan_ocr(self, image_url, ocr_rule, t1_frameset_data, source_ocr_results_this_frame, phrases_to_match):
+    def match_with_regex_phrase(self, input_text, regex_phrase, ocr_match_obj):
+        try:
+            match_regex = re.compile(regex_phrase)
+            regex_match_obj = match_regex.search(input_text)
+            if regex_match_obj:
+                if regex_match_obj.groups():
+                    return regex_match_obj.groups()[0]
+                else:
+                    return input_text
+        except:
+            print(format_exc())
+            print(f"scan_ocr: regex compile failed for ** {regex_phrase} **")
+
+    def scan_ocr(self, image_url, t1_frameset_data, source_ocr_results_this_frame, phrases_to_match):
         recognized_text_areas = {}
         analyzer = EastPlusTessGuidedAnalyzer()
         cv2_image = self.get_cv2_image_from_url(image_url, self.file_writer)
@@ -127,13 +146,13 @@ class OcrController(T1Controller):
             print('error fetching image for ocr')
             return {}
 
-        if ocr_rule['start']:
-            start = ocr_rule['start']
+        if self.ocr_rule['start']:
+            start = self.ocr_rule['start']
         else:
             start = (0, 0)
 
-        if ocr_rule['end']:
-            end = ocr_rule['end']
+        if self.ocr_rule['end']:
+            end = self.ocr_rule['end']
         else:
             end = (cv2_image.shape[1], cv2_image.shape[0])
 
@@ -152,7 +171,7 @@ class OcrController(T1Controller):
         if t1_frameset_data:
             cv2_image = self.apply_t1_limits_to_source_image(cv2_image, t1_frameset_data)
 
-        if ocr_rule['skip_east']:
+        if self.ocr_rule['skip_east']:
             tight_image = cv2_image[
                 start[1]:end[1], 
                 start[0]:end[0]
@@ -190,18 +209,11 @@ class OcrController(T1Controller):
                 returned_start_coords = start
 
             if phrases_to_match:
-                if not self.phrase_match_found(raw_rta['text'], phrases_to_match):
+                matched_words = self.phrase_match_found(raw_rta['text'], phrases_to_match)
+                if not matched_words:
                     continue
+                raw_rta['text'] = matched_words
 
-#            if phrases_to_match:
-#                found_a_match = False
-#                for phrase in phrases_to_match:
-#                    ratio = fuzz.ratio(phrase, raw_rta['text'])
-#                    if ratio > self.fuzz_match_threshold:
-#                        found_a_match = True
-#                if not found_a_match:
-                    continue
-                
             recognized_text_areas[the_id] = {
                 'source': raw_rta['source'],
                 'location': returned_start_coords,

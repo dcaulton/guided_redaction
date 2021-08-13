@@ -1,8 +1,9 @@
 import json
 import os
+import requests
+from traceback import format_exc
 import uuid
 
-import requests
 from django.conf import settings
 from zipfile import ZipFile
 
@@ -41,7 +42,7 @@ class ExportController():
 
             return {"archive_url": download_url}
         except Exception as e:
-            return {'errors' : str(e)}
+            return {'errors' : 'export failed, sorry about that'}
 
 
     def build_zip_file(self, fw, output_file_fullpath, request_data, workdir_uuid):
@@ -55,9 +56,7 @@ class ExportController():
             'job_eval_objectives': {},
             'meta': {},
         }
-        print('aa 01')
         zipObj = ZipFile(output_file_fullpath, 'w')
-        print('aa 02')
 
         build_obj['meta']['base_url'] = fw.base_url
         build_obj['meta']['working_dir'] = fw.working_dir
@@ -99,7 +98,6 @@ class ExportController():
         print('zip written')
 
     def add_job_to_dict(self, job, build_dict, zipObj, request_data, fw):
-        print('gg 02')
         if job.id in build_dict['jobs']:
             return
         print('adding job {}'.format(job.id))
@@ -178,7 +176,11 @@ class ExportController():
 
     def add_pipeline_to_dict(self, pipeline, build_dict):
         print('adding pipeline {}'.format(pipeline.id))
-        build_dict['pipelines'][str(pipeline.id)] = pipeline.as_dict()
+        pipeline_id = str(pipeline.id)
+        if pipeline_id in build_dict['pipelines']:
+            return
+        build_dict['pipelines'][pipeline_id] = pipeline.as_dict()
+        child_pipeline_ids = []
         if pipeline.content:
             content = json.loads(pipeline.content)
             for scanner_type in content['node_metadata']['tier_1_scanners']:
@@ -190,8 +192,20 @@ class ExportController():
                     build_dict['tier_1_scanners'][scanner_type][scanner_id] = scanner
             for node_id in content['node_metadata']['node']:
                 node = content['node_metadata']['node'][node_id]
-                if node['type'] == 'pipeline':
-                    print('we have a pipeline to export')
+                if node['type'] == 'pipeline' and node['entity_id'] not in build_dict['pipelines']:
+                    child_pipeline_ids.append(node['entity_id'])
+
+        for pipeline_id in child_pipeline_ids:
+            print('child pipeline detected, adding {}'.format(pipeline_id))
+            pipeline = Pipeline.objects.get(pk=pipeline_id)
+            self.add_pipeline_to_dict(pipeline, build_dict)
+
+    def get_child_pipeline_ids(self, pipeline_content, build_dict):
+        child_ids = []
+        for node_id, node in content['node_metadata']['node'].items():
+            if node['type'] == 'pipeline':
+                child_ids.append(node['entity_id'])
+        return child_ids
 
     def add_jrs_to_dict(self, jrs, build_dict, zipObj, request_data, fw):
         print('adding jrs {}'.format(jrs.id))

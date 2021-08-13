@@ -68,7 +68,7 @@ class JobRunSummariesViewSet(viewsets.ViewSet):
     def delete(self, request, pk, format=None):
         if pk and JobRunSummary.objects.filter(pk=pk).exists():
             JobRunSummary.objects.get(pk=pk).delete()
-            return Response({}, status=204)
+            return Response()
         else:
             return Response({}, status=404)
 
