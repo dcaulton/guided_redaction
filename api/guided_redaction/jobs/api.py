@@ -293,7 +293,7 @@ class JobsViewSet(viewsets.ViewSet):
             pretty_time = job.pretty_date(job.created_on)
             wall_clock_run_time = job.get_wall_clock_run_time_string()
             owner = owners[job_id] if job_id in owners else ""
-            if user_id and owner != user_id:
+            if owner and user_id and owner != user_id:
                 continue
 
             attrs = all_attrs[str(job.pk)]
