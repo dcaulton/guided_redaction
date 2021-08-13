@@ -1,8 +1,7 @@
 import React from 'react';
 import ScannerSearchControls from './ScannerSearchControls'
 import {
-  buildAttributesAddRow,
-  buildLabelAndTextInput,
+  buildAttributesAddRow, buildLabelAndTextInput, buildLabelAndDropdown,
   buildInlinePrimaryButton, 
   buildTier1LoadButton, 
   buildTier1DeleteButton,
@@ -17,11 +16,13 @@ import {
   buildToggleField,
   loadMeta,
   loadNewMeta,
+  buildPicListOfAnchors,
+  buildSourceMovieImageInfo2,
   deleteMeta,
 } from './SharedControls'
 
 
-class DiffControls extends React.Component {
+class FeatureControls extends React.Component {
 
   constructor(props) {
     super(props)
@@ -31,22 +32,97 @@ class DiffControls extends React.Component {
       attributes: {},
       scan_level: 'tier_1',
       masks_always: false,
+      return_type: 'screen',
+      match_type: 'brute_force',
+      anchors: [],
       attribute_search_name: '',
       attribute_search_value: '',
     }
+    this.getCurrentAnchors=this.getCurrentAnchors.bind(this)
     this.getMetaFromState=this.getMetaFromState.bind(this)
     this.setLocalStateVar=this.setLocalStateVar.bind(this)
     this.doSave=this.doSave.bind(this)
     this.setState=this.setState.bind(this)
     this.loadNewMetaWrapper=this.loadNewMetaWrapper.bind(this)
-    this.scanner_type = 'diff'
+    this.addAnchorCallback1=this.addAnchorCallback1.bind(this)
+    this.addAnchorCallback2=this.addAnchorCallback2.bind(this)
+    this.gotoSourceFrame=this.gotoSourceFrame.bind(this)
+    this.deleteAnchor=this.deleteAnchor.bind(this)
+    this.trainAnchor=this.trainAnchor.bind(this)
+    this.scanner_type = 'feature'
     this.default_meta_values = {
       id: '',
       name: '',
       attributes: {},
       scan_level: 'tier_1',
       masks_always: false,
+      return_type: 'orb',
+      match_type: 'brute_force',
+      anchors: [],
     }
+  }
+
+  deleteAnchor(anchor_id) {
+    let build_anchors = []
+    for (let i=0; i < this.state.anchors.length; i++) {
+      if (this.state.anchors[i]['id'] !== anchor_id) {
+        build_anchors.push(this.state.anchors[i])
+      }
+    }
+    this.setLocalStateVar('anchors', build_anchors)
+  }
+
+  trainAnchor(anchor_id) {
+    this.props.submitInsightsJob('train_feature_anchor', {'anchor_id': anchor_id})
+  }
+
+  clearAnchors() {
+    this.setLocalStateVar('anchors', [])
+    this.props.displayInsightsMessage('Anchors have been cleared')
+  }
+
+  buildAddAnchorButton() {
+    return buildInlinePrimaryButton(
+      'Add Anchor',
+      (()=>{this.addFeatureAnchor()})
+    )
+  }
+
+  buildClearAnchorsButton() {
+    return buildInlinePrimaryButton(
+      'Clear Anchors',
+      (()=>{this.clearAnchors()})
+    )
+  }
+
+  addFeatureAnchor() {
+    this.props.handleSetMode('add_feature_anchor_1')
+  }
+
+  addAnchorCallback1() {
+    this.props.handleSetMode('add_feature_anchor_2')
+  }
+
+  addAnchorCallback2(end_coords) {
+    const start_coords = this.props.clicked_coords
+    const anchor_id = 'anchor_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
+    const the_anchor = {
+        'id': anchor_id,
+        'start': start_coords,
+        'end': end_coords,
+        'image': this.props.insights_image,
+        'movie': this.props.movie_url,
+        'feature_type': this.state.return_type,
+        'matche_type': this.state.match_type,
+    }
+    let deepCopyAnchors = JSON.parse(JSON.stringify(this.state.anchors))
+    deepCopyAnchors.push(the_anchor)
+    this.setLocalStateVar('anchors', deepCopyAnchors)
+    this.props.handleSetMode('add_feature_anchor_1')
+  }
+
+  getCurrentAnchors() {
+    return this.state.anchors
   }
 
   loadNewMetaWrapper() {
@@ -57,6 +133,9 @@ class DiffControls extends React.Component {
 
   componentDidMount() {
     this.loadNewMetaWrapper()
+    this.props.addInsightsCallback('getCurrentFeatureAnchors', this.getCurrentAnchors)
+    this.props.addInsightsCallback('add_feature_anchor_1', this.addAnchorCallback1)
+    this.props.addInsightsCallback('add_feature_anchor_2', this.addAnchorCallback2)
   }
 
   setLocalStateVar(var_name, var_value, when_done=(()=>{})) {
@@ -220,6 +299,77 @@ class DiffControls extends React.Component {
     )
   }
 
+  buildReturnTypeDropdown() {
+      const values = [
+      {'all': 'All'},
+      {'orb': 'ORB'},
+    ]
+    return buildLabelAndDropdown(
+      values,
+      'Return Type',
+      this.state.return_type,
+      'feature_return_type',
+      ((value)=>{this.setLocalStateVar('return_type', value)})
+    )
+  }
+
+  buildMatchTypeDropdown() {
+      const values = [
+      {'brute_force': 'Brute Force'},
+      {'flann': 'FLANN'},
+    ]
+    return buildLabelAndDropdown(
+      values,
+      'Match Type',
+      this.state.match_type,
+      'feature_match_type',
+      ((value)=>{this.setLocalStateVar('match_type', value)})
+    )
+  }
+
+  buildAnchorsSection() {
+    const anchors_pic_list = buildPicListOfAnchors(
+      this.state.anchors, 
+      {
+        'delete_function': this.deleteAnchor,
+        'train_function': this.trainAnchor,
+      }
+    )
+    const source_movie_image_info = this.buildSourceMovieImageInfo()
+
+    return (
+      <div className='row mt-3 ml-1 mr-1 border-top'>
+        <div className='col'>
+          <div className='row font-weight-bold'>
+            Anchors
+          </div>
+
+          <div className='row'>
+            {source_movie_image_info}
+          </div>
+
+          {anchors_pic_list}
+        </div>
+      </div>
+    )
+  }
+
+  buildSourceMovieImageInfo() {
+    return buildSourceMovieImageInfo2(
+      this.state.id,
+      this.props.tier_1_scanners['feature'],
+      this.props.movies,
+      this.props.getFramesetHashForImageUrl,
+      this.props.getFramesetHashesInOrder,
+      this.gotoSourceFrame
+    )
+  }
+
+  gotoSourceFrame(movie_url, image_frameset_index) {
+    this.props.setCurrentVideo(movie_url)
+    setTimeout((() => {this.props.setScrubberToIndex(image_frameset_index)}), 1000)
+  }
+
   render() {
     if (!this.props.visibilityFlags[this.scanner_type]) {
       return([])
@@ -228,11 +378,17 @@ class DiffControls extends React.Component {
     const id_string = buildIdString(this.state.id, this.scanner_type, false)
     const name_field = this.buildNameField()
     const masks_field = buildToggleField('masks_always', 'Generate Masks Always', this.state.masks_always, this.setLocalStateVar)
+    const return_type_dropdown = this.buildReturnTypeDropdown()
+    const match_type_dropdown = this.buildMatchTypeDropdown()
     const attributes_list = this.buildAttributesList()
     const run_button = this.buildRunButtonWrapper()
     const delete_button = this.buildDeleteButton()
     const save_to_db_button = this.buildSaveToDatabaseButton()
     const clear_matches_button = this.buildClearMatchesButton2()
+    const add_anchor_button = this.buildAddAnchorButton()
+    const clear_anchors_button = this.buildClearAnchorsButton()
+    const anchors_section = this.buildAnchorsSection()
+
     const header_row = makeHeaderRow(
       this.scanner_type,
       this.scanner_type + '_body',
@@ -246,10 +402,10 @@ class DiffControls extends React.Component {
             {header_row}
 
             <div 
-                id='diff_body' 
+                id='feature_body' 
                 className='row collapse bg-light'
             >
-              <div id='diff_main' className='col'>
+              <div id='feature_main' className='col'>
 
                 <div className='row'>
                   {load_button}
@@ -257,6 +413,11 @@ class DiffControls extends React.Component {
                   {save_to_db_button}
                   {clear_matches_button}
                   {run_button}
+                </div>
+
+                <div className='row mt-2'>
+                  {add_anchor_button}
+                  {clear_anchors_button}
                 </div>
 
                 <div className='row mt-2'>
@@ -271,20 +432,30 @@ class DiffControls extends React.Component {
                   {masks_field}
                 </div>
 
+                <div className='row mt-2'>
+                  {return_type_dropdown}
+                </div>
+
+                <div className='row mt-2'>
+                  {match_type_dropdown}
+                </div>
+
+                {anchors_section}
+
                 <div className='row mt-1 mr-1 ml-1 border-top'>
                   {attributes_list}
                 </div>
 
                 <div className='row mt-3 ml-1 mr-1'>
                   <ScannerSearchControls
-                    search_attribute_name_id='diff_database_search_attribute_name'
-                    search_attribute_value_id='diff_database_search_attribute_value'
+                    search_attribute_name_id='feature_database_search_attribute_name'
+                    search_attribute_value_id='feature_database_search_attribute_value'
                     getScanners={this.props.getScanners}
                     importScanner={this.props.importScanner}
                     deleteScanner={this.props.deleteScanner}
                     scanners={this.props.scanners}
                     displayInsightsMessage={this.props.displayInsightsMessage}
-                    search_type='diff'
+                    search_type='feature'
                   />
                 </div>
 
@@ -296,4 +467,4 @@ class DiffControls extends React.Component {
   }
 }
 
-export default DiffControls;
+export default FeatureControls;

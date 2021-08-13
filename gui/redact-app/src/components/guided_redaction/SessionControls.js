@@ -28,94 +28,6 @@ class SessionControls extends React.Component {
     when_done())
   }
 
-  buildWorkbookPickerButton() {
-    let return_array = []
-    if (this.props.workbooks.length) {
-      return_array.push(
-        <div key='lsls234'>
-        <button
-            key='wb_names_button'
-            className='btn btn-primary ml-2 mt-2 dropdown-toggle'
-            type='button'
-            id='loadWorkbookDropdownButton'
-            data-toggle='dropdown'
-            area-haspopup='true'
-            area-expanded='false'
-        >
-          Load Workbook
-        </button>
-        <div className='dropdown-menu' aria-labelledby='loadWorkbookDropdownButton'>
-      {this.props.workbooks.map((value, index) => {
-        return (
-          <button 
-              className='dropdown-item'
-              key={index}
-              onClick={() => this.doWorkbookLoad(value['id'])}
-          >
-            {value['name']}
-          </button>
-        )
-      })}
-          <button 
-              className='dropdown-item'
-              key='000'
-              onClick={() => this.doWorkbookLoad('-1')}
-          >
-            none
-          </button>
-        </div>
-        </div>
-      )
-    }
-    return return_array
-  }
-
-  doWorkbookLoad(workbook_id) {
-    this.props.loadWorkbook(
-      workbook_id,
-      this.props.displayInsightsMessage('Workbook has been loaded')
-    )
-    this.props.getPipelines()
-  }
-
-  buildWorkbookDeleteButton() {
-    let return_array = []
-    if (this.props.workbooks.length) {
-      return_array.push(
-        <div key='ls224'>
-        <button
-            key='wb_delete_button'
-            className='btn btn-primary ml-2 mt-2 dropdown-toggle'
-            type='button'
-            id='deleteWorkbookDropdownButton'
-            data-toggle='dropdown'
-            area-haspopup='true'
-            area-expanded='false'
-        >
-          Delete Workbook
-        </button>
-        <div className='dropdown-menu' aria-labelledby='deleteWorkbookDropdownButton'>
-      {this.props.workbooks.map((value, index) => {
-        return (
-          <button 
-              className='dropdown-item'
-              key={index}
-              onClick={() => 
-                this.props.deleteWorkbook(value['id'], 
-                this.props.displayInsightsMessage('Workbook has been deleted'))
-              }
-          >
-            {value['name']}
-          </button>
-        )
-      })}
-        </div>
-        </div>
-      )
-    }
-    return return_array
-  }
-
   buildGlobalStateBox() {
     return (
       <textarea
@@ -136,25 +48,6 @@ class SessionControls extends React.Component {
          value={campaign_movies_string}
          onChange={(event) => this.props.setCampaignMovies(event.target.value)}
       />
-    )
-  }
-
-  buildWorkbookPlaySoundCheckbox() {
-    let checked_state = ''
-    if (this.props.current_workbook_play_sound) {
-      checked_state = 'checked'
-    } 
-    return (
-      <div className='row mt-3 bg-light rounded'>
-        <input
-          className='ml-2 mr-2 mt-1'
-          id='toggle_play_sound'
-          checked={checked_state}
-          type='checkbox'
-          onChange={(event) => this.setWorkbookSound(event.target.value)}
-        />
-        Play Sound
-      </div>
     )
   }
 
@@ -201,50 +94,6 @@ class SessionControls extends React.Component {
     )
   }
 
-  buildWorkbookId() {
-    if (this.props.current_workbook_name === '') {
-      return ''
-    }
-    const the_id = this.props.current_workbook_id
-    return (
-      <div className='row ml-2 bg-light'>
-        <div
-            className='d-inline'
-        >
-          Workbook Id: 
-        </div>
-        <div 
-            className='d-inline ml-2'
-        >
-          {the_id}
-        </div>
-      </div>
-    )
-  }
-
-  buildWorkbookName() {
-    return (
-      <div className='row ml-2 mt-3 bg-light'>
-        <div
-            className='d-inline'
-        >
-          Workbook Name: 
-        </div>
-        <div
-            className='d-inline ml-2'
-        >
-          <input 
-              id='workbook_name'
-              key='workbook_name_1'
-              size='20'
-              value={this.props.current_workbook_name}
-              onChange={(event) => this.props.saveWorkbookName(event.target.value)}
-          />
-        </div>
-      </div>
-    )
-  }
-
   buildPingButton() {
     return (
       <div className='d-inline'>
@@ -266,23 +115,6 @@ class SessionControls extends React.Component {
             onClick={() => this.props.callGetVersion()}
         >
           Get Api Version
-        </button>
-      </div>
-    )
-  }
-
-  buildWorkbookSaveButton() {
-    return (
-      <div className='d-inline'>
-        <button
-            className='btn btn-primary mt-2 ml-2'
-            onClick={() => 
-              this.props.saveWorkbook(
-                this.props.displayInsightsMessage('Workbook has been saved')
-              )
-            }
-        >
-          Save Workbook
         </button>
       </div>
     )
@@ -360,35 +192,6 @@ console.log('get screens came back with ', response)
     )
   }
 
-  buildSuLink() {
-    return (
-      <div className='d-inline p-0'>
-        <button
-            className='btn btn-link'
-            onClick={() => this.props.setGlobalStateVar('user', {})}
-        >
-          shed user
-        </button>
-      </div>
-    )
-  }
-
-  buildImpersonateLink() {
-    return (
-      <div>
-        <div className='d-inline'>
-          Impersonate User
-        </div>
-        <div className='d-inline ml-2'>
-          <input 
-              size='25'
-              onChange={(event) => this.props.impersonateUser(event.target.value)}
-          />
-        </div>
-      </div>
-    )
-  }
-
   buildPanelsCheckboxes() {
     let show_templates_checked = ''
     if (this.props.visibilityFlags['templates']) {
@@ -457,6 +260,10 @@ console.log('get screens came back with ', response)
     let show_t1_filter_checked = ''
     if (this.props.visibilityFlags['t1_filter']) {
       show_t1_filter_checked = 'checked'
+    }
+    let show_jobs_on_import_checked = ''
+    if (this.props.visibilityFlags['jobs_on_import']) {
+      show_jobs_on_import_checked = 'checked'
     }
 
     return (
@@ -619,6 +426,16 @@ console.log('get screens came back with ', response)
             onChange={() => this.props.toggleShowVisibility('t1_filter')}
           />
           Show T1 Filter
+        </div>
+
+        <div className='row mt-3 bg-light rounded'>
+          <input
+            className='ml-2 mr-2 mt-1'
+            checked={show_jobs_on_import_checked}
+            type='checkbox'
+            onChange={() => this.props.toggleShowVisibility('jobs_on_import')}
+          />
+          Show Jobs on Import
         </div>
 
         <div className='row mt-3 bg-light rounded'>
@@ -946,19 +763,38 @@ console.log('get screens came back with ', response)
     )
   }
 
+  setJobPollingIntervalSeconds(new_value) {
+    let deepCopyCheckJobParms = JSON.parse(JSON.stringify(this.props.check_job_parameters))
+    deepCopyCheckJobParms['job_polling_interval_seconds'] = new_value 
+    this.props.setGlobalStateVar('check_job_parameters', deepCopyCheckJobParms)
+  }
+
+  buildJobPollingIntervalInput() {
+    const job_polling_interval_seconds = this.props.check_job_parameters['job_polling_interval_seconds']
+    return (
+      <div className='row mt-3 bg-light rounded'>
+        <div className='d-inline'>
+          Job Polling Interval (seconds):
+        </div>
+        <div className='d-inline ml-2'>
+          <input
+              id='session_job_polling_interval_seconds'
+              value={job_polling_interval_seconds}
+              onChange={(event) => this.setJobPollingIntervalSeconds(event.target.value)}
+              size='5'
+          />
+        </div>
+      </div>
+    )
+  }
+
+
   render() {
     const campaign_movies_box = this.buildCampaignMoviesBox()
     const update_state_box = this.buildGlobalStateBox()
     const cv_workers_area = this.buildCvWorkersArea()
-    const workbook_load_button = this.buildWorkbookPickerButton()
-    const workbook_delete_button = this.buildWorkbookDeleteButton()
-    const workbook_name = this.buildWorkbookName()
-    const workbook_id = this.buildWorkbookId()
-    const show_hide_user = makePlusMinusRowLight('user', 'session_user_div')
     const show_hide_panels = makePlusMinusRowLight('panels', 'session_panels_div')
     const show_hide_data = makePlusMinusRowLight('data', 'session_data_div')
-    const su_link = this.buildSuLink()
-    const impersonate_link = this.buildImpersonateLink()
     const panels_checkboxes = this.buildPanelsCheckboxes() 
     const job_view_area = this.buildViewJobArea()
     const load_sub_job_area = this.buildLoadSubJobAsT1Area()
@@ -975,8 +811,8 @@ console.log('get screens came back with ', response)
     }
     const when_done_selector = this.buildWhenDoneSelector()
     const ping_button = this.buildPingButton() 
+    const job_polling_interval_input = this.buildJobPollingIntervalInput()
     const get_version_button = this.buildGetVersionButton() 
-    const workbook_save_button = this.buildWorkbookSaveButton()
     const rebase_movies_button = this.buildRebaseMoviesButton()
     const rebase_jobs_button = this.buildRebaseJobsButton()
     const detect_screens_button = this.buildDetectScreensButton()
@@ -1018,16 +854,6 @@ console.log('get screens came back with ', response)
                   {get_version_button}
                   {ping_cv_worker_button}
                   {delete_old_jobs_button}
-
-                  <div className='d-inline'>
-                    {workbook_load_button}
-                  </div>
-
-                  <div className='d-inline'>
-                    {workbook_delete_button}
-                  </div>
-                  {workbook_save_button}
-
                 </div>
 
                 <div className='mt-2'>
@@ -1036,8 +862,6 @@ console.log('get screens came back with ', response)
                   {detect_screens_button}
                 </div>
 
-                {workbook_name}
-                {workbook_id}
                 {frameset_discriminator}
 
                 <div className='row mt-3 bg-light rounded'>
@@ -1066,19 +890,7 @@ console.log('get screens came back with ', response)
                 {auto_delete_age_dropdown_row}
                 {delete_files_with_job_row}
 
-                <div className='row mt-3 bg-light rounded'>                     
-                  <div className='d-inline'>                                    
-                    Job Polling Interval (seconds):                             
-                  </div>                                                        
-                  <div className='d-inline ml-2'>                               
-                    <input                                                      
-                        id='session_job_polling_interval_seconds'               
-                        value={this.props.job_polling_interval_seconds}         
-                        onChange={(event) => this.props.setGlobalStateVar('job_polling_interval_seconds', event.target.value)}
-                        size='5'                                                
-                    />                                                          
-                  </div>                                                        
-                </div> 
+                {job_polling_interval_input}
 
                 <div className='row mt-3 bg-light rounded'>
                   <input
@@ -1089,20 +901,6 @@ console.log('get screens came back with ', response)
                     onChange={(event) => this.props.toggleGlobalStateVar('preserve_movie_audio')}
                   />
                   Preserve Movie Audio
-                </div>
-
-                {show_hide_user}
-
-                <div
-                    id='session_user_div'
-                    className='collapse'
-                >
-                  <div>
-                    {su_link}
-                  </div>
-                  <div>
-                    {impersonate_link}
-                  </div>
                 </div>
 
                 {show_hide_panels}

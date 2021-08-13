@@ -43,6 +43,9 @@ class ImportExportControls extends React.Component {
 
 
   buildJobsPicker() {
+    if (!this.props.visibilityFlags['jobs_on_import']) {
+      return ''
+    }
     let include_child_jobs_checked = ''
     if (this.state.include_child_jobs) {
       include_child_jobs_checked = 'checked'
@@ -141,6 +144,9 @@ class ImportExportControls extends React.Component {
   }
 
   buildMoviesPicker() {
+    if (!this.props.visibilityFlags['jobs_on_import']) {
+      return ''
+    }
     return (
       <div className='col mb-3'>
         <div className='row h5'>
@@ -281,7 +287,7 @@ class ImportExportControls extends React.Component {
     }
 
     const header_row = makeHeaderRow(
-      'import/export',
+      'import/export pipelines',
       'import_export_body',
       (() => this.props.toggleShowVisibility('import_export'))
     )

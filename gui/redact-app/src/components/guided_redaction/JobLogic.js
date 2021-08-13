@@ -61,6 +61,20 @@ class JobLogic extends React.Component {
     })
   }
 
+  static async preserveJob(job_id, getUrl, fetch_func, buildJsonHeaders, getJobs) {
+    let the_url = getUrl('preserve_jobs_url') + '/' + job_id
+    await fetch_func(the_url, {
+      method: 'GET',
+      headers: buildJsonHeaders(),
+    })
+    .then(() => {
+      getJobs()
+    })
+    .catch((error) => {
+      console.error(error);
+    })
+  }
+
   static async deleteOldJobs(getUrl, fetch_func, buildJsonHeaders) {
     let the_url = getUrl('delete_old_jobs_url')
     await fetch_func(the_url, {
@@ -154,7 +168,6 @@ class JobLogic extends React.Component {
   static async checkForJobs(pass_obj) {
     let setGlobalStateVar = pass_obj['setGlobalStateVar']
     let getGlobalStateVar = pass_obj['getGlobalStateVar']
-    let user_id = getGlobalStateVar('user')['id']
     let jobs_last_checked = getGlobalStateVar('jobs_last_checked')
     let whenJobLoaded = getGlobalStateVar('whenJobLoaded')
     let poll_for_jobs = pass_obj['poll_for_jobs']
@@ -164,7 +177,6 @@ class JobLogic extends React.Component {
     let getUrl = pass_obj['getUrl']
     let fetch_func = pass_obj['fetch_func']
     let buildJsonHeaders = pass_obj['buildJsonHeaders']
-    let saveStateCheckpoint = pass_obj['saveStateCheckpoint']
 
     let last_checked = new Date(1990, 1, 1, 12, 30, 0)
     const now = new Date()
@@ -177,7 +189,7 @@ class JobLogic extends React.Component {
       }
     }
 
-    await getJobs(user_id)
+    await getJobs()
     .then(() => {
       let jobs = getGlobalStateVar('jobs')
       const jobIdsToCheckFor = Object.keys(whenJobLoaded)
@@ -201,8 +213,7 @@ class JobLogic extends React.Component {
               getUrl,
               fetch_func,
               buildJsonHeaders,
-              getJobs,
-              saveStateCheckpoint
+              getJobs
             )
           }
         }
@@ -223,6 +234,13 @@ class JobLogic extends React.Component {
     getGlobalStateVar, 
     force_add=false
   ) {
+    if (
+      !Object.keys(request_data).includes('tier_1_scanners') ||
+      !Object.keys(request_data['tier_1_scanners']).includes(scanner_type)
+    ) {
+      return
+    }
+
     let scanner_id = ''
     let something_changed = false
     let deepCopyScanners = JSON.parse(JSON.stringify(tier_1_scanners))
@@ -264,13 +282,28 @@ class JobLogic extends React.Component {
     let movie_url = ''
     let deepCopyMovies= JSON.parse(JSON.stringify(movies))
     let something_changed = false
-    if (!Object.keys(request_data['movies']).includes('source')) {
-      return 
+    let source_movies = {}
+    if (
+      Object.keys(request_data).includes('movies') &&
+      Object.keys(request_data['movies']).includes('source')
+    ) {
+      source_movies = request_data['movies']['source']
+    } else {
+      for (let i=0; i < Object.keys(request_data['movies']).length; i++) {
+        const the_url = Object.keys(request_data['movies'])[i]
+        const the_movie = request_data['movies'][the_url]
+        if (
+          Object.keys(the_movie).includes('frames') && 
+          the_movie['frames'].length > 0
+        ) {
+          source_movies[the_url] = the_movie
+        }
+      }
     }
-    for (let i=0; i < Object.keys(request_data['movies']['source']).length; i++) {
-      movie_url = Object.keys(request_data['movies']['source'])[i]
+    for (let i=0; i < Object.keys(source_movies).length; i++) {
+      movie_url = Object.keys(source_movies)[i]
       if (!Object.keys(deepCopyMovies).includes(movie_url)) {
-        deepCopyMovies[movie_url] = request_data['movies']['source'][movie_url]
+        deepCopyMovies[movie_url] = source_movies[movie_url]
         this.addToCampaignMovies(movie_url, setGlobalStateVar, getGlobalStateVar)
         something_changed = true
       }
@@ -446,11 +479,35 @@ class JobLogic extends React.Component {
       let deepCopyTier1Matches = JSON.parse(JSON.stringify(tier_1_matches))
       let deepCopyMatches = deepCopyTier1Matches[scanner_type]
       deepCopyMatches[request_data['id']] = response_data
-      deepCopyTier1Matches[scanner_type] = deepCopyMatches // todo: can we remove this?
       setGlobalStateVar('tier_1_matches', deepCopyTier1Matches)
       return resp_obj
     }
   }
+
+
+  static loadPipelineResults(
+    job, 
+    when_done, 
+    setGlobalStateVar, 
+    getGlobalStateVar,
+    addMovieAndSetActive
+  ) {
+    const response_data = JSON.parse(job.response_data)
+    this.loadMoviesFromJob(
+      job, when_done, addMovieAndSetActive, getGlobalStateVar
+    )
+    const pipeline_id = job['attributes']['pipeline_job_link']
+    let deepCopyTier1Matches = JSON.parse(JSON.stringify(getGlobalStateVar('tier_1_matches')))
+    deepCopyTier1Matches['pipeline'][pipeline_id] = response_data
+    let deepCopyCurrentIds = JSON.parse(JSON.stringify(getGlobalStateVar('current_ids')))
+    deepCopyCurrentIds['pipeline'] = pipeline_id
+    let build_obj = {
+      'tier_1_matches': deepCopyTier1Matches,
+      'current_ids': deepCopyCurrentIds,
+    }
+    setGlobalStateVar(build_obj)
+  }
+
 
   static loadDataSifterResults(
     job, 
@@ -475,6 +532,20 @@ class JobLogic extends React.Component {
     this.loadScannersMoviesAndMatchesFromTier1(
       job, 
       't1_filter', 
+      setGlobalStateVar, 
+      getGlobalStateVar
+    )
+  } 
+
+  static loadFeatureResults(
+    job, 
+    when_done, 
+    setGlobalStateVar, 
+    getGlobalStateVar
+  ) {
+    this.loadScannersMoviesAndMatchesFromTier1(
+      job, 
+      'feature', 
       setGlobalStateVar, 
       getGlobalStateVar
     )
@@ -606,22 +677,39 @@ class JobLogic extends React.Component {
     } 
   }
 
-  static loadMoviesFromJob(job, when_done=(()=>{}), addMovieAndSetActive, getGlobalStateVar) {
-    let job_data = JSON.parse(job.response_data)
-    const movies = getGlobalStateVar('movies')
-    let deepCopyMovies = JSON.parse(JSON.stringify(movies))
+  static extractSourceMoviesFromJobRequestOrResponse(request_or_response_data, deepCopyMovies) {
     let active_movie_url = ''
     let movie_url = ''
-    for (let i=0; i < Object.keys(job_data['movies']).length; i++) {
-      movie_url = Object.keys(job_data['movies'])[i]
+    if (!request_or_response_data) {
+      return ''
+    }
+    for (let i=0; i < Object.keys(request_or_response_data['movies']).length; i++) {
+      movie_url = Object.keys(request_or_response_data['movies'])[i]
+      const the_movie = request_or_response_data['movies'][movie_url]
+      if (!Object.keys(the_movie).includes('frames')) {
+        continue
+      }
       if (!active_movie_url) {
         active_movie_url = movie_url
       }
       if (!Object.keys(deepCopyMovies).includes(movie_url)) {
-        deepCopyMovies[movie_url] = job_data['movies'][movie_url]
+        deepCopyMovies[movie_url] = the_movie
         deepCopyMovies[movie_url]['nickname'] = this.getMovieNicknameFromUrl(movie_url)
       }
     }
+    return active_movie_url
+  }
+
+  static loadMoviesFromJob(job, when_done=(()=>{}), addMovieAndSetActive, getGlobalStateVar) {
+    let job_data = JSON.parse(job.response_data)
+    const movies = getGlobalStateVar('movies')
+    let deepCopyMovies = JSON.parse(JSON.stringify(movies))
+    let active_movie_url = this.extractSourceMoviesFromJobRequestOrResponse(job_data, deepCopyMovies)
+    if (!active_movie_url) {
+      job_data = JSON.parse(job.request_data)
+      active_movie_url = this.extractSourceMoviesFromJobRequestOrResponse(job_data, deepCopyMovies)
+    }
+
     addMovieAndSetActive(
       active_movie_url,
       deepCopyMovies,
@@ -778,6 +866,23 @@ class JobLogic extends React.Component {
       movies: deepCopyMovies,
       movie_url: movie_url,
     })
+  }
+
+  static async loadTrainFeatureAnchorResults( job, when_done=(()=>{}), setGlobalStateVar, getGlobalStateVar) {
+    let new_state_obj = {}
+    let deepCopyT1Ss = JSON.parse(JSON.stringify(getGlobalStateVar('tier_1_scanners')))
+    let deepCopyCIs = JSON.parse(JSON.stringify(getGlobalStateVar('current_ids')))
+    const resp_data = JSON.parse(job.response_data)
+    const feature_ids = Object.keys(resp_data['tier_1_scanners']['feature'])
+    for (let i=0; i < feature_ids.length; i++) {
+      const feature_id = feature_ids[i]
+      const feature = resp_data['tier_1_scanners']['feature'][feature_id]
+      deepCopyT1Ss['feature'][feature_id] = feature
+      deepCopyCIs['t1_scanner']['feature'] = feature_id
+    }
+    new_state_obj['tier_1_scanners'] = deepCopyT1Ss
+    new_state_obj['current_ids'] = deepCopyCIs
+    setGlobalStateVar(new_state_obj)
   }
 
   static async loadManualCompileDataSifterResults(job, when_done=(()=>{}), setGlobalStateVar, getGlobalStateVar) {
@@ -998,8 +1103,7 @@ class JobLogic extends React.Component {
     getUrl,
     fetch_func,
     buildJsonHeaders,
-    getJobs,
-    saveStateCheckpoint
+    getJobs
   ) {
     let job_url = getUrl('jobs_url') + '/' + job_id
     await fetch_func(job_url, {
@@ -1082,6 +1186,13 @@ class JobLogic extends React.Component {
           setGlobalStateVar, 
           getGlobalStateVar
         )
+			} else if (job.app === 'analyze' && job.operation === 'feature_threaded') {
+        this.loadFeatureResults(
+          job, 
+          when_done, 
+          setGlobalStateVar, 
+          getGlobalStateVar
+        )
 			} else if ((job.app === 'parse' && job.operation === 'split_and_hash_threaded')) {
         this.loadMoviesFromJob(
           job, when_done, addMovieAndSetActive, getGlobalStateVar
@@ -1103,6 +1214,10 @@ class JobLogic extends React.Component {
           job.description.indexOf('scan_ocr_and_redact') > -1) {
         this.loadRedactResults(
           job, when_done, setGlobalStateVar, getGlobalStateVar 
+        )
+			} else if (job.app === 'pipeline' && job.operation === 'pipeline') {
+        this.loadPipelineResults(
+          job, when_done, setGlobalStateVar, getGlobalStateVar, addMovieAndSetActive
         )
 			} else if (job.app === 'parse' && job.operation === 'split_threaded') {
         this.loadSplitResults(
@@ -1160,8 +1275,11 @@ class JobLogic extends React.Component {
         this.loadManualCompileDataSifterResults(
           job, when_done, setGlobalStateVar, getGlobalStateVar
         )
+			} else if (job.app === 'analyze' && job.operation === 'train_feature_anchor') {
+        this.loadTrainFeatureAnchorResults(
+          job, when_done, setGlobalStateVar, getGlobalStateVar
+        )
 			} else if (
-        (job.app === 'pipeline' && job.operation === 'pipeline') ||
         (job.app === 'pipeline' && job.operation === 't1_sum') ||
 			  (job.app === 'analyze' && job.operation === 'intersect') 
       ) {
@@ -1192,7 +1310,6 @@ class JobLogic extends React.Component {
         }
         this.unwatchJob(job_id, whenJobLoaded, setGlobalStateVar)
       }
-      saveStateCheckpoint()
     })
     .catch((error) => {
       console.error(error);
@@ -1271,25 +1388,17 @@ class JobLogic extends React.Component {
     getUrl
   ) {
     const cv_workers = getGlobalStateVar('cv_workers')
-    const current_workbook_id = getGlobalStateVar('current_workbook_id')
-    const user = getGlobalStateVar('user')
     let the_job_data = hash_in.hasOwnProperty('job_data') ? hash_in['job_data'] : {}
     let when_submit_complete = hash_in.hasOwnProperty('after_submit') ? hash_in['after_submit'] : (()=>{})
     let delete_job_after_loading = hash_in.hasOwnProperty('delete_job_after_loading') ? hash_in['delete_job_after_loading'] : false
     let when_fetched = hash_in.hasOwnProperty('after_loaded') ? hash_in['after_loaded'] : (()=>{})
     let when_failed = hash_in.hasOwnProperty('when_failed') ? hash_in['when_failed'] : (()=>{})
-    let current_user = ''
-    if (user && Object.keys(user).includes('id')) {
-      current_user = user['id']
-    }
     let build_obj = {
       app: the_job_data['app'],
       operation: the_job_data['operation'],
       request_data: the_job_data['request_data'],
       response_data: the_job_data['response_data'],
-      owner: current_user,
       description: the_job_data['description'],
-      workbook_id: current_workbook_id,
     }
 
     const routing_data = this.getJobRoutingData(build_obj, cv_workers)

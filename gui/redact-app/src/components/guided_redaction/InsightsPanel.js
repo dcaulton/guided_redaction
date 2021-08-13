@@ -25,16 +25,6 @@ class InsightsPanel extends React.Component {
       callbacks: {},
       overlay_image_bytes: '',
     }
-    this.tier_1_scanner_types = [
-      'selected_area',
-      'mesh_match',
-      'template',
-      'selection_grower',
-      'data_sifter',
-      'focus_finder',
-      't1_filter',
-      'ocr'
-    ]
     this.tier_1_job_operations = [
       'selected_area_threaded',
       'mesh_match_threaded',
@@ -43,6 +33,8 @@ class InsightsPanel extends React.Component {
       'data_sifter_threaded',
       'focus_finder_threaded',
       't1_filter',
+      'diff_threaded',
+      'feature_threaded',
       'ocr_threaded'
     ]
     this.setCurrentVideo=this.setCurrentVideo.bind(this)
@@ -86,7 +78,12 @@ class InsightsPanel extends React.Component {
     if (!this.props.current_ids['t1_scanner']) {
       return []
     }
-    const current_rule_id = this.props.current_ids['t1_scanner'][scanner_type]
+    let current_rule_id
+    if (scanner_type === 'pipeline') {
+      current_rule_id = this.props.current_ids['pipeline']
+    } else {
+      current_rule_id = this.props.current_ids['t1_scanner'][scanner_type]
+    }
     if (!current_rule_id) {
       return []
     }
@@ -237,7 +234,7 @@ class InsightsPanel extends React.Component {
   }
 
   getCurrentPseudoTier1Matches(scanner_type) {
-    const scanner_id = this.props.current_ids['t1_scanner'][scanner_type]
+    const scanner_id = this.props.current_ids[scanner_type]
     if (Object.keys(this.props.tier_1_matches[scanner_type]).includes(scanner_id)) {
       const this_pipeline_matches = this.props.tier_1_matches[scanner_type][scanner_id]  
       if (Object.keys(this_pipeline_matches['movies']).includes(this.props.movie_url)) {
@@ -334,7 +331,6 @@ class InsightsPanel extends React.Component {
       this.movieSplitDone(this.props.movies[this.props.movie_url])
     }
     this.props.getJobs()
-    this.props.getWorkbooks()
     this.props.getPipelines()
     document.getElementById('insights_link').classList.add('active')
     this.props.setActiveWorkflow('')
@@ -427,23 +423,12 @@ class InsightsPanel extends React.Component {
     let job_data = {
       request_data: {},
     }
-
-    const scanner_operations = {
-      template: 'template_threaded',
-      ocr: 'ocr_threaded',
-      selected_area: 'selected_area_threaded',
-      selection_grower: 'selection_grower_threaded',
-      mesh_match: 'mesh_match_threaded',
-      data_sifter: 'data_sifter_threaded',
-      focus_finder: 'focus_finder_threaded',
-      t1_filter: 't1_filter_threaded',
-    }
     if (!this.props.current_ids['t1_scanner'][scanner_type]) {
       this.displayInsightsMessage('no ' + scanner_type + ' rule selected, cannot submit a job')
       return
     }
     job_data['app'] = 'analyze'
-    job_data['operation'] = scanner_operations[scanner_type] || 'insights_cant_find_operation'
+    job_data['operation'] = scanner_type + '_threaded'
     const cur_scanner_id = this.props.current_ids['t1_scanner'][scanner_type]
     const cur_scanner = this.props.tier_1_scanners[scanner_type][cur_scanner_id]
     job_data['request_data']['tier_1_scanners'] = {}
@@ -603,6 +588,45 @@ class InsightsPanel extends React.Component {
     }
     job_data['request_data']['preserve_movie_audio'] = this.props.preserve_movie_audio
     job_data['request_data']['frameset_discriminator'] = this.props.frameset_discriminator
+    return job_data
+  }
+
+  buildTrainFeatureAnchorJobData(extra_data) {
+    let job_data = {
+      request_data: {},
+    }
+    if (!Object.keys(extra_data).includes('anchor_id')) {
+      return {}
+    }
+    const cur_feature_id = this.props.current_ids['t1_scanner']['feature']
+    let cur_feature = this.props.tier_1_scanners['feature'][cur_feature_id]
+    let cur_anchor = {}
+    let build_anchors = []
+    for (let i=0; i < cur_feature['anchors'].length; i++) {
+      if (cur_feature['anchors'][i]['id'] === extra_data['anchor_id']) {
+        cur_anchor = cur_feature['anchors'][i]
+        build_anchors.push(cur_anchor)
+      }
+    }
+    cur_feature['anchors'] = build_anchors
+    let build_t1_scanners = {'feature': {}}
+    build_t1_scanners['feature'][cur_feature_id] = cur_feature
+    const feature_movie = cur_anchor['movie']
+    const feature_image = cur_anchor['image']
+    let build_movies = {}
+    build_movies[feature_movie] = {
+      frames: [feature_image],
+      framesets: {
+        1: {
+          images: [feature_image]
+        }
+      }
+    }
+    job_data['app'] = 'analyze'
+    job_data['operation'] = 'train_feature_anchor'
+    job_data['description'] = 'train feature anchor for feature ' + cur_feature['name']
+    job_data['request_data']['tier_1_scanners'] = build_t1_scanners
+    job_data['request_data']['movies'] = build_movies
     return job_data
   }
 
@@ -860,8 +884,8 @@ console.log('monkey donle8')
 
     let is_t1_job = false
     let t1_job_type = ''
-    for (let i=0; i < this.tier_1_scanner_types.length; i++) {
-      const scanner_type = this.tier_1_scanner_types[i]
+    for (let i=0; i < Object.keys(this.props.tier_1_scanners).length; i++) {
+      const scanner_type = Object.keys(this.props.tier_1_scanners)[i]
       if (job_string.startsWith(scanner_type + '_')) {
         is_t1_job = true
         t1_job_type = scanner_type
@@ -926,6 +950,11 @@ console.log('monkey donle8')
       })
     } else if (job_string === 'save_movie_metadata') {
       let job_data = this.buildSaveMovieMetadataJobData(extra_data)
+      this.props.submitJob({
+        job_data: job_data
+      })
+    } else if (job_string === 'train_feature_anchor') {
+      let job_data = this.buildTrainFeatureAnchorJobData(extra_data)
       this.props.submitJob({
         job_data: job_data
       })
@@ -1038,6 +1067,10 @@ console.log('monkey donle8')
       the_message = 'Select the upper left corner of the item'
     } else if (the_mode === 'ds_add_item_2') {
       the_message = 'click second corner'
+    } else if (the_mode === 'add_feature_anchor_1') {
+      the_message = 'Select the first corner of the Region of Interest'
+    } else if (the_mode === 'add_feature_anchor_2') {
+      the_message = 'pick the second corner of the anchor'
     }
     this.props.setGlobalStateVar('message', the_message)
     this.setState({
@@ -1207,16 +1240,12 @@ console.log('monkey donle8')
   }
 
   render() {
-    let workbook_name = this.props.current_workbook_name
     const insights_image = this.props.getImageUrl()
     const image_element = this.buildImageElement(insights_image)
     const scrubber_div = this.buildScrubberDiv(insights_image)
     let insights_title = this.state.insights_title
     if (!insights_title && ! this.props.movie_url) {
       insights_title = 'load a movie or job to get started'
-    }
-    if (!this.props.current_workbook_id) {
-      workbook_name += ' (unsaved)'
     }
     let the_message = this.props.message
     let message_style = {}
@@ -1267,9 +1296,6 @@ console.log('monkey donle8')
               id='insights_header'
           >
             <div className='col'>
-              <div className='row' id='insights_workbook'>
-                <h4>{workbook_name}</h4>
-              </div>
               <div className='row' id='insights_title'>
                 {insights_title}
               </div>
@@ -1318,14 +1344,7 @@ console.log('monkey donle8')
             callPing={this.callPing}
             callGetVersion={this.callGetVersion}
             submitInsightsJob={this.submitInsightsJob}
-            saveWorkbook={this.props.saveWorkbook}
-            saveWorkbookName={this.props.saveWorkbookName}
             setSelectedAreaTemplateAnchor={this.setSelectedAreaTemplateAnchor}
-            current_workbook_name={this.props.current_workbook_name}
-            current_workbook_id={this.props.current_workbook_id}
-            workbooks={this.props.workbooks}
-            loadWorkbook={this.props.loadWorkbook}
-            deleteWorkbook={this.props.deleteWorkbook}
             displayInsightsMessage={this.displayInsightsMessage}
             setKeyDownCallback={this.setKeyDownCallback}
             cropImage={this.props.cropImage}
@@ -1368,12 +1387,11 @@ console.log('monkey donle8')
             tier_1_scanners={this.props.tier_1_scanners}
             redact_rules={this.props.redact_rules}
             current_ids={this.props.current_ids}
-            impersonateUser={this.props.impersonateUser}
             cv_workers={this.props.cv_workers}
             queryCvWorker={this.props.queryCvWorker}
             dispatchFetchSplitAndHash={this.props.dispatchFetchSplitAndHash}
             deleteOldJobs={this.props.deleteOldJobs}
-            job_polling_interval_seconds={this.props.job_polling_interval_seconds}
+            check_job_parameters={this.props.check_job_parameters}
             getJobResultData={this.props.getJobResultData}
             runExportTask={this.props.runExportTask}
             postImportArchiveCall={this.props.postImportArchiveCall}
@@ -1396,13 +1414,12 @@ console.log('monkey donle8')
             getJobs={this.props.getJobs}
             loadInsightsJobResults={this.loadInsightsJobResults}
             cancelJob={this.props.cancelJob}
-            workbooks={this.props.workbooks}
+            preserveJob={this.props.preserveJob}
             getJobResultData={this.props.getJobResultData}
             getJobFailedTasks={this.props.getJobFailedTasks}
             wrapUpJob={this.props.wrapUpJob}
             attachToJob={this.props.attachToJob}
             attached_job={this.props.attached_job}
-            user={this.props.user}
             setScrubberToNextTier1Hit={this.setScrubberToNextTier1Hit}
           />
         </div>

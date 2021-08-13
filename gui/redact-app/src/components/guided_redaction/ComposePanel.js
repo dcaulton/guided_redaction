@@ -1,4 +1,7 @@
 import React from 'react'
+
+import protect from '../../protect';
+
 import {
   getMessage
 } from './redact_utils.js'
@@ -1115,7 +1118,7 @@ class ComposePanel extends React.Component {
     if (!this.state.displayFetchRecordingId) {
       return ''
     }
-    return (
+    return protect(["secure_files.view_securefile"], null)(
       <div>
         <div className='d-inline ml-4'>
           fetch recording id

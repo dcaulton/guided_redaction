@@ -128,14 +128,7 @@ class SelectedAreaControls extends React.Component {
       'end': click_coords,
     }
     let deepCopyManualZones = this.state['manual_zones']
-    if (!Object.keys(this.state.manual_zones).includes(this.props.movie_url)) {
-      deepCopyManualZones[this.props.movie_url] = { framesets: {} }
-    }
-    const fsh = this.props.getFramesetHashForImageUrl(this.props.insights_image)
-    if (!Object.keys(deepCopyManualZones[this.props.movie_url]['framesets']).includes(fsh)) {
-      deepCopyManualZones[this.props.movie_url]['framesets'][fsh] = {}
-    }
-    deepCopyManualZones[this.props.movie_url]['framesets'][fsh][zone_id] = the_zone
+    deepCopyManualZones[zone_id] = the_zone
     this.setLocalStateVar(
       'manual_zones', 
       deepCopyManualZones,
@@ -208,13 +201,12 @@ class SelectedAreaControls extends React.Component {
   }
 
   getCurrentSelectedAreaManualZones() {
-    const fsh = this.props.getFramesetHashForImageUrl(this.props.insights_image)
-    if (
-      this.state.manual_zones &&
-      Object.keys(this.state.manual_zones).includes(this.props.movie_url) &&
-      Object.keys(this.state.manual_zones[this.props.movie_url]['framesets']).includes(fsh)
-    ) {
-      return this.state.manual_zones[this.props.movie_url]['framesets'][fsh]
+    if (Object.keys(this.state.manual_zones).includes('mask')) {
+      let deepCopyManualZones = JSON.parse(JSON.stringify(this.state.manual_zones))
+      delete deepCopyManualZones['mask']
+      return deepCopyManualZones
+    } else {
+      return this.state.manual_zones
     }
   }
 
@@ -371,12 +363,23 @@ class SelectedAreaControls extends React.Component {
     }))
   }
 
+  isBasicSelectType() {
+    if (
+      this.state.select_type === 'invert' || 
+      this.state.select_type === 'full_screen'
+    ) {
+      return true
+    } 
+    return false
+  }
+
   buildSelectTypeDropdown() {
     const values = [
       {'flood': 'flood simple'},
       {'arrow': 'arrow simple'},
       {'manual': 'pick areas manually with mouse'},
       {'invert': 'invert whatever comes in'},
+      {'full_screen': 'select the full screen'},
     ]
     return buildLabelAndDropdown(
       values,
@@ -404,67 +407,69 @@ class SelectedAreaControls extends React.Component {
       none_checked = 'checked'
     }
     return (
-      <div className='col'>
-        <div className='row'>
-          <div className='col'>
-            <input
-              className='mr-2'
-              type='radio'
-              value='none'
-              checked={none_checked}
-              onChange={()=> this.setLocalStateVar('everything_direction', '')}
-            />
-            Don't go exclusively in any one direction
+      <div className='row mt-2'>
+        <div className='col'>
+          <div className='row'>
+            <div className='col'>
+              <input
+                className='mr-2'
+                type='radio'
+                value='none'
+                checked={none_checked}
+                onChange={()=> this.setLocalStateVar('everything_direction', '')}
+              />
+              Don't go exclusively in any one direction
+            </div>
           </div>
-        </div>
-        <div className='row'>
-          <div className='d-inline'>
-            Go exclusively
-          </div>
-          <div className='d-inline ml-2'>
-            <input
-              className='mr-2'
-              type='radio'
-              value='north'
-              checked={this.state.everything_direction === 'north'}
-              onChange={()=> this.setLocalStateVar('everything_direction', 'north')}
-            />
-            North
-          </div>
+          <div className='row'>
+            <div className='d-inline'>
+              Go exclusively
+            </div>
+            <div className='d-inline ml-2'>
+              <input
+                className='mr-2'
+                type='radio'
+                value='north'
+                checked={this.state.everything_direction === 'north'}
+                onChange={()=> this.setLocalStateVar('everything_direction', 'north')}
+              />
+              North
+            </div>
 
-          <div className='d-inline ml-4'>
-            <input
-              className='mr-2'
-              type='radio'
-              value='south'
-              checked={this.state.everything_direction === 'south'}
-              onChange={()=> this.setLocalStateVar('everything_direction', 'south')}
-            />
-            South
-          </div>
+            <div className='d-inline ml-4'>
+              <input
+                className='mr-2'
+                type='radio'
+                value='south'
+                checked={this.state.everything_direction === 'south'}
+                onChange={()=> this.setLocalStateVar('everything_direction', 'south')}
+              />
+              South
+            </div>
 
-          <div className='d-inline ml-4'>
-            <input
-              className='mr-2'
-              type='radio'
-              value='east'
-              checked={this.state.everything_direction === 'east'}
-              onChange={()=> this.setLocalStateVar('everything_direction', 'east')}
-            />
-            East
-          </div>
+            <div className='d-inline ml-4'>
+              <input
+                className='mr-2'
+                type='radio'
+                value='east'
+                checked={this.state.everything_direction === 'east'}
+                onChange={()=> this.setLocalStateVar('everything_direction', 'east')}
+              />
+              East
+            </div>
 
-          <div className='d-inline ml-4'>
-            <input
-              className='mr-2'
-              type='radio'
-              value='west'
-              checked={this.state.everything_direction === 'west'}
-              onChange={()=> this.setLocalStateVar('everything_direction', 'west')}
-            />
-            West
-          </div>
+            <div className='d-inline ml-4'>
+              <input
+                className='mr-2'
+                type='radio'
+                value='west'
+                checked={this.state.everything_direction === 'west'}
+                onChange={()=> this.setLocalStateVar('everything_direction', 'west')}
+              />
+              West
+            </div>
 
+          </div>
         </div>
       </div>
     )
@@ -495,21 +500,6 @@ class SelectedAreaControls extends React.Component {
     )
   }
 
-  buildScanLevelDropdown2() {
-    const scan_level_dropdown = [
-      {'tier_1': 'Tier 1 (select only)'},
-      {'tier_2': 'Tier 2 (select and redact)'}
-    ]
-
-    return buildLabelAndDropdown(
-      scan_level_dropdown,
-      'Scan Level',
-      this.state.scan_level,
-      'selected_area_scan_level',
-      ((value)=>{this.setLocalStateVar('scan_level', value)})
-    )
-  }
-
   buildOriginEntityTypeDropdown() {
     const values = [
       {'adhoc': 'ad hoc'},
@@ -529,18 +519,11 @@ class SelectedAreaControls extends React.Component {
       return ''
     }
     let t1_temp_ids = []
-    let t2_temp_ids = []
     let adhoc_option = (<option value=''></option>)
     if (this.state.origin_entity_type === 'template_anchor') {
       for (let i=0; i < Object.keys(this.props.tier_1_scanners['template']).length; i++) {
         const template_id = Object.keys(this.props.tier_1_scanners['template'])[i]
-        const template = this.props.tier_1_scanners['template'][template_id]
-        if (template['scan_level'] === 'tier_1') {
-          t1_temp_ids.push(template_id)
-        }
-        if (template['scan_level'] === 'tier_2') {
-          t2_temp_ids.push(template_id)
-        }
+        t1_temp_ids.push(template_id)
       }
       adhoc_option = ''
     }
@@ -554,9 +537,6 @@ class SelectedAreaControls extends React.Component {
       if (t1_temp_ids.includes(template_id)) {
         temp_type = 'Tier 1 template'
       } 
-      if (t2_temp_ids.includes(template_id)) {
-        temp_type = 'Tier 2 template'
-      }
       for (let j=0; j < template['anchors'].length; j++) {
         const anchor = template['anchors'][j]
         const desc_string = temp_type + ':' + template['name'] + ', ' + anchor['id']
@@ -866,7 +846,6 @@ class SelectedAreaControls extends React.Component {
   buildNonExclusiveFields() {
     const merge_field = this.buildToggleField('merge', 'Merge Subareas')
     const masks_field = this.buildToggleField('masks_always', 'Generate Masks Always')
-    const select_type_dropdown = this.buildSelectTypeDropdown()
     const interior_or_exterior_dropdown = this.buildInteriorOrExteriorDropdown()
     const tolerance_field = this.buildToleranceField()
     if (this.state.everything_direction !== '') {
@@ -883,10 +862,6 @@ class SelectedAreaControls extends React.Component {
         </div>
 
         <div className='row mt-2'>
-          {select_type_dropdown}
-        </div>
-
-        <div className='row mt-2'>
           {interior_or_exterior_dropdown}
         </div>
 
@@ -898,7 +873,6 @@ class SelectedAreaControls extends React.Component {
     )
   }
 
-
   render() {
     if (!this.props.visibilityFlags['selectedArea']) {
       return([])
@@ -906,11 +880,7 @@ class SelectedAreaControls extends React.Component {
     const load_button = this.buildLoadButton()
     const id_string = buildIdString(this.state.id, 'selected area meta', false)
     const name_field = this.buildNameField()
-    const everything_field = this.buildEverythingField()
     const attributes_list = this.buildAttributesList()
-    const scan_level_dropdown = this.buildScanLevelDropdown2()
-    const origin_entity_type_dropdown = this.buildOriginEntityTypeDropdown()
-    const origin_entity_id_dropdown = this.buildOriginEntityIdDropdown()
     const add_area_coords_button = this.buildAddAreaCoordsButton()
     const clear_area_coords_button = this.buildClearAreasButton()
     const add_minimum_zones_button = this.buildAddMinimumZonesButton()
@@ -921,18 +891,29 @@ class SelectedAreaControls extends React.Component {
     const clear_origin_location_button = this.buildClearOriginLocationButton()
     const add_manual_button = this.buildAddManualZoneButton() 
     const clear_manual_button = this.buildClearManualZonesButton() 
+    const select_type_dropdown = this.buildSelectTypeDropdown()
     const run_button = this.buildRunButtonWrapper()
     const delete_button = this.buildDeleteButton()
     const save_to_db_button = this.buildSaveToDatabaseButton()
     const clear_matches_button = this.buildClearMatchesButton2()
     const goto_source_link = this.buildGotoSourceLink()
-    const nonexclusive_fields = this.buildNonExclusiveFields()
-    const exclusive_fields = this.buildExclusiveFields()
     const header_row = makeHeaderRow(
       'selected area',
       'selected_area_body',
       (() => this.props.toggleShowVisibility('selectedArea'))
     )
+    var exclusive_fields = this.buildExclusiveFields()
+    var nonexclusive_fields = this.buildNonExclusiveFields()
+    var everything_field = this.buildEverythingField()
+    var origin_entity_type_dropdown = this.buildOriginEntityTypeDropdown()
+    var origin_entity_id_dropdown = this.buildOriginEntityIdDropdown()
+    if (this.isBasicSelectType()) {
+      nonexclusive_fields = ''
+      exclusive_fields = ''
+      everything_field = ''
+      origin_entity_type_dropdown = ''
+      origin_entity_id_dropdown = ''
+    }
 
     return (
         <div className='row bg-light rounded mt-3'>
@@ -986,16 +967,14 @@ class SelectedAreaControls extends React.Component {
                 </div>
 
                 <div className='row mt-2'>
-                  {everything_field}
+                  {select_type_dropdown}
                 </div>
+
+                {everything_field}
 
                 {nonexclusive_fields}
 
                 {exclusive_fields}
-
-                <div className='row mt-2'>
-                  {scan_level_dropdown}
-                </div>
 
                 <div className='row mt-2'>
                   {origin_entity_type_dropdown}

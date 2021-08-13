@@ -73,7 +73,7 @@ class JobCardList extends React.Component {
               job_data={value}
               loadInsightsJobResults={this.props.loadInsightsJobResults}
               cancelJob={this.props.cancelJob}
-              workbooks={this.props.workbooks}
+              preserveJob={this.props.preserveJob}
               jobs={this.props.jobs}
               index={index}
               getJobResultData={this.props.getJobResultData}
@@ -81,7 +81,6 @@ class JobCardList extends React.Component {
               wrapUpJob={this.props.wrapUpJob}
               attachToJob={this.props.attachToJob}
               attached_job={this.props.attached_job}
-              user={this.props.user}
             />
             )
           })}
@@ -96,8 +95,18 @@ class JobCard extends React.Component {
 
   constructor(props) {
     super(props)
+    let bg_color_name = '#FFF'
+    if (this.props.job_data['status'] === 'purged') {
+      bg_color_name = '#777'
+    }
+    const the_style = {
+      backgroundColor: bg_color_name,
+      padding: 0,
+      margin: 0,
+    }
+
     this.view_image = (
-      <svg width="50" height="30" xmlns="http://www.w3.org/2000/svg">
+      <svg width="50" height="30" xmlns="http://www.w3.org/2000/svg" style={the_style}>
         <path d="M 0 14 C 8  2, 22  2, 30 14" stroke="black" fill="transparent"/>
         <path d="M 0 14 C 8 26, 22 26, 30 14" stroke="black" fill="transparent"/>
         <circle cx="14" cy="14" r="8" fill="#8D4008"/>
@@ -107,63 +116,15 @@ class JobCard extends React.Component {
     )
   }
 
-  getWorkbookName(the_workbook_id) {
-    for (let i=0; i < this.props.workbooks.length; i++) {
-      if (this.props.workbooks[i]['id'] === the_workbook_id) {
-        return this.props.workbooks[i]['name']
-      }
-    }
-  }
-
-  buildJobOwnerBlock() {
-    if (!Object.keys(this.props.job_data).includes('owner')) {
-      return ''
-    }
-    if (this.props.user['id'] === this.props.job_data['owner']) {
-      return ''
-    }
-    let style = {
-      'fontSize': 'small',
-      'padding': 0,
-    }
-    return (
-      <div 
-          style={style}
-      >
-        <div className='d-inline'>
-          owner:
-        </div>
-        <div className='d-inline'>
-          {this.props.job_data['owner']}
-        </div>
-      </div>
-    )
-
-  }
-
-  buildJobWorkbookBlock(job_data) {
-    let job_workbook_name = '<none>'
-    if (job_data['workbook_id']) {
-        job_workbook_name = this.getWorkbookName(job_data['workbook_id'])
-    }
-    let job_workbook_block = (
-      <div>
-        workbook: {job_workbook_name}
-      </div>
-    )
-    return job_workbook_block
-  }
-
   buildJobHeader(job_data, job_body_id) {
     const jn_length = job_data['id'].length
     let sjn = job_data['id']
     if (jn_length > 12) {
-      sjn = job_data['id'].substring(0, 2) + '...' + 
-        job_data['id'].substring(jn_length-2)
+      sjn = job_data['id'].substring(0, 8) + '...'
     }
     let short_job_name = (
       <div 
-        className='col-md-7'
+        className='col-md-6 p-0 ml-3'
         title={job_data['id']}
       >
       {sjn}
@@ -175,7 +136,7 @@ class JobCard extends React.Component {
       'padding': 0,
     }
     const exp_coll = (
-      <div className='col-md-2'>
+      <div className='col-md-1 p-0 m-0'>
       <button
           style={style}
           className='btn btn-link'
@@ -211,12 +172,17 @@ class JobCard extends React.Component {
       strokeWidth: '1px',
       fill: 'solid',
     }
+    let black_circle_style = {
+      stroke: '#000000',
+      strokeWidth: '1px',
+      fill: 'solid',
+    }
 
     let status_button = ''
     if (this.props.job_data['status'] === 'running') {
       status_button = (
         <div
-          className='col-md-2 float-right'
+          className='col-md-1'
         >
           <svg width='20' height='21' >
             <circle
@@ -232,7 +198,7 @@ class JobCard extends React.Component {
     } else if (this.props.job_data['status'] === 'success') {
       status_button = (
         <div
-          className='col-md-2 float-right'
+          className='col-md-1 '
         >
           <svg width='20' height='21' >
             <circle
@@ -248,7 +214,7 @@ class JobCard extends React.Component {
     } else if (this.props.job_data['status'] === 'created') {
       status_button = (
         <div
-          className='col-md-2 float-right'
+          className='col-md-1'
         >
           <svg width='20' height='21' >
             <circle
@@ -261,10 +227,26 @@ class JobCard extends React.Component {
           </svg>
         </div>
       )
+    } else if (this.props.job_data['status'] === 'purged') {
+      status_button = (
+        <div
+          className='col-md-1'
+        >
+          <svg width='20' height='21' >
+            <circle
+                r='9'
+                fill='#000000'
+                cx='10'
+                cy='10'
+                style={black_circle_style}
+            />
+          </svg>
+        </div>
+      )
     } else {
       status_button = (
         <div
-          className='col-md-2 float-right'
+          className='col-md-1'
         >
           <svg width='20' height='21' >
             <circle
@@ -367,13 +349,38 @@ class JobCard extends React.Component {
     )
   }
 
+  buildPreserveJobButton() {
+    if (
+      this.props.job_data &&
+      Object.keys(this.props.job_data).includes('attributes') &&
+      Object.keys(this.props.job_data['attributes']).includes('auto_delete_age') &&
+      this.props.job_data['attributes']['auto_delete_age'] === 'never'
+    ) {
+      return ''
+    }
+    return (
+      <button 
+          className='btn btn-primary ml-2'
+          onClick={() => this.props.preserveJob(this.props.job_data['id'])}
+      >
+        Keep
+      </button>
+    )
+  }
+
   buildJobStatus() {
     let text_style = {
       'fontSize': '14px',
     }
+    let container_style = {
+      backgroundColor: 'white',
+    }
+    if (this.props.job_data['status'] === 'purged') {
+      container_style['backgroundColor'] = '#777'
+    }
     return (
       <div>
-        <div className='d-inline'>
+        <div className='d-inline' style={container_style}>
           {this.props.job_data['status']}
         </div>
         <div 
@@ -468,7 +475,7 @@ class JobCard extends React.Component {
     }
 
     let request_data_link = ''
-    function request_data_action() {}
+    let request_data_action;
     if (Object.keys(this.props.job_data).includes('request_data_url')) {
       const request_data_url = this.props.job_data['request_data_url']
       request_data_action = () => window.open(request_data_url)
@@ -487,7 +494,7 @@ class JobCard extends React.Component {
     )
 
     let response_data_link = ''
-    function response_data_action() {}
+    let response_data_action;
     if (Object.keys(this.props.job_data).includes('response_data_url')) {
       const response_data_url = this.props.job_data['response_data_url']
       response_data_action = () => window.open(response_data_url)
@@ -536,12 +543,15 @@ class JobCard extends React.Component {
       'fontSize': 'small',
       'display': 'block',
     }
+    let top_level_card_classes = 'row pl-1 mt-2 card'
+    if (this.props.job_data['status'] === 'purged') {
+      top_level_card_classes += ' bg-secondary'
+    }
     const get_job_button = this.buildGetJobButton()
     const delete_job_button = this.buildDeleteJobButton()
+    const preserve_job_button = this.buildPreserveJobButton()
     const job_body_id = 'job_card_' + this.props.index
     const job_header = this.buildJobHeader(this.props.job_data, job_body_id)
-    const job_workbook_block = this.buildJobWorkbookBlock(this.props.job_data)
-    const job_owner_block = this.buildJobOwnerBlock()
     const job_desc_data = this.buildJobDescriptionData(this.props.job_data)
     const job_created_on_data = this.buildCreatedOnData(this.props.job_data)
     const wall_clock_run_time_data = this.buildWallClockRunTimeData(this.props.job_data)
@@ -553,7 +563,7 @@ class JobCard extends React.Component {
     const view_failed_tasks_link = this.buildViewFailedTasksLink()
 
     return (
-      <div className='row pl-1 mt-2 card'>
+      <div className={top_level_card_classes}>
 
         <div className='col'>
 
@@ -583,8 +593,6 @@ class JobCard extends React.Component {
               {job_created_on_data}
               {wall_clock_run_time_data}
               {job_percent_done}
-              {job_workbook_block}
-              {job_owner_block}
             </div>
 
             <div 
@@ -606,6 +614,7 @@ class JobCard extends React.Component {
             <div className='row mt-1 mb-1'>
               {get_job_button}
               {delete_job_button}
+              {preserve_job_button}
             </div>
           </div>
 

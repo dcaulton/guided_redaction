@@ -66,8 +66,15 @@ class PipelinePanel extends React.Component {
     }
   }
 
+  setJobListToHaveAllPipelines() {
+    let deepCopyCheckJobParms = JSON.parse(JSON.stringify(this.props.check_job_parameters))
+    deepCopyCheckJobParms['list_all_pipelines'] = true
+    this.props.setGlobalStateVar('check_job_parameters', deepCopyCheckJobParms)
+  }
+
   componentDidMount() {
     this.props.getPipelines(((resp)=>this.loadRelevantPipelines(resp)))
+    this.setJobListToHaveAllPipelines()
     this.props.getJobs()
     document.getElementById('pipeline_link').classList.add('active')
     this.refreshJobStatus()
@@ -333,19 +340,39 @@ class PipelinePanel extends React.Component {
     )
   }
 
-  buildJobDetailsRightButtons(job_id) {
+  buildJobDetailsRightButtons(status_obj) {
+    
+    const job_id = status_obj['job_id']
+    let response_link = ''
+    if (['failed', 'success'].includes(status_obj['status'])) {
+      response_link = (
+        <div className='ml-2 d-inline'>
+          <button
+            className='btn btn-primary'
+            onClick={
+              ()=>this.props.getJobResultData(job_id, this.displayInNewTab, 'response')
+            }
+          >
+            View Response
+          </button>
+        </div>
+      )
+    }
+
     return (
       <div className='ml-5 mb-2'>
         <div className='d-inline'>
           <button
             className='btn btn-primary'
             onClick={
-              ()=>this.props.getJobResultData(job_id, this.displayInNewTab)
+              ()=>this.props.getJobResultData(job_id, this.displayInNewTab, 'request')
             }
           >
-            View Data
+            View Request
           </button>
         </div>
+
+        {response_link}
 
         <div className='d-inline ml-2'>
           <button
@@ -469,7 +496,7 @@ class PipelinePanel extends React.Component {
           const details_right_lines = this.buildNodeDetailRightLines(status_obj)
           let job_buttons = ''
           if (status_obj['job_id']) {
-            job_buttons = this.buildJobDetailsRightButtons(status_obj['job_id'])
+            job_buttons = this.buildJobDetailsRightButtons(status_obj)
           }
           return (
             <div key={index} className='border-top'>

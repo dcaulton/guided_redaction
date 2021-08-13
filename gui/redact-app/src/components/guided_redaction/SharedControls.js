@@ -457,7 +457,7 @@ export function buildTier1DeleteButton(scanner_type, hash_of_scanners, delete_sc
   )
 }
 
-export function buildIdString(id_value, scanner_type, unsaved_changes_flag) {
+export function buildIdString(id_value='', scanner_type='', unsaved_changes_flag=false) {
   const s1 = 'this ' + scanner_type + ' has not been saved and has no id yet'
   const s2 = scanner_type + ' id: ' + id_value.toString()
   if (!id_value) {
@@ -626,3 +626,247 @@ export function buildMatchIdField(
   )
 }
 
+
+export function buildToggleField(field_name, label, cur_value, setLocalStateVarFunc) {
+  let checked_val = ''
+  if (cur_value) {
+    checked_val = 'checked'
+  }
+  return (
+    <div className='ml-2'>
+      <div className='d-inline'>
+        <input
+          className='mr-2'
+          checked={checked_val}
+          type='checkbox'
+          onChange={() => setLocalStateVarFunc(field_name, !cur_value)}
+        />
+      </div>
+      <div className='d-inline'>
+        {label}
+      </div>
+    </div>
+  )
+}
+
+export function loadMeta(
+    meta_id, scanner_type, default_meta_values, current_ids, setGlobalStateVar, displayInsightsMessage, setState, 
+    state_var, tier_1_scanners, loadNewMeta
+) {
+  if (!meta_id) {
+    loadNewMeta(scanner_type, default_meta_values, current_ids, setGlobalStateVar, setState)
+  } else {
+    const s = tier_1_scanners[scanner_type][meta_id]
+    const new_state_obj = JSON.parse(JSON.stringify(default_meta_values))
+
+    for (let i=0; i < Object.keys(s).length; i++) {
+      const name = Object.keys(s)[i]
+      if (Object.keys(state_var).includes(name)) {
+        new_state_obj[name] = s[name]
+      }
+    }
+    setState(new_state_obj)
+  }
+  let deepCopyIds = JSON.parse(JSON.stringify(current_ids))
+  deepCopyIds['t1_scanner'][scanner_type] = meta_id
+  setGlobalStateVar('current_ids', deepCopyIds)
+  displayInsightsMessage(scanner_type + ' meta has been loaded')
+}
+
+
+export function loadNewMeta(scanner_type, default_meta_values, current_ids, setGlobalStateVar, setState) {
+  let deepCopyIds = JSON.parse(JSON.stringify(current_ids))
+  deepCopyIds['t1_scanner'][scanner_type] = ''
+  setGlobalStateVar('current_ids', deepCopyIds)
+  const the_id = scanner_type + '_' + Math.floor(Math.random(1000000, 9999999)*1000000000).toString()
+
+  const new_values = JSON.parse(JSON.stringify(default_meta_values))
+  new_values['id'] = the_id
+  setState(new_values)
+}
+
+export function deleteMeta(the_id, tier_1_scanners, scanner_type, setGlobalStateVar, current_ids, displayInsightsMessage) {
+  let deepCopyScanners = JSON.parse(JSON.stringify(tier_1_scanners))
+  let deepCopyMMs = deepCopyScanners[scanner_type]
+  delete deepCopyMMs[the_id]
+  deepCopyScanners[scanner_type] = deepCopyMMs
+  setGlobalStateVar('tier_1_scanners', deepCopyScanners)
+  if (the_id === current_ids['t1_scanner'][scanner_type]) {
+    let deepCopyIds = JSON.parse(JSON.stringify(current_ids))
+    deepCopyIds['t1_scanner'][scanner_type] = ''
+    setGlobalStateVar('current_ids', deepCopyIds)
+  }
+  displayInsightsMessage(scanner_type + ' was deleted')
+}
+
+export function buildPicListOfAnchors(anchors, anchor_functions={}) {
+  let return_arr = []
+  for (let i=0; i < anchors.length; i++) {
+    const anchor = anchors[i]
+    const anchor_id = anchor['id']
+    let anchor_id_row_part = (
+      <div className='d-inline'>
+        <div className='d-inline'>
+          id:
+        </div>
+        <div className='d-inline ml-2'>
+          {anchor_id}
+        </div>
+      </div>
+    )
+    let delete_button = ''
+    if (Object.keys(anchor_functions).includes('delete_function')) {
+      delete_button = (
+        <button
+          className='btn btn-primary ml-2'
+          onClick={() => anchor_functions['delete_function'](anchor_id)}
+        >
+          delete
+        </button>
+      )
+    }
+    let train_button = ''
+    if (
+      Object.keys(anchor_functions).includes('train_function') &&
+      !Object.keys(anchor).includes('cropped_image_bytes') 
+    ) {
+      train_button = (
+        <button
+          className='btn btn-primary ml-2'
+          onClick={() => anchor_functions['train_function'](anchor_id)}
+        >
+          train
+        </button>
+      )
+    }
+    let img_obj = ''
+    if (Object.keys(anchor).includes('cropped_image_bytes')) {
+      const the_src = "data:image/gif;base64," + anchor['cropped_image_bytes']
+      img_obj = (
+        <img
+          max-height='100'
+          max-width='100'
+          key={'dapper' + i}
+          alt={anchor_id}
+          title={anchor_id}
+          src={the_src}
+        />
+      )
+    }
+    let feature_type_row = ''
+    if (Object.keys(anchor).includes('feature_type')) {
+      feature_type_row = (
+        <div className='row'>
+          <div className='d-inline'>
+            feature type:
+          </div>
+          <div className='d-inline ml-2'>
+            {anchor['feature_type']}
+          </div>
+        </div>
+      )
+    }
+    let num_keypoints_row = ''
+    if (Object.keys(anchor).includes('keypoints')) {
+      const keypoints_obj = JSON.parse(anchor['keypoints'])
+      const num_keypoints = keypoints_obj.length
+      feature_type_row = (
+        <div className='row'>
+          <div className='d-inline'>
+            number of keypoints :
+          </div>
+          <div className='d-inline ml-2'>
+            {num_keypoints}
+          </div>
+        </div>
+      )
+    }
+   
+   
+    return_arr.push(
+      <div
+        key={'hey' + i}
+        className='row p-2 border-bottom'
+      >
+        <div className='col'>
+          <div className='row'>
+            {anchor_id_row_part}
+            <div className='d-inline ml-2'>
+              {img_obj}
+              {delete_button}
+              {train_button}
+            </div>
+          </div>
+
+          {feature_type_row}
+          {num_keypoints_row}
+        </div>
+      </div>
+    )
+  }
+  return return_arr
+}
+
+
+export function buildSourceMovieImageInfo2(
+    state_id, 
+    tier_1_scanners, 
+    movies, 
+    getFramesetHashForImageUrl, 
+    getFramesetHashesInOrder, 
+    showSourceFrame
+) {
+  if (state_id) {
+    if (Object.keys(tier_1_scanners).includes(state_id)) {
+      const template = tier_1_scanners[state_id]
+      if (template['anchors'].length > 0) {
+        const movie_url = template['anchors'][0]['movie']
+        const image_url = template['anchors'][0]['image']
+        let goto_link = ''
+        if (Object.keys(movies).includes(movie_url)) {
+          const the_movie = movies[movie_url]
+          const the_frameset = getFramesetHashForImageUrl(image_url, the_movie['framesets'])
+          const movie_framesets = getFramesetHashesInOrder(the_movie)
+          const image_frameset_index = movie_framesets.indexOf(the_frameset)
+          goto_link = (
+            <div>
+              <button
+                className='bg-light border-0 text-primary'
+                onClick={() => showSourceFrame(movie_url, image_frameset_index)}
+              >
+                goto anchor source frame
+              </button>
+            </div>
+          )
+        }
+        const style = {
+          'fontSize': 'small',
+        }
+        return (
+          <div className='ml-2'>
+            <div>
+              Source Info
+            </div>
+            <div style={style}>
+              <div className='d-inline ml-2'>
+                Movie url:
+              </div>
+              <div className='d-inline ml-2'>
+                {movie_url}
+              </div>
+            </div>
+            <div style={style}>
+              <div className='d-inline ml-2'>
+                Image url:
+              </div>
+              <div className='d-inline ml-2'>
+                {image_url}
+              </div>
+            </div>
+            {goto_link}
+          </div>
+        )
+      }
+    }
+  }
+}

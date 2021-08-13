@@ -7,8 +7,10 @@ import {
   buildAttributesAddRow,
   buildTier1DeleteButton,
   buildTier1LoadButton,
+  setLocalT1ScannerStateVar,
   buildIdString,
 } from './SharedControls'
+
 
 class PipelineControls extends React.Component {
 
@@ -31,12 +33,13 @@ class PipelineControls extends React.Component {
           'data_sifter': {},
           'focus_finder': {},
           't1_filter': {},
+          'diff': {},
+          'feature': {},
         },
         'redact_rules': {},
         'split_and_hash': {},
         'secure_files_import': {},
         'secure_files_export': {},
-        'purge_job_resources': {},
         'zip': {},
       },
       movie_urls: [],
@@ -46,17 +49,21 @@ class PipelineControls extends React.Component {
       subtrahends: {},
       intersect_feeds: {},
       mandatory_nodes: {},
+      quick_finish_nodes: {},
       ocr_jobs: {},
       data_sifter_jobs: {},
       redact_rule_edges: {},
       attribute_search_value: '',
       use_parsed_movies: true,
+      bypass_purge_jobs: true,
+      run_as_batch: false,
       json: '',
     }
     this.t1_scanner_types = [
-      'template', 'selected_area', 'mesh_match', 'selection_grower', 'ocr', 'data_sifter', 'focus_finder', 't1_filter'
+      'template', 'selected_area', 'mesh_match', 'selection_grower', 'ocr', 'data_sifter', 'focus_finder', 't1_filter', 'diff', 'feature'
     ]
     this.afterPipelineSaved=this.afterPipelineSaved.bind(this)
+    this.afterPipelineCloned=this.afterPipelineCloned.bind(this)
     this.deletePipeline=this.deletePipeline.bind(this)
     this.addNode=this.addNode.bind(this)
     this.deleteNode=this.deleteNode.bind(this)
@@ -64,15 +71,94 @@ class PipelineControls extends React.Component {
     this.loadPipeline=this.loadPipeline.bind(this)
     this.loadNewPipeline=this.loadNewPipeline.bind(this)
     this.setLocalStateVar=this.setLocalStateVar.bind(this)
+    this.doSave=this.doSave.bind(this)
+    this.setState=this.setState.bind(this)
+    this.cloneCurrentPipeline=this.cloneCurrentPipeline.bind(this)
+  }
+
+  toggleSaveRedactionWasNeededRecord() {
+    let deepCopyAttributes = JSON.parse(JSON.stringify(this.state.attributes))
+    if (!Object.keys(deepCopyAttributes).includes('save_redaction_was_needed_record')) {
+      deepCopyAttributes['save_redaction_was_needed_record'] = 'sure'
+    } else {
+      if (Object.keys(deepCopyAttributes).includes('save_redaction_was_needed_record')) {
+        delete deepCopyAttributes['save_redaction_was_needed_record']
+      } else {
+        deepCopyAttributes['save_redaction_was_needed_record'] = 'sure'
+      }
+    }
+    this.setLocalStateVar('attributes', deepCopyAttributes)
+  }
+
+  buildSaveRedactionWasNeededRecordCheckbox() {
+    let checked_val = ''
+    if (
+      this.state.attributes
+      && Object.keys(this.state.attributes).includes('save_redaction_was_needed_record')
+      && this.state.attributes['save_redaction_was_needed_record']
+    ) {
+      checked_val = 'checked'
+    }
+    return (
+      <div className='ml-2'>
+        <div className='d-inline'>
+          <input
+            className='mr-2'
+            checked={checked_val}
+            type='checkbox'
+            onChange={
+              () => this.toggleSaveRedactionWasNeededRecord()
+            }
+          />
+        </div>
+        <div className='d-inline'>
+          Save 'Redaction was Needed' Record on Completion
+        </div>
+      </div>
+    )
   }
 
   deleteNode(node_id) {
     let deepCopyNodeMetadata = JSON.parse(JSON.stringify(this.state.node_metadata))
     delete deepCopyNodeMetadata['node'][node_id]
+    let build_obj = {
+      'node_metadata': deepCopyNodeMetadata,
+    }
+    let edges_changed = false
+    let deepCopyEdges = JSON.parse(JSON.stringify(this.state.edges))
+    if (Object.keys(deepCopyEdges).includes(node_id)) {
+      delete deepCopyEdges[node_id]
+      edges_changed = true
+    }
+    const edge_keys = Object.keys(deepCopyEdges)
+    for (let i=0; i < edge_keys.length; i++) {
+      const edge_id = edge_keys[i]
+      let target_node_ids = this.state.edges[edge_id]
+      let new_target_node_ids = []
+      if (target_node_ids.includes(node_id)) {
+        for (let j=0; j < target_node_ids.length; j++) {
+          if (target_node_ids[j] !== node_id) {
+            new_target_node_ids.push(target_node_ids[j])
+          } else {
+            edges_changed = true
+          }
+        }
+      }
+      if (edges_changed) {
+        if (new_target_node_ids.length > 0) {
+          deepCopyEdges[edge_id] = new_target_node_ids
+        } else {
+          delete deepCopyEdges[edge_id]
+        }
+      }
+    }
+    if (edges_changed) {
+      build_obj['edges'] = deepCopyEdges
+    }
+
     this.setLocalStateVar(
-      'node_metadata', 
-      deepCopyNodeMetadata,
-      (()=>{this.props.displayInsightsMessage('node was added')})
+      build_obj,
+      (()=>{this.props.displayInsightsMessage('node was deleted')})
     )
   }
 
@@ -162,6 +248,7 @@ class PipelineControls extends React.Component {
       subtrahends: this.state.subtrahends,
       intersect_feeds: this.state.intersect_feeds,
       mandatory_nodes: this.state.mandatory_nodes,
+      quick_finish_nodes: this.state.quick_finish_nodes,
       ocr_jobs: this.state.ocr_jobs,
       data_sifter_jobs: this.state.data_sifter_jobs,
       redact_rule_edges: this.state.redact_rule_edges,
@@ -169,6 +256,20 @@ class PipelineControls extends React.Component {
       movies: build_movies,
     }
     return pipeline
+  }
+
+  afterPipelineCloned(pipeline_response_obj) {
+    if (Object.keys(pipeline_response_obj).includes('pipeline_id')) {
+      const pipeline_id = pipeline_response_obj['pipeline_id']
+      const pipeline_name = this.state.name + '_cloned'
+      this.setLocalStateVar({
+        id: pipeline_id,
+        name: pipeline_name,
+      })
+      let deepCopyIDs = JSON.parse(JSON.stringify(this.props.current_ids))
+      deepCopyIDs['pipeline'] = pipeline_id
+      this.props.setGlobalStateVar('current_ids', deepCopyIDs)
+    }
   }
 
   afterPipelineSaved(pipeline_response_obj) {
@@ -216,6 +317,7 @@ class PipelineControls extends React.Component {
         scope: scope, 
         extra_data: extra_data,
         use_parsed_movies: this.state.use_parsed_movies,
+        run_as_batch: this.state.run_as_batch,
       }
     )
     this.props.displayInsightsMessage('pipeline was dispatched')
@@ -245,9 +347,30 @@ class PipelineControls extends React.Component {
       subtrahends: {},
       intersect_feeds: {},
       mandatory_nodes: {},
+      quick_finish_nodes: {},
       ocr_jobs: {},
       data_sifter_jobs: {},
       redact_rule_edges: {},
+      node_metadata: {
+        'node': {},
+        'tier_1_scanners': {
+          'template': {},
+          'selected_area': {},
+          'mesh_match': {},
+          'selection_grower': {},
+          'ocr': {},
+          'data_sifter': {},
+          'focus_finder': {},
+          't1_filter': {},
+          'diff': {},
+          'feature': {},
+        },
+        'redact_rules': {},
+        'split_and_hash': {},
+        'secure_files_import': {},
+        'secure_files_export': {},
+        'zip': {},
+      },
     })
   }
 
@@ -286,6 +409,10 @@ class PipelineControls extends React.Component {
       if (Object.keys(content).includes('mandatory_nodes')) {
         mandatory_nodes = content['mandatory_nodes']
       }
+      let quick_finish_nodes = {}
+      if (Object.keys(content).includes('quick_finish_nodes')) {
+        mandatory_nodes = content['quick_finish_nodes']
+      }
       let ocr_jobs = {}
       if (Object.keys(content).includes('ocr_jobs')) {
         ocr_jobs = content['ocr_jobs']
@@ -315,6 +442,7 @@ class PipelineControls extends React.Component {
         subtrahends: subtrahends,
         intersect_feeds: intersect_feeds,
         mandatory_nodes: mandatory_nodes,
+        quick_finish_nodes: quick_finish_nodes,
         ocr_jobs: ocr_jobs,
         data_sifter_jobs: data_sifter_jobs,
         redact_rule_edges: redact_rule_edges,
@@ -349,18 +477,11 @@ class PipelineControls extends React.Component {
   }
 
   setLocalStateVar(var_name, var_value, when_done=(()=>{})) {
-    function anon_func() {
-      this.doSave()
-      when_done()
+    let var_value_in_state = ''
+    if (Object.keys(this.state).includes(var_name)) {
+      var_value_in_state = this.state[var_name]
     }
-    this.setState(
-      {
-        [var_name]: var_value,
-      },
-      anon_func
-    )
-
-
+    setLocalT1ScannerStateVar(var_name, var_value, var_value_in_state, this.doSave, this.setState, when_done)
   }
 
   buildLoadButton() {
@@ -368,6 +489,30 @@ class PipelineControls extends React.Component {
       'pipeline', 
       this.props.pipelines, 
       ((id)=>{this.loadPipeline(id)})
+    )
+  }
+
+  cloneCurrentPipeline() {
+    const pipeline_obj = this.getPipelineFromState()
+    pipeline_obj.id = ''
+    pipeline_obj.name = pipeline_obj.name  + '_cloned'
+    this.props.savePipelineToDatabase(
+      pipeline_obj,
+      this.afterPipelineCloned
+    )
+  }
+
+  buildCloneButton() {
+    if (!this.state.id) {
+      return 
+    }
+    return (
+      <button
+          className='btn btn-primary ml-2'
+          onClick={() => this.cloneCurrentPipeline()}
+      >
+        Clone
+      </button>
     )
   }
 
@@ -384,7 +529,7 @@ class PipelineControls extends React.Component {
 
   buildT1PipelineRunOptions() {
     const scanner_types = [
-      'template', 'selected_area', 'data_sifter', 'ocr', 'mesh_match', 'selection_grower', 'focus_finder', 't1_filter'
+      'template', 'selected_area', 'data_sifter', 'ocr', 'mesh_match', 'selection_grower', 'focus_finder', 't1_filter', 'diff', 'feature'
     ]
     return (
       <div>
@@ -546,7 +691,7 @@ class PipelineControls extends React.Component {
             cols='60'
             rows='5'
             onChange={
-              (event)=>{this.setLocalStateVar('json', event.target.value)}
+              (event)=>{this.setState({'json': event.target.value})}
             }
           />
         </div>
@@ -618,6 +763,54 @@ class PipelineControls extends React.Component {
     this.setLocalStateVar('attributes', deepCopyAttributes)
   }
 
+  toggleBypassPurgeJobResourcesValue() {
+    let deepCopyLifecycleData = JSON.parse(JSON.stringify(this.props.job_lifecycle_data))
+    deepCopyLifecycleData['bypass_purge_job_resources'] = !this.props.job_lifecycle_data['bypass_purge_job_resources']
+    this.props.setGlobalStateVar('job_lifecycle_data', deepCopyLifecycleData)
+  }
+
+  buildRunAsBatchCheckbox() {
+    return (
+      <div className='row'>
+        <div
+            className='d-inline ml-4'
+        >
+          <input
+            className='mt-1'
+            id='pipeline_run_as_batch'
+            checked={this.state.run_as_batch}
+            type='checkbox'
+            onChange={(event) => this.setState({'run_as_batch': !this.state.run_as_batch})}
+          />
+        </div>
+        <div className='d-inline ml-2'>
+          Run as Batch?
+        </div>
+      </div>
+    )
+  }
+
+  buildBypassPurgeJobResourcesCheckbox() {
+    return (
+      <div className='row'>
+        <div
+            className='d-inline ml-4'
+        >
+          <input
+            className='mt-1'
+            id='toggle_delete_files_with_job'
+            checked={this.props.job_lifecycle_data['bypass_purge_job_resources']}
+            type='checkbox'
+            onChange={(event) => this.toggleBypassPurgeJobResourcesValue()}
+          />
+        </div>
+        <div className='d-inline ml-2'>
+          Bypass the Purge Job Resources Task when Running Interactively?
+        </div>
+      </div>
+    )
+  }
+
   render() {
     if (!this.props.visibilityFlags['pipelines']) {
       return([])
@@ -625,13 +818,17 @@ class PipelineControls extends React.Component {
     const id_string = buildIdString(this.state.id, 'pipeline', false)
     const load_button = this.buildLoadButton()
     const delete_button = this.buildDeleteButton()
+    const clone_button = this.buildCloneButton()
     const run_button = this.buildRunButton()
     const name_field = this.buildNameField()
     const description_field = this.buildDescriptionField()
     const attributes_list = this.buildAttributesList()
     const use_parsed_movies_checkbox = this.buildUseParsedMoviesCheckbox()
+    const bypass_purge_job_resources_checkbox = this.buildBypassPurgeJobResourcesCheckbox()
+    const run_as_batch_checkbox = this.buildRunAsBatchCheckbox()
     const display_on_pipeline_panel_checkbox = this.buildDisplayOnPipelinePanelCheckbox()
     const input_json_textarea = this.buildInputJson()
+    const save_redaction_was_needed_checkbox = this.buildSaveRedactionWasNeededRecordCheckbox()
     const header_row = makeHeaderRow(
       'pipelines',
       'pipelines_body',
@@ -654,7 +851,12 @@ class PipelineControls extends React.Component {
               <div className='row'>
                 {load_button}
                 {delete_button}
+                {clone_button}
                 {run_button}
+              </div>
+
+              <div className='row ml-2 mt-2 border-top border-bottom h5'>
+                pipeline properties
               </div>
 
               <div className='row mt-2'>
@@ -670,11 +872,27 @@ class PipelineControls extends React.Component {
               </div>
 
               <div className='row mt-2'>
+                {display_on_pipeline_panel_checkbox}
+              </div>
+
+              <div className='row mt-2'>
+                {save_redaction_was_needed_checkbox}
+              </div>
+
+              <div className='row ml-2 mt-2 border-top border-bottom h5'>
+                runtime properties
+              </div>
+
+              <div className='row mt-2'>
                 {use_parsed_movies_checkbox}
               </div>
 
               <div className='row mt-2'>
-                {display_on_pipeline_panel_checkbox}
+                {bypass_purge_job_resources_checkbox}
+              </div>
+
+              <div className='row mt-2'>
+                {run_as_batch_checkbox}
               </div>
 
               <div className='row mt-2'>
@@ -700,6 +918,7 @@ class PipelineControls extends React.Component {
                       subtrahends={this.state.subtrahends}
                       intersect_feeds={this.state.intersect_feeds}
                       mandatory_nodes={this.state.mandatory_nodes}
+                      quick_finish_nodes={this.state.quick_finish_nodes}
                       ocr_jobs={this.state.ocr_jobs}
                       data_sifter_jobs={this.state.data_sifter_jobs}
                       addNode={this.addNode}
@@ -771,6 +990,7 @@ class NodeCardList extends React.Component {
                   subtrahends={this.props.subtrahends}
                   intersect_feeds={this.props.intersect_feeds}
                   mandatory_nodes={this.props.mandatory_nodes}
+                  quick_finish_nodes={this.props.quick_finish_nodes}
                   ocr_jobs={this.props.ocr_jobs}
                   data_sifter_jobs={this.props.data_sifter_jobs}
                   setLocalStateVar={this.props.setLocalStateVar}
@@ -868,7 +1088,7 @@ class NodeCard extends React.Component {
 
     const node_type = this.props.node_metadata['node'][this.props.node_id]['type']
     const good_types = [
-      'template', 'selected_area', 'mesh_match', 'selection_grower', 'ocr', 'data_sifter', 'focus_finder', 't1_filter'
+      'template', 'selected_area', 'mesh_match', 'selection_grower', 'ocr', 'data_sifter', 'focus_finder', 't1_filter', 'diff', 'feature'
     ]
     if (good_types.includes(node_type)) {
       const node_keys =  Object.keys(this.props.tier_1_scanners[node_type])
@@ -912,7 +1132,7 @@ class NodeCard extends React.Component {
       return ''
     }
     const id_types = [
-      'template', 'selected_area', 'mesh_match', 'selection_grower', 'ocr', 'data_sifter', 'focus_finder', 't1_filter'
+      'template', 'selected_area', 'mesh_match', 'selection_grower', 'ocr', 'data_sifter', 'focus_finder', 't1_filter', 'diff', 'feature'
     ]
     if (
       !id_types.includes(this.props.node_metadata['node'][this.props.node_id]['type'])
@@ -1156,7 +1376,8 @@ class NodeCard extends React.Component {
   buildPipelineDescendantNodeList(prefix, name_prefix, nodes, build_obj, ms_type) {
     const node_dropdown_id_types = [
       'template', 'selected_area', 'mesh_match', 'selection_grower', 'ocr', 
-      'data_sifter', 'focus_finder', 't1_filter', 'pipeline', 'intersect', 't1_diff', 't1_sum'
+      'data_sifter', 'focus_finder', 't1_filter', 'pipeline', 'intersect', 't1_diff', 't1_sum',
+      'diff', 'feature'
     ]
     let eligible_nodes = this.getEligibleNodes(ms_type, nodes, this.props.node_id, prefix)
     for (let i=0; i < Object.keys(eligible_nodes).length; i++) {
@@ -1253,7 +1474,7 @@ class NodeCard extends React.Component {
           }
           const node_dropdown_id_types = [
             'template', 'selected_area', 'mesh_match', 'selection_grower', 'ocr', 
-            'data_sifter', 'focus_finder', 't1_filter', 'pipeline', 'intersect', 't1_diff', 't1_sum'
+            'data_sifter', 'focus_finder', 't1_filter', 'pipeline', 'intersect', 't1_diff', 't1_sum', 'diff', 'feature'
           ]
           if (
             !node_dropdown_id_types.includes(this.props.node_metadata['node'][node_id]['type'])
@@ -1349,25 +1570,28 @@ class NodeCard extends React.Component {
               }
           >
             <option value=''></option>
+            <option value='data_sifter'>data sifter</option>
+            <option value='diff'>diff</option>
+            <option value='feature'>feature</option>
+            <option value='focus_finder'>focus finder</option>
+            <option value='intersect'>intersection of t1 outputs</option>
+            <option value='mesh_match'>mesh match</option>
+            <option value='noop'>noop</option>
+            <option value='ocr'>ocr</option>
+            <option value='pipeline'>pipeline</option>
+            <option value='redact'>redact</option>
+            <option value='remove_job_resources'>remove job resources</option>
+            <option value='save_gt_attribute'>save gt attribute</option>
+            <option value='secure_files_export'>secure files export</option>
             <option value='secure_files_import'>secure files import</option>
+            <option value='selected_area'>selected area</option>
+            <option value='selection_grower'>selection grower</option>
             <option value='split_and_hash'>split and hash</option>
             <option value='template'>template</option>
-            <option value='selected_area'>selected area</option>
-            <option value='mesh_match'>mesh match</option>
-            <option value='selection_grower'>selection grower</option>
-            <option value='ocr'>ocr</option>
-            <option value='data_sifter'>data sifter</option>
-            <option value='focus_finder'>focus finder</option>
-            <option value='t1_filter'>t1 filter</option>
-            <option value='pipeline'>pipeline</option>
-            <option value='t1_sum'>sum t1 outputs</option>
             <option value='t1_diff'>difference of t1 outputs</option>
-            <option value='intersect'>intersection of t1 outputs</option>
-            <option value='redact'>redact</option>
+            <option value='t1_filter'>t1 filter</option>
+            <option value='t1_sum'>sum t1 outputs</option>
             <option value='zip'>zip</option>
-            <option value='secure_files_export'>secure files export</option>
-            <option value='purge_job_resources'>purge job resources</option>
-            <option value='noop'>noop</option>
           </select>
         </div>
       </div>
@@ -1408,8 +1632,8 @@ class NodeCard extends React.Component {
     const bg_color_bad = '#F5B5A6'
     const the_style = {}
     let errors = []
-    const t1_id_types = [
-      'template', 'selected_area', 'mesh_match', 'selection_grower', 'ocr', 'data_sifter', 'focus_finder', 't1_filter'
+    const requiring_entity_id_types = [
+      'template', 'selected_area', 'mesh_match', 'selection_grower', 'ocr', 'data_sifter', 'focus_finder', 't1_filter', 'diff', 'feature', 'pipeline'
     ]
     const node = this.props.node_metadata['node'][this.props.node_id]
     if (!node['type']) {
@@ -1417,7 +1641,7 @@ class NodeCard extends React.Component {
         <div key='1'>type is required</div>
       )
     }
-    if (t1_id_types.includes(node['type']) && !node['entity_id']) {
+    if (requiring_entity_id_types.includes(node['type']) && !node['entity_id']) {
       errors.push(
         <div key='2'>entity id is required</div>
       )
@@ -1529,6 +1753,38 @@ class NodeCard extends React.Component {
     )
   }
 
+  toggleQuickFinish() {
+    let deepCopyQF = JSON.parse(JSON.stringify(this.props.quick_finish_nodes))
+    if (Object.keys(deepCopyQF).includes(this.props.node_id)) {
+      delete deepCopyQF[this.props.node_id]
+    } else {
+      deepCopyQF[this.props.node_id] = 1
+    }
+    this.props.setLocalStateVar( 'quick_finish_nodes', deepCopyQF)
+  }
+
+  buildQuickFinishCheckbox() {
+    let checked_val = ''
+    if (Object.keys(this.props['quick_finish_nodes']).includes(this.props.node_id)) {
+      checked_val = 'checked'
+    }
+    return (
+      <div className='ml-2'>
+        <div className='d-inline'>
+          <input
+            className='mr-2'
+            checked={checked_val}
+            type='checkbox'
+            onChange={() => this.toggleQuickFinish()}
+          />
+        </div>
+        <div className='d-inline'>
+          quick finish pipeline if this nodes output is empty
+        </div>
+      </div>
+    )
+  }
+
   render() {
     const delete_button = this.buildDeleteButton()
     const name_field = this.buildNameField()
@@ -1540,6 +1796,7 @@ class NodeCard extends React.Component {
     const addends_field = this.buildNodePickerField('addends')
     const intersect_feeds_field = this.buildNodePickerField('intersect_feeds')
     const mandatory_nodes_field = this.buildNodePickerField('mandatory_nodes')
+    const quick_finish_checkbox = this.buildQuickFinishCheckbox()
     const ocr_job_field = this.buildNodePickerField('ocr_jobs')
     const data_sifter_job_field = this.buildNodePickerField('data_sifter_jobs')
     const redaction_rules_field = this.buildRedactionRulesField()
@@ -1604,6 +1861,9 @@ class NodeCard extends React.Component {
         </div>
         <div className='row'>
           {redaction_rules_field}
+        </div>
+        <div className='row'>
+          {quick_finish_checkbox}
         </div>
         <div className='row'>
           {delete_button}

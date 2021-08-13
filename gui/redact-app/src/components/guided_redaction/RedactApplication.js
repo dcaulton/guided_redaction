@@ -7,7 +7,6 @@ import JobEvalPanel from './JobEvalPanel';
 import Workflows from './Workflows';
 import JobLogic from './JobLogic';
 import MovieUtils from './MovieUtils';
-import Workbooks from './Workbooks';
 import ComposePanel from './ComposePanel';
 import {getUrlVars} from './redact_utils.js'
 import './styles/guided_redaction.css';
@@ -26,6 +25,10 @@ class RedactApplication extends React.Component {
     this.state = {
       api_server_url: api_server_url,
       api_key: api_key,
+      check_job_parameters: {
+        job_polling_interval_seconds: 5,
+        list_all_pipelines: false,
+      },
       frameset_discriminator: 'gray8',
       redact_rules: {},
       movie_url: '',
@@ -33,9 +36,6 @@ class RedactApplication extends React.Component {
       image_width: 0,
       image_height: 0,
       image_scale: 1,
-      current_workbook_name: 'workbook 1',
-      current_workbook_id: '',
-      workbooks: [],
       movies: {},
       breadcrumbs_title: '',
       breadcrumbs_subtitle: '',
@@ -43,7 +43,6 @@ class RedactApplication extends React.Component {
       bypass_whoami: false,
       jobs: [],
       jobs_last_checked: '',
-      job_polling_interval_seconds: 5,
       scanners: [],
       files: {},
       subsequences: {},
@@ -65,12 +64,10 @@ class RedactApplication extends React.Component {
       results: {},
       preserve_movie_audio: true,
       app_codebooks: {},
-      user: {
-        id: '',
-      },
       job_lifecycle_data: {
         auto_delete_age: '1days', 
         delete_files_with_job: false,
+        bypass_purge_job_resources: true,
       },
       message: '',
       cv_workers: {},
@@ -87,16 +84,18 @@ class RedactApplication extends React.Component {
         'filesystem': true,
         'set_tools': true,
         'results': true,
-        'diffs': true,
+        'diff': true,
+        'feature': true,
         'redact': true,
         'zip': true,
         'pipelines': true,
-        'import_export': false,
+        'import_export': true,
         'redaction_borders': true,
         'movie_parser_link': true,
         'insights_link': true,
         'compose_link': true,
         'side_nav': true,
+        'jobs_on_import': false,
         't1_matches': {
           'template': true,
           'data_sifter': true,
@@ -107,6 +106,8 @@ class RedactApplication extends React.Component {
           'mesh_match': true,
           'selection_grower': true,
           'ocr': true,
+          'diff': true,
+          'feature': true,
         }
       },
       tier_1_scanners: {
@@ -119,6 +120,8 @@ class RedactApplication extends React.Component {
         'selected_area': {},
         'mesh_match': {},
         'selection_grower': {},
+        'diff': {},
+        'feature': {},
       },
       current_ids: {
         't1_scanner': {
@@ -131,6 +134,8 @@ class RedactApplication extends React.Component {
           'selected_area': '',
           'mesh_match': '',
           'selection_grower': '',
+          'diff': '',
+          'feature': '',
           'pipeline': '',
         },
         'redact_rule': '',
@@ -150,6 +155,8 @@ class RedactApplication extends React.Component {
         'pipeline': {},
         'intersect': {},
         't1_sum': {},
+        'diff': {},
+        'feature': {},
       },
       workflow_callbacks: {},
       workflows: {
@@ -165,6 +172,7 @@ class RedactApplication extends React.Component {
     this.buildJsonHeaders=this.buildJsonHeaders.bind(this)
     this.doGetVersion=this.doGetVersion.bind(this)
     this.cancelJobWrapper=this.cancelJobWrapper.bind(this)
+    this.preserveJobWrapper=this.preserveJobWrapper.bind(this)
     this.submitJobWrapper=this.submitJobWrapper.bind(this)
     this.getJobs=this.getJobs.bind(this)
     this.deleteOldJobsWrapper=this.deleteOldJobsWrapper.bind(this)
@@ -175,11 +183,6 @@ class RedactApplication extends React.Component {
     this.deletePipeline=this.deletePipeline.bind(this)
     this.savePipelineToDatabase=this.savePipelineToDatabase.bind(this)
     this.loadJobResultsWrapper=this.loadJobResultsWrapper.bind(this)
-    this.getWorkbooks=this.getWorkbooks.bind(this)
-    this.saveWorkbook=this.saveWorkbook.bind(this)
-    this.saveWorkbookName=this.saveWorkbookName.bind(this)
-    this.loadWorkbook=this.loadWorkbook.bind(this)
-    this.deleteWorkbook=this.deleteWorkbook.bind(this)
     this.cropImage=this.cropImage.bind(this)
     this.setMovieNickname=this.setMovieNickname.bind(this)
     this.getCurrentFramesets=this.getCurrentFramesets.bind(this)
@@ -215,8 +218,6 @@ class RedactApplication extends React.Component {
     this.restartPipelineJobWrapper=this.restartPipelineJobWrapper.bind(this)
     this.attachToJobWrapper=this.attachToJobWrapper.bind(this)
     this.toggleShowVisibility=this.toggleShowVisibility.bind(this)
-    this.impersonateUser=this.impersonateUser.bind(this)
-    this.getAndSaveUser=this.getAndSaveUser.bind(this)
     this.queryCvWorker=this.queryCvWorker.bind(this)
     this.dispatchFetchSplitAndHash=this.dispatchFetchSplitAndHash.bind(this)
     this.setActiveWorkflow=this.setActiveWorkflow.bind(this)
@@ -230,7 +231,6 @@ class RedactApplication extends React.Component {
     this.keyPress=this.keyPress.bind(this)
     this.buildWorkflowBottomNav=this.buildWorkflowBottomNav.bind(this)
     this.addMovieAndSetActive=this.addMovieAndSetActive.bind(this)
-    this.saveStateCheckpoint=this.saveStateCheckpoint.bind(this)
     this.removeFramesetHashWrapper=this.removeFramesetHashWrapper.bind(this)
     this.truncateAtFramesetHashWrapper=this.truncateAtFramesetHashWrapper.bind(this)
     this.getPipelineJobStatus=this.getPipelineJobStatus.bind(this)
@@ -566,15 +566,6 @@ class RedactApplication extends React.Component {
     )
   }
 
-  afterSaveWorkbookDone(workbook_id) {
-    let cur_url = new URL(window.location.href)
-    cur_url.searchParams.set('save-point', workbook_id)
-    window.history.pushState({}, cur_url)
-  }
-
-  saveStateCheckpoint() {
-  }
-
   async queryCvWorker(cv_worker_url, when_done=(()=>{})) {
     let the_url = this.getUrl('link_proxy')
     await fetch(the_url, {
@@ -604,26 +595,6 @@ class RedactApplication extends React.Component {
     })
   }
 
-  impersonateUser(new_user_id) {
-    let deepCopyUser = JSON.parse(JSON.stringify(this.state.user))
-    deepCopyUser['id'] = new_user_id
-    this.setGlobalStateVar('user', deepCopyUser)
-  }
-
-  async getAndSaveUser() {
-    await this.getCurrentUser()
-    .then((user_id) => {
-      let user_object = {
-        id: user_id,
-      }
-      this.setGlobalStateVar('user', user_object)
-      return user_object
-    })
-    .catch((error) => {
-      console.error(error);
-    })
-  }
-
   getUrl(url_name) {
     let api_server_url = ''
     api_server_url = this.props.getBaseUrl()
@@ -636,6 +607,8 @@ class RedactApplication extends React.Component {
       return api_server_url + 'redact/v1/parse/get-images-for-uuid'
     } else if (url_name === 'jobs_url') {
       return api_server_url + 'redact/v1/jobs'
+    } else if (url_name === 'preserve_jobs_url') {
+      return api_server_url + 'redact/v1/preserve-jobs'
     } else if (url_name === 'wrap_up_job_url') {
       return api_server_url + 'redact/v1/wrap-up-jobs'
     } else if (url_name === 'job_failed_tasks_url') {
@@ -644,8 +617,6 @@ class RedactApplication extends React.Component {
       return api_server_url + 'redact/v1/restart-pipeline-job'
     } else if (url_name === 'pipeline_job_status_url') {
       return api_server_url + 'redact/v1/jobs/pipeline-job-status'
-    } else if (url_name === 'workbooks_url') {
-      return api_server_url + 'redact/v1/workbooks'
     } else if (url_name === 'link_url') {
       return api_server_url + 'redact/v1/link/learn'
     } else if (url_name === 'can_reach_url') {
@@ -668,8 +639,6 @@ class RedactApplication extends React.Component {
       return api_server_url + 'redact/v1/files/get-version'
     } else if (url_name === 'delete_old_jobs_url') {
       return api_server_url + 'redact/v1/delete-old-jobs'
-    } else if (url_name === 'delete_old_workbooks_url') {
-      return api_server_url + 'redact/v1/delete-old-workbooks'
     } else if (url_name === 'import_archive_url') {
       return api_server_url + 'redact/v1/files/import-archive'
     } else if (url_name === 'get_color_at_pixel_url') {
@@ -780,26 +749,6 @@ class RedactApplication extends React.Component {
     this.setState({
       image_scale: scale,
     }, when_done())
-  }
-
-  async getCurrentUser() {
-    try {
-      let build_user_id = ''
-      if (!this.state.bypass_whoami) {
-        await this.props.whoAmI.getUser()
-        .then((user_id) => {
-          build_user_id = user_id
-        })
-        .catch((error) => {
-          console.error(error);
-        })
-      }
-      return build_user_id
-    }
-    catch(err) {
-      console.log('gr abend while running whoAmI')
-      return 'dave.caulton@sykes.com'
-    }
   }
 
   setCampaignMovies(movies) {
@@ -1284,10 +1233,6 @@ class RedactApplication extends React.Component {
     await response
   }
 
-  setWorkbooks(the_workbooks) {
-    Workbooks.setWorkbooks(the_workbooks, this.setGlobalStateVar)
-  }
-
   keyPress(event) {
     if (event.ctrlKey && event.key === 'i') {
       document.getElementById('insights_link').click()
@@ -1297,7 +1242,6 @@ class RedactApplication extends React.Component {
   async componentDidMount() {
     this.startWebSocket()
     this.deleteOldJobsWrapper()
-    this.deleteOldWorkbooks()
     if (!this.state.visibilityFlags['movie_parser_link']) {
       document.getElementById('movie_panel_link').style.display = 'none'
     }
@@ -1309,22 +1253,18 @@ class RedactApplication extends React.Component {
     }
     this.checkForInboundGetParameters()
     window.addEventListener('keydown', this.keyPress)
-    await this.getAndSaveUser()
-    .then(() => {
-      let pass_obj = {
-        'whenJobLoaded': this.state.whenJobLoaded,
-        'poll_for_jobs': this.props.poll_for_jobs,
-        'setGlobalStateVar': this.setGlobalStateVar,
-        'getGlobalStateVar': this.getGlobalStateVar,
-        'getJobs': this.getJobs,
-        'addMovieAndSetActive': this.addMovieAndSetActive,
-        'getUrl': this.getUrl,
-        'fetch_func': fetch,
-        'buildJsonHeaders': this.buildJsonHeaders,
-        'saveStateCheckpoint': this.saveStateCheckpoint,
-      }
-      JobLogic.checkForJobs(pass_obj)
-    })
+    let pass_obj = {
+      'whenJobLoaded': this.state.whenJobLoaded,
+      'poll_for_jobs': this.props.poll_for_jobs,
+      'setGlobalStateVar': this.setGlobalStateVar,
+      'getGlobalStateVar': this.getGlobalStateVar,
+      'getJobs': this.getJobs,
+      'addMovieAndSetActive': this.addMovieAndSetActive,
+      'getUrl': this.getUrl,
+      'fetch_func': fetch,
+      'buildJsonHeaders': this.buildJsonHeaders,
+    }
+    JobLogic.checkForJobs(pass_obj)
     this.seedRedactRule()
   }
 
@@ -1354,7 +1294,6 @@ class RedactApplication extends React.Component {
           'getUrl': this.getUrl,
           'fetch_func': fetch,
           'buildJsonHeaders': this.buildJsonHeaders,
-          'saveStateCheckpoint': this.saveStateCheckpoint,
         }
         JobLogic.checkForJobs(pass_obj)
       } else if (JobLogic.isAttachedJob(data['job_id'], this.state.attached_job)) {
@@ -1525,25 +1464,18 @@ class RedactApplication extends React.Component {
       fetch,
       this.buildJsonHeaders,
       this.getJobs,
-      this.saveStateCheckpoint
     )
   }
 
-  async getJobs(user_id='') {
+  async getJobs() {
     let the_url = this.getUrl('jobs_url')
-    the_url += '?x=1'
-    if (this.state.current_workbook_id) {
-      the_url += '&workbook_id=' + this.state.current_workbook_id
-    } 
-    if (user_id) {
-        the_url += '&user_id=' + user_id
-    } else {
-      if (this.state.user.id != null) {
-        the_url += '&user_id=' + this.state.user['id']
-      } 
+    if (
+      this.state.check_job_parameters &&
+      Object.keys(this.state.check_job_parameters).includes('list_all_pipelines') &&
+      this.state.check_job_parameters['list_all_pipelines']
+    ) {
+      the_url += '?all_pipeline_jobs=1'
     }
-    // DMC a HACK until we get refactored
-    the_url = this.getUrl('jobs_url')
     await fetch(the_url, {
       method: 'GET',
       headers: this.buildJsonHeaders(),
@@ -1621,7 +1553,6 @@ class RedactApplication extends React.Component {
   }
 
   async dispatchPipeline(input_obj) {
-    let the_url = this.getUrl('pipelines_url') + '/dispatch'
     let build_movies = {}
     let specified_input = {}
     let use_parsed_movies = false
@@ -1675,12 +1606,15 @@ class RedactApplication extends React.Component {
     let build_payload = {
       pipeline_id: input_obj.pipeline_id,
       input: specified_input,
-      owner: this.state.user['id'],
     }
 
-    if (this.state.current_workbook_id) {
-      build_payload['workbook_id'] = this.state.current_workbook_id
+    if (this.state.job_lifecycle_data) {
+      build_payload['job_lifecycle_data'] = this.state.job_lifecycle_data
     } 
+    let the_url = this.getUrl('pipelines_url') + '/dispatch'
+    if (Object.keys(input_obj).includes('run_as_batch') && input_obj['run_as_batch']) {
+      the_url += '?batch'
+    }
     await fetch(the_url, {
       method: 'POST',
       headers: this.buildJsonHeaders(),
@@ -1806,72 +1740,12 @@ class RedactApplication extends React.Component {
     JobLogic.cancelJob(job_id, this.getUrl, fetch, this.buildJsonHeaders, this.getJobs)
   }
 
+  async preserveJobWrapper(job_id) {
+    JobLogic.preserveJob(job_id, this.getUrl, fetch, this.buildJsonHeaders, this.getJobs)
+  }
+
   async deleteOldJobsWrapper() {
     JobLogic.deleteOldJobs(this.getUrl, fetch, this.buildJsonHeaders)
-  }
-
-  async deleteOldWorkbooks() {
-    Workbooks.deleteOldWorkbooks(this.getUrl, fetch, this.buildJsonHeaders)
-  }
-
-  async getWorkbooks() {
-    Workbooks.getWorkbooks(
-      this.getUrl, 
-      fetch, 
-      this.buildJsonHeaders, 
-      this.state.user['id'], 
-      this.setGlobalStateVar
-    )
-  }
-
-  saveWorkbookName(the_name) {
-    let new_workbook_id = ''
-    for (let i=0; i < this.state.workbooks.length; i++) {
-      if (this.state.workbooks[i]['name'] === the_name) {
-        new_workbook_id = this.state.workbooks[i]['id']
-      }
-    }
-    this.setState({
-      current_workbook_name: the_name,
-      current_workbook_id: new_workbook_id,
-    })
-  }
-
-  async saveWorkbook(when_done=(()=>{}), workbook_name='') {
-    Workbooks.saveWorkbook(
-      when_done,
-      workbook_name,
-      this.state,
-      this.state.current_workbook_name,
-      this.state.user['id'],
-      this.buildJsonHeaders,
-      this.getUrl,
-      fetch,
-      this.setGlobalStateVar
-    )
-  }
-
-  async loadWorkbook(workbook_id, when_done=(()=>{})) {
-    Workbooks.loadWorkbook(
-      workbook_id,
-      when_done,
-      this.setGlobalStateVar,
-      fetch,
-      this.getUrl,
-      this.buildJsonHeaders,
-      this.getJobs
-    )
-  }
-
-  async deleteWorkbook(workbook_id, when_done=(()=>{})) {
-    Workbooks.deleteWorkbook(
-      workbook_id,
-      when_done,
-      this.getUrl,
-      fetch,
-      this.buildJsonHeaders,
-      this.state.user['id']
-    )
   }
 
   getImageUrl(frameset_hash='') {
@@ -1992,23 +1866,15 @@ class RedactApplication extends React.Component {
     if (Object.keys(vars).includes('when_done')) {
       this.saveWhenDoneInfo(vars['when_done'])
     } 
-    if (Object.keys(vars).includes('workbook_id')) {
-      this.loadWorkbook(vars['workbook_id'])
-    } 
-    if (Object.keys(vars).includes('save-point')) {
-      this.loadWorkbook(vars['save-point'])
-    } 
     if (Object.keys(vars).includes('recording-id')) {
-      this.getAndSaveUser()
-      .then(() => {
-        this.dispatchFetchSplitAndHash(vars['recording-id'], true) 
-        if (this.iAmWorkOrDev()) {
-          this.setGlobalStateVar('whenDoneTarget', 'learn_dev')
-        } else {
-          this.setGlobalStateVar('whenDoneTarget', 'learn_prod')
-        }
-      })
+      this.dispatchFetchSplitAndHash(vars['recording-id'], true) 
     }
+    if (this.iAmWorkOrDev()) {
+      this.setGlobalStateVar('whenDoneTarget', 'learn_dev')
+    } else {
+      this.setGlobalStateVar('whenDoneTarget', 'learn_prod')
+    }
+
     if (Object.keys(vars).includes('title') && Object.keys(vars).includes('subtitle')) {
       this.setState({
         breadcrumbs_title: vars['title'],
@@ -2377,18 +2243,11 @@ class RedactApplication extends React.Component {
                 doPing={this.doPing}
                 doGetVersion={this.doGetVersion}
                 cancelJob={this.cancelJobWrapper}
+                preserveJob={this.preserveJobWrapper}
                 submitJob={this.submitJobWrapper}
                 getJobs={this.getJobs}
                 jobs={this.state.jobs}
                 loadJobResults={this.loadJobResultsWrapper}
-                getWorkbooks={this.getWorkbooks}
-                saveWorkbook={this.saveWorkbook}
-                saveWorkbookName={this.saveWorkbookName}
-                loadWorkbook={this.loadWorkbook}
-                deleteWorkbook={this.deleteWorkbook}
-                workbooks={this.state.workbooks}
-                current_workbook_name={this.state.current_workbook_name}
-                current_workbook_id={this.state.current_workbook_id}
                 cropImage={this.cropImage}
                 setMovieNickname={this.setMovieNickname}
                 frameset_discriminator={this.state.frameset_discriminator}
@@ -2426,17 +2285,15 @@ class RedactApplication extends React.Component {
                 current_ids={this.state.current_ids}
                 visibilityFlags={this.state.visibilityFlags}
                 toggleShowVisibility={this.toggleShowVisibility}
-                impersonateUser={this.impersonateUser}
                 attached_job={this.state.attached_job}
                 message={this.state.message}
-                user={this.state.user}
                 cv_workers={this.state.cv_workers}
                 queryCvWorker={this.queryCvWorker}
                 dispatchFetchSplitAndHash={this.dispatchFetchSplitAndHash}
                 deleteOldJobs={this.deleteOldJobsWrapper}
                 setActiveWorkflow={this.setActiveWorkflow}
                 runExportTask={this.runExportTask}
-                job_polling_interval_seconds={this.state.job_polling_interval_seconds}
+                check_job_parameters={this.state.check_job_parameters}
                 postImportArchiveCall={this.postImportArchiveCall}
                 getColorAtPixel={this.getColorAtPixel}
                 getColorsInZone={this.getColorsInZone}
@@ -2469,6 +2326,7 @@ class RedactApplication extends React.Component {
                 getJobResultData={this.getJobResultDataWrapper}
                 restartPipelineJob={this.restartPipelineJobWrapper}
                 setActiveWorkflow={this.setActiveWorkflow}
+                check_job_parameters={this.state.check_job_parameters}
               />
             </Route>
             <Route path='/redact/job-eval'>

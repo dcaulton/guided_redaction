@@ -22,6 +22,7 @@ class CanvasInsightsOverlay extends React.Component {
     this.mesh_match_origin_location_color = '#B06'
     this.crosshairs_color = '#F33'
     this.template_match_color = '#3F3'
+    this.feature_match_color = '#1D5'
     this.selected_area_color = '#2B9'
     this.mesh_match_color = '#C93'
     this.selection_grower_fill_color = '#A83'
@@ -44,6 +45,19 @@ class CanvasInsightsOverlay extends React.Component {
     const canvas = this.refs.insights_canvas
     let ctx = canvas.getContext('2d')
     ctx.clearRect(0, 0, canvas.width, canvas.height)
+  }
+
+  drawFeatureAnchors() {
+    if (!this.props.currentImageIsT1ScannerRootImage('feature', ['anchors'])) {
+      return
+    }
+    const anchors = this.props.runCallbackFunction('getCurrentFeatureAnchors')
+    if (anchors) {
+      this.drawBoxesAroundStartEndRecords(
+        anchors,
+        this.anchor_color
+      )
+    }
   }
 
   drawTemplateAnchors() {
@@ -452,6 +466,7 @@ class CanvasInsightsOverlay extends React.Component {
           || (this.props.mode === 'mesh_match_maximum_zones_2')
           || (this.props.mode === 'ds_delete_ocr_area_2')
           || (this.props.mode === 'ds_add_item_2')
+          || (this.props.mode === 'add_feature_anchor_2')
           || (this.props.mode === 'scan_ocr_2')) {
         crosshair_length = 2000
       } 
@@ -594,6 +609,9 @@ class CanvasInsightsOverlay extends React.Component {
       size = [x, y]
     }
     
+    if (!start || !size) {
+      return [0, 0, 0, 0]
+    }
     const start_x_scaled = start[0] * this.props.insights_image_scale 
     const start_y_scaled = start[1] * this.props.insights_image_scale
     const width_scaled = size[0] * this.props.insights_image_scale / template_scale
@@ -622,6 +640,10 @@ class CanvasInsightsOverlay extends React.Component {
         this.drawCrosshairs('selected_area_center', match['origin'])
       }
     }
+  }
+
+  drawFeatureMatches() {
+    this.drawTier1Matches('feature', this.feature_match_color, this.red_color) 
   }
 
   drawTemplateMatches() {
@@ -715,6 +737,8 @@ class CanvasInsightsOverlay extends React.Component {
     this.drawDataSifterAppRowCols()
     this.drawFocusFinderZones()
     this.drawT1FilterZones()
+    this.drawFeatureAnchors()
+    this.drawFeatureMatches()
   }
 
   componentDidUpdate() {
@@ -747,6 +771,8 @@ class CanvasInsightsOverlay extends React.Component {
     this.drawDataSifterAppRowCols()
     this.drawFocusFinderZones()
     this.drawT1FilterZones()
+    this.drawFeatureAnchors()
+    this.drawFeatureMatches()
   }
 
   render() {

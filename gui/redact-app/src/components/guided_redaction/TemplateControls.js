@@ -13,6 +13,8 @@ import {
   buildT1ScannerScaleDropdown,
   buildRunButton,
   setLocalT1ScannerStateVar,
+  buildPicListOfAnchors,
+  buildSourceMovieImageInfo2,
   doTier1Save,
 } from './SharedControls'
 
@@ -28,7 +30,8 @@ class TemplateControls extends React.Component {
       scale: '+/-50/5',
       match_percent: 90,
       match_method: 'any',
-      fetch_multiple: 'no',
+      fetch_multiple: false,
+      run_multiple: false,
       scan_level: 'tier_1',
       anchors: [],
       mask_zones: [],
@@ -48,6 +51,29 @@ class TemplateControls extends React.Component {
     this.setLocalStateVar=this.setLocalStateVar.bind(this)
     this.doSave=this.doSave.bind(this)
     this.setState=this.setState.bind(this)
+    this.gotoSourceFrame=this.gotoSourceFrame.bind(this)
+  }
+
+  buildToggleField(field_name, label) {
+    let checked_val = ''
+    if (this.state[field_name]) {
+      checked_val = 'checked'
+    }
+    return (
+      <div className='ml-2'>
+        <div className='d-inline'>
+          <input
+            className='mr-2'
+            checked={checked_val}
+            type='checkbox'
+            onChange={() => this.setLocalStateVar(field_name, !this.state[field_name])}
+          />
+        </div>
+        <div className='d-inline'>
+          {label}
+        </div>
+      </div>
+    )
   }
 
   addAnchorCallback1() {
@@ -82,6 +108,7 @@ class TemplateControls extends React.Component {
       match_percent: template['match_percent'],
       match_method: template['match_method'],
       fetch_multiple: template['fetch_multiple'],
+      run_multiple: template['run_multiple'],
       scan_level: template['scan_level'],
       anchors: template['anchors'],
       mask_zones: template['mask_zones'],
@@ -145,7 +172,8 @@ class TemplateControls extends React.Component {
       scale: '+/-50/5',
       match_percent: 90,
       match_method: 'any',
-      fetch_multiple: 'no',
+      fetch_multiple: false,
+      run_multiple: false,
       scan_level: 'tier_1',
       anchors: [],
       mask_zones: [],
@@ -166,6 +194,7 @@ class TemplateControls extends React.Component {
         match_percent: template['match_percent'],
         match_method: template['match_method'],
         fetch_multiple: template['fetch_multiple'],
+        run_multiple: template['run_multiple'],
         scan_level: template['scan_level'],
         anchors: template['anchors'],
         mask_zones: template['mask_zones'],
@@ -214,6 +243,7 @@ class TemplateControls extends React.Component {
       match_percent: this.state.match_percent,
       match_method: this.state.match_method,
       fetch_multiple: this.state.fetch_multiple,
+      run_multiple: this.state.run_multiple,
       scan_level: this.state.scan_level,
       anchors: this.state.anchors,
       mask_zones: this.state.mask_zones,
@@ -336,6 +366,7 @@ class TemplateControls extends React.Component {
       match_percent: this.state.match_percent,
       match_method: this.state.match_method,
       fetch_multiple: this.state.fetch_multiple,
+      run_multiple: this.state.run_multiple,
       scan_level: this.state.scan_level,
       anchors: this.state.anchors,
       mask_zones: this.state.mask_zones,
@@ -392,44 +423,7 @@ class TemplateControls extends React.Component {
   }
 
   buildAnchorPics() {
-    let return_arr = []
-    let anchor_images = []
-    for (let i=0; i < this.state.anchors.length; i++) {
-      let anchor = this.state.anchors[i]
-      if (Object.keys(anchor).includes('cropped_image_bytes')) {
-        anchor_images[anchor['id']] = anchor['cropped_image_bytes']
-      }
-    }
-    for (let i=0; i < Object.keys(anchor_images).length; i++) {
-      const anchor_id = Object.keys(anchor_images)[i]
-      const the_src = "data:image/gif;base64," + anchor_images[anchor_id]
-      return_arr.push(
-        <div 
-          key={'hey' + i}
-          className='p-2 border-bottom'
-        >
-          <div className='d-inline'>
-            <div className='d-inline'>
-              id: 
-            </div>
-            <div className='d-inline ml-2'>
-              {anchor_id}
-            </div>
-          </div>
-          <div className='d-inline ml-2'>
-            <img 
-              max-height='100'
-              max-width='100'
-              key={'dapper' + i}
-              alt={anchor_id}
-              title={anchor_id}
-              src={the_src}
-            />
-          </div>
-        </div>
-      )
-    }
-    return return_arr
+    return buildPicListOfAnchors(this.state.anchors)
   }
 
   buildRunButtonWrapper() {
@@ -511,16 +505,6 @@ class TemplateControls extends React.Component {
       this.state.match_method,
       'template_match_method',
       ((value)=>{this.setLocalStateVar('match_method', value)})
-    )
-  }
-
-  buildFetchMultiple() {
-    return buildLabelAndDropdown(
-      [{'no': 'no'}, {'yes': 'yes'}],
-      'Identify multiple locations if it occurs more than once on the page',
-      this.state.fetch_multiple,
-      'template_fetch_multiple',
-      ((value)=>{this.setLocalStateVar('fetch_multiple', value)})
     )
   }
 
@@ -622,65 +606,20 @@ class TemplateControls extends React.Component {
     )
   }
 
-  showTemplateSource(movie_url, image_frameset_index) {
+  gotoSourceFrame(movie_url, image_frameset_index) {
     this.props.setCurrentVideo(movie_url)
     setTimeout((() => {this.props.setScrubberToIndex(image_frameset_index)}), 1000)
   }
 
   buildSourceMovieImageInfo() {
-    if (this.state.id) {
-      if (Object.keys(this.props.tier_1_scanners['template']).includes(this.state['id'])) {
-        const template = this.props.tier_1_scanners['template'][this.state['id']]
-        if (template['anchors'].length > 0) {
-          const movie_url = template['anchors'][0]['movie']
-          const image_url = template['anchors'][0]['image']
-          let goto_link = ''
-          if (Object.keys(this.props.movies).includes(movie_url)) {
-            const the_movie = this.props.movies[movie_url]
-            const the_frameset = this.props.getFramesetHashForImageUrl(image_url, the_movie['framesets'])
-            const movie_framesets = this.props.getFramesetHashesInOrder(the_movie)
-            const image_frameset_index = movie_framesets.indexOf(the_frameset)
-            goto_link = (
-              <div>
-                <button
-                  className='bg-light border-0 text-primary'
-                  onClick={() => this.showTemplateSource(movie_url, image_frameset_index)}
-                >
-                  goto anchor source frame
-                </button>
-              </div>
-            )
-          }
-          const style = {
-            'fontSize': 'small',
-          }
-          return (
-            <div className='ml-2'>
-              <div>
-                Source Info
-              </div>
-              <div style={style}>
-                <div className='d-inline ml-2'>
-                  Movie url:
-                </div>
-                <div className='d-inline ml-2'>
-                  {movie_url}
-                </div>
-              </div>
-              <div style={style}>
-                <div className='d-inline ml-2'>
-                  Image url:
-                </div>
-                <div className='d-inline ml-2'>
-                  {image_url}
-                </div>
-              </div>
-              {goto_link}
-            </div>
-          )
-        }
-      }
-    }
+    return buildSourceMovieImageInfo2(
+      this.state.id,
+      this.props.tier_1_scanners['template'],
+      this.props.movies,
+      this.props.getFramesetHashForImageUrl,
+      this.props.getFramesetHashesInOrder,
+      this.gotoSourceFrame
+    )
   }
 
   render() {
@@ -698,7 +637,8 @@ class TemplateControls extends React.Component {
     const attributes_list = this.buildAttributesList()
     const scale_dropdown = this.buildScaleDropdown() 
     const match_percent = this.buildMatchPercent()
-    const fetch_multiple = this.buildFetchMultiple()
+    const fetch_multiple_checkbox = this.buildToggleField('fetch_multiple', 'Get Multiple Anchor Hits per Frame')
+    const run_multiple_checkbox = this.buildToggleField('run_multiple', 'Run Multiple Jobs per Movie')
     const match_method = this.buildMatchMethod()
     const scan_level = this.buildScanLevel()
     const import_button = this.buildImportButton()
@@ -760,7 +700,11 @@ class TemplateControls extends React.Component {
                 </div>
 
                 <div className='row mt-2'>
-                  {fetch_multiple}
+                  {fetch_multiple_checkbox}
+                </div>
+
+                <div className='row mt-2'>
+                  {run_multiple_checkbox}
                 </div>
 
                 <div className='row mt-2'>
@@ -787,7 +731,7 @@ class TemplateControls extends React.Component {
                       </div>
 
                       <div className='row m-3'>
-                        <div className='d-inline ml-2'>
+                        <div className='col d-inline ml-2'>
                           {anchor_pics}
                         </div>
                       </div>

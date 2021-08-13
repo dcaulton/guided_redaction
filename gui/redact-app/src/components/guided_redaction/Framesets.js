@@ -26,8 +26,8 @@ class FramesetCard extends React.Component {
   render() {
     const hash_span = this.buildFramesetHashData(this.props.frame_hash)
     let top_div_classname = 'col-md-3 frameCard m-3 p-3 bg-light'
-    if (this.props.frame_hash === this.props.highlighted_frameset_hash) {
-      top_div_classname = 'col-md-3 frameCard m-3 p-3 bg-light active_card'
+    if (this.props.frame_hash === this.props.active_frameset_hash) {
+      top_div_classname = 'col-md-3 frameCard m-3 p-3 active_card'
     }
     let display_image = this.props.getImageFromFrameset(this.props.frame_hash)
     const edited_indicator = this.buildEditedIndicator(display_image)
@@ -123,7 +123,7 @@ class FramesetCardList extends React.Component {
               redactFramesetCallback={this.props.redactFramesetCallback}
               getImageFromFrameset={this.props.getImageFromFrameset}
               getRedactedImageFromFrameset={this.props.getRedactedImageFromFrameset}
-              highlighted_frameset_hash={this.props.highlighted_frameset_hash}
+              active_frameset_hash={this.props.active_frameset_hash}
               gotoFramesetHash={this.props.gotoFramesetHash}
               removeFramesetHash={this.props.removeFramesetHash}
               truncateAtFramesetHash={this.props.truncateAtFramesetHash}

@@ -30,6 +30,7 @@ class OcrControls extends React.Component {
       match_percent: 70,
       skip_frames: 0,
       skip_east: false,
+      match_as_regex: false,
       data_sifter_job_id: '',
       ocr_job_id: '',
       scan_level: 'tier_1',
@@ -184,6 +185,7 @@ class OcrControls extends React.Component {
         match_percent: ocr_rule['match_percent'],
         skip_frames: ocr_rule['skip_frames'],
         skip_east: ocr_rule['skip_east'],
+        match_as_regex: ocr_rule['match_as_regex'],
         data_sifter_job_id: ocr_rule['data_sifter_job_id'],
         ocr_job_id: ocr_rule['ocr_job_id'],
         scan_level: ocr_rule['scan_level'],
@@ -212,6 +214,7 @@ class OcrControls extends React.Component {
       match_percent: 70,
       skip_frames: 0,
       skip_east: false,
+      match_as_regex: false,
       data_sifter_job_id: '',
       ocr_job_id: '',
       scan_level: 'tier_1',
@@ -231,6 +234,7 @@ class OcrControls extends React.Component {
       match_percent: this.state.match_percent,
       skip_frames: this.state.skip_frames,
       skip_east: this.state.skip_east,
+      match_as_regex: this.state.match_as_regex,
       data_sifter_job_id: this.state.data_sifter_job_id,
       ocr_job_id: this.state.ocr_job_id,
       scan_level: this.state.scan_level,
@@ -309,6 +313,33 @@ class OcrControls extends React.Component {
     )
   }
 
+  toggleMatchAsRegex() {
+    const new_value = (!this.state.match_as_regex)
+    this.setLocalStateVar('match_as_regex', new_value)
+  }
+
+  buildMatchAsRegex() {
+    let checked_state = ''
+    if (this.state.match_as_regex) {
+      checked_state = 'checked'
+    }
+    return (
+      <div className='ml-2'>
+        <div className='d-inline'>
+          Match As Regex
+        </div>
+        <div className='d-inline'>
+          <input
+            className='ml-2 mr-2 mt-1'
+            id='toggle_match_as_regex'
+            checked={checked_state}
+            type='checkbox'
+            onChange={() => this.toggleMatchAsRegex()}
+          />
+        </div>
+      </div>
+    )
+  }
   toggleSkipEast() {
     const new_value = (!this.state.skip_east)
     this.setLocalStateVar('skip_east', new_value)
@@ -458,6 +489,7 @@ class OcrControls extends React.Component {
     const match_percent = this.buildMatchPercent()
     const skip_frames = this.buildSkipFrames()
     const skip_east = this.buildSkipEast()
+    const match_as_regex = this.buildMatchAsRegex()
     const scan_level = this.buildScanLevel()
     const attributes_list = this.buildAttributesList()
     const header_row = makeHeaderRow(
@@ -521,6 +553,10 @@ class OcrControls extends React.Component {
 
                 <div className='row bg-light'>
                   {skip_east}
+                </div>
+
+                <div className='row bg-light'>
+                  {match_as_regex}
                 </div>
 
                 <div className='row bg-light'>

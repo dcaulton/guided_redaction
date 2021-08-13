@@ -34,12 +34,20 @@ const X = observer(class X extends React.Component {
   }
 
   render() {
+    let poll_for_jobs = false
+    // this is needed because, to run this locally on my mac, I nee to use eventlet.  When I do that 
+    //   jobs.models.broadcast_percent_complete won't work, we can't push status updates to a websocket.
+    //   so it's run big tasks locally, or run websockets locally, not a pleasant choice.
+    if (window.location.hostname === 'localhost') {
+      poll_for_jobs = true
+    }
     const whoAmIToUse = this.getWhoAmI()
     return (
       <div id="redact_application_wrapper">
         <RedactApplication 
           getBaseUrl={this.getBaseUrl}
           whoAmI={whoAmIToUse}
+          poll_for_jobs={poll_for_jobs}
         />
       </div>
     )

@@ -1,4 +1,7 @@
 import React from 'react';
+
+import protect from '../../protect';
+
 import {
   getFileNameFromUrl,
   getMessage, 
@@ -970,7 +973,7 @@ class MoviePanel extends React.Component {
     if (this.props.movie_url) {
       return ''
     }
-    return (
+    return protect(["secure_files.view_securefile"], null)(
       <div>
         <div className='d-inline ml-4'>
           fetch recording id
@@ -1109,7 +1112,7 @@ class MoviePanel extends React.Component {
             getFramesetHashesInOrder={this.props.getFramesetHashesInOrder}
             getImageFromFrameset={this.props.getImageFromFrameset}
             getRedactedImageFromFrameset={this.props.getRedactedImageFromFrameset}
-            highlighted_frameset_hash={this.state.highlighted_frameset_hash}
+            active_frameset_hash={this.props.active_frameset_hash}
             gotoFramesetHash={this.gotoFramesetHash}
             show_story_board={this.state.show_story_board}
             toggleShowStoryBoardVisibility={this.toggleShowStoryBoardVisibility}

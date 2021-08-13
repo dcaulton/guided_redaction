@@ -16,6 +16,8 @@ import MeshMatchControls from './MeshMatchControls'
 import SelectionGrowerControls from './SelectionGrowerControls'
 import ImportExportControls from './ImportExportControls'
 import SetToolsControls from './SetToolsControls'
+import DiffControls from './DiffControls'
+import FeatureControls from './FeatureControls'
 
 class BottomInsightsControls extends React.Component {
 
@@ -86,6 +88,24 @@ class BottomInsightsControls extends React.Component {
           style={controls_style}
       >
 
+        <PipelineControls
+          visibilityFlags={this.props.visibilityFlags}
+          toggleShowVisibility={this.props.toggleShowVisibility}
+          pipelines={this.props.pipelines}
+          current_ids={this.props.current_ids}
+          getPipelines={this.props.getPipelines}
+          dispatchPipeline={this.props.dispatchPipeline}
+          deletePipeline={this.props.deletePipeline}
+          displayInsightsMessage={this.props.displayInsightsMessage}
+          savePipelineToDatabase={this.props.savePipelineToDatabase}
+          setGlobalStateVar={this.props.setGlobalStateVar}
+          movies={this.props.movies}
+          tier_1_scanners={this.props.tier_1_scanners}
+          tier_1_matches={this.props.tier_1_matches}
+          redact_rules={this.props.redact_rules}
+          job_lifecycle_data={this.props.job_lifecycle_data}
+        />
+
         <FocusFinderControls 
           setGlobalStateVar={this.props.setGlobalStateVar}
           handleSetMode={this.props.handleSetMode}
@@ -93,12 +113,68 @@ class BottomInsightsControls extends React.Component {
           submitInsightsJob={this.props.submitInsightsJob}
           displayInsightsMessage={this.props.displayInsightsMessage}
           visibilityFlags={this.props.visibilityFlags}
+          toggleShowVisibility={this.props.toggleShowVisibility}
           buildTier1RunOptions={this.buildTier1RunOptions}
           saveScannerToDatabase={this.props.saveScannerToDatabase}
           scanners={this.props.scanners}
           getScanners={this.props.getScanners}
           deleteScanner={this.props.deleteScanner}
           importScanner={this.props.importScanner}
+          tier_1_scanners={this.props.tier_1_scanners}
+          current_ids={this.props.current_ids}
+          tier_1_matches={this.props.tier_1_matches}
+        />
+
+        <FeatureControls
+          setGlobalStateVar={this.props.setGlobalStateVar}
+          buildTier1RunOptions={this.buildTier1RunOptions}
+          handleSetMode={this.props.handleSetMode}
+          insights_image={this.props.insights_image}
+          getFramesetHashForImageUrl={this.props.getFramesetHashForImageUrl}
+          movie_url={this.props.movie_url}
+          setSelectedAreaTemplateAnchor={this.props.setSelectedAreaTemplateAnchor}
+          visibilityFlags={this.props.visibilityFlags}
+          toggleShowVisibility={this.props.toggleShowVisibility}
+          displayInsightsMessage={this.props.displayInsightsMessage}
+          addInsightsCallback={this.props.addInsightsCallback}
+          scanners={this.props.scanners}
+          getScanners={this.props.getScanners}
+          deleteScanner={this.props.deleteScanner}
+          importScanner={this.props.importScanner}
+          saveScannerToDatabase={this.props.saveScannerToDatabase}
+          submitInsightsJob={this.props.submitInsightsJob}
+          movies={this.props.movies}
+          setCurrentVideo={this.props.setCurrentVideo}
+          setScrubberToIndex={this.props.setScrubberToIndex}
+          getFramesetHashesInOrder={this.props.getFramesetHashesInOrder}
+          tier_1_scanners={this.props.tier_1_scanners}
+          current_ids={this.props.current_ids}
+          tier_1_matches={this.props.tier_1_matches}
+          clicked_coords={this.props.clicked_coords}
+        />
+
+        <DiffControls
+          setGlobalStateVar={this.props.setGlobalStateVar}
+          buildTier1RunOptions={this.buildTier1RunOptions}
+          handleSetMode={this.props.handleSetMode}
+          insights_image={this.props.insights_image}
+          getFramesetHashForImageUrl={this.props.getFramesetHashForImageUrl}
+          movie_url={this.props.movie_url}
+          setSelectedAreaTemplateAnchor={this.props.setSelectedAreaTemplateAnchor}
+          visibilityFlags={this.props.visibilityFlags}
+          toggleShowVisibility={this.props.toggleShowVisibility}
+          displayInsightsMessage={this.props.displayInsightsMessage}
+          addInsightsCallback={this.props.addInsightsCallback}
+          scanners={this.props.scanners}
+          getScanners={this.props.getScanners}
+          deleteScanner={this.props.deleteScanner}
+          importScanner={this.props.importScanner}
+          saveScannerToDatabase={this.props.saveScannerToDatabase}
+          submitInsightsJob={this.props.submitInsightsJob}
+          movies={this.props.movies}
+          setCurrentVideo={this.props.setCurrentVideo}
+          setScrubberToIndex={this.props.setScrubberToIndex}
+          getFramesetHashesInOrder={this.props.getFramesetHashesInOrder}
           tier_1_scanners={this.props.tier_1_scanners}
           current_ids={this.props.current_ids}
           tier_1_matches={this.props.tier_1_matches}
@@ -332,23 +408,6 @@ class BottomInsightsControls extends React.Component {
           jobs={this.props.jobs}
         />
 
-        <PipelineControls
-          visibilityFlags={this.props.visibilityFlags}
-          toggleShowVisibility={this.props.toggleShowVisibility}
-          pipelines={this.props.pipelines}
-          current_ids={this.props.current_ids}
-          getPipelines={this.props.getPipelines}
-          dispatchPipeline={this.props.dispatchPipeline}
-          deletePipeline={this.props.deletePipeline}
-          displayInsightsMessage={this.props.displayInsightsMessage}
-          savePipelineToDatabase={this.props.savePipelineToDatabase}
-          setGlobalStateVar={this.props.setGlobalStateVar}
-          movies={this.props.movies}
-          tier_1_scanners={this.props.tier_1_scanners}
-          tier_1_matches={this.props.tier_1_matches}
-          redact_rules={this.props.redact_rules}
-        />
-
         <RedactControls
           displayInsightsMessage={this.props.displayInsightsMessage}
           visibilityFlags={this.props.visibilityFlags}
@@ -426,16 +485,9 @@ class BottomInsightsControls extends React.Component {
         <SessionControls
           setGlobalStateVar={this.props.setGlobalStateVar}
           toggleGlobalStateVar={this.props.toggleGlobalStateVar}
-          current_workbook_name={this.props.current_workbook_name}
-          current_workbook_id={this.props.current_workbook_id}
-          saveWorkbook={this.props.saveWorkbook}
-          saveWorkbookName={this.props.saveWorkbookName}
           displayInsightsMessage={this.props.displayInsightsMessage}
           callPing={this.props.callPing}
           callGetVersion={this.props.callGetVersion}
-          workbooks={this.props.workbooks}
-          deleteWorkbook={this.props.deleteWorkbook}
-          loadWorkbook={this.props.loadWorkbook}
           visibilityFlags={this.props.visibilityFlags}
           toggleShowVisibility={this.props.toggleShowVisibility}
           campaign_movies={this.props.campaign_movies}
@@ -447,11 +499,10 @@ class BottomInsightsControls extends React.Component {
           submitInsightsJob={this.props.submitInsightsJob}
           preserve_movie_audio={this.props.preserve_movie_audio}
           getPipelines={this.props.getPipelines}
-          impersonateUser={this.props.impersonateUser}
           cv_workers={this.props.cv_workers}
           queryCvWorker={this.props.queryCvWorker}
           deleteOldJobs={this.props.deleteOldJobs}
-          job_polling_interval_seconds={this.props.job_polling_interval_seconds}
+          check_job_parameters={this.props.check_job_parameters}
           getJobResultData={this.props.getJobResultData}
           detectScreens={this.props.detectScreens}
           insights_image={this.props.insights_image}
