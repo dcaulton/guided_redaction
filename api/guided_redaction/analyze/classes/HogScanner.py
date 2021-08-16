@@ -347,7 +347,6 @@ class HogScanner:
                 (0, 0, 255),
                 3
             )
-        cv2.imwrite(debug_fullpath, cv2_image)
         debug_image_url = self.file_writer.get_url_for_file_path(debug_fullpath)
         return debug_image_url
 

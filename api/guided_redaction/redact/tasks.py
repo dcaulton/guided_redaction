@@ -46,14 +46,12 @@ def send_redaction_data_signal(redact_job, pipeline, redaction_needed):
     if redaction_needed:
         print('posting redaction was needed record')
         post_data_redacted_event(
-            account, lob, global_id, recording_id, gtid,
-            source_details=source_details
+            account, lob, global_id, gtid, recording_id, source_details=source_details
         )
     else:
         print('posting redaction not needed record')
         post_no_redaction_data_found_event(
-            account, lob, global_id, gtid, recording_id,
-            source_details=source_details
+            account, lob, global_id, gtid, recording_id, source_details=source_details
         )
 
 def dispatch_parent_job(job):

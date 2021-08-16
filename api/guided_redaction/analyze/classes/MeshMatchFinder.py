@@ -163,9 +163,6 @@ class MeshMatchFinder:
                     build_mesh_row.append(mesh_obj)
                 mesh.append(build_mesh_row)
 
-        if self.debug:
-            cv2.imwrite('/Users/dcaulton/Desktop/debug_mask_image.png', self.debug_mask_image)
-
         return mesh
 
     def build_one_mesh_obj(self, row_num, col_num, match_element, most_recent_cv2_image):

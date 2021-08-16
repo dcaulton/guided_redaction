@@ -66,6 +66,8 @@ class TrainFeatureAnchorController(T1Controller):
             kp_ser.append(build_kp)
 
         if keypoints: 
+            virgin_anchor_image = cv2_image.copy()
+            virgin_anchor_image_string = self.get_base64_image_string(virgin_anchor_image)
             cv2_image = cv2.drawKeypoints(cv2_image, keypoints, None, color=(0,255,0), flags=0)
             anchor_image_string = self.get_base64_image_string(cv2_image)
             kps = json.dumps(kp_ser)
@@ -75,6 +77,7 @@ class TrainFeatureAnchorController(T1Controller):
                 'end': end,
                 'keypoints': kps,
                 'cropped_image_bytes': anchor_image_string,
+                'cropped_image_bytes_before': virgin_anchor_image_string,
                 'movie': anchor_movie_url,
                 'image': anchor_image_url,
             }

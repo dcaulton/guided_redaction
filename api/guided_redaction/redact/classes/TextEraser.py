@@ -370,9 +370,7 @@ class TextEraser:
         scan_img = source.copy()
 
         cv2.GaussianBlur(scan_img, (13, 13), 0)
-        cv2.imwrite('/Users/dcaulton/Desktop/blessy.png', scan_img)
         s2 = imutils.auto_canny(scan_img)
-        cv2.imwrite('/Users/dcaulton/Desktop/tommy.png', s2)
 
         partition_contours = cv2.findContours(
             s2,
@@ -410,7 +408,6 @@ class TextEraser:
                 contour_bg_color,
                 -1
             )
-#        cv2.imwrite('/Users/dcaulton/Desktop/binky.png', build_img)
         return build_img
 
     def filter_edge_partition_contours(
@@ -515,7 +512,6 @@ class TextEraser:
                 color,
                 thickness
             )
-#        cv2.imwrite('/Users/dcaulton/Desktop/classy.png', target_image)
 
     def is_dark(self, color):
         if int(color[0]) + int(color[1]) + int(color[2]) <= 382:
@@ -546,7 +542,6 @@ class TextEraser:
         #  hlines with the bathwater
         hlines_thresh[:,0] = (255, 255, 255)
         hlines_thresh[:,hlines.shape[1]-1] = (255, 255, 255)
-#        cv2.imwrite('/Users/dcaulton/Desktop/hlines_thresh.png', hlines_thresh)
         return hlines_thresh
 
     def filter_hline_contours(self, hlines_contours, masking_region, debug):
@@ -608,8 +603,6 @@ class TextEraser:
                 self.xy_kernel, 
                 iterations=number_of_times_to_erode_source
             )
-#        if debug:
-#            cv2.imwrite('/Users/dcaulton/Desktop/source_eroded.png', source_eroded)
         return source_eroded
 
     def get_background_color(self, image):
