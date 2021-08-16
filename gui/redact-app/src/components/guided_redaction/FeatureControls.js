@@ -113,7 +113,7 @@ class FeatureControls extends React.Component {
         'image': this.props.insights_image,
         'movie': this.props.movie_url,
         'feature_type': this.state.return_type,
-        'matche_type': this.state.match_type,
+        'match_type': this.state.match_type,
     }
     let deepCopyAnchors = JSON.parse(JSON.stringify(this.state.anchors))
     deepCopyAnchors.push(the_anchor)
