@@ -1,4 +1,5 @@
 # guided_redaction
+
 An API for guided redaction and analysis tasks.
 
 Uses Python, OpenCV and Tesseract and the EAST algorithm to analyze and redact information on images.
