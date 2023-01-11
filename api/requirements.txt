@@ -37,7 +37,7 @@ gevent==21.1.2
 greenlet==1.0.0
 h5py==3.1.0
 hyperlink==21.0.0
-idna==3.1
+idna
 imagecodecs==2021.2.26
 imageio==2.9.0
 importlib-metadata==3.7.0
