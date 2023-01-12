@@ -6,6 +6,9 @@ Uses Python, OpenCV and Tesseract and the EAST algorithm to analyze and redact i
 
 Has a GUI to facilitate day to day redaction tasks as well as research.
 
+## NEW FEATURE - CONTAINERIZATION
+- Jan 2023: shortly, this product will be runnable as Docker containers, also as a kubernetes deployment
+
 ## to install the backend
 - Python 3 is required.
 - For desktop, set up a python virtualenv just to keep things tidy.  It's your call on a dockerized server container.
