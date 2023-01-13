@@ -22,10 +22,9 @@ class App extends React.Component {
     const host = window.location.hostname
     if (host === 'localhost' || host === '127.0.0.1') {
       api_server_url = 'http://localhost:8002/api/'
-    } else if (host.match('sykes.com$')) {
+    } else {
       api_server_url = 'https://'+host+'/api/'
     }
-   
     return api_server_url
   }
 
