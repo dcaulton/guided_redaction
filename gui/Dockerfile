@@ -19,5 +19,4 @@ RUN rm /etc/nginx/conf.d/default.conf
 COPY docker/default.conf /etc/nginx/conf.d/default.conf
 EXPOSE 80/tcp
 EXPOSE 443/tcp
-EXPOSE 8002/tcp
 CMD ["nginx", "-g", "daemon off;"]
