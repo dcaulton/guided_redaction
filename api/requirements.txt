@@ -82,7 +82,7 @@ scipy
 service-identity
 simplejson
 six
-sklearn
+scikit-learn
 sqlparse
 text-unidecode
 threadpoolctl

@@ -1,0 +1,29 @@
+services:
+  api:
+    build: ./api        
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./api:/api
+    command: bash -c "python manage.py runserver 0.0.0.0:8000"
+
+  web:
+    build: ./gui
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./gui:/gui
+
+  db:
+    image: mysql:8
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_DATABASE='guided_redaction'
+      - MYSQL_USER='root'
+      - MYSQL_PASSWORD='admin'
+      - MYSQL_ROOT_PASSWORD='admin'
+      - MYSQL_HOST='127.0.0.1'
+    volumes:
+      - /tmp/app/mysqld:/var/run/mysqld
+      - ./db:/var/lib/mysql

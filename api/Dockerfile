@@ -48,5 +48,5 @@ FROM gr
 ARG grpath=/guided_redaction
 WORKDIR $grpath
 USER python
-CMD ["python", "manage.py", "runserver", "8002"]
-#CMD ["daphne", "-p", "8002", "server.asgi:application"]
+#CMD ["python", "manage.py", "runserver", "8002"]
+CMD ["daphne", "-p", "8002", "server.asgi:application"]

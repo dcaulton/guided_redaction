@@ -7,9 +7,9 @@ RUN cd / && \
   cd /regexp-tree && \
   npm ci && \
   mv /regexp-tree/dist /js/node_modules/regexp-tree/
-RUN cd /js && env PUBLIC_URL=/step-workbench npm run build
-#WORKDIR /js
-#CMD ["npm", "start"]
+RUN cd /js && env PUBLIC_URL=/redact npm run build
+WORKDIR /js
+CMD ["npm", "start"]
 
 FROM nginx:1.17.5 AS final
 RUN mkdir /www
