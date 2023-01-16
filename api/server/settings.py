@@ -151,7 +151,7 @@ STATICFILES_DIRS = [
 
 STATIC_ROOT = os.path.join(os.path.dirname(BASE_DIR), "nginx", "www", "static")
 
-SERVE_STATIC = False
+SERVE_STATIC = True
 
 
 

@@ -44,13 +44,4 @@ RUN pip install -r requirements.txt --no-cache-dir
 #RUN safety check -i 44715
 #RUN pip uninstall -y safety
 #
-USER root
-WORKDIR /
-RUN mkdir nginx
-RUN chmod a+rwx /nginx
-#
-USER python
-WORKDIR $grpath
-RUN python manage.py collectstatic --noinput
-#
 CMD ["uwsgi", "--http", ":8002", "--module", "server.wsgi"]

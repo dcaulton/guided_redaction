@@ -1,0 +1,30 @@
+
+#branding div.navbar-header {
+  display: flex;
+  flex-direction: row;
+  align-items: left;
+  justify-content: space-between;
+  vertical-align: center
+}
+
+#content-main caption {
+  background-color: #0094E1;
+}
+
+#header {
+  background-color: #0094E1;
+  padding: 0 50px;
+}
+
+#branding div.navbar-header h1.proj-name {
+  color: white;
+  padding-top: 15px;
+  font-family: sans-serif;
+  font-size: 16px;
+}
+
+.sykes-logo {
+    height: 36px;
+    padding: 5px;
+    padding-right: 25px;
+}

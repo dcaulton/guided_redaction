@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="863.00702mm"
+   height="143.54868mm"
+   viewBox="0 0 863.00702 143.54868"
+   version="1.1"
+   id="svg8"
+   inkscape:version="0.92.3 (2405546, 2018-03-11)"
+   sodipodi:docname="step-engine-logo.svg">
+  <defs
+     id="defs2">
+    <inkscape:perspective
+       sodipodi:type="inkscape:persp3d"
+       inkscape:vp_x="0 : 148.49999 : 1"
+       inkscape:vp_y="0 : 999.99995 : 0"
+       inkscape:vp_z="210.00001 : 148.49999 : 1"
+       inkscape:persp3d-origin="105 : 98.999995 : 1"
+       id="perspective3713" />
+  </defs>
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="0.67625706"
+     inkscape:cx="1757.5596"
+     inkscape:cy="276.9648"
+     inkscape:document-units="mm"
+     inkscape:current-layer="layer1"
+     showgrid="false"
+     inkscape:pagecheckerboard="true"
+     inkscape:window-width="2672"
+     inkscape:window-height="1030"
+     inkscape:window-x="1051"
+     inkscape:window-y="586"
+     inkscape:window-maximized="0"
+     fit-margin-top="0"
+     fit-margin-left="0"
+     fit-margin-right="0"
+     fit-margin-bottom="0" />
+  <metadata
+     id="metadata5">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(0,-153.45132)">
+    <g
+       id="g4627">
+      <path
+         sodipodi:nodetypes="sssssssss"
+         inkscape:connector-curvature="0"
+         id="rect3729"
+         d="M 11.094164,230.62164 120.0101,257.72568 c 4.88906,1.21666 9.094,4.05583 9.094,9.094 v 18.916 c 0,5.03817 -4.20495,10.31065 -9.094,9.094 L 11.094,267.72564 C 6.2049418,266.50899 2,263.66981 2,258.63164 v -18.916 c 0,-5.03817 4.2051071,-10.31066 9.094164,-9.094 z"
+         style="fill:#000000;fill-opacity:0;stroke:#ffffff;stroke-width:4;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+      <path
+         sodipodi:nodetypes="ccccc"
+         inkscape:connector-curvature="0"
+         id="path4586"
+         d="M 8.8263069,228.49998 H 44.166232 l 117.840768,31 h -35.23984 z"
+         style="fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:4;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+    </g>
+    <g
+       id="g4633"
+       transform="translate(40.5,-37.499999)">
+      <path
+         style="fill:#000000;fill-opacity:0;stroke:#ffffff;stroke-width:4;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+         d="M 11.094164,230.62164 120.0101,257.72568 c 4.88906,1.21666 9.094,4.05583 9.094,9.094 v 18.916 c 0,5.03817 -4.20495,10.31065 -9.094,9.094 L 11.094,267.72564 C 6.2049418,266.50899 2,263.66981 2,258.63164 v -18.916 c 0,-5.03817 4.2051071,-10.31066 9.094164,-9.094 z"
+         id="path4629"
+         inkscape:connector-curvature="0"
+         sodipodi:nodetypes="sssssssss" />
+      <path
+         style="fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:4;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+         d="M 8.8263069,228.49998 H 44.166232 l 117.840768,31 h -35.23984 z"
+         id="path4631"
+         inkscape:connector-curvature="0"
+         sodipodi:nodetypes="ccccc" />
+    </g>
+    <path
+       style="fill:#000000;fill-opacity:0;stroke:#ffffff;stroke-width:4;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       d="m 92.094049,155.62164 108.916021,27.104 c 4.88907,1.21665 9.09401,4.05582 9.09401,9.09398 v 18.91597 c 0,5.03816 -4.20495,10.31063 -9.09401,9.09398 L 92.093885,192.72558 c -4.889062,-1.21665 -9.094007,-4.05582 -9.094007,-9.09399 v -18.91596 c 0,-5.03817 4.20511,-10.31065 9.094171,-9.09399 z"
+       id="path4635"
+       inkscape:connector-curvature="0"
+       sodipodi:nodetypes="sssssssss" />
+    <path
+       style="fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:4;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       d="M 89.82619,153.49998 H 125.166 l 727.25767,31 -644.65653,-5e-5 z"
+       id="path4637"
+       inkscape:connector-curvature="0"
+       sodipodi:nodetypes="ccccc" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:77.52681732px;line-height:1.25;font-family:sans-serif;-inkscape-font-specification:'sans-serif, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:0.40379387"
+       x="217.15633"
+       y="276.25381"
+       id="text4643"><tspan
+         sodipodi:role="line"
+         id="tspan4645"
+         x="217.15633"
+         y="276.25381"
+         style="stroke-width:0.40379387">STEP Workbench</tspan></text>
+  </g>
+</svg>
