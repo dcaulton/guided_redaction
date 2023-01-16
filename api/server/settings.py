@@ -145,6 +145,15 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, "server", "static"),
+]
+
+STATIC_ROOT = os.path.join(os.path.dirname(BASE_DIR), "nginx", "www", "static")
+
+SERVE_STATIC = False
+
+
 
 #CUSTOM SETTINGS
 REDACT_EAST_FILE_PATH = 'guided_redaction/analyze/bin/frozen_east_text_detection.pb'

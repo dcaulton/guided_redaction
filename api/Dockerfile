@@ -30,7 +30,7 @@ RUN apt-get -y update && apt-get -y install \
   tdsodbc
 # RUN apt-get -y -t stretch-backports install \
 
-FROM step-base as gr
+FROM step-base as gr1
 ARG grpath=/guided_redaction
 EXPOSE 8002
 RUN useradd -m -s /bin/bash -d /home/python python
@@ -43,11 +43,14 @@ RUN pip install -r requirements.txt --no-cache-dir
 #RUN pip install safety
 #RUN safety check -i 44715
 #RUN pip uninstall -y safety
-
-FROM gr
-ARG grpath=/guided_redaction
-WORKDIR $grpath
+#
+USER root
+WORKDIR /
+RUN mkdir nginx
+RUN chmod a+rwx /nginx
+#
 USER python
-#CMD ["python", "manage.py", "runserver", "8002"]
-#CMD ["daphne", "-p", "8002", "server.asgi:application"]
+WORKDIR $grpath
+RUN python manage.py collectstatic --noinput
+#
 CMD ["uwsgi", "--http", ":8002", "--module", "server.wsgi"]
