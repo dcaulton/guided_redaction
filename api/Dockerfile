@@ -44,5 +44,5 @@ RUN pip install -r requirements.txt --no-cache-dir
 #RUN safety check -i 44715
 #RUN pip uninstall -y safety
 #
-CMD ["uwsgi", "--http", ":8002", "--module", "server.wsgi"]
-#CMD ["daphne", "-p", "8002", "server.asgi:application"]
+#CMD ["uwsgi", "--http", ":8002", "--module", "server.wsgi"]
+CMD ["daphne", "-p", "8002", "server.asgi:application"]
