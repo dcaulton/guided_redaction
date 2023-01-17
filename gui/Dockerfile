@@ -7,7 +7,8 @@ RUN cd / && \
   cd /regexp-tree && \
   npm ci && \
   mv /regexp-tree/dist /js/node_modules/regexp-tree/
-RUN cd /js && env PUBLIC_URL=/redact npm run build
+RUN cd /js && npm run build
+#RUN cd /js && env PUBLIC_URL=/redact npm run build
 #WORKDIR /js
 #EXPOSE 3000/tcp
 #CMD ["npm", "start"]

@@ -20,5 +20,6 @@ router = get_router()
 urlpatterns = [
   path('', include(router.urls)),
   path("api/", include(router.urls)),
+  path("admin/", admin.site.urls),
 ]
 

@@ -85,7 +85,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'server.wsgi.application'
-ASGI_APPLICATION = "server.asgi_routing.application"
+#ASGI_APPLICATION = "server.asgi_routing.application"
 
 
 # Database
