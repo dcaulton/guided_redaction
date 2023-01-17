@@ -1,17 +1,18 @@
 services:
   api:
-    image: gr-api2
-#    build: ./api        
+#    image: gr-api2
+    build: ./api        
 #    volumes:
 #      - ./api:/api
     ports:
       - "8002:8002"
 
   web:
-    image: gr-gui2
-#    build: ./gui
+#    image: gr-gui2
+    build: ./gui
 #    volumes:
 #      - ./gui:/gui
     ports:
-      - "3000:3000"
+      - "80:80"
+      - "443:443"
 
