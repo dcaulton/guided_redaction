@@ -85,7 +85,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'server.wsgi.application'
-#ASGI_APPLICATION = "server.asgi_routing.application"
+ASGI_APPLICATION = "server.asgi_routing.application"
 
 
 # Database
@@ -174,6 +174,15 @@ REDACT_IMAGE_REQUEST_VERIFY_HEADERS = False
 HASH_IMAGES_IN_COLOR = False
 CELERY_BROKER_HEARTBEAT=0
 CELERY_ALWAYS_EAGER=False
+
+#CHANNELS FOR ASGI
+CHANNEL_LAYERS = { "default": {
+        "BACKEND": "base.channels.BaseChannelLayer",
+        "CONFIG": {
+            "hosts": [("localhost", 6379)],
+        },
+    },
+}
 
 try:
     from local_settings import *
