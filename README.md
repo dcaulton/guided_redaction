@@ -21,6 +21,10 @@ Has a GUI to facilitate day to day redaction tasks as well as research.
 - install the latest version of Node.js
 
 ## to run
+- run docker-compose build from the root directory 
+- access the api at localhost/api, the application at localhost
+
+# OLD TO RUN:
 - start django server
 -- load virtualenv, change directory to guided_redaction/api, then `python manage.py runserver`
 - start npm server
