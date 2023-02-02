@@ -4,14 +4,13 @@ asgiref
 attrs
 autobahn
 Automat
-azure-core
-azure-storage-blob
 billiard
 cached-property
 celery
 certifi
 cffi
 channels
+channels-redis
 chardet
 click
 click-didyoumean

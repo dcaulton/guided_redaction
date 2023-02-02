@@ -113,3 +113,5 @@ pyvenv.cfg
 api/guided_redaction/work/
 gui/redact-app/package-lock.json
 src/*
+nginx/
+

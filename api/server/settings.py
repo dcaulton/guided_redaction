@@ -153,36 +153,36 @@ STATIC_ROOT = os.path.join(os.path.dirname(BASE_DIR), "nginx", "www", "static")
 
 SERVE_STATIC = True
 
+CORS_ORIGIN_ALLOW_ALL = True
 
 
 #CUSTOM SETTINGS
 REDACT_EAST_FILE_PATH = 'guided_redaction/analyze/bin/frozen_east_text_detection.pb'
-CORS_ORIGIN_ALLOW_ALL = True
-#REDACT_FILE_STORAGE_DIR = './guided_redaction/work'
-REDACT_FILE_STORAGE_DIR = '/Users/davecaulton/dev/guided_redaction/api/guided_redaction/work'
-#REDACT_FILE_BASE_URL = 'http://localhost:8080'
+REDACT_FILE_STORAGE_DIR = os.path.join(os.path.dirname(BASE_DIR), "api", "guided_redaction", "work")
 REDACT_FILE_BASE_URL = "http://localhost:8080/{route}"
-REDACT_AZURE_BASE_URL = 'https://redactblob.blob.core.windows.net/mycontainer'
-REDACT_AZURE_BLOB_CONNECTION_STRING = 'DefaultEndpointsProtocol=https;AccountName=redactblob;AccountKey=pTkHJ1dws5dtiVmX5FF+vYxkp1qNgaz62LeSLcxijoWFUXVzWFkn3BxoGMKxJs4tjjHaI/zI80zeIcfdPPz7sw==;EndpointSuffix=core.windows.net'
-REDACT_SYKES_DEV_AZURE_BLOB_CONNECTION_STRING = 'DefaultEndpointsProtocol=https;AccountName=sykesdevcustomertile;AccountKey=Q573TWuD3wefJDPk4zP9kVIZXuISaqzQR/gGy597111IuGx9yY/EWCztopDO1ufi4sK5s4Jwfz0U3f4EWLJMYQ==;EndpointSuffix=core.windows.net'
-REDACT_SYKES_DEV_AZURE_BLOB_CONTAINER_NAME = 'redaction'
-REDACT_IMAGE_STORAGE='file'  # file, redis,  mysql or azure_blob
-#REDACT_REDIS_HOST="127.0.0.1"
-#REDACT_REDIS_PORT=6379
-#REDACT_REDIS_DB=2
 REDACT_IMAGE_REQUEST_VERIFY_HEADERS = False
 HASH_IMAGES_IN_COLOR = False
 CELERY_BROKER_HEARTBEAT=0
 CELERY_ALWAYS_EAGER=False
 
 #CHANNELS FOR ASGI
-CHANNEL_LAYERS = { "default": {
-        "BACKEND": "base.channels.BaseChannelLayer",
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [("localhost", 6379)],
+            "hosts": [("127.0.0.1", 6379)],
         },
     },
 }
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
+broker_path_parts = CELERY_BROKER_URL.split("/")
+broker_host, broker_port = broker_path_parts[2].split(":")
+REDIS_CONNECTION = {"host": broker_host, "port": broker_port, "db": 2}
+
+
+
+
+
 
 try:
     from local_settings import *
